@@ -397,7 +397,7 @@ public class MinerServerImpl implements MinerServer {
         return submitBitcoinBlock(blockHashForMergedMining, bitcoinMergedMiningBlock, true);
     }
 
-    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
+    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
         logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
 
         //noinspection ConstantConditions
@@ -500,22 +500,14 @@ public class MinerServerImpl implements MinerServer {
      * getBitcoinMergedMerkleBranch returns the Partial Merkle Branch needed to validate that the coinbase tx
      * is part of the Merkle Tree.
      *
-     * @param txnHashes the bitcoin block that includes all the txs.
+     * @param networkParams bitcoin network params.
+     * @param txStringHashes hashes for the txs of the bitcoin block used for merged mining.
      * @return A Partial Merkle Branch in which you can validate the coinbase tx.
      */
     public static PartialMerkleTree getBitcoinMergedMerkleBranch(NetworkParameters networkParams, List<String> txStringHashes) {
         List<co.rsk.bitcoinj.core.Sha256Hash> txHashes = txStringHashes.stream().map(Sha256Hash::wrap).collect(Collectors.toList());
 
-        /**
-         *  We need to convert the txs to a bitvector to choose which ones
-         *  will be included in the Partial Merkle Tree.
-         *
-         *  We need txs.size() / 8 bytes to represent this vector.
-         *  The coinbase tx is the first one of the txs so we set the first bit to 1.
-         */
-        byte[] bitvector = new byte[(int) Math.ceil(txHashes.size() / 8.0)];
-        co.rsk.bitcoinj.core.Utils.setBitLE(bitvector, 0);
-        return PartialMerkleTree.buildFromLeaves(networkParams, bitvector, txHashes);
+        return buildMerkleBranch(txHashes, networkParams);
     }
 
     /**
@@ -531,16 +523,21 @@ public class MinerServerImpl implements MinerServer {
         for (BtcTransaction tx : txs) {
             txHashes.add(tx.getHash());
         }
-        /**
-         *  We need to convert the txs to a bitvector to choose which ones
-         *  will be included in the Partial Merkle Tree.
-         *
-         *  We need txs.size() / 8 bytes to represent this vector.
-         *  The coinbase tx is the first one of the txs so we set the first bit to 1.
+
+        return buildMerkleBranch(txHashes, bitcoinMergedMiningBlock.getParams());
+    }
+
+    private static PartialMerkleTree buildMerkleBranch(List<Sha256Hash> txHashes, NetworkParameters params) {
+        /*
+           We need to convert the txs to a bitvector to choose which ones
+           will be included in the Partial Merkle Tree.
+
+           We need txs.size() / 8 bytes to represent this vector.
+           The coinbase tx is the first one of the txs so we set the first bit to 1.
          */
-        byte[] bitvector = new byte[(int) Math.ceil(txs.size() / 8.0)];
-        co.rsk.bitcoinj.core.Utils.setBitLE(bitvector, 0);
-        return PartialMerkleTree.buildFromLeaves(bitcoinMergedMiningBlock.getParams(), bitvector, txHashes);
+        byte[] bitvector = new byte[(int) Math.ceil(txHashes.size() / 8.0)];
+        Utils.setBitLE(bitvector, 0);
+        return PartialMerkleTree.buildFromLeaves(params, bitvector, txHashes);
     }
 
     @Override
