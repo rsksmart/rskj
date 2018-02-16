@@ -48,6 +48,7 @@ import org.spongycastle.util.encoders.Hex;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -153,7 +154,7 @@ public class RskWireProtocol extends EthHandler {
 
         try {
             Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
-            if (!msg.getGenesisHash().equals(genesis.getHash())
+            if (!Arrays.equals(msg.getGenesisHash(), genesis.getHash().getBytes())
                     || msg.getProtocolVersion() != version.getCode()) {
                 loggerNet.info("Removing EthHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
                 if (msg.getProtocolVersion() != version.getCode()){
