@@ -459,6 +459,45 @@ public class TestContract {
         return new TestContract(bytecode, runtimeBytecode, functions);
     }
 
+    public static TestContract returnBridgeTest() {
+        /*
+        contract MiniBridge {
+          function getFeePerKb() public returns(int256);
+        }
+
+        contract BridgeCaller {
+          function invokeGetFeePerKb() public {
+            MiniBridge bridge = MiniBridge(0x0000000000000000000000000000000001000006);
+            require(bridge.getFeePerKb() == 100000);
+          }
+        }
+        */
+        String bytecode =
+            "6060604052341561000f57600080fd5b6101228061001e6000396000f300606060405260043610603f576000357c010000000000" +
+            "0000000000000000000000000000000000000000000000900463ffffffff168063c28b60de146044575b600080fd5b3415604e57" +
+            "600080fd5b60546056565b005b600063010000069050620186a08173ffffffffffffffffffffffffffffffffffffffff1663724e" +
+            "c8866000604051602001526040518163ffffffff167c010000000000000000000000000000000000000000000000000000000002" +
+            "8152600401602060405180830381600087803b151560ce57600080fd5b6102c65a03f1151560de57600080fd5b50505060405180" +
+            "51905014151560f357600080fd5b505600a165627a7a7230582077146eca2563074d8d8bf51f8c382b8a2e967f39dd6dc4d242de" +
+            "f61020da94bf0029";
+        String abi =
+            "[" +
+              "{" +
+                "\"constant\": false," +
+                "\"inputs\": []," +
+                "\"name\": \"invokeGetFeePerKb\"," +
+                "\"outputs\": []," +
+                "\"payable\": false," +
+                "\"type\": \"function\"" +
+              "}" +
+            "]";
+        CallTransaction.Contract contract = new CallTransaction.Contract(abi);
+
+        Map<String, CallTransaction.Function> functions = new HashMap<>();
+        functions.put("invokeGetFeePerKb", contract.getByName("invokeGetFeePerKb"));
+        return new TestContract(bytecode, "", functions);
+    }
+
     public ProgramResult executeFunction(String functionName, BigInteger value, Object... args) {
         byte[] bytecode = Hex.decode(this.bytecode);
         byte[] encodedCall = this.functions.get(functionName).encode(args);
