@@ -104,6 +104,13 @@ public class ProgramTest {
     }
 
     @Test
+    public void returnPrecompiledDataSizeTest() {
+        ProgramResult result = TestContract.returnDataTest().executeFunction("testPrecompiledSize", BigInteger.ZERO);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+    }
+
+    @Test
     public void returnDataCopyTest() {
         TestContract contract = TestContract.returnDataTest();
         ProgramResult result = contract.executeFunction("testCopy", BigInteger.ZERO);
