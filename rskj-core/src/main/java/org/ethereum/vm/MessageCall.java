@@ -30,8 +30,8 @@ public class MessageCall {
         CALL,
         CALLCODE,
         DELEGATECALL,
-        POST,
-        STATICCALL;
+        STATICCALL,
+        POST;
 
         /**
          *  Indicates that the code is executed in the context of the caller
