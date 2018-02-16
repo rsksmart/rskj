@@ -26,8 +26,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeaderWrapper;
-import org.ethereum.core.BlockWrapper;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.MessageQueue;
@@ -284,14 +282,6 @@ public class Channel {
     }
 
     // RSK sub protocol
-
-    public void fetchBlockBodies(List<BlockHeaderWrapper> headers) {
-        eth.fetchBodies(headers);
-    }
-
-    public void recoverGap(BlockWrapper block) {
-        eth.recoverGap(block);
-    }
 
     public boolean isEthCompatible(Channel peer) {
         return peer != null && peer.getEthVersion().isCompatible(getEthVersion());

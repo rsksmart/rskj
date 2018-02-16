@@ -253,11 +253,6 @@ public class RskWireProtocol extends EthHandler {
     }
 
     @Override
-    public void recoverGap(BlockWrapper block) {
-
-    }
-
-    @Override
     public void sendTransaction(List<Transaction> txs) {
         TransactionsMessage msg = new TransactionsMessage(config, txs);
         sendMessage(msg);
@@ -343,11 +338,6 @@ public class RskWireProtocol extends EthHandler {
 
         logger.info("Peer {}: is a bad one, drop", channel.getPeerIdShort());
         disconnect(USELESS_PEER);
-    }
-
-    @Override
-    public void fetchBodies(List<BlockHeaderWrapper> headers) {
-
     }
 
     /*************************

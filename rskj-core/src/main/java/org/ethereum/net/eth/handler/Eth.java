@@ -20,8 +20,6 @@
 package org.ethereum.net.eth.handler;
 
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeaderWrapper;
-import org.ethereum.core.BlockWrapper;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
@@ -127,24 +125,10 @@ public interface Eth {
     void sendStatus();
 
     /**
-     * Tries to recover a gap
-     *
-     * @param block gap block
-     */
-    void recoverGap(BlockWrapper block);
-
-    /**
      * Drops connection with remote peer.
      * It should be called when peer don't behave
      */
     void dropConnection();
-
-    /**
-     * Force peer to fetch block bodies
-     *
-     * @param headers related headers
-     */
-    void fetchBodies(List<BlockHeaderWrapper> headers);
 
     // Send eth message directly
     void sendMessage(EthMessage message);
