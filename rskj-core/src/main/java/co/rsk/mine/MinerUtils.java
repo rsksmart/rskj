@@ -77,56 +77,6 @@ public class MinerUtils {
         return coinbaseTransaction;
     }
 
-    public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
-            co.rsk.bitcoinj.core.NetworkParameters params,
-            MinerWork work,
-            MinerWork work2) {
-        return getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
-                params,
-                TypeConverter.stringHexToByteArray(work.getBlockHashForMergedMining()),
-                TypeConverter.stringHexToByteArray(work2.getBlockHashForMergedMining()));
-    }
-
-    public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
-            co.rsk.bitcoinj.core.NetworkParameters params,
-            byte[] blockHashForMergedMining1,
-            byte[] blockHashForMergedMining2) {
-        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction = new co.rsk.bitcoinj.core.BtcTransaction(params);
-        //Add a random number of random bytes before the RSK tag
-        SecureRandom random = new SecureRandom();
-        byte[] prefix = new byte[random.nextInt(1000)];
-        random.nextBytes(prefix);
-
-        byte[] bytes0 = Arrays.concatenate(RskMiningConstants.RSK_TAG, blockHashForMergedMining1);
-        // addsecond tag
-        byte[] bytes1 = Arrays.concatenate(bytes0, RskMiningConstants.RSK_TAG, blockHashForMergedMining2);
-
-        co.rsk.bitcoinj.core.TransactionInput ti = new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, prefix);
-        coinbaseTransaction.addInput(ti);
-        ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
-        co.rsk.bitcoinj.core.BtcECKey key = new co.rsk.bitcoinj.core.BtcECKey();
-        try {
-            co.rsk.bitcoinj.script.Script.writeBytes(scriptPubKeyBytes, key.getPubKey());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        scriptPubKeyBytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKSIG);
-        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(50, 0), scriptPubKeyBytes.toByteArray()));
-        // add opreturn output with two tags
-        ByteArrayOutputStream output2Bytes = new ByteArrayOutputStream();
-        output2Bytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_RETURN);
-
-        try {
-            co.rsk.bitcoinj.script.Script.writeBytes(output2Bytes, bytes1);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        coinbaseTransaction.addOutput(
-                new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(1), output2Bytes.toByteArray()));
-
-        return coinbaseTransaction;
-    }
-
     public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(co.rsk.bitcoinj.core.NetworkParameters params,
                                                                       co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction) {
         List<BtcTransaction> transactions = Lists.newArrayList(coinbaseTransaction);
