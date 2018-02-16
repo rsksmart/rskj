@@ -1413,8 +1413,9 @@ public class VM {
         // value is always zero in a DELEGATECALL operation
         DataWord value = op.equals(OpCode.DELEGATECALL) ? DataWord.ZERO : program.stackPop();
 
-        if (program.isStaticCall() && op == CALL && !value.isZero())
-            throw new Program.StaticCallModificationException();
+        if (program.isStaticCall() && op == CALL && !value.isZero()) {
+            throw Program.ExceptionHelper.modificationException();
+        }
 
         DataWord inDataOffs = program.stackPop();
         DataWord inDataSize = program.stackPop();
