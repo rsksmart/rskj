@@ -253,11 +253,6 @@ public class RskWireProtocol extends EthHandler {
     }
 
     @Override
-    public void recoverGap(BlockWrapper block) {
-
-    }
-
-    @Override
     public void sendTransaction(List<Transaction> txs) {
         TransactionsMessage msg = new TransactionsMessage(config, txs);
         sendMessage(msg);

@@ -21,7 +21,6 @@ package org.ethereum.net.eth.handler;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeaderWrapper;
-import org.ethereum.core.BlockWrapper;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
@@ -116,10 +115,6 @@ public class EthAdapter implements Eth {
 
     @Override
     public void sendStatus() {
-    }
-
-    @Override
-    public void recoverGap(BlockWrapper block) {
     }
 
     @Override

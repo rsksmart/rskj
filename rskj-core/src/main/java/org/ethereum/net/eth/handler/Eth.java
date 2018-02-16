@@ -21,7 +21,6 @@ package org.ethereum.net.eth.handler;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeaderWrapper;
-import org.ethereum.core.BlockWrapper;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
@@ -125,13 +124,6 @@ public interface Eth {
      * Sends {@link EthMessageCodes#STATUS} message
      */
     void sendStatus();
-
-    /**
-     * Tries to recover a gap
-     *
-     * @param block gap block
-     */
-    void recoverGap(BlockWrapper block);
 
     /**
      * Drops connection with remote peer.
