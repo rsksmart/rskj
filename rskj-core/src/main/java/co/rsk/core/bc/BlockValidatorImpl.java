@@ -83,7 +83,7 @@ public class BlockValidatorImpl implements BlockValidator {
             return null;
         }
 
-        return blockStore.getBlockByHash(block.getParentHash());
+        return blockStore.getBlockByHash(block.getParentHash().getBytes());
     }
 }
 

@@ -182,7 +182,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         headers.add(block.getHeader());
 
         for (int k = 1; k < count; k++) {
-            block = blockSyncService.getBlockFromStoreOrBlockchain(block.getParentHash());
+            block = blockSyncService.getBlockFromStoreOrBlockchain(block.getParentHash().getBytes());
 
             if (block == null) {
                 break;

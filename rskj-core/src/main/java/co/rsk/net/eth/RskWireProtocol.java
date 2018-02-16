@@ -48,7 +48,6 @@ import org.spongycastle.util.encoders.Hex;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -244,7 +243,7 @@ public class RskWireProtocol extends EthHandler {
         sendMessage(msg);
 
         // RSK new protocol send status
-        Status status = new Status(bestBlock.getNumber(), bestBlock.getHash().getBytes(), bestBlock.getParentHash(), totalDifficulty);
+        Status status = new Status(bestBlock.getNumber(), bestBlock.getHash().getBytes(), bestBlock.getParentHash().getBytes(), totalDifficulty);
         RskMessage rskmessage = new RskMessage(config, new StatusMessage(status));
         loggerNet.trace("Sending status best block {} to {}", status.getBestBlockNumber(), this.messageSender.getPeerNodeID().toString());
         sendMessage(rskmessage);

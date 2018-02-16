@@ -19,9 +19,9 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
@@ -30,7 +30,6 @@ import co.rsk.trie.TrieImpl;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -97,7 +96,7 @@ public class Block {
     public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
 
         this(
-                header.getParentHash(),
+                header.getParentHash().getBytes(),
                 header.getUnclesHash(),
                 header.getCoinbase().getBytes(),
                 header.getLogsBloom(),
@@ -270,7 +269,7 @@ public class Block {
         return new ByteArrayWrapper(rawHash);
     }
 
-    public byte[] getParentHash() {
+    public Keccak256 getParentHash() {
         if (!parsed) {
             parseRLP();
         }
@@ -278,7 +277,7 @@ public class Block {
     }
 
     public ByteArrayWrapper getWrappedParentHash() {
-        return new ByteArrayWrapper(getParentHash());
+        return new ByteArrayWrapper(getParentHash().getBytes());
     }
 
     public byte[] getUnclesHash() {
@@ -680,7 +679,7 @@ public class Block {
     }
 
     public String getParentHashJsonString() {
-        return TypeConverter.toJsonHex(getParentHash());
+        return getParentHash().toJsonString();
     }
 
     public byte[] getBitcoinMergedMiningHeader() {

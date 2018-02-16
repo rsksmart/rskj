@@ -14,7 +14,6 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.validator.DependentBlockHeaderRule;
 import org.ethereum.validator.DifficultyRule;
 import org.slf4j.Logger;
@@ -23,7 +22,10 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.time.Duration;
-import java.util.*;
+import java.util.Deque;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -332,7 +334,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
         @Override
         public boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader) {
-            if (!ByteUtil.fastEquals(parentHeader.getHash().getBytes(), header.getParentHash())) {
+            if (!parentHeader.getHash().equals(header.getParentHash())) {
                 return false;
             }
 

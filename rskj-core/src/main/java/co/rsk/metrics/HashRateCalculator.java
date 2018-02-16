@@ -71,7 +71,7 @@ public abstract class HashRateCalculator {
                 hashRate = hashRate.add(element.getDifficulty().asBigInteger());
             }
 
-            byte[] parentHash = element.getBlockHeader().getParentHash();
+            byte[] parentHash = element.getBlockHeader().getParentHash().getBytes();
 
             element = getHeaderElement(parentHash);
         }

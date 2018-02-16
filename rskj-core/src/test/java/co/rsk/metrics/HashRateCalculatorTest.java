@@ -59,9 +59,9 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
         Mockito.when(block.getHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH));
-        Mockito.when(blockHeader.getParentHash()).thenReturn(FAKE_GENERIC_HASH)
-                .thenReturn(OHTER_FAKE_GENERIC_HASH)
-                .thenReturn(FAKE_GENERIC_HASH)
+        Mockito.when(blockHeader.getParentHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH))
+                .thenReturn(new Keccak256(OHTER_FAKE_GENERIC_HASH))
+                .thenReturn(new Keccak256(FAKE_GENERIC_HASH))
                 .thenReturn(null);
 
         Mockito.when(blockHeader.getHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH));

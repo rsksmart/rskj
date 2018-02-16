@@ -95,7 +95,7 @@ public class NodeBlockProcessorTest {
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -347,7 +347,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertEquals(11, parent.getNumber());
         Assert.assertEquals(12, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), parent.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), parent.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -399,7 +399,7 @@ public class NodeBlockProcessorTest {
 
         final GetBlockMessage gbMessage = (GetBlockMessage) message;
 
-        Assert.assertArrayEquals(block.getParentHash(), gbMessage.getBlockHash());
+        Assert.assertArrayEquals(block.getParentHash().getBytes(), gbMessage.getBlockHash());
     }
 
     @Test @Ignore("Ignored when Process status deleted on block processor")
@@ -971,7 +971,7 @@ public class NodeBlockProcessorTest {
 
         for (int i = 0; i < expected.length; i++) {
             Assert.assertEquals(expected[i].getNumber(), actual.get(i).getNumber());
-            Assert.assertEquals(expected[i].getHash(), actual.get(i).getHash());
+            Assert.assertArrayEquals(expected[i].getHash(), actual.get(i).getHash());
         }
     }
 }

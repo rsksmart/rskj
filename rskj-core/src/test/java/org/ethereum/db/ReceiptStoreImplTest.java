@@ -254,14 +254,14 @@ public class ReceiptStoreImplTest {
         TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), block2a.getHash().getBytes(), world.getBlockChain().getBlockStore());
 
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertEquals(block1a.getHash(), result.getBlockHash());
+        Assert.assertArrayEquals(block1a.getHash().getBytes(), result.getBlockHash());
         Assert.assertEquals(3, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
 
         result = store.get(receipt.getTransaction().getHash().getBytes(), block2b.getHash().getBytes(), world.getBlockChain().getBlockStore());
 
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertEquals(block1b.getHash(), result.getBlockHash());
+        Assert.assertArrayEquals(block1b.getHash().getBytes(), result.getBlockHash());
         Assert.assertEquals(42, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
 

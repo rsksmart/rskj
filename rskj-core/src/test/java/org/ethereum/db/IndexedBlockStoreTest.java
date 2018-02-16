@@ -756,7 +756,7 @@ public class IndexedBlockStoreTest {
 
             for (int i = 0; i < forkLine.size(); ++i) {
                 Block newBlock = forkLine.get(i);
-                Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash());
+                Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash().getBytes());
                 td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes());
 
                 td = td.add(newBlock.getCumulativeDifficulty());
@@ -773,7 +773,7 @@ public class IndexedBlockStoreTest {
 
             Map<ByteArrayWrapper, BlockDifficulty> tForkDiffs = new HashMap<>();
             Block block = forkLine.get(0);
-            td = tDiffs.get(wrap(block.getParentHash()));
+            td = tDiffs.get(wrap(block.getParentHash().getBytes()));
             for (Block currBlock : forkLine){
                 td = td.add(currBlock.getCumulativeDifficulty());
                 tForkDiffs.put(wrap(currBlock.getHash().getBytes()), td);
@@ -859,7 +859,7 @@ public class IndexedBlockStoreTest {
 
             for (int i = 0; i < forkLine.size(); ++i) {
                 Block newBlock = forkLine.get(i);
-                Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash());
+                Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash().getBytes());
                 td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes());
 
                 td = td.add(newBlock.getCumulativeDifficulty());
@@ -912,7 +912,7 @@ public class IndexedBlockStoreTest {
 
             for (int i = 0; i < forkLine.size(); ++i) {
                 Block newBlock = forkLine.get(i);
-                Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash());
+                Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash().getBytes());
                 td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash().getBytes());
 
                 td = td.add(newBlock.getCumulativeDifficulty());

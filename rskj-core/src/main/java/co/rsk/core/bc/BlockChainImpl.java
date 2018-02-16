@@ -38,7 +38,6 @@ import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -226,7 +225,7 @@ public class BlockChainImpl implements Blockchain {
         // else, Get parent AND total difficulty
         else {
             logger.trace("get parent and total difficulty");
-            parent = blockStore.getBlockByHash(block.getParentHash());
+            parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
             if (parent == null) {
                 return ImportResult.NO_PARENT;
@@ -478,9 +477,9 @@ public class BlockChainImpl implements Blockchain {
         setStatus(status.getBestBlock(), totalDifficulty);
     }
 
-    @Override
+    @Override @VisibleForTesting
     public byte[] getBestBlockHash() {
-        return status.getBestBlock().getHash().getBytes();
+        return getBestBlock().getHash().getBytes();
     }
 
     @Override

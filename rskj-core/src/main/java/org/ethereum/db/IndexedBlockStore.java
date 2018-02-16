@@ -321,7 +321,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
                         index.put(currentLevel, blocks);
                     }
                 }
-                forkLine = getBlockByHash(forkLine.getParentHash());
+                forkLine = getBlockByHash(forkLine.getParentHash().getBytes());
                 --currentLevel;
             }
         }
@@ -338,7 +338,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
                         index.put(currentLevel, blocks);
                     }
                 }
-                bestLine = getBlockByHash(bestLine.getParentHash());
+                bestLine = getBlockByHash(bestLine.getParentHash().getBytes());
                 --currentLevel;
             }
         }
@@ -363,8 +363,8 @@ public class IndexedBlockStore extends AbstractBlockstore {
                 }
             }
 
-            bestLine = getBlockByHash(bestLine.getParentHash());
-            forkLine = getBlockByHash(forkLine.getParentHash());
+            bestLine = getBlockByHash(bestLine.getParentHash().getBytes());
+            forkLine = getBlockByHash(forkLine.getParentHash().getBytes());
 
             --currentLevel;
         }

@@ -123,7 +123,7 @@ public class Metrics {
                 "newBlockHeader",
                 HashUtil.shortHash(header.getHash().getBytes()),
                 header.getNumber(),
-                HashUtil.shortHash(header.getParentHash()),
+                HashUtil.shortHash(header.getParentHash().getBytes()),
                 HashUtil.shortHash(sender.getID())
         );
         logEvent(event);

@@ -76,7 +76,7 @@ public class BlockStoreTest {
 
         Assert.assertNull(store.getBlockByHash(block.getHash().getBytes()));
         Assert.assertTrue(store.getBlocksByNumber(block.getNumber()).isEmpty());
-        Assert.assertTrue(store.getBlocksByParentHash(block.getParentHash()).isEmpty());
+        Assert.assertTrue(store.getBlocksByParentHash(block.getParentHash().getBytes()).isEmpty());
         Assert.assertEquals(0, store.size());
     }
 

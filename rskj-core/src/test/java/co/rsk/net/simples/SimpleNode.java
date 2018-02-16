@@ -67,7 +67,7 @@ public class SimpleNode {
 
     public Status getFullStatus() {
         Block block = this.getBestBlock();
-        return new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash(), this.getTotalDifficulty());
+        return new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), this.getTotalDifficulty());
     }
 
     public SimpleNodeChannel getMessageChannel(SimpleNode peer) {

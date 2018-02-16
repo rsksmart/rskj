@@ -244,7 +244,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Block block = blockChainStatus.getBestBlock();
         BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
-        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash(), totalDifficulty);
+        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), totalDifficulty);
         logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
         this.channelManager.broadcastStatus(status);
     }

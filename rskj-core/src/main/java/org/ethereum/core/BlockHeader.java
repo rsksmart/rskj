@@ -228,8 +228,8 @@ public class BlockHeader {
         return this.getNumber() == Genesis.NUMBER;
     }
 
-    public byte[] getParentHash() {
-        return parentHash;
+    public Keccak256 getParentHash() {
+        return new Keccak256(parentHash);
     }
 
     public int getUncleCount() {
@@ -594,7 +594,7 @@ public class BlockHeader {
     }
 
     public String getParentShortHash() {
-        return HashUtil.shortHash(getParentHash());
+        return HashUtil.shortHash(getParentHash().getBytes());
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {

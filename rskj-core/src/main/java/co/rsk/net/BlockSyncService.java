@@ -224,7 +224,7 @@ public class BlockSyncService {
         while (currentBlock != null && !blockchain.hasBlockInSomeBlockchain(currentBlock.getHash().getBytes())) {
             BlockUtils.addBlockToList(blocks, currentBlock);
 
-            currentBlock = getBlockFromStoreOrBlockchain(currentBlock.getParentHash());
+            currentBlock = getBlockFromStoreOrBlockchain(currentBlock.getParentHash().getBytes());
         }
 
         return blocks;

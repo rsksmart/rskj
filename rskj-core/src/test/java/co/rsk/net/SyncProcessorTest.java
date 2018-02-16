@@ -445,7 +445,7 @@ public class SyncProcessorTest {
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -489,7 +489,7 @@ public class SyncProcessorTest {
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -544,7 +544,7 @@ public class SyncProcessorTest {
         extended.tryToConnect(block);
 
         Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -617,7 +617,7 @@ public class SyncProcessorTest {
         Assert.assertEquals(1, block.getTransactionsList().size());
 
         Assert.assertEquals(1, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -661,7 +661,7 @@ public class SyncProcessorTest {
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);

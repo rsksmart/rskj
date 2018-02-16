@@ -21,7 +21,6 @@ package co.rsk.core.bc;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -73,19 +72,19 @@ public class BlockFork {
 
         while (newBlock.getNumber() > oldBlock.getNumber()) {
             newBlocks.add(0, newBlock);
-            newBlock = store.getBlockByHash(newBlock.getParentHash());
+            newBlock = store.getBlockByHash(newBlock.getParentHash().getBytes());
         }
 
         while (oldBlock.getNumber() > newBlock.getNumber()) {
             oldBlocks.add(0, oldBlock);
-            oldBlock = store.getBlockByHash(oldBlock.getParentHash());
+            oldBlock = store.getBlockByHash(oldBlock.getParentHash().getBytes());
         }
 
         while (!oldBlock.getHash().equals(newBlock.getHash())) {
             newBlocks.add(0, newBlock);
-            newBlock = store.getBlockByHash(newBlock.getParentHash());
+            newBlock = store.getBlockByHash(newBlock.getParentHash().getBytes());
             oldBlocks.add(0, oldBlock);
-            oldBlock = store.getBlockByHash(oldBlock.getParentHash());
+            oldBlock = store.getBlockByHash(oldBlock.getParentHash().getBytes());
         }
 
         commonAncestor = oldBlock;

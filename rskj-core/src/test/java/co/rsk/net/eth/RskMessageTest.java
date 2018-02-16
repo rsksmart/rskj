@@ -84,7 +84,7 @@ public class RskMessageTest {
         Message resultMessage = result.getMessage();
 
         Assert.assertEquals(MessageType.STATUS_MESSAGE, resultMessage.getMessageType());
-        Assert.assertEquals(block.getHash(), ((StatusMessage)resultMessage).getStatus().getBestBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), ((StatusMessage)resultMessage).getStatus().getBestBlockHash());
         Assert.assertEquals(block.getNumber(), ((StatusMessage)resultMessage).getStatus().getBestBlockNumber());
     }
 

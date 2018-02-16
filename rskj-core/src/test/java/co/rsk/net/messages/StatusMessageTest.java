@@ -53,7 +53,7 @@ public class StatusMessageTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block = blockGenerator.createChildBlock(genesis);
-        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash(), new BlockDifficulty(BigInteger.TEN));
+        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
 
         StatusMessage message = new StatusMessage(status);
 
@@ -62,7 +62,7 @@ public class StatusMessageTest {
         Assert.assertEquals(1, message.getStatus().getBestBlockNumber());
         Assert.assertArrayEquals(block.getHash().getBytes(), message.getStatus().getBestBlockHash());
         Assert.assertNotNull(message.getStatus().getBestBlockParentHash());
-        Assert.assertArrayEquals(block.getParentHash(), message.getStatus().getBestBlockParentHash());
+        Assert.assertArrayEquals(block.getParentHash().getBytes(), message.getStatus().getBestBlockParentHash());
         Assert.assertNotNull(message.getStatus().getTotalDifficulty());
         Assert.assertEquals(new BlockDifficulty(BigInteger.TEN), message.getStatus().getTotalDifficulty());
     }

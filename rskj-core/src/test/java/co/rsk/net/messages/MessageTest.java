@@ -54,7 +54,7 @@ public class MessageTest {
 
         GetBlockMessage newmessage = (GetBlockMessage) result;
 
-        Assert.assertEquals(block.getHash().getBytes(), newmessage.getBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
     }
 
     @Test
@@ -73,7 +73,7 @@ public class MessageTest {
         BlockRequestMessage newmessage = (BlockRequestMessage) result;
 
         Assert.assertEquals(100, newmessage.getId());
-        Assert.assertEquals(block.getHash().getBytes(), newmessage.getBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
     }
 
     @Test
@@ -91,7 +91,7 @@ public class MessageTest {
 
         GetBlockHeadersMessage newmessage = (GetBlockHeadersMessage) result;
 
-        Assert.assertEquals(block.getHash(), newmessage.getBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
         Assert.assertEquals(newmessage.getMaxHeaders(), 1);
 
         message = new GetBlockHeadersMessage(0, block.getHash().getBytes(), 10, 5, true);
@@ -103,7 +103,7 @@ public class MessageTest {
         Assert.assertEquals(MessageType.GET_BLOCK_HEADERS_MESSAGE, result.getMessageType());
         newmessage = (GetBlockHeadersMessage) result;
 
-        Assert.assertEquals(block.getHash(), newmessage.getBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
         Assert.assertEquals(newmessage.getMaxHeaders(), 10);
         Assert.assertEquals(newmessage.getSkipBlocks(), 5);
         Assert.assertTrue(newmessage.isReverse());
@@ -125,7 +125,7 @@ public class MessageTest {
 
         StatusMessage newmessage = (StatusMessage) result;
 
-        Assert.assertEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
         Assert.assertEquals(block.getNumber(), newmessage.getStatus().getBestBlockNumber());
         Assert.assertNull(newmessage.getStatus().getBestBlockParentHash());
         Assert.assertNull(newmessage.getStatus().getTotalDifficulty());
@@ -134,7 +134,7 @@ public class MessageTest {
     @Test
     public void encodeDecodeStatusMessageWithCompleteArguments() {
         Block block = new BlockGenerator().getBlock(1);
-        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash(), new BlockDifficulty(BigInteger.TEN));
+        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
         StatusMessage message = new StatusMessage(status);
 
         byte[] encoded = message.getEncoded();
@@ -498,7 +498,7 @@ public class MessageTest {
         BodyRequestMessage newmessage = (BodyRequestMessage) result;
 
         Assert.assertEquals(100, newmessage.getId());
-        Assert.assertEquals(block.getHash().getBytes(), newmessage.getBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
     }
 
     @Test

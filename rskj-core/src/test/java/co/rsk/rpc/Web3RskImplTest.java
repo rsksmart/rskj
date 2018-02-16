@@ -35,6 +35,7 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.rpc.Web3;
@@ -81,13 +82,14 @@ public class Web3RskImplTest {
     @Test
     public void web3_LogFilterElement_toString() {
         LogInfo logInfo = Mockito.mock(LogInfo.class);
-        Mockito.when(logInfo.getData()).thenReturn(new byte[]{1});
+        byte[] valueToTest = HashUtil.keccak256(new byte[]{1});
+        Mockito.when(logInfo.getData()).thenReturn(valueToTest);
         List<DataWord> topics = new ArrayList<>();
         topics.add(new DataWord("c1"));
         topics.add(new DataWord("c2"));
         Mockito.when(logInfo.getTopics()).thenReturn(topics);
         Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHash()).thenReturn(new Keccak256(new byte[]{1}));
+        Mockito.when(block.getHash()).thenReturn(new Keccak256(valueToTest));
         Mockito.when(block.getNumber()).thenReturn(1L);
         int txIndex = 1;
         Transaction tx = Mockito.mock(Transaction.class);

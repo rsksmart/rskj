@@ -81,7 +81,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         byte[] data = tx.isContractCreation() ? ByteUtil.EMPTY_BYTE_ARRAY : nullToEmpty(tx.getData());
 
         /***    PREVHASH  op  ***/
-        byte[] lastHash = block.getParentHash();
+        byte[] lastHash = block.getParentHash().getBytes();
 
         /***   COINBASE  op ***/
         byte[] coinbase = block.getCoinbase().getBytes();

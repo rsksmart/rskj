@@ -43,7 +43,7 @@ public class BlockBuilderTest {
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
         // Assert.assertTrue(genesis.getCumulativeDifficulty().compareTo(block.getDifficultyBI()) < 0);
-        Assert.assertArrayEquals(genesis.getHash().getBytes(), block.getParentHash());
+        Assert.assertEquals(genesis.getHash(), block.getParentHash());
     }
 
     @Test

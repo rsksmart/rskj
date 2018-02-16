@@ -156,7 +156,7 @@ public class BlockChainImplTest {
         Assert.assertEquals(genesis.getCumulativeDifficulty(), status.getTotalDifficulty());
 
         Assert.assertEquals(bestBlock, blockChain.getBestBlock());
-        Assert.assertEquals(genesis.getHash().getBytes(), blockChain.getBestBlockHash());
+        Assert.assertArrayEquals(genesis.getHash().getBytes(), blockChain.getBestBlockHash());
         Assert.assertEquals(genesis.getCumulativeDifficulty(), blockChain.getTotalDifficulty());
 
         Repository repository = blockChain.getRepository();

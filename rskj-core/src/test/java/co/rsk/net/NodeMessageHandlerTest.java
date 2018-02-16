@@ -284,7 +284,7 @@ public class NodeMessageHandlerTest {
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
-        final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash(), new BlockDifficulty(BigInteger.TEN));
+        final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
         final Message message = new StatusMessage(status);
 
         handler.processMessage(sender, message);
@@ -317,7 +317,7 @@ public class NodeMessageHandlerTest {
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
-        final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash(), blockchain.getTotalDifficulty());
+        final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), blockchain.getTotalDifficulty());
         final Message message = new StatusMessage(status);
 
         store.saveBlock(block);
@@ -358,7 +358,7 @@ public class NodeMessageHandlerTest {
 
         final BlockMessage bMessage = (BlockMessage) message;
 
-        Assert.assertEquals(block.getHash().getBytes(), bMessage.getBlock().getHash().getBytes());
+        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
@@ -394,7 +394,7 @@ public class NodeMessageHandlerTest {
 
         BlockMessage bmessage = (BlockMessage) message;
 
-        Assert.assertArrayEquals(blocks.get(4).getHash().getBytes(), bmessage.getBlock().getHash().getBytes());
+        Assert.assertEquals(blocks.get(4).getHash(), bmessage.getBlock().getHash());
     }
 
     @Test
@@ -451,7 +451,7 @@ public class NodeMessageHandlerTest {
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertArrayEquals(block.getHash().getBytes(), bMessage.getBlockHeaders().get(0).getHash().getBytes());
+        Assert.assertEquals(block.getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -487,7 +487,7 @@ public class NodeMessageHandlerTest {
 
         BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertArrayEquals(blocks.get(4).getHash().getBytes(), bMessage.getBlockHeaders().get(0).getHash().getBytes());
+        Assert.assertEquals(blocks.get(4).getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -737,8 +737,8 @@ public class NodeMessageHandlerTest {
         Assert.assertEquals(expected.size(), received.size());
         for (int i = 0; i < received.size(); i += 1) {
             Assert.assertEquals(expected.get(i).getNumber(), received.get(i).getNumber());
-            Assert.assertEquals(expected.get(i).getHash().getBytes(), received.get(i).getHash().getBytes());
-            Assert.assertArrayEquals(expected.get(i).getParentHash(), received.get(i).getParentHash());
+            Assert.assertEquals(expected.get(i).getHash(), received.get(i).getHash());
+            Assert.assertEquals(expected.get(i).getParentHash(), received.get(i).getParentHash());
         }
     }
 

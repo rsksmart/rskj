@@ -370,7 +370,7 @@ public class MinerServerImpl implements MinerServer {
         BlockHeader newHeader = newBlock.getHeader();
 
         newHeader.setTimestamp(this.getCurrentTimeInSeconds());
-        Block parentBlock =blockchain.getBlockByHash(newHeader.getParentHash());
+        Block parentBlock =blockchain.getBlockByHash(newHeader.getParentHash().getBytes());
         newHeader.setDifficulty(
                 difficultyCalculator.calcDifficulty(newHeader, parentBlock.getHeader()));
 
@@ -603,7 +603,7 @@ public class MinerServerImpl implements MinerServer {
         // See BlockChainImpl.calclBloom() if blocks has txs
         if (createCompetitiveBlock) {
             // Just for testing, mine on top of bestblock's parent
-            newBlockParent = blockchain.getBlockByHash(newBlockParent.getParentHash());
+            newBlockParent = blockchain.getBlockByHash(newBlockParent.getParentHash().getBytes());
         }
 
         logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());

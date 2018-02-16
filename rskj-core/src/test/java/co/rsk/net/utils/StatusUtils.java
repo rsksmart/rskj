@@ -8,7 +8,7 @@ public class StatusUtils {
         return new Status(
                 blockchain.getBestBlock().getNumber(),
                 blockchain.getBestBlockHash(),
-                blockchain.getBestBlock().getParentHash(),
+                blockchain.getBestBlock().getParentHash().getBytes(),
                 blockchain.getTotalDifficulty()
         );
     }

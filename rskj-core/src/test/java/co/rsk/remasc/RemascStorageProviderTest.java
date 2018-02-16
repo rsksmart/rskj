@@ -292,19 +292,19 @@ public class RemascStorageProviderTest {
         List<Sibling> list2 = map.get(Long.valueOf(2));
 
         Assert.assertEquals(1, list0.get(0).getIncludedHeight());
-        Assert.assertEquals(genesis.getHeader().getHash(), list0.get(0).getHash());
+        Assert.assertArrayEquals(genesis.getHeader().getHash().getBytes(), list0.get(0).getHash());
         Assert.assertEquals(2, list0.get(1).getIncludedHeight());
-        Assert.assertEquals(block1.getHeader().getHash(), list0.get(1).getHash());
+        Assert.assertArrayEquals(block1.getHeader().getHash().getBytes(), list0.get(1).getHash());
 
         Assert.assertEquals(3, list1.get(0).getIncludedHeight());
-        Assert.assertEquals(block2.getHeader().getHash(), list1.get(0).getHash());
+        Assert.assertArrayEquals(block2.getHeader().getHash().getBytes(), list1.get(0).getHash());
         Assert.assertEquals(4, list1.get(1).getIncludedHeight());
-        Assert.assertEquals(block3.getHeader().getHash(), list1.get(1).getHash());
+        Assert.assertArrayEquals(block3.getHeader().getHash().getBytes(), list1.get(1).getHash());
 
         Assert.assertEquals(5, list2.get(0).getIncludedHeight());
-        Assert.assertEquals(block4.getHeader().getHash(), list2.get(0).getHash());
+        Assert.assertArrayEquals(block4.getHeader().getHash().getBytes(), list2.get(0).getHash());
         Assert.assertEquals(6, list2.get(1).getIncludedHeight());
-        Assert.assertEquals(block5.getHeader().getHash(), list2.get(1).getHash());
+        Assert.assertArrayEquals(block5.getHeader().getHash().getBytes(), list2.get(1).getHash());
     }
 
     private RskAddress randomAddress() {
