@@ -99,8 +99,6 @@ public class MinerServerImpl implements MinerServer {
 
     private boolean started;
 
-    private byte[] extraData;
-
     @GuardedBy("lock")
     private LinkedHashMap<Keccak256, Block> blocksWaitingforPoW;
 
@@ -588,10 +586,6 @@ public class MinerServerImpl implements MinerServer {
         return new MinerWork(blockMergedMiningHash.toJsonString(), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString());
     }
 
-    public void setExtraData(byte[] extraData) {
-        this.extraData = extraData;
-    }
-
     /**
      * buildBlockToMine creates a block to mine based on the given block as parent.
      *
@@ -638,7 +632,6 @@ public class MinerServerImpl implements MinerServer {
             }
         }
 
-        newBlock.setExtraData(extraData);
         removePendingTransactions(txsToRemove);
         executor.executeAndFill(newBlock, newBlockParent);
 

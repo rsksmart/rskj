@@ -48,8 +48,6 @@ public interface MinerServer {
 
     void buildBlockToMine(@Nonnull Block newParent, boolean createCompetitiveBlock);
 
-    void setExtraData(byte[] extraData);
-
     long getCurrentTimeInSeconds();
 
     long increaseTime(long seconds);

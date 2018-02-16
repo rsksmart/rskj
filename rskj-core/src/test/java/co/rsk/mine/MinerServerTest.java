@@ -122,17 +122,12 @@ public class MinerServerTest {
                 new GasLimitCalculator(config),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         try {
-        byte[] extraData = ByteBuffer.allocate(4).putInt(1).array();
-        minerServer.setExtraData(extraData);
         minerServer.start();
         MinerWork work = minerServer.getWork();
         Block bestBlock = blockchain.getBestBlock();
 
-        extraData = ByteBuffer.allocate(4).putInt(2).array();
-        minerServer.setExtraData(extraData);
         minerServer.buildBlockToMine(bestBlock, false);
         MinerWork work2 = minerServer.getWork(); // only the tag is used
-        Assert.assertNotEquals(work2.getBlockHashForMergedMining(),work.getBlockHashForMergedMining());
 
         co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithTwoTags(work,work2);
 
