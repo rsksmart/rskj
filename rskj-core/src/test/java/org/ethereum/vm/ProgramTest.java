@@ -111,6 +111,13 @@ public class ProgramTest {
     }
 
     @Test
+    public void callPrecompiledContractMethodThroughStub() {
+        ProgramResult result = TestContract.returnBridgeTest().executeFunction("invokeGetFeePerKb", BigInteger.ZERO);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+    }
+
+    @Test
     public void returnDataCopyTest() {
         TestContract contract = TestContract.returnDataTest();
         ProgramResult result = contract.executeFunction("testCopy", BigInteger.ZERO);
