@@ -64,61 +64,63 @@ public class TxValidatorTest {
         List<Transaction> vtxs = new LinkedList<>();
         List<Transaction> itxs = new LinkedList<>();
 
-        //valid everything
+        // valid everything
         vtxs.add(createTransaction(1, 50000, 1, 0, 0, 0));
-        //not enough balance
+        createAccountState(vtxs.get(vtxs.size() - 1), repository, 50000, 0);
+
+        // not enough balance
         itxs.add(createTransaction(1, 50000, 1, 0, 0, 1));
-        //bad nonce
-        itxs.add(createTransaction(1, 50000, 1, 1, 0, 2));
-        createAccountState(vtxs.get(0), repository, 50000, 0);
-        createAccountState(itxs.get(0), repository, 49999, 0);
-        createAccountState(itxs.get(1), repository, 50000, 0);
+        createAccountState(itxs.get(itxs.size() - 1), repository, 49999, 0);
 
-        //enough balance for 2 txs
+        // bad nonce
+        vtxs.add(createTransaction(1, 50000, 1, 1, 0, 2));
+        createAccountState(vtxs.get(vtxs.size() - 1), repository, 50000, 0);
+
+        // enough balance for txs
         vtxs.add(createTransaction(1, 50000, 1, 0, 0, 3));
+        createAccountState(vtxs.get(vtxs.size() - 1), repository, 100000, 0);
         vtxs.add(createTransaction(1, 50000, 1, 1, 0, 3));
-        itxs.add(createTransaction(1, 50000, 1, 2, 0, 3));
-        createAccountState(vtxs.get(1), repository, 150001, 0);
+        vtxs.add(createTransaction(1, 50000, 1, 2, 0, 3));
 
-        //enough balance for 3 txs
+        // enough balance for 3 txs
         vtxs.add(createTransaction(1, 50000, 1, 0, 0, 4));
+        createAccountState(vtxs.get(vtxs.size() - 1), repository, 150002, 0);
         vtxs.add(createTransaction(1, 50000, 1, 1, 0, 4));
         vtxs.add(createTransaction(1, 50000, 1, 2, 0, 4));
-        createAccountState(vtxs.get(3), repository, 150002, 0);
 
-        //bad intrinsic gas
+        // bad intrinsic gas
         itxs.add(createTransaction(1, 20990, 1, 0, 1000, 5));
+        createAccountState(itxs.get(itxs.size() - 1), repository, 150000, 0);
         itxs.add(createTransaction(1, 21900, 1, 0, 1000, 5));
-        createAccountState(itxs.get(3), repository, 150000, 0);
 
-        //no account
+        // no account
         itxs.add(createTransaction(1, 50000, 0, 0, 0, 6));
 
-        //all possible nonces
+        // all possible nonces
         vtxs.add(createTransaction(1, 50000, 1, 0, 0, 7));
+        createAccountState(vtxs.get(vtxs.size() - 1), repository, 1000000, 0);
         vtxs.add(createTransaction(1, 50000, 1, 1, 0, 7));
         vtxs.add(createTransaction(1, 50000, 1, 2, 0, 7));
         vtxs.add(createTransaction(1, 50000, 1, 3, 0, 7));
         vtxs.add(createTransaction(1, 50000, 1, 4, 0, 7));
-        vtxs.add(createTransaction(1, 50000, 1, 5, 0, 7));
-        createAccountState(vtxs.get(6), repository, 1000000, 0);
+        itxs.add(createTransaction(1, 50000, 1, 5, 0, 7));
 
-        //all possible nonces starting in non zero
+        // all possible nonces starting in non zero
         vtxs.add(createTransaction(1, 50000, 1, 6, 0, 8));
+        createAccountState(vtxs.get(vtxs.size() - 1), repository, 1000000, 6);
         vtxs.add(createTransaction(1, 50000, 1, 7, 0, 8));
         vtxs.add(createTransaction(1, 50000, 1, 8, 0, 8));
         vtxs.add(createTransaction(1, 50000, 1, 9, 0, 8));
         vtxs.add(createTransaction(1, 50000, 1, 10, 0, 8));
-        vtxs.add(createTransaction(1, 50000, 1, 11, 0, 8));
-        createAccountState(vtxs.get(12), repository, 1000000, 6);
+        itxs.add(createTransaction(1, 50000, 1, 11, 0, 8));
 
-        //bad balance
+        // bad balance
         itxs.add(createTransaction(1, 200000, 5, 0, 0, 9));
-        createAccountState(itxs.get(5), repository, 999999, 0);
+        createAccountState(itxs.get(itxs.size() - 1), repository, 999999, 0);
 
-        //just enough balance
+        // just enough balance
         itxs.add(createTransaction(1, 200000, 5, 0, 0, 10));
-        createAccountState(itxs.get(6), repository, 1000000, 0);
+        createAccountState(itxs.get(itxs.size() - 1), repository, 1000000, 0);
 
         txs = new LinkedList<>();
         txs.addAll(vtxs);
