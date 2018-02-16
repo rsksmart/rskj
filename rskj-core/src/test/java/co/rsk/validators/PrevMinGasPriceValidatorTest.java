@@ -20,6 +20,7 @@ package co.rsk.validators;
 
 import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.junit.Assert;
@@ -33,7 +34,7 @@ public class PrevMinGasPriceValidatorTest {
 
     private static final Coin BLOCK_MGP = Coin.valueOf(1050L);
     private static final Coin PARENT_BLOCK_MGP = Coin.valueOf(1000L);
-    private static final byte[] PARENT_HASH = {00, 01, 02, 03};
+    private static final byte[] PARENT_HASH = TestUtils.randomBytes(32);
 
     @Test
     public void noParentBlock() {

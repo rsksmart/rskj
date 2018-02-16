@@ -150,7 +150,7 @@ public class Web3RskImpl extends Web3Impl {
             }
             writer.println("#");
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(block.getParentHash()) + " P");
+                writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(block.getParentHash().getBytes()) + " P");
                 if (includeUncles) {
                     for (BlockHeader uncleHeader : block.getUncleList()) {
                         writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(uncleHeader.getHash().getBytes()) + " U");

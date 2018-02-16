@@ -19,18 +19,16 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mapdb.DB;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -202,10 +200,10 @@ public class FamilyUtilsTest {
         Assert.assertFalse(list.isEmpty());
         Assert.assertEquals(4, list.size());
 
-        Assert.assertTrue(containsHash(uncle11.getHash().getBytes(), list));
-        Assert.assertTrue(containsHash(uncle12.getHash().getBytes(), list));
-        Assert.assertTrue(containsHash(uncle21.getHash().getBytes(), list));
-        Assert.assertTrue(containsHash(uncle22.getHash().getBytes(), list));
+        Assert.assertTrue(containsHash(uncle11.getHash(), list));
+        Assert.assertTrue(containsHash(uncle12.getHash(), list));
+        Assert.assertTrue(containsHash(uncle21.getHash(), list));
+        Assert.assertTrue(containsHash(uncle22.getHash(), list));
     }
 
     @Test
@@ -257,7 +255,7 @@ public class FamilyUtilsTest {
         return new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
     }
 
-    private static boolean containsHash(byte[] hash, List<BlockHeader> headers) {
+    private static boolean containsHash(Keccak256 hash, List<BlockHeader> headers) {
         for (BlockHeader header : headers) {
             if (hash.equals(header.getHash())) {
                 return true;
