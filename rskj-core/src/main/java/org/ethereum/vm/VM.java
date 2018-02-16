@@ -1858,6 +1858,8 @@ public class VM {
             case OpCodes.OP_CALL:
             case OpCodes.OP_CALLCODE:
             case OpCodes.OP_DELEGATECALL:
+                doCALL();
+            break;
             case OpCodes.OP_STATICCALL:
                 if (!config.isRcs230()) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
