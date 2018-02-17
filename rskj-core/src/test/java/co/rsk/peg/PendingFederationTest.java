@@ -101,7 +101,7 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void testEquals_a() {
+    public void testEquals_basic() {
         Assert.assertTrue(pendingFederation.equals(pendingFederation));
 
         Assert.assertFalse(pendingFederation.equals(null));
@@ -110,7 +110,7 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void testEquals_differentNumberOfPublicKeys() {
+    public void testEquals_differentNumberOfMembers() {
         PendingFederation otherPendingFederation = new PendingFederation(
                 FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
@@ -126,18 +126,25 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void testEquals_differentPublicKeys() {
-        PendingFederation otherPendingFederation = new PendingFederation(
-                FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
-                        BtcECKey.fromPrivate(BigInteger.valueOf(100)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(200)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(300)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(400)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(500)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(610)),
-                }))
-        );
+    public void testEquals_differentMembers() {
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(300)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(400)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(500)),
+        }));
+
+        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600))));
+        PendingFederation otherPendingFederation = new PendingFederation(members);
+
+        members.remove(members.size()-1);
+        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(610))));
+        PendingFederation yetOtherPendingFederation = new PendingFederation(members);
+
+        Assert.assertFalse(otherPendingFederation.equals(yetOtherPendingFederation));
         Assert.assertFalse(pendingFederation.equals(otherPendingFederation));
+        Assert.assertFalse(pendingFederation.equals(yetOtherPendingFederation));
     }
 
     @Test
