@@ -74,7 +74,7 @@ public class MainNetMinerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(config, ethereumImpl, this.blockchain, null, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, world.getBlockProcessor(), DIFFICULTY_CALCULATOR,
+        MinerServer minerServer = new MinerServerImpl(config, ethereumImpl, this.blockchain, this.blockchain.getBlockStore(), null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, world.getBlockProcessor(), DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(config),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         try {
@@ -163,7 +163,7 @@ public class MainNetMinerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(tempConfig, ethereumImpl, blockchain, null, null,
+        MinerServer minerServer = new MinerServerImpl(tempConfig, ethereumImpl, blockchain, blockchain.getBlockStore(), null,
                 blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(config),
@@ -236,7 +236,7 @@ public class MainNetMinerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(config, ethereumImpl, this.blockchain, null,
+        MinerServer minerServer = new MinerServerImpl(config, ethereumImpl, this.blockchain, this.blockchain.getBlockStore(),
                 null, this.blockchain.getPendingState(), blockchain.getRepository(),
                 ConfigUtils.getDefaultMiningConfig(), unclesValidationRule,
                 world.getBlockProcessor(), DIFFICULTY_CALCULATOR,

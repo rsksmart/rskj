@@ -25,21 +25,16 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
@@ -50,7 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.util.Arrays;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -65,8 +59,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
-import static org.ethereum.util.BIUtil.toBI;
 
 /**
  * The MinerServer provides support to components that perform the actual mining.
@@ -84,12 +76,9 @@ public class MinerServerImpl implements MinerServer {
     private static final int CACHE_SIZE = 20;
 
     private final Ethereum ethereum;
-    private final BlockStore blockStore;
     private final Blockchain blockchain;
-    private final PendingState pendingState;
-    private final BlockExecutor executor;
-    private final GasLimitCalculator gasLimitCalculator;
     private final ProofOfWorkRule powRule;
+    private final BlockToMineBuilder builder;
 
     private boolean isFallbackMining;
     private int fallbackBlocksGenerated;
@@ -118,20 +107,12 @@ public class MinerServerImpl implements MinerServer {
     private final Object lock = new Object();
 
     private final RskAddress coinbaseAddress;
-
-    private final BigInteger minerMinGasPriceTarget;
     private final BigDecimal minFeesNotifyInDollars;
     private final BigDecimal gasUnitInDollars;
-
-    private MiningConfig miningConfig;
-
-    private BlockValidationRule validationRules;
 
     private final BlockProcessor nodeBlockProcessor;
     private final DifficultyCalculator difficultyCalculator;
 
-    private long timeAdjustment;
-    private long minimumAcceptableTime;
     private boolean autoSwitchBetweenNormalAndFallbackMining;
     private boolean fallbackMiningScheduled;
     private final RskSystemProperties config;
@@ -153,16 +134,21 @@ public class MinerServerImpl implements MinerServer {
         this.config = config;
         this.ethereum = ethereum;
         this.blockchain = blockchain;
-        this.blockStore = blockStore;
-        this.pendingState = pendingState;
-        this.miningConfig = miningConfig;
-        this.validationRules = validationRules;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.difficultyCalculator = difficultyCalculator;
-        this.gasLimitCalculator = gasLimitCalculator;
         this.powRule = powRule;
 
-        executor = new BlockExecutor(config, repository, receiptStore, blockStore, null);
+        this.builder = new BlockToMineBuilder(
+                miningConfig,
+                repository,
+                blockStore,
+                pendingState,
+                difficultyCalculator,
+                gasLimitCalculator,
+                validationRules,
+                config,
+                receiptStore
+        );
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
 
@@ -171,7 +157,6 @@ public class MinerServerImpl implements MinerServer {
         coinbaseAddress = miningConfig.getCoinbaseAddress();
         minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
         gasUnitInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
-        minerMinGasPriceTarget = toBI(miningConfig.getMinGasPriceTarget());
 
         // One more second to force continuous reduction in difficulty
         // TODO(mc) move to MiningConstants
@@ -610,24 +595,7 @@ public class MinerServerImpl implements MinerServer {
 
         logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
 
-        List<BlockHeader> uncles;
-        if (blockStore != null) {
-            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash().getBytes(), this.miningConfig.getUncleGenerationLimit());
-        } else {
-            uncles = new ArrayList<>();
-        }
-
-        if (uncles.size() > this.miningConfig.getUncleListLimit()) {
-            uncles = uncles.subList(0, this.miningConfig.getUncleListLimit());
-        }
-
-        final List<Transaction> txsToRemove = new ArrayList<>();
-
-        Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(newBlockParent.getMinimumGasPrice(), new Coin(minerMinGasPriceTarget));
-        final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
-        minimumAcceptableTime = newBlockParent.getTimestamp() + 1;
-
-        final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice);
+        final Block newBlock = builder.build(newBlockParent, extraData);
 
         if (autoSwitchBetweenNormalAndFallbackMining) {
             if (ProofOfWorkRule.isFallbackMiningPossible(
@@ -639,10 +607,6 @@ public class MinerServerImpl implements MinerServer {
                 setFallbackMining(false);
             }
         }
-
-        newBlock.setExtraData(extraData);
-        removePendingTransactions(txsToRemove);
-        executor.executeAndFill(newBlock, newBlockParent);
 
         synchronized (lock) {
             Keccak256 parentHash = newBlockParent.getHash();
@@ -664,7 +628,7 @@ public class MinerServerImpl implements MinerServer {
         }
 
         logger.debug("Built block {}. Parent {}", newBlock.getShortHashForMergedMining(), newBlockParent.getShortHashForMergedMining());
-        for (BlockHeader uncleHeader : uncles) {
+        for (BlockHeader uncleHeader : newBlock.getUncleList()) {
             logger.debug("With uncle {}", uncleHeader.getShortHashForMergedMining());
         }
     }
@@ -694,47 +658,14 @@ public class MinerServerImpl implements MinerServer {
 
     @Override
     public long getCurrentTimeInSeconds() {
-        long ret = System.currentTimeMillis() / 1000 + this.timeAdjustment;
-        return Long.max(ret, minimumAcceptableTime);
+        // this is not great, but it was the simplest way to extract BlockToMineBuilder
+        return builder.getCurrentTimeInSeconds();
     }
 
     @Override
     public long increaseTime(long seconds) {
-        if (seconds <= 0) {
-            return this.timeAdjustment;
-        }
-
-        this.timeAdjustment += seconds;
-
-        return this.timeAdjustment;
-    }
-
-    private void removePendingTransactions(List<Transaction> transactions) {
-        if (transactions != null) {
-            for (Transaction tx : transactions) {
-                logger.debug("Removing transaction {}", tx.getHash());
-            }
-        }
-
-        pendingState.clearPendingState(transactions);
-        pendingState.clearWire(transactions);
-    }
-
-    private List<Transaction> getTransactions(List<Transaction> txsToRemove, Block parent, Coin minGasPrice) {
-
-        logger.debug("Starting getTransactions");
-
-        List<Transaction> txs = new MinerUtils().getAllTransactions(pendingState);
-        logger.debug("txsList size {}", txs.size());
-
-        Transaction remascTx = new RemascTransaction(parent.getNumber() + 1);
-        txs.add(remascTx);
-
-        Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
-
-        Repository originalRepo = blockchain.getRepository().getSnapshotTo(parent.getStateRoot());
-
-        return new MinerUtils().filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
+        // this is not great, but it was the simplest way to extract BlockToMineBuilder
+        return builder.increaseTime(seconds);
     }
 
     class NewBlockListener extends EthereumListenerAdapter {
@@ -770,47 +701,6 @@ public class MinerServerImpl implements MinerServer {
         private boolean isSyncing() {
             return nodeBlockProcessor.hasBetterBlockToSync();
         }
-    }
-
-    private BlockHeader createHeader(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, Coin minimumGasPrice) {
-        final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
-
-        final long timestampSeconds = this.getCurrentTimeInSeconds();
-
-        // Set gas limit before executing block
-        BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getMininimum());
-        BigInteger targetGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getTarget());
-        BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
-        BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
-        boolean forceLimit = miningConfig.getGasLimit().isTargetForced();
-        BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
-                gasUsed, minGasLimit, targetGasLimit, forceLimit);
-
-        final BlockHeader newHeader = new BlockHeader(newBlockParent.getHash().getBytes(),
-                unclesListHash,
-                coinbaseAddress.getBytes(),
-                new Bloom().getData(),
-                new byte[]{1},
-                newBlockParent.getNumber() + 1,
-                gasLimit.toByteArray(),
-                0,
-                timestampSeconds,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                minimumGasPrice.getBytes(),
-                CollectionUtils.size(uncles)
-        );
-        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
-        return newHeader;
-    }
-
-    private Block createBlock(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, Coin minimumGasPrice) {
-        final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice);
-        final Block newBlock = new Block(newHeader, txs, uncles);
-        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, null);
     }
 
     private class FallbackMiningTask extends TimerTask {
