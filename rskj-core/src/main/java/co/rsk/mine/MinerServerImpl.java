@@ -505,7 +505,7 @@ public class MinerServerImpl implements MinerServer {
      * @return A Partial Merkle Branch in which you can validate the coinbase tx.
      */
     public static PartialMerkleTree getBitcoinMergedMerkleBranch(NetworkParameters networkParams, List<String> txStringHashes) {
-        List<co.rsk.bitcoinj.core.Sha256Hash> txHashes = txStringHashes.stream().map(Sha256Hash::wrap).collect(Collectors.toList());
+        List<Sha256Hash> txHashes = txStringHashes.stream().map(Sha256Hash::wrap).collect(Collectors.toList());
 
         return buildMerkleBranch(txHashes, networkParams);
     }
@@ -519,7 +519,7 @@ public class MinerServerImpl implements MinerServer {
      */
     public static PartialMerkleTree getBitcoinMergedMerkleBranch(BtcBlock bitcoinMergedMiningBlock) {
         List<BtcTransaction> txs = bitcoinMergedMiningBlock.getTransactions();
-        List<co.rsk.bitcoinj.core.Sha256Hash> txHashes = new ArrayList<>(txs.size());
+        List<Sha256Hash> txHashes = new ArrayList<>(txs.size());
         for (BtcTransaction tx : txs) {
             txHashes.add(tx.getHash());
         }
