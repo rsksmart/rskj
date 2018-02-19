@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
@@ -35,10 +36,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -74,7 +73,7 @@ public class TrieImpl implements Trie {
     private static final int SERIALIZATION_HEADER_LENGTH = Short.BYTES * 2 + Integer.BYTES * 2;
 
     // all zeroed, default hash for empty nodes
-    private static byte[] emptyHash = makeEmptyHash();
+    private static Keccak256 emptyHash = makeEmptyHash();
 
     // this node associated value, if any
     private byte[] value;
@@ -83,10 +82,10 @@ public class TrieImpl implements Trie {
     private TrieImpl[] nodes;
 
     // the list of subnode hashes
-    private byte[][] hashes;
+    private Keccak256[] hashes;
 
     // this node hash value
-    private byte[] hash;
+    private Keccak256 hash;
 
     // it is saved to store
     private boolean saved;
@@ -123,7 +122,7 @@ public class TrieImpl implements Trie {
     }
 
     // full constructor
-    private TrieImpl(byte[] encodedSharedPath, int sharedPathLength, byte[] value, TrieImpl[] nodes, byte[][] hashes, TrieStore store) {
+    private TrieImpl(byte[] encodedSharedPath, int sharedPathLength, byte[] value, TrieImpl[] nodes, Keccak256[] hashes, TrieStore store) {
         this.value = value;
         this.nodes = nodes;
         this.hashes = hashes;
@@ -218,19 +217,20 @@ public class TrieImpl implements Trie {
                 }
             }
 
-            byte[][] hashes = new byte[ARITY][];
+            Keccak256[] hashes = new Keccak256[arity];
 
             for (int k = 0; k < arity; k++) {
                 if ((bhashes & (1 << k)) == 0) {
                     continue;
                 }
 
-                hashes[k] = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
 
-                if (istream.read(hashes[k]) != Keccak256Helper.DEFAULT_SIZE_BYTES) {
+                if (istream.read(valueHash) != Keccak256Helper.DEFAULT_SIZE_BYTES) {
                     throw new EOFException();
                 }
 
+                hashes[k] = new Keccak256(valueHash);
                 nhashes++;
             }
 
@@ -285,20 +285,20 @@ public class TrieImpl implements Trie {
      * @return  a byte array with the node serialized to bytes
      */
     @Override
-    public byte[] getHash() {
+    public Keccak256 getHash() {
         if (this.hash != null) {
-            return ByteUtils.clone(this.hash);
+            return this.hash.copy();
         }
 
         if (isEmptyTrie(this.value, this.nodes, this.hashes)) {
-            return ByteUtils.clone(emptyHash);
+            return emptyHash.copy();
         }
 
         byte[] message = this.toMessage();
 
-        this.hash = Keccak256Helper.keccak256(message);
+        this.hash = new Keccak256(Keccak256Helper.keccak256(message));
 
-        return ByteUtils.clone(this.hash);
+        return this.hash.copy();
     }
 
     /**
@@ -453,7 +453,7 @@ public class TrieImpl implements Trie {
         int bits = 0;
 
         for (int k = 0; k < ARITY; k++) {
-            byte[] nodeHash = this.getHash(k);
+            Keccak256 nodeHash = this.getHash(k);
 
             if (nodeHash == null) {
                 continue;
@@ -485,13 +485,13 @@ public class TrieImpl implements Trie {
         }
 
         for (int k = 0; k < ARITY; k++) {
-            byte[] nodeHash = this.getHash(k);
+            Keccak256 nodeHash = this.getHash(k);
 
             if (nodeHash == null) {
                 continue;
             }
 
-            buffer.put(nodeHash);
+            buffer.put(nodeHash.getBytes());
         }
 
         if (lvalue > 0) {
@@ -606,7 +606,7 @@ public class TrieImpl implements Trie {
 
         for (int k = 0; k < ARITY; k++) {
             TrieImpl node = this.getNode(k);
-            byte[] localHash = this.getHash(k);
+            Keccak256 localHash = this.getHash(k);
 
             if (node != null && !isEmptyTrie(node.value, node.nodes, node.hashes) || localHash != null) {
                 count++;
@@ -635,16 +635,16 @@ public class TrieImpl implements Trie {
             return null;
         }
 
-        byte[] localHash = this.hashes[n];
+        Keccak256 localHash = this.hashes[n];
 
         if (localHash == null) {
             return null;
         }
 
-        node = this.store.retrieve(localHash);
+        node = this.store.retrieve(localHash.getBytes());
 
         if (node == null) {
-            String strHash = Hex.toHexString(localHash);
+            String strHash = localHash.toHexString();
             logger.error(ERROR_NON_EXISTENT_TRIE_LOGGER, strHash);
             panicProcessor.panic(PANIC_TOPIC, ERROR_NON_EXISTENT_TRIE + " " + strHash);
             throw new TrieSerializationException(ERROR_NON_EXISTENT_TRIE + " " + strHash, null);
@@ -668,7 +668,7 @@ public class TrieImpl implements Trie {
      * @return  node hash or null if no node is present
      */
     @Nullable
-    private byte[] getHash(int n) {
+    private Keccak256 getHash(int n) {
         if (this.hashes != null && this.hashes[n] != null) {
             return this.hashes[n];
         }
@@ -683,7 +683,7 @@ public class TrieImpl implements Trie {
             return null;
         }
 
-        byte[] localHash = node.getHash();
+        Keccak256 localHash = node.getHash();
 
         this.setHash(n, localHash);
 
@@ -697,9 +697,9 @@ public class TrieImpl implements Trie {
      * @param hash  the subnode hash
      */
     @Override
-    public void setHash(int n, byte[] hash) {
+    public void setHash(int n, Keccak256 hash) {
         if (this.hashes == null) {
-            this.hashes = new byte[ARITY][];
+            this.hashes = new Keccak256[ARITY];
         }
 
         this.hashes[n] = hash;
@@ -715,7 +715,7 @@ public class TrieImpl implements Trie {
         this.save();
 
         byte[] bytes = this.store.serialize();
-        byte[] root = this.getHash();
+        byte[] root = this.getHash().getBytes();
 
         ByteBuffer buffer = ByteBuffer.allocate(Short.BYTES + Keccak256Helper.DEFAULT_SIZE_BYTES + bytes.length);
 
@@ -976,7 +976,7 @@ public class TrieImpl implements Trie {
 
         if (position >= length) {
             TrieImpl[] newNodes = cloneNodes(false);
-            byte[][] newHashes = cloneHashes();
+            Keccak256[] newHashes = cloneHashes();
 
             if (isEmptyTrie(value, newNodes, newHashes)) {
                 return null;
@@ -993,7 +993,7 @@ public class TrieImpl implements Trie {
         }
 
         TrieImpl[] newNodes = cloneNodes(true);
-        byte[][] newHashes = cloneHashes();
+        Keccak256[] newHashes = cloneHashes();
 
         int pos = key[position];
 
@@ -1032,7 +1032,7 @@ public class TrieImpl implements Trie {
 
     private TrieImpl split(int nshared) {
         TrieImpl[] newChildNodes = this.cloneNodes(false);
-        byte[][] newChildHashes = this.cloneHashes();
+        Keccak256[] newChildHashes = this.cloneHashes();
 
         TrieImpl newChildTrie = new TrieImpl(null, 0, this.value, newChildNodes, newChildHashes, this.store).withSecure(this.isSecure);
 
@@ -1068,13 +1068,13 @@ public class TrieImpl implements Trie {
      * @return a copy of the original hashes
      */
     @Nullable
-    private byte[][] cloneHashes() {
+    private Keccak256[] cloneHashes() {
         if (this.hashes == null) {
             return null;
         }
 
         int nhashes = this.hashes.length;
-        byte[][] newHashes = new byte[nhashes][];
+        Keccak256[] newHashes = new Keccak256[nhashes];
 
         for (int k = 0; k < nhashes; k++) {
             newHashes[k] = this.hashes[k];
@@ -1121,7 +1121,7 @@ public class TrieImpl implements Trie {
      *
      * @return true if no data
      */
-    private static boolean isEmptyTrie(byte[] value, TrieImpl[] nodes, byte[][]hashes) {
+    private static boolean isEmptyTrie(byte[] value, TrieImpl[] nodes, Keccak256[] hashes) {
         if (value != null && value.length != 0) {
             return false;
         }
@@ -1177,17 +1177,17 @@ public class TrieImpl implements Trie {
         return keyBytes;
     }
 
-    public Trie getSnapshotTo(byte[] hash) {
+    public Trie getSnapshotTo(Keccak256 hash) {
         this.save();
 
-        if (Arrays.equals(emptyHash, hash)) {
+        if (emptyHash.equals(hash)) {
             return new TrieImpl(this.store, this.isSecure);
         }
 
-        Trie newTrie = this.store.retrieve(hash);
+        Trie newTrie = this.store.retrieve(hash.getBytes());
 
         if (newTrie == null) {
-            String strHash = Hex.toHexString(hash);
+            String strHash = hash.toHexString();
             logger.error(ERROR_NON_EXISTENT_TRIE_LOGGER, strHash);
             panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE + " " + strHash);
             throw new TrieSerializationException(ERROR_CREATING_TRIE + " " + strHash, null);
@@ -1223,7 +1223,7 @@ public class TrieImpl implements Trie {
      *
      * @return a hash with zeroed bytes
      */
-    private static byte[] makeEmptyHash() {
-        return Keccak256Helper.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+    private static Keccak256 makeEmptyHash() {
+        return new Keccak256(Keccak256Helper.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
     }
 }

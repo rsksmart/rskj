@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.junit.Assert;
@@ -26,16 +27,14 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 
-import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Created by ajlopez on 07/04/2017.
  */
 public class TrieImplTrieSerializationTests {
-    private static byte[] emptyHash = makeEmptyHash();
+    private static Keccak256 emptyHash = makeEmptyHash();
 
     @Test
     public void serializeEmptyTrie() throws IOException {
@@ -90,7 +89,7 @@ public class TrieImplTrieSerializationTests {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.trieSize());
-        Assert.assertArrayEquals(emptyHash, result.getHash());
+        Assert.assertEquals(emptyHash, result.getHash());
     }
 
     @Test
@@ -105,7 +104,7 @@ public class TrieImplTrieSerializationTests {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(3, result.trieSize());
-        Assert.assertFalse(Arrays.equals(emptyHash, result.getHash()));
+        Assert.assertNotEquals(emptyHash, result.getHash());
 
         Assert.assertArrayEquals("bar".getBytes(), result.get("foo".getBytes()));
         Assert.assertArrayEquals("foo".getBytes(), result.get("bar".getBytes()));
@@ -123,7 +122,7 @@ public class TrieImplTrieSerializationTests {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(3, result.trieSize());
-        Assert.assertFalse(Arrays.equals(emptyHash, result.getHash()));
+        Assert.assertNotEquals(emptyHash, result.getHash());
 
         Assert.assertArrayEquals("bar".getBytes(), result.get("foo".getBytes()));
         Assert.assertArrayEquals("foo".getBytes(), result.get("bar".getBytes()));
@@ -142,7 +141,7 @@ public class TrieImplTrieSerializationTests {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(trie.trieSize(), result.trieSize());
-        Assert.assertFalse(Arrays.equals(emptyHash, result.getHash()));
+        Assert.assertNotEquals(emptyHash, result.getHash());
 
         for (int k = 0; k < 100; k++)
             Assert.assertArrayEquals(("bar" + k).getBytes(), result.get(("foo" + k).getBytes()));
@@ -161,13 +160,13 @@ public class TrieImplTrieSerializationTests {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(trie.trieSize(), result.trieSize());
-        Assert.assertFalse(Arrays.equals(emptyHash, result.getHash()));
+        Assert.assertNotEquals(emptyHash, result.getHash());
 
         for (int k = 0; k < 100; k++)
             Assert.assertArrayEquals(("bar" + k).getBytes(), result.get(("foo" + k).getBytes()));
     }
 
-    public static byte[] makeEmptyHash() {
-        return HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+    public static Keccak256 makeEmptyHash() {
+        return new Keccak256(HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
     }
 }

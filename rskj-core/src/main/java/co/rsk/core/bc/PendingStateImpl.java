@@ -45,7 +45,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.BIUtil.toBI;
 
 /**
@@ -422,7 +421,7 @@ public class PendingStateImpl implements PendingState {
                             new byte[0],
                             new byte[0],
                             new byte[32],  // receiptsRoot
-                            txsTrie.getHash(),  // TransactionsRoot-
+                            txsTrie.getHash().getBytes(),  // TransactionsRoot-
                             new byte[32],  // stateRoot
                             Collections.<Transaction>emptyList(), // tx list
                             Collections.<BlockHeader>emptyList(), // uncle list

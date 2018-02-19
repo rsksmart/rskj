@@ -18,20 +18,20 @@
 
 package co.rsk.trie;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Created by ajlopez on 05/04/2017.
  */
 public class TrieImplSnapshotTest {
-    private static byte[] emptyHash = makeEmptyHash();
+    private static Keccak256 emptyHash = makeEmptyHash();
 
     @Test
     public void getSnapshotToEmptyTrie() {
@@ -42,7 +42,7 @@ public class TrieImplSnapshotTest {
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(trie.trieSize(), snapshot.trieSize());
-        Assert.assertArrayEquals(emptyHash, snapshot.getHash());
+        Assert.assertEquals(emptyHash, snapshot.getHash());
     }
 
     @Test
@@ -52,7 +52,7 @@ public class TrieImplSnapshotTest {
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
 
-        byte[] hash = trie.getHash();
+        Keccak256 hash = trie.getHash();
 
         trie.save();
 
@@ -64,7 +64,7 @@ public class TrieImplSnapshotTest {
         Trie snapshot = trie.getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
-        Assert.assertArrayEquals(hash, snapshot.getHash());
+        Assert.assertEquals(hash, snapshot.getHash());
 
         Assert.assertNotNull(snapshot.get("foo".getBytes()));
         Assert.assertNull(snapshot.get("bar".getBytes()));
@@ -78,7 +78,7 @@ public class TrieImplSnapshotTest {
 
         trie = trie.put("foo".getBytes(), TrieImplValueTest.makeValue(100));
 
-        byte[] hash = trie.getHash();
+        Keccak256 hash = trie.getHash();
 
         trie.save();
 
@@ -90,7 +90,7 @@ public class TrieImplSnapshotTest {
         Trie snapshot = trie.getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
-        Assert.assertArrayEquals(hash, snapshot.getHash());
+        Assert.assertEquals(hash, snapshot.getHash());
 
         Assert.assertNotNull(snapshot.get("foo".getBytes()));
         Assert.assertNull(snapshot.get("bar".getBytes()));
@@ -103,7 +103,7 @@ public class TrieImplSnapshotTest {
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
 
-        byte[] hash = trie.getHash();
+        Keccak256 hash = trie.getHash();
 
         trie.save();
 
@@ -115,7 +115,7 @@ public class TrieImplSnapshotTest {
         Trie snapshot = TrieImpl.deserialize(trie.serialize()).getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
-        Assert.assertArrayEquals(hash, snapshot.getHash());
+        Assert.assertEquals(hash, snapshot.getHash());
 
         Assert.assertNotNull(snapshot.get("foo".getBytes()));
         Assert.assertNull(snapshot.get("bar".getBytes()));
@@ -131,7 +131,7 @@ public class TrieImplSnapshotTest {
 
         trie = trie.put("foo".getBytes(), value1);
 
-        byte[] hash = trie.getHash();
+        Keccak256 hash = trie.getHash();
 
         trie.save();
 
@@ -145,14 +145,14 @@ public class TrieImplSnapshotTest {
         Trie snapshot = TrieImpl.deserialize(trie.serialize()).getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
-        Assert.assertArrayEquals(hash, snapshot.getHash());
+        Assert.assertEquals(hash, snapshot.getHash());
 
         Assert.assertNotNull(snapshot.get("foo".getBytes()));
         Assert.assertArrayEquals(value1, snapshot.get("foo".getBytes()));
         Assert.assertNull(snapshot.get("bar".getBytes()));
     }
 
-    public static byte[] makeEmptyHash() {
-        return HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+    public static Keccak256 makeEmptyHash() {
+        return new Keccak256(HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
     }
 }

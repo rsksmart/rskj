@@ -25,8 +25,6 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.ethereum.crypto.HashUtil.keccak256;
-
 /**
  * Created by martin.medina on 11/01/2017.
  */
@@ -45,7 +43,7 @@ public class TrieImplHashTest {
         Assert.assertTrue(Arrays.equals(trie1.get("roosevalt"), "So, first of all, let me assert my firm belief that".getBytes()));
         Assert.assertTrue(Arrays.equals(trie1.get("roosevilt"), "42".getBytes()));
         Assert.assertNull(trie1.get("roosevelt"));
-        Assert.assertTrue(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -61,7 +59,7 @@ public class TrieImplHashTest {
         Assert.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
         Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
         Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertTrue(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -82,7 +80,7 @@ public class TrieImplHashTest {
         Assert.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
         Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
         Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertTrue(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -101,7 +99,7 @@ public class TrieImplHashTest {
         Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
         Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevaltroosevaltroosevalt"), "42434445".getBytes()));
         Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertTrue(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -125,7 +123,7 @@ public class TrieImplHashTest {
         Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
         Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevaltroosevaltroosevalt"), "42434445".getBytes()));
         Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertTrue(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -144,7 +142,7 @@ public class TrieImplHashTest {
         Assert.assertTrue(Arrays.equals(trie1.get("roosevalt0oosevalt"), "424344".getBytes()));
         Assert.assertTrue(Arrays.equals(trie1.get("roosevalt1oosevalt"), "42434445".getBytes()));
         Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertTrue(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -168,7 +166,7 @@ public class TrieImplHashTest {
         Assert.assertTrue(Arrays.equals(trie1.get("roosevalt0oosevalt"), "424344".getBytes()));
         Assert.assertTrue(Arrays.equals(trie1.get("roosevalt1oosevalt"), "42434445".getBytes()));
         Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertTrue(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -186,6 +184,6 @@ public class TrieImplHashTest {
         Assert.assertTrue(Arrays.equals(trie1.get("rooseval_"), "424344".getBytes()));
         Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "42434445".getBytes()));
         Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertTrue(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 }

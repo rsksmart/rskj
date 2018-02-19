@@ -151,7 +151,7 @@ public class Block {
 
         this.header.setPaidFees(paidFees);
 
-        byte[] calculatedRoot = getTxTrie(transactionsList).getHash();
+        byte[] calculatedRoot = getTxTrie(transactionsList).getHash().getBytes();
         this.header.setTransactionsRoot(calculatedRoot);
         this.checkExpectedRoot(transactionsRoot, calculatedRoot);
 
@@ -221,7 +221,7 @@ public class Block {
         // Parse Transactions
         RLPList txTransactions = (RLPList) block.get(1);
         this.transactionsList = parseTxs(txTransactions);
-        byte[] calculatedRoot = getTxTrie(this.transactionsList).getHash();
+        byte[] calculatedRoot = getTxTrie(this.transactionsList).getHash().getBytes();
         this.checkExpectedRoot(this.header.getTxTrieRoot(), calculatedRoot);
 
         // Parse Uncles
