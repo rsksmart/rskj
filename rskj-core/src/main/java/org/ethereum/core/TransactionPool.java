@@ -38,7 +38,9 @@ public interface TransactionPool extends org.ethereum.facade.TransactionPool {
     boolean addTransaction(Transaction tx);
 
     /**
-     * Adds a list of transactions to the list of pending state txs  <br>
+     * Adds a list of transactions to the list of pending state txs or
+     * queued transactions
+     *
      * Triggers an update of pending state
      *
      * @param txs transaction list
@@ -62,9 +64,9 @@ public interface TransactionPool extends org.ethereum.facade.TransactionPool {
 
     void removeTransactions(List<Transaction> txs);
 
-    // Returns a list of pending txs
+    // Returns a list of pending txs (ready to be executed)
     List<Transaction> getPendingTransactions();
 
-    // Returns a list of queued txs
+    // Returns a list of queued txs (out of nonce sequence)
     List<Transaction> getQueuedTransactions();
 }

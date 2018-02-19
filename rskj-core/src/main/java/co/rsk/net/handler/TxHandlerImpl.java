@@ -36,42 +36,30 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Multiple TxHandlerImpl instances may cause inconsistencies and unexpected
- * behaviors.
+ * TxHandler validates the incoming transactions
+ * It does not check the nonce sequence by account,
+ * TransactionPool controls that sequence, with two
+ * list of transactions: pendig (in sequence), queued (out of sequence)
  */
 public class TxHandlerImpl implements TxHandler {
-
     private final RskSystemProperties config;
     private Repository repository;
     private Blockchain blockchain;
-    private Lock knownTxsLock = new ReentrantLock();
 
-    /**
-     * This method will fork two `threads` and should not be instanced more than
-     * once.
-     *
-     * As TxHandler will hold txs that weren't relayed or similar stuff, this
-     * threads will help to keep memory low and consistency through all the
-     * life of the application
-     */
     public TxHandlerImpl(RskSystemProperties config, CompositeEthereumListener compositeEthereumListener, Repository repository, Blockchain blockchain) {
         this.config = config;
         this.blockchain = blockchain;
         this.repository = repository;
     }
 
-    @VisibleForTesting TxHandlerImpl(RskSystemProperties config) {
+    @VisibleForTesting
+    TxHandlerImpl(RskSystemProperties config) {
         // Only for testing
         this.config = config;
     }
 
     @Override
     public List<Transaction> retrieveValidTxs(List<Transaction> txs) {
-        try {
-            knownTxsLock.lock();
-            return new TxValidator(config, repository, blockchain).filterTxs(txs);
-        } finally {
-            knownTxsLock.unlock();
-        }
+        return new TxValidator(config, repository, blockchain).filterTxs(txs);
     }
 }
