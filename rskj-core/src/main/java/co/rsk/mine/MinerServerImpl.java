@@ -99,8 +99,6 @@ public class MinerServerImpl implements MinerServer {
 
     private boolean started;
 
-    private byte[] extraData;
-
     @GuardedBy("lock")
     private LinkedHashMap<Keccak256, Block> blocksWaitingforPoW;
 
@@ -128,10 +126,10 @@ public class MinerServerImpl implements MinerServer {
 
     private final BlockProcessor nodeBlockProcessor;
     private final DifficultyCalculator difficultyCalculator;
+    private final boolean autoSwitchBetweenNormalAndFallbackMining;
 
     private long timeAdjustment;
     private long minimumAcceptableTime;
-    private boolean autoSwitchBetweenNormalAndFallbackMining;
     private boolean fallbackMiningScheduled;
     private final RskSystemProperties config;
 
@@ -159,6 +157,7 @@ public class MinerServerImpl implements MinerServer {
         this.difficultyCalculator = difficultyCalculator;
         this.gasLimitCalculator = gasLimitCalculator;
         this.powRule = powRule;
+        this.autoSwitchBetweenNormalAndFallbackMining = !config.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BlockDifficulty.ZERO);
 
         executor = new BlockExecutor(config, repository, blockchain, blockStore, null);
 
@@ -181,10 +180,9 @@ public class MinerServerImpl implements MinerServer {
         if (secsBetweenFallbackMinedBlocks==0) {
             secsBetweenFallbackMinedBlocks = (config.getBlockchainConfig().getCommonConstants().getDurationLimit());
         }
-        autoSwitchBetweenNormalAndFallbackMining = !config.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BlockDifficulty.ZERO);
     }
 
-    // This method is used for tests
+    @VisibleForTesting
     public void setSecsBetweenFallbackMinedBlocks(int m) {
         secsBetweenFallbackMinedBlocks = m;
     }
@@ -200,15 +198,12 @@ public class MinerServerImpl implements MinerServer {
 
     }
 
+    @VisibleForTesting
     public int getFallbackBlocksGenerated() {
         return fallbackBlocksGenerated;
     }
 
-    public boolean isFallbackMining() {
-        return isFallbackMining;
-    }
-
-    public void setFallbackMiningState() {
+    private void setFallbackMiningState() {
         if (isFallbackMining) {
             // setFallbackMining() can be called before start
             if (started) {
@@ -239,11 +234,7 @@ public class MinerServerImpl implements MinerServer {
         }
     }
 
-    @Override
-    public void setAutoSwitchBetweenNormalAndFallbackMining(boolean p) {
-        autoSwitchBetweenNormalAndFallbackMining = p;
-    }
-
+    @VisibleForTesting
     public void setFallbackMining(boolean p) {
         synchronized (lock) {
             if (isFallbackMining == p) {
@@ -260,11 +251,6 @@ public class MinerServerImpl implements MinerServer {
     @VisibleForTesting
     public Map<Keccak256, Block> getBlocksWaitingforPoW() {
         return blocksWaitingforPoW;
-    }
-
-    @Override
-    public boolean isRunning() {
-        return started;
     }
 
     @Override
@@ -305,7 +291,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Nullable
-    public static byte[] readFromFile(File aFile) {
+    private static byte[] readFromFile(File aFile) {
         try {
             try (FileInputStream fis = new FileInputStream(aFile)) {
                 byte[] array = new byte[1024];
@@ -319,8 +305,8 @@ public class MinerServerImpl implements MinerServer {
         }
     }
 
-    static byte[] privKey0;
-    static byte[] privKey1;
+    private static byte[] privKey0;
+    private static byte[] privKey1;
 
     @Override
     public boolean generateFallbackBlock() {
@@ -416,7 +402,11 @@ public class MinerServerImpl implements MinerServer {
     }
 
 
-    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
+    @VisibleForTesting
+    public SubmitBlockResult submitBitcoinBlock(
+            String blockHashForMergedMining,
+            co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock,
+            boolean lastTag) {
         logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningBlock.getTransactions().get(0);
         co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
@@ -576,7 +566,7 @@ public class MinerServerImpl implements MinerServer {
         this.currentWork = work;
     }
 
-    public MinerWork updateGetWork(@Nonnull final Block block, @Nonnull final boolean notify) {
+    private MinerWork updateGetWork(@Nonnull final Block block, @Nonnull final boolean notify) {
         Keccak256 blockMergedMiningHash = new Keccak256(block.getHashForMergedMining());
 
         BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
@@ -586,10 +576,6 @@ public class MinerServerImpl implements MinerServer {
 
         logger.debug("Sending work for merged mining. Hash: {}", block.getShortHashForMergedMining());
         return new MinerWork(blockMergedMiningHash.toJsonString(), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString());
-    }
-
-    public void setExtraData(byte[] extraData) {
-        this.extraData = extraData;
     }
 
     /**
@@ -638,7 +624,6 @@ public class MinerServerImpl implements MinerServer {
             }
         }
 
-        newBlock.setExtraData(extraData);
         removePendingTransactions(txsToRemove);
         executor.executeAndFill(newBlock, newBlockParent);
 
@@ -690,7 +675,7 @@ public class MinerServerImpl implements MinerServer {
 
     }
 
-    @Override
+    @VisibleForTesting
     public long getCurrentTimeInSeconds() {
         long ret = System.currentTimeMillis() / 1000 + this.timeAdjustment;
         return Long.max(ret, minimumAcceptableTime);
@@ -735,7 +720,7 @@ public class MinerServerImpl implements MinerServer {
         return new MinerUtils().filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }
 
-    class NewBlockListener extends EthereumListenerAdapter {
+    private class NewBlockListener extends EthereumListenerAdapter {
 
         @Override
         /**
