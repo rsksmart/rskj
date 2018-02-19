@@ -18,6 +18,7 @@
 
 package co.rsk.net.discovery.message;
 
+import co.rsk.net.NodeID;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -109,12 +110,12 @@ public abstract class PeerDiscoveryMessage {
         return outKey;
     }
 
-    public byte[] getNodeId() {
+    public NodeID getNodeId() {
         byte[] nodeID = new byte[64];
 
         System.arraycopy(getKey().getPubKey(), 1, nodeID, 0, 64);
 
-        return nodeID;
+        return new NodeID(nodeID);
     }
 
     public byte[] getPacket() {

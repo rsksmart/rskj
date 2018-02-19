@@ -35,7 +35,6 @@ import org.ethereum.config.NodeFilter;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.sync.SyncPool;
@@ -48,7 +47,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -64,7 +66,7 @@ public class ChannelManagerImpl implements ChannelManager {
     // then we ban that peer IP on any connections for some time to protect from
     // too active peers
     private static final int INBOUND_CONNECTION_BAN_TIMEOUT = 10 * 1000;
-    private final Map<ByteArrayWrapper, Channel> activePeers = Collections.synchronizedMap(new HashMap<>());
+    private final Map<NodeID, Channel> activePeers = Collections.synchronizedMap(new HashMap<>());
 
     private final RskSystemProperties config;
     private final SyncPool syncPool;
@@ -120,7 +122,7 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private ReasonCode getNewPeerDisconnectionReason(Channel peer) {
-        if(activePeers.containsKey(peer.getNodeIdWrapper())) {
+        if (activePeers.containsKey(peer.getNodeId())) {
             return ReasonCode.DUPLICATE_PEER;
         }
 
@@ -153,7 +155,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private void process(Channel peer) {
         if (peer.isUsingNewProtocol() || peer.hasEthStatusSucceeded()) {
             syncPool.add(peer);
-            activePeers.put(peer.getNodeIdWrapper(), peer);
+            activePeers.put(peer.getNodeId(), peer);
         }
     }
 

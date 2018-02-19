@@ -27,7 +27,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.NodeStatistics;
@@ -262,11 +261,7 @@ public class Channel {
     }
 
     public NodeID getNodeId() {
-        return node == null ? null : node.getNodeId();
-    }
-
-    public ByteArrayWrapper getNodeIdWrapper() {
-        return node == null ? null : new ByteArrayWrapper(node.getId());
+        return node == null ? null : node.getId();
     }
 
     public void disconnect(ReasonCode reason) {

@@ -222,7 +222,7 @@ public class SyncPool implements Iterable<Channel> {
         synchronized (pendingConnections) {
             String ip = node.getHost();
             int port = node.getPort();
-            String remoteId = Hex.toHexString(node.getId());
+            String remoteId = Hex.toHexString(node.getId().getID());
             logger.info("Connecting to: {}:{}", ip, port);
             PeerClient peerClient = peerClientFactory.newInstance();
             peerClient.connectAsync(ip, port, remoteId, false);
@@ -364,7 +364,7 @@ public class SyncPool implements Iterable<Channel> {
         StringBuilder sb = new StringBuilder();
 
         for(NodeHandler n : nodes) {
-            sb.append(Utils.getNodeIdShort(Hex.toHexString(n.getNode().getId())));
+            sb.append(Utils.getNodeIdShort(Hex.toHexString(n.getNode().getId().getID())));
             sb.append(", ");
         }
 
