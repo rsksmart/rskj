@@ -61,6 +61,7 @@ import java.util.stream.Collectors;
 /**
  * The MinerServer provides support to components that perform the actual mining.
  * It builds blocks to mine and publishes blocks once a valid nonce was found by the miner.
+ *
  * @author Oscar Guindzberg
  */
 
@@ -148,7 +149,7 @@ public class MinerServerImpl implements MinerServer {
         secsBetweenFallbackMinedBlocks =
                 config.getAverageFallbackMiningTime();
         // default
-        if (secsBetweenFallbackMinedBlocks==0) {
+        if (secsBetweenFallbackMinedBlocks == 0) {
             secsBetweenFallbackMinedBlocks = (config.getBlockchainConfig().getCommonConstants().getDurationLimit());
         }
         autoSwitchBetweenNormalAndFallbackMining = !config.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BlockDifficulty.ZERO);
@@ -160,8 +161,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     private LinkedHashMap<Keccak256, Block> createNewBlocksWaitingList() {
-        return new LinkedHashMap<Keccak256, Block>(CACHE_SIZE)
-        {
+        return new LinkedHashMap<Keccak256, Block>(CACHE_SIZE) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Keccak256, Block> eldest) {
                 return size() > CACHE_SIZE;
@@ -186,15 +186,14 @@ public class MinerServerImpl implements MinerServer {
                     fallbackMiningTimer = new Timer("Private mining timer");
                 }
                 if (!fallbackMiningScheduled) {
-                    fallbackMiningTimer.schedule(new FallbackMiningTask(), 1000,1000 );
+                    fallbackMiningTimer.schedule(new FallbackMiningTask(), 1000, 1000);
                     fallbackMiningScheduled = true;
                 }
                 // Because the Refresh occurs only once every minute,
                 // we need to create at least one first block to mine
                 Block bestBlock = blockchain.getBestBlock();
                 buildBlockToMine(bestBlock, false);
-            }
-            else {
+            } else {
                 if (fallbackMiningTimer != null) {
                     fallbackMiningTimer.cancel();
                     fallbackMiningTimer = null;
@@ -319,7 +318,7 @@ public class MinerServerImpl implements MinerServer {
         }
 
         if (!isEvenBlockNumber && privKey1 == null) {
-           return false;
+            return false;
         }
 
         if (isEvenBlockNumber && privKey0 == null) {
@@ -340,7 +339,7 @@ public class MinerServerImpl implements MinerServer {
         BlockHeader newHeader = newBlock.getHeader();
 
         newHeader.setTimestamp(this.getCurrentTimeInSeconds());
-        Block parentBlock =blockchain.getBlockByHash(newHeader.getParentHash().getBytes());
+        Block parentBlock = blockchain.getBlockByHash(newHeader.getParentHash().getBytes());
         newHeader.setDifficulty(
                 difficultyCalculator.calcDifficulty(newHeader, parentBlock.getHeader()));
 
@@ -381,10 +380,11 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
-    public SubmitBlockResult submitBitcoinSolution(String blockHashForMergedMining,
-                                                    BtcBlock blockWithHeaderOnly,
-                                                    BtcTransaction coinbase,
-                                                    List<String> txHashes) {
+    public SubmitBlockResult submitBitcoinSolution(
+            String blockHashForMergedMining,
+            BtcBlock blockWithHeaderOnly,
+            BtcTransaction coinbase,
+            List<String> txHashes) {
         logger.debug("Received solution with hash {} for merged mining", blockHashForMergedMining);
 
         PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(blockWithHeaderOnly.getParams(), txHashes);
@@ -407,7 +407,12 @@ public class MinerServerImpl implements MinerServer {
         return processSolution(blockHashForMergedMining, bitcoinMergedMiningBlock, coinbase, bitcoinMergedMiningMerkleBranch, lastTag);
     }
 
-    private SubmitBlockResult processSolution(String blockHashForMergedMining, BtcBlock blockWithHeaderOnly, BtcTransaction coinbase, PartialMerkleTree bitcoinMergedMiningMerkleBranch, boolean lastTag) {
+    private SubmitBlockResult processSolution(
+            String blockHashForMergedMining,
+            BtcBlock blockWithHeaderOnly,
+            BtcTransaction coinbase,
+            PartialMerkleTree bitcoinMergedMiningMerkleBranch,
+            boolean lastTag) {
         Block newBlock;
         Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
 
@@ -469,12 +474,12 @@ public class MinerServerImpl implements MinerServer {
         return compressCoinbase(bitcoinMergedMiningCoinbaseTransactionSerialized, true);
     }
 
-    public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized, boolean lastOcurrence) {
+    public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized, boolean lastOccurrence) {
         List<Byte> coinBaseTransactionSerializedAsList = java.util.Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionSerialized));
         List<Byte> tagAsList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
 
         int rskTagPosition;
-        if (lastOcurrence) {
+        if (lastOccurrence) {
             rskTagPosition = Collections.lastIndexOfSubList(coinBaseTransactionSerializedAsList, tagAsList);
         } else {
             rskTagPosition = Collections.indexOfSubList(coinBaseTransactionSerializedAsList, tagAsList);
@@ -500,7 +505,7 @@ public class MinerServerImpl implements MinerServer {
      * getBitcoinMergedMerkleBranch returns the Partial Merkle Branch needed to validate that the coinbase tx
      * is part of the Merkle Tree.
      *
-     * @param networkParams bitcoin network params.
+     * @param networkParams  bitcoin network params.
      * @param txStringHashes hashes for the txs of the bitcoin block used for merged mining.
      * @return A Partial Merkle Branch in which you can validate the coinbase tx.
      */
@@ -557,7 +562,7 @@ public class MinerServerImpl implements MinerServer {
         if (work == null) {
             return null;
         }
-        
+
         if (work.getNotify()) {
             /**
              * Set currentWork.notify to false for the next time this function is called.
@@ -567,11 +572,11 @@ public class MinerServerImpl implements MinerServer {
              * currentWork, regardless of what it is.
              */
             synchronized (lock) {
-                if (currentWork != work ||  currentWork == null) {
+                if (currentWork != work || currentWork == null) {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
-                                            currentWork.getFeesPaidToMiner(),false, currentWork.getParentBlockHash());
+                        currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash());
             }
         }
         return work;
@@ -601,7 +606,7 @@ public class MinerServerImpl implements MinerServer {
     /**
      * buildBlockToMine creates a block to mine based on the given block as parent.
      *
-     * @param newBlockParent              the new block parent.
+     * @param newBlockParent         the new block parent.
      * @param createCompetitiveBlock used for testing.
      */
     @Override
@@ -736,16 +741,16 @@ public class MinerServerImpl implements MinerServer {
                 long curtimestampSeconds = getCurrentTimeInSeconds();
 
 
-                if (curtimestampSeconds > bestBlock.getTimestamp() + secsBetweenFallbackMinedBlocks)
-                    {
-                        generateFallbackBlock();
-            }
+                if (curtimestampSeconds > bestBlock.getTimestamp() + secsBetweenFallbackMinedBlocks) {
+                    generateFallbackBlock();
+                }
             } catch (Throwable th) {
                 logger.error("Unexpected error: {}", th);
                 panicProcessor.panic("mserror", th.getMessage());
             }
         }
     }
+
     /**
      * RefreshBlocks rebuilds the block to mine.
      */
