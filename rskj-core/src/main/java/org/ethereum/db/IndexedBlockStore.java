@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
@@ -238,7 +239,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         for (BlockInfo blockInfo : blockInfos) {
             if (areEqual(blockInfo.getHash(), hash)) {
-                return blockInfo.cummDifficulty;
+                return blockInfo.getCummDifficulty();
             }
         }
 
@@ -394,31 +395,33 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     public static class BlockInfo implements Serializable {
-        byte[] hash;
-        BlockDifficulty cummDifficulty;
-        boolean mainChain;
+        private static final long serialVersionUID = 5906746360128478753L;
 
-        public byte[] getHash() {
+        private byte[] hash;
+        private BigInteger cummDifficulty;
+        private boolean mainChain;
+
+        private byte[] getHash() {
             return hash;
         }
 
-        public void setHash(byte[] hash) {
+        private void setHash(byte[] hash) {
             this.hash = hash;
         }
 
-        public BlockDifficulty getCummDifficulty() {
-            return cummDifficulty;
+        private BlockDifficulty getCummDifficulty() {
+            return new BlockDifficulty(cummDifficulty);
         }
 
-        public void setCummDifficulty(BlockDifficulty cummDifficulty) {
-            this.cummDifficulty = cummDifficulty;
+        private void setCummDifficulty(BlockDifficulty cummDifficulty) {
+            this.cummDifficulty = cummDifficulty.asBigInteger();
         }
 
-        public boolean isMainChain() {
+        private boolean isMainChain() {
             return mainChain;
         }
 
-        public void setMainChain(boolean mainChain) {
+        private void setMainChain(boolean mainChain) {
             this.mainChain = mainChain;
         }
     }
