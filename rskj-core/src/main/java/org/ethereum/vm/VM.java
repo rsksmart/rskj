@@ -1081,7 +1081,7 @@ public class VM {
     }
 
     protected void doLOG(){
-        if (program.isStaticCall()) {
+        if (program.isStaticCall() && program.getBlockchainConfig().isRcs230()) {
             throw Program.ExceptionHelper.modificationException();
         }
 
