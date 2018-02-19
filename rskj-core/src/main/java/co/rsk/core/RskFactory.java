@@ -35,6 +35,7 @@ import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.netty.JsonRpcWeb3FilterHandler;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
 import co.rsk.rpc.netty.Web3HttpServer;
@@ -137,24 +138,25 @@ public class RskFactory {
     }
 
     @Bean
-    public Web3 getWeb3Factory(Rsk rsk,
-                               Blockchain blockchain,
-                               PendingState pendingState,
-                               RskSystemProperties config,
-                               MinerClient minerClient,
-                               MinerServer minerServer,
-                               PersonalModule personalModule,
-                               EthModule ethModule,
-                               ChannelManager channelManager,
-                               Repository repository,
-                               PeerScoringManager peerScoringManager,
-                               NetworkStateExporter networkStateExporter,
-                               org.ethereum.db.BlockStore blockStore,
-                               PeerServer peerServer,
-                               BlockProcessor nodeBlockProcessor,
-                               HashRateCalculator hashRateCalculator,
-                               ConfigCapabilities configCapabilities) {
-        return new Web3RskImpl(rsk, blockchain, pendingState, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer, nodeBlockProcessor, hashRateCalculator, configCapabilities);
+    public Web3 getWeb3(Rsk rsk,
+                        Blockchain blockchain,
+                        PendingState pendingState,
+                        RskSystemProperties config,
+                        MinerClient minerClient,
+                        MinerServer minerServer,
+                        PersonalModule personalModule,
+                        EthModule ethModule,
+                        TxPoolModule txPoolModule,
+                        ChannelManager channelManager,
+                        Repository repository,
+                        PeerScoringManager peerScoringManager,
+                        NetworkStateExporter networkStateExporter,
+                        org.ethereum.db.BlockStore blockStore,
+                        PeerServer peerServer,
+                        BlockProcessor nodeBlockProcessor,
+                        HashRateCalculator hashRateCalculator,
+                        ConfigCapabilities configCapabilities) {
+        return new Web3RskImpl(rsk, blockchain, pendingState, config, minerClient, minerServer, personalModule, ethModule, txPoolModule , channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer, nodeBlockProcessor, hashRateCalculator, configCapabilities);
     }
 
     @Bean

@@ -43,7 +43,8 @@ public class Web3ImplRpcTest {
         PendingState pendingState = Web3Mocks.getMockPendingState();
         PersonalModule pm = new PersonalModuleWalletDisabled();
         Repository repository = Web3Mocks.getMockRepository();
-        Web3Impl web3 = new Web3RskImpl(eth, blockchain, pendingState, new RskSystemProperties(), null, null, pm, null, null, repository, null, null, null, null, null, null, null);
+        Web3Impl web3 = new Web3RskImpl(eth, blockchain, pendingState, new RskSystemProperties(), null, null, pm, null, null,
+                null, repository, null, null, null, null, null, null, null);
 
         Map<String, String> result = web3.rpc_modules();
 

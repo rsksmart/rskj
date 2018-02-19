@@ -28,6 +28,8 @@ import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
+import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
@@ -355,7 +357,8 @@ public class Web3ImplScoringTest {
         RskSystemProperties config = new RskSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(config, rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
-        return new Web3RskImpl(rsk, world.getBlockChain(), null, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null, null, null, null, null);
+        TxPoolModule tpm = new TxPoolModuleImpl();
+        return new Web3RskImpl(rsk, world.getBlockChain(), null, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, tpm, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null, null, null, null, null);
     }
 
     private static NodeID generateNodeID() {

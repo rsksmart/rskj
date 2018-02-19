@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.rpc.Web3TxPoolModule;
 import co.rsk.scoring.PeerScoringInformation;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -26,7 +27,7 @@ import org.ethereum.rpc.dto.TransactionResultDTO;
 import java.util.Arrays;
 import java.util.Map;
 
-public interface Web3 {
+public interface Web3 extends Web3TxPoolModule {
     class SyncingResult {
         public String startingBlock;
         public String currentBlock;

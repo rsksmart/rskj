@@ -26,6 +26,8 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.*;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
+import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -169,11 +171,12 @@ public class Web3ImplSnapshotTest {
     private static Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
         MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config);
         PersonalModule pm = new PersonalModuleWalletDisabled();
+        TxPoolModule tpm = new TxPoolModuleImpl();
 
         ethereum.repository = world.getRepository();
         ethereum.blockchain = world.getBlockChain();
 
-        return new Web3Impl(ethereum, world.getBlockChain(), null, world.getBlockChain().getBlockStore(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null, null, null, null);
+        return new Web3Impl(ethereum, world.getBlockChain(), null, world.getBlockChain().getBlockStore(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, tpm, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null, null, null, null);
     }
 
     private static Web3Impl createWeb3(World world) {
