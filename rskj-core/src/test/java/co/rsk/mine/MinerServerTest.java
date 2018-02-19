@@ -19,8 +19,11 @@
 package co.rsk.mine;
 
 import co.rsk.TestHelpers.Tx;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
@@ -45,10 +48,7 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
@@ -58,7 +58,7 @@ import static org.junit.Assert.*;
  */
 public class MinerServerTest {
     private static final RskSystemProperties config = new RskSystemProperties();
-    public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
 
     private BlockChainImpl blockchain;
 
@@ -126,8 +126,6 @@ public class MinerServerTest {
         assertThat(remascTransaction, instanceOf(RemascTransaction.class));
     }
 
-
-
     @Test
     public void submitBitcoinBlockTwoTags() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
@@ -168,7 +166,7 @@ public class MinerServerTest {
         MinerWork work2 = minerServer.getWork(); // only the tag is used
         Assert.assertNotEquals(work2.getBlockHashForMergedMining(),work.getBlockHashForMergedMining());
 
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithTwoTags(work,work2);
+        BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithTwoTags(work,work2);
 
         findNonce(work, bitcoinMergedMiningBlock);
         SubmitBlockResult result;
@@ -190,6 +188,7 @@ public class MinerServerTest {
             minerServer.stop();
         }
     }
+
     @Test
     public void submitBitcoinBlock() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
@@ -218,27 +217,60 @@ public class MinerServerTest {
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
-        minerServer.start();
-        MinerWork work = minerServer.getWork();
+            minerServer.start();
+            MinerWork work = minerServer.getWork();
 
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work);
+            BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work);
 
-        findNonce(work, bitcoinMergedMiningBlock);
+            findNonce(work, bitcoinMergedMiningBlock);
 
-        SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+            SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        Assert.assertEquals("OK", result.getStatus());
-        Assert.assertNotNull(result.getBlockInfo());
-        Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
-        Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+            Assert.assertEquals("OK", result.getStatus());
+            Assert.assertNotNull(result.getBlockInfo());
+            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-        Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
         } finally {
             minerServer.stop();
         }
     }
 
+    @Test
+    public void submitBitcoinSolution() {
+        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
+        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
+        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerServer minerServer = new MinerServerImpl(config, ethereumImpl, blockchain, null,
+                blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
+                unclesValidationRule, null, DIFFICULTY_CALCULATOR,
+                new GasLimitCalculator(config),
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        try {
+            minerServer.start();
+            MinerWork work = minerServer.getWork();
+
+            BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work);
+
+            findNonce(work, bitcoinMergedMiningBlock);
+
+            //noinspection ConstantConditions
+            BtcTransaction coinbase = bitcoinMergedMiningBlock.getTransactions().get(0);
+            SubmitBlockResult result = minerServer.submitBitcoinSolution(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, coinbase, Collections.singletonList(coinbase.getHashAsString()));
+
+            Assert.assertEquals("OK", result.getStatus());
+            Assert.assertNotNull(result.getBlockInfo());
+            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+        } finally {
+            minerServer.stop();
+        }
+    }
 
     @Test
     public void workWithNoTransactionsZeroFees() {
@@ -452,20 +484,20 @@ public class MinerServerTest {
         Assert.assertTrue(result <= current + 11);
     }
 
-    private co.rsk.bitcoinj.core.BtcBlock getMergedMiningBlock(MinerWork work) {
-        NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
+    private BtcBlock getMergedMiningBlock(MinerWork work) {
+        NetworkParameters bitcoinNetworkParameters = RegTestParams.get();
+        BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
         return MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
     }
 
-    private co.rsk.bitcoinj.core.BtcBlock getMergedMiningBlockWithTwoTags(MinerWork work,MinerWork work2) {
-        NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction =
+    private BtcBlock getMergedMiningBlockWithTwoTags(MinerWork work,MinerWork work2) {
+        NetworkParameters bitcoinNetworkParameters = RegTestParams.get();
+        BtcTransaction bitcoinMergedMiningCoinbaseTransaction =
                 MinerUtils.getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(bitcoinNetworkParameters, work,work2);
         return MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
     }
 
-    private void findNonce(MinerWork work, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+    private void findNonce(MinerWork work, BtcBlock bitcoinMergedMiningBlock) {
         BigInteger target = new BigInteger(TypeConverter.stringHexToByteArray(work.getTarget()));
 
         while (true) {
