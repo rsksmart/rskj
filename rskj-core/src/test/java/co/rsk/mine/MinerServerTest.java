@@ -47,6 +47,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -77,9 +78,7 @@ public class MinerServerTest {
 
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
         byte[] s1 = new byte[32];
-        byte[] s2 = new byte[32];
         s1[0] = 0;
-        s2[0] = 1;
         Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
         Mockito.when(tx1.getEncoded()).thenReturn(new byte[32]);
 
@@ -88,7 +87,7 @@ public class MinerServerTest {
         Mockito.when(repository.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
         Mockito.when(repository.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
 
-        List<Transaction> txs = new ArrayList<>(Arrays.asList(tx1));
+        List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));
 
         PendingState localPendingState = Mockito.mock(PendingState.class);
         Mockito.when(localPendingState.getPendingTransactions()).thenReturn(txs);
