@@ -169,7 +169,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
                 continue;
             }
 
-            if (new ByteArrayWrapper(bhash).equals(mblock.getWrappedHash())) {
+            if (Arrays.equals(bhash, mblock.getHash().getBytes())) {
                 return ti;
             }
         }

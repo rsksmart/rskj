@@ -18,13 +18,17 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
 
@@ -42,12 +46,12 @@ public class FamilyUtils {
      *
      * @return set of ancestors block hashes
      */
-    public static Set<ByteArrayWrapper> getAncestors(BlockStore blockStore, Block block, int limitNum) {
+    public static Set<Keccak256> getAncestors(BlockStore blockStore, Block block, int limitNum) {
         return getAncestors(blockStore, block.getNumber(), block.getParentHash().getBytes(), limitNum);
     }
 
-    public static Set<ByteArrayWrapper> getAncestors(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
-        Set<ByteArrayWrapper> ret = new HashSet<>();
+    public static Set<Keccak256> getAncestors(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
+        Set<Keccak256> ret = new HashSet<>();
 
         if (blockStore == null) {
             return ret;
@@ -57,7 +61,7 @@ public class FamilyUtils {
         Block it = blockStore.getBlockByHash(parentHash);
 
         while(it != null && it.getNumber() >= limit) {
-            ret.add(it.getWrappedHash());
+            ret.add(it.getHash());
             it = blockStore.getBlockByHash(it.getParentHash().getBytes());
         }
 
@@ -73,12 +77,12 @@ public class FamilyUtils {
      *
      * @return set of already used uncles block hashes
      */
-    public static Set<ByteArrayWrapper> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
+    public static Set<Keccak256> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
         return getUsedUncles(blockStore, block.getNumber(), block.getParentHash().getBytes(), limitNum);
     }
 
-    public static Set<ByteArrayWrapper> getUsedUncles(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
-        Set<ByteArrayWrapper> ret = new HashSet<>();
+    public static Set<Keccak256> getUsedUncles(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
+        Set<Keccak256> ret = new HashSet<>();
 
         if (blockStore == null) {
             return ret;
@@ -89,7 +93,7 @@ public class FamilyUtils {
 
         while(it != null && it.getNumber() >= minNumber) {
             for (BlockHeader uncle : it.getUncleList()) {
-                ret.add(new ByteArrayWrapper(uncle.getHash().getBytes()));
+                ret.add(uncle.getHash());
             }
             it = blockStore.getBlockByHash(it.getParentHash().getBytes());
         }
@@ -103,10 +107,10 @@ public class FamilyUtils {
 
     public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, byte[] parentHash, int levels) {
         List<BlockHeader> uncles = new ArrayList<>();
-        Set<ByteArrayWrapper> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
+        Set<Keccak256> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
 
-        for (ByteArrayWrapper uncleHash : unclesHeaders) {
-            Block uncle = store.getBlockByHash(uncleHash.getData());
+        for (Keccak256 uncleHash : unclesHeaders) {
+            Block uncle = store.getBlockByHash(uncleHash.getBytes());
 
             if (uncle != null) {
                 uncles.add(uncle.getHeader());
@@ -116,29 +120,27 @@ public class FamilyUtils {
         return uncles;
     }
 
-    public static Set<ByteArrayWrapper> getUncles(BlockStore store, Block block, int levels) {
+    public static Set<Keccak256> getUncles(BlockStore store, Block block, int levels) {
         return getUncles(store, block.getNumber(), block.getParentHash().getBytes(), levels);
     }
 
-    public static Set<ByteArrayWrapper> getUncles(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
-        Set<ByteArrayWrapper> family = getFamily(store, blockNumber, parentHash, levels);
-        Set<ByteArrayWrapper> ancestors = getAncestors(store, blockNumber, parentHash, levels);
+    public static Set<Keccak256> getUncles(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
+        Set<Keccak256> family = getFamily(store, blockNumber, parentHash, levels);
+        Set<Keccak256> ancestors = getAncestors(store, blockNumber, parentHash, levels);
         family.removeAll(ancestors);
         family.removeAll(getUsedUncles(store, blockNumber, parentHash, levels));
 
         return family;
     }
 
-    public static Set<ByteArrayWrapper> getFamily(BlockStore store, Block block, int levels) {
+    public static Set<Keccak256> getFamily(BlockStore store, Block block, int levels) {
         return getFamily(store, block.getNumber(), block.getParentHash().getBytes(), levels);
     }
 
-    public static Set<ByteArrayWrapper> getFamily(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
+    public static Set<Keccak256> getFamily(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
         long minNumber = max(0, blockNumber - levels);
 
-        Set<ByteArrayWrapper> family = new HashSet<>();
         List<Block> ancestors = new ArrayList<>();
-
         Block parent = store.getBlockByHash(parentHash);
 
         while (parent != null && parent.getNumber() >= minNumber) {
@@ -146,9 +148,7 @@ public class FamilyUtils {
             parent = store.getBlockByHash(parent.getParentHash().getBytes());
         }
 
-        for (Block b : ancestors) {
-            family.add(b.getWrappedHash());
-        }
+        Set<Keccak256> family = ancestors.stream().map(Block::getHash).collect(Collectors.toSet());
 
         for (int k = 1; k < ancestors.size(); k++) {
             Block ancestorParent = ancestors.get(k - 1);
@@ -169,7 +169,7 @@ public class FamilyUtils {
                     continue;
                 }
 
-                family.add(uncle.getWrappedHash());
+                family.add(uncle.getHash());
             }
         }
 

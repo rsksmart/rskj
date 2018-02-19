@@ -20,7 +20,7 @@ package co.rsk.net;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.db.ByteArrayWrapper;
+import co.rsk.crypto.Keccak256;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -30,15 +30,15 @@ import java.util.stream.Collectors;
  * Created by ajlopez on 5/11/2016.
  */
 public class BlockStore {
-    private Map<ByteArrayWrapper, Block> blocks = new HashMap<>();
+    private Map<Keccak256, Block> blocks = new HashMap<>();
     private Map<Long, Set<Block>> blocksbynumber = new HashMap<>();
-    private Map<ByteArrayWrapper, Set<Block>> blocksbyparent = new HashMap<>();
+    private Map<Keccak256, Set<Block>> blocksbyparent = new HashMap<>();
 
-    private final Map<ByteArrayWrapper, BlockHeader> headers = new HashMap<>();
+    private final Map<Keccak256, BlockHeader> headers = new HashMap<>();
 
     public synchronized void saveBlock(Block block) {
-        ByteArrayWrapper key = block.getWrappedHash();
-        ByteArrayWrapper pkey = block.getWrappedParentHash();
+        Keccak256 key = block.getHash();
+        Keccak256 pkey = block.getParentHash();
         Long nkey = Long.valueOf(block.getNumber());
         this.blocks.put(key, block);
 
@@ -62,12 +62,12 @@ public class BlockStore {
     }
 
     public synchronized void removeBlock(Block block) {
-        if (!this.hasBlock(block.getHash().getBytes())) {
+        if (!this.hasBlock(block)) {
             return;
         }
 
-        ByteArrayWrapper key = block.getWrappedHash();
-        ByteArrayWrapper pkey = block.getWrappedParentHash();
+        Keccak256 key = block.getHash();
+        Keccak256 pkey = block.getParentHash();
         Long nkey = Long.valueOf(block.getNumber());
 
         this.blocks.remove(key);
@@ -76,14 +76,14 @@ public class BlockStore {
         removeBlockByParent(key, pkey);
     }
 
-    private void removeBlockByParent(ByteArrayWrapper key, ByteArrayWrapper pkey) {
+    private void removeBlockByParent(Keccak256 key, Keccak256 pkey) {
         Set<Block> byparent = this.blocksbyparent.get(pkey);
 
         if (byparent != null && !byparent.isEmpty()) {
             Block toremove = null;
 
             for (Block blk : byparent) {
-                if (blk.getWrappedHash().equals(key)) {
+                if (blk.getHash().equals(key)) {
                     toremove = blk;
                     break;
                 }
@@ -99,14 +99,14 @@ public class BlockStore {
         }
     }
 
-    private void removeBlockByNumber(ByteArrayWrapper key, Long nkey) {
+    private void removeBlockByNumber(Keccak256 key, Long nkey) {
         Set<Block> bynumber = this.blocksbynumber.get(nkey);
 
         if (bynumber != null && !bynumber.isEmpty()) {
             Block toremove = null;
 
             for (Block blk : bynumber) {
-                if (blk.getWrappedHash().equals(key)) {
+                if (blk.getHash().equals(key)) {
                     toremove = blk;
                     break;
                 }
@@ -122,30 +122,22 @@ public class BlockStore {
     }
 
     public synchronized Block getBlockByHash(byte[] hash) {
-        ByteArrayWrapper key = new ByteArrayWrapper(hash);
-
-        return this.blocks.get(key);
+        return this.blocks.get(new Keccak256(hash));
     }
 
     public synchronized List<Block> getBlocksByNumber(long number) {
-        Long nkey = Long.valueOf(number);
-
-        Set<Block> blockSet = this.blocksbynumber.get(nkey);
-
+        Set<Block> blockSet = this.blocksbynumber.get(Long.valueOf(number));
         if (blockSet == null) {
-            blockSet = new HashSet<>();
+            return new ArrayList<>();
         }
 
         return new ArrayList<>(blockSet);
     }
 
-    public synchronized List<Block> getBlocksByParentHash(byte[] hash) {
-        ByteArrayWrapper key = new ByteArrayWrapper(hash);
-
-        Set<Block> blockSet = this.blocksbyparent.get(key);
-
+    public synchronized List<Block> getBlocksByParentHash(Keccak256 hash) {
+        Set<Block> blockSet = this.blocksbyparent.get(hash);
         if (blockSet == null) {
-            blockSet = new HashSet<>();
+            return new ArrayList<>();
         }
 
         return new ArrayList<>(blockSet);
@@ -159,17 +151,17 @@ public class BlockStore {
      */
     public List<Block> getChildrenOf(Set<Block> blocks) {
         return blocks.stream()
-                .flatMap(b -> getBlocksByParentHash(b.getHash().getBytes()).stream())
+                .flatMap(b -> getBlocksByParentHash(b.getHash()).stream())
                 .distinct()
                 .collect(Collectors.toList());
     }
 
     public synchronized boolean hasBlock(Block block) {
-        return this.blocks.containsKey(block.getWrappedHash());
+        return this.blocks.containsKey(block.getHash());
     }
 
     public synchronized boolean hasBlock(byte[] hash) {
-        return this.blocks.containsKey(new ByteArrayWrapper(hash));
+        return this.blocks.containsKey(new Keccak256(hash));
     }
 
     public synchronized int size() {
@@ -211,11 +203,11 @@ public class BlockStore {
     /**
      * hasHeader returns true if this block store has the header of the corresponding block.
      *
-     * @param hash the block's hash.
      * @return true if the store has the header, false otherwise.
+     * @param hash
      */
-    public synchronized boolean hasHeader(@Nonnull final byte[] hash) {
-        return this.headers.containsKey(new ByteArrayWrapper(hash));
+    public synchronized boolean hasHeader(Keccak256 hash) {
+        return this.headers.containsKey(hash);
     }
 
     /**
@@ -224,9 +216,7 @@ public class BlockStore {
      * @param header the header to store.
      */
     public synchronized void saveHeader(@Nonnull final BlockHeader header) {
-        ByteArrayWrapper key = new ByteArrayWrapper(header.getHash().getBytes());
-
-        this.headers.put(key, header);
+        this.headers.put(header.getHash(), header);
     }
 
     /**
@@ -235,12 +225,10 @@ public class BlockStore {
      * @param header the header to remove.
      */
     public synchronized void removeHeader(@Nonnull final BlockHeader header) {
-        if (!this.hasHeader(header.getHash().getBytes())) {
+        if (!this.hasHeader(header.getHash())) {
             return;
         }
 
-        ByteArrayWrapper key = new ByteArrayWrapper(header.getHash().getBytes());
-
-        this.headers.remove(key);
+        this.headers.remove(header.getHash());
     }
 }

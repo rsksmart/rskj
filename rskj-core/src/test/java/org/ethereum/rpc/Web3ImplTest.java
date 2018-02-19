@@ -794,7 +794,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByHash("0x1234", false);
+        Web3.BlockResult blockResult = web3.eth_getBlockByHash("0x1234000000000000000000000000000000000000000000000000000000000000", false);
 
         Assert.assertNull(blockResult);
     }

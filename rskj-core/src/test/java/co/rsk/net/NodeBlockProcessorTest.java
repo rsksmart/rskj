@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.SyncConfiguration;
@@ -28,7 +29,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -468,7 +468,7 @@ public class NodeBlockProcessorTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final Block block = blockchain.getBestBlock();
-        final ByteArrayWrapper blockHash = block.getWrappedHash();
+        final Keccak256 blockHash = block.getHash();
 
 //        final Status status = new Status(block.getNumber(), block.getHash());
 
@@ -492,7 +492,7 @@ public class NodeBlockProcessorTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final Block block = blockchain.getBlockByNumber(1);
-        final ByteArrayWrapper blockHash = block.getWrappedHash();
+        final Keccak256 blockHash = block.getHash();
 
         store.saveBlock(block);
 //        final Status status = new Status(block.getNumber(), block.getHash());
@@ -586,7 +586,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processGetBlockMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = new BlockGenerator().getBlock(3);
-        final ByteArrayWrapper blockHash = block.getWrappedHash();
+        final Keccak256 blockHash = block.getHash();
 
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
@@ -643,7 +643,7 @@ public class NodeBlockProcessorTest {
     public void processGetBlockMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
-        final ByteArrayWrapper blockHash = block.getWrappedHash();
+        final Keccak256 blockHash = block.getHash();
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -674,7 +674,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockRequestMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = new BlockGenerator().getBlock(3);
-        final ByteArrayWrapper blockHash = block.getWrappedHash();
+        final Keccak256 blockHash = block.getHash();
 
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
@@ -737,7 +737,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockHashRequestMessageUsingEmptyStore() throws UnknownHostException {
         final Block block = new BlockGenerator().getBlock(3);
-        final ByteArrayWrapper blockHash = block.getWrappedHash();
+        final Keccak256 blockHash = block.getHash();
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
@@ -761,7 +761,7 @@ public class NodeBlockProcessorTest {
     public void processBlockHashRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
-        final ByteArrayWrapper blockHash = block.getWrappedHash();
+        final Keccak256 blockHash = block.getHash();
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();

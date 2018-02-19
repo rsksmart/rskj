@@ -25,13 +25,14 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by ajlopez on 12/08/2016.
@@ -51,13 +52,13 @@ public class FamilyUtilsTest {
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
         store.saveBlock(block1, TEST_DIFFICULTY, true);
 
-        Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, block1, 6);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block1, 6);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
         Assert.assertEquals(1, family.size());
 
-        Assert.assertTrue(family.contains(genesis.getWrappedHash()));
+        Assert.assertTrue(family.contains(genesis.getHash()));
     }
 
     @Test
@@ -68,7 +69,7 @@ public class FamilyUtilsTest {
 
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
 
-        Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, genesis, 6);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, genesis, 6);
 
         Assert.assertNotNull(family);
         Assert.assertTrue(family.isEmpty());
@@ -89,16 +90,16 @@ public class FamilyUtilsTest {
         store.saveBlock(block2, TEST_DIFFICULTY, true);
         store.saveBlock(block3, TEST_DIFFICULTY, true);
 
-        Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, block3, 2);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
         Assert.assertEquals(2, family.size());
 
-        Assert.assertFalse(family.contains(genesis.getWrappedHash()));
-        Assert.assertFalse(family.contains(block3.getWrappedHash()));
-        Assert.assertTrue(family.contains(block1.getWrappedHash()));
-        Assert.assertTrue(family.contains(block2.getWrappedHash()));
+        Assert.assertFalse(family.contains(genesis.getHash()));
+        Assert.assertFalse(family.contains(block3.getHash()));
+        Assert.assertTrue(family.contains(block1.getHash()));
+        Assert.assertTrue(family.contains(block2.getHash()));
     }
 
     @Test
@@ -128,22 +129,22 @@ public class FamilyUtilsTest {
         store.saveBlock(uncle31, TEST_DIFFICULTY, false);
         store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
-        Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, block3, 2);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
         Assert.assertEquals(4, family.size());
 
-        Assert.assertFalse(family.contains(genesis.getWrappedHash()));
-        Assert.assertTrue(family.contains(block1.getWrappedHash()));
-        Assert.assertFalse(family.contains(uncle11.getWrappedHash()));
-        Assert.assertFalse(family.contains(uncle12.getWrappedHash()));
-        Assert.assertTrue(family.contains(block2.getWrappedHash()));
-        Assert.assertTrue(family.contains(uncle21.getWrappedHash()));
-        Assert.assertTrue(family.contains(uncle22.getWrappedHash()));
-        Assert.assertFalse(family.contains(block3.getWrappedHash()));
-        Assert.assertFalse(family.contains(uncle31.getWrappedHash()));
-        Assert.assertFalse(family.contains(uncle32.getWrappedHash()));
+        Assert.assertFalse(family.contains(genesis.getHash()));
+        Assert.assertTrue(family.contains(block1.getHash()));
+        Assert.assertFalse(family.contains(uncle11.getHash()));
+        Assert.assertFalse(family.contains(uncle12.getHash()));
+        Assert.assertTrue(family.contains(block2.getHash()));
+        Assert.assertTrue(family.contains(uncle21.getHash()));
+        Assert.assertTrue(family.contains(uncle22.getHash()));
+        Assert.assertFalse(family.contains(block3.getHash()));
+        Assert.assertFalse(family.contains(uncle31.getHash()));
+        Assert.assertFalse(family.contains(uncle32.getHash()));
 
         family = FamilyUtils.getFamily(store, block3, 3);
 
@@ -151,16 +152,16 @@ public class FamilyUtilsTest {
         Assert.assertFalse(family.isEmpty());
         Assert.assertEquals(7, family.size());
 
-        Assert.assertTrue(family.contains(genesis.getWrappedHash()));
-        Assert.assertTrue(family.contains(block1.getWrappedHash()));
-        Assert.assertTrue(family.contains(uncle11.getWrappedHash()));
-        Assert.assertTrue(family.contains(uncle12.getWrappedHash()));
-        Assert.assertTrue(family.contains(block2.getWrappedHash()));
-        Assert.assertTrue(family.contains(uncle21.getWrappedHash()));
-        Assert.assertTrue(family.contains(uncle22.getWrappedHash()));
-        Assert.assertFalse(family.contains(block3.getWrappedHash()));
-        Assert.assertFalse(family.contains(uncle31.getWrappedHash()));
-        Assert.assertFalse(family.contains(uncle32.getWrappedHash()));
+        Assert.assertTrue(family.contains(genesis.getHash()));
+        Assert.assertTrue(family.contains(block1.getHash()));
+        Assert.assertTrue(family.contains(uncle11.getHash()));
+        Assert.assertTrue(family.contains(uncle12.getHash()));
+        Assert.assertTrue(family.contains(block2.getHash()));
+        Assert.assertTrue(family.contains(uncle21.getHash()));
+        Assert.assertTrue(family.contains(uncle22.getHash()));
+        Assert.assertFalse(family.contains(block3.getHash()));
+        Assert.assertFalse(family.contains(uncle31.getHash()));
+        Assert.assertFalse(family.contains(uncle32.getHash()));
     }
 
     @Test
@@ -233,22 +234,22 @@ public class FamilyUtilsTest {
         store.saveBlock(uncle31, TEST_DIFFICULTY, false);
         store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
-        Set<ByteArrayWrapper> family = FamilyUtils.getUncles(store, block3, 3);
+        Set<Keccak256> family = FamilyUtils.getUncles(store, block3, 3);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
         Assert.assertEquals(4, family.size());
 
-        Assert.assertFalse(family.contains(genesis.getWrappedHash()));
-        Assert.assertFalse(family.contains(block1.getWrappedHash()));
-        Assert.assertTrue(family.contains(uncle11.getWrappedHash()));
-        Assert.assertTrue(family.contains(uncle12.getWrappedHash()));
-        Assert.assertFalse(family.contains(block2.getWrappedHash()));
-        Assert.assertTrue(family.contains(uncle21.getWrappedHash()));
-        Assert.assertTrue(family.contains(uncle22.getWrappedHash()));
-        Assert.assertFalse(family.contains(block3.getWrappedHash()));
-        Assert.assertFalse(family.contains(uncle31.getWrappedHash()));
-        Assert.assertFalse(family.contains(uncle32.getWrappedHash()));
+        Assert.assertFalse(family.contains(genesis.getHash()));
+        Assert.assertFalse(family.contains(block1.getHash()));
+        Assert.assertTrue(family.contains(uncle11.getHash()));
+        Assert.assertTrue(family.contains(uncle12.getHash()));
+        Assert.assertFalse(family.contains(block2.getHash()));
+        Assert.assertTrue(family.contains(uncle21.getHash()));
+        Assert.assertTrue(family.contains(uncle22.getHash()));
+        Assert.assertFalse(family.contains(block3.getHash()));
+        Assert.assertFalse(family.contains(uncle31.getHash()));
+        Assert.assertFalse(family.contains(uncle32.getHash()));
     }
 
     private static BlockStore createBlockStore() {

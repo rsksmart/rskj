@@ -28,7 +28,6 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -260,24 +259,11 @@ public class Block {
         return this.header.getHash();
     }
 
-    public ByteArrayWrapper getWrappedHash() {
-        Keccak256 hash = getHash();
-        byte[] rawHash = null;
-        if (hash != null) {
-            rawHash = hash.getBytes();
-        }
-        return new ByteArrayWrapper(rawHash);
-    }
-
     public Keccak256 getParentHash() {
         if (!parsed) {
             parseRLP();
         }
         return this.header.getParentHash();
-    }
-
-    public ByteArrayWrapper getWrappedParentHash() {
-        return new ByteArrayWrapper(getParentHash().getBytes());
     }
 
     public byte[] getUnclesHash() {

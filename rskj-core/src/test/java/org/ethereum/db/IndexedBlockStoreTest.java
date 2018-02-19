@@ -21,6 +21,7 @@ package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
 import org.ethereum.datasource.HashMapDB;
@@ -47,7 +48,6 @@ import java.util.*;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.*;
-import static org.ethereum.util.ByteUtil.wrap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -764,55 +764,55 @@ public class IndexedBlockStoreTest {
             }
 
             // calc all TDs
-            Map<ByteArrayWrapper, BlockDifficulty> tDiffs = new HashMap<>();
+            Map<Keccak256, BlockDifficulty> tDiffs = new HashMap<>();
             td = Genesis.getInstance(config).getCumulativeDifficulty();
             for (Block block : bestLine){
                 td = td.add(block.getCumulativeDifficulty());
-                tDiffs.put(wrap(block.getHash().getBytes()), td);
+                tDiffs.put(block.getHash(), td);
             }
 
-            Map<ByteArrayWrapper, BlockDifficulty> tForkDiffs = new HashMap<>();
+            Map<Keccak256, BlockDifficulty> tForkDiffs = new HashMap<>();
             Block block = forkLine.get(0);
-            td = tDiffs.get(wrap(block.getParentHash().getBytes()));
+            td = tDiffs.get(block.getParentHash());
             for (Block currBlock : forkLine){
                 td = td.add(currBlock.getCumulativeDifficulty());
-                tForkDiffs.put(wrap(currBlock.getHash().getBytes()), td);
+                tForkDiffs.put(currBlock.getHash(), td);
             }
 
             // Assert tds on bestLine
-            for ( ByteArrayWrapper hash :  tDiffs.keySet()) {
+            for ( Keccak256 hash :  tDiffs.keySet()) {
                 BlockDifficulty currTD = tDiffs.get(hash);
-                BlockDifficulty checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash.getData());
+                BlockDifficulty checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash.getBytes());
                 assertEquals(checkTd, currTD);
             }
 
             // Assert tds on forkLine
-            for ( ByteArrayWrapper hash :  tForkDiffs.keySet()) {
+            for ( Keccak256 hash :  tForkDiffs.keySet()) {
                 BlockDifficulty currTD = tForkDiffs.get(hash);
-                BlockDifficulty checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash.getData());
+                BlockDifficulty checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash.getBytes());
                 assertEquals(checkTd, currTD);
             }
 
             indexedBlockStore.flush();
 
             // Assert tds on bestLine
-            for ( ByteArrayWrapper hash :  tDiffs.keySet()) {
+            for ( Keccak256 hash :  tDiffs.keySet()) {
                 BlockDifficulty currTD = tDiffs.get(hash);
-                BlockDifficulty checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash.getData());
+                BlockDifficulty checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash.getBytes());
                 assertEquals(checkTd, currTD);
             }
 
             // check total difficulty
             Block bestBlock = bestLine.get(bestLine.size() - 1);
             BlockDifficulty totalDifficulty  = indexedBlockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
-            BlockDifficulty totalDifficulty_ = tDiffs.get(wrap(bestBlock.getHash().getBytes()));
+            BlockDifficulty totalDifficulty_ = tDiffs.get(bestBlock.getHash());
 
             assertEquals(totalDifficulty_, totalDifficulty);
 
             // Assert tds on forkLine
-            for ( ByteArrayWrapper hash :  tForkDiffs.keySet()) {
+            for ( Keccak256 hash :  tForkDiffs.keySet()) {
                 BlockDifficulty currTD = tForkDiffs.get(hash);
-                BlockDifficulty checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash.getData());
+                BlockDifficulty checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash.getBytes());
                 assertEquals(checkTd, currTD);
             }
 
