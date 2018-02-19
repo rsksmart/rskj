@@ -45,7 +45,7 @@ public class TransactionResultDTO {
     public String input;
 
     public TransactionResultDTO (Block b, Integer index, Transaction tx) {
-        hash =  TypeConverter.toJsonHex(tx.getHash());
+        hash = tx.getHash().toJsonString();
 
         if (Arrays.equals(tx.getNonce(), ByteUtil.EMPTY_BYTE_ARRAY)) {
             nonce = "0";

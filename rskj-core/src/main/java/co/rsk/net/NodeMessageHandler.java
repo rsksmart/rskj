@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
@@ -32,7 +33,6 @@ import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +69,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private TransactionNodeInformation transactionNodeInformation;
 
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
-    private Set<ByteArrayWrapper> receivedMessages = Collections.synchronizedSet(new HashSet<ByteArrayWrapper>());
+    private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<Keccak256>());
     private long cleanMsgTimestamp = 0;
 
     private volatile boolean stopped;
@@ -163,7 +163,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void tryAddMessage(MessageChannel sender, Message message) {
-        ByteArrayWrapper encodedMessage = new ByteArrayWrapper(HashUtil.keccak256(message.getEncoded()));
+        Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         if (!receivedMessages.contains(encodedMessage)) {
             if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
                 if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
@@ -437,9 +437,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void relayTransactions(@Nonnull MessageChannel sender, List<Transaction> acceptedTxs) {
         for (Transaction tx : acceptedTxs) {
-            final ByteArrayWrapper txHash = new ByteArrayWrapper(tx.getHash());
+            Keccak256 txHash = tx.getHash();
             transactionNodeInformation.addTransactionToNode(txHash, sender.getPeerNodeID());
-            final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(tx.getHash()));
+            final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(txHash));
             final Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);
 
             newNodes.forEach(nodeID -> transactionNodeInformation.addTransactionToNode(txHash, nodeID));

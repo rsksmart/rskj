@@ -21,7 +21,6 @@ package co.rsk.net.messages;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,7 +63,7 @@ public class TransactionsMessage extends Message {
 
         if(size > 0) {
             sb.append(": ");
-            this.getTransactions().forEach(tx -> sb.append(Hex.toHexString(tx.getHash())).append(", "));
+            this.getTransactions().forEach(tx -> sb.append(tx.getHash().toHexString()).append(", "));
         }
 
         return sb.toString();

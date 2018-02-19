@@ -50,7 +50,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -762,7 +761,7 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(objects.getParent()));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(objects.getBlock()));
 
-        Assert.assertNotNull(blockChain.getTransactionInfo(objects.getTransaction().getHash()));
+        Assert.assertNotNull(blockChain.getTransactionInfo(objects.getTransaction().getHash().getBytes()));
     }
 
     @Test

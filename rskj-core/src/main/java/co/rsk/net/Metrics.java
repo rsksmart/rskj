@@ -66,7 +66,7 @@ public class Metrics {
             }
 
             String nonce = BIUtil.toBI(tx.getNonce()).toString();
-            String pretty = String.format("H:%s - N:%s", HashUtil.shortHash(tx.getHash()), nonce);
+            String pretty = String.format("H:%s - N:%s", HashUtil.shortHash(tx.getHash().getBytes()), nonce);
             res.append(pretty);
         }
         res.append(']');
@@ -99,7 +99,7 @@ public class Metrics {
     public static void broadcastTransaction(@Nonnull final Transaction tx) {
         String event = String.format("event: %s hash: %s nonce: %s",
                 "broadcastTransaction",
-                HashUtil.shortHash(tx.getHash()),
+                HashUtil.shortHash(tx.getHash().getBytes()),
                 BIUtil.toBI(tx.getNonce()).toString()
         );
         logEvent(event);
@@ -109,7 +109,7 @@ public class Metrics {
     public static void newTransaction(@Nonnull final Transaction tx, @Nonnull final NodeID sender) {
         String event = String.format("event: %s hash: %s nonce: %s sender: %s",
                 "newTransaction",
-                HashUtil.shortHash(tx.getHash()),
+                HashUtil.shortHash(tx.getHash().getBytes()),
                 BIUtil.toBI(tx.getNonce()).toString(),
                 HashUtil.shortHash(sender.getID())
         );

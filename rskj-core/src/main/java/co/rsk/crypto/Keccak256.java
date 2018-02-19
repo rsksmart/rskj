@@ -71,9 +71,12 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
         return Ints.fromBytes(bytes[28], bytes[29], bytes[30], bytes[31]);
     }
 
+    /**
+     * @return a DEBUG representation of the hash, mainly used for logging.
+     */
     @Override
     public String toString() {
-        return Utils.HEX.encode(bytes);
+        return toHexString();
     }
 
     /**

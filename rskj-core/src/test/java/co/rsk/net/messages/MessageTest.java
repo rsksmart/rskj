@@ -322,7 +322,7 @@ public class MessageTest {
             Transaction tx1 = txs.get(k);
             Transaction tx2 = newmessage.getTransactions().get(k);
 
-            Assert.assertArrayEquals(tx1.getHash(), tx2.getHash());
+            Assert.assertEquals(tx1.getHash(), tx2.getHash());
         }
     }
 
@@ -538,8 +538,7 @@ public class MessageTest {
         Assert.assertNotNull(newmessage.getTransactions());
         Assert.assertEquals(transactions.size(), newmessage.getTransactions().size());
 
-        for (int k = 0; k < transactions.size(); k++)
-            Assert.assertArrayEquals(transactions.get(k).getHash(), newmessage.getTransactions().get(k).getHash());
+        Assert.assertEquals(transactions, newmessage.getTransactions());
 
         Assert.assertNotNull(newmessage.getUncles());
         Assert.assertEquals(uncles.size(), newmessage.getUncles().size());

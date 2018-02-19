@@ -197,7 +197,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
 
         eth.submitTransaction(tx);
 
-        return TypeConverter.toJsonHex(tx.getHash());
+        return tx.getHash().toJsonString();
     }
 
     private String convertFromJsonHexToHex(String x) throws Exception {

@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -106,7 +107,7 @@ public class TransactionTest {
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash(), tx.getSignature().toBase64());
+        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature().toBase64());
 
         System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
         System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
@@ -147,7 +148,7 @@ public class TransactionTest {
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash(), tx.getSignature().toBase64());
+        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature().toBase64());
 
         System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
         System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
@@ -162,7 +163,7 @@ public class TransactionTest {
     // Testdata from: https://github.com/ethereum/tests/blob/master/txtest.json
     String RLP_ENCODED_RAW_TX = "e88085e8d4a510008227109413978aee95f38490e9769c39b2773ed763d9cd5f872386f26fc1000080";
     String RLP_ENCODED_UNSIGNED_TX = "eb8085e8d4a510008227109413978aee95f38490e9769c39b2773ed763d9cd5f872386f26fc1000080808080";
-    String HASH_TX = "328ea6d24659dec48adea1aced9a136e5ebdf40258db30d1b1d97ed2b74be34e";
+    Keccak256 HASH_TX = new Keccak256("328ea6d24659dec48adea1aced9a136e5ebdf40258db30d1b1d97ed2b74be34e");
     String RLP_ENCODED_SIGNED_TX = "f86b8085e8d4a510008227109413978aee95f38490e9769c39b2773ed763d9cd5f872386f26fc10000801ba0eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4a014a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1";
     String KEY = "c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4";
     byte[] testNonce = Hex.decode("");
@@ -178,7 +179,7 @@ public class TransactionTest {
     public void testTransactionFromSignedRLP() throws Exception {
         Transaction txSigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_SIGNED_TX));
 
-        assertEquals(HASH_TX, Hex.toHexString(txSigned.getHash()));
+        assertEquals(HASH_TX, txSigned.getHash());
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txSigned.getEncoded()));
 
         assertEquals(BigInteger.ZERO, new BigInteger(1, txSigned.getNonce()));
@@ -197,7 +198,7 @@ public class TransactionTest {
     public void testTransactionFromUnsignedRLP() throws Exception {
         Transaction txUnsigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_UNSIGNED_TX));
 
-        assertEquals(HASH_TX, Hex.toHexString(txUnsigned.getHash()));
+        assertEquals(HASH_TX, txUnsigned.getHash());
         assertEquals(RLP_ENCODED_UNSIGNED_TX, Hex.toHexString(txUnsigned.getEncoded()));
         txUnsigned.sign(Hex.decode(KEY));
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txUnsigned.getEncoded()));
@@ -227,7 +228,7 @@ public class TransactionTest {
         assertNull(txNew.getSignature());
 
         assertEquals(RLP_ENCODED_RAW_TX, Hex.toHexString(txNew.getEncodedRaw()));
-        assertEquals(HASH_TX, Hex.toHexString(txNew.getHash()));
+        assertEquals(HASH_TX, txNew.getHash());
         assertEquals(RLP_ENCODED_UNSIGNED_TX, Hex.toHexString(txNew.getEncoded()));
         txNew.sign(Hex.decode(KEY));
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txNew.getEncoded()));
@@ -244,7 +245,7 @@ public class TransactionTest {
 
         String RLP_TX_UNSIGNED = "eb8085e8d4a510008227109413978aee95f38490e9769c39b2773ed763d9cd5f872386f26fc1000080808080";
         String RLP_TX_SIGNED = "f86b8085e8d4a510008227109413978aee95f38490e9769c39b2773ed763d9cd5f872386f26fc10000801ba0eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4a014a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1";
-        String HASH_TX_UNSIGNED = "328ea6d24659dec48adea1aced9a136e5ebdf40258db30d1b1d97ed2b74be34e";
+        Keccak256 HASH_TX_UNSIGNED = new Keccak256("328ea6d24659dec48adea1aced9a136e5ebdf40258db30d1b1d97ed2b74be34e");
 
         byte[] nonce = BigIntegers.asUnsignedByteArray(BigInteger.ZERO);
         byte[] gasPrice = Hex.decode("e8d4a51000");     // 1000000000000
@@ -258,13 +259,13 @@ public class TransactionTest {
         // Testing unsigned
         String encodedUnsigned = Hex.toHexString(tx.getEncoded());
         assertEquals(RLP_TX_UNSIGNED, encodedUnsigned);
-        assertEquals(HASH_TX_UNSIGNED, Hex.toHexString(tx.getHash()));
+        assertEquals(HASH_TX_UNSIGNED, tx.getHash());
 
         // Testing signed
         tx.sign(privKeyBytes);
         String encodedSigned = Hex.toHexString(tx.getEncoded());
         assertEquals(RLP_TX_SIGNED, encodedSigned);
-        assertEquals(HASH_TX_UNSIGNED, Hex.toHexString(tx.getHash()));
+        assertEquals(HASH_TX_UNSIGNED, tx.getHash());
     }
 
     @Test
@@ -300,8 +301,8 @@ public class TransactionTest {
 
 //        Transaction tx = new Transaction(Hex.decode(rlp));
 
-        System.out.println("tx1.hash: " + Hex.toHexString(tx1.getHash()));
-        System.out.println("tx2.hash: " + Hex.toHexString(tx2.getHash()));
+        System.out.println("tx1.hash: " + tx1.getHash());
+        System.out.println("tx2.hash: " + tx2.getHash());
         System.out.println();
         System.out.println("plainTx1: " + plainTx1);
         System.out.println("plainTx2: " + plainTx2);

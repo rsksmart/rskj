@@ -36,7 +36,7 @@ public class PendingTransactionFilter extends Filter {
 
         @Override
         public String getJsonEventObject() {
-            return toJsonHex(tx.getHash());
+            return tx.getHash().toJsonString();
         }
     }
 

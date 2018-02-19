@@ -62,7 +62,7 @@ public class TxPendingValidatorTest {
     }
 
     private Transaction createTransaction(long value, long gaslimit, long gasprice, long nonce, long data, long sender) {
-        return Tx.create(new RskSystemProperties(), value, gaslimit, gasprice, nonce, data, sender, hashes);
+        return Tx.create(new RskSystemProperties(), value, gaslimit, gasprice, nonce, data, sender);
     }
 
 }

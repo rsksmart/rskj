@@ -108,7 +108,7 @@ public class TxBuilder {
         //Adds created transaction to the local node's memory pool
         ethereum.submitTransaction(tx);
 
-        logger.info("Added pending tx: " + tx.getHash());
+        logger.info("Added pending tx={}", tx.getHash());
 
         try {
             SecureRandom random = new SecureRandom();

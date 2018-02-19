@@ -58,7 +58,7 @@ public class TransactionExecutionSummary {
     }
 
     public byte[] getTransactionHash() {
-        return getTransaction().getHash() ;
+        return getTransaction().getHash().getBytes();
     }
 
     private Coin calcCost(BigInteger gas) {

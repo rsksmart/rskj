@@ -24,10 +24,11 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.rpc.TypeConverter;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -139,7 +140,7 @@ public class TxHandlerImpl implements TxHandler {
                 knownTxsLock.lock();
                 for (TransactionReceipt txReceipt : receipts) {
                     Transaction tx = txReceipt.getTransaction();
-                    String txHash = TypeConverter.toJsonHex(tx.getHash());
+                    String txHash = tx.getHash().toJsonString();
 
                     if (!knownTxs.containsKey(txHash)) {
                         continue;

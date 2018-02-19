@@ -138,7 +138,7 @@ public class TxValidatorTest {
 
         List<Transaction> txs = new LinkedList<>();
         //Bridge Tx
-        txs.add(createBridgeTx(config, 1, 0, 1, 0, 0, 6, hashes));
+        txs.add(createBridgeTx(config, 1, 0, 1, 0, 0, 6));
 
         Map<String, TxTimestamp> times;
         Map<RskAddress, TxsPerAccount> txmap;
@@ -159,7 +159,7 @@ public class TxValidatorTest {
     }
 
     private Transaction createTransaction(long value, long gaslimit, long gasprice, long nonce, long data, long sender) {
-        return Tx.create(config, value, gaslimit, gasprice, nonce, data, sender, hashes);
+        return Tx.create(config, value, gaslimit, gasprice, nonce, data, sender);
     }
 
 
@@ -170,8 +170,15 @@ public class TxValidatorTest {
         Mockito.when(repository.getAccountState(tx.getSender())).thenReturn(as);
     }
 
-    public static Transaction createBridgeTx(RskSystemProperties config, long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {
-        Transaction transaction = Tx.create(config, value, gaslimit, gasprice, nonce, data, sender, hashes);
+    public static Transaction createBridgeTx(
+            RskSystemProperties config,
+            long value,
+            long gaslimit,
+            long gasprice,
+            long nonce,
+            long data,
+            long sender) {
+        Transaction transaction = Tx.create(config, value, gaslimit, gasprice, nonce, data, sender);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
         Mockito.when(transaction.getSignature()).thenReturn(new ECKey.ECDSASignature(BigInteger.ONE, BigInteger.ONE));
         Mockito.when(transaction.transactionCost(eq(config), Mockito.any())).thenReturn(new Long(0));

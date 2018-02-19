@@ -23,12 +23,10 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
-import org.ethereum.rpc.TypeConverter;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
 import java.util.*;
 
 public class TxHandlerTest {
@@ -41,8 +39,8 @@ public class TxHandlerTest {
         final long threshold = 300001;
         Random random = new Random(0);
 
-        Transaction tx1 = Tx.create(config, 0, 0, 0, 0, 0, 0, random);
-        Transaction tx2 = Tx.create(config, 0, 0, 0, 1, 0, 0, random);
+        Transaction tx1 = Tx.create(config, 0, 0, 0, 0, 0, 0);
+        Transaction tx2 = Tx.create(config, 0, 0, 0, 1, 0, 0);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
         Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();
@@ -71,7 +69,7 @@ public class TxHandlerTest {
         final long threshold = 300001;
         Random random = new Random(0);
 
-        Transaction tx1 = Tx.create(config, 0, 0, 0, 0, 0, 0, random);
+        Transaction tx1 = Tx.create(config, 0, 0, 0, 0, 0, 0);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
         Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();
@@ -97,15 +95,15 @@ public class TxHandlerTest {
         long time = System.currentTimeMillis();
         Random random = new Random(0);
 
-        Transaction tx1 = Tx.create(config, 0, 0, 0, 0, 0, 0, random);
-        Transaction tx2 = Tx.create(config, 0, 0, 0, 1, 0, 0, random);
+        Transaction tx1 = Tx.create(config, 0, 0, 0, 0, 0, 0);
+        Transaction tx2 = Tx.create(config, 0, 0, 0, 1, 0, 0);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
         Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();
 
         random = new Random(0);
-        String hash1 = TypeConverter.toJsonHex(BigInteger.valueOf(random.nextLong()).toByteArray());
-        String hash2 = TypeConverter.toJsonHex(BigInteger.valueOf(random.nextLong()).toByteArray());
+        String hash1 = tx1.getHash().toJsonString();
+        String hash2 = tx2.getHash().toJsonString();
 
         knownTxs.put(hash1, new TxTimestamp(tx1, time));
         knownTxs.put(hash2, new TxTimestamp(tx1, time));

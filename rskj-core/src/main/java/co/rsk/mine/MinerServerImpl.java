@@ -710,7 +710,7 @@ public class MinerServerImpl implements MinerServer {
     private void removePendingTransactions(List<Transaction> transactions) {
         if (transactions != null) {
             for (Transaction tx : transactions) {
-                logger.debug("Removing transaction {}", Hex.toHexString(tx.getHash()));
+                logger.debug("Removing transaction {}", tx.getHash());
             }
         }
 

@@ -703,8 +703,7 @@ public class BridgeSupport {
 
         // Add the btc transaction to the 'awaiting signatures' list
         if (txsWithEnoughConfirmations.size() > 0) {
-            Keccak256 rskTxHash = new Keccak256(rskTx.getHash());
-            txsWaitingForSignatures.put(rskTxHash, txsWithEnoughConfirmations.iterator().next());
+            txsWaitingForSignatures.put(rskTx.getHash(), txsWithEnoughConfirmations.iterator().next());
         }
     }
 

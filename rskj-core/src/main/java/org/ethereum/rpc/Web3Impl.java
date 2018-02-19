@@ -22,6 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.SnapshotManager;
+import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
@@ -610,7 +611,7 @@ public class Web3Impl implements Web3 {
 
             eth.submitTransaction(tx);
 
-            return s = TypeConverter.toJsonHex(tx.getHash());
+            return s = tx.getHash().toJsonString();
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_sendRawTransaction(" + rawData + "): " + s);
@@ -674,7 +675,7 @@ public class Web3Impl implements Web3 {
             }
         } else {
             for (Transaction tx : b.getTransactionsList()) {
-                txes.add(toJsonHex(tx.getHash()));
+                txes.add(tx.getHash().toJsonString());
             }
         }
 
@@ -743,21 +744,16 @@ public class Web3Impl implements Web3 {
     public TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception {
         TransactionResultDTO s = null;
         try {
-            byte[] txHash = stringHexToByteArray(transactionHash);
+            Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
             Block block = null;
 
-            TransactionInfo txInfo = blockchain.getTransactionInfo(txHash);
+            TransactionInfo txInfo = blockchain.getTransactionInfo(txHash.getBytes());
 
             if (txInfo == null) {
-                if (transactionHash != null && transactionHash.startsWith("0x")) {
-                    transactionHash = transactionHash.substring(2);
-                }
-
                 List<Transaction> txs = this.getTransactionsByJsonBlockId("pending");
 
                 for (Transaction tx : txs) {
-                    if (Hex.toHexString(tx.getHash()).equals(transactionHash))
-                    {
+                    if (tx.getHash().equals(txHash)) {
                         return s = new TransactionResultDTO(null, null, tx);
                     }
                 }
@@ -777,9 +773,7 @@ public class Web3Impl implements Web3 {
 
             return s = new TransactionResultDTO(block, txInfo.getIndex(), txInfo.getReceipt().getTransaction());
         } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("eth_getTransactionByHash(" + transactionHash + "): " + s);
-            }
+            logger.debug("eth_getTransactionByHash({}): {}", transactionHash, s);
         }
     }
 
