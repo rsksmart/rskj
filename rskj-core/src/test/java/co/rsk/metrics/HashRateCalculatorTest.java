@@ -20,6 +20,7 @@ package co.rsk.metrics;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.util.RskCustomCache;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
@@ -39,8 +40,8 @@ import java.time.Duration;
 public class HashRateCalculatorTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
-    private final byte[] FAKE_GENERIC_HASH = {12,31,43,12};
-    private final byte[] OHTER_FAKE_GENERIC_HASH = {14,34,44,14};
+    private final byte[] FAKE_GENERIC_HASH = TestUtils.randomBytes(32);
+    private final byte[] OHTER_FAKE_GENERIC_HASH = TestUtils.randomBytes(32)        ;
     private final RskAddress FAKE_COINBASE = TestUtils.randomAddress();
     private final RskAddress NOT_MY_COINBASE = TestUtils.randomAddress();
 
@@ -57,13 +58,13 @@ public class HashRateCalculatorTest {
         blockHeader = Mockito.mock(BlockHeader.class);
 
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
-        Mockito.when(block.getHash()).thenReturn(FAKE_GENERIC_HASH);
-        Mockito.when(blockHeader.getParentHash()).thenReturn(FAKE_GENERIC_HASH)
-                .thenReturn(OHTER_FAKE_GENERIC_HASH)
-                .thenReturn(FAKE_GENERIC_HASH)
+        Mockito.when(block.getHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH));
+        Mockito.when(blockHeader.getParentHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH))
+                .thenReturn(new Keccak256(OHTER_FAKE_GENERIC_HASH))
+                .thenReturn(new Keccak256(FAKE_GENERIC_HASH))
                 .thenReturn(null);
 
-        Mockito.when(blockHeader.getHash()).thenReturn(FAKE_GENERIC_HASH);
+        Mockito.when(blockHeader.getHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH));
 
         Mockito.when(blockStore.getBlockByHash(Mockito.any())).thenReturn(block)
                 .thenReturn(block).thenReturn(block).thenReturn(null);

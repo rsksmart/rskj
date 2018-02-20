@@ -194,7 +194,7 @@ public class ChannelManagerImpl implements ChannelManager {
         Metrics.broadcastBlock(block);
 
         final Set<NodeID> res = new HashSet<>();
-        final BlockIdentifier bi = new BlockIdentifier(block.getHash(), block.getNumber());
+        final BlockIdentifier bi = new BlockIdentifier(block.getHash().getBytes(), block.getNumber());
         final EthMessage newBlock = new RskMessage(config, new BlockMessage(block));
         final EthMessage newBlockHashes = new RskMessage(config, new NewBlockHashesMessage(Arrays.asList(bi)));
         synchronized (activePeers) {

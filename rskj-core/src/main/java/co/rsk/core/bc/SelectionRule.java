@@ -44,7 +44,7 @@ public class SelectionRule {
         // As a last resort, choose the block with the lower hash. We ask that
         // the fees are at least bigger than the half of current block.
         return currentBlock.getHeader().getPaidFees().compareTo(blockFeesCriteria) < 0 &&
-                isThisBlockHashSmaller(block.getHash(), currentBlock.getHash());
+                isThisBlockHashSmaller(block.getHash().getBytes(), currentBlock.getHash().getBytes());
     }
     
     public static boolean isBrokenSelectionRule(
@@ -58,7 +58,7 @@ public class SelectionRule {
             }
             Coin blockFeesCriteria = sibling.getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
             if (processingBlockHeader.getPaidFees().compareTo(blockFeesCriteria) < 0 &&
-                    isThisBlockHashSmaller(sibling.getHash(), processingBlockHeader.getHash())) {
+                    isThisBlockHashSmaller(sibling.getHash(), processingBlockHeader.getHash().getBytes())) {
                 return true;
             }
         }

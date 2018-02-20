@@ -19,9 +19,10 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
@@ -29,7 +30,6 @@ import co.rsk.trie.TrieImpl;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -96,7 +96,7 @@ public class Block {
     public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
 
         this(
-                header.getParentHash(),
+                header.getParentHash().getBytes(),
                 header.getUnclesHash(),
                 header.getCoinbase().getBytes(),
                 header.getLogsBloom(),
@@ -253,7 +253,7 @@ public class Block {
         return this.header;
     }
 
-    public byte[] getHash() {
+    public Keccak256 getHash() {
         if (!parsed) {
             parseRLP();
         }
@@ -261,10 +261,15 @@ public class Block {
     }
 
     public ByteArrayWrapper getWrappedHash() {
-        return new ByteArrayWrapper(getHash());
+        Keccak256 hash = getHash();
+        byte[] rawHash = null;
+        if (hash != null) {
+            rawHash = hash.getBytes();
+        }
+        return new ByteArrayWrapper(rawHash);
     }
 
-    public byte[] getParentHash() {
+    public Keccak256 getParentHash() {
         if (!parsed) {
             parseRLP();
         }
@@ -272,7 +277,7 @@ public class Block {
     }
 
     public ByteArrayWrapper getWrappedParentHash() {
-        return new ByteArrayWrapper(getParentHash());
+        return new ByteArrayWrapper(getParentHash().getBytes());
     }
 
     public byte[] getUnclesHash() {
@@ -437,7 +442,7 @@ public class Block {
         toStringBuff.setLength(0);
         toStringBuff.append(Hex.toHexString(this.getEncoded())).append("\n");
         toStringBuff.append("BlockData [ ");
-        toStringBuff.append("hash=").append(ByteUtil.toHexString(this.getHash())).append("\n");
+        toStringBuff.append("hash=").append(this.getHash()).append("\n");
         toStringBuff.append(header.toString());
 
         if (!getUncleList().isEmpty()) {
@@ -472,7 +477,7 @@ public class Block {
 
         toStringBuff.setLength(0);
         toStringBuff.append("BlockData [");
-        toStringBuff.append("hash=").append(ByteUtil.toHexString(this.getHash()));
+        toStringBuff.append("hash=").append(this.getHash());
         toStringBuff.append(header.toFlatString());
 
         for (Transaction tx : getTransactionsList()) {
@@ -528,7 +533,7 @@ public class Block {
     private void checkExpectedRoot(byte[] expectedRoot, byte[] calculatedRoot) {
         if (!Arrays.areEqual(expectedRoot, calculatedRoot)) {
             logger.error("Transactions trie root validation failed for block #{}", this.header.getNumber());
-            panicProcessor.panic("txroot", String.format("Transactions trie root validation failed for block %d %s", this.header.getNumber(), Hex.toHexString(this.header.getHash())));
+            panicProcessor.panic("txroot", String.format("Transactions trie root validation failed for block %d %s", this.header.getNumber(), this.header.getHash()));
         }
     }
 
@@ -539,7 +544,7 @@ public class Block {
      * @return - true if this block is parent of param block
      */
     public boolean isParentOf(Block block) {
-        return Arrays.areEqual(this.getHash(), block.getParentHash());
+        return this.getHash().equals(block.getParentHash());
     }
 
     public boolean isGenesis() {
@@ -551,11 +556,11 @@ public class Block {
     }
 
     public boolean isEqual(Block block) {
-        return Arrays.areEqual(this.getHash(), block.getHash());
+        return this.getHash().equals(block.getHash());
     }
 
     public boolean fastEquals(Block block) {
-        return block != null && ByteUtil.fastEquals(this.getHash(), block.getHash());
+        return block != null && this.getHash().equals(block.getHash());
     }
 
     private byte[] getTransactionsEncoded() {
@@ -670,11 +675,11 @@ public class Block {
     }
 
     public String getHashJsonString() {
-        return TypeConverter.toJsonHex(getHash());
+        return TypeConverter.toJsonHex(getHash().getBytes());
     }
 
     public String getParentHashJsonString() {
-        return TypeConverter.toJsonHex(getParentHash());
+        return getParentHash().toJsonString();
     }
 
     public byte[] getBitcoinMergedMiningHeader() {

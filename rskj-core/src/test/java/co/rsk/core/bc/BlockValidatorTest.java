@@ -650,7 +650,7 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder().minGasPrice(BigInteger.TEN).transactions(txs)
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
+        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addTxsMinGasPriceRule()
@@ -674,7 +674,7 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder().minGasPrice(BigInteger.TEN)
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
+        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addPrevMinGasPriceRule()
@@ -703,7 +703,7 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder().transactions(txs).minGasPrice(BigInteger.valueOf(11L))
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
+        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addPrevMinGasPriceRule()

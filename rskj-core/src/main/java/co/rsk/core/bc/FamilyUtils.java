@@ -43,7 +43,7 @@ public class FamilyUtils {
      * @return set of ancestors block hashes
      */
     public static Set<ByteArrayWrapper> getAncestors(BlockStore blockStore, Block block, int limitNum) {
-        return getAncestors(blockStore, block.getNumber(), block.getParentHash(), limitNum);
+        return getAncestors(blockStore, block.getNumber(), block.getParentHash().getBytes(), limitNum);
     }
 
     public static Set<ByteArrayWrapper> getAncestors(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
@@ -58,7 +58,7 @@ public class FamilyUtils {
 
         while(it != null && it.getNumber() >= limit) {
             ret.add(it.getWrappedHash());
-            it = blockStore.getBlockByHash(it.getParentHash());
+            it = blockStore.getBlockByHash(it.getParentHash().getBytes());
         }
 
         return ret;
@@ -74,7 +74,7 @@ public class FamilyUtils {
      * @return set of already used uncles block hashes
      */
     public static Set<ByteArrayWrapper> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
-        return getUsedUncles(blockStore, block.getNumber(), block.getParentHash(), limitNum);
+        return getUsedUncles(blockStore, block.getNumber(), block.getParentHash().getBytes(), limitNum);
     }
 
     public static Set<ByteArrayWrapper> getUsedUncles(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
@@ -89,16 +89,16 @@ public class FamilyUtils {
 
         while(it != null && it.getNumber() >= minNumber) {
             for (BlockHeader uncle : it.getUncleList()) {
-                ret.add(new ByteArrayWrapper(uncle.getHash()));
+                ret.add(new ByteArrayWrapper(uncle.getHash().getBytes()));
             }
-            it = blockStore.getBlockByHash(it.getParentHash());
+            it = blockStore.getBlockByHash(it.getParentHash().getBytes());
         }
 
         return ret;
     }
 
     public static List<BlockHeader> getUnclesHeaders(BlockStore store, Block block, int levels) {
-        return getUnclesHeaders(store, block.getNumber(), block.getParentHash(), levels);
+        return getUnclesHeaders(store, block.getNumber(), block.getParentHash().getBytes(), levels);
     }
 
     public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, byte[] parentHash, int levels) {
@@ -117,7 +117,7 @@ public class FamilyUtils {
     }
 
     public static Set<ByteArrayWrapper> getUncles(BlockStore store, Block block, int levels) {
-        return getUncles(store, block.getNumber(), block.getParentHash(), levels);
+        return getUncles(store, block.getNumber(), block.getParentHash().getBytes(), levels);
     }
 
     public static Set<ByteArrayWrapper> getUncles(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
@@ -130,7 +130,7 @@ public class FamilyUtils {
     }
 
     public static Set<ByteArrayWrapper> getFamily(BlockStore store, Block block, int levels) {
-        return getFamily(store, block.getNumber(), block.getParentHash(), levels);
+        return getFamily(store, block.getNumber(), block.getParentHash().getBytes(), levels);
     }
 
     public static Set<ByteArrayWrapper> getFamily(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
@@ -143,7 +143,7 @@ public class FamilyUtils {
 
         while (parent != null && parent.getNumber() >= minNumber) {
             ancestors.add(0, parent);
-            parent = store.getBlockByHash(parent.getParentHash());
+            parent = store.getBlockByHash(parent.getParentHash().getBytes());
         }
 
         for (Block b : ancestors) {
@@ -161,11 +161,11 @@ public class FamilyUtils {
                     continue;
                 }
 
-                if (!Arrays.equals(ancestorParent.getHash(), uncle.getParentHash())) {
+                if (!ancestorParent.getHash().equals(uncle.getParentHash())) {
                     continue;
                 }
 
-                if (Arrays.equals(ancestor.getHash(), uncle.getHash())) {
+                if (ancestor.getHash().equals(uncle.getHash())) {
                     continue;
                 }
 

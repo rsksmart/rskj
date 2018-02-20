@@ -154,7 +154,7 @@ public class TestRunner {
         for (Block block : blockTraffic) {
 
             ImportResult importResult = blockchain.tryToConnect(block);
-            logger.debug("{} ~ {} difficulty: {} ::: {}", block.getShortHash(), shortHash(block.getParentHash()),
+            logger.debug("{} ~ {} difficulty: {} ::: {}", block.getShortHash(), shortHash(block.getParentHash().getBytes()),
                     block.getCumulativeDifficulty(), importResult.toString());
         }
 

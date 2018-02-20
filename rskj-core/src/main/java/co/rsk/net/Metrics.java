@@ -121,9 +121,9 @@ public class Metrics {
     public static void newBlockHeader(@Nonnull final BlockHeader header, @Nonnull final NodeID sender) {
         String event = String.format("event: %s hash: %s number: %d parent: %s sender: %s",
                 "newBlockHeader",
-                HashUtil.shortHash(header.getHash()),
+                HashUtil.shortHash(header.getHash().getBytes()),
                 header.getNumber(),
-                HashUtil.shortHash(header.getParentHash()),
+                HashUtil.shortHash(header.getParentHash().getBytes()),
                 HashUtil.shortHash(sender.getID())
         );
         logEvent(event);

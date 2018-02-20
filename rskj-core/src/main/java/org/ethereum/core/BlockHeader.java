@@ -21,6 +21,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
@@ -227,8 +228,8 @@ public class BlockHeader {
         return this.getNumber() == Genesis.NUMBER;
     }
 
-    public byte[] getParentHash() {
-        return parentHash;
+    public Keccak256 getParentHash() {
+        return new Keccak256(parentHash);
     }
 
     public int getUncleCount() {
@@ -397,8 +398,8 @@ public class BlockHeader {
         this.extraData = extraData;
     }
 
-    public byte[] getHash() {
-        return HashUtil.keccak256(getEncoded());
+    public Keccak256 getHash() {
+        return new Keccak256(HashUtil.keccak256(getEncoded()));
     }
 
     public byte[] getEncoded() {
@@ -533,7 +534,7 @@ public class BlockHeader {
 
     // TODO added to comply with SerializableObject
 
-    public byte[] getRawHash() {
+    public Keccak256 getRawHash() {
         return getHash();
     }
     // TODO added to comply with SerializableObject
@@ -589,11 +590,11 @@ public class BlockHeader {
     }
 
     public String getShortHash() {
-        return HashUtil.shortHash(getHash());
+        return HashUtil.shortHash(getHash().getBytes());
     }
 
     public String getParentShortHash() {
-        return HashUtil.shortHash(getParentHash());
+        return HashUtil.shortHash(getParentHash().getBytes());
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {

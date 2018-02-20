@@ -129,7 +129,7 @@ public class BlockChainLoader {
 
             logger.info("Genesis block loaded");
         } else {
-            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash());
+            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
 
             blockchain.setBestBlock(bestBlock);
             blockchain.setTotalDifficulty(totalDifficulty);

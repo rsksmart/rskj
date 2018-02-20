@@ -62,7 +62,7 @@ public class BlockStore {
     }
 
     public synchronized void removeBlock(Block block) {
-        if (!this.hasBlock(block.getHash())) {
+        if (!this.hasBlock(block.getHash().getBytes())) {
             return;
         }
 
@@ -159,7 +159,7 @@ public class BlockStore {
      */
     public List<Block> getChildrenOf(Set<Block> blocks) {
         return blocks.stream()
-                .flatMap(b -> getBlocksByParentHash(b.getHash()).stream())
+                .flatMap(b -> getBlocksByParentHash(b.getHash().getBytes()).stream())
                 .distinct()
                 .collect(Collectors.toList());
     }
@@ -224,7 +224,7 @@ public class BlockStore {
      * @param header the header to store.
      */
     public synchronized void saveHeader(@Nonnull final BlockHeader header) {
-        ByteArrayWrapper key = new ByteArrayWrapper(header.getHash());
+        ByteArrayWrapper key = new ByteArrayWrapper(header.getHash().getBytes());
 
         this.headers.put(key, header);
     }
@@ -235,11 +235,11 @@ public class BlockStore {
      * @param header the header to remove.
      */
     public synchronized void removeHeader(@Nonnull final BlockHeader header) {
-        if (!this.hasHeader(header.getHash())) {
+        if (!this.hasHeader(header.getHash().getBytes())) {
             return;
         }
 
-        ByteArrayWrapper key = new ByteArrayWrapper(header.getHash());
+        ByteArrayWrapper key = new ByteArrayWrapper(header.getHash().getBytes());
 
         this.headers.remove(key);
     }

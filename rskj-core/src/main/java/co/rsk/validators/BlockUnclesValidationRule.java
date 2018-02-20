@@ -28,7 +28,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.HashSet;
 import java.util.List;
@@ -117,7 +116,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         Set<ByteArrayWrapper> hashes = new HashSet<>();
 
         for (BlockHeader uncle : uncles) {
-            byte[] uhash = uncle.getHash();
+            byte[] uhash = uncle.getHash().getBytes();
 
             Block blockForUncleHeader = new Block(uncle);
 
@@ -184,8 +183,8 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     }
 
     private boolean validateUncleParent(Set<ByteArrayWrapper> ancestors, Block uncle) {
-        String uhashString = Hex.toHexString(uncle.getHash());
-        Block parent = blockStore.getBlockByHash(uncle.getParentHash());
+        String uhashString = uncle.getHash().toString();
+        Block parent = blockStore.getBlockByHash(uncle.getParentHash().getBytes());
 
         if (ancestors != null && (parent == null || !ancestors.contains(parent.getWrappedHash()))) {
             logger.error("Uncle has no common parent: {}", uhashString);

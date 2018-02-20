@@ -221,10 +221,10 @@ public class BlockSyncService {
     private List<Block> getParentsNotInBlockchain(@Nullable Block block) {
         final List<Block> blocks = new ArrayList<>();
         Block currentBlock = block;
-        while (currentBlock != null && !blockchain.hasBlockInSomeBlockchain(currentBlock.getHash())) {
+        while (currentBlock != null && !blockchain.hasBlockInSomeBlockchain(currentBlock.getHash().getBytes())) {
             BlockUtils.addBlockToList(blocks, currentBlock);
 
-            currentBlock = getBlockFromStoreOrBlockchain(currentBlock.getParentHash());
+            currentBlock = getBlockFromStoreOrBlockchain(currentBlock.getParentHash().getBytes());
         }
 
         return blocks;

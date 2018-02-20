@@ -160,7 +160,7 @@ public class BlockGenerator {
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 unclesListHash, // uncle hash
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
@@ -195,7 +195,7 @@ public class BlockGenerator {
         }
 
         return new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 coinbase, // coinbase
                 logBloom.getData(), // logs bloom
@@ -254,7 +254,7 @@ public class BlockGenerator {
 
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        BlockHeader newHeader = new BlockHeader(parent.getHash(),
+        BlockHeader newHeader = new BlockHeader(parent.getHash().getBytes(),
                 unclesListHash,
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
@@ -301,7 +301,7 @@ public class BlockGenerator {
         Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
 
         return new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
@@ -333,7 +333,7 @@ public class BlockGenerator {
         }
 
         return new SimpleBlock(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
@@ -356,7 +356,7 @@ public class BlockGenerator {
     public Block createFallbackMinedChildBlockWithTimeStamp(Block parent, byte[] difficulty, long timeStamp, boolean goodSig) {
         List<Transaction> txs = new ArrayList<>();
         Block block = new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),

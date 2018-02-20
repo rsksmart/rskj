@@ -43,7 +43,7 @@ public class BlockSyncServiceTest {
             for (Block block : extendedChain) {
                 blockSyncService.processBlock(null, block, false);
                 Assert.assertEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
-                Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlock().getHash());
+                Assert.assertEquals(block.getHash(), blockchain.getBestBlock().getHash());
             }
         }
     }
@@ -65,7 +65,7 @@ public class BlockSyncServiceTest {
                 blockSyncService.processBlock(null, block, false);
                 // we don't have all the parents, so we wait to update the best chain
                 Assert.assertEquals(initialBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
-                Assert.assertArrayEquals(initialBestBlock.getHash(), blockchain.getBestBlock().getHash());
+                Assert.assertEquals(initialBestBlock.getHash(), blockchain.getBestBlock().getHash());
             }
 
             // the chain is complete, we have a new best block
@@ -73,7 +73,7 @@ public class BlockSyncServiceTest {
             Block newBestBlock = extendedChain.get(0);
             blockSyncService.processBlock(null, closingBlock, false);
             Assert.assertEquals(newBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
-            Assert.assertArrayEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
+            Assert.assertEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
         }
     }
 
@@ -95,7 +95,7 @@ public class BlockSyncServiceTest {
             Block newBestBlock = extendedChain.get(i);
             blockSyncService.processBlock(null, newBestBlock, false);
             Assert.assertEquals(newBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
-            Assert.assertArrayEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
+            Assert.assertEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
         }
     }
 }

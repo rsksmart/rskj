@@ -33,9 +33,9 @@ public abstract class AbstractBlockstore implements BlockStore {
             throw new IllegalArgumentException("Requested block number > branch hash number: " + blockNumber + " < " + branchBlock.getNumber());
         }
         while(branchBlock.getNumber() > blockNumber) {
-            branchBlock = getBlockByHash(branchBlock.getParentHash());
+            branchBlock = getBlockByHash(branchBlock.getParentHash().getBytes());
         }
-        return branchBlock.getHash();
+        return branchBlock.getHash().getBytes();
     }
 
     @Override
@@ -43,7 +43,7 @@ public abstract class AbstractBlockstore implements BlockStore {
         Block block = this.getBlockByHash(hash);
 
         for (long i = 0; i < depth; i++) {
-            block = this.getBlockByHash(block.getParentHash());
+            block = this.getBlockByHash(block.getParentHash().getBytes());
         }
 
         return block;

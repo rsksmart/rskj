@@ -23,7 +23,7 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
     @Override
     public void newBlockHeaders(List<BlockHeader> chunk){
         BlockHeader header = chunk.get(0);
-        if (!ByteUtil.fastEquals(header.getHash(), miniChunk.getHash()) ||
+        if (!ByteUtil.fastEquals(header.getHash().getBytes(), miniChunk.getHash()) ||
                 !syncInformation.blockHeaderIsValid(header)) {
             syncEventsHandler.onErrorSyncing(
                     "Invalid chunk received from node {}", EventType.INVALID_HEADER, this.getClass(),

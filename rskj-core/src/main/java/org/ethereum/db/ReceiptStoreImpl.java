@@ -136,13 +136,13 @@ public class ReceiptStoreImpl implements ReceiptStore {
                 return null;
             }
 
-            block = store.getBlockByHash(block.getParentHash());
+            block = store.getBlockByHash(block.getParentHash().getBytes());
 
             if (block == null) {
                 return null;
             }
 
-            blockHash = block.getHash();
+            blockHash = block.getHash().getBytes();
         }
     }
 

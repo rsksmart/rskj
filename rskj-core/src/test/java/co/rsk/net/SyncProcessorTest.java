@@ -445,7 +445,7 @@ public class SyncProcessorTest {
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -465,8 +465,8 @@ public class SyncProcessorTest {
         headers.add(headerStack);
 
         List<BlockIdentifier> bids = new ArrayList<>();
-        bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash(), 0));
-        bids.add(new BlockIdentifier(block.getHash(), 1));
+        bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
+        bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
         processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
@@ -474,7 +474,7 @@ public class SyncProcessorTest {
         processor.processBodyResponse(sender, response);
 
         Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
         Assert.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
@@ -489,7 +489,7 @@ public class SyncProcessorTest {
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -517,8 +517,8 @@ public class SyncProcessorTest {
         headers.add(headerStack);
 
         List<BlockIdentifier> bids = new ArrayList<>();
-        bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash(), 0));
-        bids.add(new BlockIdentifier(block.getHash(), 1));
+        bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
+        bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
         processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
@@ -544,7 +544,7 @@ public class SyncProcessorTest {
         extended.tryToConnect(block);
 
         Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -617,7 +617,7 @@ public class SyncProcessorTest {
         Assert.assertEquals(1, block.getTransactionsList().size());
 
         Assert.assertEquals(1, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -637,8 +637,8 @@ public class SyncProcessorTest {
         headers.add(headerStack);
 
         List<BlockIdentifier> bids = new ArrayList<>();
-        bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash(), 0));
-        bids.add(new BlockIdentifier(block.getHash(), 1));
+        bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
+        bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
         processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
@@ -646,7 +646,7 @@ public class SyncProcessorTest {
         processor.processBodyResponse(sender, response);
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
         Assert.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
@@ -661,7 +661,7 @@ public class SyncProcessorTest {
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -675,7 +675,7 @@ public class SyncProcessorTest {
         processor.processBlockResponse(sender, response);
 
         Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
         Assert.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
@@ -708,7 +708,7 @@ public class SyncProcessorTest {
 
             Block block = advancedBlockchain.getBlockByNumber(expectedHeights[k]);
 
-            processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash()));
+            processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash().getBytes()));
         }
 
         Assert.assertEquals(expectedHeights.length + 2, sender.getMessages().size());
@@ -752,7 +752,7 @@ public class SyncProcessorTest {
 
             Block block = advancedBlockchain.getBlockByNumber(binarySearchHeights[k]);
 
-            processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash()));
+            processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash().getBytes()));
         }
 
         Assert.assertEquals(binarySearchHeights.length + 2, sender.getMessages().size());
@@ -880,7 +880,7 @@ public class SyncProcessorTest {
             byte[] hash;
 
             if (block != null)
-                hash = block.getHash();
+                hash = block.getHash().getBytes();
             else
                 hash = HashUtil.randomHash();
 

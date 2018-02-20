@@ -75,7 +75,7 @@ public class OneAsyncNodeTest {
         node.joinWithTimeout();
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 
     @Test
@@ -96,6 +96,6 @@ public class OneAsyncNodeTest {
         node.joinWithTimeout();
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 }

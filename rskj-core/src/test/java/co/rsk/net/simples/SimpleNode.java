@@ -56,7 +56,7 @@ public class SimpleNode {
 
     public void sendStatusTo(SimpleNode peer) {
         Block block = this.getBestBlock();
-        Status status = new Status(block.getNumber(), block.getHash());
+        Status status = new Status(block.getNumber(), block.getHash().getBytes());
         peer.receiveMessageFrom(this, new StatusMessage(status));
     }
 
@@ -67,7 +67,7 @@ public class SimpleNode {
 
     public Status getFullStatus() {
         Block block = this.getBestBlock();
-        return new Status(block.getNumber(), block.getHash(), block.getParentHash(), this.getTotalDifficulty());
+        return new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), this.getTotalDifficulty());
     }
 
     public SimpleNodeChannel getMessageChannel(SimpleNode peer) {
