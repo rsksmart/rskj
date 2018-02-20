@@ -18,6 +18,8 @@
 
 package co.rsk.mine;
 
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 
@@ -35,12 +37,12 @@ public interface MinerServer {
     boolean isRunning();
 
     SubmitBlockResult submitBitcoinSolution(String blockHashForMergedMining,
-                                            co.rsk.bitcoinj.core.BtcBlock blockWithOnlyHeader,
-                                            co.rsk.bitcoinj.core.BtcTransaction coinbase,
+                                            BtcBlock blockWithOnlyHeader,
+                                            BtcTransaction coinbase,
                                             List<String> merkleHashes,
                                             int blockTxnCount);
 
-    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock);
+    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock);
 
     boolean generateFallbackBlock();
 
