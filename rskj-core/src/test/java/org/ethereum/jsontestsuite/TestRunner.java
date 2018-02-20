@@ -20,6 +20,7 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
@@ -42,6 +43,7 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -69,6 +71,8 @@ import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 public class TestRunner {
 
     private final RskSystemProperties config = new RskSystemProperties();
+    private final VmConfig vmConfig = config.getVmConfig();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
     private boolean setNewStateRoot;
@@ -228,8 +232,8 @@ public class TestRunner {
 
             /* 3. Create Program - exec.code */
             /* 4. run VM */
-            VM vm = new VM(config);
-            Program program = new Program(config, exec.getCode(), programInvoke);
+            VM vm = new VM(vmConfig, precompiledContracts);
+            Program program = new Program(vmConfig, precompiledContracts, exec.getCode(), programInvoke, null);
             boolean vmDidThrowAnEception = false;
             Exception e = null;
             ThreadMXBean thread;

@@ -19,8 +19,10 @@
 package co.rsk.vm;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
@@ -51,6 +53,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class VMPerformanceTest {
     private final RskSystemProperties config = new RskSystemProperties();
+    private final VmConfig vmConfig = config.getVmConfig();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private ProgramInvokeMockImpl invoke;
     private Program program;
     ThreadMXBean thread;
@@ -166,7 +170,7 @@ public class VMPerformanceTest {
 
         Boolean old = thread.isThreadCpuTimeEnabled();
         thread.setThreadCpuTimeEnabled(true);
-        vm = new VM(config);
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
         if (useProfiler)
             waitForProfiler();
 
@@ -295,7 +299,7 @@ public class VMPerformanceTest {
             baos.write(code, 0, code.length);
         byte[] newCode = baos.toByteArray();
 
-        program = new Program(config, newCode, invoke);
+        program = new Program(vmConfig, precompiledContracts, newCode, invoke, null);
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -475,7 +479,7 @@ public class VMPerformanceTest {
 } // contract
         */
 
-        vm = new VM(config);
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
         // Strip the first 16 bytes which are added by Solidity to store the contract.
         byte[] codePlusPrefix = Hex.decode(
                 //---------------------------------------------------------------------------------------------------------------------nn
@@ -502,7 +506,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(config, code, invoke);
+        program =new Program(vmConfig, precompiledContracts, code, invoke, null);
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -561,7 +565,7 @@ public class VMPerformanceTest {
          }
          } // contract
          ********************************************************************************************/
-        vm = new VM(config);
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // To increase precesion of the measurement, the maximum k value was increased
         // until the contract took more than 30 seconds
@@ -617,7 +621,7 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     public void testRunTime(byte[] code, String s_expected) {
-        program = new Program(config, code, invoke);
+        program = new Program(vmConfig, precompiledContracts, code, invoke, null);
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
         System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());

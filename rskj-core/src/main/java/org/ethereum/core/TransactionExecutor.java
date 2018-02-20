@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
@@ -67,6 +68,8 @@ public class TransactionExecutor {
     private final Repository cacheTrack;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final VmConfig vmConfig;
+    private final PrecompiledContracts precompiledContracts;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
@@ -112,6 +115,8 @@ public class TransactionExecutor {
         this.executionBlock = executionBlock;
         this.listener = listener;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
+        this.vmConfig = config.getVmConfig();
+        this.precompiledContracts = new PrecompiledContracts(config);
     }
 
 
@@ -246,7 +251,7 @@ public class TransactionExecutor {
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        precompiledContract = PrecompiledContracts.getContractForAddress(config, new DataWord(targetAddress.getBytes()));
+        precompiledContract = precompiledContracts.getContractForAddress(new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -283,8 +288,8 @@ public class TransactionExecutor {
                 ProgramInvoke programInvoke =
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
-                this.vm = new VM(config);
-                this.program = new Program(config, code, programInvoke, tx);
+                this.vm = new VM(vmConfig, precompiledContracts);
+                this.program = new Program(vmConfig, precompiledContracts, code, programInvoke, tx);
             }
         }
 
@@ -302,8 +307,8 @@ public class TransactionExecutor {
         } else {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
-            this.vm = new VM(config);
-            this.program = new Program(config, tx.getData(), programInvoke, tx);
+            this.vm = new VM(vmConfig, precompiledContracts);
+            this.program = new Program(vmConfig, precompiledContracts, tx.getData(), programInvoke, tx);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network

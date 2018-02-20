@@ -70,7 +70,13 @@ public class PrecompiledContracts {
     private static SamplePrecompiledContract sample = new SamplePrecompiledContract(SAMPLE_ADDR);
     private static BigIntegerModexp bigIntegerModexp = new BigIntegerModexp();
 
-    public static PrecompiledContract getContractForAddress(RskSystemProperties config, DataWord address) {
+    private final RskSystemProperties config;
+
+    public PrecompiledContracts(RskSystemProperties config) {
+        this.config = config;
+    }
+
+    public PrecompiledContract getContractForAddress(DataWord address) {
 
         if (address == null) {
             return identity;

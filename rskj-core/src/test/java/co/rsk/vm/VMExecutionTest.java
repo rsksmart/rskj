@@ -19,7 +19,9 @@
 package co.rsk.vm;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -40,6 +42,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class VMExecutionTest {
     private final RskSystemProperties config = new RskSystemProperties();
+    private final VmConfig vmConfig = config.getVmConfig();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private ProgramInvokeMockImpl invoke;
     private BytecodeCompiler compiler;
 
@@ -245,7 +249,7 @@ public class VMExecutionTest {
     @Test
     public void dupnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST DUPN 0x5b 0x5b");
-        Program program = new Program(config, code, invoke);
+        Program program = new Program(vmConfig, precompiledContracts, code, invoke, null);
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -260,7 +264,7 @@ public class VMExecutionTest {
     @Test
     public void swapnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST SWAPN 0x5b 0x5b");
-        Program program = new Program(config, code, invoke);
+        Program program = new Program(vmConfig, precompiledContracts, code, invoke, null);
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -357,9 +361,9 @@ public class VMExecutionTest {
     }
 
     private Program executeCode(byte[] code, int nsteps) {
-        VM vm = new VM(config);
+        VM vm = new VM(vmConfig, precompiledContracts);
 
-        Program program = new Program(config, code, invoke);
+        Program program = new Program(vmConfig, precompiledContracts, code, invoke, null);
 
         for (int k = 0; k < nsteps; k++)
             vm.step(program);
