@@ -92,17 +92,13 @@ public class Web3RskImpl extends Web3Impl {
     }
 
     public MinerWork mnr_getWork() {
-        if (logger.isDebugEnabled()) {
-            logger.debug("mnr_getWork()");
-        }
+        logger.debug("mnr_getWork()");
 
         return minerServer.getWork();
     }
 
     public SubmittedBlockInfo mnr_submitBitcoinBlock(String bitcoinBlockHex) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("mnr_submitBitcoinBlock(): {}", bitcoinBlockHex.length());
-        }
+        logger.debug("mnr_submitBitcoinBlock(): {}", bitcoinBlockHex.length());
 
         NetworkParameters params = RegTestParams.get();
         new Context(params);
@@ -124,9 +120,7 @@ public class Web3RskImpl extends Web3Impl {
             String merkleHashesHex,
             String blockTxnCountHex
     ) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("mnr_submitBitcoinSolution(): {}, {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, merkleHashesHex, blockTxnCountHex);
-        }
+        logger.debug("mnr_submitBitcoinSolution(): {}, {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, merkleHashesHex, blockTxnCountHex);
 
         NetworkParameters params = RegTestParams.get();
         new Context(params);
