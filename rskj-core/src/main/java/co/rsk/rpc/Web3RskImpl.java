@@ -207,11 +207,8 @@ public class Web3RskImpl extends Web3Impl {
     }
 
     private List<String> parseTransactionHashes(String txnHashesHex) {
-        List<String> txnHashes = new ArrayList<>();
-        for (int start = 0; start < txnHashesHex.length(); start += 64) {
-            txnHashes.add(txnHashesHex.substring(start, Math.min(txnHashesHex.length(), start + 64)));
-        }
-        return txnHashes;
+        String[] split = txnHashesHex.split("\\s+");
+        return Arrays.asList(split);
     }
 
     private SubmittedBlockInfo parseResultAndReturn(SubmitBlockResult result) {
