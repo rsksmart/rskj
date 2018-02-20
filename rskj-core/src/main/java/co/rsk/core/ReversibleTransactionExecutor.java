@@ -30,20 +30,13 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
-public final class ReversibleTransactionExecutor extends TransactionExecutor {
+/**
+ * Encapsulates the logic to execute a transaction in an
+ * isolated environment (e.g. no persistent state changes).
+ */
+public class ReversibleTransactionExecutor {
 
-    private ReversibleTransactionExecutor(
-            RskSystemProperties config,
-            Transaction tx,
-            RskAddress coinbase,
-            Repository track,
-            BlockStore blockStore,
-            ReceiptStore receiptStore,
-            ProgramInvokeFactory programInvokeFactory,
-            Block executionBlock) {
-        super(config, tx, 0, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock);
-        setLocalCall(true);
-    }
+    private ReversibleTransactionExecutor() { }
 
     public static TransactionExecutor executeTransaction(
             RskSystemProperties config,
@@ -100,25 +93,23 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
                 fromAddress
         );
 
-        ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(
+        TransactionExecutor executor = new TransactionExecutor(
                 config,
                 tx,
+                0,
                 coinbase,
                 repository,
                 blockStore,
                 receiptStore,
                 programInvokeFactory,
                 executionBlock
-        );
-        return executor.executeTransaction();
-    }
+        ).setLocalCall(true);
 
-    private TransactionExecutor executeTransaction() {
-        init();
-        execute();
-        go();
-        finalization();
-        return this;
+        executor.init();
+        executor.execute();
+        executor.go();
+        executor.finalization();
+        return executor;
     }
 
     private static class UnsignedTransaction extends Transaction {
