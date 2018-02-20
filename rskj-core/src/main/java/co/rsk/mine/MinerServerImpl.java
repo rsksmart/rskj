@@ -384,10 +384,11 @@ public class MinerServerImpl implements MinerServer {
             String blockHashForMergedMining,
             BtcBlock blockWithHeaderOnly,
             BtcTransaction coinbase,
-            List<String> txHashes) {
+            List<String> merkleHashes,
+            int blockTxnCount) {
         logger.debug("Received solution with hash {} for merged mining", blockHashForMergedMining);
 
-        PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(blockWithHeaderOnly.getParams(), txHashes);
+        PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranchForCoinbase(blockWithHeaderOnly.getParams(), merkleHashes, blockTxnCount);
 
         return processSolution(blockHashForMergedMining, blockWithHeaderOnly, coinbase, bitcoinMergedMiningMerkleBranch, true);
     }
@@ -505,14 +506,34 @@ public class MinerServerImpl implements MinerServer {
      * getBitcoinMergedMerkleBranch returns the Partial Merkle Branch needed to validate that the coinbase tx
      * is part of the Merkle Tree.
      *
-     * @param networkParams  bitcoin network params.
-     * @param txStringHashes hashes for the txs of the bitcoin block used for merged mining.
+     * @param networkParams      bitcoin network params.
+     * @param merkleStringHashes hashes for the partial merkle tree of the bitcoin block used for merged mining.
+     * @param blockTxnCount      number of transactions in the block.
      * @return A Partial Merkle Branch in which you can validate the coinbase tx.
      */
-    public static PartialMerkleTree getBitcoinMergedMerkleBranch(NetworkParameters networkParams, List<String> txStringHashes) {
-        List<Sha256Hash> txHashes = txStringHashes.stream().map(Sha256Hash::wrap).collect(Collectors.toList());
+    private PartialMerkleTree getBitcoinMergedMerkleBranchForCoinbase(
+            NetworkParameters networkParams,
+            List<String> merkleStringHashes,
+            int blockTxnCount) {
+        List<Sha256Hash> merkleHashes = merkleStringHashes.stream().map(Sha256Hash::wrap).collect(Collectors.toList());
+        int merkleTreeHeight = (int) Math.ceil(Math.log(blockTxnCount) / Math.log(2));
 
-        return buildMerkleBranch(txHashes, networkParams);
+        // bitlist will always have ones at the beginning because merkle branch is built for coinbase tx
+        List<Boolean> bitList = new ArrayList<>();
+        for (int i = 0; i < merkleHashes.size() + merkleTreeHeight; i++) {
+            bitList.add(i < merkleHashes.size());
+        }
+
+        // bits indicates which nodes are going to be used for building the partial merkle tree
+        // for more information please refer to {@link co.rsk.bitcoinj.core.PartialMerkleTree#buildFromLeaves } method
+        byte[] bits = new byte[(int) Math.ceil(bitList.size() / 8.0)];
+        for (int i = 0; i < bitList.size(); i++) {
+            if (bitList.get(i)) {
+                Utils.setBitLE(bits, i);
+            }
+        }
+
+        return new PartialMerkleTree(networkParams, bits, merkleHashes, blockTxnCount);
     }
 
     /**
