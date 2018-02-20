@@ -139,7 +139,7 @@ public class Web3RskImpl extends Web3Impl {
         return parseResultAndReturn(result);
     }
 
-    public void ext_dumpState()  {
+    public void ext_dumpState() {
         Block bestBlcock = blockStore.getBestBlock();
         logger.info("Dumping state for block hash {}, block number {}", bestBlcock.getHash(), bestBlcock.getNumber());
         networkStateExporter.exportStatus(System.getProperty("user.dir") + "/" + "rskdump.json");
@@ -147,12 +147,13 @@ public class Web3RskImpl extends Web3Impl {
 
     /**
      * Export the blockchain tree as a tgf file to user.dir/rskblockchain.tgf
+     *
      * @param numberOfBlocks Number of block heights to include. Eg if best block is block 2300 and numberOfBlocks is 10, the graph will include blocks in heights 2290 to 2300.
-     * @param includeUncles Whether to show uncle links (recommended value is false)
+     * @param includeUncles  Whether to show uncle links (recommended value is false)
      */
-    public void ext_dumpBlockchain(long numberOfBlocks, boolean includeUncles)  {
+    public void ext_dumpBlockchain(long numberOfBlocks, boolean includeUncles) {
         Block bestBlock = blockStore.getBestBlock();
-        logger.info("Dumping blockchain starting on block number {}, to best block number {}", bestBlock.getNumber()-numberOfBlocks, bestBlock.getNumber());
+        logger.info("Dumping blockchain starting on block number {}, to best block number {}", bestBlock.getNumber() - numberOfBlocks, bestBlock.getNumber());
         PrintWriter writer = null;
         try {
             File graphFile = new File(System.getProperty("user.dir") + "/" + "rskblockchain.tgf");
@@ -167,7 +168,7 @@ public class Web3RskImpl extends Web3Impl {
                 result.addAll(blockStore.getChainBlocksByNumber(i));
             }
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash().getBytes()) + " " + block.getNumber()+"-"+toSmallHash(block.getHash().getBytes()));
+                writer.println(toSmallHash(block.getHash().getBytes()) + " " + block.getNumber() + "-" + toSmallHash(block.getHash().getBytes()));
             }
             writer.println("#");
             for (Block block : result) {
@@ -181,16 +182,17 @@ public class Web3RskImpl extends Web3Impl {
         } catch (IOException e) {
             logger.error("Could nos save node graph to file", e);
         } finally {
-            if (writer!=null) {
+            if (writer != null) {
                 try {
                     writer.close();
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
             }
         }
     }
 
     private String toSmallHash(byte[] input) {
-        return Hex.toHexString(input).substring(56,64);
+        return Hex.toHexString(input).substring(56, 64);
     }
 
     private BtcBlock getBtcBlock(String blockHeaderHex, NetworkParameters params) {
@@ -205,8 +207,8 @@ public class Web3RskImpl extends Web3Impl {
         List<Byte> rskTagAsByteList = Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
 
         int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
-        byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue()/8];
-        System.arraycopy(coinbaseAsByteArray, rskTagPosition+ RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
+        byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue() / 8];
+        System.arraycopy(coinbaseAsByteArray, rskTagPosition + RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
         return TypeConverter.toJsonHex(blockHashForMergedMiningArray);
     }
 
@@ -216,7 +218,7 @@ public class Web3RskImpl extends Web3Impl {
     }
 
     private SubmittedBlockInfo parseResultAndReturn(SubmitBlockResult result) {
-        if("OK".equals(result.getStatus())) {
+        if ("OK".equals(result.getStatus())) {
             return result.getBlockInfo();
         } else {
             throw new JsonRpcSubmitBlockException(result.getMessage());
