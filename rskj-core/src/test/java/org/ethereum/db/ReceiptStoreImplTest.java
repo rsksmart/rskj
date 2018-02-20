@@ -169,8 +169,8 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
         TransactionReceipt receipt = createReceipt();
 
-        byte[] blockHash0 = Hex.decode("0102030405060708");
-        byte[] blockHash = Hex.decode("010203040506070809");
+        byte[] blockHash0 = Hex.decode("0102030405060708000000000000000000000000000000000000000000000000");
+        byte[] blockHash = Hex.decode("0102030405060708090000000000000000000000000000000000000000000000");
 
         store.add(blockHash, 1, receipt);
 
@@ -184,12 +184,12 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
-        byte[] blockHash0 = Hex.decode("010203040506070809");
+        byte[] blockHash0 = Hex.decode("0102030405060708090000000000000000000000000000000000000000000000");
 
         store.add(blockHash0, 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708");
+        byte[] blockHash = Hex.decode("0102030405060708000000000000000000000000000000000000000000000000");
 
         store.add(blockHash, 42, receipt);
 
@@ -206,12 +206,12 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
-        byte[] blockHash0 = Hex.decode("010203040506070809");
+        byte[] blockHash0 = Hex.decode("0102030405060708090000000000000000000000000000000000000000000000");
 
         store.add(blockHash0, 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708");
+        byte[] blockHash = Hex.decode("0102030405060708000000000000000000000000000000000000000000000000");
 
         store.add(blockHash, 42, receipt);
 
