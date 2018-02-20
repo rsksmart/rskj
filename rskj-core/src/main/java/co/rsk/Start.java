@@ -50,6 +50,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
@@ -82,38 +83,39 @@ public class Start {
     }
 
     @Autowired
-    public Start(Rsk rsk,
-                 UDPServer udpServer,
-                 MinerServer minerServer,
-                 MinerClient minerClient,
-                 RskSystemProperties rskSystemProperties,
-                 Web3 web3Service,
-                 Web3HttpServer web3HttpServer,
-                 Repository repository,
-                 Blockchain blockchain,
-                 ChannelManager channelManager,
-                 SyncPool syncPool,
-                 MessageHandler messageHandler,
-                 TxHandler txHandler,
-                 BlockProcessor nodeBlockProcessor,
-                 PendingState pendingState,
-                 SyncPool.PeerClientFactory peerClientFactory) {
-        this.rsk = rsk;
-        this.udpServer = udpServer;
-        this.minerServer = minerServer;
-        this.minerClient = minerClient;
-        this.rskSystemProperties = rskSystemProperties;
-        this.web3HttpServer = web3HttpServer;
-        this.web3Service = web3Service;
-        this.repository = repository;
-        this.blockchain = blockchain;
-        this.channelManager = channelManager;
-        this.syncPool = syncPool;
-        this.messageHandler = messageHandler;
-        this.txHandler = txHandler;
-        this.nodeBlockProcessor = nodeBlockProcessor;
-        this.pendingState = pendingState;
-        this.peerClientFactory = peerClientFactory;
+    public Start(
+            Rsk rsk,
+            UDPServer udpServer,
+            MinerServer minerServer,
+            MinerClient minerClient,
+            RskSystemProperties rskSystemProperties,
+            Web3 web3Service,
+            Web3HttpServer web3HttpServer,
+            Repository repository,
+            Blockchain blockchain,
+            ChannelManager channelManager,
+            SyncPool syncPool,
+            MessageHandler messageHandler,
+            TxHandler txHandler,
+            BlockProcessor nodeBlockProcessor,
+            PendingState pendingState,
+            SyncPool.PeerClientFactory peerClientFactory) {
+        this.rsk = Objects.requireNonNull(rsk);
+        this.udpServer = Objects.requireNonNull(udpServer);
+        this.minerServer = Objects.requireNonNull(minerServer);
+        this.minerClient = Objects.requireNonNull(minerClient);
+        this.rskSystemProperties = Objects.requireNonNull(rskSystemProperties);
+        this.web3HttpServer = Objects.requireNonNull(web3HttpServer);
+        this.web3Service = Objects.requireNonNull(web3Service);
+        this.repository = Objects.requireNonNull(repository);
+        this.blockchain = Objects.requireNonNull(blockchain);
+        this.channelManager = Objects.requireNonNull(channelManager);
+        this.syncPool = Objects.requireNonNull(syncPool);
+        this.messageHandler = Objects.requireNonNull(messageHandler);
+        this.txHandler = Objects.requireNonNull(txHandler);
+        this.nodeBlockProcessor = Objects.requireNonNull(nodeBlockProcessor);
+        this.pendingState = Objects.requireNonNull(pendingState);
+        this.peerClientFactory = Objects.requireNonNull(peerClientFactory);
     }
 
     public void startNode(String[] args) throws Exception {
