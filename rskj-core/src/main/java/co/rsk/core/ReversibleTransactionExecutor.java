@@ -28,6 +28,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 /**
@@ -36,25 +37,32 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
  */
 public class ReversibleTransactionExecutor {
 
-    private ReversibleTransactionExecutor() { }
+    private final RskSystemProperties config;
+    private final Repository track;
+    private final BlockStore blockStore;
+    private final ReceiptStore receiptStore;
+    private final ProgramInvokeFactory programInvokeFactory;
 
-    public static TransactionExecutor executeTransaction(
+    public ReversibleTransactionExecutor(
             RskSystemProperties config,
             Repository track,
             BlockStore blockStore,
             ReceiptStore receiptStore,
-            ProgramInvokeFactory programInvokeFactory,
+            ProgramInvokeFactory programInvokeFactory) {
+        this.config = config;
+        this.track = track;
+        this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
+        this.programInvokeFactory = programInvokeFactory;
+    }
+
+    public ProgramResult executeTransaction(
             Block executionBlock,
             RskAddress coinbase,
             Web3.CallArguments args) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
 
         return executeTransaction(
-                config,
-                track,
-                blockStore,
-                receiptStore,
-                programInvokeFactory,
                 executionBlock,
                 coinbase,
                 hexArgs.getGasPrice(),
@@ -66,12 +74,7 @@ public class ReversibleTransactionExecutor {
         );
     }
 
-    public static TransactionExecutor executeTransaction(
-            RskSystemProperties config,
-            Repository track,
-            BlockStore blockStore,
-            ReceiptStore receiptStore,
-            ProgramInvokeFactory programInvokeFactory,
+    public ProgramResult executeTransaction(
             Block executionBlock,
             RskAddress coinbase,
             byte[] gasPrice,
@@ -109,7 +112,7 @@ public class ReversibleTransactionExecutor {
         executor.execute();
         executor.go();
         executor.finalization();
-        return executor;
+        return executor.getResult();
     }
 
     private static class UnsignedTransaction extends Transaction {

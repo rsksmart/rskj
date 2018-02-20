@@ -23,13 +23,12 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.util.TestContract;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -54,15 +53,13 @@ public class ReversibleTransactionExecutorTest {
         args.gas = "0xf424";
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
-        TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                config, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
-                args);
+        ProgramResult result = factory.getReversibleTransactionExecutor()
+                .executeTransaction(bestBlock, bestBlock.getCoinbase(), args);
 
-        Assert.assertNull(executor.getResult().getException());
+        Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
                 new String[] { "chinchilla" },
-                helloFn.decodeResult(executor.getResult().getHReturn()));
-        System.out.println(executor.getReceipt().toString());
+                helloFn.decodeResult(result.getHReturn()));
     }
 
     @Test
@@ -82,14 +79,13 @@ public class ReversibleTransactionExecutorTest {
         args.gas = "0xf424";
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
-        TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                config, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
-                args);
+        ProgramResult result = factory.getReversibleTransactionExecutor()
+                .executeTransaction(bestBlock, bestBlock.getCoinbase(), args);
 
-        Assert.assertNull(executor.getResult().getException());
+        Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
                 new String[] { "greet me" },
-                greeterFn.decodeResult(executor.getResult().getHReturn()));
+                greeterFn.decodeResult(result.getHReturn()));
     }
 
     @Test
@@ -110,11 +106,10 @@ public class ReversibleTransactionExecutorTest {
         args.gas = "0xf424";
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
-        TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                config, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
-                args);
+        ProgramResult result = factory.getReversibleTransactionExecutor()
+                .executeTransaction(bestBlock, bestBlock.getCoinbase(), args);
 
-        Assert.assertTrue(executor.getResult().isRevert());
+        Assert.assertTrue(result.isRevert());
     }
 
     @Test
@@ -135,22 +130,20 @@ public class ReversibleTransactionExecutorTest {
         args.gas = "0xf424";
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
-        TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                config, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
-                args);
+        ProgramResult result = factory.getReversibleTransactionExecutor()
+                .executeTransaction(bestBlock, bestBlock.getCoinbase(), args);
 
-        Assert.assertNull(executor.getResult().getException());
+        Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
                 new String[] { "calls: 1" },
-                callsFn.decodeResult(executor.getResult().getHReturn()));
+                callsFn.decodeResult(result.getHReturn()));
 
-        TransactionExecutor executor2 = ReversibleTransactionExecutor.executeTransaction(
-                config, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
-                args);
+        ProgramResult result2 = factory.getReversibleTransactionExecutor()
+                .executeTransaction(bestBlock, bestBlock.getCoinbase(), args);
 
-        Assert.assertNull(executor2.getResult().getException());
+        Assert.assertNull(result2.getException());
         Assert.assertArrayEquals(
                 new String[] { "calls: 1" },
-                callsFn.decodeResult(executor2.getResult().getHReturn()));
+                callsFn.decodeResult(result2.getHReturn()));
     }
 }

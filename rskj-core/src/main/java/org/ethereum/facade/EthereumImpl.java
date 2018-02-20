@@ -173,16 +173,17 @@ public class EthereumImpl implements Ethereum {
     @Override
     public ProgramResult callConstant(Web3.CallArguments args) {
         Block bestBlock = blockchain.getBestBlock();
-        return ReversibleTransactionExecutor.executeTransaction(
+        return new ReversibleTransactionExecutor(
                 config,
                 repository,
                 blockStore,
                 receiptStore,
-                programInvokeFactory,
+                programInvokeFactory
+        ).executeTransaction(
                 bestBlock,
                 bestBlock.getCoinbase(),
                 args
-        ).getResult();
+        );
     }
 
     @Override
