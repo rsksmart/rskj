@@ -226,7 +226,7 @@ public class WorldDslProcessor {
             }
             Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
             BlockExecutor executor = new BlockExecutor(new RskSystemProperties(), world.getRepository(),
-                    world.getBlockChain(), world.getBlockChain().getBlockStore(), null);
+                    null, world.getBlockChain().getBlockStore(), null);
             executor.executeAndFill(block, parent);
             world.saveBlock(name, block);
             parent = block;

@@ -41,6 +41,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
@@ -140,6 +141,7 @@ public class MinerServerImpl implements MinerServer {
                            Ethereum ethereum,
                            Blockchain blockchain,
                            BlockStore blockStore,
+                           ReceiptStore receiptStore,
                            PendingState pendingState,
                            Repository repository,
                            MiningConfig miningConfig,
@@ -160,7 +162,7 @@ public class MinerServerImpl implements MinerServer {
         this.gasLimitCalculator = gasLimitCalculator;
         this.powRule = powRule;
 
-        executor = new BlockExecutor(config, repository, blockchain, blockStore, null);
+        executor = new BlockExecutor(config, repository, receiptStore, blockStore, null);
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
 

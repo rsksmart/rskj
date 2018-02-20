@@ -112,7 +112,7 @@ public class BlockChainImpl implements Blockchain {
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
-        this.blockExecutor = new BlockExecutor(config, repository, this, blockStore, listener);
+        this.blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
         this.pendingState = pendingState;
     }
 
@@ -487,9 +487,6 @@ public class BlockChainImpl implements Blockchain {
     public void setBlockRecorder(BlockRecorder blockRecorder) {
         this.blockRecorder = blockRecorder;
     }
-
-    @Override
-    public ReceiptStore getReceiptStore() { return receiptStore; }
 
     private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
         synchronized (accessLock) {

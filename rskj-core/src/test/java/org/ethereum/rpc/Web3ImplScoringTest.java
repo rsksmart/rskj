@@ -358,7 +358,27 @@ public class Web3ImplScoringTest {
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(config, rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
         TxPoolModule tpm = new TxPoolModuleImpl();
-        return new Web3RskImpl(rsk, world.getBlockChain(), null, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, tpm, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null, null, null, null, null);
+        return new Web3RskImpl(
+                rsk,
+                world.getBlockChain(),
+                null,
+                config,
+                Web3Mocks.getMockMinerClient(),
+                Web3Mocks.getMockMinerServer(),
+                pm,
+                em,
+                tpm,
+                Web3Mocks.getMockChannelManager(),
+                rsk.getRepository(),
+                peerScoringManager,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 
     private static NodeID generateNodeID() {

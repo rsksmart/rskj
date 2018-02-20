@@ -24,7 +24,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 
 import java.util.List;
@@ -91,8 +90,6 @@ public interface Blockchain {
     List<Block> getBlocksByNumber(long blockNr);
 
     void removeBlocksByNumber(long blockNr);
-
-    ReceiptStore getReceiptStore();
 
     BlockStore getBlockStore();
 

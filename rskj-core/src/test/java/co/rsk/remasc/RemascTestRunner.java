@@ -106,7 +106,7 @@ class RemascTestRunner {
         this.blockchain.tryToConnect(this.genesis);
 
         BlockExecutor blockExecutor = new BlockExecutor(new RskSystemProperties(), blockchain.getRepository(),
-                blockchain, blockchain.getBlockStore(), null);
+                null, blockchain.getBlockStore(), null);
 
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;

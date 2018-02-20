@@ -26,7 +26,6 @@ import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 
 import java.util.List;
@@ -137,9 +136,6 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     public List<Block> getBlocksByNumber(long blockNr) {
         return null;
     }
-
-    @Override
-    public ReceiptStore getReceiptStore() { return null; }
 
     @Override
     public BlockStore getBlockStore() { return null; }
