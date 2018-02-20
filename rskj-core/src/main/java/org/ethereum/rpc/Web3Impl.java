@@ -1234,10 +1234,10 @@ public class Web3Impl implements Web3 {
     @Override
     public String evm_increaseTime(String seconds) {
         try {
-            long nseconds = stringHexToBigInteger(seconds).longValue();
+            long nseconds = stringNumberAsBigInt(seconds).longValue();
             String result = toJsonHex(minerServer.increaseTime(nseconds));
             if (logger.isDebugEnabled()) {
-                logger.debug("evm_increaseTime({}): {}", seconds, result);
+                logger.debug("evm_increaseTime({}): {}", nseconds, result);
             }
             return result;
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {

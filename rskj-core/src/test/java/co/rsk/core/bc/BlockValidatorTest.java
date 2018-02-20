@@ -814,13 +814,12 @@ public class BlockValidatorTest {
         Assert.assertTrue(validator.isValid(block));
     }
 
-
     @Test
     public void blockInTheFuture() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
-        int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxSecondsInTheFuture();
+        int validPeriod = 6000;
 
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getTimestamp())
@@ -836,6 +835,32 @@ public class BlockValidatorTest {
 
         Mockito.when(block.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + validPeriod);
+
+        Assert.assertTrue(validator.isValid(block));
+    }
+
+
+    @Test
+    public void blockInTheFutureIsAcceptedWhenValidPeriodIsZero() {
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+
+        int validPeriod = 0;
+
+        Block block = Mockito.mock(Block.class);
+        Mockito.when(block.getTimestamp())
+                .thenReturn((System.currentTimeMillis() / 1000) + 2000);
+
+        Mockito.when(block.getParentHash()).thenReturn(genesis.getHash());
+
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockTimeStampValidationRule(validPeriod)
+                .build();
+
+        Assert.assertTrue(validator.isValid(block));
+
+        Mockito.when(block.getTimestamp())
+                .thenReturn((System.currentTimeMillis() / 1000) + 2000);
 
         Assert.assertTrue(validator.isValid(block));
     }
