@@ -113,14 +113,14 @@ public class Web3RskImpl extends Web3Impl {
         return parseResultAndReturn(result);
     }
 
-    public SubmittedBlockInfo mnr_submitBitcoinSolution(
+    public SubmittedBlockInfo mnr_submitBitcoinBlockPartialMerkle(
             String blockHashHex,
             String blockHeaderHex,
             String coinbaseHex,
             String merkleHashesHex,
             String blockTxnCountHex
     ) {
-        logger.debug("mnr_submitBitcoinSolution(): {}, {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, merkleHashesHex, blockTxnCountHex);
+        logger.debug("mnr_submitBitcoinBlockPartialMerkle(): {}, {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, merkleHashesHex, blockTxnCountHex);
 
         NetworkParameters params = RegTestParams.get();
         new Context(params);
@@ -130,11 +130,34 @@ public class Web3RskImpl extends Web3Impl {
 
         String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
 
-        List<String> merkleHashes = parseMerkleHashes(merkleHashesHex);
+        List<String> merkleHashes = parseHashes(merkleHashesHex);
 
         int txnCount = Integer.parseInt(blockTxnCountHex, 16);
 
-        SubmitBlockResult result = minerServer.submitBitcoinSolution(blockHashForMergedMining, bitcoinBlockWithHeaderOnly, coinbase, merkleHashes, txnCount);
+        SubmitBlockResult result = minerServer.submitBitcoinBlockPartialMerkle(blockHashForMergedMining, bitcoinBlockWithHeaderOnly, coinbase, merkleHashes, txnCount);
+
+        return parseResultAndReturn(result);
+    }
+
+    public SubmittedBlockInfo mnr_submitBitcoinBlockTransactions(
+            String blockHashHex,
+            String blockHeaderHex,
+            String coinbaseHex,
+            String txnHashesHex
+    ) {
+        logger.debug("mnr_submitBitcoinBlockTransactions(): {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, txnHashesHex);
+
+        NetworkParameters params = RegTestParams.get();
+        new Context(params);
+
+        BtcBlock bitcoinBlockWithHeaderOnly = getBtcBlock(blockHeaderHex, params);
+        BtcTransaction coinbase = new BtcTransaction(params, Hex.decode(coinbaseHex));
+
+        String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
+
+        List<String> txnHashes = parseHashes(txnHashesHex);
+
+        SubmitBlockResult result = minerServer.submitBitcoinBlockTransactions(blockHashForMergedMining, bitcoinBlockWithHeaderOnly, coinbase, txnHashes);
 
         return parseResultAndReturn(result);
     }
@@ -212,7 +235,7 @@ public class Web3RskImpl extends Web3Impl {
         return TypeConverter.toJsonHex(blockHashForMergedMiningArray);
     }
 
-    private List<String> parseMerkleHashes(String txnHashesHex) {
+    private List<String> parseHashes(String txnHashesHex) {
         String[] split = txnHashesHex.split("\\s+");
         return Arrays.asList(split);
     }

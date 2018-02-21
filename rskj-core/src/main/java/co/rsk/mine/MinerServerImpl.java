@@ -380,15 +380,28 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
-    public SubmitBlockResult submitBitcoinSolution(
+    public SubmitBlockResult submitBitcoinBlockPartialMerkle(
             String blockHashForMergedMining,
             BtcBlock blockWithHeaderOnly,
             BtcTransaction coinbase,
             List<String> merkleHashes,
             int blockTxnCount) {
-        logger.debug("Received solution with hash {} for merged mining", blockHashForMergedMining);
+        logger.debug("Received merkle solution with hash {} for merged mining", blockHashForMergedMining);
 
         PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranchForCoinbase(blockWithHeaderOnly.getParams(), merkleHashes, blockTxnCount);
+
+        return processSolution(blockHashForMergedMining, blockWithHeaderOnly, coinbase, bitcoinMergedMiningMerkleBranch, true);
+    }
+
+    @Override
+    public SubmitBlockResult submitBitcoinBlockTransactions(
+            String blockHashForMergedMining,
+            BtcBlock blockWithHeaderOnly,
+            BtcTransaction coinbase,
+            List<String> txHashes) {
+        logger.debug("Received tx solution with hash {} for merged mining", blockHashForMergedMining);
+
+        PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(blockWithHeaderOnly.getParams(), txHashes);
 
         return processSolution(blockHashForMergedMining, blockWithHeaderOnly, coinbase, bitcoinMergedMiningMerkleBranch, true);
     }
@@ -534,6 +547,20 @@ public class MinerServerImpl implements MinerServer {
         }
 
         return new PartialMerkleTree(networkParams, bits, merkleHashes, blockTxnCount);
+    }
+
+    /**
+     * getBitcoinMergedMerkleBranch returns the Partial Merkle Branch needed to validate that the coinbase tx
+     * is part of the Merkle Tree.
+     *
+     * @param networkParams  bitcoin network params.
+     * @param txStringHashes hashes for the txs of the bitcoin block used for merged mining.
+     * @return A Partial Merkle Branch in which you can validate the coinbase tx.
+     */
+    private PartialMerkleTree getBitcoinMergedMerkleBranch(NetworkParameters networkParams, List<String> txStringHashes) {
+        List<Sha256Hash> txHashes = txStringHashes.stream().map(Sha256Hash::wrap).collect(Collectors.toList());
+
+        return buildMerkleBranch(txHashes, networkParams);
     }
 
     /**
