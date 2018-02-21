@@ -19,7 +19,6 @@
 
 package org.ethereum.vm.program.invoke;
 
-import co.rsk.core.Rsk;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImplForTesting;
 import org.ethereum.core.Repository;
@@ -44,8 +43,9 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     private Repository repository;
     private RskAddress ownerAddress = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
-    private final RskAddress contractAddress = new RskAddress("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
+    private final RskAddress defaultContractAddress = new RskAddress("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
 
+    private RskAddress contractAddress;
     // default for most tests. This can be overwritten by the test
     private long gasLimit = 1000000;
 
@@ -55,13 +55,18 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     public ProgramInvokeMockImpl(String contractCode, RskAddress contractAddress) {
+        this(Hex.decode(contractCode), contractAddress);
+    }
+
+    public ProgramInvokeMockImpl(byte[] contractCode, RskAddress contractAddress) {
         this.repository = new RepositoryImplForTesting();
 
         this.repository.createAccount(ownerAddress);
-        //Defaults to contractAddress constant defined in this mock
-        RskAddress address = contractAddress!=null?contractAddress:this.contractAddress;
-        this.repository.createAccount(address);
-        this.repository.saveCode(address, Hex.decode(contractCode));
+        //Defaults to defaultContractAddress constant defined in this mock
+        this.contractAddress = contractAddress!=null?contractAddress:this.defaultContractAddress;
+        this.repository.createAccount(this.contractAddress);
+        this.repository.saveCode(this.contractAddress, contractCode);
+        this.txindex = DataWord.ZERO;
     }
 
     public ProgramInvokeMockImpl() {
@@ -72,9 +77,11 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
                 + "00603f556103e75660005460005360200235", null);
     }
 
+    public RskAddress getContractAddress() {
+        return this.contractAddress;
+    }
+
     public ProgramInvokeMockImpl(boolean defaults) {
-
-
     }
 
     /*           ADDRESS op         */

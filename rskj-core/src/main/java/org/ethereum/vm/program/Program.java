@@ -27,7 +27,6 @@ import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -184,7 +183,6 @@ public class Program {
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
-    private final BlockchainNetConfig blockchainNetConfig;
 
     boolean isLogEnabled;
     boolean isGasLogEnabled;
@@ -200,7 +198,6 @@ public class Program {
         this.precompiledContracts = precompiledContracts;
         this.blockchainConfig = blockchainConfig;
         this.transaction = transaction;
-        this.blockchainNetConfig = config.getBlockchainNetConfig();
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
 
@@ -895,9 +892,10 @@ public class Program {
         childResult  = program.getResult();
 
         getTrace().merge(program.getTrace());
-        getResult().merge(childResult );
+        getResult().merge(childResult);
 
         boolean childCallSuccessful = true;
+
         if (childResult.getException() != null || childResult.isRevert()) {
             if (isGasLogEnabled) {
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
@@ -906,7 +904,7 @@ public class Program {
             }
 
             internalTx.reject();
-            childResult .rejectInternalTransactions();
+            childResult.rejectInternalTransactions();
             childResult.rejectLogInfos();
 
             track.rollback();
