@@ -62,6 +62,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         this.contractAddress = contractAddress!=null?contractAddress:this.defaultContractAddress;
         this.repository.createAccount(this.contractAddress);
         this.repository.saveCode(this.contractAddress, Hex.decode(contractCode));
+        this.txindex = DataWord.ZERO;
     }
 
     public ProgramInvokeMockImpl() {

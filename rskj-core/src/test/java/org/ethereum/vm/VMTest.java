@@ -24,8 +24,12 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import org.ethereum.config.BlockchainConfig;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.vm.BytecodeCompiler;
+import org.ethereum.core.Account;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.BadJumpDestinationException;
@@ -74,19 +78,42 @@ public class VMTest {
         invoke.getRepository().close();
     }
 
-    @Test(expected=Program.StaticCallModificationException.class)
-    public void testSTATICCALL() {
+    @Test
+    public void testSTATICCALLWithStatusZero() {
         invoke = new ProgramInvokeMockImpl("6001600255",null);
         RskAddress address = invoke.getContractAddress();
         program = getProgram("PUSH1 0x00" +
                 " PUSH1 0x00" +
                 " PUSH1 0x00" +
                 " PUSH1 0x00" +
+                " PUSH1 0x00" +
                 " PUSH20 0x" +invoke.getContractAddress()+
-                " PUSH4 0x5B8D80 STATICCALL");
+                " PUSH4 0x005B8D80" +
+                " STATICCALL");
         program.fullTrace();
-        vm.steps(program, 7);
+        vm.steps(program, Long.MAX_VALUE);
 
+        assertEquals(DataWord.ZERO, program.stackPop());
+    }
+
+    @Test
+    public void testSTATICCALLWithStatusOne() {
+        invoke = new ProgramInvokeMockImpl("60016002",null);
+        RskAddress address = invoke.getContractAddress();
+        program = new Program(config, compile(
+                "PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH20 0x" +invoke.getContractAddress() +
+                        " PUSH4 0x005B8D80" +
+                        " STATICCALL"), invoke, createTransaction(0));
+
+        program.fullTrace();
+        vm.steps(program, Long.MAX_VALUE);
+
+        assertEquals(DataWord.ONE, program.stackPop());
     }
 
     @Test  // PUSH1 OP
@@ -499,13 +526,14 @@ public class VMTest {
 
         assertTrue(program.isStopped());
         String result = Hex.toHexString(program.getStack().peek().getData()).toUpperCase();
-        assertEquals(expected,result );
+        assertEquals(expected,result);
     }
 
     @Test  // AND OP
     public void testAND_1() {
 
         program = getProgram("600A600A16");
+
         String expected = "000000000000000000000000000000000000000000000000000000000000000A";
 
         vm.step(program);
@@ -2973,6 +3001,16 @@ public class VMTest {
 
     private byte[] compile(String code) {
         return new BytecodeCompiler().compile(code);
+    }
+
+    private static Transaction createTransaction(int number) {
+        AccountBuilder acbuilder = new AccountBuilder();
+        acbuilder.name("sender" + number);
+        Account sender = acbuilder.build();
+        acbuilder.name("receiver" + number);
+        Account receiver = acbuilder.build();
+        TransactionBuilder txbuilder = new TransactionBuilder();
+        return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(number * 1000 + 1000)).build();
     }
 }
 
