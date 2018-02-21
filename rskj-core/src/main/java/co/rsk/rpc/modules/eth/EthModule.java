@@ -95,11 +95,8 @@ public class EthModule
     public String call(Web3.CallArguments args, String bnOrId) {
         String s = null;
         try {
-            if (!"latest".equals(bnOrId)) {
-                throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' as a parameter so far.");
-            }
-
-            ProgramResult res = callConstant(args);
+            Block executionBlock = getExecutionBlock(bnOrId);
+            ProgramResult res = callConstant(args, executionBlock);
             return s = toJsonHex(res.getHReturn());
         } finally {
             LOGGER.debug("eth_call(): {}", s);
@@ -114,7 +111,7 @@ public class EthModule
     public String estimateGas(Web3.CallArguments args) {
         String s = null;
         try {
-            ProgramResult res = callConstant(args);
+            ProgramResult res = callConstant(args, blockchain.getBestBlock());
             return s = toJsonHex(res.getGasUsed());
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
@@ -131,12 +128,19 @@ public class EthModule
         return ethModuleWallet.sign(addr, data);
     }
 
-    private ProgramResult callConstant(Web3.CallArguments args) {
-        Block bestBlock = blockchain.getBestBlock();
+    private Block getExecutionBlock(String bnOrId) {
+        if ("latest".equals(bnOrId)) {
+            return blockchain.getBestBlock();
+        }
+
+        throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' as a parameter so far.");
+    }
+
+    private ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction(
-                bestBlock,
-                bestBlock.getCoinbase(),
+                executionBlock,
+                executionBlock.getCoinbase(),
                 hexArgs.getGasPrice(),
                 hexArgs.getGasLimit(),
                 hexArgs.getToAddress(),
