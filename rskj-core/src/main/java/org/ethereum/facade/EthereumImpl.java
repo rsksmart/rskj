@@ -69,16 +69,17 @@ public class EthereumImpl implements Ethereum {
     private final Repository repository;
     private ExecutorService peerServiceExecutor;
 
-    public EthereumImpl(RskSystemProperties config,
-                        ChannelManager channelManager,
-                        PeerServer peerServer,
-                        ProgramInvokeFactory programInvokeFactory,
-                        PendingState pendingState,
-                        BlockStore blockStore,
-                        CompositeEthereumListener compositeEthereumListener,
-                        ReceiptStore receiptStore,
-                        Repository repository,
-                        Blockchain blockchain) {
+    public EthereumImpl(
+            RskSystemProperties config,
+            ChannelManager channelManager,
+            PeerServer peerServer,
+            ProgramInvokeFactory programInvokeFactory,
+            PendingState pendingState,
+            BlockStore blockStore,
+            CompositeEthereumListener compositeEthereumListener,
+            ReceiptStore receiptStore,
+            Repository repository,
+            Blockchain blockchain) {
         this.channelManager = channelManager;
         this.peerServer = peerServer;
         this.programInvokeFactory = programInvokeFactory;
