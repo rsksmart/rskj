@@ -563,7 +563,6 @@ public class TransactionPoolImplTest {
     }
 
     private static TransactionPoolImpl createSampleNewTransactionPoolWithAccounts(int naccounts, Coin balance, BlockChainImpl blockChain) {
-
         Block best = blockChain.getStatus().getBestBlock();
         Repository repository = blockChain.getRepository();
 
