@@ -22,10 +22,10 @@ public class TrieCopyToTest {
 
         trie.copyTo(store2);
 
-        Trie result = store2.retrieve(trie.getHash());
+        Trie result = store2.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(result);
-        Assert.assertArrayEquals(trie.getHash(), result.getHash());
+        Assert.assertEquals(trie.getHash(), result.getHash());
     }
 
     @Test
@@ -46,10 +46,10 @@ public class TrieCopyToTest {
 
         trie.copyTo(store2);
 
-        Trie result = store2.retrieve(trie.getHash());
+        Trie result = store2.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(result);
-        Assert.assertArrayEquals(trie.getHash(), result.getHash());
+        Assert.assertEquals(trie.getHash(), result.getHash());
 
         for (int k = 0; k < 100; k++) {
             Assert.assertArrayEquals((k + "").getBytes(), result.get(k + ""));
@@ -78,19 +78,19 @@ public class TrieCopyToTest {
         trie1.copyTo(store2);
         trie2.copyTo(store2);
 
-        Trie result1 = store2.retrieve(trie1.getHash());
+        Trie result1 = store2.retrieve(trie1.getHash().getBytes());
 
         Assert.assertNotNull(result1);
-        Assert.assertArrayEquals(trie1.getHash(), result1.getHash());
+        Assert.assertEquals(trie1.getHash(), result1.getHash());
 
         for (int k = 0; k < 100; k++) {
             Assert.assertArrayEquals((k + "").getBytes(), result1.get(k + ""));
         }
 
-        Trie result2 = store2.retrieve(trie2.getHash());
+        Trie result2 = store2.retrieve(trie2.getHash().getBytes());
 
         Assert.assertNotNull(result2);
-        Assert.assertArrayEquals(trie2.getHash(), result2.getHash());
+        Assert.assertEquals(trie2.getHash(), result2.getHash());
 
         for (int k = 0; k < 100; k++) {
             Assert.assertArrayEquals((k + 100 + "").getBytes(), result2.get(k + 100 + ""));

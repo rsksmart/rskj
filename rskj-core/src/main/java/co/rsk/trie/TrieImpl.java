@@ -530,7 +530,7 @@ public class TrieImpl implements Trie {
 
     @Override
     public void copyTo(TrieStore target) {
-        if (target.retrieve(this.getHash()) != null) {
+        if (target.retrieve(this.getHash().getBytes()) != null) {
             return;
         }
 
