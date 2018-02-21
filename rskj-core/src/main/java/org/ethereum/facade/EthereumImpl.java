@@ -21,7 +21,6 @@ package org.ethereum.facade;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.ReversibleTransactionExecutor;
 import org.ethereum.core.*;
 import org.ethereum.core.PendingState;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -31,10 +30,7 @@ import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.net.submit.TransactionExecutor;
 import org.ethereum.net.submit.TransactionTask;
-import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -58,7 +54,6 @@ public class EthereumImpl implements Ethereum {
     private final RskSystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final Blockchain blockchain;
-    private final ReversibleTransactionExecutor reversibleTransactionExecutor;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
     private ExecutorService peerServiceExecutor;
@@ -69,7 +64,6 @@ public class EthereumImpl implements Ethereum {
             PeerServer peerServer,
             PendingState pendingState,
             CompositeEthereumListener compositeEthereumListener,
-            ReversibleTransactionExecutor reversibleTransactionExecutor,
             Blockchain blockchain) {
         this.channelManager = channelManager;
         this.peerServer = peerServer;
@@ -77,7 +71,6 @@ public class EthereumImpl implements Ethereum {
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.blockchain = blockchain;
-        this.reversibleTransactionExecutor = reversibleTransactionExecutor;
     }
 
     @Override
@@ -157,22 +150,6 @@ public class EthereumImpl implements Ethereum {
                 return adapteeResult.get(0);
             }
         };
-    }
-
-    @Override
-    public ProgramResult callConstant(Web3.CallArguments args) {
-        Block bestBlock = blockchain.getBestBlock();
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        return reversibleTransactionExecutor.executeTransaction(
-                bestBlock,
-                bestBlock.getCoinbase(),
-                hexArgs.getGasPrice(),
-                hexArgs.getGasLimit(),
-                hexArgs.getToAddress(),
-                hexArgs.getValue(),
-                hexArgs.getData(),
-                hexArgs.getFromAddress()
-        );
     }
 
     @Override

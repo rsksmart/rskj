@@ -20,13 +20,14 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
-import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.vm.PrecompiledContracts;
@@ -49,21 +50,21 @@ public class EthModule
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
     private final RskSystemProperties config;
-    private final Ethereum eth;
     private final Blockchain blockchain;
+    private final ReversibleTransactionExecutor reversibleTransactionExecutor;
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
 
     @Autowired
     public EthModule(
             RskSystemProperties config,
-            Ethereum eth,
             Blockchain blockchain,
+            ReversibleTransactionExecutor reversibleTransactionExecutor,
             EthModuleSolidity ethModuleSolidity,
             EthModuleWallet ethModuleWallet) {
         this.config = config;
-        this.eth = eth;
         this.blockchain = blockchain;
+        this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
     }
@@ -98,7 +99,7 @@ public class EthModule
                 throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' as a parameter so far.");
             }
 
-            ProgramResult res = eth.callConstant(args);
+            ProgramResult res = callConstant(args);
             return s = toJsonHex(res.getHReturn());
         } finally {
             LOGGER.debug("eth_call(): {}", s);
@@ -113,7 +114,7 @@ public class EthModule
     public String estimateGas(Web3.CallArguments args) {
         String s = null;
         try {
-            ProgramResult res = eth.callConstant(args);
+            ProgramResult res = callConstant(args);
             return s = toJsonHex(res.getGasUsed());
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
@@ -128,5 +129,20 @@ public class EthModule
     @Override
     public String sign(String addr, String data) {
         return ethModuleWallet.sign(addr, data);
+    }
+
+    private ProgramResult callConstant(Web3.CallArguments args) {
+        Block bestBlock = blockchain.getBestBlock();
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        return reversibleTransactionExecutor.executeTransaction(
+                bestBlock,
+                bestBlock.getCoinbase(),
+                hexArgs.getGasPrice(),
+                hexArgs.getGasLimit(),
+                hexArgs.getToAddress(),
+                hexArgs.getValue(),
+                hexArgs.getData(),
+                hexArgs.getFromAddress()
+        );
     }
 }

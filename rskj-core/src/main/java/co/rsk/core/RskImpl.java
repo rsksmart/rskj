@@ -51,7 +51,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
                 peerServer,
                 pendingState,
                 compositeEthereumListener,
-                reversibleTransactionExecutor,
                 blockchain
         );
         this.nodeBlockProcessor = nodeBlockProcessor;
