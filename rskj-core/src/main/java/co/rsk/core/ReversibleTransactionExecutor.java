@@ -26,8 +26,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,24 +56,6 @@ public class ReversibleTransactionExecutor {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.programInvokeFactory = programInvokeFactory;
-    }
-
-    public ProgramResult executeTransaction(
-            Block executionBlock,
-            RskAddress coinbase,
-            Web3.CallArguments args) {
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-
-        return executeTransaction(
-                executionBlock,
-                coinbase,
-                hexArgs.getGasPrice(),
-                hexArgs.getGasLimit(),
-                hexArgs.getToAddress(),
-                hexArgs.getValue(),
-                hexArgs.getData(),
-                hexArgs.getFromAddress()
-        );
     }
 
     public ProgramResult executeTransaction(

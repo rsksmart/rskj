@@ -32,6 +32,7 @@ import org.ethereum.net.server.PeerServer;
 import org.ethereum.net.submit.TransactionExecutor;
 import org.ethereum.net.submit.TransactionTask;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -161,10 +162,16 @@ public class EthereumImpl implements Ethereum {
     @Override
     public ProgramResult callConstant(Web3.CallArguments args) {
         Block bestBlock = blockchain.getBestBlock();
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction(
                 bestBlock,
                 bestBlock.getCoinbase(),
-                args
+                hexArgs.getGasPrice(),
+                hexArgs.getGasLimit(),
+                hexArgs.getToAddress(),
+                hexArgs.getValue(),
+                hexArgs.getData(),
+                hexArgs.getFromAddress()
         );
     }
 
