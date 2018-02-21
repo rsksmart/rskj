@@ -515,7 +515,7 @@ public class MinerServerImpl implements MinerServer {
             NetworkParameters networkParams,
             List<String> merkleStringHashes,
             int blockTxnCount) {
-        List<Sha256Hash> merkleHashes = merkleStringHashes.stream().map(Sha256Hash::wrap).collect(Collectors.toList());
+        List<Sha256Hash> merkleHashes = merkleStringHashes.stream().map(mk -> Sha256Hash.wrapReversed(Hex.decode(mk))).collect(Collectors.toList());
         int merkleTreeHeight = (int) Math.ceil(Math.log(blockTxnCount) / Math.log(2));
 
         // bitlist will always have ones at the beginning because merkle branch is built for coinbase tx
