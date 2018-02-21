@@ -896,9 +896,10 @@ public class Program {
         childResult  = program.getResult();
 
         getTrace().merge(program.getTrace());
-        getResult().merge(childResult );
+        getResult().merge(childResult);
 
         boolean childCallSuccessful = true;
+
         if (childResult.getException() != null || childResult.isRevert()) {
             if (isGasLogEnabled) {
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
@@ -907,7 +908,7 @@ public class Program {
             }
 
             internalTx.reject();
-            childResult .rejectInternalTransactions();
+            childResult.rejectInternalTransactions();
             childResult.rejectLogInfos();
 
             track.rollback();
