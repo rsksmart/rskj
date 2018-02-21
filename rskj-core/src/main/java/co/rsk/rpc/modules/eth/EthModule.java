@@ -23,13 +23,13 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
+import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
-import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -55,6 +55,8 @@ public class EthModule
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
 
+    private final ExecutionBlockRetriever executionBlockRetriever;
+
     @Autowired
     public EthModule(
             RskSystemProperties config,
@@ -67,6 +69,8 @@ public class EthModule
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
+
+        this.executionBlockRetriever = new ExecutionBlockRetriever(this.blockchain);
     }
 
     @Override
@@ -95,7 +99,7 @@ public class EthModule
     public String call(Web3.CallArguments args, String bnOrId) {
         String s = null;
         try {
-            Block executionBlock = getExecutionBlock(bnOrId);
+            Block executionBlock = executionBlockRetriever.getExecutionBlock(bnOrId);
             ProgramResult res = callConstant(args, executionBlock);
             return s = toJsonHex(res.getHReturn());
         } finally {
@@ -126,14 +130,6 @@ public class EthModule
     @Override
     public String sign(String addr, String data) {
         return ethModuleWallet.sign(addr, data);
-    }
-
-    private Block getExecutionBlock(String bnOrId) {
-        if ("latest".equals(bnOrId)) {
-            return blockchain.getBestBlock();
-        }
-
-        throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' as a parameter so far.");
     }
 
     private ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {
