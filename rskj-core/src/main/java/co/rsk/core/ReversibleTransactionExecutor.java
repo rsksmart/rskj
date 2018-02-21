@@ -53,6 +53,34 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
             ProgramInvokeFactory programInvokeFactory,
             Block executionBlock,
             RskAddress coinbase,
+            Web3.CallArguments args) {
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+
+        return executeTransaction(
+                config,
+                track,
+                blockStore,
+                receiptStore,
+                programInvokeFactory,
+                executionBlock,
+                coinbase,
+                hexArgs.getGasPrice(),
+                hexArgs.getGasLimit(),
+                hexArgs.getToAddress(),
+                hexArgs.getValue(),
+                hexArgs.getData(),
+                hexArgs.getFromAddress()
+        );
+    }
+
+    public static TransactionExecutor executeTransaction(
+            RskSystemProperties config,
+            Repository track,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            ProgramInvokeFactory programInvokeFactory,
+            Block executionBlock,
+            RskAddress coinbase,
             byte[] gasPrice,
             byte[] gasLimit,
             byte[] toAddress,
@@ -83,34 +111,6 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
                 executionBlock
         );
         return executor.executeTransaction();
-    }
-
-    public static TransactionExecutor executeTransaction(
-            RskSystemProperties config,
-            Repository track,
-            BlockStore blockStore,
-            ReceiptStore receiptStore,
-            ProgramInvokeFactory programInvokeFactory,
-            Block executionBlock,
-            RskAddress coinbase,
-            Web3.CallArguments args) {
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-
-        return executeTransaction(
-                config,
-                track,
-                blockStore,
-                receiptStore,
-                programInvokeFactory,
-                executionBlock,
-                coinbase,
-                hexArgs.getGasPrice(),
-                hexArgs.getGasLimit(),
-                hexArgs.getToAddress(),
-                hexArgs.getValue(),
-                hexArgs.getData(),
-                hexArgs.getFromAddress()
-        );
     }
 
     private TransactionExecutor executeTransaction() {
