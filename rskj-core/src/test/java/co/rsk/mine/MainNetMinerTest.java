@@ -7,6 +7,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
@@ -17,6 +18,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.EthereumImpl;
 import org.junit.Assert;
@@ -65,6 +67,7 @@ public class MainNetMinerTest {
         gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE)));
         bc.setStatus(gen, gen.getCumulativeDifficulty());
         World world = new World(bc, gen);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), null, null, null, 10, 100);
         blockchain = world.getBlockChain();
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
