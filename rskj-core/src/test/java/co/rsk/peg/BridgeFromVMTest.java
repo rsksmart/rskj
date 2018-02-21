@@ -27,7 +27,7 @@ import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
@@ -75,8 +75,13 @@ public class BridgeFromVMTest {
         byte[] callerCode = assembler.assemble("0xaabb 0xccdd 0xeeff");
         invoke.getRepository().saveCode(new RskAddress(invoke.getOwnerAddress().getLast20Bytes()), callerCode);
 
-        VM vm = new VM(config.getVmConfig(), mock(PrecompiledContracts.class));
-            
+        PrecompiledContracts precompiledContracts = mock(PrecompiledContracts.class);
+        doReturn(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR))
+                .when(precompiledContracts)
+                .getContractForAddress(new DataWord(PrecompiledContracts.BRIDGE_ADDR_STR));
+
+        VM vm = new VM(config.getVmConfig(), precompiledContracts);
+
         // Encode a call to the bridge's getMinimumLockTxValue function
         // That means first pushing the corresponding encoded ABI storage to memory (MSTORE)
         // and then doing a CALL to the corresponding address with the correct parameters
@@ -88,10 +93,10 @@ public class BridgeFromVMTest {
 
         // Mock a transaction, all we really need is a hash
         Transaction tx = mock(Transaction.class);
-        when(tx.getHash()).thenReturn(new Keccak256("aabbccdd"));
+        when(tx.getHash()).thenReturn(new Keccak256("00000000000000000000000000000000000000000000000000000000aabbccdd"));
 
         // Run the program on the VM
-        Program program = new Program(config.getVmConfig(), mock(PrecompiledContracts.class), blockchainConfig, code, invoke, tx);
+        Program program = new Program(config.getVmConfig(), precompiledContracts, blockchainConfig, code, invoke, tx);
         for (int i = 0; i < numOps; i++) {
             vm.step(program);
         }
