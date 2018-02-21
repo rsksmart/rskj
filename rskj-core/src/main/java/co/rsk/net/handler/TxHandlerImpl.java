@@ -52,12 +52,6 @@ public class TxHandlerImpl implements TxHandler {
         this.repository = repository;
     }
 
-    @VisibleForTesting
-    TxHandlerImpl(RskSystemProperties config) {
-        // Only for testing
-        this.config = config;
-    }
-
     @Override
     public List<Transaction> retrieveValidTxs(List<Transaction> txs) {
         return new TxValidator(config, repository, blockchain).filterTxs(txs);
