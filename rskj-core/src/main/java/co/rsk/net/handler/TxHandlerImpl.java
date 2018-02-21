@@ -52,7 +52,6 @@ public class TxHandlerImpl implements TxHandler {
         this.repository = repository;
     }
 
-    
     @Override
     public List<Transaction> retrieveValidTxs(List<Transaction> txs) {
         return new TxValidator(config, repository, blockchain).filterTxs(txs);
