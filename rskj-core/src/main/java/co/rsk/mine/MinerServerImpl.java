@@ -118,19 +118,20 @@ public class MinerServerImpl implements MinerServer {
     private final RskSystemProperties config;
 
     @Autowired
-    public MinerServerImpl(RskSystemProperties config,
-                           Ethereum ethereum,
-                           Blockchain blockchain,
-                           BlockStore blockStore,
-                           ReceiptStore receiptStore,
-                           PendingState pendingState,
-                           Repository repository,
-                           MiningConfig miningConfig,
-                           @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
-                           BlockProcessor nodeBlockProcessor,
-                           DifficultyCalculator difficultyCalculator,
-                           GasLimitCalculator gasLimitCalculator,
-                           ProofOfWorkRule powRule) {
+    public MinerServerImpl(
+            RskSystemProperties config,
+            Ethereum ethereum,
+            Blockchain blockchain,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            PendingState pendingState,
+            Repository repository,
+            MiningConfig miningConfig,
+            @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
+            BlockProcessor nodeBlockProcessor,
+            DifficultyCalculator difficultyCalculator,
+            GasLimitCalculator gasLimitCalculator,
+            ProofOfWorkRule powRule) {
         this.config = config;
         this.ethereum = ethereum;
         this.blockchain = blockchain;
