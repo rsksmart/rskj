@@ -18,6 +18,9 @@
 
 package co.rsk.vm;
 
+import org.ethereum.vm.OpCode;
+import org.spongycastle.util.encoders.Hex;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,67 +37,34 @@ public class BytecodeCompiler {
         int ntokens = tokens.length;
 
         for (int i = 0; i < ntokens; i++) {
-            String token = tokens[i].toLowerCase();
+            String token = tokens[i].trim().toUpperCase();
 
             if (token.isEmpty())
                 continue;
 
-            bytecodes.add(compileToken(token));
+            if (isHexadecimal(token))
+                compileHexadecimal(token, bytecodes);
+            else
+                bytecodes.add(OpCode.byteVal(token));
         }
 
         int nbytes = bytecodes.size();
-        byte[] result = new byte[nbytes];
+        byte[] bytes = new byte[nbytes];
 
         for (int k = 0; k < nbytes; k++)
-            result[k] = bytecodes.get(k).byteValue();
+            bytes[k] = bytecodes.get(k).byteValue();
 
-        return result;
+        return bytes;
     }
 
-    private byte compileToken(String token) {
-        if (token.length() > 4 && "push".equals(token.substring(0, 4)))
-            return (byte)(0x60 + Integer.parseInt(token.substring(4)) - 1);
+    private static boolean isHexadecimal(String token) {
+        return token.startsWith("0X");
+    }
 
-        if ("add".equals(token))
-            return 0x01;
-        if ("mul".equals(token))
-            return 0x02;
-        if ("sub".equals(token))
-            return 0x03;
-        if ("div".equals(token))
-            return 0x04;
-        if ("sdiv".equals(token))
-            return 0x05;
-        if ("mod".equals(token))
-            return 0x06;
-        if ("smod".equals(token))
-            return 0x07;
+    private static void compileHexadecimal(String token, List<Byte> bytecodes) {
+        byte[] bytes = Hex.decode(token.substring(2));
 
-        if ("dupn".equals(token))
-            return (byte)0xa8;
-
-        if (token.length() > 3 && "dup".equals(token.substring(0, 3)))
-            return (byte)(0x80 + Integer.parseInt(token.substring(3)) - 1);
-
-        if ("swapn".equals(token))
-            return (byte)0xa9;
-
-        if (token.length() > 4 && "swap".equals(token.substring(0, 4)))
-            return (byte)(0x90 + Integer.parseInt(token.substring(4)) - 1);
-
-        if ("txindex".equals(token))
-            return (byte)0xaa;
-
-        if ("jump".equals(token))
-            return (byte)0x56;
-        if ("jumpi".equals(token))
-            return (byte)0x57;
-        if ("jumpdest".equals(token))
-            return (byte)0x5b;
-
-        if (token.startsWith("0x"))
-            return (byte)Integer.parseInt(token.substring(2), 16);
-
-        return (byte)Integer.parseInt(token);
+        for (int k = 0; k < bytes.length; k++)
+            bytecodes.add(bytes[k]);
     }
 }
