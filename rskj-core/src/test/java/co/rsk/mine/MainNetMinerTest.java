@@ -69,22 +69,15 @@ public class MainNetMinerTest {
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
-                this.blockchain,
-                this.blockchain.getBlockStore(),
+                blockchain,
                 null,
-                this.blockchain.getPendingState(),
-                blockchain.getRepository(),
-                ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule,
-                world.getBlockProcessor(),
                 DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false)
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                blockToMineBuilder(),
+                ConfigUtils.getDefaultMiningConfig()
         );
         try {
             minerServer.start();
@@ -170,22 +163,15 @@ public class MainNetMinerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 tempConfig,
                 ethereumImpl,
                 blockchain,
-                blockchain.getBlockStore(),
-                null,
-                blockchain.getPendingState(),
-                blockchain.getRepository(),
-                ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule,
                 null,
                 DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(config),
-                new ProofOfWorkRule(tempConfig).setFallbackMiningEnabled(true)
+                new ProofOfWorkRule(tempConfig).setFallbackMiningEnabled(true),
+                blockToMineBuilder(),
+                ConfigUtils.getDefaultMiningConfig()
         );
         try {
             minerServer.setFallbackMining(true);
@@ -252,22 +238,15 @@ public class MainNetMinerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 this.blockchain,
-                this.blockchain.getBlockStore(),
-                null,
-                this.blockchain.getPendingState(),
-                blockchain.getRepository(),
-                ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule,
                 world.getBlockProcessor(),
                 DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false)
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                blockToMineBuilder(),
+                ConfigUtils.getDefaultMiningConfig()
         );
         try {
         minerServer.start();
@@ -312,5 +291,21 @@ public class MainNetMinerTest {
         NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
         return MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
+    }
+
+    private BlockToMineBuilder blockToMineBuilder() {
+        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
+        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        return new BlockToMineBuilder(
+                ConfigUtils.getDefaultMiningConfig(),
+                blockchain.getRepository(),
+                this.blockchain.getBlockStore(),
+                this.blockchain.getPendingState(),
+                DIFFICULTY_CALCULATOR,
+                new GasLimitCalculator(config),
+                unclesValidationRule,
+                config,
+                null
+        );
     }
 }

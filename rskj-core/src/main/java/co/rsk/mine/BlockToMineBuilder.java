@@ -34,6 +34,9 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.time.Clock;
@@ -44,6 +47,7 @@ import java.util.*;
  * It can also be used to generate a new block from the pending state, which is useful
  * in places like Web3 with the 'pending' parameter.
  */
+@Component
 public class BlockToMineBuilder {
     private static final Logger logger = LoggerFactory.getLogger("blocktominebuilder");
 
@@ -66,6 +70,7 @@ public class BlockToMineBuilder {
     private long timeAdjustment;
     private long minimumAcceptableTime;
 
+    @Autowired
     public BlockToMineBuilder(
             MiningConfig miningConfig,
             Repository repository,
@@ -73,7 +78,7 @@ public class BlockToMineBuilder {
             PendingState pendingState,
             DifficultyCalculator difficultyCalculator,
             GasLimitCalculator gasLimitCalculator,
-            BlockValidationRule validationRules,
+            @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
             RskSystemProperties config,
             ReceiptStore receiptStore) {
         this.miningConfig = Objects.requireNonNull(miningConfig);

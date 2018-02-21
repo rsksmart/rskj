@@ -29,14 +29,11 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.util.DifficultyUtils;
-import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
@@ -46,7 +43,6 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.util.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
@@ -122,34 +118,18 @@ public class MinerServerImpl implements MinerServer {
             RskSystemProperties config,
             Ethereum ethereum,
             Blockchain blockchain,
-            BlockStore blockStore,
-            ReceiptStore receiptStore,
-            PendingState pendingState,
-            Repository repository,
-            MiningConfig miningConfig,
-            @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
             BlockProcessor nodeBlockProcessor,
             DifficultyCalculator difficultyCalculator,
-            GasLimitCalculator gasLimitCalculator,
-            ProofOfWorkRule powRule) {
+            ProofOfWorkRule powRule,
+            BlockToMineBuilder builder,
+            MiningConfig miningConfig) {
         this.config = config;
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.difficultyCalculator = difficultyCalculator;
         this.powRule = powRule;
-
-        this.builder = new BlockToMineBuilder(
-                miningConfig,
-                repository,
-                blockStore,
-                pendingState,
-                difficultyCalculator,
-                gasLimitCalculator,
-                validationRules,
-                config,
-                receiptStore
-        );
+        this.builder = builder;
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
 

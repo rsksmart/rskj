@@ -99,16 +99,21 @@ public class MinerServerTest {
                 config,
                 ethereumImpl,
                 this.blockchain,
-                this.blockchain.getBlockStore(),
-                null,
-                localPendingState,
-                repository,
-                ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule,
                 null,
                 DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false)
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        repository,
+                        this.blockchain.getBlockStore(),
+                        localPendingState,
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
         );
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
@@ -135,16 +140,21 @@ public class MinerServerTest {
                 config,
                 ethereumImpl,
                 blockchain,
-                blockchain.getBlockStore(),
-                null,
-                blockchain.getPendingState(),
-                blockchain.getRepository(),
-                ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule,
                 null,
                 DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false)
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        blockchain.getBlockStore(),
+                        blockchain.getPendingState(),
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
         );
         try {
         byte[] extraData = ByteBuffer.allocate(4).putInt(1).array();
@@ -192,16 +202,21 @@ public class MinerServerTest {
                 config,
                 ethereumImpl,
                 blockchain,
-                blockchain.getBlockStore(),
-                null,
-                blockchain.getPendingState(),
-                blockchain.getRepository(),
-                ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule,
                 null,
                 DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false)
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        blockchain.getBlockStore(),
+                        blockchain.getPendingState(),
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
         );
         try {
         minerServer.start();
@@ -236,16 +251,21 @@ public class MinerServerTest {
                 config,
                 ethereumImpl,
                 this.blockchain,
-                this.blockchain.getBlockStore(),
-                null,
-                this.blockchain.getPendingState(),
-                blockchain.getRepository(),
-                ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule,
                 null,
                 DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false)
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        this.blockchain.getBlockStore(),
+                        this.blockchain.getPendingState(),
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
         );
 
         minerServer.start();
@@ -268,16 +288,21 @@ public class MinerServerTest {
                 config,
                 ethereumImpl,
                 this.blockchain,
-                this.blockchain.getBlockStore(),
-                null,
-                this.blockchain.getPendingState(),
-                blockchain.getRepository(),
-                ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule,
                 null,
                 DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false)
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        this.blockchain.getBlockStore(),
+                        this.blockchain.getPendingState(),
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
         );
         try {
         minerServer.start();
@@ -300,16 +325,21 @@ public class MinerServerTest {
                 config,
                 ethereumImpl,
                 this.blockchain,
-                this.blockchain.getBlockStore(),
-                null,
-                this.blockchain.getPendingState(),
-                blockchain.getRepository(),
-                ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule,
                 null,
                 DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false)
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        this.blockchain.getBlockStore(),
+                        this.blockchain.getPendingState(),
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
         );
 
         minerServer.start();
@@ -336,16 +366,21 @@ public class MinerServerTest {
                 config,
                 ethereumImpl,
                 this.blockchain,
-                blockchain.getBlockStore(),
-                null,
-                blockchain.getPendingState(),
-                blockchain.getRepository(),
-                ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule,
                 null,
                 DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false)
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        blockchain.getBlockStore(),
+                        blockchain.getPendingState(),
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
         );
         try {
         minerServer.start();
@@ -454,16 +489,25 @@ public class MinerServerTest {
                 config,
                 Mockito.mock(Ethereum.class),
                 Mockito.mock(Blockchain.class),
-                Mockito.mock(BlockStore.class),
-                Mockito.mock(ReceiptStore.class),
-                Mockito.mock(PendingState.class),
-                Mockito.mock(Repository.class),
-                ConfigUtils.getDefaultMiningConfig(),
-                Mockito.mock(BlockValidationRule.class),
                 null,
                 DIFFICULTY_CALCULATOR,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                getBuilderWithMocks(),
+                ConfigUtils.getDefaultMiningConfig()
+        );
+    }
+
+    private BlockToMineBuilder getBuilderWithMocks() {
+        return new BlockToMineBuilder(
+                ConfigUtils.getDefaultMiningConfig(),
+                Mockito.mock(Repository.class),
+                Mockito.mock(BlockStore.class),
+                Mockito.mock(PendingState.class),
+                DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false)
+                Mockito.mock(BlockValidationRule.class),
+                config,
+                Mockito.mock(ReceiptStore.class)
         );
     }
 }
