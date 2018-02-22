@@ -19,8 +19,8 @@
 
 package co.rsk.net;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
-import org.ethereum.db.ByteArrayWrapper;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,36 +29,32 @@ import java.util.Map;
  * Created by ajlopez on 17/06/2017.
  */
 public class BlockCache {
-    private final LinkedHashMap<ByteArrayWrapper, Block> linkedHashMap;
+    private final LinkedHashMap<Keccak256, Block> linkedHashMap;
 
     public BlockCache(int cacheSize) {
-        this.linkedHashMap = new LinkedHashMap<ByteArrayWrapper, Block>(cacheSize, 0.75f, true) {
+        this.linkedHashMap = new LinkedHashMap<Keccak256, Block>(cacheSize, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, Block> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<Keccak256, Block> eldest) {
                 return size() > cacheSize;
             }
         };
     }
 
     public void removeBlock(Block block) {
-        ByteArrayWrapper key = block.getWrappedHash();
-
-        linkedHashMap.remove(key);
+        linkedHashMap.remove(block.getHash());
     }
 
     public void addBlock(Block block) {
-        ByteArrayWrapper key = block.getWrappedHash();
-
-        linkedHashMap.put(key, block);
+        linkedHashMap.put(block.getHash(), block);
     }
 
     public Block getBlockByHash(byte[] hash) {
-        ByteArrayWrapper key = new ByteArrayWrapper(hash);
+        Keccak256 key = new Keccak256(hash);
 
         return linkedHashMap.get(key);
     }
 
-    public Block put(ByteArrayWrapper key, Block block) {
+    public Block put(Keccak256 key, Block block) {
         return linkedHashMap.put(key, block);
     }
 }

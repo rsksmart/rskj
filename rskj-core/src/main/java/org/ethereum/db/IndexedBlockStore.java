@@ -215,7 +215,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
 
         block = new Block(blockRlp);
-        this.blockCache.put(new ByteArrayWrapper(hash), block);
+        this.blockCache.put(new Keccak256(hash), block);
         return block;
     }
 

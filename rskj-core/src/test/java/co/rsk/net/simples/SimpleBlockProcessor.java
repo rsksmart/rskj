@@ -18,13 +18,16 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.*;
+import co.rsk.crypto.Keccak256;
+import co.rsk.net.BlockNodeInformation;
+import co.rsk.net.BlockProcessResult;
+import co.rsk.net.BlockProcessor;
+import co.rsk.net.MessageChannel;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
-import org.ethereum.db.ByteArrayWrapper;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -44,9 +47,9 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     @Override
     public BlockProcessResult processBlock(MessageChannel sender, Block block) {
-        Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
+        Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
         this.blocks.add(block);
-        connectionsResult.put(block.getWrappedHash(), ImportResult.IMPORTED_BEST);
+        connectionsResult.put(block.getHash(), ImportResult.IMPORTED_BEST);
         return new BlockProcessResult(false, connectionsResult, block.getShortHash(), Duration.ZERO);
     }
 

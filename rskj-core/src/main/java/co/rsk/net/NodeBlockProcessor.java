@@ -18,13 +18,13 @@
 
 package co.rsk.net;
 
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
-import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -33,7 +33,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * NodeBlockProcessor processes blocks to add into a blockchain.
@@ -90,13 +89,12 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processNewBlockHashesMessage(@Nonnull final MessageChannel sender, @Nonnull final NewBlockHashesMessage message) {
         message.getBlockIdentifiers().stream()
-                .map(bi -> new ByteArrayWrapper(bi.getHash()))
-                .collect(Collectors.toSet()) // Eliminate duplicates
-                .stream()
-                .filter(b -> !hasBlock(b.getData()))
+                .map(bi -> new Keccak256(bi.getHash()))
+                .distinct()
+                .filter(b -> !hasBlock(b.getBytes()))
                 .forEach(
                         b -> {
-                            sender.sendMessage(new GetBlockMessage(b.getData()));
+                            sender.sendMessage(new GetBlockMessage(b.getBytes()));
                             nodeInformation.addBlockToNode(b, sender.getPeerNodeID());
                         }
                 );
@@ -106,14 +104,14 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processBlockHeaders(@Nonnull final MessageChannel sender, @Nonnull final List<BlockHeader> blockHeaders) {
         blockHeaders.stream()
-                .filter(h -> !hasHeader(h.getHash().getBytes()))
+                .filter(h -> !hasHeader(h.getHash()))
                 // sort block headers in ascending order, so we can process them in that order.
                 .sorted(Comparator.comparingLong(BlockHeader::getNumber))
                 .forEach(h -> processBlockHeader(sender, h));
     }
 
-    private boolean hasHeader(@Nonnull final byte[] hash) {
-        return hasBlock(hash) || store.hasHeader(hash);
+    private boolean hasHeader(Keccak256 hash) {
+        return hasBlock(hash.getBytes()) || store.hasHeader(hash);
     }
 
     private void processBlockHeader(@Nonnull final MessageChannel sender, @Nonnull final BlockHeader header) {
@@ -137,7 +135,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             return;
         }
 
-        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getPeerNodeID());
+        nodeInformation.addBlockToNode(new Keccak256(hash), sender.getPeerNodeID());
         sender.sendMessage(new BlockMessage(block));
     }
 
@@ -157,7 +155,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             return;
         }
 
-        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getPeerNodeID());
+        nodeInformation.addBlockToNode(new Keccak256(hash), sender.getPeerNodeID());
         sender.sendMessage(new BlockResponseMessage(requestId, block));
     }
 

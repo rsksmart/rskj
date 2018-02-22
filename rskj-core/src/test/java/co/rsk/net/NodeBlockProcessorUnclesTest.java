@@ -136,7 +136,7 @@ public class NodeBlockProcessorUnclesTest {
         Assert.assertEquals(0, processor.getBlockchain().getBestBlock().getNumber());
         Assert.assertArrayEquals(genesis.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
         Assert.assertEquals(1, sender.getGetBlockMessages().size());
-        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(block1.getWrappedHash()));
+        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(block1.getHash()));
     }
 
     private static NodeBlockProcessor createNodeBlockProcessor(BlockChainImpl blockChain) {
