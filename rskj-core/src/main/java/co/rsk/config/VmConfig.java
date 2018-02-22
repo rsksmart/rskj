@@ -18,6 +18,9 @@
 
 package co.rsk.config;
 
+import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.core.Block;
+
 /**
  * Wraps configuration for the VM, which is usually derived from configuration files.
  */
@@ -27,16 +30,19 @@ public class VmConfig {
     private final int vmTraceInitStorageLimit;
     private final int dumpBlock;
     private final String dumpStyle;
+    private final BlockchainNetConfig blockchainNetConfig;
 
     public VmConfig(
             boolean vmTrace,
             int vmTraceInitStorageLimit,
             int dumpBlock,
-            String dumpStyle) {
+            String dumpStyle,
+            final BlockchainNetConfig blockchainNetConfig) {
         this.vmTrace = vmTrace;
         this.vmTraceInitStorageLimit = vmTraceInitStorageLimit;
         this.dumpBlock = dumpBlock;
         this.dumpStyle = dumpStyle;
+        this.blockchainNetConfig = blockchainNetConfig;
     }
 
     public int dumpBlock() {
@@ -53,5 +59,9 @@ public class VmConfig {
 
     public int vmTraceInitStorageLimit() {
         return vmTraceInitStorageLimit;
+    }
+
+    public BlockchainNetConfig getBlockchainNetConfig() {
+        return this.blockchainNetConfig;
     }
 }
