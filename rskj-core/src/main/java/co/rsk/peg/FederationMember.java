@@ -114,8 +114,8 @@ public final class FederationMember {
 
     @Override
     public int hashCode() {
-        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
-        // well-defined hashCode()s
+        // Can use java.util.Objects.hash since both BtcECKey and ECKey have
+        // well-defined hashCode(s).
         return Objects.hash(
                 btcPublicKey,
                 rskPublicKey
