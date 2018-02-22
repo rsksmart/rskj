@@ -87,7 +87,7 @@ public class VMTest {
                 " PUSH1 0x00" +
                 " PUSH1 0x00" +
                 " PUSH1 0x00" +
-                " PUSH20 0x" +invoke.getContractAddress()+
+                " PUSH20 0x" + invoke.getContractAddress() +
                 " PUSH4 0x005B8D80" +
                 " STATICCALL");
         program.fullTrace();
@@ -100,15 +100,14 @@ public class VMTest {
     public void testSTATICCALLWithStatusOne() {
         invoke = new ProgramInvokeMockImpl("60016002",null);
         RskAddress address = invoke.getContractAddress();
-        program = new Program(config, compile(
-                "PUSH1 0x00" +
+        program = getProgram("PUSH1 0x00" +
                         " PUSH1 0x00" +
                         " PUSH1 0x00" +
                         " PUSH1 0x00" +
                         " PUSH1 0x00" +
-                        " PUSH20 0x" +invoke.getContractAddress() +
+                        " PUSH20 0x" + invoke.getContractAddress() +
                         " PUSH4 0x005B8D80" +
-                        " STATICCALL"), invoke, createTransaction(0));
+                        " STATICCALL");
 
         program.fullTrace();
         vm.steps(program, Long.MAX_VALUE);
