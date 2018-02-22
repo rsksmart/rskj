@@ -44,4 +44,6 @@ public interface BlockchainConfig {
     boolean isRfs55();
 
     boolean isRfs90();
+
+    boolean isRfs94();
 }
