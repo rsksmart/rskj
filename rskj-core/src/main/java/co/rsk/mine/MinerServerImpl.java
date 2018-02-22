@@ -539,7 +539,7 @@ public class MinerServerImpl implements MinerServer {
 
         // bits indicates which nodes are going to be used for building the partial merkle tree
         // for more information please refer to {@link co.rsk.bitcoinj.core.PartialMerkleTree#buildFromLeaves } method
-        byte[] bits = new byte[(int) Math.ceil(bitList.size() / 8.0)];
+        byte[] bits = new byte[(bitList.size() + 7) / 8];
         for (int i = 0; i < bitList.size(); i++) {
             if (bitList.get(i)) {
                 Utils.setBitLE(bits, i);
@@ -588,7 +588,7 @@ public class MinerServerImpl implements MinerServer {
            We need txs.size() / 8 bytes to represent this vector.
            The coinbase tx is the first one of the txs so we set the first bit to 1.
          */
-        byte[] bitvector = new byte[(int) Math.ceil(txHashes.size() / 8.0)];
+        byte[] bitvector = new byte[(txHashes.size() + 7) / 8];
         Utils.setBitLE(bitvector, 0);
         return PartialMerkleTree.buildFromLeaves(params, bitvector, txHashes);
     }
