@@ -72,6 +72,11 @@ public class RegTestConfig extends GenesisConfig {
     }
 
     @Override
+    public boolean isRfs50() {
+        return true;
+    }
+
+    @Override
     public boolean isRfs55() {
         return true;
     }

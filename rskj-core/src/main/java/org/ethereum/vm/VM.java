@@ -28,6 +28,7 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
@@ -769,20 +770,23 @@ public class VM {
             spendOpCodeGas();
         }
         // EXECUTION PHASE
-        int length;
-        if (op == OpCode.CODESIZE)
-            //TODO(mmarquez): we need to add support to precompiled contracts
-        {
-            length = program.getCode().length; // during initialization it will return the initialization code size
+        DataWord codeLength;
+        if (op == OpCode.CODESIZE) {
+            codeLength = new DataWord(program.getCode().length); // during initialization it will return the initialization code size
         } else {
             DataWord address = program.stackPop();
-            length = program.getCodeAt(address).length;
+            codeLength = new DataWord(program.getCodeAt(address).length);
+            if (program.getBlockchainConfig().isRfs50()) {
+                PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(address);
+                if (precompiledContract != null) {
+                    codeLength = new DataWord(BigIntegers.asUnsignedByteArray(DataWord.MAX_VALUE));
+                }
+            }
             program.disposeWord(address);
         }
-        DataWord codeLength = new DataWord(length);
 
         if (isLogEnabled) {
-            hint = "size: " + length;
+            hint = "size: " + codeLength;
         }
 
         program.stackPush(codeLength);
