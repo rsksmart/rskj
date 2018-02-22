@@ -19,10 +19,7 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.Wallet;
-import co.rsk.core.WalletFactory;
+import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.mine.MinerClient;
@@ -846,7 +843,7 @@ public class Web3ImplTest {
 
         Web3.CallArguments argsForCall = new Web3.CallArguments();
         argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress().getBytes());
-        argsForCall.data = greeter.functions.get("greet").formatSignature();
+        argsForCall.data = TypeConverter.toJsonHex(greeter.functions.get("greet").encodeSignature());
 
         String result = web3.eth_call(argsForCall, "latest");
 
@@ -1284,9 +1281,6 @@ public class Web3ImplTest {
 
     private Web3Impl createWeb3Mocked(World world) {
         Ethereum ethMock = Mockito.mock(Ethereum.class);
-        ProgramResult res = new ProgramResult();
-        res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
-        Mockito.when(ethMock.callConstant(Matchers.any())).thenReturn(res);
         return createWeb3(ethMock, world, null);
     }
 
@@ -1299,7 +1293,7 @@ public class Web3ImplTest {
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         PendingState pendingState = Web3Mocks.getMockPendingState();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
-        EthModule ethModule = new EthModule(config, eth, blockchain, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
+        EthModule ethModule = new EthModule(config, blockchain, null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
         TxPoolModule txPoolModule = new TxPoolModuleImpl();
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
@@ -1345,7 +1339,11 @@ public class Web3ImplTest {
     private Web3Impl createWeb3(Ethereum eth, Blockchain blockchain, PendingState pendingState, BlockStore blockStore, BlockProcessor nodeBlockProcessor, ConfigCapabilities configCapabilities, ReceiptStore receiptStore) {
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, pendingState);
-        EthModule ethModule = new EthModule(config, eth, blockchain, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, pendingState));
+        ReversibleTransactionExecutor executor = Mockito.mock(ReversibleTransactionExecutor.class);
+        ProgramResult res = new ProgramResult();
+        res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
+        Mockito.when(executor.executeTransaction(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(res);
+        EthModule ethModule = new EthModule(config, blockchain, executor, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, pendingState));
         TxPoolModule txPoolModule = new TxPoolModuleImpl();
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
@@ -1382,7 +1380,7 @@ public class Web3ImplTest {
 
         Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);
         Ethereum eth = Mockito.mock(Ethereum.class);
-        EthModule ethModule = new EthModule(config, eth, null, new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null);
+        EthModule ethModule = new EthModule(config, null, null, new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null);
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         TxPoolModule txPoolModule = new TxPoolModuleImpl();
         Web3Impl web3 = new Web3RskImpl(
@@ -1433,7 +1431,7 @@ public class Web3ImplTest {
         Ethereum eth = Web3Mocks.getMockEthereum();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         PendingState pendingState = Web3Mocks.getMockPendingState();
-        EthModule ethModule = new EthModule(config, eth, blockchain, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
+        EthModule ethModule = new EthModule(config, blockchain, null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
         TxPoolModule txPoolModule = new TxPoolModuleImpl();
         Web3Impl web3 = new Web3RskImpl(
                 eth,

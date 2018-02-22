@@ -19,138 +19,153 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.util.TestContract;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
+import org.spongycastle.util.encoders.Hex;
 
 public class ReversibleTransactionExecutorTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final RskTestFactory factory = new RskTestFactory();
+    private final ContractRunner contractRunner = new ContractRunner(factory);
+    private final ReversibleTransactionExecutor reversibleTransactionExecutor = factory.getReversibleTransactionExecutor();
 
     @Test
     public void executeTransactionHello() {
-        RskTestFactory factory = new RskTestFactory();
-        ContractRunner contractRunner = new ContractRunner(factory);
-
         TestContract hello = TestContract.hello();
         CallTransaction.Function helloFn = hello.functions.get("hello");
         ContractDetails contract = contractRunner.addContract(hello.runtimeBytecode);
 
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.to = TypeConverter.toJsonHex(contract.getAddress());
-        args.data = TypeConverter.toJsonHex(helloFn.encode());
-        args.gasPrice = "0x0";
-        args.value = "0x0";
-        args.gas = "0xf424";
+        RskAddress from = RskAddress.nullAddress();
+        byte[] gasPrice = Hex.decode("00");
+        byte[] value = Hex.decode("00");
+        byte[] gasLimit = Hex.decode("f424");
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
-        TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                config, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
-                args);
 
-        Assert.assertNull(executor.getResult().getException());
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+                bestBlock,
+                bestBlock.getCoinbase(),
+                gasPrice,
+                gasLimit,
+                contract.getAddress(),
+                value,
+                helloFn.encode(),
+                from.getBytes()
+        );
+
+        Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
-                new String[] { "chinchilla" },
-                helloFn.decodeResult(executor.getResult().getHReturn()));
-        System.out.println(executor.getReceipt().toString());
+                new String[]{"chinchilla"},
+                helloFn.decodeResult(result.getHReturn()));
     }
 
     @Test
     public void executeTransactionGreeter() {
-        RskTestFactory factory = new RskTestFactory();
-        ContractRunner contractRunner = new ContractRunner(factory);
-
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
         ContractDetails contract = contractRunner.addContract(greeter.runtimeBytecode);
 
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.to = TypeConverter.toJsonHex(contract.getAddress());
-        args.data = TypeConverter.toJsonHex(greeterFn.encode("greet me"));
-        args.gasPrice = "0x0";
-        args.value = "0x0";
-        args.gas = "0xf424";
+        RskAddress from = RskAddress.nullAddress();
+        byte[] gasPrice = Hex.decode("00");
+        byte[] value = Hex.decode("00");
+        byte[] gasLimit = Hex.decode("f424");
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
-        TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                config, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
-                args);
 
-        Assert.assertNull(executor.getResult().getException());
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+                bestBlock,
+                bestBlock.getCoinbase(),
+                gasPrice,
+                gasLimit,
+                contract.getAddress(),
+                value,
+                greeterFn.encode("greet me"),
+                from.getBytes()
+        );
+
+        Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
-                new String[] { "greet me" },
-                greeterFn.decodeResult(executor.getResult().getHReturn()));
+                new String[]{"greet me"},
+                greeterFn.decodeResult(result.getHReturn()));
     }
 
     @Test
     public void executeTransactionGreeterOtherSender() {
-        RskTestFactory factory = new RskTestFactory();
-        ContractRunner contractRunner = new ContractRunner(factory);
-
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
         ContractDetails contract = contractRunner.addContract(greeter.runtimeBytecode);
 
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.from = "0x0000000000000000000000000000000000000023"; // someone else
-        args.to = TypeConverter.toJsonHex(contract.getAddress());
-        args.data = TypeConverter.toJsonHex(greeterFn.encode("greet me"));
-        args.gasPrice = "0x0";
-        args.value = "0x0";
-        args.gas = "0xf424";
+        RskAddress from = new RskAddress("0000000000000000000000000000000000000023"); // someone else
+        byte[] gasPrice = Hex.decode("00");
+        byte[] value = Hex.decode("00");
+        byte[] gasLimit = Hex.decode("f424");
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
-        TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                config, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
-                args);
 
-        Assert.assertTrue(executor.getResult().isRevert());
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+                bestBlock,
+                bestBlock.getCoinbase(),
+                gasPrice,
+                gasLimit,
+                contract.getAddress(),
+                value,
+                greeterFn.encode("greet me"),
+                from.getBytes()
+        );
+
+        Assert.assertTrue(result.isRevert());
     }
 
     @Test
     public void executeTransactionCountCallsMultipleTimes() {
-        RskTestFactory factory = new RskTestFactory();
-        ContractRunner contractRunner = new ContractRunner(factory);
-
         TestContract countcalls = TestContract.countcalls();
         CallTransaction.Function callsFn = countcalls.functions.get("calls");
         ContractDetails contract = contractRunner.addContract(countcalls.runtimeBytecode);
 
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.from = "0x0000000000000000000000000000000000000023"; // someone else
-        args.to = TypeConverter.toJsonHex(contract.getAddress());
-        args.data = TypeConverter.toJsonHex(callsFn.encodeSignature());
-        args.gasPrice = "0x0";
-        args.value = "0x0";
-        args.gas = "0xf424";
+        RskAddress from = new RskAddress("0000000000000000000000000000000000000023"); // someone else
+        byte[] gasPrice = Hex.decode("00");
+        byte[] value = Hex.decode("00");
+        byte[] gasLimit = Hex.decode("f424");
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
-        TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                config, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
-                args);
 
-        Assert.assertNull(executor.getResult().getException());
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+                bestBlock,
+                bestBlock.getCoinbase(),
+                gasPrice,
+                gasLimit,
+                contract.getAddress(),
+                value,
+                callsFn.encodeSignature(),
+                from.getBytes()
+        );
+
+        Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
-                new String[] { "calls: 1" },
-                callsFn.decodeResult(executor.getResult().getHReturn()));
+                new String[]{"calls: 1"},
+                callsFn.decodeResult(result.getHReturn()));
 
-        TransactionExecutor executor2 = ReversibleTransactionExecutor.executeTransaction(
-                config, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
-                args);
+        ProgramResult result2 = reversibleTransactionExecutor.executeTransaction(
+                bestBlock,
+                bestBlock.getCoinbase(),
+                gasPrice,
+                gasLimit,
+                contract.getAddress(),
+                value,
+                callsFn.encodeSignature(),
+                from.getBytes()
+        );
 
-        Assert.assertNull(executor2.getResult().getException());
+        Assert.assertNull(result2.getException());
         Assert.assertArrayEquals(
-                new String[] { "calls: 1" },
-                callsFn.decodeResult(executor2.getResult().getHReturn()));
+                new String[]{"calls: 1"},
+                callsFn.decodeResult(result2.getHReturn()));
     }
 }

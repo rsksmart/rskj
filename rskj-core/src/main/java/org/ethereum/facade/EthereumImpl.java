@@ -21,12 +21,8 @@ package org.ethereum.facade;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.ReversibleTransactionExecutor;
 import org.ethereum.core.*;
 import org.ethereum.core.PendingState;
-import org.ethereum.core.Repository;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
@@ -34,10 +30,7 @@ import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.net.submit.TransactionExecutor;
 import org.ethereum.net.submit.TransactionTask;
-import org.ethereum.rpc.Web3;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -57,37 +50,26 @@ public class EthereumImpl implements Ethereum {
 
     private final ChannelManager channelManager;
     private final PeerServer peerServer;
-    private final ProgramInvokeFactory programInvokeFactory;
     private final PendingState pendingState;
-    private final BlockStore blockStore;
     private final RskSystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
-    private final ReceiptStore receiptStore;
     private final Blockchain blockchain;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
-    private final Repository repository;
     private ExecutorService peerServiceExecutor;
 
-    public EthereumImpl(RskSystemProperties config,
-                        ChannelManager channelManager,
-                        PeerServer peerServer,
-                        ProgramInvokeFactory programInvokeFactory,
-                        PendingState pendingState,
-                        BlockStore blockStore,
-                        CompositeEthereumListener compositeEthereumListener,
-                        ReceiptStore receiptStore,
-                        Repository repository,
-                        Blockchain blockchain) {
+    public EthereumImpl(
+            RskSystemProperties config,
+            ChannelManager channelManager,
+            PeerServer peerServer,
+            PendingState pendingState,
+            CompositeEthereumListener compositeEthereumListener,
+            Blockchain blockchain) {
         this.channelManager = channelManager;
         this.peerServer = peerServer;
-        this.programInvokeFactory = programInvokeFactory;
         this.pendingState = pendingState;
-        this.blockStore = blockStore;
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
-        this.receiptStore = receiptStore;
-        this.repository = repository;
         this.blockchain = blockchain;
     }
 
@@ -168,21 +150,6 @@ public class EthereumImpl implements Ethereum {
                 return adapteeResult.get(0);
             }
         };
-    }
-
-    @Override
-    public ProgramResult callConstant(Web3.CallArguments args) {
-        Block bestBlock = blockchain.getBestBlock();
-        return ReversibleTransactionExecutor.executeTransaction(
-                config,
-                repository,
-                blockStore,
-                receiptStore,
-                programInvokeFactory,
-                bestBlock,
-                bestBlock.getCoinbase(),
-                args
-        ).getResult();
     }
 
     @Override

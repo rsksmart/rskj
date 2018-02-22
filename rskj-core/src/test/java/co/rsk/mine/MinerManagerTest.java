@@ -34,7 +34,6 @@ import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -379,7 +378,7 @@ public class MinerManagerTest {
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
             super(null, null, null, null,
-                    null, null, null, null, null, null, null);
+                  null, null, null, null);
         }
     }
 }

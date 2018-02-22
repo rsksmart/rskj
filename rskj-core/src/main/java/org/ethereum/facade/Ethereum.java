@@ -24,8 +24,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.rpc.Web3;
-import org.ethereum.vm.program.ProgramResult;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -89,7 +87,4 @@ public interface Ethereum {
      * be increased at some ratio (e.g. * 1.2)
      */
     Coin getGasPrice();
-
-    // TODO added method, to review
-    ProgramResult callConstant(Web3.CallArguments args);
 }

@@ -3,6 +3,7 @@ package org.ethereum.util;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
@@ -36,6 +37,7 @@ public class RskTestFactory {
     private PendingState pendingState;
     private RepositoryImpl repository;
     private ProgramInvokeFactoryImpl programInvokeFactory;
+    private ReversibleTransactionExecutor reversibleTransactionExecutor;
 
     public RskTestFactory() {
         Genesis genesis = new BlockGenerator().getGenesisBlock();
@@ -156,5 +158,19 @@ public class RskTestFactory {
         }
 
         return repository;
+    }
+
+    public ReversibleTransactionExecutor getReversibleTransactionExecutor() {
+        if (reversibleTransactionExecutor == null) {
+            reversibleTransactionExecutor = new ReversibleTransactionExecutor(
+                    config,
+                    getRepository(),
+                    getBlockStore(),
+                    getReceiptStore(),
+                    getProgramInvokeFactory()
+            );
+        }
+
+        return reversibleTransactionExecutor;
     }
 }

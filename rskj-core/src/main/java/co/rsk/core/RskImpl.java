@@ -22,14 +22,10 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.net.NodeBlockProcessor;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.PendingState;
-import org.ethereum.core.Repository;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -40,18 +36,23 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private final NodeBlockProcessor nodeBlockProcessor;
 
     @Autowired
-    public RskImpl(ChannelManager channelManager,
-                   PeerServer peerServer,
-                   ProgramInvokeFactory programInvokeFactory,
-                   PendingState pendingState,
-                   BlockStore blockStore,
-                   RskSystemProperties config,
-                   CompositeEthereumListener compositeEthereumListener,
-                   ReceiptStore receiptStore,
-                   NodeBlockProcessor nodeBlockProcessor,
-                   Repository repository,
-                   Blockchain blockchain) {
-        super(config, channelManager, peerServer, programInvokeFactory, pendingState, blockStore, compositeEthereumListener, receiptStore, repository, blockchain);
+    public RskImpl(
+            ChannelManager channelManager,
+            PeerServer peerServer,
+            PendingState pendingState,
+            RskSystemProperties config,
+            CompositeEthereumListener compositeEthereumListener,
+            NodeBlockProcessor nodeBlockProcessor,
+            ReversibleTransactionExecutor reversibleTransactionExecutor,
+            Blockchain blockchain) {
+        super(
+                config,
+                channelManager,
+                peerServer,
+                pendingState,
+                compositeEthereumListener,
+                blockchain
+        );
         this.nodeBlockProcessor = nodeBlockProcessor;
     }
 
