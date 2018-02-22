@@ -26,6 +26,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -1573,6 +1574,10 @@ public class Program {
 
             byte[] out = contract.execute(data);
 
+            if (getBlockchainConfig().isRfs50()) {
+                this.returnDataBuffer = out;
+            }
+
             this.memorySave(msg.getOutDataOffs().intValue(), out);
             this.stackPushOne();
             track.commit();
@@ -1581,6 +1586,10 @@ public class Program {
 
     public boolean byTestingSuite() {
         return invoke.byTestingSuite();
+    }
+
+    public BlockchainConfig getBlockchainConfig() {
+        return config.getBlockchainConfig().getConfigForBlock(getNumber().longValue());
     }
 
     public interface ProgramOutListener {
