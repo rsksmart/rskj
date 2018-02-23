@@ -357,7 +357,7 @@ public class Web3ImplScoringTest {
         Wallet wallet = WalletFactory.createWallet();
         RskSystemProperties config = new RskSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
-        EthModule em = new EthModule(config, world.getBlockChain(), null, new ExecutionBlockRetriever(world.getBlockChain()), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
+        EthModule em = new EthModule(config, world.getBlockChain(), null, new ExecutionBlockRetriever(world.getBlockChain(), null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
         TxPoolModule tpm = new TxPoolModuleImpl();
         return new Web3RskImpl(
                 rsk,

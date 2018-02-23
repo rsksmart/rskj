@@ -18,11 +18,16 @@
 
 package co.rsk.rpc;
 
+import co.rsk.mine.BlockToMineBuilder;
+import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Nullable;
+import java.util.Optional;
 
 /**
  * Encapsulates the logic to retrieve or create an execution block
@@ -31,10 +36,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class ExecutionBlockRetriever {
     private final Blockchain blockchain;
+    private final MinerServer minerServer;
+    private final BlockToMineBuilder builder;
+
+    @Nullable
+    private Block cachedBlock;
 
     @Autowired
-    public ExecutionBlockRetriever(Blockchain blockchain) {
+    public ExecutionBlockRetriever(Blockchain blockchain, MinerServer minerServer, BlockToMineBuilder builder) {
         this.blockchain = blockchain;
+        this.minerServer = minerServer;
+        this.builder = builder;
     }
 
     public Block getExecutionBlock(String bnOrId) {
@@ -42,6 +54,20 @@ public class ExecutionBlockRetriever {
             return blockchain.getBestBlock();
         }
 
-        throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' as a parameter so far.");
+        if ("pending".equals(bnOrId)) {
+            Optional<Block> latestBlock = minerServer.getLatestBlock();
+            if (latestBlock.isPresent()) {
+                return latestBlock.get();
+            }
+
+            Block bestBlock = blockchain.getBestBlock();
+            if (cachedBlock == null || !bestBlock.isParentOf(cachedBlock)) {
+                cachedBlock = builder.build(bestBlock, null);
+            }
+
+            return cachedBlock;
+        }
+
+        throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' and 'pending' as parameters so far.");
     }
 }

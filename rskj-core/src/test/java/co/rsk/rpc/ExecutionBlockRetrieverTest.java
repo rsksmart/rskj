@@ -18,24 +18,40 @@
 
 package co.rsk.rpc;
 
+import co.rsk.mine.BlockToMineBuilder;
+import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
+import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class ExecutionBlockRetrieverTest {
+
+    private Blockchain blockchain;
+    private MinerServer minerServer;
+    private BlockToMineBuilder builder;
+    private ExecutionBlockRetriever retriever;
+
+    @Before
+    public void setUp() {
+        blockchain = mock(Blockchain.class);
+        minerServer = mock(MinerServer.class);
+        builder = mock(BlockToMineBuilder.class);
+        retriever = new ExecutionBlockRetriever(blockchain, minerServer, builder);
+    }
+
     @Test
     public void getLatest() {
         Block latest = mock(Block.class);
-        Blockchain blockchain = mock(Blockchain.class);
         when(blockchain.getBestBlock())
                 .thenReturn(latest);
-        ExecutionBlockRetriever retriever = new ExecutionBlockRetriever(blockchain);
 
         assertThat(retriever.getExecutionBlock("latest"), is(latest));
     }
@@ -44,24 +60,102 @@ public class ExecutionBlockRetrieverTest {
     public void getLatestIsUpToDate() {
         Block latest1 = mock(Block.class);
         Block latest2 = mock(Block.class);
-        Blockchain blockchain = mock(Blockchain.class);
         when(blockchain.getBestBlock())
                 .thenReturn(latest1)
                 .thenReturn(latest2);
-        ExecutionBlockRetriever retriever = new ExecutionBlockRetriever(blockchain);
 
         assertThat(retriever.getExecutionBlock("latest"), is(latest1));
         assertThat(retriever.getExecutionBlock("latest"), is(latest2));
     }
 
+    @Test
+    public void getPendingUsesMinerServerLatestBlock() {
+        Block latest = mock(Block.class);
+        when(minerServer.getLatestBlock())
+                .thenReturn(Optional.of(latest));
+
+        assertThat(retriever.getExecutionBlock("pending"), is(latest));
+    }
+
+    @Test
+    public void getPendingUsesMinerServerAndIsUpToDate() {
+        Block latest1 = mock(Block.class);
+        Block latest2 = mock(Block.class);
+        when(minerServer.getLatestBlock())
+                .thenReturn(Optional.of(latest1))
+                .thenReturn(Optional.of(latest2));
+
+        assertThat(retriever.getExecutionBlock("pending"), is(latest1));
+        assertThat(retriever.getExecutionBlock("pending"), is(latest2));
+    }
+
+    @Test
+    public void getPendingBuildsPendingBlockIfMinerServerHasNoWork() {
+        when(minerServer.getLatestBlock())
+                .thenReturn(Optional.empty());
+
+        Block bestBlock = mock(Block.class);
+        when(blockchain.getBestBlock())
+                .thenReturn(bestBlock);
+
+        Block builtBlock = mock(Block.class);
+        when(builder.build(bestBlock, null))
+                .thenReturn(builtBlock);
+
+        assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
+    }
+
+    @Test
+    public void getPendingReturnsCachedBlockIfMinerServerHasNoWork() {
+        when(minerServer.getLatestBlock())
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.empty());
+
+        Block bestBlock = mock(Block.class);
+        when(blockchain.getBestBlock())
+                .thenReturn(bestBlock)
+                .thenReturn(bestBlock);
+
+        Block builtBlock = mock(Block.class);
+        when(bestBlock.isParentOf(builtBlock))
+                .thenReturn(true);
+        when(builder.build(bestBlock, null))
+                .thenReturn(builtBlock);
+
+        assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
+        assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
+        verify(builder, times(1)).build(bestBlock, null);
+    }
+
+    @Test
+    public void getPendingDoesntUseCacheIfBestBlockHasChanged() {
+        when(minerServer.getLatestBlock())
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.empty());
+
+        Block bestBlock1 = mock(Block.class);
+        Block bestBlock2 = mock(Block.class);
+        when(blockchain.getBestBlock())
+                .thenReturn(bestBlock1)
+                .thenReturn(bestBlock2);
+
+        Block builtBlock1 = mock(Block.class);
+        when(bestBlock1.isParentOf(builtBlock1))
+                .thenReturn(true);
+        when(builder.build(bestBlock1, null))
+                .thenReturn(builtBlock1);
+        Block builtBlock2 = mock(Block.class);
+        when(bestBlock2.isParentOf(builtBlock2))
+                .thenReturn(true);
+        when(builder.build(bestBlock2, null))
+                .thenReturn(builtBlock2);
+
+        assertThat(retriever.getExecutionBlock("pending"), is(builtBlock1));
+        assertThat(retriever.getExecutionBlock("pending"), is(builtBlock2));
+    }
+
     @Test(expected = JsonRpcUnimplementedMethodException.class)
     public void getOtherThanLatestThrows() {
-        Block latest = mock(Block.class);
-        Blockchain blockchain = mock(Blockchain.class);
-        when(blockchain.getBestBlock())
-                .thenReturn(latest);
-        ExecutionBlockRetriever retriever = new ExecutionBlockRetriever(blockchain);
-
         retriever.getExecutionBlock("other");
     }
 }

@@ -22,6 +22,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 
 import javax.annotation.Nonnull;
+import java.util.Optional;
 
 
 public interface MinerServer {
@@ -53,4 +54,6 @@ public interface MinerServer {
     long getCurrentTimeInSeconds();
 
     long increaseTime(long seconds);
+
+    Optional<Block> getLatestBlock();
 }

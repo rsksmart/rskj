@@ -638,6 +638,11 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
+    public Optional<Block> getLatestBlock() {
+        return Optional.ofNullable(latestBlock);
+    }
+
+    @Override
     @VisibleForTesting
     public long getCurrentTimeInSeconds() {
         // this is not great, but it was the simplest way to extract BlockToMineBuilder
