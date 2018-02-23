@@ -36,6 +36,7 @@ import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,14 +53,14 @@ public class FederationTest {
     @Before
     public void createFederation() {
         federation = new Federation(
-                Arrays.asList(new BtcECKey[]{
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(300)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(400)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(500)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(600)),
-                }),
+                })),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -78,10 +79,10 @@ public class FederationTest {
     }
 
     @Test
-    public void publicKeysImmutable() {
+    public void membersImmutable() {
         boolean exception = false;
         try {
-            federation.getPublicKeys().add(BtcECKey.fromPrivate(BigInteger.valueOf(1000)));
+            federation.getMembers().add(new FederationMember(new BtcECKey(), new ECKey()));
         } catch (Exception e) {
             exception = true;
         }
@@ -89,7 +90,7 @@ public class FederationTest {
 
         exception = false;
         try {
-            federation.getPublicKeys().remove(0);
+            federation.getMembers().remove(0);
         } catch (Exception e) {
             exception = true;
         }
@@ -168,7 +169,7 @@ public class FederationTest {
     }
 
     @Test
-    public void testEquals_a() {
+    public void testEquals_basic() {
         Assert.assertTrue(federation.equals(federation));
 
         Assert.assertFalse(federation.equals(null));
@@ -177,9 +178,9 @@ public class FederationTest {
     }
 
     @Test
-    public void testEquals_differentNumberOfPublicKeys() {
+    public void testEquals_differentNumberOfMembers() {
         Federation otherFederation = new Federation(
-                Arrays.asList(new BtcECKey[]{
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(300)),
@@ -187,7 +188,7 @@ public class FederationTest {
                         BtcECKey.fromPrivate(BigInteger.valueOf(500)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(600)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(700)),
-                }),
+                })),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -198,14 +199,14 @@ public class FederationTest {
     @Test
     public void testEquals_differentCreationTime() {
         Federation otherFederation = new Federation(
-                Arrays.asList(new BtcECKey[]{
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(300)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(400)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(500)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(600)),
-                }),
+                })),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -216,14 +217,14 @@ public class FederationTest {
     @Test
     public void testEquals_differentCreationBlockNumber() {
         Federation otherFederation = new Federation(
-                Arrays.asList(
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(
                     BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                     BtcECKey.fromPrivate(BigInteger.valueOf(200)),
                     BtcECKey.fromPrivate(BigInteger.valueOf(300)),
                     BtcECKey.fromPrivate(BigInteger.valueOf(400)),
                     BtcECKey.fromPrivate(BigInteger.valueOf(500)),
                     BtcECKey.fromPrivate(BigInteger.valueOf(600))
-                ),
+                )),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
                 1L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -234,14 +235,14 @@ public class FederationTest {
     @Test
     public void testEquals_differentNetworkParameters() {
         Federation otherFederation = new Federation(
-                Arrays.asList(new BtcECKey[]{
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(300)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(400)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(500)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(600)),
-                }),
+                })),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET)
@@ -250,34 +251,48 @@ public class FederationTest {
     }
 
     @Test
-    public void testEquals_differentPublicKeys() {
+    public void testEquals_differentMembers() {
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(300)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(400)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(500)),
+        }));
+
+        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600))));
         Federation otherFederation = new Federation(
-                Arrays.asList(new BtcECKey[]{
-                        BtcECKey.fromPrivate(BigInteger.valueOf(100)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(200)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(300)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(400)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(500)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(610)),
-                }),
+                members,
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
+
+        members.remove(members.size()-1);
+        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(610))));
+        Federation yetOtherFederation = new Federation(
+                members,
+                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                0L,
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        Assert.assertFalse(otherFederation.equals(yetOtherFederation));
         Assert.assertFalse(federation.equals(otherFederation));
+        Assert.assertFalse(federation.equals(yetOtherFederation));
     }
 
     @Test
     public void testEquals_same() {
         Federation otherFederation = new Federation(
-                Arrays.asList(new BtcECKey[]{
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(300)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(400)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(500)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(600)),
-                }),
+                })),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -286,24 +301,24 @@ public class FederationTest {
     }
 
     @Test
-    public void getPublicKeyIndex() {
-        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
-            Assert.assertEquals(i, federation.getPublicKeyIndex(sortedPublicKeys.get(i)).intValue());
+    public void getBtcPublicKeyIndex() {
+        for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
+            Assert.assertEquals(i, federation.getBtcPublicKeyIndex(sortedPublicKeys.get(i)).intValue());
         }
-        Assert.assertNull(federation.getPublicKeyIndex(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
+        Assert.assertNull(federation.getBtcPublicKeyIndex(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
     }
 
     @Test
-    public void hasPublicKey() {
-        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
-            Assert.assertTrue(federation.hasPublicKey(sortedPublicKeys.get(i)));
+    public void hasBtcPublicKey() {
+        for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
+            Assert.assertTrue(federation.hasBtcPublicKey(sortedPublicKeys.get(i)));
         }
-        Assert.assertFalse(federation.hasPublicKey(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
+        Assert.assertFalse(federation.hasBtcPublicKey(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
     }
 
     @Test
     public void hasMemberWithRskAddress() {
-        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
+        for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
             Assert.assertTrue(federation.hasMemberWithRskAddress(rskAddresses.get(i)));
         }
 
