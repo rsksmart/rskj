@@ -36,7 +36,9 @@ import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.ethereum.util.ByteUtil.*;
 
@@ -48,12 +50,14 @@ import static org.ethereum.util.ByteUtil.*;
  */
 public class PrecompiledContracts {
 
-    public static final String ECRECOVER_ADDR = "0000000000000000000000000000000000000001";
-    public static final String SHA256_ADDR = "0000000000000000000000000000000000000002";
-    public static final String RIPEMPD160_ADDR = "0000000000000000000000000000000000000003";
-    public static final String IDENTITY_ADDR_STR = "0000000000000000000000000000000000000004";
-    public static final String BIG_INT_MODEXP_ADDR = "0000000000000000000000000000000000000005";
-    public static final String SAMPLE_ADDR_STR = "0000000000000000000000000000000001000005";
+    private static final String RSK_NATIVECONTRACT_REQUIREDPREFIX = "000000000000000000000000";
+
+    private static final String ECRECOVER_ADDR_STR = RSK_NATIVECONTRACT_REQUIREDPREFIX + "0000000000000000000000000000000000000001";
+    private static final String SHA256_ADDR_STR = RSK_NATIVECONTRACT_REQUIREDPREFIX + "0000000000000000000000000000000000000002";
+    private static final String RIPEMPD160_ADDR_STR = RSK_NATIVECONTRACT_REQUIREDPREFIX + "0000000000000000000000000000000000000003";
+    private static final String BIG_INT_MODEXP_ADDR_STR = RSK_NATIVECONTRACT_REQUIREDPREFIX +"0000000000000000000000000000000000000005";
+    private static final String IDENTITY_ADDR_STR = "0000000000000000000000000000000000000004";
+    private static final String SAMPLE_ADDR_STR = "0000000000000000000000000000000001000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
 
@@ -61,16 +65,34 @@ public class PrecompiledContracts {
     public static final RskAddress IDENTITY_ADDR = new RskAddress(IDENTITY_ADDR_STR);
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_STR);
     public static final RskAddress SAMPLE_ADDR = new RskAddress(SAMPLE_ADDR_STR);
+    private static final RskAddress BRIDGE_NATIVE_ADDR = new RskAddress(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR_STR);
+    private static final RskAddress REMASC_NATIVE_ADDR = new RskAddress(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR_STR);
+    private static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_STR);
+    private static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_STR);
+    private static final RskAddress RIPEMPD160_ADDR = new RskAddress(RIPEMPD160_ADDR_STR);
+    private static final RskAddress BIG_INT_MODEXP_ADDR = new RskAddress(BIG_INT_MODEXP_ADDR_STR);
 
-    private static final String RSK_NATIVECONTRACT_REQUIREDPREFIX = "000000000000000000000000";
-    private static ECRecover ecRecover = new ECRecover();
-    private static Sha256 sha256 = new Sha256();
-    private static Ripempd160 ripempd160 = new Ripempd160();
-    private static Identity identity = new Identity();
-    private static SamplePrecompiledContract sample = new SamplePrecompiledContract(SAMPLE_ADDR);
-    private static BigIntegerModexp bigIntegerModexp = new BigIntegerModexp();
+    private static final Map<RskAddress, PrecompiledContractProvider> contractProviders = buildContractProviders();
+    private static final Identity identity = new Identity();
 
     private final RskSystemProperties config;
+
+    private static Map<RskAddress, PrecompiledContractProvider> buildContractProviders() {
+        HashMap<RskAddress, PrecompiledContractProvider> contractProviders = new HashMap<>();
+        contractProviders.put(ECRECOVER_ADDR, new SingletonPrecompiledContractProvider(new ECRecover()));
+        contractProviders.put(SHA256_ADDR, new SingletonPrecompiledContractProvider(new Sha256()));
+        contractProviders.put(RIPEMPD160_ADDR, new SingletonPrecompiledContractProvider(new Ripempd160()));
+        contractProviders.put(IDENTITY_ADDR, new SingletonPrecompiledContractProvider(identity));
+        contractProviders.put(SAMPLE_ADDR, new SingletonPrecompiledContractProvider(new SamplePrecompiledContract(SAMPLE_ADDR)));
+        contractProviders.put(BIG_INT_MODEXP_ADDR, new SingletonPrecompiledContractProvider(new BigIntegerModexp()));
+        PrecompiledContractProvider bridgeProvider = config -> new Bridge(config, BRIDGE_ADDR);
+        contractProviders.put(BRIDGE_ADDR, bridgeProvider);
+        contractProviders.put(BRIDGE_NATIVE_ADDR, bridgeProvider);
+        PrecompiledContractProvider remascProvider = config -> new RemascContract(config, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName()), REMASC_ADDR);
+        contractProviders.put(REMASC_ADDR, remascProvider);
+        contractProviders.put(REMASC_NATIVE_ADDR, remascProvider);
+        return contractProviders;
+    }
 
     public PrecompiledContracts(RskSystemProperties config) {
         this.config = config;
@@ -81,32 +103,12 @@ public class PrecompiledContracts {
         if (address == null) {
             return identity;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + ECRECOVER_ADDR)) {
-            return ecRecover;
+        RskAddress requestedAddress = new RskAddress(address);
+        if (contractProviders.containsKey(requestedAddress)){
+            return contractProviders.get(requestedAddress).retrieve(config);
+        } else {
+            return null;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + SHA256_ADDR)) {
-            return sha256;
-        }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + RIPEMPD160_ADDR)) {
-            return ripempd160;
-        }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + IDENTITY_ADDR_STR)) {
-            return identity;
-        }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + SAMPLE_ADDR_STR)) {
-            return sample;
-        }
-        if (address.isHex(BRIDGE_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR_STR)) {
-            return new Bridge(config, BRIDGE_ADDR);
-        }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BIG_INT_MODEXP_ADDR)) {
-            return bigIntegerModexp;
-        }
-        if (address.isHex(REMASC_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR_STR)) {
-            return new RemascContract(config, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName()), REMASC_ADDR);
-        }
-
-        return null;
     }
 
     public abstract static class PrecompiledContract {
@@ -373,4 +375,21 @@ public class PrecompiledContracts {
 
     }
 
+    private interface PrecompiledContractProvider {
+        PrecompiledContract retrieve(RskSystemProperties config);
+    }
+
+    private static class SingletonPrecompiledContractProvider implements PrecompiledContractProvider {
+
+        private final PrecompiledContract precompiledContract;
+
+        public SingletonPrecompiledContractProvider(PrecompiledContract precompiledContract) {
+            this.precompiledContract = precompiledContract;
+        }
+
+        @Override
+        public PrecompiledContract retrieve(RskSystemProperties config) {
+            return precompiledContract;
+        }
+    }
 }
