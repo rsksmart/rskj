@@ -23,6 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.OutOfGasException;
 import org.ethereum.vm.program.Program.StackTooSmallException;
@@ -33,6 +34,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Roman Mandeleil
@@ -525,7 +527,7 @@ public class VMCustomTest {
     }
 
     private Program getProgram(String ops) {
-        return new Program(vmConfig, precompiledContracts, Hex.decode(ops), invoke, null);
+        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), Hex.decode(ops), invoke, null);
     }
 
 }

@@ -23,6 +23,7 @@ import co.rsk.asm.EVMAssembler;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
@@ -39,6 +40,7 @@ import java.util.List;
 
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Roman Mandeleil
@@ -3060,7 +3062,7 @@ public class VMTest {
     }
 
     private Program getProgram(byte[] code) {
-        return new Program(vmConfig, precompiledContracts, code, invoke, null);
+        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, null);
     }
 
 }

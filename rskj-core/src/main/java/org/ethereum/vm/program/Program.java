@@ -26,6 +26,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -86,6 +87,7 @@ public class Program {
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
 
+    private final BlockchainConfig blockchainConfig;
     private final Transaction transaction;
 
     private final ProgramInvoke invoke;
@@ -187,11 +189,13 @@ public class Program {
     public Program(
             VmConfig config,
             PrecompiledContracts precompiledContracts,
+            BlockchainConfig blockchainConfig,
             byte[] ops,
             ProgramInvoke programInvoke,
             Transaction transaction) {
         this.config = config;
         this.precompiledContracts = precompiledContracts;
+        this.blockchainConfig = blockchainConfig;
         this.transaction = transaction;
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
@@ -654,7 +658,7 @@ public class Program {
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
-            Program program = new Program(config, precompiledContracts, programCode, programInvoke, internalTx);
+            Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
         }
@@ -880,7 +884,7 @@ public class Program {
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
-        Program program = new Program(config, precompiledContracts, programCode, programInvoke, internalTx);
+        Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
         vm.play(program);
         childResult  = program.getResult();
 
