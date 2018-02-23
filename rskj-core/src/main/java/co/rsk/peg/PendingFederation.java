@@ -22,10 +22,12 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -37,34 +39,40 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public final class PendingFederation {
-    private static final int MIN_FEDERATORS_REQUIRED = 2;
+    private static final int MIN_MEMBERS_REQUIRED = 2;
 
-    private List<BtcECKey> publicKeys;
+    private List<FederationMember> members;
 
-    public PendingFederation(List<BtcECKey> publicKeys) {
-        // Sorting public keys ensures same order of federators for same public keys
-        // Immutability provides protection unless unwanted modification, thus making the Pending Federation instance
+    public PendingFederation(List<FederationMember> members) {
+        // Sorting members ensures same order for members
+        // Immutability provides protection against unwanted modification, thus making the Pending Federation instance
         // effectively immutable
-        this.publicKeys = Collections.unmodifiableList(publicKeys.stream().sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList()));
+        this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
     }
 
-    public List<BtcECKey> getPublicKeys() {
-        return publicKeys;
+    public List<FederationMember> getMembers() {
+        // Safe to return instance since both the list and instances are immutable
+        return members;
+    }
+
+    public List<BtcECKey> getBtcPublicKeys() {
+        // Copy keys since we don't control immutability of BtcECKey(s)
+        return members.stream().map(m -> m.getBtcPublicKey()).collect(Collectors.toList());
     }
 
     public boolean isComplete() {
-        return this.publicKeys.size() >= MIN_FEDERATORS_REQUIRED;
+        return this.members.size() >= MIN_MEMBERS_REQUIRED;
     }
 
     /**
-     * Creates a new PendingFederation with the additional specified public key
-     * @param key the new public key
-     * @return a new PendingFederation with the added public key
+     * Creates a new PendingFederation with the additional specified member
+     * @param member the new federation member
+     * @return a new PendingFederation with the added member
      */
-    public PendingFederation addPublicKey(BtcECKey key) {
-        List<BtcECKey> newKeys = new ArrayList<>(publicKeys);
-        newKeys.add(key);
-        return new PendingFederation(newKeys);
+    public PendingFederation addMember(FederationMember member) {
+        List<FederationMember> newMembers = new ArrayList<>(members);
+        newMembers.add(member);
+        return new PendingFederation(newMembers);
     }
 
     /**
@@ -79,7 +87,7 @@ public final class PendingFederation {
         }
 
         return new Federation(
-                publicKeys,
+                members,
                 creationTime,
                 blockNumber,
                 btcParams
@@ -88,7 +96,7 @@ public final class PendingFederation {
 
     @Override
     public String toString() {
-        return String.format("%d signatures pending federation (%s)", publicKeys.size(), isComplete() ? "complete" : "incomplete");
+        return String.format("%d signatures pending federation (%s)", members.size(), isComplete() ? "complete" : "incomplete");
     }
 
     @Override
@@ -101,18 +109,7 @@ public final class PendingFederation {
             return false;
         }
 
-        PendingFederation otherFederation = (PendingFederation) other;
-        ByteArrayWrapper[] thisPublicKeys = this.getPublicKeys().stream()
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(k -> new ByteArrayWrapper(k.getPubKey()))
-                .toArray(ByteArrayWrapper[]::new);
-        ByteArrayWrapper[] otherPublicKeys = otherFederation.getPublicKeys().stream()
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(k -> new ByteArrayWrapper(k.getPubKey()))
-                .toArray(ByteArrayWrapper[]::new);
-
-        return this.getPublicKeys().size() == otherFederation.getPublicKeys().size() &&
-                Arrays.equals(thisPublicKeys, otherPublicKeys);
+        return this.members.equals(((PendingFederation) other).members);
     }
 
     public Keccak256 getHash() {
@@ -124,6 +121,6 @@ public final class PendingFederation {
     public int hashCode() {
         // Can use java.util.Objects.hash since List<BtcECKey> has a
         // well-defined hashCode()
-        return Objects.hash(getPublicKeys());
+        return Objects.hash(getBtcPublicKeys());
     }
 }
