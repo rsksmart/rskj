@@ -64,7 +64,6 @@ public class BlockToMineBuilder {
     private final MinerUtils minerUtils;
     private final BlockExecutor executor;
 
-    private final RskAddress coinbaseAddress;
     private final Coin minerMinGasPriceTarget;
 
     private long timeAdjustment;
@@ -94,7 +93,6 @@ public class BlockToMineBuilder {
         this.minerUtils = new MinerUtils();
         this.executor = new BlockExecutor(config, repository, receiptStore, blockStore, null);
 
-        this.coinbaseAddress = miningConfig.getCoinbaseAddress();
         this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
     }
 
@@ -185,7 +183,7 @@ public class BlockToMineBuilder {
         final BlockHeader newHeader = new BlockHeader(
                 newBlockParent.getHash().getBytes(),
                 unclesListHash,
-                coinbaseAddress.getBytes(),
+                miningConfig.getCoinbaseAddress().getBytes(),
                 new Bloom().getData(),
                 new byte[]{1},
                 newBlockParent.getNumber() + 1,

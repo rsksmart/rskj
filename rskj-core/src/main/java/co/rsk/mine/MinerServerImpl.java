@@ -638,6 +638,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
+    @VisibleForTesting
     public long getCurrentTimeInSeconds() {
         // this is not great, but it was the simplest way to extract BlockToMineBuilder
         return builder.getCurrentTimeInSeconds();
