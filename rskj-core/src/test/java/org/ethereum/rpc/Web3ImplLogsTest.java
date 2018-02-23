@@ -24,6 +24,7 @@ import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
@@ -679,7 +680,7 @@ public class Web3ImplLogsTest {
 
     private Web3Impl createWeb3(Ethereum eth, Blockchain blockchain, PendingState pendingState, ReceiptStore receiptStore, Wallet wallet) {
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
-        EthModule ethModule = new EthModule(config, blockchain, null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
+        EthModule ethModule = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
         TxPoolModule txPoolModule = new TxPoolModuleImpl();
         return new Web3RskImpl(
                 eth,

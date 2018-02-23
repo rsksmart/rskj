@@ -52,25 +52,24 @@ public class EthModule
     private final RskSystemProperties config;
     private final Blockchain blockchain;
     private final ReversibleTransactionExecutor reversibleTransactionExecutor;
+    private final ExecutionBlockRetriever executionBlockRetriever;
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
-
-    private final ExecutionBlockRetriever executionBlockRetriever;
 
     @Autowired
     public EthModule(
             RskSystemProperties config,
             Blockchain blockchain,
             ReversibleTransactionExecutor reversibleTransactionExecutor,
+            ExecutionBlockRetriever executionBlockRetriever,
             EthModuleSolidity ethModuleSolidity,
             EthModuleWallet ethModuleWallet) {
         this.config = config;
         this.blockchain = blockchain;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
+        this.executionBlockRetriever = executionBlockRetriever;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
-
-        this.executionBlockRetriever = new ExecutionBlockRetriever(this.blockchain);
     }
 
     @Override

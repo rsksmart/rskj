@@ -21,14 +21,18 @@ package co.rsk.rpc;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Encapsulates the logic to retrieve or create an execution block
  * for Web3 calls.
  */
+@Component
 public class ExecutionBlockRetriever {
     private final Blockchain blockchain;
 
+    @Autowired
     public ExecutionBlockRetriever(Blockchain blockchain) {
         this.blockchain = blockchain;
     }
