@@ -17,7 +17,6 @@
  */
 package co.rsk.rpc.netty;
 
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
@@ -26,7 +25,7 @@ public class Web3ResultWebSocketResponseHandler extends SimpleChannelInboundHand
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Web3Result msg) {
-        ctx.write(new TextWebSocketFrame(msg.getContent())).addListener(ChannelFutureListener.CLOSE);
+        ctx.write(new TextWebSocketFrame(msg.getContent()));
     }
 
     @Override
