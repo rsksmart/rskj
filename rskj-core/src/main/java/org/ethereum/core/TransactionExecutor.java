@@ -24,6 +24,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
@@ -49,7 +50,6 @@ import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 
 /**
@@ -289,7 +289,8 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
-                this.program = new Program(vmConfig, precompiledContracts, code, programInvoke, tx);
+                BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+                this.program = new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
             }
         }
 
@@ -308,7 +309,8 @@ public class TransactionExecutor {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
-            this.program = new Program(vmConfig, precompiledContracts, tx.getData(), programInvoke, tx);
+            BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+            this.program = new Program(vmConfig, precompiledContracts, configForBlock, tx.getData(), programInvoke, tx);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
