@@ -57,6 +57,36 @@ public class TrieCopyToTest {
     }
 
     @Test
+    public void copyTrieWithOneHundredValuesRetrievedFromStore() {
+        HashMapDB map1 = new HashMapDB();
+        TrieStoreImpl store1 = new TrieStoreImpl(map1);
+
+        HashMapDB map2 = new HashMapDB();
+        TrieStoreImpl store2 = new TrieStoreImpl(map2);
+
+        Trie trie = new TrieImpl(store1, true);
+
+        for (int k = 0; k < 100; k++) {
+            trie = trie.put(k + "", (k + "").getBytes());
+        }
+
+        trie.save();
+
+        trie = store1.retrieve(trie.getHash().getBytes());
+
+        trie.copyTo(store2);
+
+        Trie result = store2.retrieve(trie.getHash().getBytes());
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(trie.getHash(), result.getHash());
+
+        for (int k = 0; k < 100; k++) {
+            Assert.assertArrayEquals((k + "").getBytes(), result.get(k + ""));
+        }
+    }
+
+    @Test
     public void copyTwoTriesWithOneHundredValues() {
         HashMapDB map1 = new HashMapDB();
         TrieStoreImpl store1 = new TrieStoreImpl(map1);
