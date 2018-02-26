@@ -361,11 +361,26 @@ public class MinerManagerTest {
         ethereum.repository = blockchain.getRepository();
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
-        return new MinerServerImpl(config, ethereum, blockchain, blockchain.getBlockStore(), null, blockchain.getPendingState(),
-                blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
-                new BlockValidationRuleDummy(), null,
-                difficultyCalculator, new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        return new MinerServerImpl(
+                config,
+                ethereum,
+                blockchain,
+                null,
+                difficultyCalculator,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        blockchain.getBlockStore(),
+                        blockchain.getPendingState(),
+                        difficultyCalculator,
+                        new GasLimitCalculator(config),
+                        new BlockValidationRuleDummy(),
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
+        );
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {
