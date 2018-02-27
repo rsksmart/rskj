@@ -399,6 +399,7 @@ public class TransactionPoolImpl implements TransactionPool {
         }
     }
 
+    
     private void executeTransaction(Transaction tx) {
         logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
 
