@@ -54,6 +54,8 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final Map<Keccak256, Transaction> pendingTransactions = new HashMap<>();
     private final Map<Keccak256, Transaction> queuedTransactions = new HashMap<>();
+    private final Map<RskAddress, List<Transaction>> queuedTransactionsByAccount = new HashMap<>();
+
     private final Map<Keccak256, Long> transactionBlocks = new HashMap<>();
     private final Map<Keccak256, Long> transactionTimes = new HashMap<>();
 
@@ -169,6 +171,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 while (succesor.isPresent()) {
                     Transaction found = succesor.get();
                     this.queuedTransactions.remove(found.getHash());
+                    this.queuedTransactionsByAccount.get(found.getSender()).remove(found);
 
                     if (!this.addTransaction(found)) {
                         break;
@@ -187,7 +190,13 @@ public class TransactionPoolImpl implements TransactionPool {
     private Optional<Transaction> getQueuedSuccesor(Transaction tx) {
         BigInteger next = tx.getNonceAsInteger().add(BigInteger.ONE);
 
-        return this.queuedTransactions.values()
+        List<Transaction> txsaccount = this.queuedTransactionsByAccount.get(tx.getSender());
+
+        if (txsaccount == null) {
+            return Optional.empty();
+        }
+
+        return txsaccount
                 .stream()
                 .filter(t -> t.getSender().equals(tx.getSender()) && t.getNonceAsInteger().equals(next))
                 .findFirst();
@@ -220,6 +229,16 @@ public class TransactionPoolImpl implements TransactionPool {
 
         if (!txnonce.equals(this.getNextNonceByAccount(tx.getSender()))) {
             queuedTransactions.put(hash, tx);
+
+            List<Transaction> txsaccount = queuedTransactionsByAccount.get(tx.getSender());
+
+            if (txsaccount == null) {
+                txsaccount = new ArrayList<>();
+                queuedTransactionsByAccount.put(tx.getSender(), txsaccount);
+            }
+
+            txsaccount.add(tx);
+
             return false;
         }
 
@@ -342,6 +361,13 @@ public class TransactionPoolImpl implements TransactionPool {
         for (Keccak256 key : toremove) {
             pendingTransactions.remove(key);
             queuedTransactions.remove(key);
+
+            Transaction tx = queuedTransactions.get(key);
+
+            if (tx != null) {
+                queuedTransactionsByAccount.get(tx.getSender()).remove(tx);
+            }
+
             transactionBlocks.remove(key);
             transactionTimes.remove(key);
         }
@@ -353,7 +379,13 @@ public class TransactionPoolImpl implements TransactionPool {
             Keccak256 khash = tx.getHash();
             pendingTransactions.remove(khash);
             queuedTransactions.remove(khash);
-            logger.trace("Clear pending transaction, hash: [{}]", khash);
+            List<Transaction> txsaccount = queuedTransactionsByAccount.get(tx.getSender());
+
+            if (txsaccount != null) {
+                txsaccount.remove(tx);
+            }
+
+            logger.trace("Clear transaction, hash: [{}]", khash);
         }
     }
 
