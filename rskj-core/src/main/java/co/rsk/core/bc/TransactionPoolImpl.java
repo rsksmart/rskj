@@ -197,7 +197,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         return txsaccount
                 .stream()
-                .filter(t -> t.getSender().equals(tx.getSender()) && t.getNonceAsInteger().equals(next))
+                .filter(t -> t.getNonceAsInteger().equals(next))
                 .findFirst();
     }
 
