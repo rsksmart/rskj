@@ -378,7 +378,6 @@ public class TransactionPoolImpl implements TransactionPool {
         return ret;
     }
 
-    
     @Override
     public synchronized List<Transaction> getQueuedTransactions() {
         removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
