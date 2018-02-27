@@ -170,8 +170,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
                 while (succesor.isPresent()) {
                     Transaction found = succesor.get();
-                    this.queuedTransactions.remove(found.getHash());
-                    this.queuedTransactionsByAccount.get(found.getSender()).remove(found);
+                    removeQueuedTransaction(found.getHash());
 
                     if (!this.addTransaction(found)) {
                         break;
@@ -228,16 +227,7 @@ public class TransactionPoolImpl implements TransactionPool {
         BigInteger txnonce = tx.getNonceAsInteger();
 
         if (!txnonce.equals(this.getNextNonceByAccount(tx.getSender()))) {
-            queuedTransactions.put(hash, tx);
-
-            List<Transaction> txsaccount = queuedTransactionsByAccount.get(tx.getSender());
-
-            if (txsaccount == null) {
-                txsaccount = new ArrayList<>();
-                queuedTransactionsByAccount.put(tx.getSender(), txsaccount);
-            }
-
-            txsaccount.add(tx);
+            this.addQueuedTransaction(tx);
 
             return false;
         }
@@ -360,13 +350,8 @@ public class TransactionPoolImpl implements TransactionPool {
     private void removeTransactionList(List<Keccak256> toremove) {
         for (Keccak256 key : toremove) {
             pendingTransactions.remove(key);
-            queuedTransactions.remove(key);
 
-            Transaction tx = queuedTransactions.get(key);
-
-            if (tx != null) {
-                queuedTransactionsByAccount.get(tx.getSender()).remove(tx);
-            }
+            removeQueuedTransaction(key);
 
             transactionBlocks.remove(key);
             transactionTimes.remove(key);
@@ -378,12 +363,7 @@ public class TransactionPoolImpl implements TransactionPool {
         for (Transaction tx : txs) {
             Keccak256 khash = tx.getHash();
             pendingTransactions.remove(khash);
-            queuedTransactions.remove(khash);
-            List<Transaction> txsaccount = queuedTransactionsByAccount.get(tx.getSender());
-
-            if (txsaccount != null) {
-                txsaccount.remove(tx);
-            }
+            removeQueuedTransaction(khash);
 
             logger.trace("Clear transaction, hash: [{}]", khash);
         }
@@ -417,6 +397,24 @@ public class TransactionPoolImpl implements TransactionPool {
         }
     }
 
+    private void removeQueuedTransaction(Keccak256 key) {
+        Transaction tx = queuedTransactions.get(key);
+
+        if (tx == null) {
+            return;
+        }
+
+        queuedTransactions.remove(key);
+
+        List<Transaction> txsaccount = queuedTransactionsByAccount.get(tx.getSender());
+
+        txsaccount.remove(tx);
+
+        if (txsaccount.isEmpty()) {
+            queuedTransactionsByAccount.remove(tx.getSender());
+        }
+    }
+
     private void executeTransaction(Transaction tx) {
         logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
 
@@ -429,6 +427,19 @@ public class TransactionPoolImpl implements TransactionPool {
         executor.execute();
         executor.go();
         executor.finalization();
+    }
+
+    private void addQueuedTransaction(Transaction tx) {
+        this.queuedTransactions.put(tx.getHash(), tx);
+
+        List<Transaction> txsaccount = this.queuedTransactionsByAccount.get(tx.getSender());
+
+        if (txsaccount == null) {
+            txsaccount = new ArrayList<>();
+            this.queuedTransactionsByAccount.put(tx.getSender(), txsaccount);
+        }
+
+        txsaccount.add(tx);
     }
 
     private long getCurrentTimeInSeconds() {
