@@ -435,6 +435,40 @@ public class ECKey implements Serializable {
             return signature;
         }
 
+        /**
+         *
+         * @param r -
+         * @param s -
+         * @param hash - the hash used to compute this signature
+         * @param pub - public key bytes, used to calculate the recovery byte 'v'
+         * @return -
+         */
+        public static ECDSASignature fromComponentsWithRecoveryCalculation(byte[] r, byte[] s, byte[] hash, byte[] pub) {
+            byte v = calculateRecoveryByte(r, s, hash, pub);
+            return fromComponents(r, s, v);
+        }
+
+        private static byte calculateRecoveryByte(byte[] r, byte[] s, byte[] hash, byte[] pub) {
+            ECDSASignature sig = ECDSASignature.fromComponents(r, s);
+            ECPoint pubPoint = ECKey.fromPublicOnly(pub).pub;
+
+            // Now we have to work backwards to figure out the recId needed to recover the signature.
+            int recId = -1;
+            for (int i = 0; i < 4; i++) {
+                ECKey k = ECKey.recoverFromSignature(i, sig, hash, false);
+                if (k != null && k.pub.equals(pubPoint)) {
+                    recId = i;
+                    break;
+                }
+            }
+
+            if (recId == -1) {
+                throw new RuntimeException("Could not construct a recoverable key. This should never happen.");
+            }
+
+            return (byte) (recId + 27);
+        }
+
         public boolean validateComponents() {
             return validateComponents(r, s, v);
         }
