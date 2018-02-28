@@ -22,10 +22,8 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
-import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -39,6 +37,8 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.ethereum.util.TransactionFactoryHelper.*;
 
 /**
  * Created by ajlopez on 08/08/2016.
@@ -68,11 +68,11 @@ public class TransactionPoolImplTest {
 
     @Test
     public void usingCleanUp() {
-        TransactionPoolImpl pendingState = createSampleNewTransactionPool(createBlockchain());
+        TransactionPoolImpl transactionPool = createSampleNewTransactionPool(createBlockchain());
 
-        pendingState.cleanUp();
+        transactionPool.cleanUp();
 
-        Assert.assertTrue(pendingState.getPendingTransactions().isEmpty());
+        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
     }
 
     @Test
@@ -583,56 +583,6 @@ public class TransactionPoolImplTest {
         blockChain.setTransactionPool(transactionPool);
 
         return transactionPool;
-    }
-
-    private static Account createAccount(int naccount) {
-        return new AccountBuilder().name("account" + naccount).build();
-    }
-
-    private static Transaction createSampleTransaction() {
-        return createSampleTransaction(0);
-    }
-
-    private static Transaction createSampleTransaction(long nonce) {
-        Account sender = new AccountBuilder().name("sender").build();
-        Account receiver = new AccountBuilder().name("receiver").build();
-
-        Transaction tx = new TransactionBuilder()
-                .nonce(nonce)
-                .sender(sender)
-                .receiver(receiver)
-                .value(BigInteger.TEN)
-                .build();
-
-        return tx;
-    }
-
-    private static Transaction createSampleTransaction(int from, int to, long value, int nonce) {
-        Account sender = createAccount(from);
-        Account receiver = createAccount(to);
-
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .nonce(nonce)
-                .value(BigInteger.valueOf(value))
-                .build();
-
-        return tx;
-    }
-
-    private static Transaction createSampleTransactionWithData(int from, int nonce, String data) {
-        Account sender = createAccount(from);
-
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiverAddress(new byte[0])
-                .nonce(nonce)
-                .data(data)
-                .gasLimit(BigInteger.valueOf(1000000))
-                .build();
-
-        return tx;
     }
 
     private static BlockChainImpl createBlockchain() {
