@@ -35,6 +35,9 @@ import java.util.Optional;
  */
 @Component
 public class ExecutionBlockRetriever {
+    private static final String LATEST_ID = "latest";
+    private static final String PENDING_ID = "pending";
+
     private final Blockchain blockchain;
     private final MinerServer minerServer;
     private final BlockToMineBuilder builder;
@@ -50,11 +53,11 @@ public class ExecutionBlockRetriever {
     }
 
     public Block getExecutionBlock(String bnOrId) {
-        if ("latest".equals(bnOrId)) {
+        if (LATEST_ID.equals(bnOrId)) {
             return blockchain.getBestBlock();
         }
 
-        if ("pending".equals(bnOrId)) {
+        if (PENDING_ID.equals(bnOrId)) {
             Optional<Block> latestBlock = minerServer.getLatestBlock();
             if (latestBlock.isPresent()) {
                 return latestBlock.get();
