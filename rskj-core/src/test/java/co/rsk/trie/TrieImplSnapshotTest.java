@@ -18,20 +18,13 @@
 
 package co.rsk.trie;
 
-<<<<<<< 13e30355b6aa6cbaee004919fd0eb800a4e0cbce
 import co.rsk.crypto.Keccak256;
-=======
->>>>>>> Rename sha3 too keccak256
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 
-<<<<<<< 13e30355b6aa6cbaee004919fd0eb800a4e0cbce
-=======
-import static org.ethereum.crypto.HashUtil.keccak256;
->>>>>>> Rename sha3 too keccak256
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -159,12 +152,7 @@ public class TrieImplSnapshotTest {
         Assert.assertNull(snapshot.get("bar".getBytes()));
     }
 
-<<<<<<< 13e30355b6aa6cbaee004919fd0eb800a4e0cbce
     public static Keccak256 makeEmptyHash() {
         return new Keccak256(HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
-=======
-    public static byte[] makeEmptyHash() {
-        return HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
->>>>>>> Rename sha3 too keccak256
     }
 }
