@@ -78,14 +78,14 @@ public class VMTest {
     public void testSTATICCALLWithStatusZero() {
         invoke = new ProgramInvokeMockImpl("6001600255",null);
         RskAddress address = invoke.getContractAddress();
-        program = getProgram("PUSH1 0x00" +
+        program = getProgram(compile("PUSH1 0x00" +
                 " PUSH1 0x00" +
                 " PUSH1 0x00" +
                 " PUSH1 0x00" +
                 " PUSH1 0x00" +
                 " PUSH20 0x" + invoke.getContractAddress() +
                 " PUSH4 0x005B8D80" +
-                " STATICCALL");
+                " STATICCALL"));
         program.fullTrace();
         vm.steps(program, Long.MAX_VALUE);
 
@@ -96,14 +96,14 @@ public class VMTest {
     public void testSTATICCALLWithStatusOne() {
         invoke = new ProgramInvokeMockImpl("60016002",null);
         RskAddress address = invoke.getContractAddress();
-        program = getProgram("PUSH1 0x00" +
+        program = getProgram(compile("PUSH1 0x00" +
                         " PUSH1 0x00" +
                         " PUSH1 0x00" +
                         " PUSH1 0x00" +
                         " PUSH1 0x00" +
                         " PUSH20 0x" + invoke.getContractAddress() +
                         " PUSH4 0x005B8D80" +
-                        " STATICCALL");
+                        " STATICCALL"));
 
         program.fullTrace();
         vm.steps(program, Long.MAX_VALUE);
@@ -114,7 +114,7 @@ public class VMTest {
     @Test  // PUSH1 OP
     public void testPUSH1() {
 
-        program = getProgram("PUSH1 0xa0");
+        program = getProgram(compile("PUSH1 0xa0"));
         String expected = "00000000000000000000000000000000000000000000000000000000000000A0";
 
         program.fullTrace();
@@ -126,7 +126,7 @@ public class VMTest {
     @Test  // PUSH2 OP
     public void testPUSH2() {
 
-        program = getProgram("PUSH2 0xa0b0");
+        program = getProgram(compile("PUSH2 0xa0b0"));
         String expected = "000000000000000000000000000000000000000000000000000000000000A0B0";
 
         program.fullTrace();
@@ -138,7 +138,7 @@ public class VMTest {
     @Test  // PUSH3 OP
     public void testPUSH3() {
 
-        program = getProgram("PUSH3 0xA0B0C0");
+        program = getProgram(compile("PUSH3 0xA0B0C0"));
         String expected = "0000000000000000000000000000000000000000000000000000000000A0B0C0";
 
         program.fullTrace();
@@ -150,7 +150,7 @@ public class VMTest {
     @Test  // PUSH4 OP
     public void testPUSH4() {
 
-        program = getProgram("PUSH4 0xA0B0C0D0");
+        program = getProgram(compile("PUSH4 0xA0B0C0D0"));
         String expected = "00000000000000000000000000000000000000000000000000000000A0B0C0D0";
 
         program.fullTrace();
@@ -162,7 +162,7 @@ public class VMTest {
     @Test  // PUSH5 OP
     public void testPUSH5() {
 
-        program = getProgram("PUSH5 0xA0B0C0D0E0");
+        program = getProgram(compile("PUSH5 0xA0B0C0D0E0"));
         String expected = "000000000000000000000000000000000000000000000000000000A0B0C0D0E0";
 
         program.fullTrace();
@@ -174,7 +174,7 @@ public class VMTest {
     @Test  // PUSH6 OP
     public void testPUSH6() {
 
-        program = getProgram("PUSH6 0xA0B0C0D0E0F0");
+        program = getProgram(compile("PUSH6 0xA0B0C0D0E0F0"));
         String expected = "0000000000000000000000000000000000000000000000000000A0B0C0D0E0F0";
 
         program.fullTrace();
@@ -186,7 +186,7 @@ public class VMTest {
     @Test  // PUSH7 OP
     public void testPUSH7() {
 
-        program = getProgram("PUSH7 0xA0B0C0D0E0F0A1");
+        program = getProgram(compile("PUSH7 0xA0B0C0D0E0F0A1"));
         String expected = "00000000000000000000000000000000000000000000000000A0B0C0D0E0F0A1";
 
         program.fullTrace();
@@ -198,7 +198,7 @@ public class VMTest {
     @Test  // PUSH8 OP
     public void testPUSH8() {
 
-        program = getProgram("PUSH8 0xA0B0C0D0E0F0A1B1");
+        program = getProgram(compile("PUSH8 0xA0B0C0D0E0F0A1B1"));
         String expected = "000000000000000000000000000000000000000000000000A0B0C0D0E0F0A1B1";
 
         program.fullTrace();
@@ -210,7 +210,7 @@ public class VMTest {
     @Test  // PUSH9 OP
     public void testPUSH9() {
 
-        program = getProgram("PUSH9 0xA0B0C0D0E0F0A1B1C1");
+        program = getProgram(compile("PUSH9 0xA0B0C0D0E0F0A1B1C1"));
         String expected = "0000000000000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1";
 
         program.fullTrace();
@@ -223,7 +223,7 @@ public class VMTest {
     @Test  // PUSH10 OP
     public void testPUSH10() {
 
-        program = getProgram("PUSH10 0xA0B0C0D0E0F0A1B1C1D1");
+        program = getProgram(compile("PUSH10 0xA0B0C0D0E0F0A1B1C1D1"));
         String expected = "00000000000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1";
 
         program.fullTrace();
@@ -235,7 +235,7 @@ public class VMTest {
     @Test  // PUSH11 OP
     public void testPUSH11() {
 
-        program = getProgram("PUSH11 0xA0B0C0D0E0F0A1B1C1D1E1");
+        program = getProgram(compile("PUSH11 0xA0B0C0D0E0F0A1B1C1D1E1"));
         String expected = "000000000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1";
 
         program.fullTrace();
@@ -247,7 +247,7 @@ public class VMTest {
     @Test  // PUSH12 OP
     public void testPUSH12() {
 
-        program = getProgram("PUSH12 0xA0B0C0D0E0F0A1B1C1D1E1F1");
+        program = getProgram(compile("PUSH12 0xA0B0C0D0E0F0A1B1C1D1E1F1"));
         String expected = "0000000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1";
 
         program.fullTrace();
@@ -259,7 +259,7 @@ public class VMTest {
     @Test  // PUSH13 OP
     public void testPUSH13() {
 
-        program = getProgram("PUSH13 0xA0B0C0D0E0F0A1B1C1D1E1F1A2");
+        program = getProgram(compile("PUSH13 0xA0B0C0D0E0F0A1B1C1D1E1F1A2"));
         String expected = "00000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2";
 
         program.fullTrace();
@@ -271,7 +271,7 @@ public class VMTest {
     @Test  // PUSH14 OP
     public void testPUSH14() {
 
-        program = getProgram("PUSH14 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2");
+        program = getProgram(compile("PUSH14 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2"));
         String expected = "000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2";
 
         program.fullTrace();
@@ -283,7 +283,7 @@ public class VMTest {
     @Test  // PUSH15 OP
     public void testPUSH15() {
 
-        program = getProgram("PUSH15 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2");
+        program = getProgram(compile("PUSH15 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2"));
         String expected = "0000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2";
 
         program.fullTrace();
@@ -295,7 +295,7 @@ public class VMTest {
     @Test  // PUSH16 OP
     public void testPUSH16() {
 
-        program = getProgram("PUSH16 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2");
+        program = getProgram(compile("PUSH16 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2"));
         String expected = "00000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2";
 
         program.fullTrace();
@@ -307,7 +307,7 @@ public class VMTest {
     @Test  // PUSH17 OP
     public void testPUSH17() {
 
-        program = getProgram("PUSH17 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2");
+        program = getProgram(compile("PUSH17 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2"));
         String expected = "000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2";
 
         program.fullTrace();
@@ -319,7 +319,7 @@ public class VMTest {
     @Test  // PUSH18 OP
     public void testPUSH18() {
 
-        program = getProgram("PUSH18 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2");
+        program = getProgram(compile("PUSH18 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2"));
         String expected = "0000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2";
 
         program.fullTrace();
@@ -331,7 +331,7 @@ public class VMTest {
     @Test  // PUSH19 OP
     public void testPUSH19() {
 
-        program = getProgram("PUSH19 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3");
+        program = getProgram(compile("PUSH19 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3"));
         String expected = "00000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3";
 
         program.fullTrace();
@@ -343,7 +343,7 @@ public class VMTest {
     @Test  // PUSH20 OP
     public void testPUSH20() {
 
-        program = getProgram("PUSH20 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3");
+        program = getProgram(compile("PUSH20 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3"));
         String expected = "000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3";
 
         program.fullTrace();
@@ -355,7 +355,7 @@ public class VMTest {
     @Test  // PUSH21 OP
     public void testPUSH21() {
 
-        program = getProgram("PUSH21 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3");
+        program = getProgram(compile("PUSH21 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3"));
         String expected = "0000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3";
 
         program.fullTrace();
@@ -367,7 +367,7 @@ public class VMTest {
     @Test  // PUSH22 OP
     public void testPUSH22() {
 
-        program = getProgram("PUSH22 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3");
+        program = getProgram(compile("PUSH22 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3"));
         String expected = "00000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3";
 
         program.fullTrace();
@@ -379,7 +379,7 @@ public class VMTest {
     @Test  // PUSH23 OP
     public void testPUSH23() {
 
-        program = getProgram("PUSH23 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3");
+        program = getProgram(compile("PUSH23 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3"));
         String expected = "000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3";
 
         program.fullTrace();
@@ -391,7 +391,7 @@ public class VMTest {
     @Test  // PUSH24 OP
     public void testPUSH24() {
 
-        program = getProgram("PUSH24 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3");
+        program = getProgram(compile("PUSH24 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3"));
         String expected = "0000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3";
 
         program.fullTrace();
@@ -403,7 +403,7 @@ public class VMTest {
     @Test  // PUSH25 OP
     public void testPUSH25() {
 
-        program = getProgram("PUSH25 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4");
+        program = getProgram(compile("PUSH25 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4"));
         String expected = "00000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4";
 
         program.fullTrace();
@@ -415,7 +415,7 @@ public class VMTest {
     @Test  // PUSH26 OP
     public void testPUSH26() {
 
-        program = getProgram("PUSH26 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4");
+        program = getProgram(compile("PUSH26 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4"));
         String expected = "000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4";
 
         program.fullTrace();
@@ -427,7 +427,7 @@ public class VMTest {
     @Test  // PUSH27 OP
     public void testPUSH27() {
 
-        program = getProgram("PUSH27 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4");
+        program = getProgram(compile("PUSH27 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4"));
         String expected = "0000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4";
 
         program.fullTrace();
@@ -439,7 +439,7 @@ public class VMTest {
     @Test  // PUSH28 OP
     public void testPUSH28() {
 
-        program = getProgram("PUSH28 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4");
+        program = getProgram(compile("PUSH28 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4"));
         String expected = "00000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4";
 
         program.fullTrace();
@@ -451,7 +451,7 @@ public class VMTest {
     @Test  // PUSH29 OP
     public void testPUSH29() {
 
-        program = getProgram("PUSH29 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4");
+        program = getProgram(compile("PUSH29 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4"));
         String expected = "000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4";
 
         program.fullTrace();
@@ -463,7 +463,7 @@ public class VMTest {
     @Test  // PUSH30 OP
     public void testPUSH30() {
 
-        program = getProgram("PUSH30 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4");
+        program = getProgram(compile("PUSH30 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4"));
         String expected = "0000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4";
 
         program.fullTrace();
@@ -475,7 +475,7 @@ public class VMTest {
     @Test  // PUSH31 OP
     public void testPUSH31() {
 
-        program = getProgram("PUSH31 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1");
+        program = getProgram(compile("PUSH31 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1"));
         String expected = "00A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1";
 
         program.fullTrace();
@@ -487,7 +487,7 @@ public class VMTest {
     @Test  // PUSH32 OP
     public void testPUSH32() {
 
-        program = getProgram("PUSH32 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1B1");
+        program = getProgram(compile("PUSH32 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1B1"));
         String expected = "A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1B1";
 
         program.fullTrace();

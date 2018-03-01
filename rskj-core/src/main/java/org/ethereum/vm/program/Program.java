@@ -1610,10 +1610,6 @@ public class Program {
         return invoke.byTestingSuite();
     }
 
-    public BlockchainConfig getBlockchainConfig() {
-        return blockchainConfig;
-    }
-
     public interface ProgramOutListener {
         void output(String out);
     }
