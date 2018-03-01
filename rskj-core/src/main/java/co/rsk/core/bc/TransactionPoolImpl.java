@@ -383,7 +383,6 @@ public class TransactionPoolImpl implements TransactionPool {
         removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
         List<Transaction> ret = new ArrayList<>();
         ret.addAll(queuedTransactions.getTransactions());
-
         return ret;
     }
 
@@ -399,7 +398,6 @@ public class TransactionPoolImpl implements TransactionPool {
         }
     }
 
-    
     private void executeTransaction(Transaction tx) {
         logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
 

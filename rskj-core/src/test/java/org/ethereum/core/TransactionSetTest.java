@@ -149,7 +149,6 @@ public class TransactionSetTest {
         Assert.assertEquals(transaction.getHash(), result.get(0).getHash());
     }
 
-    
     @Test
     public void addTransactionTwiceAndGetListBySenderWithOneTransaction() {
         TransactionSet txset = new TransactionSet();
