@@ -28,15 +28,14 @@ import org.ethereum.core.Transaction;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 @Component
 public class TxPoolModuleImpl implements TxPoolModule {
 
+    public static final String PENDING = "pending";
+    public static final String QUEUED = "queued";
     private final JsonNodeFactory jsonNodeFactory;
     private final TransactionPool transactionPool;
 
@@ -57,8 +56,8 @@ public class TxPoolModuleImpl implements TxPoolModule {
         Map<String, JsonNode> contentProps = new HashMap<>();
         Map<RskAddress, Map<BigInteger, List<Transaction>>> pendingGrouped = groupTransactions(transactionPool.getPendingTransactions());
         Map<RskAddress, Map<BigInteger, List<Transaction>>> queuedGrouped = groupTransactions(transactionPool.getQueuedTransactions());
-        contentProps.put("pending", serializeTransactions(pendingGrouped, this::fullSerializer));
-        contentProps.put("queued", serializeTransactions(queuedGrouped, this::fullSerializer));
+        contentProps.put(PENDING, serializeTransactions(pendingGrouped, this::fullSerializer));
+        contentProps.put(QUEUED, serializeTransactions(queuedGrouped, this::fullSerializer));
         JsonNode node = jsonNodeFactory.objectNode().setAll(contentProps);
         return node.toString();
     }
@@ -84,7 +83,7 @@ public class TxPoolModuleImpl implements TxPoolModule {
     private JsonNode fullSerializer(Transaction tx) {
         ObjectNode txNode = jsonNodeFactory.objectNode();
         txNode.put("blockhash", "0x0000000000000000000000000000000000000000000000000000000000000000");
-        txNode.put("blocknumber", jsonNodeFactory.nullNode());
+        txNode.putNull("blocknumber");
         txNode.put("from", tx.getSender().toString());
         txNode.put("gas", tx.getGasLimitAsInteger().toString());
         txNode.put("gasPrice", tx.getGasPrice().toString());
@@ -92,7 +91,7 @@ public class TxPoolModuleImpl implements TxPoolModule {
         txNode.put("input", tx.getData());
         txNode.put("nonce", tx.getNonceAsInteger().toString());
         txNode.put("to", tx.getReceiveAddress().toString());
-        txNode.put("transactionIndex", jsonNodeFactory.nullNode());
+        txNode.putNull("transactionIndex");
         txNode.put("value", tx.getValue().toString());
 
         return txNode;
@@ -118,7 +117,9 @@ public class TxPoolModuleImpl implements TxPoolModule {
             }
             List<Transaction> txsByNonce = txsBySender.get(tx.getNonceAsInteger());
             if (txsByNonce == null){
-                txsBySender.put(tx.getNonceAsInteger(), Collections.singletonList(tx));
+                List<Transaction> txs = new ArrayList<>();
+                txs.add(tx);
+                txsBySender.put(tx.getNonceAsInteger(), txs);
             } else {
                 txsByNonce.add(tx);
             }
@@ -138,8 +139,8 @@ public class TxPoolModuleImpl implements TxPoolModule {
         Map<String, JsonNode> contentProps = new HashMap<>();
         Map<RskAddress, Map<BigInteger, List<Transaction>>> pendingGrouped = groupTransactions(transactionPool.getPendingTransactions());
         Map<RskAddress, Map<BigInteger, List<Transaction>>> queuedGrouped = groupTransactions(transactionPool.getQueuedTransactions());
-        contentProps.put("pending", serializeTransactions(pendingGrouped, this::summarySerializer));
-        contentProps.put("queued", serializeTransactions(queuedGrouped, this::summarySerializer));
+        contentProps.put(PENDING, serializeTransactions(pendingGrouped, this::summarySerializer));
+        contentProps.put(QUEUED, serializeTransactions(queuedGrouped, this::summarySerializer));
         JsonNode node = jsonNodeFactory.objectNode().setAll(contentProps);
         return node.toString();
     }
@@ -154,8 +155,8 @@ public class TxPoolModuleImpl implements TxPoolModule {
     @Override
     public String status() {
         Map<String, JsonNode> txProps = new HashMap<>();
-        txProps.put("pending", jsonNodeFactory.numberNode(transactionPool.getPendingTransactions().size()));
-        txProps.put("queued", jsonNodeFactory.numberNode(transactionPool.getQueuedTransactions().size()));
+        txProps.put(PENDING, jsonNodeFactory.numberNode(transactionPool.getPendingTransactions().size()));
+        txProps.put(QUEUED, jsonNodeFactory.numberNode(transactionPool.getQueuedTransactions().size()));
         JsonNode node = jsonNodeFactory.objectNode().setAll(txProps);
         return node.toString();
     }
