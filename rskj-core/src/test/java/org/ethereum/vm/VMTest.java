@@ -85,7 +85,7 @@ public class VMTest {
                 " PUSH1 0x00" +
                 " PUSH20 0x" + invoke.getContractAddress() +
                 " PUSH4 0x005B8D80" +
-                " STATICCALL"));
+                " STATICCALL"), createTransaction(0));
         program.fullTrace();
         vm.steps(program, Long.MAX_VALUE);
 
@@ -2973,11 +2973,14 @@ public class VMTest {
     }
 
     private Program getProgram(String code) {
-        return getProgram(Hex.decode(code));
+        return getProgram(Hex.decode(code), null);
     }
 
     private Program getProgram(byte[] code) {
-        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, null);
+        return getProgram(code, null);
+    }
+    private Program getProgram(byte[] code, Transaction transaction) {
+        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, transaction);
     }
 
     private byte[] compile(String code) {
