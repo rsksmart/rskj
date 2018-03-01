@@ -67,10 +67,15 @@ public class TransactionSet {
 
         this.transactionsByHash.remove(hash);
 
-        List<Transaction> txs = this.transactionsByAddress.get(transaction.getSender());
+        RskAddress senderAddress = transaction.getSender();
+        List<Transaction> txs = this.transactionsByAddress.get(senderAddress);
 
         if (txs != null) {
             txs.remove(transaction);
+
+            if (txs.isEmpty()) {
+                this.transactionsByAddress.remove(senderAddress);
+            }
         }
     }
 

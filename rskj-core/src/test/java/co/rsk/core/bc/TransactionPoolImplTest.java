@@ -44,7 +44,6 @@ import static org.ethereum.util.TransactionFactoryHelper.*;
  * Created by ajlopez on 08/08/2016.
  */
 public class TransactionPoolImplTest {
-
     private static final RskSystemProperties config = new RskSystemProperties();
 
     @Test
