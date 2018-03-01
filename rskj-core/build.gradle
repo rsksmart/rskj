@@ -151,14 +151,11 @@ dependencies {
     runtime "ch.qos.logback:logback-core:${logbackVersion}"
 
     testCompile "junit:junit:${junitVersion}"
-    testCompile "org.springframework:spring-test:${springVersion}"
     testCompile "org.mockito:mockito-core:${mockitoVersion}"
     testCompile "org.powermock:powermock-core:${powermockitoVersion}"
     testCompile "org.powermock:powermock-module-junit4:${powermockitoVersion}"
     testCompile "org.powermock:powermock-api-mockito:${powermockitoVersion}"
     testCompile "co.rsk:lll-compiler:${rskLllVersion}"
-    testCompile "org.springframework:spring-tx:${springVersion}"
-    testCompile "org.springframework:spring-orm:${springVersion}"
     testCompile "com.h2database:h2:1.4.193"
     testCompile "org.awaitility:awaitility:3.0.0"
     testCompile 'commons-io:commons-io:2.5'
@@ -189,8 +186,8 @@ dependencyVerification {
         'com.typesafe:config:e6fadfc6108220d3a6b86aa7e4e16c9e7bb857ba58955886308bb13972264af0',
         'commons-codec:commons-codec:4241dfa94e711d435f29a4604a3e2de5c4aa3c165e23bd066be6fc1fc4309569',
         'commons-io:commons-io:a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474',
-        'commons-logging:commons-logging:daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636',
         'io.netty:netty-all:1578cbb1354f02951c6ce5d374962e703afb882321164db9e3a2cfb141a1ebeb',
+        'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
         'net.iharder:base64:f1a0e359eee29a5939c35e5fdedc574dd7e8ca065b056fc14b2b29e3ed3cd54d',
         'net.jcip:jcip-annotations:be5805392060c71474bf6c9a67a099471274d30b83eef84bfc4e0889a4f1dcc0',
         'org.apache.commons:commons-collections4:b1fe8b5968b57d8465425357ed2d9dc695504518bed2df5b565c4b8e68c1c8a5',
@@ -199,6 +196,7 @@ dependencyVerification {
         'org.ethereum:leveldbjni-all:18da00444c77080d4422b16c9d4750c4addabda350b702b4a6d628b86658e585',
         'org.fusesource.hawtjni:hawtjni-runtime:74fe9764e1fb1ef20b159dbca2d29abd6de292082ce3fcf538f81ac912390416',
         'org.fusesource.leveldbjni:leveldbjni:05fe3a006d030aaf8d1e43f6c640a85f9f6b967c4499ce1ad5055ac236c3b944',
+        'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
         'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
         'org.iq80.leveldb:leveldb-api:279e3a5649cde0bf0d4e09fd1369ec0e9ee80344ec06527c37148c9a58684140',
         'org.iq80.leveldb:leveldb:0dcc623fcb8450e736b9d2b1b8d91b980e44920d6a22cec8c00f703548b3747f',
@@ -220,10 +218,6 @@ dependencyVerification {
         'org.springframework:spring-context:72b862c9a4220064f1b3bb2b4d4e30a4ab6a45b5c90c559dd6d16c645d6e25aa',
         'org.springframework:spring-core:bda8947716100a3fc3e6017e16a9592a0216b14fed83ee63dc9a015444e88b0d',
         'org.springframework:spring-expression:0c471def6efa20b66c9ef182182747ba41ec9f02b519b0b301caf5c0c9e49641',
-        'org.springframework:spring-jdbc:b2f2c988c22744441f422ddfd7880bbe6d6d73148b9df76835921f533ca9e430',
-        'org.springframework:spring-orm:32557ae0c762d842097bc1383f9b98d9264870f047f67618ac6a195c88e2a831',
-        'org.springframework:spring-test:5659b135bd6f32e11ea00ae5411a206fd6ae7754bc0a749da9e4722cf354f018',
-        'org.springframework:spring-tx:63d0a80c5c87008eb958ee6d8c121d175d5fb69523a1aec91959682c1a4202a7',
     ]
 }
 
