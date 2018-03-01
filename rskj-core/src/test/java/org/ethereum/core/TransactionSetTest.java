@@ -41,6 +41,59 @@ public class TransactionSetTest {
     }
 
     @Test
+    public void transactionIsNotInEmptySet() {
+        TransactionSet txset = new TransactionSet();
+        Transaction transaction = createSampleTransaction();
+
+        Assert.assertFalse(txset.hasTransaction(transaction));
+        List<Transaction> result = txset.getTransactions();
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void hasTransaction() {
+        TransactionSet txset = new TransactionSet();
+        Transaction transaction1 = createSampleTransaction(10);
+        Transaction transaction2 = createSampleTransaction(20);
+        Transaction transaction3 = createSampleTransaction(30);
+
+        txset.addTransaction(transaction1);
+        txset.addTransaction(transaction2);
+
+        Assert.assertTrue(txset.hasTransaction(transaction1));
+        Assert.assertTrue(txset.hasTransaction(transaction2));
+        Assert.assertFalse(txset.hasTransaction(transaction3));
+    }
+
+    @Test
+    public void addAndRemoveTransactions() {
+        TransactionSet txset = new TransactionSet();
+
+        Transaction transaction1 = createSampleTransaction(1, 2, 100, 0);
+        Transaction transaction2 = createSampleTransaction(2, 3, 200, 0);
+        Transaction transaction3 = createSampleTransaction(3, 4, 300, 0);
+
+        txset.addTransaction(transaction1);
+        txset.addTransaction(transaction2);
+        txset.addTransaction(transaction3);
+
+        txset.removeTransactionByHash(transaction1.getHash());
+        txset.removeTransactionByHash(transaction2.getHash());
+        txset.removeTransactionByHash(transaction3.getHash());
+
+        Assert.assertFalse(txset.hasTransaction(transaction1));
+        Assert.assertFalse(txset.hasTransaction(transaction2));
+        Assert.assertFalse(txset.hasTransaction(transaction3));
+
+        Assert.assertTrue(txset.getTransactions().isEmpty());
+        Assert.assertTrue(txset.getTransactionsWithSender(transaction1.getSender()).isEmpty());
+        Assert.assertTrue(txset.getTransactionsWithSender(transaction2.getSender()).isEmpty());
+        Assert.assertTrue(txset.getTransactionsWithSender(transaction3.getSender()).isEmpty());
+    }
+
+    @Test
     public void addTransactionAndGetListWithOneTransaction() {
         TransactionSet txset = new TransactionSet();
         Transaction tx = createSampleTransaction();
@@ -58,17 +111,17 @@ public class TransactionSetTest {
     @Test
     public void addtTransactionTwiceAndGetListWithOneTransaction() {
         TransactionSet txset = new TransactionSet();
-        Transaction tx = createSampleTransaction();
+        Transaction transaction = createSampleTransaction();
 
-        txset.addTransaction(tx);
-        txset.addTransaction(tx);
+        txset.addTransaction(transaction);
+        txset.addTransaction(transaction);
 
         List<Transaction> result = txset.getTransactions();
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());
         Assert.assertEquals(1, result.size());
-        Assert.assertEquals(tx.getHash(), result.get(0).getHash());
+        Assert.assertEquals(transaction.getHash(), result.get(0).getHash());
     }
 
     @Test
@@ -84,31 +137,31 @@ public class TransactionSetTest {
     @Test
     public void addTransactionAndGetListBySenderWithOneTransaction() {
         TransactionSet txset = new TransactionSet();
-        Transaction tx = createSampleTransaction();
+        Transaction transaction = createSampleTransaction();
 
-        txset.addTransaction(tx);
+        txset.addTransaction(transaction);
 
-        List<Transaction> result = txset.getTransactionsWithSender(tx.getSender());
+        List<Transaction> result = txset.getTransactionsWithSender(transaction.getSender());
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());
         Assert.assertEquals(1, result.size());
-        Assert.assertEquals(tx.getHash(), result.get(0).getHash());
+        Assert.assertEquals(transaction.getHash(), result.get(0).getHash());
     }
 
     @Test
     public void addTransactionTwiceAndGetListBySenderWithOneTransaction() {
         TransactionSet txset = new TransactionSet();
-        Transaction tx = createSampleTransaction();
+        Transaction transaction = createSampleTransaction();
 
-        txset.addTransaction(tx);
-        txset.addTransaction(tx);
+        txset.addTransaction(transaction);
+        txset.addTransaction(transaction);
 
-        List<Transaction> result = txset.getTransactionsWithSender(tx.getSender());
+        List<Transaction> result = txset.getTransactionsWithSender(transaction.getSender());
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());
         Assert.assertEquals(1, result.size());
-        Assert.assertEquals(tx.getHash(), result.get(0).getHash());
+        Assert.assertEquals(transaction.getHash(), result.get(0).getHash());
     }
 }

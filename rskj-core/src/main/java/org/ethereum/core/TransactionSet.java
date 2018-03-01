@@ -55,11 +55,23 @@ public class TransactionSet {
     }
 
     public boolean hasTransaction(Transaction transaction) {
-        return false;
+        return this.transactionsByHash.containsKey(transaction.getHash());
     }
 
     public void removeTransactionByHash(Keccak256 hash) {
+        Transaction transaction = this.transactionsByHash.get(hash);
 
+        if (transaction == null) {
+            return;
+        }
+
+        this.transactionsByHash.remove(hash);
+
+        List<Transaction> txs = this.transactionsByAddress.get(transaction.getSender());
+
+        if (txs != null) {
+            txs.remove(transaction);
+        }
     }
 
     public List<Transaction> getTransactions() {
