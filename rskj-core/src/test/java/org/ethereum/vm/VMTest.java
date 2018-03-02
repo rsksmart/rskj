@@ -75,8 +75,29 @@ public class VMTest {
     }
 
     @Test
-    public void testSTATICCALLWithStatusZero() {
-        invoke = new ProgramInvokeMockImpl("6001600255",null);
+    public void testSTATICCALLWithStatusZeroUsingSStore() {
+        testSTATICCALLWithStatusZeroUsingOpCode("SSTORE");
+    }
+
+    @Test
+    public void testSTATICCALLWithStatusZeroUsingLogs() {
+        for (int k = 0; k < 5; k++) {
+            testSTATICCALLWithStatusZeroUsingOpCode("LOG" + k);
+        }
+    }
+
+    @Test
+    public void testSTATICCALLWithStatusZeroUsingCreate() {
+        testSTATICCALLWithStatusZeroUsingOpCode("CREATE");
+    }
+
+    @Test
+    public void testSTATICCALLWithStatusZeroUsingSuicide() {
+        testSTATICCALLWithStatusZeroUsingOpCode("SUICIDE");
+    }
+
+    public void testSTATICCALLWithStatusZeroUsingOpCode(String opcode) {
+        invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 " + opcode), null);
         RskAddress address = invoke.getContractAddress();
         program = getProgram(compile("PUSH1 0x00" +
                 " PUSH1 0x00" +
@@ -94,7 +115,7 @@ public class VMTest {
 
     @Test
     public void testSTATICCALLWithStatusOne() {
-        invoke = new ProgramInvokeMockImpl("60016002",null);
+        invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
         RskAddress address = invoke.getContractAddress();
         program = getProgram(compile("PUSH1 0x00" +
                         " PUSH1 0x00" +

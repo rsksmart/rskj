@@ -55,13 +55,17 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     public ProgramInvokeMockImpl(String contractCode, RskAddress contractAddress) {
+        this(Hex.decode(contractCode), contractAddress);
+    }
+
+    public ProgramInvokeMockImpl(byte[] contractCode, RskAddress contractAddress) {
         this.repository = new RepositoryImplForTesting();
 
         this.repository.createAccount(ownerAddress);
         //Defaults to defaultContractAddress constant defined in this mock
         this.contractAddress = contractAddress!=null?contractAddress:this.defaultContractAddress;
         this.repository.createAccount(this.contractAddress);
-        this.repository.saveCode(this.contractAddress, Hex.decode(contractCode));
+        this.repository.saveCode(this.contractAddress, contractCode);
         this.txindex = DataWord.ZERO;
     }
 
