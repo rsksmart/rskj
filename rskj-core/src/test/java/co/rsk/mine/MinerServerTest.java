@@ -19,8 +19,8 @@
 package co.rsk.mine;
 
 import co.rsk.TestHelpers.Tx;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
@@ -45,9 +45,8 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
@@ -57,7 +56,7 @@ import static org.junit.Assert.*;
  */
 public class MinerServerTest {
     private static final RskSystemProperties config = new RskSystemProperties();
-    public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
 
     private BlockChainImpl blockchain;
 
@@ -77,9 +76,7 @@ public class MinerServerTest {
 
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
         byte[] s1 = new byte[32];
-        byte[] s2 = new byte[32];
         s1[0] = 0;
-        s2[0] = 1;
         Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
         Mockito.when(tx1.getEncoded()).thenReturn(new byte[32]);
 
@@ -88,7 +85,7 @@ public class MinerServerTest {
         Mockito.when(repository.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
         Mockito.when(repository.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
 
-        List<Transaction> txs = new ArrayList<>(Arrays.asList(tx1));
+        List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));
 
         PendingState localPendingState = Mockito.mock(PendingState.class);
         Mockito.when(localPendingState.getPendingTransactions()).thenReturn(txs);
@@ -126,8 +123,6 @@ public class MinerServerTest {
         Transaction remascTransaction = blockTransactions.get(1);
         assertThat(remascTransaction, instanceOf(RemascTransaction.class));
     }
-
-
 
     @Test
     public void submitBitcoinBlockTwoTags() {
@@ -169,7 +164,7 @@ public class MinerServerTest {
         MinerWork work2 = minerServer.getWork(); // only the tag is used
         Assert.assertNotEquals(work2.getBlockHashForMergedMining(),work.getBlockHashForMergedMining());
 
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithTwoTags(work,work2);
+        BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithTwoTags(work,work2);
 
         findNonce(work, bitcoinMergedMiningBlock);
         SubmitBlockResult result;
@@ -191,6 +186,7 @@ public class MinerServerTest {
             minerServer.stop();
         }
     }
+
     @Test
     public void submitBitcoinBlock() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
@@ -219,27 +215,240 @@ public class MinerServerTest {
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
-        minerServer.start();
-        MinerWork work = minerServer.getWork();
+            minerServer.start();
+            MinerWork work = minerServer.getWork();
 
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work);
+            BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithOnlyCoinbase(work);
 
-        findNonce(work, bitcoinMergedMiningBlock);
+            findNonce(work, bitcoinMergedMiningBlock);
 
-        SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+            SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        Assert.assertEquals("OK", result.getStatus());
-        Assert.assertNotNull(result.getBlockInfo());
-        Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
-        Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+            Assert.assertEquals("OK", result.getStatus());
+            Assert.assertNotNull(result.getBlockInfo());
+            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-        Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
         } finally {
             minerServer.stop();
         }
     }
 
+    @Test
+    public void submitBitcoinBlockPartialMerkleWhenBlockIsEmpty() {
+        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
+        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
+        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerServer minerServer = new MinerServerImpl(
+                config,
+                ethereumImpl,
+                blockchain,
+                null,
+                DIFFICULTY_CALCULATOR,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        blockchain.getBlockStore(),
+                        blockchain.getPendingState(),
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
+        );
+        try {
+            minerServer.start();
+            MinerWork work = minerServer.getWork();
+
+            BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithOnlyCoinbase(work);
+
+            findNonce(work, bitcoinMergedMiningBlock);
+
+            //noinspection ConstantConditions
+            BtcTransaction coinbase = bitcoinMergedMiningBlock.getTransactions().get(0);
+            List<String> coinbaseReversedHash = Collections.singletonList(Sha256Hash.wrap(coinbase.getHash().getReversedBytes()).toString());
+            SubmitBlockResult result = minerServer.submitBitcoinBlockPartialMerkle(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, coinbase, coinbaseReversedHash, 1);
+
+            Assert.assertEquals("OK", result.getStatus());
+            Assert.assertNotNull(result.getBlockInfo());
+            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+        } finally {
+            minerServer.stop();
+        }
+    }
+
+    @Test
+    public void submitBitcoinBlockPartialMerkleWhenBlockHasTransactions() {
+        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+
+        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
+        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerServer minerServer = new MinerServerImpl(
+                config,
+                ethereumImpl,
+                blockchain,
+                null,
+                DIFFICULTY_CALCULATOR,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        blockchain.getBlockStore(),
+                        blockchain.getPendingState(),
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
+        );
+        try {
+            minerServer.start();
+            MinerWork work = minerServer.getWork();
+
+            BtcTransaction otherTx = Mockito.mock(BtcTransaction.class);
+            Sha256Hash otherTxHash = Sha256Hash.wrap("aaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccdddd");
+            Mockito.when(otherTx.getHash()).thenReturn(otherTxHash);
+            Mockito.when(otherTx.getHashAsString()).thenReturn(otherTxHash.toString());
+
+            BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work, Collections.singletonList(otherTx));
+
+            findNonce(work, bitcoinMergedMiningBlock);
+
+            //noinspection ConstantConditions
+            BtcTransaction coinbase = bitcoinMergedMiningBlock.getTransactions().get(0);
+            String coinbaseReversedHash = Sha256Hash.wrap(coinbase.getHash().getReversedBytes()).toString();
+            String otherTxHashReversed = Sha256Hash.wrap(otherTxHash.getReversedBytes()).toString();
+            List<String> merkleHashes = Arrays.asList(coinbaseReversedHash, otherTxHashReversed);
+            SubmitBlockResult result = minerServer.submitBitcoinBlockPartialMerkle(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, coinbase, merkleHashes, 2);
+
+            Assert.assertEquals("OK", result.getStatus());
+            Assert.assertNotNull(result.getBlockInfo());
+            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+        } finally {
+            minerServer.stop();
+        }
+    }
+
+    @Test
+    public void submitBitcoinBlockTransactionsWhenBlockIsEmpty() {
+        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+
+        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
+        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerServer minerServer = new MinerServerImpl(
+                config,
+                ethereumImpl,
+                blockchain,
+                null,
+                DIFFICULTY_CALCULATOR,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        blockchain.getBlockStore(),
+                        blockchain.getPendingState(),
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
+        );
+        try {
+            minerServer.start();
+            MinerWork work = minerServer.getWork();
+
+            BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithOnlyCoinbase(work);
+
+            findNonce(work, bitcoinMergedMiningBlock);
+
+            //noinspection ConstantConditions
+            BtcTransaction coinbase = bitcoinMergedMiningBlock.getTransactions().get(0);
+            SubmitBlockResult result = minerServer.submitBitcoinBlockTransactions(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, coinbase, Collections.singletonList(coinbase.getHashAsString()));
+
+            Assert.assertEquals("OK", result.getStatus());
+            Assert.assertNotNull(result.getBlockInfo());
+            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+        } finally {
+            minerServer.stop();
+        }
+    }
+
+    @Test
+    public void submitBitcoinBlockTransactionsWhenBlockHasTransactions() {
+        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+
+        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
+        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerServer minerServer = new MinerServerImpl(
+                config,
+                ethereumImpl,
+                blockchain,
+                null,
+                DIFFICULTY_CALCULATOR,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        blockchain.getBlockStore(),
+                        blockchain.getPendingState(),
+                        DIFFICULTY_CALCULATOR,
+                        new GasLimitCalculator(config),
+                        unclesValidationRule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
+        );
+        try {
+            minerServer.start();
+            MinerWork work = minerServer.getWork();
+
+            BtcTransaction otherTx = Mockito.mock(BtcTransaction.class);
+            Sha256Hash otherTxHash = Sha256Hash.wrap("aaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccdddd");
+            Mockito.when(otherTx.getHash()).thenReturn(otherTxHash);
+            Mockito.when(otherTx.getHashAsString()).thenReturn(otherTxHash.toString());
+
+            BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work, Collections.singletonList(otherTx));
+
+            findNonce(work, bitcoinMergedMiningBlock);
+
+            //noinspection ConstantConditions
+            BtcTransaction coinbase = bitcoinMergedMiningBlock.getTransactions().get(0);
+            List<String> txs = Arrays.asList(coinbase.getHashAsString(), otherTxHash.toString());
+            SubmitBlockResult result = minerServer.submitBitcoinBlockTransactions(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, coinbase, txs);
+
+            Assert.assertEquals("OK", result.getStatus());
+            Assert.assertNotNull(result.getBlockInfo());
+            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+        } finally {
+            minerServer.stop();
+        }
+    }
 
     @Test
     public void workWithNoTransactionsZeroFees() {
@@ -453,20 +662,29 @@ public class MinerServerTest {
         Assert.assertTrue(result <= current + 11);
     }
 
-    private co.rsk.bitcoinj.core.BtcBlock getMergedMiningBlock(MinerWork work) {
-        NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
+    private BtcBlock getMergedMiningBlockWithOnlyCoinbase(MinerWork work) {
+        return getMergedMiningBlock(work, Collections.emptyList());
+    }
+
+    private BtcBlock getMergedMiningBlock(MinerWork work, List<BtcTransaction> txs) {
+        NetworkParameters bitcoinNetworkParameters = RegTestParams.get();
+        BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
+
+        List<BtcTransaction> blockTxs = new ArrayList<>();
+        blockTxs.add(bitcoinMergedMiningCoinbaseTransaction);
+        blockTxs.addAll(txs);
+
+        return MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, blockTxs);
+    }
+
+    private BtcBlock getMergedMiningBlockWithTwoTags(MinerWork work, MinerWork work2) {
+        NetworkParameters bitcoinNetworkParameters = RegTestParams.get();
+        BtcTransaction bitcoinMergedMiningCoinbaseTransaction =
+                MinerUtils.getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(bitcoinNetworkParameters, work, work2);
         return MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
     }
 
-    private co.rsk.bitcoinj.core.BtcBlock getMergedMiningBlockWithTwoTags(MinerWork work,MinerWork work2) {
-        NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction =
-                MinerUtils.getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(bitcoinNetworkParameters, work,work2);
-        return MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
-    }
-
-    private void findNonce(MinerWork work, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+    private void findNonce(MinerWork work, BtcBlock bitcoinMergedMiningBlock) {
         BigInteger target = new BigInteger(TypeConverter.stringHexToByteArray(work.getTarget()));
 
         while (true) {

@@ -18,6 +18,11 @@
 
 package co.rsk.rpc;
 
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
@@ -48,12 +53,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
- * Created by adrian.eidelman on 3/11/2016.
+ * Handles requests for work and block submission.
+ * Full responsibility for processing the request is delegated to MinerServer.
+ *
+ * @author Adrian Eidelman
+ * @author Martin Medina
  */
 public class Web3RskImpl extends Web3Impl {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -85,42 +92,77 @@ public class Web3RskImpl extends Web3Impl {
     }
 
     public MinerWork mnr_getWork() {
-        if (logger.isDebugEnabled()) {
-            logger.debug("mnr_getWork()");
-        }
+        logger.debug("mnr_getWork()");
+
         return minerServer.getWork();
     }
 
     public SubmittedBlockInfo mnr_submitBitcoinBlock(String bitcoinBlockHex) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("mnr_submitBitcoinBlock(): {}", bitcoinBlockHex.length());
-        }
-        
-        co.rsk.bitcoinj.core.NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
-        new co.rsk.bitcoinj.core.Context(params);
-        byte[] bitcoinBlockByteArray = Hex.decode(bitcoinBlockHex);
-        co.rsk.bitcoinj.core.BtcBlock bitcoinBlock = params.getDefaultSerializer().makeBlock(bitcoinBlockByteArray);
-        co.rsk.bitcoinj.core.BtcTransaction coinbase = bitcoinBlock.getTransactions().get(0);
-        byte[] coinbaseAsByteArray = coinbase.bitcoinSerialize();
-        List<Byte> coinbaseAsByteList = java.util.Arrays.asList(ArrayUtils.toObject(coinbaseAsByteArray));
+        logger.debug("mnr_submitBitcoinBlock(): {}", bitcoinBlockHex.length());
 
-        List<Byte> rskTagAsByteList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+        NetworkParameters params = RegTestParams.get();
+        new Context(params);
 
-        int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
-        byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue()/8];
-        System.arraycopy(coinbaseAsByteArray, rskTagPosition+ RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
-        String blockHashForMergedMining = TypeConverter.toJsonHex(blockHashForMergedMiningArray);
+        BtcBlock bitcoinBlock = getBtcBlock(bitcoinBlockHex, params);
+        BtcTransaction coinbase = bitcoinBlock.getTransactions().get(0);
+
+        String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
 
         SubmitBlockResult result = minerServer.submitBitcoinBlock(blockHashForMergedMining, bitcoinBlock);
 
-        if("OK".equals(result.getStatus())) {
-            return result.getBlockInfo();
-        } else {
-            throw new JsonRpcSubmitBlockException(result.getMessage());
-        }
+        return parseResultAndReturn(result);
     }
 
-    public void ext_dumpState()  {
+    public SubmittedBlockInfo mnr_submitBitcoinBlockPartialMerkle(
+            String blockHashHex,
+            String blockHeaderHex,
+            String coinbaseHex,
+            String merkleHashesHex,
+            String blockTxnCountHex
+    ) {
+        logger.debug("mnr_submitBitcoinBlockPartialMerkle(): {}, {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, merkleHashesHex, blockTxnCountHex);
+
+        NetworkParameters params = RegTestParams.get();
+        new Context(params);
+
+        BtcBlock bitcoinBlockWithHeaderOnly = getBtcBlock(blockHeaderHex, params);
+        BtcTransaction coinbase = new BtcTransaction(params, Hex.decode(coinbaseHex));
+
+        String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
+
+        List<String> merkleHashes = parseHashes(merkleHashesHex);
+
+        int txnCount = Integer.parseInt(blockTxnCountHex, 16);
+
+        SubmitBlockResult result = minerServer.submitBitcoinBlockPartialMerkle(blockHashForMergedMining, bitcoinBlockWithHeaderOnly, coinbase, merkleHashes, txnCount);
+
+        return parseResultAndReturn(result);
+    }
+
+    public SubmittedBlockInfo mnr_submitBitcoinBlockTransactions(
+            String blockHashHex,
+            String blockHeaderHex,
+            String coinbaseHex,
+            String txnHashesHex
+    ) {
+        logger.debug("mnr_submitBitcoinBlockTransactions(): {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, txnHashesHex);
+
+        NetworkParameters params = RegTestParams.get();
+        new Context(params);
+
+        BtcBlock bitcoinBlockWithHeaderOnly = getBtcBlock(blockHeaderHex, params);
+        BtcTransaction coinbase = new BtcTransaction(params, Hex.decode(coinbaseHex));
+
+        String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
+
+        List<String> txnHashes = parseHashes(txnHashesHex);
+
+        SubmitBlockResult result = minerServer.submitBitcoinBlockTransactions(blockHashForMergedMining, bitcoinBlockWithHeaderOnly, coinbase, txnHashes);
+
+        return parseResultAndReturn(result);
+    }
+
+    public void ext_dumpState() {
         Block bestBlcock = blockStore.getBestBlock();
         logger.info("Dumping state for block hash {}, block number {}", bestBlcock.getHash(), bestBlcock.getNumber());
         networkStateExporter.exportStatus(System.getProperty("user.dir") + "/" + "rskdump.json");
@@ -128,12 +170,13 @@ public class Web3RskImpl extends Web3Impl {
 
     /**
      * Export the blockchain tree as a tgf file to user.dir/rskblockchain.tgf
+     *
      * @param numberOfBlocks Number of block heights to include. Eg if best block is block 2300 and numberOfBlocks is 10, the graph will include blocks in heights 2290 to 2300.
-     * @param includeUncles Whether to show uncle links (recommended value is false)
+     * @param includeUncles  Whether to show uncle links (recommended value is false)
      */
-    public void ext_dumpBlockchain(long numberOfBlocks, boolean includeUncles)  {
+    public void ext_dumpBlockchain(long numberOfBlocks, boolean includeUncles) {
         Block bestBlock = blockStore.getBestBlock();
-        logger.info("Dumping blockchain starting on block number {}, to best block number {}", bestBlock.getNumber()-numberOfBlocks, bestBlock.getNumber());
+        logger.info("Dumping blockchain starting on block number {}, to best block number {}", bestBlock.getNumber() - numberOfBlocks, bestBlock.getNumber());
         PrintWriter writer = null;
         try {
             File graphFile = new File(System.getProperty("user.dir") + "/" + "rskblockchain.tgf");
@@ -148,7 +191,7 @@ public class Web3RskImpl extends Web3Impl {
                 result.addAll(blockStore.getChainBlocksByNumber(i));
             }
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash().getBytes()) + " " + block.getNumber()+"-"+toSmallHash(block.getHash().getBytes()));
+                writer.println(toSmallHash(block.getHash().getBytes()) + " " + block.getNumber() + "-" + toSmallHash(block.getHash().getBytes()));
             }
             writer.println("#");
             for (Block block : result) {
@@ -162,16 +205,46 @@ public class Web3RskImpl extends Web3Impl {
         } catch (IOException e) {
             logger.error("Could nos save node graph to file", e);
         } finally {
-            if (writer!=null) {
+            if (writer != null) {
                 try {
                     writer.close();
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
             }
         }
     }
 
     private String toSmallHash(byte[] input) {
-        return Hex.toHexString(input).substring(56,64);
+        return Hex.toHexString(input).substring(56, 64);
     }
 
+    private BtcBlock getBtcBlock(String blockHeaderHex, NetworkParameters params) {
+        byte[] bitcoinBlockByteArray = Hex.decode(blockHeaderHex);
+        return params.getDefaultSerializer().makeBlock(bitcoinBlockByteArray);
+    }
+
+    private String extractBlockHashForMergedMining(BtcTransaction coinbase) {
+        byte[] coinbaseAsByteArray = coinbase.bitcoinSerialize();
+        List<Byte> coinbaseAsByteList = Arrays.asList(ArrayUtils.toObject(coinbaseAsByteArray));
+
+        List<Byte> rskTagAsByteList = Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+
+        int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
+        byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue() / 8];
+        System.arraycopy(coinbaseAsByteArray, rskTagPosition + RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
+        return TypeConverter.toJsonHex(blockHashForMergedMiningArray);
+    }
+
+    private List<String> parseHashes(String txnHashesHex) {
+        String[] split = txnHashesHex.split("\\s+");
+        return Arrays.asList(split);
+    }
+
+    private SubmittedBlockInfo parseResultAndReturn(SubmitBlockResult result) {
+        if ("OK".equals(result.getStatus())) {
+            return result.getBlockInfo();
+        } else {
+            throw new JsonRpcSubmitBlockException(result.getMessage());
+        }
+    }
 }

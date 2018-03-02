@@ -26,7 +26,6 @@ import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
-import com.google.common.collect.Lists;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -39,10 +38,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by oscar on 26/09/2016.
@@ -127,9 +123,11 @@ public class MinerUtils {
         return coinbaseTransaction;
     }
 
-    public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(co.rsk.bitcoinj.core.NetworkParameters params,
-                                                                      co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction) {
-        List<BtcTransaction> transactions = Lists.newArrayList(coinbaseTransaction);
+    public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(co.rsk.bitcoinj.core.NetworkParameters params, BtcTransaction transaction) {
+        return getBitcoinMergedMiningBlock(params, Collections.singletonList(transaction));
+    }
+
+    public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(co.rsk.bitcoinj.core.NetworkParameters params, List<BtcTransaction> transactions) {
         co.rsk.bitcoinj.core.Sha256Hash prevBlockHash = co.rsk.bitcoinj.core.Sha256Hash.ZERO_HASH;
         long time = System.currentTimeMillis() / 1000;
         long difficultyTarget = co.rsk.bitcoinj.core.Utils.encodeCompactBits(params.getMaxTarget());
