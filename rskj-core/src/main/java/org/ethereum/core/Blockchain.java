@@ -69,7 +69,7 @@ public interface Blockchain {
 
     BlockChainStatus getStatus();
 
-    PendingState getPendingState();
+    TransactionPool getTransactionPool();
 
     TransactionInfo getTransactionInfo(byte[] hash);
 

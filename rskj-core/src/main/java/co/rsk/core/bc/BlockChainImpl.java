@@ -84,7 +84,7 @@ public class BlockChainImpl implements Blockchain {
     private final Repository repository;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
-    private PendingState pendingState;
+    private TransactionPool transactionPool;
     private EthereumListener listener;
     private final AdminInfo adminInfo;
     private BlockValidator blockValidator;
@@ -100,7 +100,7 @@ public class BlockChainImpl implements Blockchain {
                           Repository repository,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
-                          PendingState pendingState,
+                          TransactionPool transactionPool,
                           EthereumListener listener,
                           AdminInfo adminInfo,
                           BlockValidator blockValidator) {
@@ -112,7 +112,7 @@ public class BlockChainImpl implements Blockchain {
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
         this.blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
     }
 
     @Override
@@ -120,12 +120,11 @@ public class BlockChainImpl implements Blockchain {
         return repository;
     }
 
-    @Override
-    public PendingState getPendingState() { return pendingState; }
+    public TransactionPool getTransactionPool() { return transactionPool; }
 
     // circular dependency
-    public void setPendingState(PendingState pendingState) {
-        this.pendingState = pendingState;
+    public void setTransactionPool(TransactionPool transactionPool) {
+        this.transactionPool = transactionPool;
     }
 
     @Override
@@ -518,7 +517,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private void processBest(final Block block) {
-        EventDispatchThread.invokeLater(() -> pendingState.processBest(block));
+        EventDispatchThread.invokeLater(() -> transactionPool.processBest(block));
     }
 
     private void onBlock(Block block, BlockResult result) {

@@ -683,7 +683,7 @@ public class BlockExecutorTest {
         }
 
         @Override
-        public void onPendingStateChanged(PendingState pendingState) {
+        public void onPendingStateChanged(TransactionPool transactionPool) {
 
         }
 

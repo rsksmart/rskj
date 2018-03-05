@@ -20,7 +20,7 @@ package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -44,7 +44,7 @@ import co.rsk.scoring.PunishmentParameters;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -140,7 +140,7 @@ public class RskFactory {
     @Bean
     public Web3 getWeb3(Rsk rsk,
                         Blockchain blockchain,
-                        PendingState pendingState,
+                        TransactionPool transactionPool,
                         RskSystemProperties config,
                         MinerClient minerClient,
                         MinerServer minerServer,
@@ -160,7 +160,7 @@ public class RskFactory {
         return new Web3RskImpl(
                 rsk,
                 blockchain,
-                pendingState,
+                transactionPool,
                 config,
                 minerClient,
                 minerServer,
@@ -211,13 +211,13 @@ public class RskFactory {
     }
 
     @Bean
-    public PendingState getPendingState(org.ethereum.db.BlockStore blockStore,
+    public TransactionPool getTransactionPool(org.ethereum.db.BlockStore blockStore,
                                         ReceiptStore receiptStore,
                                         org.ethereum.core.Repository repository,
                                         RskSystemProperties config,
                                         ProgramInvokeFactory programInvokeFactory,
                                         @Qualifier("compositeEthereumListener") EthereumListener listener) {
-        return new PendingStateImpl(
+        return new TransactionPoolImpl(
                 blockStore,
                 receiptStore,
                 listener,
@@ -286,21 +286,21 @@ public class RskFactory {
     }
 
     @Bean
-    public PersonalModule getPersonalModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, PendingState pendingState) {
+    public PersonalModule getPersonalModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, TransactionPool transactionPool) {
         if (wallet == null) {
             return new PersonalModuleWalletDisabled();
         }
 
-        return new PersonalModuleWalletEnabled(config, rsk, wallet, pendingState);
+        return new PersonalModuleWalletEnabled(config, rsk, wallet, transactionPool);
     }
 
     @Bean
-    public EthModuleWallet getEthModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, PendingState pendingState) {
+    public EthModuleWallet getEthModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, TransactionPool transactionPool) {
         if (wallet == null) {
             return new EthModuleWalletDisabled();
         }
 
-        return new EthModuleWalletEnabled(config, rsk, wallet, pendingState);
+        return new EthModuleWalletEnabled(config, rsk, wallet, transactionPool);
     }
 
     @Bean

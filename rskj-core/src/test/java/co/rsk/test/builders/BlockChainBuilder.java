@@ -133,13 +133,13 @@ public class BlockChainBuilder {
             blockChain.setNoValidation(true);
         }
 
-        PendingStateImpl pendingState;
+        TransactionPoolImpl pendingState;
         if (withoutCleaner) {
-            pendingState = new PendingStateImplNoCleaner(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            pendingState = new TransactionPoolImplNoCleaner(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         } else {
-            pendingState = new PendingStateImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            pendingState = new TransactionPoolImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         }
-        blockChain.setPendingState(pendingState);
+        blockChain.setTransactionPool(pendingState);
 
         if (this.genesis != null) {
             for (RskAddress addr : this.genesis.getPremine().keySet()) {

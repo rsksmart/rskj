@@ -54,7 +54,7 @@ public class BlockToMineBuilder {
     private final MiningConfig miningConfig;
     private final Repository repository;
     private final BlockStore blockStore;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
     private final DifficultyCalculator difficultyCalculator;
     private final GasLimitCalculator gasLimitCalculator;
     private final BlockValidationRule validationRules;
@@ -74,7 +74,7 @@ public class BlockToMineBuilder {
             MiningConfig miningConfig,
             Repository repository,
             BlockStore blockStore,
-            PendingState pendingState,
+            TransactionPool transactionPool,
             DifficultyCalculator difficultyCalculator,
             GasLimitCalculator gasLimitCalculator,
             @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
@@ -83,7 +83,7 @@ public class BlockToMineBuilder {
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
         this.blockStore = Objects.requireNonNull(blockStore);
-        this.pendingState = Objects.requireNonNull(pendingState);
+        this.transactionPool = Objects.requireNonNull(transactionPool);
         this.difficultyCalculator = Objects.requireNonNull(difficultyCalculator);
         this.gasLimitCalculator = Objects.requireNonNull(gasLimitCalculator);
         this.validationRules = Objects.requireNonNull(validationRules);
@@ -134,7 +134,7 @@ public class BlockToMineBuilder {
 
     private List<Transaction> getTransactions(List<Transaction> txsToRemove, Block parent, Coin minGasPrice) {
         logger.debug("getting transactions from pending state");
-        List<Transaction> txs = minerUtils.getAllTransactions(pendingState);
+        List<Transaction> txs = minerUtils.getAllTransactions(transactionPool);
         logger.debug("{} transaction(s) collected from pending state", txs.size());
 
         Transaction remascTx = new RemascTransaction(parent.getNumber() + 1);
@@ -148,8 +148,7 @@ public class BlockToMineBuilder {
     }
 
     private void removePendingTransactions(List<Transaction> transactions) {
-        pendingState.clearPendingState(transactions);
-        pendingState.clearWire(transactions);
+        transactionPool.removeTransactions(transactions);
     }
 
     private Block createBlock(

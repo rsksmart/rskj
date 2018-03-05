@@ -27,11 +27,6 @@ import java.util.List;
  *
  */
 public interface TxHandler {
-
-    void start();
-
-    void stop();
-
     /**
      * Filters transactions that aren't ready to be added to a block or
      * relayed, but it keeps them and may retrieve them later.

@@ -304,13 +304,11 @@ public class MinerManagerTest {
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
 
         snapshotManager.resetSnapshots(blockchain);
-        Assert.assertTrue(blockchain.getPendingState().getWireTransactions().isEmpty());
-        Assert.assertTrue(blockchain.getPendingState().getPendingTransactions().isEmpty());
+        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
 
         manager.mineBlock(blockchain, minerClient, minerServer);
 
-        Assert.assertTrue(blockchain.getPendingState().getWireTransactions().isEmpty());
-        Assert.assertTrue(blockchain.getPendingState().getPendingTransactions().isEmpty());
+        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
     }
 
     @Test
@@ -372,7 +370,7 @@ public class MinerManagerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         blockchain.getBlockStore(),
-                        blockchain.getPendingState(),
+                        blockchain.getTransactionPool(),
                         difficultyCalculator,
                         new GasLimitCalculator(config),
                         new BlockValidationRuleDummy(),

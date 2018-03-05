@@ -86,9 +86,9 @@ public class CompositeEthereumListener implements EthereumListener {
     }
 
     @Override
-    public void onPendingStateChanged(PendingState pendingState) {
+    public void onPendingStateChanged(TransactionPool transactionPool) {
         for (EthereumListener listener : listeners) {
-            listener.onPendingStateChanged(pendingState);
+            listener.onPendingStateChanged(transactionPool);
         }
     }
 

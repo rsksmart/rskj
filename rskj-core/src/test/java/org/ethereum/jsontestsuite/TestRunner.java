@@ -24,7 +24,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.BlockchainConfig;
@@ -118,12 +118,12 @@ public class TestRunner {
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(config, repository, null, null, null, listener, 10, 100);
+        TransactionPoolImpl pendingState = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
         blockchain.setBestBlock(genesis);
         blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
 
-        blockchain.setPendingState(pendingState);
+        blockchain.setTransactionPool(pendingState);
 
         /* 2 */ // Create block traffic list
         List<Block> blockTraffic = new ArrayList<>();

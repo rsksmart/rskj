@@ -19,7 +19,7 @@
 package co.rsk.net.simples;
 
 import org.ethereum.core.Block;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 
@@ -30,7 +30,7 @@ import java.util.List;
  * Created by usuario on 25/07/2016.
  */
 
-public class SimplePendingState implements PendingState {
+public class SimpleTransactionPool implements TransactionPool {
     private List<Transaction> wireTransactions = new ArrayList<>();
 
     @Override
@@ -39,7 +39,7 @@ public class SimplePendingState implements PendingState {
     }
 
     @Override
-    public List<Transaction> addWireTransactions(List<Transaction> transactions) {
+    public List<Transaction> addTransactions(List<Transaction> transactions) {
         List<Transaction> newTxs = new ArrayList<>();
 
         for (Transaction tx : transactions)
@@ -52,8 +52,8 @@ public class SimplePendingState implements PendingState {
     }
 
     @Override
-    public void addPendingTransaction(Transaction tx) {
-
+    public boolean addTransaction(Transaction tx) {
+        return true;
     }
 
     @Override
@@ -62,32 +62,22 @@ public class SimplePendingState implements PendingState {
     }
 
     @Override
-    public void clearPendingState(List<Transaction> txs) {
+    public void removeTransactions(List<Transaction> txs) {
 
     }
 
     @Override
-    public void clearWire(List<Transaction> txs) {
-
+    public List<Transaction> getPendingTransactions() {
+        return null;
     }
 
     @Override
-    public List<Transaction> getAllPendingTransactions() {
+    public List<Transaction> getQueuedTransactions() {
         return null;
     }
 
     @Override
     public Repository getRepository() {
-        return null;
-    }
-
-    @Override
-    public List<Transaction> getWireTransactions() {
-        return null;
-    }
-
-    @Override
-    public List<Transaction> getPendingTransactions() {
         return null;
     }
 }

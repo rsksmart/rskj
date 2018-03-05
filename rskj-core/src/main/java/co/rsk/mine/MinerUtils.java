@@ -22,11 +22,11 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.Coin;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
@@ -134,15 +134,13 @@ public class MinerUtils {
         return new co.rsk.bitcoinj.core.BtcBlock(params, params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT), prevBlockHash, null, time, difficultyTarget, 0, transactions);
     }
 
-    public List<org.ethereum.core.Transaction> getAllTransactions(PendingState pendingState) {
+    public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool) {
         //TODO: optimize this by considering GasPrice (order by GasPrice/Nonce)
-        PendingStateImpl.TransactionSortedSet ret = new PendingStateImpl.TransactionSortedSet();
+        TransactionPoolImpl.TransactionSortedSet ret = new TransactionPoolImpl.TransactionSortedSet();
 
-        List<org.ethereum.core.Transaction> pendingTransactions = new LinkedList<>(pendingState.getPendingTransactions());
-        List<org.ethereum.core.Transaction> wireTransactions = new LinkedList<>(pendingState.getWireTransactions());
+        List<org.ethereum.core.Transaction> pendingTransactions = new LinkedList<>(transactionPool.getPendingTransactions());
 
         ret.addAll(pendingTransactions);
-        ret.addAll(wireTransactions);
 
         return new LinkedList<>(ret);
     }
@@ -156,7 +154,6 @@ public class MinerUtils {
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
                 RskAddress txSender = tx.getSender();
                 logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
-
 
                 BigInteger expectedNonce;
 

@@ -22,7 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.ethereum.core.Account;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.Ethereum;
@@ -46,13 +46,13 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     private final RskSystemProperties config;
     private final Ethereum eth;
     private final Wallet wallet;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
 
-    public EthModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, PendingState pendingState) {
+    public EthModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
         this.config = config;
         this.eth = eth;
         this.wallet = wallet;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
     }
 
     @Override
@@ -74,8 +74,8 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
                 args.data = args.data.substring(2);
             }
 
-            synchronized (pendingState) {
-                BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : pendingState.getRepository().getNonce(account.getAddress());
+            synchronized (transactionPool) {
+                BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getRepository().getNonce(account.getAddress());
                 Transaction tx = Transaction.create(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
                 eth.submitTransaction(tx.toImmutableTransaction());
