@@ -19,10 +19,13 @@
 package co.rsk.core;
 
 import com.google.common.primitives.UnsignedBytes;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -38,7 +41,7 @@ public class RskAddress {
      * This is the size of an RSK address in bytes.
      */
     private static final int LENGTH_IN_BYTES = 20;
-
+    public static final String DEFAULT_CHECKSUMADDRESS_PREFIX = "RSK";
     private static final RskAddress NULL_ADDRESS = new RskAddress(new byte[LENGTH_IN_BYTES]);
 
     /**
@@ -105,8 +108,31 @@ public class RskAddress {
         return Arrays.hashCode(bytes);
     }
 
+    // Hex returns an EIP55-compliant hex string representation of the address.
+    public String hex(String prefix) {
+        String unchecksummed = Hex.toHexString(bytes);
+        //We add a prefix and hash it
+        String prefixUsed = prefix != null?prefix: DEFAULT_CHECKSUMADDRESS_PREFIX;
+        byte[] hash = HashUtil.keccak256((DEFAULT_CHECKSUMADDRESS_PREFIX +unchecksummed).getBytes(StandardCharsets.UTF_8));
+        String out = "";
+        int v = ByteUtil.byteArrayToInt(hash);
+        for (int i=0; i < unchecksummed.length();i++) {
+            Character c = unchecksummed.charAt(i);
+            if (Character.isDigit(c)) {
+                out += c;
+            } else {
+                if ((v & (int)Math.pow(2, 255 -4*i)) != 0) {
+                    out += Character.toUpperCase(c);
+                } else {
+                    out += Character.toLowerCase(c);
+                }
+            }
+        }
+        return "0x"+out;
+    }
+
     @Override
     public String toString() {
-        return Hex.toHexString(bytes);
+        return hex(null);
     }
 }

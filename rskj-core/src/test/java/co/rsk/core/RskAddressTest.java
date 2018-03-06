@@ -90,4 +90,42 @@ public class RskAddressTest {
         new RskAddress(new byte[21]);
     }
 
+    private void testOKAddress(String address, String prefix) {
+        RskAddress rskAddress = new RskAddress(address);
+        Assert.assertEquals(address, rskAddress.toString());
+    }
+
+    private void testErrAddress(String address, String prefix) {
+        RskAddress rskAddress = new RskAddress(address);
+        Assert.assertNotEquals(address, rskAddress.hex(prefix));
+    }
+
+    @Test
+    public void testEthOk() {
+        String prefix = RskAddress.DEFAULT_CHECKSUMADDRESS_PREFIX;
+        testOKAddress("0x52908400098527886E0F7030069857D2E4169EE7", "");
+        testOKAddress("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed", "");
+        testOKAddress("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359", "");
+        testOKAddress("0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB", "");
+        testOKAddress("0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb", "");
+        testOKAddress("0x52908400098527886E0F7030069857d2E4169EE7", prefix);
+        testOKAddress("0x5Aaeb6053F3e94c9B9A09F33669435E7Ef1beaEd", prefix);
+        testOKAddress("0xFB6916095CA1dF60BB79Ce92CE3EA74C37c5d359", prefix);
+        testOKAddress("0xdbF03b407c01e7Cd3cBEa99509D93f8DDDC8C6Fb", prefix);
+        testOKAddress("0xd1220A0cF47c7b9be7a2E6ba89f429762E7B9ADB", prefix);
+    }
+
+    @Test
+    public void testEthErr() {
+        String prefix = RskAddress.DEFAULT_CHECKSUMADDRESS_PREFIX;
+        testErrAddress("0xd1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb", "");
+        testErrAddress("0xA000000000000000000000000000000000000000", "");
+        testErrAddress("0x52908400098527886E0F7030069857d2E4169EE7", "");
+        testErrAddress("0x52908400098527886E0F7030069857D2E4169EE7", prefix);
+        testErrAddress("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed", prefix);
+        testErrAddress("0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359", prefix);
+        testErrAddress("0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB", prefix);
+        testErrAddress("0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb", prefix);
+    }
+    
 }
