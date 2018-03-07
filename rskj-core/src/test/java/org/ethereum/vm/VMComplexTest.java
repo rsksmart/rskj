@@ -23,7 +23,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -705,6 +704,6 @@ public class VMComplexTest {
     }
 
     private Program getProgram(byte[] code, ProgramInvoke pi) {
-        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, pi, null);
+        return new Program(vmConfig, precompiledContracts, code, pi, null);
     }
 }
