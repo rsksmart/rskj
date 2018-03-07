@@ -1438,7 +1438,7 @@ public class Program {
     }
 
     public BlockchainConfig getBlockchainConfig() {
-        return blockchainNetConfig.getConfigForBlock(getNumber().longValue());
+        return blockchainConfig;
     }
 
     static class ByteCodeIterator {
