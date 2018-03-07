@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -27,6 +28,7 @@ import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -183,6 +185,8 @@ public class Program {
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
+    private final BlockchainNetConfig blockchainNetConfig;
+
     boolean isLogEnabled;
     boolean isGasLogEnabled;
 
@@ -197,6 +201,7 @@ public class Program {
         this.precompiledContracts = precompiledContracts;
         this.blockchainConfig = blockchainConfig;
         this.transaction = transaction;
+        this.blockchainNetConfig = config.getBlockchainNetConfig();
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
 
@@ -652,7 +657,7 @@ public class Program {
         InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, new DataWord(newAddressBytes), getOwnerAddress(), value, gasLimit,
-                newBalance, null, track, this.invoke.getBlockStore(), byTestingSuite());
+                newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         ProgramResult programResult = ProgramResult.empty();
         returnDataBuffer = null; // reset return buffer right before the call
@@ -877,11 +882,13 @@ public class Program {
 
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult = null;
+
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, new DataWord(contextAddress.getBytes()),
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
-                limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(), byTestingSuite());
+                limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(),
+                msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
         Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
@@ -889,9 +896,10 @@ public class Program {
         childResult  = program.getResult();
 
         getTrace().merge(program.getTrace());
-        getResult().merge(childResult );
+        getResult().merge(childResult);
 
         boolean childCallSuccessful = true;
+
         if (childResult.getException() != null || childResult.isRevert()) {
             if (isGasLogEnabled) {
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
@@ -900,7 +908,7 @@ public class Program {
             }
 
             internalTx.reject();
-            childResult .rejectInternalTransactions();
+            childResult.rejectInternalTransactions();
             childResult.rejectLogInfos();
 
             track.rollback();
@@ -1117,6 +1125,10 @@ public class Program {
 
     public DataWord getGasLimit() {
         return invoke.getGaslimit().clone();
+    }
+
+    public boolean isStaticCall() {
+        return invoke.isStaticCall();
     }
 
     public ProgramResult getResult() {
@@ -1425,6 +1437,10 @@ public class Program {
         return Optional.of(copiedData);
     }
 
+    public BlockchainConfig getBlockchainConfig() {
+        return blockchainConfig;
+    }
+
     static class ByteCodeIterator {
         byte[] code;
         int pc;
@@ -1594,10 +1610,6 @@ public class Program {
         return invoke.byTestingSuite();
     }
 
-    public BlockchainConfig getBlockchainConfig() {
-        return blockchainConfig;
-    }
-
     public interface ProgramOutListener {
         void output(String out);
     }
@@ -1634,9 +1646,20 @@ public class Program {
         }
     }
 
+    @SuppressWarnings("serial")
+    public static class StaticCallModificationException extends RuntimeException {
+        public StaticCallModificationException() {
+            super("Attempt to call a state modifying opcode inside STATICCALL");
+        }
+    }
+
     public static class ExceptionHelper {
 
         private ExceptionHelper() { }
+
+        public static StaticCallModificationException modificationException() {
+            return new StaticCallModificationException();
+        }
 
         public static OutOfGasException notEnoughOpGas(OpCode op, long opGas, long programGas) {
             return new OutOfGasException("Not enough gas for '%s' operation executing: opGas[%d], programGas[%d];", op, opGas, programGas);

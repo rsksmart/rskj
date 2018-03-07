@@ -82,7 +82,7 @@ public class BridgeFromVMTest {
                 .getContractForAddress(new DataWord(PrecompiledContracts.BRIDGE_ADDR_STR));
 
         VM vm = new VM(config.getVmConfig(), precompiledContracts);
-            
+
         // Encode a call to the bridge's getMinimumLockTxValue function
         // That means first pushing the corresponding encoded ABI storage to memory (MSTORE)
         // and then doing a CALL to the corresponding address with the correct parameters

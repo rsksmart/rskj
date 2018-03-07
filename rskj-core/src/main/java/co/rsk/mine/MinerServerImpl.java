@@ -26,6 +26,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
+
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
@@ -683,6 +684,7 @@ public class MinerServerImpl implements MinerServer {
 
         synchronized (lock) {
             Keccak256 parentHash = newBlockParent.getHash();
+
             boolean notify = this.getNotify(newBlock, parentHash);
 
             if (notify) {

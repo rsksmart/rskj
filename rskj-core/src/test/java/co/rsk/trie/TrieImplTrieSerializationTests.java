@@ -19,6 +19,7 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
+
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.junit.Assert;
@@ -27,6 +28,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 

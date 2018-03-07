@@ -151,6 +151,7 @@ public class MinerServerTest {
                 ),
                 ConfigUtils.getDefaultMiningConfig()
         );
+
         try {
         byte[] extraData = ByteBuffer.allocate(4).putInt(1).array();
         minerServer.setExtraData(extraData);
@@ -214,6 +215,7 @@ public class MinerServerTest {
                 ),
                 ConfigUtils.getDefaultMiningConfig()
         );
+
         try {
             minerServer.start();
             MinerWork work = minerServer.getWork();
@@ -513,6 +515,7 @@ public class MinerServerTest {
                 ),
                 ConfigUtils.getDefaultMiningConfig()
         );
+
         try {
         minerServer.start();
 
@@ -591,6 +594,7 @@ public class MinerServerTest {
                 ),
                 ConfigUtils.getDefaultMiningConfig()
         );
+
         try {
         minerServer.start();
 

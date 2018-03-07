@@ -30,6 +30,7 @@ public class MessageCall {
         CALL,
         CALLCODE,
         DELEGATECALL,
+        STATICCALL,
         POST;
 
         /**
@@ -44,6 +45,7 @@ public class MessageCall {
                 case CALL: return CALL;
                 case CALLCODE: return CALLCODE;
                 case DELEGATECALL: return DELEGATECALL;
+                case STATICCALL: return STATICCALL;
                 default:
                     throw new RuntimeException("Invalid call opcode: " + opCode);
             }
