@@ -27,9 +27,7 @@ import org.ethereum.config.BlockchainConfig;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.vm.BytecodeCompiler;
-import org.ethereum.core.Account;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.BadJumpDestinationException;
@@ -47,6 +45,7 @@ import java.util.List;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Roman Mandeleil
@@ -3000,8 +2999,18 @@ public class VMTest {
     private Program getProgram(byte[] code) {
         return getProgram(code, null);
     }
+
+    private BlockchainConfig getBlockchainConfig() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRcs230()).thenReturn(true);
+        when(blockchainConfig.isRfs90()).thenReturn(true);
+        when(blockchainConfig.isRfs50()).thenReturn(true);
+        when(blockchainConfig.isRfs55()).thenReturn(true);
+        return blockchainConfig;
+    }
+
     private Program getProgram(byte[] code, Transaction transaction) {
-        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, transaction);
+        return new Program(vmConfig, precompiledContracts, getBlockchainConfig(), code, invoke, transaction);
     }
 
     private byte[] compile(String code) {
