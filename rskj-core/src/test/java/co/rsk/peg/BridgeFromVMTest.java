@@ -27,6 +27,7 @@ import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -96,7 +97,7 @@ public class BridgeFromVMTest {
         when(tx.getHash()).thenReturn(new Keccak256("00000000000000000000000000000000000000000000000000000000aabbccdd"));
 
         // Run the program on the VM
-        Program program = new Program(config.getVmConfig(), precompiledContracts, code, invoke, tx);
+        Program program = new Program(config.getVmConfig(), precompiledContracts, blockchainConfig, code, invoke, tx);
         for (int i = 0; i < numOps; i++) {
             vm.step(program);
         }

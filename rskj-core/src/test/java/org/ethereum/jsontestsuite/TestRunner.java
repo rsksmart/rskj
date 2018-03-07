@@ -27,6 +27,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.validators.DummyBlockValidator;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Repository;
@@ -234,7 +235,7 @@ public class TestRunner {
             /* 3. Create Program - exec.code */
             /* 4. run VM */
             VM vm = new VM(vmConfig, precompiledContracts);
-            Program program = new Program(vmConfig, precompiledContracts, exec.getCode(), programInvoke, null);
+            Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), exec.getCode(), programInvoke, null);
             boolean vmDidThrowAnEception = false;
             Exception e = null;
             ThreadMXBean thread;
