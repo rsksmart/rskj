@@ -289,7 +289,8 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
-                this.program = new Program(vmConfig, precompiledContracts, code, programInvoke, tx);
+                BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+                this.program = new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
             }
         }
 
@@ -308,7 +309,8 @@ public class TransactionExecutor {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
-            this.program = new Program(vmConfig, precompiledContracts, tx.getData(), programInvoke, tx);
+            BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+            this.program = new Program(vmConfig, precompiledContracts, configForBlock, tx.getData(), programInvoke, tx);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network

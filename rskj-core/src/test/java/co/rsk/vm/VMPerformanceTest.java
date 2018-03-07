@@ -302,7 +302,7 @@ public class VMPerformanceTest {
             baos.write(code, 0, code.length);
         byte[] newCode = baos.toByteArray();
 
-        program = new Program(vmConfig, precompiledContracts, newCode, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockchainConfig, newCode, invoke, null);
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -509,7 +509,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(vmConfig, precompiledContracts, code, invoke, null);
+        program =new Program(vmConfig, precompiledContracts, blockchainConfig, code, invoke, null);
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -624,7 +624,7 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     public void testRunTime(byte[] code, String s_expected) {
-        program = new Program(vmConfig, precompiledContracts, code, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockchainConfig, code, invoke, null);
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
         System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());

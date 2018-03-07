@@ -23,6 +23,7 @@ import co.rsk.asm.EVMAssembler;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import org.ethereum.config.BlockchainConfig;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.vm.BytecodeCompiler;
@@ -3000,7 +3001,7 @@ public class VMTest {
         return getProgram(code, null);
     }
     private Program getProgram(byte[] code, Transaction transaction) {
-        return new Program(vmConfig, precompiledContracts, code, invoke, transaction);
+        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, transaction);
     }
 
     private byte[] compile(String code) {

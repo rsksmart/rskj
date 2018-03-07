@@ -20,6 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
@@ -39,7 +40,7 @@ public class ProgramMemoryTest {
     @Before
     public void createProgram() {
         RskSystemProperties config = new RskSystemProperties();
-        program = new Program(config.getVmConfig(), new PrecompiledContracts(config), ByteUtil.EMPTY_BYTE_ARRAY, pi, null);
+        program = new Program(config.getVmConfig(), new PrecompiledContracts(config), mock(BlockchainConfig.class), ByteUtil.EMPTY_BYTE_ARRAY, pi, null);
     }
 
     @Test
