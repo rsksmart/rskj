@@ -1212,6 +1212,7 @@ public class TrieImpl implements Trie {
             String strHash = hash.toHexString();
             logger.error(ERROR_NON_EXISTENT_TRIE_LOGGER, strHash);
             panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE + " " + strHash);
+
             throw new TrieSerializationException(ERROR_CREATING_TRIE + " " + strHash, null);
         }
 

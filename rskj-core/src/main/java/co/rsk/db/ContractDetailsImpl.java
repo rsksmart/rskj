@@ -388,7 +388,6 @@ public class ContractDetailsImpl implements ContractDetails {
         return (code==null || code.length==0) && keys.isEmpty();
     }
 
-    @VisibleForTesting
     public Trie getTrie() {
         return this.trie;
     }
