@@ -49,6 +49,10 @@ public class World {
         this(new BlockChainBuilder().build());
     }
 
+    public World(Repository repository) {
+        this(new BlockChainBuilder().setRepository(repository).build());
+    }
+
     public World(ReceiptStore receiptStore) {
         this(new BlockChainBuilder().setReceiptStore(receiptStore).build());
     }
