@@ -23,20 +23,17 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Blockchain;
+import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
-import org.mockito.Mockito;
 
 import java.util.concurrent.*;
-
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 5/15/2016.
@@ -116,10 +113,9 @@ public class SimpleAsyncNode extends SimpleNode {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
-        PeerScoringManager peerScoringManager = Mockito.mock(PeerScoringManager.class);
-        when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
-        when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring());
-        SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config));
+        PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
+        ChannelManager channelManager = RskMockFactory.getChannelManager();
+        SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config));
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor);
     }

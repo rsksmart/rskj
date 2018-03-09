@@ -1,6 +1,5 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockHeader;
@@ -12,13 +11,13 @@ import java.util.List;
 import java.util.Map;
 
 public interface SyncEventsHandler {
-    void sendSkeletonRequest(MessageChannel peer, long height);
+    boolean sendSkeletonRequest(NodeID nodeID, long height);
 
-    void sendBlockHashRequest(long height);
+    boolean sendBlockHashRequest(long height);
 
-    void sendBlockHeadersRequest(ChunkDescriptor chunk);
+    boolean sendBlockHeadersRequest(ChunkDescriptor chunk);
 
-    long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId);
+    Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId);
 
     void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons);
 
@@ -26,9 +25,11 @@ public interface SyncEventsHandler {
 
     void startDownloadingSkeleton(long connectionPoint);
 
-    void startSyncing(MessageChannel peer);
+    void startSyncing(NodeID nodeID);
 
     void stopSyncing();
+
+    void onSyncIssue(String message, Object... arguments);
 
     void onErrorSyncing(String message, EventType eventType, Object... arguments);
 

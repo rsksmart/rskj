@@ -62,16 +62,24 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
         }
 
         resetTimeElapsed();
-        syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk());
+        trySendRequest();
     }
 
     @Override
     public void onEnter() {
-        syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk());
+        trySendRequest();
     }
 
     @VisibleForTesting
     public List<BlockIdentifier> getSkeleton() {
         return chunksDownloadHelper.getSkeleton();
+    }
+
+    private void trySendRequest() {
+        boolean sent = syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk());
+        if (!sent) {
+            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
+                    this.getClass(), syncInformation.getSelectedPeerId());
+        }
     }
 }

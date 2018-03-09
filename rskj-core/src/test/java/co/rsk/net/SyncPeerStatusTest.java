@@ -13,14 +13,14 @@ import java.util.concurrent.TimeUnit;
 public class SyncPeerStatusTest {
     @Test
     public void justCreatedIsNotExpired() {
-        SyncPeerStatus status = new SyncPeerStatus(null);
+        SyncPeerStatus status = new SyncPeerStatus();
 
         Assert.assertFalse(status.isExpired(Duration.ofMillis(1000)));
     }
 
     @Test
     public void isExpiredAfterTimeout() throws InterruptedException {
-        SyncPeerStatus status = new SyncPeerStatus(null);
+        SyncPeerStatus status = new SyncPeerStatus();
 
         TimeUnit.MILLISECONDS.sleep(1000);
 
@@ -29,7 +29,7 @@ public class SyncPeerStatusTest {
 
     @Test
     public void isNotExpiredAfterShortTimeout() throws InterruptedException {
-        SyncPeerStatus status = new SyncPeerStatus(null);
+        SyncPeerStatus status = new SyncPeerStatus();
 
         TimeUnit.MILLISECONDS.sleep(100);
 

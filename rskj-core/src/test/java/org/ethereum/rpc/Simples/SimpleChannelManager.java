@@ -20,6 +20,7 @@ package org.ethereum.rpc.Simples;
 
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
+import co.rsk.net.messages.MessageWithId;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
@@ -52,7 +53,7 @@ public class SimpleChannelManager implements ChannelManager {
     }
 
     @Override
-    public void sendTransaction(List<Transaction> tx, Channel receivedFrom) {
+    public void broadcastTransactionMessage(List<Transaction> tx, Channel receivedFrom) {
 
     }
 
@@ -107,6 +108,11 @@ public class SimpleChannelManager implements ChannelManager {
         channels.add(new Channel(null, null, null, null, null, null, null, null));
         channels.add(new Channel(null, null, null, null, null, null, null, null));
         return channels;
+    }
+
+    @Override
+    public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
+        return true;
     }
 
     public List<Transaction> getTransactions() {

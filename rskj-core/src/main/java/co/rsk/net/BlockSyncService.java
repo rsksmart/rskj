@@ -67,7 +67,7 @@ public class BlockSyncService {
         this.unknownBlockHashes = new HashMap<>();
     }
 
-    public BlockProcessResult processBlock(MessageChannel sender, @Nonnull Block block, boolean ignoreMissingHashes) {
+    public BlockProcessResult processBlock(@Nonnull Block block, MessageChannel sender, boolean ignoreMissingHashes) {
         Instant start = Instant.now();
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();

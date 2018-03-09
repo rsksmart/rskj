@@ -302,7 +302,9 @@ public class NodeMessageHandlerTest {
     @Test
     public void processStatusMessageUsingSyncProcessor() throws UnknownHostException {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor();
+        final ChannelManager channelManager = mock(ChannelManager.class);
+//        when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
+        final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
@@ -333,7 +335,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule(), null);
+        final SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, new DummyBlockValidationRule(), null);
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, syncProcessor, null, null, null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
@@ -933,7 +935,7 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(null, message);
 
-        verify(channelManager, never()).broadcastTransaction(any(), any());
+        verify(channelManager, never()).broadcastTransactionMessage(any(), any());
     }
 
     @Test
