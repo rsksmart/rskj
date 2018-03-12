@@ -18,7 +18,7 @@
 
 package co.rsk.rpc.netty;
 
-import co.rsk.rpc.JsonRpcFilterServer;
+import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.ModuleDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,10 +54,10 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<FullHt
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
-    private final JsonRpcFilterServer jsonRpcServer;
+    private final JsonRpcMethodFilter jsonRpcServer;
 
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules) {
-        this.jsonRpcServer = new JsonRpcFilterServer(service, service.getClass(), filteredModules);
+        this.jsonRpcServer = new JsonRpcMethodFilter(service, service.getClass(), filteredModules);
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
     }
 

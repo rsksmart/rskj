@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * Created by ajlopez on 19/04/2017.
  */
-public class JsonRpcFilterServer extends JsonRpcBasicServer {
+public class JsonRpcMethodFilter extends JsonRpcBasicServer {
 
     private List<ModuleDescription> modules;
 
@@ -44,7 +44,7 @@ public class JsonRpcFilterServer extends JsonRpcBasicServer {
      * @param remoteInterface the interface
      * @param modules list of configured modules
      */
-    public JsonRpcFilterServer(Object handler, Class<?> remoteInterface, List<ModuleDescription> modules) {
+    public JsonRpcMethodFilter(Object handler, Class<?> remoteInterface, List<ModuleDescription> modules) {
         super(new ObjectMapper(), handler, remoteInterface);
 
         this.modules = modules;

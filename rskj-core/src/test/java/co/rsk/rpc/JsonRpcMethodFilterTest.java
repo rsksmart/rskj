@@ -28,10 +28,10 @@ import java.util.List;
 /**
  * Created by ajlopez on 20/04/2017.
  */
-public class JsonRpcFilterServerTest {
+public class JsonRpcMethodFilterTest {
     @Test
     public void checkModuleNames() {
-        JsonRpcFilterServer server = new JsonRpcFilterServer(null, null, getModules());
+        JsonRpcMethodFilter server = new JsonRpcMethodFilter(null, null, getModules());
 
         try {
             server.checkMethod("evm_snapshot");
