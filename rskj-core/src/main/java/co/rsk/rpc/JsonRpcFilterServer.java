@@ -32,7 +32,6 @@ import java.util.List;
  */
 public class JsonRpcFilterServer extends JsonRpcBasicServer {
 
-    private static final String JSON_RPC_METHOD_FIELD_NAME = "/method";
     private List<ModuleDescription> modules;
 
     /**
@@ -53,8 +52,8 @@ public class JsonRpcFilterServer extends JsonRpcBasicServer {
 
     @Override
     protected ErrorResolver.JsonError handleJsonNodeRequest(JsonNode node, OutputStream output) throws IOException {
-        if (node.hasNonNull(JSON_RPC_METHOD_FIELD_NAME)) {
-            checkMethod(node.at(JSON_RPC_METHOD_FIELD_NAME).asText());
+        if (node.hasNonNull(JsonRpcBasicServer.METHOD)) {
+            checkMethod(node.get(JsonRpcBasicServer.METHOD).asText());
         }
         return super.handleJsonNodeRequest(node, output);
     }
