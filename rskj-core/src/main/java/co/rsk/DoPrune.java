@@ -54,7 +54,7 @@ public class DoPrune {
     private final RskSystemProperties rskSystemProperties;
     private final Blockchain blockchain;
 
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -67,11 +67,11 @@ public class DoPrune {
     public DoPrune(Rsk rsk,
                    RskSystemProperties rskSystemProperties,
                    Blockchain blockchain,
-                   PendingState pendingState) {
+                   TransactionPool transactionPool) {
         this.rsk = rsk;
         this.rskSystemProperties = rskSystemProperties;
         this.blockchain = blockchain;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
     }
 
     public void doPrune(String[] args) throws Exception {
