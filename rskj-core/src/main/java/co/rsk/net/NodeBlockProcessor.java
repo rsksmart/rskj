@@ -80,6 +80,13 @@ public class NodeBlockProcessor implements BlockProcessor {
         return this.blockchain;
     }
 
+    /**
+     * Detect a block number that is too advanced
+     * based on sync chunk size and maximum number of chuncks
+     *
+     * @param blockNumber   the block number to check
+     * @return  true if the block number is too advanced
+     */
     @Override
     public boolean isAdvancedBlock(long blockNumber) {
         int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
