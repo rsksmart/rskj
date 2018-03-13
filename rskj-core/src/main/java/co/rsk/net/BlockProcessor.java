@@ -51,6 +51,8 @@ public interface BlockProcessor {
 
     boolean hasBetterBlockToSync();
 
+    boolean isAdvancedBlock(long number);
+
     // New messages for RSK's sync protocol
 
     void processBlockRequest(MessageChannel sender, long requestId, byte[] hash);

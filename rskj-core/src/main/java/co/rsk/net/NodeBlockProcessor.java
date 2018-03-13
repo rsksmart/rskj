@@ -73,10 +73,19 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.blockSyncService = blockSyncService;
         this.syncConfiguration = syncConfiguration;
     }
+
     @Override
     @Nonnull
     public Blockchain getBlockchain() {
         return this.blockchain;
+    }
+
+    @Override
+    public boolean isAdvancedBlock(long blockNumber) {
+        int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
+        long bestBlockNumber = this.getBestBlockNumber();
+
+        return blockNumber > bestBlockNumber + syncMaxDistance;
     }
 
     /**

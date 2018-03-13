@@ -84,6 +84,24 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
+    public void advancedBlock() throws UnknownHostException {
+        final BlockStore store = new BlockStore();
+        final MessageChannel sender = new SimpleMessageChannel();
+
+        final BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        final long advancedBlockNumber = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks() + blockchain.getBestBlock().getNumber() + 1;
+
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+
+        Assert.assertTrue(processor.isAdvancedBlock(advancedBlockNumber));
+        Assert.assertFalse(processor.isAdvancedBlock(advancedBlockNumber - 1));
+    }
+
+    @Test
     public void processBlockAddingToBlockchain() {
         Blockchain blockchain = BlockChainBuilder.ofSize(10);
 

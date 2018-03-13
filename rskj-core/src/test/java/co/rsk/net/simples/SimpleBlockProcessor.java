@@ -59,6 +59,11 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
+    public boolean isAdvancedBlock(long number) {
+        return false;
+    }
+
+    @Override
     public void processBlockRequest(MessageChannel sender, long requestId, byte[] hash) {
         this.requestId = requestId;
         this.hash = hash;
