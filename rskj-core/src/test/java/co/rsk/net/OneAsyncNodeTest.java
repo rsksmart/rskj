@@ -50,10 +50,11 @@ public class OneAsyncNodeTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, new DummyBlockValidationRule(), new DifficultyCalculator(config));
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
+        SimpleChannelManager channelManager = new SimpleChannelManager();
+        SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager, syncConfiguration, new DummyBlockValidationRule(), new DifficultyCalculator(config));
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
 
-        return new SimpleAsyncNode(handler);
+        return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }
 
     private static Block getGenesis() {

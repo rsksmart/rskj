@@ -18,9 +18,12 @@
 
 package org.ethereum.rpc.Simples;
 
+import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.MessageWithId;
+import co.rsk.net.simples.SimpleNode;
+import co.rsk.net.simples.SimpleNodeChannel;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
@@ -31,6 +34,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by Ruben on 09/06/2016.
@@ -38,6 +46,7 @@ import java.util.*;
 public class SimpleChannelManager implements ChannelManager {
     private List<Transaction> transactions = new ArrayList<>();
     private Set<NodeID> lastSkip;
+    private Map<NodeID, MessageChannel> simpleChannels = new ConcurrentHashMap<>();
 
     @Override
     public void start() {
@@ -92,6 +101,17 @@ public class SimpleChannelManager implements ChannelManager {
 
     }
 
+    public MessageChannel getMessageChannel(SimpleNode sender, SimpleNode receiver) {
+        MessageChannel channel = simpleChannels.get(sender.getNodeID());
+        if (channel != null){
+            return channel;
+        }
+
+        channel = new SimpleNodeChannel(sender, receiver);
+        simpleChannels.put(channel.getPeerNodeID(), channel);
+        return  channel;
+    }
+
     @Override
     public void notifyDisconnect(Channel channel) {
 
@@ -104,14 +124,28 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Override
     public Collection<Channel> getActivePeers() {
-        Collection<Channel> channels = new ArrayList<Channel>();
-        channels.add(new Channel(null, null, null, null, null, null, null, null));
-        channels.add(new Channel(null, null, null, null, null, null, null, null));
-        return channels;
+        return simpleChannels.values().stream().map(this::getMockedChannel).collect(Collectors.toList());
+
+//        Collection<Channel> channels = new ArrayList<Channel>();
+//        channels.add(new Channel(null, null, null, null, null, null, null, null));
+//        channels.add(new Channel(null, null, null, null, null, null, null, null));
+//        return channels;
+    }
+
+    private Channel getMockedChannel(MessageChannel mc) {
+        Channel channel = mock(Channel.class);
+        when(channel.getNodeId()).thenReturn(mc.getPeerNodeID());
+        return channel;
     }
 
     @Override
     public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
+//        simpleChannels.get(nodeID).sendMessage(message);
+        MessageChannel channel = simpleChannels.get(nodeID);
+        // TODO(lsebrie): handle better tests where channels are not initialized
+        if (channel != null){
+            channel.sendMessage(message);
+        }
         return true;
     }
 

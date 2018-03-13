@@ -37,11 +37,6 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
-    public void logData(String message, Object... arguments) {
-
-    }
-
-    @Override
     public int getScore(NodeID key) {
         return 1;
     }

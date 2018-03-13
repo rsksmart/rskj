@@ -399,10 +399,6 @@ public class SyncProcessor implements SyncEventsHandler {
             peerScoringManager.recordEvent(peerId, null, eventType);
         }
 
-        public void logData(String message, Object... arguments) {
-            logger.trace(message, arguments);
-        }
-
         @Override
         public int getScore(NodeID peerId) {
             return peerScoringManager.getPeerScoring(peerId).getScore();

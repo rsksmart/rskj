@@ -28,7 +28,6 @@ import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Blockchain;
-import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
@@ -43,19 +42,21 @@ public class SimpleAsyncNode extends SimpleNode {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(5000);
     private SyncProcessor syncProcessor;
+    private SimpleChannelManager simpleChannelManager;
 
     public SimpleAsyncNode(MessageHandler handler) {
         super(handler);
     }
 
-    public SimpleAsyncNode(MessageHandler handler, SyncProcessor syncProcessor) {
+    public SimpleAsyncNode(MessageHandler handler, SyncProcessor syncProcessor, SimpleChannelManager simpleChannelManager) {
         super(handler);
         this.syncProcessor = syncProcessor;
+        this.simpleChannelManager = simpleChannelManager;
     }
 
     @Override
     public void receiveMessageFrom(SimpleNode peer, Message message) {
-        SimpleNodeChannel senderToPeer = new SimpleNodeChannel(this, peer);
+        MessageChannel senderToPeer = simpleChannelManager.getMessageChannel(this, peer);
         futures.add(
                 executor.submit(() -> this.getHandler().processMessage(senderToPeer, message)));
     }
@@ -114,10 +115,10 @@ public class SimpleAsyncNode extends SimpleNode {
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
-        ChannelManager channelManager = RskMockFactory.getChannelManager();
+        SimpleChannelManager channelManager = new SimpleChannelManager();
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config));
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, null, peerScoringManager, blockValidationRule);
-        return new SimpleAsyncNode(handler, syncProcessor);
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, peerScoringManager, blockValidationRule);
+        return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }
 
     // TODO(mc) find out why the following two work differently

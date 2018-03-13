@@ -27,8 +27,6 @@ public interface SyncInformation {
 
     void reportEvent(String message, EventType eventType, NodeID peerId, Object... arguments);
 
-    void logData(String message, Object... arguments);
-
     int getScore(NodeID key);
 
     Instant getFailInstant(NodeID peerId);
