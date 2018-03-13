@@ -54,8 +54,6 @@ public class DoPrune {
     private final RskSystemProperties rskSystemProperties;
     private final Blockchain blockchain;
 
-    private final TransactionPool transactionPool;
-
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
         DoPrune runner = ctx.getBean(DoPrune.class);
@@ -66,19 +64,16 @@ public class DoPrune {
     @Autowired
     public DoPrune(Rsk rsk,
                    RskSystemProperties rskSystemProperties,
-                   Blockchain blockchain,
-                   TransactionPool transactionPool) {
+                   Blockchain blockchain) {
         this.rsk = rsk;
         this.rskSystemProperties = rskSystemProperties;
         this.blockchain = blockchain;
-        this.transactionPool = transactionPool;
     }
 
     public void doPrune(String[] args) throws Exception {
         logger.info("Pruning Database");
 
         int blocksToProcess = DEFAULT_BLOCKS_TO_PROCESS;
-        // blocksToProcess = 100;
         RskAddress contractAddress = DEFAULT_CONTRACT_ADDRESS;
 
         CLIInterface.call(rskSystemProperties, args);
@@ -103,14 +98,16 @@ public class DoPrune {
     public void processBlocks(long from, TrieImpl sourceTrie, RskAddress contractAddress, TrieStore targetStore) {
         long n = from;
 
-        if (n <= 0)
+        if (n <= 0) {
             n = 1;
+        }
 
         while (true) {
             List<Block> blocks = this.blockchain.getBlocksByNumber(n);
 
-            if (blocks.isEmpty())
+            if (blocks.isEmpty()) {
                 break;
+            }
 
             for (Block b: blocks) {
                 byte[] stateRoot = b.getStateRoot();

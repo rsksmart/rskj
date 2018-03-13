@@ -534,8 +534,9 @@ public class TrieImpl implements Trie {
             return;
         }
 
-        for (int k = 0; k < ARITY; k++)
+        for (int k = 0; k < ARITY; k++) {
             this.retrieveNode(k);
+        }
 
         if (this.nodes != null) {
             for (TrieImpl node : this.nodes) {
