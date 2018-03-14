@@ -282,6 +282,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
      */
     private void processBlockMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockMessage message) {
         final Block block = message.getBlock();
+
         logger.trace("Process block {} {}", block.getNumber(), block.getShortHash());
 
         if (block.isGenesis()) {
@@ -289,10 +290,17 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
         }
 
+        long blockNumber = block.getNumber();
+
+        if (this.blockProcessor.isAdvancedBlock(blockNumber)) {
+            logger.trace("Too advanced block {} {}", blockNumber, block.getShortHash());
+            return;
+        }
+
         Metrics.processBlockMessage("start", block, sender.getPeerNodeID());
 
         if (!isValidBlock(block)) {
-            logger.trace("Invalid block {} {}", block.getNumber(), block.getShortHash());
+            logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
             recordEvent(sender, EventType.INVALID_BLOCK);
             return;
         }
