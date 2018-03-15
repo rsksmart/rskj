@@ -108,12 +108,14 @@ public class RskFactory {
                                           Blockchain blockchain,
                                           BlockSyncService blockSyncService,
                                           PeerScoringManager peerScoringManager,
+                                          ChannelManager channelManager,
                                           SyncConfiguration syncConfiguration,
                                           DifficultyCalculator difficultyCalculator,
                                           ProofOfWorkRule proofOfWorkRule) {
 
         // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
-        return new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, syncConfiguration, proofOfWorkRule, difficultyCalculator);
+        return new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager,
+                syncConfiguration, proofOfWorkRule, difficultyCalculator);
     }
 
     @Bean

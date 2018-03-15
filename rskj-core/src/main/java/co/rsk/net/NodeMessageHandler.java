@@ -228,8 +228,11 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private void updateTimedEvents() {
         Long now = System.currentTimeMillis();
         Duration timeTick = Duration.ofMillis(now - lastTickSent);
-        this.syncProcessor.onTimePassed(timeTick);
+        // TODO(lsebrie): handle timeouts properly
         lastTickSent = now;
+        if (queue.isEmpty()){
+            this.syncProcessor.onTimePassed(timeTick);
+        }
 
         //Refresh status to peers every 10 seconds or so
         Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
@@ -373,9 +376,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void processBlockHashRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHashRequestMessage message) {
-        final long requestId = message.getId();
-        final long height = message.getHeight();
-        this.blockProcessor.processBlockHashRequest(sender, requestId, height);
+        this.blockProcessor.processBlockHashRequest(sender, message.getId(), message.getHeight());
     }
 
     private void processBlockHashResponseMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHashResponseMessage message) {

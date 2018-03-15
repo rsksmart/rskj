@@ -19,47 +19,35 @@
 package co.rsk.rpc;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.googlecode.jsonrpc4j.ErrorResolver;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
+import com.googlecode.jsonrpc4j.RequestInterceptor;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 
-/**
- * Created by ajlopez on 19/04/2017.
- */
-public class JsonRpcFilterServer extends JsonRpcBasicServer {
+public class JsonRpcMethodFilter implements RequestInterceptor {
 
-    private static final String JSON_RPC_METHOD_FIELD_NAME = "/method";
     private List<ModuleDescription> modules;
 
     /**
-     * Creates the server with a default {@link ObjectMapper} delegating
-     * all calls to the given {@code handler} {@link Object} but only
-     * methods available on the {@code remoteInterface}.
-     * AND enabled in the list of modules
+     * This checks the JSON RPC invoked method against the received list of modules
      *
-     * @param handler the {@code handler}
-     * @param remoteInterface the interface
+     * @see co.rsk.rpc.ModuleDescription#methodIsEnable
+     *
      * @param modules list of configured modules
      */
-    public JsonRpcFilterServer(Object handler, Class<?> remoteInterface, List<ModuleDescription> modules) {
-        super(new ObjectMapper(), handler, remoteInterface);
-
+    public JsonRpcMethodFilter(List<ModuleDescription> modules) {
         this.modules = modules;
     }
 
     @Override
-    protected ErrorResolver.JsonError handleJsonNodeRequest(JsonNode node, OutputStream output) throws IOException {
-        if (node.hasNonNull(JSON_RPC_METHOD_FIELD_NAME)) {
-            checkMethod(node.at(JSON_RPC_METHOD_FIELD_NAME).asText());
+    public void interceptRequest(JsonNode node) throws IOException {
+        if (node.hasNonNull(JsonRpcBasicServer.METHOD)) {
+            checkMethod(node.get(JsonRpcBasicServer.METHOD).asText());
         }
-        return super.handleJsonNodeRequest(node, output);
     }
 
-    public void checkMethod(String methodName) throws IOException {
+    private void checkMethod(String methodName) throws IOException {
         for (ModuleDescription module: this.modules) {
             if (module.methodIsEnable(methodName)) {
                 return;
