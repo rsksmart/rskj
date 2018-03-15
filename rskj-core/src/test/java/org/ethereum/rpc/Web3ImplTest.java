@@ -119,7 +119,7 @@ public class Web3ImplTest {
         String peerCount  = web3.net_peerCount();
 
         Assert.assertEquals("Different number of peers than expected",
-                "0x2", peerCount);
+                "0x0", peerCount);
     }
 
 

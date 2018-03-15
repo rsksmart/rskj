@@ -48,10 +48,11 @@ public class BlockParentCompositeRule implements BlockParentDependantValidationR
     @Override
     public boolean isValid(Block block, Block parent) {
         final String shortHash = block.getShortHash();
-        logger.debug("Validating block {}", shortHash);
+        long number = block.getNumber();
+        logger.debug("Validating block {} {}", shortHash, number);
         for(BlockParentDependantValidationRule rule : this.rules) {
             if(!rule.isValid(block, parent)) {
-                logger.warn("Error Validating block {}", shortHash);
+                logger.warn("Error Validating block {} {}", shortHash, number);
                 return false;
             }
         }

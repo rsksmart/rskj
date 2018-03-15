@@ -2,6 +2,7 @@ package co.rsk.net.sync;
 
 
 import co.rsk.net.BlockProcessResult;
+import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
@@ -9,6 +10,7 @@ import org.ethereum.core.BlockHeader;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.time.Instant;
 
 public class SimpleSyncInformation implements SyncInformation {
     private boolean hasLowerDifficulty = true;
@@ -40,12 +42,17 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
+    public Instant getFailInstant(NodeID peerId) {
+        return Instant.EPOCH;
+    }
+
+    @Override
     public boolean hasLowerDifficulty(NodeID nodeID) {
         return hasLowerDifficulty;
     }
 
     @Override
-    public BlockProcessResult processBlock(Block block) {
+    public BlockProcessResult processBlock(Block block, MessageChannel channel) {
         return new BlockProcessResult(false, null, block.getShortHash(), Duration.ZERO);
     }
 

@@ -60,7 +60,7 @@ public class TransactionTask implements Callable<List<Transaction>> {
 
         try {
             logger.trace("submit tx: {}", tx.toString());
-            channelManager.sendTransaction(tx, receivedFrom);
+            channelManager.broadcastTransactionMessage(tx, receivedFrom);
             return tx;
 
         } catch (Throwable th) {

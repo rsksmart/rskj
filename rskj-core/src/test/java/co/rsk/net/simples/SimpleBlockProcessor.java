@@ -44,6 +44,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
     private long requestId;
     private byte[] hash;
     private int count;
+    private long blockGap = 1000000;
 
     @Override
     public BlockProcessResult processBlock(MessageChannel sender, Block block) {
@@ -59,16 +60,25 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
+    public boolean isAdvancedBlock(long number) {
+        return number >= this.blockGap;
+    }
+
+    public void setBlockGap(long gap) {
+        this.blockGap = gap;
+    }
+
+    @Override
     public void processBlockRequest(MessageChannel sender, long requestId, byte[] hash) {
         this.requestId = requestId;
         this.hash = hash;
+        this.count = count;
     }
 
     @Override
     public void processBlockHeadersRequest(MessageChannel sender, long requestId, byte[] hash, int count) {
         this.requestId = requestId;
         this.hash = hash;
-        this.count = count;
     }
 
     @Override

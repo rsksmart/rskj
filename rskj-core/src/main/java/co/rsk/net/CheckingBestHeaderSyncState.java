@@ -17,7 +17,7 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
 
     @Override
     public void onEnter(){
-        syncEventsHandler.sendBlockHeadersRequest(miniChunk);
+        trySendRequest();
     }
 
     @Override
@@ -32,5 +32,13 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
         }
 
         syncEventsHandler.startFindingConnectionPoint();
+    }
+
+    private void trySendRequest() {
+        boolean sent = syncEventsHandler.sendBlockHeadersRequest(miniChunk);
+        if (!sent) {
+            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
+                    this.getClass(), syncInformation.getSelectedPeerId());
+        }
     }
 }
