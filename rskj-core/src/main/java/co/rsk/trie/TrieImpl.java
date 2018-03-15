@@ -528,6 +528,27 @@ public class TrieImpl implements Trie {
         this.saved = true;
     }
 
+    @Override
+    public void copyTo(TrieStore target) {
+        if (target.retrieve(this.getHash().getBytes()) != null) {
+            return;
+        }
+
+        for (int k = 0; k < ARITY; k++) {
+            this.retrieveNode(k);
+        }
+
+        if (this.nodes != null) {
+            for (TrieImpl node : this.nodes) {
+                if (node != null) {
+                    node.copyTo(target);
+                }
+            }
+        }
+
+        target.save(this);
+    }
+
     /**
      * trieSize returns the number of nodes in trie
      *
