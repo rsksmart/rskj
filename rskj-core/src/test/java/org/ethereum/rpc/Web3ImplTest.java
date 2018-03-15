@@ -42,8 +42,6 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.TestContract;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -71,7 +69,6 @@ import org.mockito.Mockito;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -119,7 +116,7 @@ public class Web3ImplTest {
         String peerCount  = web3.net_peerCount();
 
         Assert.assertEquals("Different number of peers than expected",
-                "0x2", peerCount);
+                "0x0", peerCount);
     }
 
 
@@ -252,7 +249,7 @@ public class Web3ImplTest {
         RskSystemProperties mockProperties = Web3Mocks.getMockProperties();
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        TxPoolModule txPoolModule = new TxPoolModuleImpl();
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         Web3 web3 = new Web3Impl(
                 ethMock,
                 blockchain,
@@ -1185,45 +1182,6 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void txpool_contentBasic() throws IOException {
-        World world = new World();
-        Web3Impl web3 = createWeb3(world);
-        String result = web3.txpool_content();
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
-        Assert.assertTrue(node.has("pending"));
-        Assert.assertTrue(node.has("queued"));
-        Assert.assertTrue(node.get("pending").isObject());
-        Assert.assertTrue(node.get("queued").isObject());
-    }
-
-    @Test
-    public void txpool_inspectBasic() throws IOException {
-        World world = new World();
-        Web3Impl web3 = createWeb3(world);
-        String result = web3.txpool_inspect();
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
-        Assert.assertTrue(node.has("pending"));
-        Assert.assertTrue(node.has("queued"));
-        Assert.assertTrue(node.get("pending").isObject());
-        Assert.assertTrue(node.get("queued").isObject());
-    }
-
-    @Test
-    public void txpool_statusBasic() throws IOException {
-        World world = new World();
-        Web3Impl web3 = createWeb3(world);
-        String result = web3.txpool_status();
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
-        Assert.assertTrue(node.has("pending"));
-        Assert.assertTrue(node.has("queued"));
-        Assert.assertTrue(node.get("pending").isInt());
-        Assert.assertTrue(node.get("queued").isInt());
-    }
-
-    @Test
     public void eth_sendTransaction()
     {
         BigInteger nonce = BigInteger.ONE;
@@ -1295,7 +1253,7 @@ public class Web3ImplTest {
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
-        TxPoolModule txPoolModule = new TxPoolModuleImpl();
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -1345,7 +1303,7 @@ public class Web3ImplTest {
         res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
         Mockito.when(executor.executeTransaction(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(res);
         EthModule ethModule = new EthModule(config, blockchain, executor, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, transactionPool));
-        TxPoolModule txPoolModule = new TxPoolModuleImpl();
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -1383,7 +1341,7 @@ public class Web3ImplTest {
         Ethereum eth = Mockito.mock(Ethereum.class);
         EthModule ethModule = new EthModule(config, null, null, new ExecutionBlockRetriever(null, null, null), new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null);
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        TxPoolModule txPoolModule = new TxPoolModuleImpl();
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         Web3Impl web3 = new Web3RskImpl(
                 eth,
                 null,
@@ -1433,7 +1391,7 @@ public class Web3ImplTest {
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         EthModule ethModule = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
-        TxPoolModule txPoolModule = new TxPoolModuleImpl();
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         Web3Impl web3 = new Web3RskImpl(
                 eth,
                 blockchain,

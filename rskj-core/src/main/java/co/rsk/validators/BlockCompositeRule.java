@@ -47,10 +47,11 @@ public class BlockCompositeRule implements BlockValidationRule {
     @Override
     public boolean isValid(Block block) {
         String shortHash = block.getShortHash();
-        logger.debug("Validating block {}", shortHash);
+        long number = block.getNumber();
+        logger.debug("Validating block {} {}", shortHash, number);
         for(BlockValidationRule rule : this.rules) {
             if(!rule.isValid(block)) {
-                logger.warn("Error Validating block {}", shortHash);
+                logger.warn("Error Validating block {} {}", shortHash, number);
                 return false;
             }
         }

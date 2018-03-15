@@ -21,6 +21,7 @@ package org.ethereum.net.server;
 
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
+import co.rsk.net.messages.MessageWithId;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
@@ -53,7 +54,7 @@ public interface ChannelManager {
      * @param receivedFrom the peer which sent original message or null if
      *                     the transactions were originated by this peer
      */
-    void sendTransaction(List<Transaction> tx, Channel receivedFrom);
+    void broadcastTransactionMessage(List<Transaction> tx, Channel receivedFrom);
 
 
     /**
@@ -101,4 +102,6 @@ public interface ChannelManager {
     void onSyncDone(boolean done) ;
 
     Collection<Channel> getActivePeers();
+
+    boolean sendMessageTo(NodeID nodeID, MessageWithId message);
 }

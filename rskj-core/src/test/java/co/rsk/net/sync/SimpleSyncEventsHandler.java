@@ -1,7 +1,6 @@
 package co.rsk.net.sync;
 
 
-import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockHeader;
@@ -17,10 +16,10 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     private boolean stopSyncingWasCalled_;
 
     @Override
-    public void sendBlockHashRequest(long height) { }
+    public boolean sendBlockHashRequest(long height) { return true;}
 
     @Override
-    public void sendBlockHeadersRequest(ChunkDescriptor chunk) { }
+    public boolean sendBlockHeadersRequest(ChunkDescriptor chunk) { return true;}
 
     @Override
     public void onErrorSyncing(String message, EventType eventType, Object... arguments) {
@@ -38,16 +37,16 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) { return 0; }
+    public Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) { return 0L; }
 
     @Override
-    public void sendSkeletonRequest(MessageChannel peer, long height) { }
+    public boolean sendSkeletonRequest(NodeID nodeID, long height) { return true;}
 
     @Override
     public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint) { }
 
     @Override
-    public void startSyncing(MessageChannel peer) {
+    public void startSyncing(NodeID nodeID) {
         this.startSyncingWasCalled_ = true;
     }
 
@@ -59,6 +58,11 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
 
     @Override
     public void stopSyncing() { this.stopSyncingWasCalled_ = true; }
+
+    @Override
+    public void onSyncIssue(String message, Object... arguments) {
+
+    }
 
     public boolean startSyncingWasCalled() {
         return startSyncingWasCalled_;

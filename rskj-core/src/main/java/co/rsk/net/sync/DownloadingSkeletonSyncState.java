@@ -12,8 +12,9 @@ import java.util.Map;
 
 public class DownloadingSkeletonSyncState extends BaseSyncState {
 
-    private final List<MessageChannel> candidates;
+    private final List<NodeID> candidates;
     private final Map<NodeID, List<BlockIdentifier>> skeletons;
+    private final Map<NodeID, Boolean> availables;
     private long connectionPoint;
     private long expectedSkeletons;
     private boolean selectedPeerAnswered;
@@ -23,15 +24,16 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
         super(syncInformation, syncEventsHandler, syncConfiguration);
         this.connectionPoint = connectionPoint;
         this.skeletons = new HashMap<>();
+        this.availables = new HashMap<>();
         this.selectedPeerAnswered = false;
         this.candidates = knownPeers.getPeerCandidates();
-        this.expectedSkeletons = candidates.size();
+        this.expectedSkeletons = 0;
     }
 
     @Override
     public void newSkeleton(List<BlockIdentifier> skeleton, MessageChannel peer) {
         NodeID peerId = peer.getPeerNodeID();
-        boolean isSelectedPeer = peerId == syncInformation.getSelectedPeerId();
+        boolean isSelectedPeer = peerId.equals(syncInformation.getSelectedPeerId());
 
         // defensive programming: this should never happen
         if (skeleton.size() < 2) {
@@ -51,7 +53,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
         selectedPeerAnswered = selectedPeerAnswered || isSelectedPeer;
 
         if (expectedSkeletons <= 0){
-            if (skeletons.size() == 0){
+            if (skeletons.isEmpty()){
                 syncEventsHandler.stopSyncing();
                 return;
             }
@@ -64,10 +66,11 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
         timeElapsed = timeElapsed.plus(duration);
         if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0) {
             candidates.stream()
-                    .filter(c -> !skeletons.containsKey(c.getPeerNodeID()))
+                    .filter(availables::get)
+                    .filter(c -> !skeletons.containsKey(c))
                     .forEach(p ->
-                            syncInformation.reportEvent("Timeout waiting requests from node {}",
-                                    EventType.TIMEOUT_MESSAGE, p.getPeerNodeID(), p.getPeerNodeID()));
+                            syncInformation.reportEvent("Timeout waiting skeleton from node {}",
+                                    EventType.TIMEOUT_MESSAGE, p, p));
 
             // when the selected peer fails automatically all process restarts
             if (!selectedPeerAnswered){
@@ -81,6 +84,15 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
 
     @Override
     public void onEnter() {
-        candidates.forEach(p -> syncEventsHandler.sendSkeletonRequest(p, connectionPoint));
+        candidates.forEach(this::trySendRequest);
+        expectedSkeletons = availables.size();
+    }
+
+    private void trySendRequest(NodeID p) {
+        boolean sent = syncEventsHandler.sendSkeletonRequest(p, connectionPoint);
+        availables.put(p, sent);
+        if (!sent){
+            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}", this.getClass(), p);
+        }
     }
 }

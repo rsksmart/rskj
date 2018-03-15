@@ -9,13 +9,11 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
 
     public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, long bestBlockNumber) {
         super(syncInformation, syncEventsHandler, syncConfiguration);
-
         this.connectionPointFinder = new ConnectionPointFinder(bestBlockNumber);
     }
 
     @Override
     public void newConnectionPointData(byte[] hash) {
-
         if (this.syncInformation.isKnownBlock(hash)) {
             connectionPointFinder.updateFound();
         } else {
@@ -25,7 +23,7 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
         Optional<Long> cp = connectionPointFinder.getConnectionPoint();
         if (!cp.isPresent()) {
             this.resetTimeElapsed();
-            syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
+            trySendRequest();
             return;
         }
 
@@ -33,9 +31,17 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
         syncEventsHandler.startDownloadingSkeleton(cp.get());
     }
 
+    private void trySendRequest() {
+        boolean sent = syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
+        if (!sent) {
+            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
+                    this.getClass(), syncInformation.getSelectedPeerId());
+        }
+    }
+
     @Override
     public void onEnter() {
-        syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
+        trySendRequest();
     }
 
     @VisibleForTesting
