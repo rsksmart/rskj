@@ -39,11 +39,11 @@ import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
@@ -52,6 +52,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -67,7 +68,6 @@ import static org.mockito.Mockito.*;
  * Created by ajlopez on 5/10/2016.
  */
 public class NodeMessageHandlerTest {
-    private static BlockchainNetConfig blockchainNetConfigOriginal;
     private static RskSystemProperties config;
 
     @BeforeClass
@@ -299,27 +299,29 @@ public class NodeMessageHandlerTest {
         Assert.assertArrayEquals(block.getHash().getBytes(), gbMessage.getBlockHash());
     }
 
-    @Test
+    @Test()
     public void processStatusMessageUsingSyncProcessor() throws UnknownHostException {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor();
+
+        final ChannelManager channelManager = mock(ChannelManager.class);
+        Channel channel = mock(Channel.class);
+        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
+        when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
+        final Message[] msg = new Message[1];
+        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
+            msg[0] = invocation.getArgumentAt(1, Message.class);
+            return true;
+        });
+        final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
         final Message message = new StatusMessage(status);
-
         handler.processMessage(sender, message);
 
-        Assert.assertNotNull(sender.getGetBlockMessages());
-        Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
-        Assert.assertNotNull(sender.getMessages());
-        Assert.assertEquals(1, sender.getMessages().size());
-
-        Message request = sender.getMessages().get(0);
-
-        Assert.assertNotNull(request);
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, request.getMessageType());
+        Assert.assertNotNull(msg[0]);
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, msg[0].getMessageType());
     }
 
     @Test
@@ -333,7 +335,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule(), null);
+        final SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, new DummyBlockValidationRule(), null);
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, syncProcessor, null, null, null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
@@ -933,7 +935,7 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(null, message);
 
-        verify(channelManager, never()).broadcastTransaction(any(), any());
+        verify(channelManager, never()).broadcastTransactionMessage(any(), any());
     }
 
     @Test
