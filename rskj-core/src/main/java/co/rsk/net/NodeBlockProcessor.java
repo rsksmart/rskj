@@ -73,10 +73,26 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.blockSyncService = blockSyncService;
         this.syncConfiguration = syncConfiguration;
     }
+
     @Override
     @Nonnull
     public Blockchain getBlockchain() {
         return this.blockchain;
+    }
+
+    /**
+     * Detect a block number that is too advanced
+     * based on sync chunk size and maximum number of chuncks
+     *
+     * @param blockNumber   the block number to check
+     * @return  true if the block number is too advanced
+     */
+    @Override
+    public boolean isAdvancedBlock(long blockNumber) {
+        int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
+        long bestBlockNumber = this.getBestBlockNumber();
+
+        return blockNumber > bestBlockNumber + syncMaxDistance;
     }
 
     /**
@@ -169,6 +185,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBlockHeadersRequest(@Nonnull final MessageChannel sender, long requestId, @Nonnull final byte[] hash, int count) {
+        logger.trace("Processing headers request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
         Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
@@ -176,7 +193,6 @@ public class NodeBlockProcessor implements BlockProcessor {
         }
 
         List<BlockHeader> headers = new ArrayList<>();
-
         headers.add(block.getHeader());
 
         for (int k = 1; k < count; k++) {
@@ -203,7 +219,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBodyRequest(@Nonnull final MessageChannel sender, long requestId, @Nonnull final byte[] hash) {
-        logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID().toString());
+        logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
@@ -223,7 +239,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBlockHashRequest(@Nonnull final MessageChannel sender, long requestId, long height) {
-        logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getPeerNodeID().toString());
+        logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getPeerNodeID());
         if (height == 0){
             return;
         }
@@ -246,7 +262,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processSkeletonRequest(@Nonnull final MessageChannel sender, long requestId, long startNumber) {
-        logger.trace("Processing block hash request {} {} {} from {}", requestId, startNumber, sender.getPeerNodeID());
+        logger.trace("Processing skeleton request {} {} from {}", requestId, startNumber, sender.getPeerNodeID());
         int skeletonStep = syncConfiguration.getChunkSize();
         Block blockStart = this.getBlockFromBlockchainStore(startNumber);
 
@@ -356,7 +372,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public BlockProcessResult processBlock(@Nullable final MessageChannel sender, @Nonnull final Block block) {
-        return blockSyncService.processBlock(sender, block, false);
+        return blockSyncService.processBlock(block, sender, false);
     }
 
     @Override

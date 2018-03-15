@@ -45,7 +45,8 @@ public class PeerScoring {
                 case INVALID_TRANSACTION:
                 case INVALID_MESSAGE:
                 case INVALID_HEADER:
-                case TIMEOUT_MESSAGE:
+                    // TODO(lsebrie): review how to handle timeouts properly
+                    //case TIMEOUT_MESSAGE:
                     if (score > 0) {
                         score = 0;
                     }
@@ -191,6 +192,7 @@ public class PeerScoring {
         }
         this.goodReputation = true;
         this.timeLostGoodReputation = 0;
+        this.score = 0;
     }
 
     @VisibleForTesting

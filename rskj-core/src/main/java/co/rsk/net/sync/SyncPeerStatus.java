@@ -1,7 +1,6 @@
 package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.net.MessageChannel;
 import co.rsk.net.Status;
 
 import java.time.Clock;
@@ -14,13 +13,11 @@ import java.time.Instant;
 public class SyncPeerStatus {
     // Peer status
     private Status status;
-    private MessageChannel messageChannel;
 
     private final Clock clock = Clock.systemUTC();
     private Instant lastActivity;
 
-    public SyncPeerStatus(MessageChannel messageChannel) {
-        this.messageChannel = messageChannel;
+    public SyncPeerStatus() {
         this.updateActivity();
     }
 
@@ -54,10 +51,6 @@ public class SyncPeerStatus {
 
     public Status getStatus() {
         return this.status;
-    }
-
-    public MessageChannel getMessageChannel() {
-        return messageChannel;
     }
 
     /**
