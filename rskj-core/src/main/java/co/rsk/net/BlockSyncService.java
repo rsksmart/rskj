@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.GetBlockMessage;
@@ -52,10 +53,12 @@ public class BlockSyncService {
     private final Blockchain blockchain;
     private final SyncConfiguration syncConfiguration;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
+    private final RskSystemProperties config;
 
     // this is tightly coupled with NodeProcessorService and SyncProcessor,
     // and we should use the same objects everywhere to ensure consistency
     public BlockSyncService(
+            @Nonnull final RskSystemProperties config,
             @Nonnull final BlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
@@ -65,6 +68,7 @@ public class BlockSyncService {
         this.syncConfiguration = syncConfiguration;
         this.nodeInformation = nodeInformation;
         this.unknownBlockHashes = new HashMap<>();
+        this.config = config;
     }
 
     public BlockProcessResult processBlock(@Nonnull Block block, MessageChannel sender, boolean ignoreMissingHashes) {
@@ -132,6 +136,11 @@ public class BlockSyncService {
     public boolean hasBetterBlockToSync() {
         int blocksDistance = syncConfiguration.getChunkSize() / CHUNK_PART_LIMIT;
         return getLastKnownBlockNumber() >= getBestBlockNumber() + blocksDistance;
+    }
+
+    public boolean canBeIgnoredForUnclesRewards(long blockNumber) {
+        int blockDistance = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        return blockNumber < getBestBlockNumber() - blockDistance;
     }
 
     public long getLastKnownBlockNumber() {

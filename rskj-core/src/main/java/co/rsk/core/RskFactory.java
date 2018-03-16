@@ -119,11 +119,12 @@ public class RskFactory {
     }
 
     @Bean
-    public BlockSyncService getBlockSyncService(Blockchain blockchain,
+    public BlockSyncService getBlockSyncService(RskSystemProperties config,
+                                                Blockchain blockchain,
                                                 BlockStore store,
                                                 BlockNodeInformation nodeInformation,
                                                 SyncConfiguration syncConfiguration) {
-            return new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+            return new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
     }
 
     @Bean

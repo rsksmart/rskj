@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
@@ -36,7 +37,8 @@ public class BlockSyncServiceTest {
             Blockchain blockchain = BlockChainBuilder.ofSize(10 * i);
             BlockStore store = new BlockStore();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
-            BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+            RskSystemProperties config = new RskSystemProperties();
+            BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
             Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
 
             List<Block> extendedChain = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), i);
@@ -54,7 +56,8 @@ public class BlockSyncServiceTest {
             Blockchain blockchain = BlockChainBuilder.ofSize(10 * i);
             BlockStore store = new BlockStore();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
-            BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+            RskSystemProperties config = new RskSystemProperties();
+            BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
             Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
 
             Block initialBestBlock = blockchain.getBestBlock();
@@ -82,7 +85,8 @@ public class BlockSyncServiceTest {
         Blockchain blockchain = BlockChainBuilder.ofSize(10);
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        RskSystemProperties config = new RskSystemProperties();
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         Block initialBestBlock = blockchain.getBestBlock();
         Assert.assertEquals(10, initialBestBlock.getNumber());

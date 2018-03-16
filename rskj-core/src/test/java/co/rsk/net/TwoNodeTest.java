@@ -49,7 +49,8 @@ public class TwoNodeTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        RskSystemProperties config = new RskSystemProperties();
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         NodeMessageHandler handler = new NodeMessageHandler(new RskSystemProperties(), processor, null, null, null, null, null, new DummyBlockValidationRule());
 
