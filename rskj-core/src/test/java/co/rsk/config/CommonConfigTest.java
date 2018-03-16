@@ -47,10 +47,10 @@ public class CommonConfigTest {
     }
 
     @Test
-    public void createPendingStateTransactions() {
+    public void createTransactionPoolTransactions() {
         CommonConfig config = new CommonConfig();
 
-        List<Transaction> result = config.pendingStateTransactions();
+        List<Transaction> result = config.transactionPoolTransactions();
 
         Assert.assertNotNull(result);
         Assert.assertTrue(result.isEmpty());

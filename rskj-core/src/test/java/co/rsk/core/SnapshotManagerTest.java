@@ -146,7 +146,7 @@ public class SnapshotManagerTest {
     }
 
     @Test
-    public void revertToSnapshotClearingPendingState() {
+    public void revertToSnapshotClearingTransactionPool() {
         Blockchain blockchain = createBlockchain();
         addBlocks(blockchain, 10);
 
@@ -192,7 +192,7 @@ public class SnapshotManagerTest {
     }
 
     @Test
-    public void resetSnapshotClearingPendingState() {
+    public void resetSnapshotClearingTransactionPool() {
         Blockchain blockchain = createBlockchain();
         Block genesis = blockchain.getBestBlock();
         BlockDifficulty genesisDifficulty = blockchain.getStatus().getTotalDifficulty();

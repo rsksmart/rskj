@@ -907,8 +907,8 @@ public class BlockChainImplTest {
         EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
         BlockChainImpl blockChain = new BlockChainImpl(config, repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator);
-        TransactionPoolImpl pendingState = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
-        blockChain.setTransactionPool(pendingState);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
+        blockChain.setTransactionPool(transactionPool);
 
         return blockChain;
     }

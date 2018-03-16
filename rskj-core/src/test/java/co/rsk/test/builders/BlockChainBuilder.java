@@ -133,13 +133,13 @@ public class BlockChainBuilder {
             blockChain.setNoValidation(true);
         }
 
-        TransactionPoolImpl pendingState;
+        TransactionPoolImpl transactionPool;
         if (withoutCleaner) {
-            pendingState = new TransactionPoolImplNoCleaner(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            transactionPool = new TransactionPoolImplNoCleaner(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         } else {
-            pendingState = new TransactionPoolImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            transactionPool = new TransactionPoolImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         }
-        blockChain.setTransactionPool(pendingState);
+        blockChain.setTransactionPool(transactionPool);
 
         if (this.genesis != null) {
             for (RskAddress addr : this.genesis.getPremine().keySet()) {
@@ -170,7 +170,7 @@ public class BlockChainBuilder {
         return blockChain;
     }
 
-    public static Blockchain ofSizeWithNoPendingStateCleaner(int size) {
+    public static Blockchain ofSizeWithNoTransactionPoolCleaner(int size) {
         return ofSize(size, false, true);
     }
 
