@@ -308,20 +308,28 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
         }
 
-        boolean wasOrphan = !this.blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes());
+        if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
+            logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
+            Metrics.processBlockMessage("blockIgnored", block, sender.getPeerNodeID());
+            return;
+        }
+
+        if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())){
+            logger.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getShortHash());
+            Metrics.processBlockMessage("blockIgnored", block, sender.getPeerNodeID());
+            return;
+        }
+
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
-
         Metrics.processBlockMessage("blockProcessed", block, sender.getPeerNodeID());
-
+        tryRelayBlock(sender, block, result);
         recordEvent(sender, EventType.VALID_BLOCK);
-        tryRelayBlock(sender, block, wasOrphan, result);
-
         Metrics.processBlockMessage("finish", block, sender.getPeerNodeID());
     }
 
-    private void tryRelayBlock(@Nonnull MessageChannel sender, Block block, boolean wasOrphan, BlockProcessResult result) {
+    private void tryRelayBlock(@Nonnull MessageChannel sender, Block block, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
-        if (wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
+        if (result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
             relayBlock(sender, block);
         }
     }

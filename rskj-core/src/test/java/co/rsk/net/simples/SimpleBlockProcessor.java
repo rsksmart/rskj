@@ -123,6 +123,11 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
+    public boolean canBeIgnoredForUnclesRewards(long blockNumber) {
+        return false;
+    }
+
+    @Override
     public boolean hasBlock(byte[] hash) {
         return false;
     }
