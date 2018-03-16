@@ -18,6 +18,7 @@
 
 package co.rsk.net.discovery.table;
 
+import co.rsk.net.NodeID;
 import org.ethereum.net.rlpx.Node;
 
 import java.util.*;
@@ -49,11 +50,10 @@ public class NodeDistanceTable {
         return getNodeBucket(node).removeNode(node);
     }
 
-    public synchronized List<Node> getClosestNodes(byte[] nodeId) {
-        List<Node> closeNodes = new ArrayList<>(getAllNodes());
-        Collections.sort(closeNodes, new NodeDistanceComparator(nodeId, this.distanceCalculator));
-
-        return closeNodes;
+    public synchronized List<Node> getClosestNodes(NodeID nodeId) {
+        return getAllNodes().stream()
+                .sorted(new NodeDistanceComparator(nodeId, this.distanceCalculator))
+                .collect(Collectors.toList());
     }
 
     private Bucket getNodeBucket(Node node) {

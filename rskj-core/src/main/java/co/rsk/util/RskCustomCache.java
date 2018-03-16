@@ -18,8 +18,6 @@
 
 package co.rsk.util;
 
-import org.ethereum.db.ByteArrayWrapper;
-
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -61,7 +59,7 @@ public class RskCustomCache<K, T> {
         this.cache.put(key, new CacheElement<T>(data, this.timeToLive));
     }
 
-    public T get(ByteArrayWrapper key) {
+    public T get(K key) {
         T ret = null;
         CacheElement<T> element = this.cache.get(key);
         if(element != null) {

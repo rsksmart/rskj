@@ -197,9 +197,9 @@ public class ContractDetailsImplTest {
 
         Trie trie = details.getTrie();
 
-        Assert.assertNotNull(trie.getHash());
+        Assert.assertNotNull(trie.getHash().getBytes());
 
-        Assert.assertArrayEquals(trie.getHash(), details.getStorageHash());
+        Assert.assertArrayEquals(trie.getHash().getBytes(), details.getStorageHash());
     }
 
     @Test

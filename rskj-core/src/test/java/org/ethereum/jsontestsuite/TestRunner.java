@@ -20,12 +20,14 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.validators.DummyBlockValidator;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Repository;
@@ -42,6 +44,7 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -61,6 +64,7 @@ import static org.ethereum.crypto.HashUtil.shortHash;
 import static org.ethereum.json.Utils.parseData;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Roman Mandeleil
@@ -69,6 +73,8 @@ import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 public class TestRunner {
 
     private final RskSystemProperties config = new RskSystemProperties();
+    private final VmConfig vmConfig = config.getVmConfig();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
     private boolean setNewStateRoot;
@@ -112,12 +118,12 @@ public class TestRunner {
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(config, repository, null, blockchain.getReceiptStore(), null, listener, 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
         blockchain.setBestBlock(genesis);
         blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
 
-        blockchain.setPendingState(pendingState);
+        blockchain.setTransactionPool(transactionPool);
 
         /* 2 */ // Create block traffic list
         List<Block> blockTraffic = new ArrayList<>();
@@ -154,7 +160,7 @@ public class TestRunner {
         for (Block block : blockTraffic) {
 
             ImportResult importResult = blockchain.tryToConnect(block);
-            logger.debug("{} ~ {} difficulty: {} ::: {}", block.getShortHash(), shortHash(block.getParentHash()),
+            logger.debug("{} ~ {} difficulty: {} ::: {}", block.getShortHash(), shortHash(block.getParentHash().getBytes()),
                     block.getCumulativeDifficulty(), importResult.toString());
         }
 
@@ -228,8 +234,8 @@ public class TestRunner {
 
             /* 3. Create Program - exec.code */
             /* 4. run VM */
-            VM vm = new VM(config);
-            Program program = new Program(config, exec.getCode(), programInvoke);
+            VM vm = new VM(vmConfig, precompiledContracts);
+            Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), exec.getCode(), programInvoke, null);
             boolean vmDidThrowAnEception = false;
             Exception e = null;
             ThreadMXBean thread;

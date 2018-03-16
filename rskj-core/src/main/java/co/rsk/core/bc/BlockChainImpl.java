@@ -38,7 +38,6 @@ import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -85,7 +84,7 @@ public class BlockChainImpl implements Blockchain {
     private final Repository repository;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
-    private PendingState pendingState;
+    private TransactionPool transactionPool;
     private EthereumListener listener;
     private final AdminInfo adminInfo;
     private BlockValidator blockValidator;
@@ -101,7 +100,7 @@ public class BlockChainImpl implements Blockchain {
                           Repository repository,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
-                          PendingState pendingState,
+                          TransactionPool transactionPool,
                           EthereumListener listener,
                           AdminInfo adminInfo,
                           BlockValidator blockValidator) {
@@ -112,8 +111,8 @@ public class BlockChainImpl implements Blockchain {
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
-        this.blockExecutor = new BlockExecutor(config, repository, this, blockStore, listener);
-        this.pendingState = pendingState;
+        this.blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
+        this.transactionPool = transactionPool;
     }
 
     @Override
@@ -121,12 +120,11 @@ public class BlockChainImpl implements Blockchain {
         return repository;
     }
 
-    @Override
-    public PendingState getPendingState() { return pendingState; }
+    public TransactionPool getTransactionPool() { return transactionPool; }
 
     // circular dependency
-    public void setPendingState(PendingState pendingState) {
-        this.pendingState = pendingState;
+    public void setTransactionPool(TransactionPool transactionPool) {
+        this.transactionPool = transactionPool;
     }
 
     @Override
@@ -167,7 +165,7 @@ public class BlockChainImpl implements Blockchain {
         }
 
         if (!block.isSealed()) {
-            panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), Hex.toHexString(block.getHash())));
+            panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
             block.seal();
         }
 
@@ -195,8 +193,8 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private ImportResult internalTryToConnect(Block block) {
-        if (blockStore.getBlockByHash(block.getHash()) != null &&
-                !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash()))) {
+        if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
+                !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                          block.getShortHash(),
                          block.getNumber());
@@ -226,13 +224,13 @@ public class BlockChainImpl implements Blockchain {
         // else, Get parent AND total difficulty
         else {
             logger.trace("get parent and total difficulty");
-            parent = blockStore.getBlockByHash(block.getParentHash());
+            parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
             if (parent == null) {
                 return ImportResult.NO_PARENT;
             }
 
-            parentTotalDifficulty = blockStore.getTotalDifficultyForHash(parent.getHash());
+            parentTotalDifficulty = blockStore.getTotalDifficultyForHash(parent.getHash().getBytes());
 
             if (parentTotalDifficulty == null || parentTotalDifficulty.equals(BlockDifficulty.ZERO)) {
                 return ImportResult.NO_PARENT;
@@ -243,7 +241,7 @@ public class BlockChainImpl implements Blockchain {
         if (!isValid(block)) {
             long blockNumber = block.getNumber();
             logger.warn("Invalid block with number: {}", blockNumber);
-            panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, Hex.toHexString(block.getHash())));
+            panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, block.getHash()));
             return ImportResult.INVALID_BLOCK;
         }
 
@@ -478,18 +476,15 @@ public class BlockChainImpl implements Blockchain {
         setStatus(status.getBestBlock(), totalDifficulty);
     }
 
-    @Override
+    @Override @VisibleForTesting
     public byte[] getBestBlockHash() {
-        return status.getBestBlock().getHash();
+        return getBestBlock().getHash().getBytes();
     }
 
     @Override
     public void setBlockRecorder(BlockRecorder blockRecorder) {
         this.blockRecorder = blockRecorder;
     }
-
-    @Override
-    public ReceiptStore getReceiptStore() { return receiptStore; }
 
     private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
         synchronized (accessLock) {
@@ -518,11 +513,11 @@ public class BlockChainImpl implements Blockchain {
             return;
         }
 
-        receiptStore.saveMultiple(block.getHash(), result.getTransactionReceipts());
+        receiptStore.saveMultiple(block.getHash().getBytes(), result.getTransactionReceipts());
     }
 
     private void processBest(final Block block) {
-        EventDispatchThread.invokeLater(() -> pendingState.processBest(block));
+        EventDispatchThread.invokeLater(() -> transactionPool.processBest(block));
     }
 
     private void onBlock(Block block, BlockResult result) {
@@ -560,7 +555,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     public static byte[] calcTxTrie(List<Transaction> transactions) {
-        return Block.getTxTrie(transactions).getHash();
+        return Block.getTxTrie(transactions).getHash().getBytes();
     }
 
     public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
@@ -574,6 +569,6 @@ public class BlockChainImpl implements Blockchain {
             receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
         }
 
-        return receiptsTrie.getHash();
+        return receiptsTrie.getHash().getBytes();
     }
 }

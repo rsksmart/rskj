@@ -34,7 +34,7 @@ public class NewBlockHashesTest {
         Block block = new BlockGenerator().getBlock(1);
 
         List<BlockIdentifier> blockIdentifierList = new LinkedList<>();
-        blockIdentifierList.add(new BlockIdentifier(block.getHash(), block.getNumber()));
+        blockIdentifierList.add(new BlockIdentifier(block.getHash().getBytes(), block.getNumber()));
 
         NewBlockHashesMessage message = new NewBlockHashesMessage(blockIdentifierList);
         Assert.assertEquals(MessageType.NEW_BLOCK_HASHES, message.getMessageType());
@@ -44,7 +44,7 @@ public class NewBlockHashesTest {
     public void getBlockIdentifier() {
         Block block = new BlockGenerator().getBlock(1);
         List<BlockIdentifier> blockIdentifierList = new LinkedList<>();
-        blockIdentifierList.add(new BlockIdentifier(block.getHash(), block.getNumber()));
+        blockIdentifierList.add(new BlockIdentifier(block.getHash().getBytes(), block.getNumber()));
 
         NewBlockHashesMessage message = new NewBlockHashesMessage(blockIdentifierList);
         List<BlockIdentifier> identifiers = message.getBlockIdentifiers();

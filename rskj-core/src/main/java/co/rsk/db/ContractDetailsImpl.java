@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;
@@ -171,7 +172,7 @@ public class ContractDetailsImpl implements ContractDetails {
         checkDataSourceIsOpened();
 
         this.trie.save();
-        byte[] trieHash = this.trie.getHash();
+        byte[] trieHash = this.trie.getHash().getBytes();
         logger.trace("getting contract details trie hash {}, address {}", getHashAsString(trieHash), this.getAddressAsString());
         return trieHash;
     }
@@ -192,7 +193,8 @@ public class ContractDetailsImpl implements ContractDetails {
         this.originalExternalStorage = this.externalStorage;
 
         if (this.externalStorage) {
-            this.trie = new TrieImpl(new TrieStoreImpl(levelDbByName(config, getDataSourceName())), true).getSnapshotTo(rlpStorage.getRLPData());
+            Keccak256 snapshotHash = new Keccak256(rlpStorage.getRLPData());
+            this.trie = new TrieImpl(new TrieStoreImpl(levelDbByName(config, getDataSourceName())), true).getSnapshotTo(snapshotHash);
         } else {
             this.trie = TrieImpl.deserialize(rlpStorage.getRLPData());
         }
@@ -234,7 +236,7 @@ public class ContractDetailsImpl implements ContractDetails {
         byte[] rlpIsExternalStorage = RLP.encodeByte((byte) (externalStorage ? 1 : 0));
 
         // Serialize the full trie, or only the root hash if external storage is used
-        byte[] rlpStorage = RLP.encodeElement(externalStorage ? this.trie.getHash() : this.trie.serialize());
+        byte[] rlpStorage = RLP.encodeElement(externalStorage ? this.trie.getHash().getBytes() : this.trie.serialize());
 
         byte[] rlpCode = RLP.encodeElement(this.code);
         byte[] rlpKeys = RLP.encodeSet(this.keys);
@@ -336,7 +338,7 @@ public class ContractDetailsImpl implements ContractDetails {
                 TrieStoreImpl newStore = new TrieStoreImpl(ds);
                 TrieStoreImpl originalStore = (TrieStoreImpl)((TrieImpl) this.trie).getStore();
                 newStore.copyFrom(originalStore);
-                Trie newTrie = newStore.retrieve(this.trie.getHash());
+                Trie newTrie = newStore.retrieve(this.trie.getHash().getBytes());
                 this.trie = newTrie;
 
                 // checking the trie it's OK
@@ -366,7 +368,7 @@ public class ContractDetailsImpl implements ContractDetails {
 
         this.trie.save();
 
-        ContractDetailsImpl details = new ContractDetailsImpl(this.config, this.address, this.trie.getSnapshotTo(hash), this.code);
+        ContractDetailsImpl details = new ContractDetailsImpl(this.config, this.address, this.trie.getSnapshotTo(new Keccak256(hash)), this.code);
         details.keys = new HashSet<>();
         details.keys.addAll(this.keys);
         details.externalStorage = this.externalStorage;
@@ -433,13 +435,13 @@ public class ContractDetailsImpl implements ContractDetails {
         logger.trace("reopening contract details data source");
         KeyValueDataSource ds = levelDbByName(config, this.getDataSourceName());
         TrieStoreImpl newStore = new TrieStoreImpl(ds);
-        Trie newTrie = newStore.retrieve(this.trie.getHash());
+        Trie newTrie = newStore.retrieve(this.trie.getHash().getBytes());
         this.trie = newTrie;
         this.closed = false;
     }
 
     private String getStorageHashAsString() {
-        return getHashAsString(this.trie.getHash());
+        return getHashAsString(this.trie.getHash().getBytes());
     }
 
     private static String getHashAsString(byte[] hash) {

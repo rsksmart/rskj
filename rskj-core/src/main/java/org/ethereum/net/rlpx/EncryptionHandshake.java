@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import org.ethereum.crypto.ECIESCoder;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
 import org.spongycastle.crypto.InvalidCipherTextException;
 import org.spongycastle.crypto.digests.SHA3Digest;
@@ -33,7 +34,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.Keccak256Helper.keccak256;
 
 /**
  * Created by devrandom on 2015-04-08.
@@ -207,7 +208,7 @@ public class EncryptionHandshake {
         byte[] signed = xor(token, nonce);
         message.signature = ephemeralKey.sign(signed);
         message.isTokenUsed = isToken;
-        message.ephemeralPublicHash = sha3(ephemeralKey.getPubKeyPoint().getEncoded(false), 1, 64);
+        message.ephemeralPublicHash = keccak256(ephemeralKey.getPubKeyPoint().getEncoded(false), 1, 64);
         message.publicKey = key.getPubKeyPoint();
         message.nonce = initiatorNonce;
         return message;
@@ -261,12 +262,12 @@ public class EncryptionHandshake {
     void agreeSecret(byte[] initiatePacket, byte[] responsePacket) {
         BigInteger secretScalar = remoteEphemeralKey.multiply(ephemeralKey.getPrivKey()).normalize().getXCoord().toBigInteger();
         byte[] agreedSecret = ByteUtil.bigIntegerToBytes(secretScalar, SECRET_SIZE);
-        byte[] sharedSecret = sha3(agreedSecret, sha3(responderNonce, initiatorNonce));
-        byte[] aesSecret = sha3(agreedSecret, sharedSecret);
+        byte[] sharedSecret = Keccak256Helper.keccak256(agreedSecret, Keccak256Helper.keccak256(responderNonce, initiatorNonce));
+        byte[] aesSecret = Keccak256Helper.keccak256(agreedSecret, sharedSecret);
         secrets = new Secrets();
         secrets.aes = aesSecret;
-        secrets.mac = sha3(agreedSecret, aesSecret);
-        secrets.token = sha3(sharedSecret);
+        secrets.mac = Keccak256Helper.keccak256(agreedSecret, aesSecret);
+        secrets.token = Keccak256Helper.keccak256(sharedSecret);
 
         SHA3Digest mac1 = new SHA3Digest(MAC_SIZE);
         mac1.update(xor(secrets.mac, responderNonce), 0, secrets.mac.length);

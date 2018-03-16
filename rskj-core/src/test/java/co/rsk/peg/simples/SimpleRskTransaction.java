@@ -20,30 +20,28 @@ package co.rsk.peg.simples;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.Keccak256Helper;
 
 /**
  * Created by ajlopez on 6/8/2016.
  */
 public class SimpleRskTransaction extends Transaction {
-    private byte[] hash;
+    private final Keccak256 hash;
 
     public SimpleRskTransaction(byte[] hash) {
         super(null);
-        this.hash = hash;
-        this.sender = new RskAddress(ECKey.fromPrivate(SHA3Helper.sha3("cow".getBytes())).getAddress());
+        this.hash = hash == null ? null : new Keccak256(hash);
+        this.sender = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
     }
 
     @Override
-    public byte[] getHash() { return hash; }
+    public Keccak256 getHash() { return hash; }
 
     @Override
     public Coin getValue() {
         return Coin.valueOf(10000000);
     }
-
-    @Override
-    public String toString() { return "Tx " + this.getHash().toString(); }
 }

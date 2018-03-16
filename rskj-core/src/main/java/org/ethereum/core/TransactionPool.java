@@ -25,34 +25,36 @@ import java.util.List;
  * @author Mikhail Kalinin
  * @since 28.09.2015
  */
-public interface PendingState extends org.ethereum.facade.PendingState {
+public interface TransactionPool extends org.ethereum.facade.TransactionPool {
 
     void start(Block initialBestBlock);
 
     /**
-     * Adds transactions received from the net to the list of wire transactions <br>
-     * Don't have an impact on pending state
-     *
-     * @param transactions txs received from the net
-     * @return A list with the accepted transactions
-     */
-    List<Transaction> addWireTransactions(List<Transaction> transactions);
-
-    /**
-     * Adds transaction to the list of pending state txs  <br>
-     * For the moment this list is populated with txs sent by our peer only <br>
+     * Adds transaction to the list of pending or queued state txs  <br>
      * Triggers an update of pending state
      *
      * @param tx transaction
      */
-    void addPendingTransaction(Transaction tx);
+    boolean addTransaction(Transaction tx);
+
+    /**
+     * Adds a list of transactions to the list of pending state txs or
+     * queued transactions
+     *
+     * Triggers an update of pending state
+     *
+     * @param txs transaction list
+     *
+     * @return the list of added transactions
+     */
+    List<Transaction> addTransactions(List<Transaction> txs);
 
     /**
      * It should be called on each block imported as <b>BEST</b> <br>
      * Does several things:
      * <ul>
      *     <li>removes block's txs from pending state and wire lists</li>
-     *     <li>removes outdated wire txs</li>
+     *     <li>removes outdated pending txs</li>
      *     <li>updates pending state</li>
      * </ul>
      *
@@ -60,10 +62,11 @@ public interface PendingState extends org.ethereum.facade.PendingState {
      */
     void processBest(Block block);
 
-    void clearPendingState(List<Transaction> txs);
+    void removeTransactions(List<Transaction> txs);
 
-    void clearWire(List<Transaction> txs);
+    // Returns a list of pending txs (ready to be executed)
+    List<Transaction> getPendingTransactions();
 
-    // Returns a list of pending txs
-    List<Transaction> getAllPendingTransactions();
+    // Returns a list of queued txs (out of nonce sequence)
+    List<Transaction> getQueuedTransactions();
 }

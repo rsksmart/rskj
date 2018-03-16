@@ -93,7 +93,7 @@ public class BlockResult {
             receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
         }
 
-        return receiptsTrie.getHash();
+        return receiptsTrie.getHash().getBytes();
     }
 
     private static byte[] calculateLogsBloom(List<TransactionReceipt> receipts) {

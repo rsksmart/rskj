@@ -57,7 +57,7 @@ public class NodeHandler {
     @Override
     public String toString() {
         return "NodeHandler[node: " + node.getHost() + ":" + node.getPort() + ", id="
-                + (node.getId().length > 0 ? Hex.toHexString(node.getId(), 0, 4) : "empty") + "]";
+                + (node.getId().getID().length > 0 ? Hex.toHexString(node.getId().getID(), 0, 4) : "empty") + "]";
     }
 
 

@@ -18,10 +18,9 @@
 
 package co.rsk.core;
 
-import co.rsk.Start;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -30,25 +29,29 @@ import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
+import co.rsk.rpc.netty.JsonRpcWeb3FilterHandler;
+import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
+import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
-import co.rsk.validators.BlockValidator;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
+import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
@@ -61,6 +64,7 @@ import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.HandshakeHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.server.*;
+import org.ethereum.rpc.Web3;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
@@ -104,12 +108,14 @@ public class RskFactory {
                                           Blockchain blockchain,
                                           BlockSyncService blockSyncService,
                                           PeerScoringManager peerScoringManager,
+                                          ChannelManager channelManager,
                                           SyncConfiguration syncConfiguration,
                                           DifficultyCalculator difficultyCalculator,
                                           ProofOfWorkRule proofOfWorkRule) {
 
         // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
-        return new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, syncConfiguration, proofOfWorkRule, difficultyCalculator);
+        return new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager,
+                syncConfiguration, proofOfWorkRule, difficultyCalculator);
     }
 
     @Bean
@@ -134,55 +140,86 @@ public class RskFactory {
     }
 
     @Bean
-    public Start.Web3Factory getWeb3Factory(Rsk rsk,
-                                            Blockchain blockchain,
-                                            PendingState pendingState,
-                                            RskSystemProperties config,
-                                            MinerClient minerClient,
-                                            MinerServer minerServer,
-                                            PersonalModule personalModule,
-                                            EthModule ethModule,
-                                            ChannelManager channelManager,
-                                            Repository repository,
-                                            PeerScoringManager peerScoringManager,
-                                            NetworkStateExporter networkStateExporter,
-                                            org.ethereum.db.BlockStore blockStore,
-                                            PeerServer peerServer,
-                                            BlockProcessor nodeBlockProcessor,
-                                            HashRateCalculator hashRateCalculator,
-                                            ConfigCapabilities configCapabilities) {
-        return () -> new Web3RskImpl(rsk, blockchain, pendingState, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer, nodeBlockProcessor, hashRateCalculator, configCapabilities);
-    }
-
-    @Bean
-    public BlockChainImpl getBlockchain(org.ethereum.core.Repository repository,
-                                        org.ethereum.db.BlockStore blockStore,
-                                        ReceiptStore receiptStore,
-                                        PendingState pendingState,
-                                        @Qualifier("compositeEthereumListener") EthereumListener listener,
-                                        AdminInfo adminInfo,
-                                        BlockValidator blockValidator,
-                                        RskSystemProperties config) {
-        return new BlockChainImpl(
+    public Web3 getWeb3(Rsk rsk,
+                        Blockchain blockchain,
+                        TransactionPool transactionPool,
+                        RskSystemProperties config,
+                        MinerClient minerClient,
+                        MinerServer minerServer,
+                        PersonalModule personalModule,
+                        EthModule ethModule,
+                        TxPoolModule txPoolModule,
+                        ChannelManager channelManager,
+                        Repository repository,
+                        PeerScoringManager peerScoringManager,
+                        NetworkStateExporter networkStateExporter,
+                        org.ethereum.db.BlockStore blockStore,
+                        ReceiptStore receiptStore,
+                        PeerServer peerServer,
+                        BlockProcessor nodeBlockProcessor,
+                        HashRateCalculator hashRateCalculator,
+                        ConfigCapabilities configCapabilities) {
+        return new Web3RskImpl(
+                rsk,
+                blockchain,
+                transactionPool,
                 config,
+                minerClient,
+                minerServer,
+                personalModule,
+                ethModule,
+                txPoolModule,
+                channelManager,
                 repository,
+                peerScoringManager,
+                networkStateExporter,
                 blockStore,
                 receiptStore,
-                pendingState,
-                listener,
-                adminInfo,
-                blockValidator
+                peerServer,
+                nodeBlockProcessor,
+                hashRateCalculator,
+                configCapabilities
         );
     }
 
     @Bean
-    public PendingState getPendingState(org.ethereum.db.BlockStore blockStore,
+    public JsonRpcWeb3FilterHandler getJsonRpcWeb3FilterHandler(RskSystemProperties rskSystemProperties) {
+        return new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains(), rskSystemProperties.rpcAddress(), rskSystemProperties.rpcHost());
+    }
+
+    @Bean
+    public JsonRpcWeb3ServerHandler getJsonRpcWeb3ServerHandler(Web3 web3Service, RskSystemProperties rskSystemProperties) {
+        return new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
+    }
+
+    @Bean
+    public Web3HttpServer getWeb3HttpServer(RskSystemProperties rskSystemProperties,
+                                            JsonRpcWeb3FilterHandler filterHandler,
+                                            JsonRpcWeb3ServerHandler serverHandler) {
+        return new Web3HttpServer(
+            rskSystemProperties.rpcAddress(),
+            rskSystemProperties.rpcPort(),
+            rskSystemProperties.soLingerTime(),
+            true,
+            new CorsConfiguration(rskSystemProperties.corsDomains()),
+            filterHandler,
+            serverHandler
+        );
+    }
+
+    @Bean
+    public BlockChainImpl getBlockchain(BlockChainLoader blockChainLoader) {
+        return blockChainLoader.loadBlockchain();
+    }
+
+    @Bean
+    public TransactionPool getTransactionPool(org.ethereum.db.BlockStore blockStore,
                                         ReceiptStore receiptStore,
                                         org.ethereum.core.Repository repository,
                                         RskSystemProperties config,
                                         ProgramInvokeFactory programInvokeFactory,
                                         @Qualifier("compositeEthereumListener") EthereumListener listener) {
-        return new PendingStateImpl(
+        return new TransactionPoolImpl(
                 blockStore,
                 receiptStore,
                 listener,
@@ -251,21 +288,21 @@ public class RskFactory {
     }
 
     @Bean
-    public PersonalModule getPersonalModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, PendingState pendingState) {
+    public PersonalModule getPersonalModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, TransactionPool transactionPool) {
         if (wallet == null) {
             return new PersonalModuleWalletDisabled();
         }
 
-        return new PersonalModuleWalletEnabled(config, rsk, wallet, pendingState);
+        return new PersonalModuleWalletEnabled(config, rsk, wallet, transactionPool);
     }
 
     @Bean
-    public EthModuleWallet getEthModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, PendingState pendingState) {
+    public EthModuleWallet getEthModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, TransactionPool transactionPool) {
         if (wallet == null) {
             return new EthModuleWalletDisabled();
         }
 
-        return new EthModuleWalletEnabled(config, rsk, wallet, pendingState);
+        return new EthModuleWalletEnabled(config, rsk, wallet, transactionPool);
     }
 
     @Bean

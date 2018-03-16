@@ -26,15 +26,15 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
-public class PendingStateImplNoCleaner extends PendingStateImpl {
-    public PendingStateImplNoCleaner(RskSystemProperties config,
-                                     Repository repository,
-                                     BlockStore blockStore,
-                                     ReceiptStore receiptStore,
-                                     ProgramInvokeFactory programInvokeFactory,
-                                     EthereumListener listener,
-                                     int outdatedThreshold,
-                                     int outdatedTimeout) {
+public class TransactionPoolImplNoCleaner extends TransactionPoolImpl {
+    public TransactionPoolImplNoCleaner(RskSystemProperties config,
+                                        Repository repository,
+                                        BlockStore blockStore,
+                                        ReceiptStore receiptStore,
+                                        ProgramInvokeFactory programInvokeFactory,
+                                        EthereumListener listener,
+                                        int outdatedThreshold,
+                                        int outdatedTimeout) {
         super(config, repository, blockStore, receiptStore, programInvokeFactory, listener, outdatedThreshold, outdatedTimeout);
     }
 

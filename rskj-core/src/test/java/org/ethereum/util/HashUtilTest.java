@@ -57,25 +57,25 @@ public class HashUtilTest {
     @Test
     public void testSha3_EmptyString() {
         String expected1 = "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470";
-        String result1 = Hex.toHexString(HashUtil.sha3(new byte[0]));
+        String result1 = Hex.toHexString(HashUtil.keccak256(new byte[0]));
         assertEquals(expected1, result1);
     }
 
     @Test
     public void testSha3_Test() {
         String expected2 = "9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb658";
-        String result2 = Hex.toHexString(HashUtil.sha3("test".getBytes()));
+        String result2 = Hex.toHexString(HashUtil.keccak256("test".getBytes()));
         assertEquals(expected2, result2);
     }
 
     @Test
     public void testSha3_Multiple() {
         String expected1 = "6d255fc3390ee6b41191da315958b7d6a1e5b17904cc7683558f98acc57977b4";
-        String result1 = Hex.toHexString(HashUtil.sha3("test1".getBytes()));
+        String result1 = Hex.toHexString(HashUtil.keccak256("test1".getBytes()));
         assertEquals(expected1, result1);
 
         String expected2 = "4da432f1ecd4c0ac028ebde3a3f78510a21d54087b161590a63080d33b702b8d";
-        String result2 = Hex.toHexString(HashUtil.sha3("test2".getBytes()));
+        String result2 = Hex.toHexString(HashUtil.keccak256("test2".getBytes()));
         assertEquals(expected2, result2);
     }
 

@@ -28,7 +28,7 @@ import org.junit.Test;
 public class BlockRequestMessageTest {
     @Test
     public void createWithBlockHash() {
-        byte[] hash = new BlockGenerator().getGenesisBlock().getHash();
+        byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         BlockRequestMessage message = new BlockRequestMessage(100, hash);
 
         Assert.assertEquals(100, message.getId());

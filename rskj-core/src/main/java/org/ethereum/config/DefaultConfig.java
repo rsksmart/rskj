@@ -24,6 +24,7 @@ import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.NetworkStateExporter;
+import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.metrics.HashRateCalculatorMining;
@@ -106,7 +107,7 @@ public class DefaultConfig {
 
     @Bean
     public HashRateCalculator hashRateCalculator(RskSystemProperties rskSystemProperties, BlockStore blockStore, MiningConfig miningConfig) {
-        RskCustomCache<ByteArrayWrapper, BlockHeaderElement> cache = new RskCustomCache<>(60000L);
+        RskCustomCache<Keccak256, BlockHeaderElement> cache = new RskCustomCache<>(60000L);
         if (!rskSystemProperties.isMinerServerEnabled()) {
             return new HashRateCalculatorNonMining(blockStore, cache);
         }

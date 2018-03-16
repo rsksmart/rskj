@@ -3,6 +3,7 @@ package org.ethereum.util;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
+import org.ethereum.net.server.ChannelManager;
 
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
@@ -15,5 +16,9 @@ public class RskMockFactory {
         when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring());
         return peerScoringManager;
+    }
+
+    public static ChannelManager getChannelManager() {
+        return mock(ChannelManager.class);
     }
 }

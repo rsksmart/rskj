@@ -22,7 +22,8 @@ import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.PendingState;
+import co.rsk.crypto.Keccak256;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
@@ -39,7 +40,7 @@ public class MinerUtilsTest {
 
     @Test
     public void getAllTransactionsTest() {
-        PendingState pendingState = Mockito.mock(PendingState.class);
+        TransactionPool transactionPool = Mockito.mock(TransactionPool.class);
 
         Transaction tx1 = Mockito.mock(Transaction.class);
         Transaction tx2 = Mockito.mock(Transaction.class);
@@ -50,26 +51,24 @@ public class MinerUtilsTest {
         s1[0] = 0;
         s2[0] = 1;
 
-        Mockito.when(tx1.getHash()).thenReturn(s1);
-        Mockito.when(tx2.getHash()).thenReturn(s2);
+        Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
+        Mockito.when(tx2.getHash()).thenReturn(new Keccak256(s2));
 
-        List<Transaction> txs1 = new LinkedList<>();
-        List<Transaction> txs2 = new LinkedList<>();
+        List<Transaction> txs = new LinkedList<>();
 
-        txs1.add(tx1);
-        txs2.add(tx2);
+        txs.add(tx1);
+        txs.add(tx2);
 
-        Mockito.when(pendingState.getPendingTransactions()).thenReturn(txs1);
-        Mockito.when(pendingState.getWireTransactions()).thenReturn(txs2);
+        Mockito.when(transactionPool.getPendingTransactions()).thenReturn(txs);
 
-        List<Transaction> res = new MinerUtils().getAllTransactions(pendingState);
+        List<Transaction> res = new MinerUtils().getAllTransactions(transactionPool);
 
         Assert.assertEquals(2, res.size());
     }
 
     @Test
     public void validTransactionRepositoryNonceTest() {
-        Transaction tx = Tx.create(config, 0, 50000, 5, 0, 0, 0, new Random(0));
+        Transaction tx = Tx.create(config, 0, 50000, 5, 0, 0, 0);
         //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
@@ -84,7 +83,7 @@ public class MinerUtilsTest {
 
     @Test
     public void validTransactionAccWrapNonceTest() {
-        Transaction tx = Tx.create(config, 0, 50000, 5, 1, 0, 0, new Random(0));
+        Transaction tx = Tx.create(config, 0, 50000, 5, 1, 0, 0);
         //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
@@ -99,7 +98,7 @@ public class MinerUtilsTest {
 
     @Test
     public void invalidNonceTransactionTest() {
-        Transaction tx = Tx.create(config, 0, 50000, 2, 0, 0, 0, new Random(0));
+        Transaction tx = Tx.create(config, 0, 50000, 2, 0, 0, 0);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
@@ -115,7 +114,7 @@ public class MinerUtilsTest {
 
     @Test
     public void invalidGasPriceTransactionTest() {
-        Transaction tx = Tx.create(config, 0, 50000, 1, 0, 0, 0, new Random(0));
+        Transaction tx = Tx.create(config, 0, 50000, 1, 0, 0, 0);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
@@ -132,7 +131,7 @@ public class MinerUtilsTest {
 
     @Test
     public void harmfulTransactionTest() {
-        Transaction tx = Tx.create(config, 0, 50000, 1, 0, 0, 0, new Random(0));
+        Transaction tx = Tx.create(config, 0, 50000, 1, 0, 0, 0);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Mockito.when(tx.getGasPrice()).thenReturn(null);

@@ -34,7 +34,6 @@ import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -146,7 +145,7 @@ public class MinerManagerTest {
 
         Assert.assertNotNull(blocks);
         Assert.assertEquals(2, blocks.size());
-        Assert.assertFalse(Arrays.equals(blocks.get(0).getHash(), blocks.get(1).getHash()));
+        Assert.assertFalse(blocks.get(0).getHash().equals(blocks.get(1).getHash()));
     }
 
     @Test
@@ -305,13 +304,11 @@ public class MinerManagerTest {
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
 
         snapshotManager.resetSnapshots(blockchain);
-        Assert.assertTrue(blockchain.getPendingState().getWireTransactions().isEmpty());
-        Assert.assertTrue(blockchain.getPendingState().getPendingTransactions().isEmpty());
+        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
 
         manager.mineBlock(blockchain, minerClient, minerServer);
 
-        Assert.assertTrue(blockchain.getPendingState().getWireTransactions().isEmpty());
-        Assert.assertTrue(blockchain.getPendingState().getPendingTransactions().isEmpty());
+        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
     }
 
     @Test
@@ -362,11 +359,26 @@ public class MinerManagerTest {
         ethereum.repository = blockchain.getRepository();
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
-        return new MinerServerImpl(config, ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(),
-                blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
-                new BlockValidationRuleDummy(), null,
-                difficultyCalculator, new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        return new MinerServerImpl(
+                config,
+                ethereum,
+                blockchain,
+                null,
+                difficultyCalculator,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        blockchain.getBlockStore(),
+                        blockchain.getTransactionPool(),
+                        difficultyCalculator,
+                        new GasLimitCalculator(config),
+                        new BlockValidationRuleDummy(),
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
+        );
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {
@@ -379,7 +391,7 @@ public class MinerManagerTest {
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
             super(null, null, null, null,
-                    null, null, null, null, null, null, null);
+                  null, null, null, null);
         }
     }
 }

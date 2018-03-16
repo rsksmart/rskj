@@ -3,9 +3,10 @@ package org.ethereum.util;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
@@ -33,9 +34,10 @@ public class RskTestFactory {
     private final RskSystemProperties config = new RskSystemProperties();
     private BlockChainImpl blockchain;
     private IndexedBlockStore blockStore;
-    private PendingState pendingState;
+    private TransactionPool transactionPool;
     private RepositoryImpl repository;
     private ProgramInvokeFactoryImpl programInvokeFactory;
+    private ReversibleTransactionExecutor reversibleTransactionExecutor;
 
     public RskTestFactory() {
         Genesis genesis = new BlockGenerator().getGenesisBlock();
@@ -114,8 +116,8 @@ public class RskTestFactory {
                     null,
                     new DummyBlockValidator()
             );
-            PendingState pendingState = getPendingState();
-            blockchain.setPendingState(pendingState);
+            TransactionPool transactionPool = getTransactionPool();
+            blockchain.setTransactionPool(transactionPool);
         }
 
         return blockchain;
@@ -134,9 +136,9 @@ public class RskTestFactory {
         return blockStore;
     }
 
-    public PendingState getPendingState() {
-        if (pendingState == null) {
-            pendingState = new PendingStateImpl(
+    public TransactionPool getTransactionPool() {
+        if (transactionPool == null) {
+            transactionPool = new TransactionPoolImpl(
                     getBlockStore(),
                     getReceiptStore(),
                     null,
@@ -146,7 +148,7 @@ public class RskTestFactory {
             );
         }
 
-        return pendingState;
+        return transactionPool;
     }
 
     public Repository getRepository() {
@@ -156,5 +158,19 @@ public class RskTestFactory {
         }
 
         return repository;
+    }
+
+    public ReversibleTransactionExecutor getReversibleTransactionExecutor() {
+        if (reversibleTransactionExecutor == null) {
+            reversibleTransactionExecutor = new ReversibleTransactionExecutor(
+                    config,
+                    getRepository(),
+                    getBlockStore(),
+                    getReceiptStore(),
+                    getProgramInvokeFactory()
+            );
+        }
+
+        return reversibleTransactionExecutor;
     }
 }

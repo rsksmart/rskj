@@ -25,7 +25,7 @@ import org.junit.Test;
 public class NewBlockHashTest {
     @Test
     public void createWithBlockHash() {
-        byte[] hash = new BlockGenerator().getGenesisBlock().getHash();
+        byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         NewBlockHashMessage message = new NewBlockHashMessage(hash);
 
         Assert.assertArrayEquals(hash, message.getBlockHash());

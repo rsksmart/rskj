@@ -20,15 +20,14 @@ package co.rsk.validators;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.FamilyUtils;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.HashSet;
 import java.util.List;
@@ -107,17 +106,16 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
      * @param used        used uncles
      * @return true if the uncles in the list are valid, false if not
      */
-    public boolean validateUncleList(long blockNumber, List<BlockHeader> uncles, Set<ByteArrayWrapper> ancestors, Set<ByteArrayWrapper> used) {
+    public boolean validateUncleList(long blockNumber, List<BlockHeader> uncles, Set<Keccak256> ancestors, Set<Keccak256> used) {
         if (uncles.size() > uncleListLimit) {
             logger.error("Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
             panicProcessor.panic(INVALIDUNCLE, "Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
             return false;
         }
 
-        Set<ByteArrayWrapper> hashes = new HashSet<>();
+        Set<Keccak256> hashes = new HashSet<>();
 
         for (BlockHeader uncle : uncles) {
-            byte[] uhash = uncle.getHash();
 
             Block blockForUncleHeader = new Block(uncle);
 
@@ -126,7 +124,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
                 return false;
             }
 
-            ByteArrayWrapper uncleHash = new ByteArrayWrapper(uhash);
+            Keccak256 uncleHash = uncle.getHash();
 
             /* Just checking that the uncle is not added twice */
             if (hashes.contains(uncleHash)) {
@@ -163,7 +161,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         return true;
     }
 
-    private boolean validateUnclesAncestors(Set<ByteArrayWrapper> ancestors, ByteArrayWrapper uncleHash) {
+    private boolean validateUnclesAncestors(Set<Keccak256> ancestors, Keccak256 uncleHash) {
         if (ancestors != null && ancestors.contains(uncleHash)) {
             String uHashStr = uncleHash.toString();
             logger.error("Uncle is direct ancestor: {}", uHashStr);
@@ -173,7 +171,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         return true;
     }
 
-    private boolean validateIfUncleWasNeverUsed(Set<ByteArrayWrapper> used, ByteArrayWrapper uncleHash) {
+    private boolean validateIfUncleWasNeverUsed(Set<Keccak256> used, Keccak256 uncleHash) {
         String uhashString = uncleHash.toString();
         if (used != null && used.contains(uncleHash)) {
             logger.error("Uncle is not unique: {}", uhashString);
@@ -183,11 +181,11 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         return true;
     }
 
-    private boolean validateUncleParent(Set<ByteArrayWrapper> ancestors, Block uncle) {
-        String uhashString = Hex.toHexString(uncle.getHash());
-        Block parent = blockStore.getBlockByHash(uncle.getParentHash());
+    private boolean validateUncleParent(Set<Keccak256> ancestors, Block uncle) {
+        String uhashString = uncle.getHash().toString();
+        Block parent = blockStore.getBlockByHash(uncle.getParentHash().getBytes());
 
-        if (ancestors != null && (parent == null || !ancestors.contains(parent.getWrappedHash()))) {
+        if (ancestors != null && (parent == null || !ancestors.contains(parent.getHash()))) {
             logger.error("Uncle has no common parent: {}", uhashString);
             panicProcessor.panic(INVALIDUNCLE, String.format("Uncle has no common parent: %s", uhashString));
             return false;

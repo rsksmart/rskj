@@ -20,12 +20,15 @@
 package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
@@ -38,6 +41,7 @@ import org.spongycastle.util.encoders.Hex;
 import java.math.BigInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Roman Mandeleil
@@ -48,6 +52,8 @@ public class VMComplexTest {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final RskSystemProperties config = new RskSystemProperties();
+    private final VmConfig vmConfig = config.getVmConfig();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
     @Ignore //TODO #POC9
     @Test // contract call recursive
@@ -82,7 +88,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
@@ -99,8 +105,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(config);
-        Program program = new Program(config, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -184,8 +190,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(config);
-        Program program = new Program(config, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -273,8 +279,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(config);
-        Program program = new Program(config, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -351,8 +357,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(config);
-        Program program = new Program(config, codeA, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeA, pi);
 
         try {
             while (!program.isStopped())
@@ -425,8 +431,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(config);
-        Program program = new Program(config, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -473,7 +479,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
@@ -490,8 +496,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(config);
-        Program program = new Program(config, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -533,7 +539,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
@@ -550,8 +556,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(config);
-        Program program = new Program(config, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -593,7 +599,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
@@ -610,8 +616,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(config);
-        Program program = new Program(config, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -653,7 +659,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
@@ -670,8 +676,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(config);
-        Program program = new Program(config, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -692,5 +698,13 @@ public class VMComplexTest {
 
         repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
+    }
+
+    private VM getSubject() {
+        return new VM(vmConfig, precompiledContracts);
+    }
+
+    private Program getProgram(byte[] code, ProgramInvoke pi) {
+        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, pi, null);
     }
 }

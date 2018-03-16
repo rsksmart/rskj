@@ -102,7 +102,7 @@ public final class TestUtils {
                     null, null, EMPTY_TRIE_HASH, randomHash(), null, null, null, Coin.ZERO);
 
             ++lastIndex;
-            lastHash = block.getHash();
+            lastHash = block.getHash().getBytes();
             result.add(block);
         }
 

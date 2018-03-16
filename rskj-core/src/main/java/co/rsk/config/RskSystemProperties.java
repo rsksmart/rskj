@@ -63,6 +63,7 @@ public class RskSystemProperties extends SystemProperties {
     private MessageRecorder messageRecorder;
 
     private List<ModuleDescription> moduleDescriptions;
+    private VmConfig vmConfig;
 
     @Nullable
     public RskAddress coinbaseAddress() {
@@ -105,7 +106,7 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         String coinbaseSecret = configFromFiles.getString(MINER_COINBASE_SECRET_CONFIG);
-        return new Account(ECKey.fromPrivate(HashUtil.sha3(coinbaseSecret.getBytes(StandardCharsets.UTF_8))));
+        return new Account(ECKey.fromPrivate(HashUtil.keccak256(coinbaseSecret.getBytes(StandardCharsets.UTF_8))));
     }
 
     public boolean isMinerClientEnabled() {
@@ -387,5 +388,13 @@ public class RskSystemProperties extends SystemProperties {
     // its fixed, cannot be set by config file
     public int getChunkSize() {
         return CHUNK_SIZE;
+    }
+
+    public VmConfig getVmConfig() {
+        if (vmConfig == null) {
+            vmConfig = new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle());
+        }
+
+        return vmConfig;
     }
 }

@@ -20,14 +20,10 @@ package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
-import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
-
-import static org.ethereum.crypto.HashUtil.sha3;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Created by martin.medina on 03/04/2017.
@@ -49,6 +45,6 @@ public class SecureTrieImplHashTest {
         Assert.assertTrue(Arrays.equals(trie1.get("roosevalt"), "So, first of all, let me assert my firm belief that".getBytes()));
         Assert.assertTrue(Arrays.equals(trie1.get("roosevilt"), "42".getBytes()));
         Assert.assertNull(trie1.get("roosevelt"));
-        Assert.assertTrue(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 }

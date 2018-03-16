@@ -33,7 +33,7 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
@@ -224,10 +224,10 @@ public class BlockValidatorTest {
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
         Block block = new BlockGenerator().createChildBlock(genesis);
 
-        Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block, 6);
+        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block, 6);
         Assert.assertFalse(ancestors.isEmpty());
-        Assert.assertTrue(ancestors.contains(genesis.getWrappedHash()));
-        Assert.assertFalse(ancestors.contains(block.getWrappedHash()));
+        Assert.assertTrue(ancestors.contains(genesis.getHash()));
+        Assert.assertFalse(ancestors.contains(block.getHash()));
     }
 
     @Test
@@ -248,15 +248,15 @@ public class BlockValidatorTest {
         Block block5 = blockGenerator.createChildBlock(block4);
         store.saveBlock(block5, TEST_DIFFICULTY, true);
 
-        Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block5, 3);
+        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block5, 3);
         Assert.assertFalse(ancestors.isEmpty());
         Assert.assertEquals(3, ancestors.size());
-        Assert.assertFalse(ancestors.contains(genesis.getWrappedHash()));
-        Assert.assertFalse(ancestors.contains(block1.getWrappedHash()));
-        Assert.assertTrue(ancestors.contains(block2.getWrappedHash()));
-        Assert.assertTrue(ancestors.contains(block3.getWrappedHash()));
-        Assert.assertTrue(ancestors.contains(block4.getWrappedHash()));
-        Assert.assertFalse(ancestors.contains(block5.getWrappedHash()));
+        Assert.assertFalse(ancestors.contains(genesis.getHash()));
+        Assert.assertFalse(ancestors.contains(block1.getHash()));
+        Assert.assertTrue(ancestors.contains(block2.getHash()));
+        Assert.assertTrue(ancestors.contains(block3.getHash()));
+        Assert.assertTrue(ancestors.contains(block4.getHash()));
+        Assert.assertFalse(ancestors.contains(block5.getHash()));
     }
 
     @Test
@@ -291,17 +291,17 @@ public class BlockValidatorTest {
         store.saveBlock(uncle2b, TEST_DIFFICULTY, false);
         store.saveBlock(block2, TEST_DIFFICULTY, true);
 
-        Set<ByteArrayWrapper> used = FamilyUtils.getUsedUncles(store, block3, 6);
+        Set<Keccak256> used = FamilyUtils.getUsedUncles(store, block3, 6);
 
         Assert.assertFalse(used.isEmpty());
-        Assert.assertFalse(used.contains(block3.getWrappedHash()));
-        Assert.assertFalse(used.contains(block2.getWrappedHash()));
-        Assert.assertTrue(used.contains(uncle2a.getWrappedHash()));
-        Assert.assertTrue(used.contains(uncle2b.getWrappedHash()));
-        Assert.assertFalse(used.contains(block1.getWrappedHash()));
-        Assert.assertTrue(used.contains(uncle1a.getWrappedHash()));
-        Assert.assertTrue(used.contains(uncle1b.getWrappedHash()));
-        Assert.assertFalse(used.contains(genesis.getWrappedHash()));
+        Assert.assertFalse(used.contains(block3.getHash()));
+        Assert.assertFalse(used.contains(block2.getHash()));
+        Assert.assertTrue(used.contains(uncle2a.getHash()));
+        Assert.assertTrue(used.contains(uncle2b.getHash()));
+        Assert.assertFalse(used.contains(block1.getHash()));
+        Assert.assertTrue(used.contains(uncle1a.getHash()));
+        Assert.assertTrue(used.contains(uncle1b.getHash()));
+        Assert.assertFalse(used.contains(genesis.getHash()));
     }
 
     @Test
@@ -483,7 +483,7 @@ public class BlockValidatorTest {
 
         Block genesis = blockGenerator.getGenesisBlock();
         Block uncle1a = blockGenerator.createChildBlock(new SimpleBlock(null, null, TestUtils.randomAddress().getBytes(), null, TEST_DIFFICULTY.getBytes(),
-                0, null, 0L, 0L, new byte[]{}, null, null, null, Block.getTxTrie(null).getHash(), null, null, null));
+                0, null, 0L, 0L, new byte[]{}, null, null, null, Block.getTxTrie(null).getHash().getBytes(), null, null, null));
 
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
@@ -650,7 +650,7 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder().minGasPrice(BigInteger.TEN).transactions(txs)
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
+        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addTxsMinGasPriceRule()
@@ -674,7 +674,7 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder().minGasPrice(BigInteger.TEN)
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
+        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addPrevMinGasPriceRule()
@@ -703,7 +703,7 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder().transactions(txs).minGasPrice(BigInteger.valueOf(11L))
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
+        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addPrevMinGasPriceRule()
@@ -814,13 +814,12 @@ public class BlockValidatorTest {
         Assert.assertTrue(validator.isValid(block));
     }
 
-
     @Test
     public void blockInTheFuture() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
-        int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxSecondsInTheFuture();
+        int validPeriod = 6000;
 
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getTimestamp())
@@ -836,6 +835,32 @@ public class BlockValidatorTest {
 
         Mockito.when(block.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + validPeriod);
+
+        Assert.assertTrue(validator.isValid(block));
+    }
+
+
+    @Test
+    public void blockInTheFutureIsAcceptedWhenValidPeriodIsZero() {
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+
+        int validPeriod = 0;
+
+        Block block = Mockito.mock(Block.class);
+        Mockito.when(block.getTimestamp())
+                .thenReturn((System.currentTimeMillis() / 1000) + 2000);
+
+        Mockito.when(block.getParentHash()).thenReturn(genesis.getHash());
+
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockTimeStampValidationRule(validPeriod)
+                .build();
+
+        Assert.assertTrue(validator.isValid(block));
+
+        Mockito.when(block.getTimestamp())
+                .thenReturn((System.currentTimeMillis() / 1000) + 2000);
 
         Assert.assertTrue(validator.isValid(block));
     }

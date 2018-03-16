@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.util.ByteUtil;
@@ -77,6 +78,17 @@ public class Genesis extends Block {
 
     public static byte[] getZeroHash(){
         return Arrays.copyOf(ZERO_HASH_2048, ZERO_HASH_2048.length);
+    }
+
+    /**
+     * WORKAROUND.
+     * This is overrode because the Genesis' parent hash is an empty byte array,
+     * which isn't a valid Keccak256 hash.
+     * For encoding purposes, the empty byte array is used instead.
+     */
+    @Override
+    public Keccak256 getParentHash() {
+        return Keccak256.ZERO_HASH;
     }
 
     public Map<RskAddress, InitialAddressState> getPremine() {

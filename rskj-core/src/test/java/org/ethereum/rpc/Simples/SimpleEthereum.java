@@ -96,17 +96,7 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public List<Transaction> getWireTransactions() {
-        return null;
-    }
-
-    @Override
     public Coin getGasPrice() {
         return new GasPriceTracker().getGasPrice();
-    }
-
-    @Override
-    public ProgramResult callConstant(Web3.CallArguments args) {
-        return null;
     }
 }

@@ -150,7 +150,7 @@ public class CodeReplaceTest {
     public TransactionExecutor executeTransaction(BlockChainImpl blockchain, Transaction tx) {
         Repository track = blockchain.getRepository().startTracking();
         TransactionExecutor executor = new TransactionExecutor(config, tx, 0, RskAddress.nullAddress(), blockchain.getRepository(),
-                blockchain.getBlockStore(), blockchain.getReceiptStore(), new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
+                blockchain.getBlockStore(), null, new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
 
         executor.init();
         executor.execute();

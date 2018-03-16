@@ -24,8 +24,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.rpc.Web3;
-import org.ethereum.vm.program.ProgramResult;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -77,11 +75,6 @@ public interface Ethereum {
     void init();
 
     /**
-     * @return - currently pending transactions received from the net
-     */
-    List<Transaction> getWireTransactions();
-
-    /**
      * Calculates a 'reasonable' Gas price based on statistics of the latest transaction's Gas prices
      * Normally the price returned should be sufficient to execute a transaction since ~25% of the latest
      * transactions were executed at this or lower price.
@@ -89,7 +82,4 @@ public interface Ethereum {
      * be increased at some ratio (e.g. * 1.2)
      */
     Coin getGasPrice();
-
-    // TODO added method, to review
-    ProgramResult callConstant(Web3.CallArguments args);
 }

@@ -1,8 +1,10 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
+import org.ethereum.net.server.Channel;
+import org.ethereum.net.server.ChannelManager;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -14,13 +16,15 @@ import java.util.stream.Stream;
  *     things such as the underlying communication channel.
  */
 public class PeersInformation {
-    private final SyncConfiguration syncConfiguration;
+    private final ChannelManager channelManager;
     private final SyncInformation syncInformation;
+    private final SyncConfiguration syncConfiguration;
     private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
 
-    public PeersInformation(SyncConfiguration syncConfiguration, SyncInformation syncInformation){
-        this.syncConfiguration = syncConfiguration;
+    public PeersInformation(SyncInformation syncInformation, ChannelManager channelManager, SyncConfiguration syncConfiguration){
+        this.channelManager = channelManager;
         this.syncInformation = syncInformation;
+        this.syncConfiguration = syncConfiguration;
     }
 
     public int count() {
@@ -34,31 +38,36 @@ public class PeersInformation {
         return Math.toIntExact(count);
     }
 
-    public SyncPeerStatus getOrRegisterPeer(MessageChannel messageChannel) {
-        SyncPeerStatus peerStatus = this.peerStatuses.get(messageChannel.getPeerNodeID());
+    public SyncPeerStatus getOrRegisterPeer(NodeID nodeID) {
+        SyncPeerStatus peerStatus = this.peerStatuses.get(nodeID);
 
         if (peerStatus != null && peerNotExpired(peerStatus)) {
             return peerStatus;
         }
 
-        return this.registerPeer(messageChannel);
+        return this.registerPeer(nodeID);
     }
 
     public SyncPeerStatus getPeer(NodeID nodeID) {
         return this.peerStatuses.get(nodeID);
     }
 
-    public Optional<MessageChannel> getBestPeer() {
-        return getCandidates()
+    public Optional<NodeID> getBestPeer() {
+        return getCandidatesStream()
                 .max(this::peerComparator)
-                .map(Map.Entry::getValue)
-                .map(SyncPeerStatus::getMessageChannel);
+                .map(Map.Entry::getKey);
     }
 
     private int peerComparator(Map.Entry<NodeID, SyncPeerStatus> entry, Map.Entry<NodeID, SyncPeerStatus> other) {
         int score = syncInformation.getScore(entry.getKey());
         int otherScore = syncInformation.getScore(other.getKey());
-        if (score >= 0 && otherScore >= 0) {
+        Instant failInstant = syncInformation.getFailInstant(entry.getKey());
+        Instant otherFailInstant = syncInformation.getFailInstant(other.getKey());
+        if (failInstant.isAfter(otherFailInstant) ){
+            return -1;
+        } else if (failInstant.isBefore(otherFailInstant)){
+            return 1;
+        } else if (score >= 0 && otherScore >= 0) {
             return entry.getValue().peerTotalDifficultyComparator(other.getValue());
         } else if (score < otherScore){
             return -1;
@@ -68,26 +77,28 @@ public class PeersInformation {
         return entry.getValue().peerTotalDifficultyComparator(other.getValue());
     }
 
-    private Stream<Map.Entry<NodeID,SyncPeerStatus>> getCandidates(){
+    private Stream<Map.Entry<NodeID, SyncPeerStatus>> getCandidatesStream(){
+        Set<NodeID> activeNodes = channelManager.getActivePeers().stream()
+                .map(Channel::getNodeId).collect(Collectors.toSet());
+
         return peerStatuses.entrySet().stream()
                 .filter(e -> peerNotExpired(e.getValue()))
+                .filter(e -> activeNodes.contains(e.getKey()))
                 .filter(e -> syncInformation.hasGoodReputation(e.getKey()))
                 .filter(e -> syncInformation.hasLowerDifficulty(e.getKey()));
     }
 
-    public List<MessageChannel> getPeerCandidates() {
-        return getCandidates()
-                .map(e -> e.getValue().getMessageChannel())
-                .collect(Collectors.toList());
+    public List<NodeID> getPeerCandidates() {
+        return getCandidatesStream().map(Map.Entry::getKey).collect(Collectors.toList());
     }
 
     public Set<NodeID> knownNodeIds() {
         return peerStatuses.keySet();
     }
 
-    public SyncPeerStatus registerPeer(MessageChannel messageChannel) {
-        SyncPeerStatus peerStatus = new SyncPeerStatus(messageChannel);
-        peerStatuses.put(messageChannel.getPeerNodeID(), peerStatus);
+    public SyncPeerStatus registerPeer(NodeID nodeID) {
+        SyncPeerStatus peerStatus = new SyncPeerStatus();
+        peerStatuses.put(nodeID, peerStatus);
         return peerStatus;
     }
 

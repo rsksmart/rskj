@@ -50,7 +50,7 @@ public class NewBlockFilterTest {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.length);
-        Assert.assertEquals("0x" + Hex.toHexString(block.getHash()), result[0]);
+        Assert.assertEquals("0x" + block.getHash(), result[0]);
     }
 
     @Test
@@ -66,7 +66,7 @@ public class NewBlockFilterTest {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(2, result.length);
-        Assert.assertEquals("0x" + Hex.toHexString(block1.getHash()), result[0]);
-        Assert.assertEquals("0x" + Hex.toHexString(block2.getHash()), result[1]);
+        Assert.assertEquals("0x" + block1.getHash(), result[0]);
+        Assert.assertEquals("0x" + block2.getHash(), result[1]);
     }
 }

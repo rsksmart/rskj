@@ -22,7 +22,7 @@ package co.rsk.net.discovery.message;
 import co.rsk.net.discovery.PeerDiscoveryException;
 import org.ethereum.util.FastByteComparisons;
 
-import static org.ethereum.crypto.HashUtil.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 
 /**
  * Created by mario on 13/02/17.
@@ -48,7 +48,7 @@ public class MessageDecoder {
         byte[] data = new byte[wire.length - 98];
         System.arraycopy(wire, 98, data, 0, data.length);
 
-        byte[] mdcCheck = sha3(wire, 32, wire.length - 32);
+        byte[] mdcCheck = keccak256(wire, 32, wire.length - 32);
 
         int check = FastByteComparisons.compareTo(mdc, 0, mdc.length, mdcCheck, 0, mdcCheck.length);
 

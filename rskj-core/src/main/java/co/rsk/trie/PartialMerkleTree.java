@@ -38,8 +38,6 @@ public class PartialMerkleTree {
 
     public void addTrie(Trie trie, int insertion) {
         // normalize trie, to have all hashes
-        trie.getHash();
-
         Trie clone = trie.cloneTrie();
         clone.removeNode(insertion);
 
@@ -57,7 +55,7 @@ public class PartialMerkleTree {
             trie = clone;
         }
 
-        return trie.getHash();
+        return trie.getHash().getBytes();
     }
 
     public byte[] toMessage() {

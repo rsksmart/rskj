@@ -60,7 +60,7 @@ public class WorldTest {
 
         Assert.assertNotNull(best);
         Assert.assertEquals(0, best.getNumber());
-        Assert.assertArrayEquals(genesis.getHash(), best.getHash());
+        Assert.assertEquals(genesis.getHash(), best.getHash());
     }
 
     @Test

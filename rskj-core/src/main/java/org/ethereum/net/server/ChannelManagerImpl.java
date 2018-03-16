@@ -24,10 +24,7 @@ import co.rsk.net.Metrics;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.eth.RskMessage;
-import co.rsk.net.messages.BlockMessage;
-import co.rsk.net.messages.NewBlockHashesMessage;
-import co.rsk.net.messages.StatusMessage;
-import co.rsk.net.messages.TransactionsMessage;
+import co.rsk.net.messages.*;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.LRUMap;
@@ -35,7 +32,6 @@ import org.ethereum.config.NodeFilter;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.sync.SyncPool;
@@ -48,7 +44,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -64,7 +63,7 @@ public class ChannelManagerImpl implements ChannelManager {
     // then we ban that peer IP on any connections for some time to protect from
     // too active peers
     private static final int INBOUND_CONNECTION_BAN_TIMEOUT = 10 * 1000;
-    private final Map<ByteArrayWrapper, Channel> activePeers = Collections.synchronizedMap(new HashMap<>());
+    private final Map<NodeID, Channel> activePeers = Collections.synchronizedMap(new HashMap<>());
 
     private final RskSystemProperties config;
     private final SyncPool syncPool;
@@ -106,7 +105,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private void processNewPeers() {
         if (!CollectionUtils.isEmpty(newPeers)) {
             final List<Channel>  processed = new ArrayList<>();
-            newPeers.stream().filter(channel -> channel.isProtocolsInitialized()).forEach(channel -> {
+            newPeers.stream().filter(Channel::isProtocolsInitialized).forEach(channel -> {
                 ReasonCode reason = getNewPeerDisconnectionReason(channel);
                if(reason == null) {
                     process(channel);
@@ -120,7 +119,7 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private ReasonCode getNewPeerDisconnectionReason(Channel peer) {
-        if(activePeers.containsKey(peer.getNodeIdWrapper())) {
+        if (activePeers.containsKey(peer.getNodeId())) {
             return ReasonCode.DUPLICATE_PEER;
         }
 
@@ -153,7 +152,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private void process(Channel peer) {
         if (peer.isUsingNewProtocol() || peer.hasEthStatusSucceeded()) {
             syncPool.add(peer);
-            activePeers.put(peer.getNodeIdWrapper(), peer);
+            activePeers.put(peer.getNodeId(), peer);
         }
     }
 
@@ -165,8 +164,8 @@ public class ChannelManagerImpl implements ChannelManager {
      * @param receivedFrom the peer which sent original message or null if
      *                     the transactions were originated by this peer
      */
-    public void sendTransaction(List<Transaction> tx, Channel receivedFrom) {
-        tx.stream().forEach(t -> Metrics.broadcastTransaction(t));
+    public void broadcastTransactionMessage(List<Transaction> tx, Channel receivedFrom) {
+        tx.forEach(Metrics::broadcastTransaction);
 
         synchronized (activePeers) {
             TransactionsMessage txsmsg = new TransactionsMessage(tx);
@@ -192,7 +191,7 @@ public class ChannelManagerImpl implements ChannelManager {
         Metrics.broadcastBlock(block);
 
         final Set<NodeID> res = new HashSet<>();
-        final BlockIdentifier bi = new BlockIdentifier(block.getHash(), block.getNumber());
+        final BlockIdentifier bi = new BlockIdentifier(block.getHash().getBytes(), block.getNumber());
         final EthMessage newBlock = new RskMessage(config, new BlockMessage(block));
         final EthMessage newBlockHashes = new RskMessage(config, new NewBlockHashesMessage(Arrays.asList(bi)));
         synchronized (activePeers) {
@@ -200,7 +199,7 @@ public class ChannelManagerImpl implements ChannelManager {
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
             final Vector<Channel> peers = activePeers.values().stream()
                     .filter(p -> skip == null || !skip.contains(p.getNodeId()))
-                    .collect(Collectors.toCollection(() -> new Vector<>()));
+                    .collect(Collectors.toCollection(Vector::new));
             Collections.shuffle(peers);
 
             int sqrt = (int) Math.floor(Math.sqrt(peers.size()));
@@ -259,7 +258,7 @@ public class ChannelManagerImpl implements ChannelManager {
         synchronized (activePeers) {
             final Vector<Channel> peers = activePeers.values().stream()
                     .filter(p -> skip == null || !skip.contains(p.getNodeId()))
-                    .collect(Collectors.toCollection(() -> new Vector<>()));
+                    .collect(Collectors.toCollection(Vector::new));
 
             for (Channel peer : peers) {
                 res.add(peer.getNodeId());
@@ -273,22 +272,19 @@ public class ChannelManagerImpl implements ChannelManager {
     @Override
     public int broadcastStatus(Status status) {
         final EthMessage message = new RskMessage(config, new StatusMessage(status));
-
-        int npeers = 0;
-
         synchronized (activePeers) {
-            int peerCount = activePeers.size();
-            if (peerCount > 0) {
-                int numberOfPeersToSendStatusTo = getNumberOfPeersToSendStatusTo(peerCount);
-                List<Channel> shuffledPeers = new ArrayList<>(activePeers.values());
-                Collections.shuffle(shuffledPeers);
-                for (int i = 0; i < numberOfPeersToSendStatusTo; i++) {
-                    shuffledPeers.get(i).sendMessage(message);
-                    npeers++;
-                }
+            if (activePeers.isEmpty()) {
+                return 0;
             }
+
+            int numberOfPeersToSendStatusTo = getNumberOfPeersToSendStatusTo(activePeers.size());
+            List<Channel> shuffledPeers = new ArrayList<>(activePeers.values());
+            Collections.shuffle(shuffledPeers);
+            shuffledPeers.stream()
+                    .limit(numberOfPeersToSendStatusTo)
+                    .forEach(c -> c.sendMessage(message));
+            return numberOfPeersToSendStatusTo;
         }
-        return npeers;
     }
 
     @VisibleForTesting
@@ -296,8 +292,7 @@ public class ChannelManagerImpl implements ChannelManager {
         // Send to the sqrt of number of peers.
         // Make sure the number is between 3 and 10 (unless there are less than 3 peers).
         int peerCountSqrt = (int) Math.sqrt(peerCount);
-        int numberOfPeersToSendStatusTo = Math.min(10, Math.min(Math.max(3, peerCountSqrt), peerCount));
-        return numberOfPeersToSendStatusTo;
+        return Math.min(10, Math.min(Math.max(3, peerCountSqrt), peerCount));
     }
 
     /**
@@ -347,6 +342,19 @@ public class ChannelManagerImpl implements ChannelManager {
 
     public Collection<Channel> getActivePeers() {
         return Collections.unmodifiableCollection(activePeers.values());
+    }
+
+    @Override
+    public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
+        synchronized (activePeers) {
+            EthMessage msg = new RskMessage(config, message);
+            Channel channel = activePeers.get(nodeID);
+            if (channel == null){
+                return false;
+            }
+            channel.sendMessage(msg);
+        }
+        return true;
     }
 
 }

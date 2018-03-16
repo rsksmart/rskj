@@ -139,14 +139,14 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(status.getBestBlockNumber(), newStatus.getBestBlockNumber());
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
-        Assert.assertArrayEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
+        Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
 
         for (int k = 11; k <= 30; k++)
             Assert.assertTrue(blockchain.getBlocksByNumber(k).isEmpty());
     }
 
     @Test
-    public void revertToSnapshotClearingPendingState() {
+    public void revertToSnapshotClearingTransactionPool() {
         Blockchain blockchain = createBlockchain();
         addBlocks(blockchain, 10);
 
@@ -162,15 +162,16 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(2, manager.getSnapshots().size());
 
-        PendingState pendingState = blockchain.getPendingState();
+        TransactionPool transactionPool = blockchain.getTransactionPool();
 
-        Assert.assertNotNull(pendingState);
-        pendingState.addPendingTransaction(createSampleTransaction());
+        Assert.assertNotNull(transactionPool);
+
         List<Transaction> txs = new ArrayList<>();
         txs.add(createSampleTransaction());
-        pendingState.addWireTransactions(txs);
-        Assert.assertFalse(pendingState.getAllPendingTransactions().isEmpty());
-        Assert.assertFalse(pendingState.getAllPendingTransactions().isEmpty());
+        txs.add(createSampleTransaction());
+        transactionPool.addTransactions(txs);
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
 
         Assert.assertEquals(30, blockchain.getStatus().getBestBlockNumber());
 
@@ -180,10 +181,9 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(status.getBestBlockNumber(), newStatus.getBestBlockNumber());
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
-        Assert.assertArrayEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
+        Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
 
-        Assert.assertTrue(blockchain.getPendingState().getAllPendingTransactions().isEmpty());
-        Assert.assertTrue(blockchain.getPendingState().getWireTransactions().isEmpty());
+        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
 
         Assert.assertEquals(1, manager.getSnapshots().size());
 
@@ -192,7 +192,7 @@ public class SnapshotManagerTest {
     }
 
     @Test
-    public void resetSnapshotClearingPendingState() {
+    public void resetSnapshotClearingTransactionPool() {
         Blockchain blockchain = createBlockchain();
         Block genesis = blockchain.getBestBlock();
         BlockDifficulty genesisDifficulty = blockchain.getStatus().getTotalDifficulty();
@@ -203,15 +203,15 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(10, status.getBestBlockNumber());
 
-        PendingState pendingState = blockchain.getPendingState();
+        TransactionPool transactionPool = blockchain.getTransactionPool();
 
-        Assert.assertNotNull(pendingState);
-        pendingState.addPendingTransaction(createSampleTransaction());
+        Assert.assertNotNull(transactionPool);
         List<Transaction> txs = new ArrayList<>();
         txs.add(createSampleTransaction());
-        pendingState.addWireTransactions(txs);
-        Assert.assertFalse(pendingState.getAllPendingTransactions().isEmpty());
-        Assert.assertFalse(pendingState.getAllPendingTransactions().isEmpty());
+        txs.add(createSampleTransaction());
+        transactionPool.addTransactions(txs);
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
 
         SnapshotManager manager = new SnapshotManager();
 
@@ -226,10 +226,9 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(0, newStatus.getBestBlockNumber());
         Assert.assertEquals(genesisDifficulty, newStatus.getTotalDifficulty());
-        Assert.assertArrayEquals(genesis.getHash(), newStatus.getBestBlock().getHash());
+        Assert.assertEquals(genesis.getHash(), newStatus.getBestBlock().getHash());
 
-        Assert.assertTrue(blockchain.getPendingState().getAllPendingTransactions().isEmpty());
-        Assert.assertTrue(blockchain.getPendingState().getWireTransactions().isEmpty());
+        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
 
         Assert.assertTrue(manager.getSnapshots().isEmpty());
 

@@ -98,7 +98,7 @@ public class BridgeTest {
         rskTx.sign(new ECKey().getPrivKeyBytes());
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         World world = new World();
-        bridge.init(rskTx, world.getBlockChain().getBestBlock(), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), new LinkedList<>());
+        bridge.init(rskTx, world.getBlockChain().getBestBlock(), track, world.getBlockChain().getBlockStore(), null, new LinkedList<>());
 
         bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 
@@ -140,7 +140,7 @@ public class BridgeTest {
         world.getBlockChain().getBlockStore().saveBlock(blocks.get(1), new BlockDifficulty(BigInteger.ONE), true);
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(rskTx, blocks.get(9), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), new LinkedList<>());
+        bridge.init(rskTx, blocks.get(9), track, world.getBlockChain().getBlockStore(), null, new LinkedList<>());
 
         bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 

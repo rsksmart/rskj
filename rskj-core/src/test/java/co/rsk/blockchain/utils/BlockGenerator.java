@@ -55,7 +55,7 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
  */
 public class BlockGenerator {
 
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
@@ -116,7 +116,7 @@ public class BlockGenerator {
             state = state.put(addr.getBytes(), premine.get(addr).getAccountState().getEncoded());
         }
 
-        return state.getHash();
+        return state.getHash().getBytes();
     }
 
     private Map<RskAddress, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
@@ -157,10 +157,10 @@ public class BlockGenerator {
 
     public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
         List<Transaction> txs = new ArrayList<>();
-        byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 unclesListHash, // uncle hash
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
@@ -195,7 +195,7 @@ public class BlockGenerator {
         }
 
         return new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 coinbase, // coinbase
                 logBloom.getData(), // logs bloom
@@ -252,9 +252,9 @@ public class BlockGenerator {
             uncles = new ArrayList<>();
         }
 
-        byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        BlockHeader newHeader = new BlockHeader(parent.getHash(),
+        BlockHeader newHeader = new BlockHeader(parent.getHash().getBytes(),
                 unclesListHash,
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
@@ -278,7 +278,7 @@ public class BlockGenerator {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
+        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
@@ -301,7 +301,7 @@ public class BlockGenerator {
         Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
 
         return new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
@@ -333,7 +333,7 @@ public class BlockGenerator {
         }
 
         return new SimpleBlock(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
@@ -356,7 +356,7 @@ public class BlockGenerator {
     public Block createFallbackMinedChildBlockWithTimeStamp(Block parent, byte[] difficulty, long timeStamp, boolean goodSig) {
         List<Transaction> txs = new ArrayList<>();
         Block block = new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),

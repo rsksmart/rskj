@@ -19,9 +19,9 @@
 
 package co.rsk.net;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -47,7 +47,7 @@ public class BlockCacheTest {
     public void putAndGetValue() {
         BlockCache store = getSubject();
         Block block = Mockito.mock(Block.class);
-        store.put(new ByteArrayWrapper(HASH_1), block);
+        store.put(new Keccak256(HASH_1), block);
 
         assertThat(store.getBlockByHash(HASH_1), is(block));
     }
@@ -55,11 +55,11 @@ public class BlockCacheTest {
     @Test
     public void putMoreThanSizeAndCheckCleanup() {
         BlockCache store = getSubject();
-        store.put(new ByteArrayWrapper(HASH_1), Mockito.mock(Block.class));
-        store.put(new ByteArrayWrapper(HASH_2), Mockito.mock(Block.class));
-        store.put(new ByteArrayWrapper(HASH_3), Mockito.mock(Block.class));
-        store.put(new ByteArrayWrapper(HASH_4), Mockito.mock(Block.class));
-        store.put(new ByteArrayWrapper(HASH_5), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_1), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_2), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_3), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_4), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_5), Mockito.mock(Block.class));
 
         assertThat(store.getBlockByHash(HASH_1), nullValue());
         assertThat(store.getBlockByHash(HASH_2), notNullValue());
@@ -71,12 +71,12 @@ public class BlockCacheTest {
     @Test
     public void repeatingValueAtEndPreventsCleanup() {
         BlockCache store = getSubject();
-        store.put(new ByteArrayWrapper(HASH_1), Mockito.mock(Block.class));
-        store.put(new ByteArrayWrapper(HASH_2), Mockito.mock(Block.class));
-        store.put(new ByteArrayWrapper(HASH_3), Mockito.mock(Block.class));
-        store.put(new ByteArrayWrapper(HASH_4), Mockito.mock(Block.class));
-        store.put(new ByteArrayWrapper(HASH_1), Mockito.mock(Block.class));
-        store.put(new ByteArrayWrapper(HASH_5), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_1), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_2), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_3), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_4), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_1), Mockito.mock(Block.class));
+        store.put(new Keccak256(HASH_5), Mockito.mock(Block.class));
 
         assertThat(store.getBlockByHash(HASH_1), notNullValue());
         assertThat(store.getBlockByHash(HASH_2), nullValue());
@@ -89,7 +89,7 @@ public class BlockCacheTest {
     public void addAndRetrieveBlock() {
         BlockCache store = getSubject();
         Block block = Mockito.mock(Block.class);
-        when(block.getWrappedHash()).thenReturn(new ByteArrayWrapper(HASH_1));
+        when(block.getHash()).thenReturn(new Keccak256(HASH_1));
         store.addBlock(block);
 
         assertThat(store.getBlockByHash(HASH_1), is(block));
@@ -99,7 +99,7 @@ public class BlockCacheTest {
     public void addAndRemoveBlock() {
         BlockCache store = getSubject();
         Block block = Mockito.mock(Block.class);
-        when(block.getHash()).thenReturn(HASH_1);
+        when(block.getHash()).thenReturn(new Keccak256(HASH_1));
         store.addBlock(block);
         store.removeBlock(block);
 

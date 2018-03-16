@@ -25,8 +25,6 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.vm.LogInfo;
 
-import java.util.Arrays;
-
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
 
@@ -74,7 +72,7 @@ public class TransactionReceiptDTO {
 
         root = toJsonHex(receipt.getPostTxState());
         to = toJsonHex(receipt.getTransaction().getReceiveAddress().getBytes());
-        transactionHash = toJsonHex(receipt.getTransaction().getHash());
+        transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = toJsonHex(txInfo.getIndex());
     }
 }

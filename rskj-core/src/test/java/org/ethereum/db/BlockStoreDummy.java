@@ -38,7 +38,7 @@ public class BlockStoreDummy implements BlockStore {
     public byte[] getBlockHashByNumber(long blockNumber) {
 
         byte[] data = String.valueOf(blockNumber).getBytes(StandardCharsets.UTF_8);
-        return HashUtil.sha3(data);
+        return HashUtil.keccak256(data);
     }
 
     @Override

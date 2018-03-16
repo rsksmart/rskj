@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockStore;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -27,7 +28,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
-import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -85,7 +85,7 @@ public class BlockUtilsTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
         Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
 
-        Set<ByteArrayWrapper> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
+        Set<Keccak256> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertTrue(hashes.isEmpty());
@@ -105,14 +105,14 @@ public class BlockUtilsTest {
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
         Assert.assertEquals(1, hashes.size());
-        Assert.assertTrue(hashes.contains(block2.getWrappedHash()));
+        Assert.assertTrue(hashes.contains(block2.getHash()));
 
         hashes = BlockUtils.unknownAncestorsHashes(block3.getHash(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
         Assert.assertEquals(1, hashes.size());
-        Assert.assertTrue(hashes.contains(block2.getWrappedHash()));
+        Assert.assertTrue(hashes.contains(block2.getHash()));
     }
 
     @Test
@@ -143,7 +143,7 @@ public class BlockUtilsTest {
         blockChain.tryToConnect(block1);
         blockChain.tryToConnect(block1b);
 
-        Set<ByteArrayWrapper> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
+        Set<Keccak256> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertTrue(hashes.isEmpty());
@@ -164,15 +164,15 @@ public class BlockUtilsTest {
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
         Assert.assertEquals(1, hashes.size());
-        Assert.assertTrue(hashes.contains(block2.getWrappedHash()));
+        Assert.assertTrue(hashes.contains(block2.getHash()));
 
         hashes = BlockUtils.unknownAncestorsHashes(block3.getHash(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
         Assert.assertEquals(3, hashes.size());
-        Assert.assertTrue(hashes.contains(block2.getWrappedHash()));
-        Assert.assertTrue(hashes.contains(uncle1.getWrappedHash()));
-        Assert.assertTrue(hashes.contains(uncle2.getWrappedHash()));
+        Assert.assertTrue(hashes.contains(block2.getHash()));
+        Assert.assertTrue(hashes.contains(uncle1.getHash()));
+        Assert.assertTrue(hashes.contains(uncle2.getHash()));
     }
 }

@@ -19,6 +19,8 @@
 package org.ethereum.rpc.dto;
 
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
@@ -45,7 +47,7 @@ public class TransactionResultDTO {
     public String input;
 
     public TransactionResultDTO (Block b, Integer index, Transaction tx) {
-        hash =  TypeConverter.toJsonHex(tx.getHash());
+        hash = tx.getHash().toJsonString();
 
         if (Arrays.equals(tx.getNonce(), ByteUtil.EMPTY_BYTE_ARRAY)) {
             nonce = "0";
@@ -56,8 +58,8 @@ public class TransactionResultDTO {
         blockHash = b != null ? b.getHashJsonString() : null;
         blockNumber = b != null ? TypeConverter.toJsonHex(b.getNumber()) : null;
         transactionIndex = index != null ? TypeConverter.toJsonHex(index) : null;
-        from= TypeConverter.toJsonHex(tx.getSender().getBytes());
-        to = TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes());
+        from = addressToJsonHex(tx.getSender());
+        to = addressToJsonHex(tx.getReceiveAddress());
         gas = TypeConverter.toJsonHex(tx.getGasLimit()); // Todo: unclear if it's the gas limit or gas consumed what is asked
 
         gasPrice = TypeConverter.toJsonHex(tx.getGasPrice().getBytes());
@@ -69,6 +71,16 @@ public class TransactionResultDTO {
         }
 
         input = TypeConverter.toJsonHex(tx.getData());
+    }
+
+    private String addressToJsonHex(RskAddress address) {
+        // Web3.js requires the address to be valid (20 bytes),
+        // so we have to serialize the Remasc sender as a valid address.
+        if (address.equals(RemascTransaction.REMASC_ADDRESS)) {
+            return TypeConverter.toJsonHex(RskAddress.nullAddress().getBytes());
+        }
+
+        return TypeConverter.toJsonHex(address.getBytes());
     }
 
 }

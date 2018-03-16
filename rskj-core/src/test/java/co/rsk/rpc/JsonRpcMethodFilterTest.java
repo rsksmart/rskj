@@ -18,49 +18,55 @@
 
 package co.rsk.rpc;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.googlecode.jsonrpc4j.RequestInterceptor;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
- * Created by ajlopez on 20/04/2017.
- */
-public class JsonRpcFilterServerTest {
+public class JsonRpcMethodFilterTest {
+
+    private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
+
     @Test
-    public void checkModuleNames() {
-        JsonRpcFilterServer server = new JsonRpcFilterServer(null, null, getModules());
+    public void checkModuleNames() throws Throwable {
+        RequestInterceptor jsonRpcMethodFilter = new JsonRpcMethodFilter(getModules());
+
+        jsonRpcMethodFilter.interceptRequest(getMethodInvocation("evm_snapshot"));
+        jsonRpcMethodFilter.interceptRequest(getMethodInvocation("evm_revert"));
 
         try {
-            server.checkMethod("evm_snapshot");
-            server.checkMethod("evm_revert");
-        }
-        catch (IOException ex) {
-            Assert.fail();
-        }
-
-        try {
-            server.checkMethod("evm_reset");
-            Assert.fail();
-        }
-        catch (IOException ex) {
+            jsonRpcMethodFilter.interceptRequest(getMethodInvocation("evm_reset"));
+            Assert.fail("evm_reset is enabled AND disabled, disabled take precedence");
+        } catch (IOException ex) {
+            // expected fail
         }
 
         try {
-            server.checkMethod("evm_increaseTime");
-            Assert.fail();
-        }
-        catch (IOException ex) {
+            jsonRpcMethodFilter.interceptRequest(getMethodInvocation("evm_increaseTime"));
+            Assert.fail("evm_increaseTime is disabled");
+        } catch (IOException ex) {
+            // expected fail
         }
 
         try {
-            server.checkMethod("eth_getBlock");
-            Assert.fail();
+            jsonRpcMethodFilter.interceptRequest(getMethodInvocation("eth_getBlock"));
+            Assert.fail("The whole eth namespace is disabled");
+        } catch (IOException ex) {
+            // expected fail
         }
-        catch (IOException ex) {
-        }
+    }
+
+    private JsonNode getMethodInvocation(String methodName) {
+        Map<String, JsonNode> errorProperties = new HashMap<>();
+        errorProperties.put("method", JSON_NODE_FACTORY.textNode(methodName));
+        return JSON_NODE_FACTORY.objectNode().setAll(errorProperties);
     }
 
     private static List<ModuleDescription> getModules() {

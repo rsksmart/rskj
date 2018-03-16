@@ -21,9 +21,10 @@ package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
-import co.rsk.core.RskAddress;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
@@ -44,8 +45,8 @@ import org.spongycastle.util.encoders.Hex;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -246,7 +247,7 @@ public class Transaction {
         this.gasPrice = RLP.parseCoin(this.gasPriceRaw);
         this.gasLimit = transaction.get(2).getRLPData();
         this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
-        this.valueRaw = nullToZeroArray(transaction.get(4).getRLPData());
+        this.valueRaw = transaction.get(4).getRLPData();
         this.value = RLP.parseCoin(this.valueRaw);
         this.data = transaction.get(5).getRLPData();
         // only parse signature in case tx is signed
@@ -264,29 +265,29 @@ public class Transaction {
             logger.trace("RLP encoded tx is not signed!");
         }
         this.parsed = true;
-        this.hash = getHash();
+        this.hash = getHash().getBytes();
     }
 
     public boolean isParsed() {
         return parsed;
     }
 
-    public byte[] getHash() {
+    public Keccak256 getHash() {
         if (!parsed) {
             rlpParse();
         }
 
         byte[] plainMsg = this.getEncoded();
-        return HashUtil.sha3(plainMsg);
+        return new Keccak256(HashUtil.keccak256(plainMsg));
     }
 
-    public byte[] getRawHash() {
+    public Keccak256 getRawHash() {
         if (!parsed) {
             rlpParse();
         }
 
         byte[] plainMsg = this.getEncodedRaw();
-        return HashUtil.sha3(plainMsg);
+        return new Keccak256(HashUtil.keccak256(plainMsg));
     }
 
     public byte[] getNonce() {
@@ -391,7 +392,7 @@ public class Transaction {
     }
 
     public void sign(byte[] privKeyBytes) throws MissingPrivateKeyException {
-        byte[] rawHash = this.getRawHash();
+        byte[] rawHash = this.getRawHash().getBytes();
         ECKey key = ECKey.fromPrivate(privKeyBytes).decompress();
         this.signature = key.sign(rawHash);
         this.rlpEncoded = null;
@@ -419,7 +420,7 @@ public class Transaction {
      */
 
     public ECKey getKey() {
-        byte[] rawHash = getRawHash();
+        byte[] rawHash = getRawHash().getBytes();
         //We clear the 4th bit, the compress bit, in case a signature is using compress in true
         return ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, rawHash, true);
     }
@@ -430,7 +431,7 @@ public class Transaction {
         }
 
         try {
-            ECKey key = ECKey.signatureToKey(getRawHash(), getSignature().toBase64());
+            ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature().toBase64());
             sender = new RskAddress(key.getAddress());
         } catch (SignatureException e) {
             logger.error(e.getMessage(), e);
@@ -554,7 +555,8 @@ public class Transaction {
         this.rlpEncoded = RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
                 toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
 
-        this.hash = this.getHash();
+        Keccak256 hash = this.getHash();
+        this.hash = hash == null ? null : hash.getBytes();
 
         return rlpEncoded;
     }
@@ -569,7 +571,7 @@ public class Transaction {
 
     @Override
     public int hashCode() {
-        return java.util.Arrays.hashCode(this.getHash());
+        return this.getHash().hashCode();
     }
 
     @Override
@@ -581,7 +583,7 @@ public class Transaction {
 
         Transaction tx = (Transaction) obj;
 
-        return Arrays.equals(this.getHash(), tx.getHash());
+        return Objects.equals(this.getHash(), tx.getHash());
     }
 
     public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit){

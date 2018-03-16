@@ -28,7 +28,6 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +45,7 @@ public class TxBuilderEx {
     private final Ethereum ethereum;
     private final Repository repository;
     private final BlockProcessor nodeBlockProcessor;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
 
     private final SecureRandom random = new SecureRandom();
 
@@ -56,16 +55,16 @@ public class TxBuilderEx {
                        Ethereum ethereum,
                        Repository repository,
                        BlockProcessor nodeBlockProcessor,
-                       PendingState pendingState) {
+                       TransactionPool transactionPool) {
         this.config = config;
         this.ethereum = ethereum;
         this.repository = repository;
         this.nodeBlockProcessor = nodeBlockProcessor;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
     }
 
     public void simulateTxs() {
-        final byte[] privateKeyBytes = HashUtil.sha3(config.simulateTxsExAccountSeed().getBytes(StandardCharsets.UTF_8));
+        final byte[] privateKeyBytes = HashUtil.keccak256(config.simulateTxsExAccountSeed().getBytes(StandardCharsets.UTF_8));
         final ECKey key = ECKey.fromPrivate(privateKeyBytes);
         RskAddress addr = new RskAddress(key.getAddress());
 
@@ -129,7 +128,7 @@ public class TxBuilderEx {
                         SecureRandom r = new SecureRandom();
                         Thread.sleep(10000 + (long)r.nextInt(20000));
 
-                        Repository prepository = pendingState.getRepository();
+                        Repository prepository = transactionPool.getRepository();
                         AccountState accountState;
 
                         accountState = prepository.getAccountState(targetAcc.getAddress());
@@ -162,7 +161,7 @@ public class TxBuilderEx {
     private void sendTransaction(Transaction tx) {
         //Adds created transaction to the local node's memory pool
         ethereum.submitTransaction(tx);
-        logger.info("Added pending tx: {}", Hex.decode(tx.getHash()));
+        logger.info("Added pending tx={}", tx.getHash());
     }
 
     private Transaction createNewTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {

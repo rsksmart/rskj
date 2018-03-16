@@ -55,6 +55,7 @@ public class BlockChainBuilder {
     private Repository repository;
     private BlockStore blockStore;
     private Genesis genesis;
+    private ReceiptStore receiptStore;
 
     public BlockChainBuilder setAdminInfo(AdminInfo adminInfo) {
         this.adminInfo = adminInfo;
@@ -86,6 +87,11 @@ public class BlockChainBuilder {
         return this;
     }
 
+    public BlockChainBuilder setReceiptStore(ReceiptStore receiptStore) {
+        this.receiptStore = receiptStore;
+        return this;
+    }
+
     public BlockChainImpl build() {
         return build(false);
     }
@@ -98,9 +104,11 @@ public class BlockChainBuilder {
             blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         }
 
-        KeyValueDataSource ds = new HashMapDB();
-        ds.init();
-        ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
+        if (receiptStore == null) {
+            KeyValueDataSource ds = new HashMapDB();
+            ds.init();
+            receiptStore = new ReceiptStoreImpl(ds);
+        }
 
         if (txinfos != null && !txinfos.isEmpty())
             for (TransactionInfo txinfo : txinfos)
@@ -125,13 +133,13 @@ public class BlockChainBuilder {
             blockChain.setNoValidation(true);
         }
 
-        PendingStateImpl pendingState;
+        TransactionPoolImpl transactionPool;
         if (withoutCleaner) {
-            pendingState = new PendingStateImplNoCleaner(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            transactionPool = new TransactionPoolImplNoCleaner(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         } else {
-            pendingState = new PendingStateImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            transactionPool = new TransactionPoolImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         }
-        blockChain.setPendingState(pendingState);
+        blockChain.setTransactionPool(transactionPool);
 
         if (this.genesis != null) {
             for (RskAddress addr : this.genesis.getPremine().keySet()) {
@@ -151,7 +159,7 @@ public class BlockChainBuilder {
         }
 
         if (this.blocks != null) {
-            BlockExecutor blockExecutor = new BlockExecutor(config, repository, blockChain, blockStore, listener);
+            BlockExecutor blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
 
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock());
@@ -162,7 +170,7 @@ public class BlockChainBuilder {
         return blockChain;
     }
 
-    public static Blockchain ofSizeWithNoPendingStateCleaner(int size) {
+    public static Blockchain ofSizeWithNoTransactionPoolCleaner(int size) {
         return ofSize(size, false, true);
     }
 

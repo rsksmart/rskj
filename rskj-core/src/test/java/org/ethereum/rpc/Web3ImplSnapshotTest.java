@@ -26,6 +26,8 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.*;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
+import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -91,7 +93,7 @@ public class Web3ImplSnapshotTest {
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
-        Assert.assertArrayEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
+        Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
     }
 
@@ -113,7 +115,7 @@ public class Web3ImplSnapshotTest {
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
-        Assert.assertArrayEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
+        Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
     }
 
@@ -140,13 +142,26 @@ public class Web3ImplSnapshotTest {
     }
 
     @Test
-    public void increaseTime() {
+    public void increaseTimeUsingHexadecimalValue() {
         World world = new World();
         SimpleEthereum ethereum = new SimpleEthereum();
         MinerServer minerServer = getMinerServerForTest(world, ethereum);
         Web3Impl web3 = createWeb3(world, ethereum, minerServer);
 
         String result = web3.evm_increaseTime("0x10");
+
+        Assert.assertEquals("0x10", result);
+        Assert.assertEquals(16, minerServer.increaseTime(0));
+    }
+
+    @Test
+    public void increaseTimeUsingDecimalValue() {
+        World world = new World();
+        SimpleEthereum ethereum = new SimpleEthereum();
+        MinerServer minerServer = getMinerServerForTest(world, ethereum);
+        Web3Impl web3 = createWeb3(world, ethereum, minerServer);
+
+        String result = web3.evm_increaseTime("16");
 
         Assert.assertEquals("0x10", result);
         Assert.assertEquals(16, minerServer.increaseTime(0));
@@ -166,14 +181,48 @@ public class Web3ImplSnapshotTest {
         Assert.assertEquals(32, minerServer.increaseTime(0));
     }
 
+    @Test
+    public void increaseTimeTwiceUsingDecimalValues() {
+        World world = new World();
+        SimpleEthereum ethereum = new SimpleEthereum();
+        MinerServer minerServer = getMinerServerForTest(world, ethereum);
+        Web3Impl web3 = createWeb3(world, ethereum, minerServer);
+
+        web3.evm_increaseTime("16");
+        String result = web3.evm_increaseTime("16");
+
+        Assert.assertEquals("0x20", result);
+        Assert.assertEquals(32, minerServer.increaseTime(0));
+    }
+
     private static Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
         MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config);
         PersonalModule pm = new PersonalModuleWalletDisabled();
+        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
 
         ethereum.repository = world.getRepository();
         ethereum.blockchain = world.getBlockChain();
 
-        return new Web3Impl(ethereum, world.getBlockChain(), null, world.getBlockChain().getBlockStore(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null, null, null, null);
+        return new Web3Impl(
+                ethereum,
+                world.getBlockChain(),
+                null,
+                world.getBlockChain().getBlockStore(),
+                null,
+                Web3Mocks.getMockProperties(),
+                minerClient,
+                minerServer,
+                pm,
+                null,
+                tpm,
+                Web3Mocks.getMockChannelManager(),
+                ethereum.repository,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 
     private static Web3Impl createWeb3(World world) {
@@ -183,9 +232,27 @@ public class Web3ImplSnapshotTest {
 
     static MinerServer getMinerServerForTest(World world, SimpleEthereum ethereum) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
-        return new MinerServerImpl(config, ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(),
-                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor(), new DifficultyCalculator(config), new GasLimitCalculator(config),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
+        return new MinerServerImpl(
+                config,
+                ethereum,
+                world.getBlockChain(),
+                world.getBlockProcessor(),
+                difficultyCalculator,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        world.getBlockChain().getRepository(),
+                        world.getBlockChain().getBlockStore(),
+                        world.getBlockChain().getTransactionPool(),
+                        difficultyCalculator,
+                        new GasLimitCalculator(config),
+                        rule,
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
+        );
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {

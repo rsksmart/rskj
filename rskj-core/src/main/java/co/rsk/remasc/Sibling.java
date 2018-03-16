@@ -51,7 +51,7 @@ public class Sibling {
 
 
     public Sibling(BlockHeader blockHeader, RskAddress includedBlockCoinbase, long includedHeight){
-        this(blockHeader.getHash(),
+        this(blockHeader.getHash().getBytes(),
                 blockHeader.getCoinbase(),
                 includedBlockCoinbase,
                 blockHeader.getPaidFees(),

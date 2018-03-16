@@ -16,18 +16,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.rpc;
+package co.rsk.rpc.netty;
 
-import co.rsk.rpc.JsonRpcFilterServer;
+import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.ModuleDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.googlecode.jsonrpc4j.AnnotationsErrorResolver;
-import com.googlecode.jsonrpc4j.DefaultErrorResolver;
-import com.googlecode.jsonrpc4j.DefaultHttpStatusCodeProvider;
-import com.googlecode.jsonrpc4j.MultipleErrorResolver;
+import com.googlecode.jsonrpc4j.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
@@ -37,6 +34,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.RskErrorResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,10 +51,11 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<FullHt
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
-    private final JsonRpcFilterServer jsonRpcServer;
+    private final JsonRpcBasicServer jsonRpcServer;
 
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules) {
-        this.jsonRpcServer = new JsonRpcFilterServer(service, service.getClass(), filteredModules);
+        this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
+        jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
     }
 

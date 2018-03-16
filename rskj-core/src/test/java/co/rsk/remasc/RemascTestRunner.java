@@ -24,7 +24,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.TestUtils;
@@ -32,7 +32,6 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
-import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -43,7 +42,7 @@ import java.util.stream.Collectors;
  * Created by martin.medina on 1/5/17.
  */
 class RemascTestRunner {
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private ECKey txSigningKey;
 
@@ -107,7 +106,7 @@ class RemascTestRunner {
         this.blockchain.tryToConnect(this.genesis);
 
         BlockExecutor blockExecutor = new BlockExecutor(new RskSystemProperties(), blockchain.getRepository(),
-                blockchain, blockchain.getBlockStore(), null);
+                null, blockchain.getBlockStore(), null);
 
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;
@@ -170,13 +169,13 @@ class RemascTestRunner {
         return accountState == null ? null : repository.getAccountState(addr).getBalance();
     }
 
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, RskAddress coinbase,
+    public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, long minerFee, long txNonce, long txValue,
                                     ECKey txSigningKey) {
         return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, minerFee, txNonce,
                 txValue, txSigningKey, null);
     }
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, RskAddress coinbase,
+    public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, long minerFee, long txNonce, long txValue,
                                     ECKey txSigningKey, Long difficulty) {
         if (minerFee == 0) throw new IllegalArgumentException();
@@ -194,7 +193,7 @@ class RemascTestRunner {
         return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, difficulty, tx);
     }
 
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, RskAddress coinbase,
+    public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, Long difficulty, Transaction... txsToInlcude) {
         List<Transaction> txs = new ArrayList<>();
         if (txsToInlcude != null) {
@@ -221,7 +220,7 @@ class RemascTestRunner {
         }
 
         Block block =  new Block(
-                parentBlock.getHash(),          // parent hash
+                parentBlock.getHash().getBytes(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
                 coinbase.getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
@@ -248,8 +247,8 @@ class RemascTestRunner {
                 if (harcodedHashHeader==null) {
                     harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded(), false) {
                         @Override
-                        public byte[] getHash() {
-                            return blockHash.getBytes();
+                        public Keccak256 getHash() {
+                            return blockHash;
                         }
                     };
                 }
@@ -257,8 +256,8 @@ class RemascTestRunner {
             }
 
             @Override
-            public byte[] getHash() {
-                return blockHash.getBytes();
+            public Keccak256 getHash() {
+                return blockHash;
             }
 
             @Override

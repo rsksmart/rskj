@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
@@ -29,10 +30,9 @@ import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +59,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
     private final ChannelManager channelManager;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
     private final PeerScoringManager peerScoringManager;
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
@@ -69,7 +69,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private TransactionNodeInformation transactionNodeInformation;
 
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
-    private Set<ByteArrayWrapper> receivedMessages = Collections.synchronizedSet(new HashSet<ByteArrayWrapper>());
+    private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<Keccak256>());
     private long cleanMsgTimestamp = 0;
 
     private volatile boolean stopped;
@@ -81,7 +81,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                               @Nonnull final BlockProcessor blockProcessor,
                               final SyncProcessor syncProcessor,
                               @Nullable final ChannelManager channelManager,
-                              @Nullable final PendingState pendingState,
+                              @Nullable final TransactionPool transactionPool,
                               final TxHandler txHandler,
                               @Nullable final PeerScoringManager peerScoringManager,
                               @Nonnull BlockValidationRule blockValidationRule) {
@@ -89,7 +89,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
         this.blockValidationRule = blockValidationRule;
         this.transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
@@ -163,7 +163,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void tryAddMessage(MessageChannel sender, Message message) {
-        ByteArrayWrapper encodedMessage = new ByteArrayWrapper(HashUtil.sha3(message.getEncoded()));
+        Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         if (!receivedMessages.contains(encodedMessage)) {
             if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
                 if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
@@ -228,8 +228,11 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private void updateTimedEvents() {
         Long now = System.currentTimeMillis();
         Duration timeTick = Duration.ofMillis(now - lastTickSent);
-        this.syncProcessor.onTimePassed(timeTick);
+        // TODO(lsebrie): handle timeouts properly
         lastTickSent = now;
+        if (queue.isEmpty()){
+            this.syncProcessor.onTimePassed(timeTick);
+        }
 
         //Refresh status to peers every 10 seconds or so
         Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
@@ -244,7 +247,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Block block = blockChainStatus.getBestBlock();
         BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
-        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
+        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), totalDifficulty);
         logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
         this.channelManager.broadcastStatus(status);
     }
@@ -282,6 +285,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
      */
     private void processBlockMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockMessage message) {
         final Block block = message.getBlock();
+
         logger.trace("Process block {} {}", block.getNumber(), block.getShortHash());
 
         if (block.isGenesis()) {
@@ -289,15 +293,22 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
         }
 
+        long blockNumber = block.getNumber();
+
+        if (this.blockProcessor.isAdvancedBlock(blockNumber)) {
+            logger.trace("Too advanced block {} {}", blockNumber, block.getShortHash());
+            return;
+        }
+
         Metrics.processBlockMessage("start", block, sender.getPeerNodeID());
 
         if (!isValidBlock(block)) {
-            logger.trace("Invalid block {} {}", block.getNumber(), block.getShortHash());
+            logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
             recordEvent(sender, EventType.INVALID_BLOCK);
             return;
         }
 
-        boolean wasOrphan = !this.blockProcessor.hasBlockInSomeBlockchain(block.getHash());
+        boolean wasOrphan = !this.blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes());
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
 
         Metrics.processBlockMessage("blockProcessed", block, sender.getPeerNodeID());
@@ -317,14 +328,14 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void relayBlock(@Nonnull MessageChannel sender, Block block) {
         final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
-        final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(block.getHash());
+        final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(block.getHash().getBytes());
         final Set<NodeID> newNodes = this.syncProcessor.getKnownPeersNodeIDs().stream()
                 .filter(p -> !nodesWithBlock.contains(p))
                 .collect(Collectors.toSet());
 
 
         List<BlockIdentifier> identifiers = new ArrayList<>();
-        identifiers.add(new BlockIdentifier(block.getHash(), block.getNumber()));
+        identifiers.add(new BlockIdentifier(block.getHash().getBytes(), block.getNumber()));
         channelManager.broadcastBlockHash(identifiers, newNodes);
 
         Metrics.processBlockMessage("blockRelayed", block, sender.getPeerNodeID());
@@ -365,9 +376,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void processBlockHashRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHashRequestMessage message) {
-        final long requestId = message.getId();
-        final long height = message.getHeight();
-        this.blockProcessor.processBlockHashRequest(sender, requestId, height);
+        this.blockProcessor.processBlockHashRequest(sender, message.getId(), message.getHeight());
     }
 
     private void processBlockHashResponseMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHashResponseMessage message) {
@@ -409,6 +418,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Metrics.processTxsMessage("start", messageTxs, sender.getPeerNodeID());
 
         List<Transaction> txs = new LinkedList();
+
         for (Transaction tx : messageTxs) {
             if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
                 recordEvent(sender, EventType.INVALID_TRANSACTION);
@@ -423,9 +433,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Metrics.processTxsMessage("txsValidated", acceptedTxs, sender.getPeerNodeID());
 
         // TODO(mmarquez): Add all this logic to the TxHandler
-        acceptedTxs = pendingState.addWireTransactions(acceptedTxs);
+        acceptedTxs = transactionPool.addTransactions(acceptedTxs);
 
-        Metrics.processTxsMessage("validTxsAddedToPendingState", acceptedTxs, sender.getPeerNodeID());
+        Metrics.processTxsMessage("validTxsAddedToTransactionPool", acceptedTxs, sender.getPeerNodeID());
         /* Relay all transactions to peers that don't have them */
         relayTransactions(sender, acceptedTxs);
         Metrics.processTxsMessage("validTxsRelayed", acceptedTxs, sender.getPeerNodeID());
@@ -437,9 +447,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void relayTransactions(@Nonnull MessageChannel sender, List<Transaction> acceptedTxs) {
         for (Transaction tx : acceptedTxs) {
-            final ByteArrayWrapper txHash = new ByteArrayWrapper(tx.getHash());
+            Keccak256 txHash = tx.getHash();
             transactionNodeInformation.addTransactionToNode(txHash, sender.getPeerNodeID());
-            final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(tx.getHash()));
+            final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(txHash));
             final Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);
 
             newNodes.forEach(nodeID -> transactionNodeInformation.addTransactionToNode(txHash, nodeID));

@@ -78,8 +78,8 @@ public class MinerHelper {
         String stateHash1 = Hex.toHexString(blockchain.getBestBlock().getStateRoot());
         String stateHash2 = Hex.toHexString(repository.getRoot());
         if (stateHash1.compareTo(stateHash2) != 0) {
-            logger.error("Strange state in block {} {}", block.getNumber(), Hex.toHexString(block.getHash()));
-            panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), Hex.toHexString(block.getHash())));
+            logger.error("Strange state in block {} {}", block.getNumber(), block.getHash());
+            panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), block.getHash()));
         }
 
         int txindex = 0;
@@ -87,7 +87,7 @@ public class MinerHelper {
         for (Transaction tx : block.getTransactionsList()) {
 
             TransactionExecutor executor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(),
-                    track, null, blockchain.getReceiptStore(),
+                    track, null, null,
                     null, block, new EthereumListenerAdapter(), totalGasUsed);
 
             executor.init();

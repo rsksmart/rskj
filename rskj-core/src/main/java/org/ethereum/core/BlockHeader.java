@@ -21,6 +21,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
@@ -97,7 +98,12 @@ public class BlockHeader {
     private byte[] bitcoinMergedMiningMerkleProof;
     /* The bitcoin protobuf serialized coinbase tx for merged mining */
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
-    /*The mgp for a tx to be included in the block*/
+    /**
+     * The mgp for a tx to be included in the block.
+     * Note that minimumGasPriceRaw is saved to perform {@link #getEncoded()},
+     * but for other uses you should only rely on minimumGasPrice.
+     */
+    private byte[] minimumGasPriceRaw;
     private Coin minimumGasPrice;
     private int uncleCount;
 
@@ -145,7 +151,8 @@ public class BlockHeader {
         this.extraData = rlpHeader.get(12).getRLPData();
 
         this.paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
-        this.minimumGasPrice = RLP.parseCoin(rlpHeader.get(14).getRLPData());
+        this.minimumGasPriceRaw = rlpHeader.get(14).getRLPData();
+        this.minimumGasPrice = RLP.parseCoin(this.minimumGasPriceRaw);
 
         int r = 15;
 
@@ -194,7 +201,8 @@ public class BlockHeader {
         this.timestamp = timestamp;
         this.extraData = extraData;
         this.stateRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
-        this.minimumGasPrice = minimumGasPrice == null ? null : new Coin(minimumGasPrice);
+        this.minimumGasPriceRaw = minimumGasPrice;
+        this.minimumGasPrice = minimumGasPriceRaw == null ? null : new Coin(minimumGasPriceRaw);
         this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.uncleCount = uncleCount;
         this.paidFees = Coin.ZERO;
@@ -220,8 +228,8 @@ public class BlockHeader {
         return this.getNumber() == Genesis.NUMBER;
     }
 
-    public byte[] getParentHash() {
-        return parentHash;
+    public Keccak256 getParentHash() {
+        return new Keccak256(parentHash);
     }
 
     public int getUncleCount() {
@@ -390,8 +398,8 @@ public class BlockHeader {
         this.extraData = extraData;
     }
 
-    public byte[] getHash() {
-        return HashUtil.sha3(getEncoded());
+    public Keccak256 getHash() {
+        return new Keccak256(HashUtil.keccak256(getEncoded()));
     }
 
     public byte[] getEncoded() {
@@ -434,7 +442,7 @@ public class BlockHeader {
         byte[] timestamp = RLP.encodeBigInteger(BigInteger.valueOf(this.timestamp));
         byte[] extraData = RLP.encodeElement(this.extraData);
         byte[] paidFees = RLP.encodeCoin(this.paidFees);
-        byte[] mgp = RLP.encodeCoin(this.minimumGasPrice);
+        byte[] mgp = RLP.encodeElement(this.minimumGasPriceRaw);
         List<byte[]> fieldToEncodeList = Lists.newArrayList(parentHash, unclesHash, coinbase,
                 stateRoot, txTrieRoot, receiptTrieRoot, logsBloom, difficulty, number,
                 gasLimit, gasUsed, timestamp, extraData, paidFees, mgp);
@@ -526,7 +534,7 @@ public class BlockHeader {
 
     // TODO added to comply with SerializableObject
 
-    public byte[] getRawHash() {
+    public Keccak256 getRawHash() {
         return getHash();
     }
     // TODO added to comply with SerializableObject
@@ -578,15 +586,15 @@ public class BlockHeader {
     }
 
     public byte[] getHashForMergedMining() {
-        return HashUtil.sha3(getEncoded(false));
+        return HashUtil.keccak256(getEncoded(false));
     }
 
     public String getShortHash() {
-        return HashUtil.shortHash(getHash());
+        return HashUtil.shortHash(getHash().getBytes());
     }
 
     public String getParentShortHash() {
-        return HashUtil.shortHash(getParentHash());
+        return HashUtil.shortHash(getParentHash().getBytes());
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {

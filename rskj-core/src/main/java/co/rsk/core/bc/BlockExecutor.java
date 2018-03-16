@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -48,16 +49,22 @@ public class BlockExecutor {
 
     private final RskSystemProperties config;
     private final Repository repository;
-    private final Blockchain blockChain;
+    private final ReceiptStore receiptStore;
     private final BlockStore blockStore;
     private final EthereumListener listener;
 
     private final ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
 
-    public BlockExecutor(RskSystemProperties config, Repository repository, Blockchain blockChain, BlockStore blockStore, EthereumListener listener) {
+    public BlockExecutor(
+        RskSystemProperties config,
+        Repository repository,
+        ReceiptStore receiptStore,
+        BlockStore blockStore,
+        EthereumListener listener) {
+
         this.config = config;
         this.repository = repository;
-        this.blockChain = blockChain;
+        this.receiptStore = receiptStore;
         this.blockStore = blockStore;
         this.listener = listener;
     }
@@ -88,7 +95,7 @@ public class BlockExecutor {
     private void fill(Block block, BlockResult result) {
         block.setTransactionsList(result.getExecutedTransactions());
         BlockHeader header = block.getHeader();
-        header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash());
+        header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash().getBytes());
         header.setReceiptsRoot(result.getReceiptsRoot());
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
@@ -204,16 +211,16 @@ public class BlockExecutor {
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
-            TransactionExecutor txExecutor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(), track, blockStore, blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
+            TransactionExecutor txExecutor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(), track, blockStore, receiptStore, programInvokeFactory, block, listener, totalGasUsed);
 
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {
                 if (discardInvalidTxs) {
-                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()));
+                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
                     continue;
                 } else {
                     logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                            block.getNumber(), Hex.toHexString(tx.getHash()));
+                                block.getNumber(), tx.getHash());
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             }
@@ -246,8 +253,8 @@ public class BlockExecutor {
             receipt.setLogInfoList(txExecutor.getVMLogs());
             receipt.setStatus(txExecutor.getReceipt().getStatus());
 
-            logger.trace("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
-                    Hex.toHexString(lastStateRootHash));
+            logger.trace("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), tx.getHash(),
+                         Hex.toHexString(lastStateRootHash));
 
             logger.trace("tx[{}].receipt", i);
 

@@ -18,6 +18,7 @@
 
 package co.rsk.mine;
 
+import co.rsk.bitcoinj.core.*;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
@@ -25,22 +26,15 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.FamilyUtils;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.DifficultyUtils;
-import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
@@ -51,7 +45,6 @@ import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.util.Arrays;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
@@ -64,12 +57,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
-import static org.ethereum.util.BIUtil.toBI;
+import java.util.stream.Collectors;
 
 /**
  * The MinerServer provides support to components that perform the actual mining.
  * It builds blocks to mine and publishes blocks once a valid nonce was found by the miner.
+ *
  * @author Oscar Guindzberg
  */
 
@@ -83,12 +76,9 @@ public class MinerServerImpl implements MinerServer {
     private static final int CACHE_SIZE = 20;
 
     private final Ethereum ethereum;
-    private final BlockStore blockStore;
     private final Blockchain blockchain;
-    private final PendingState pendingState;
-    private final BlockExecutor executor;
-    private final GasLimitCalculator gasLimitCalculator;
     private final ProofOfWorkRule powRule;
+    private final BlockToMineBuilder builder;
 
     private boolean isFallbackMining;
     private int fallbackBlocksGenerated;
@@ -102,12 +92,12 @@ public class MinerServerImpl implements MinerServer {
     private byte[] extraData;
 
     @GuardedBy("lock")
-    private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
+    private LinkedHashMap<Keccak256, Block> blocksWaitingforPoW;
 
     @GuardedBy("lock")
-    private Sha3Hash latestblockHashWaitingforPoW;
+    private Keccak256 latestblockHashWaitingforPoW;
     @GuardedBy("lock")
-    private Sha3Hash latestParentHash;
+    private Keccak256 latestParentHash;
     @GuardedBy("lock")
     private Block latestBlock;
     @GuardedBy("lock")
@@ -117,50 +107,33 @@ public class MinerServerImpl implements MinerServer {
     private final Object lock = new Object();
 
     private final RskAddress coinbaseAddress;
-
-    private final BigInteger minerMinGasPriceTarget;
     private final BigDecimal minFeesNotifyInDollars;
     private final BigDecimal gasUnitInDollars;
-
-    private MiningConfig miningConfig;
-
-    private BlockValidationRule validationRules;
 
     private final BlockProcessor nodeBlockProcessor;
     private final DifficultyCalculator difficultyCalculator;
 
-    private long timeAdjustment;
-    private long minimumAcceptableTime;
     private boolean autoSwitchBetweenNormalAndFallbackMining;
     private boolean fallbackMiningScheduled;
     private final RskSystemProperties config;
 
     @Autowired
-    public MinerServerImpl(RskSystemProperties config,
-                           Ethereum ethereum,
-                           Blockchain blockchain,
-                           BlockStore blockStore,
-                           PendingState pendingState,
-                           Repository repository,
-                           MiningConfig miningConfig,
-                           @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
-                           BlockProcessor nodeBlockProcessor,
-                           DifficultyCalculator difficultyCalculator,
-                           GasLimitCalculator gasLimitCalculator,
-                           ProofOfWorkRule powRule) {
+    public MinerServerImpl(
+            RskSystemProperties config,
+            Ethereum ethereum,
+            Blockchain blockchain,
+            BlockProcessor nodeBlockProcessor,
+            DifficultyCalculator difficultyCalculator,
+            ProofOfWorkRule powRule,
+            BlockToMineBuilder builder,
+            MiningConfig miningConfig) {
         this.config = config;
         this.ethereum = ethereum;
         this.blockchain = blockchain;
-        this.blockStore = blockStore;
-        this.pendingState = pendingState;
-        this.miningConfig = miningConfig;
-        this.validationRules = validationRules;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.difficultyCalculator = difficultyCalculator;
-        this.gasLimitCalculator = gasLimitCalculator;
         this.powRule = powRule;
-
-        executor = new BlockExecutor(config, repository, blockchain, blockStore, null);
+        this.builder = builder;
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
 
@@ -169,7 +142,6 @@ public class MinerServerImpl implements MinerServer {
         coinbaseAddress = miningConfig.getCoinbaseAddress();
         minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
         gasUnitInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
-        minerMinGasPriceTarget = toBI(miningConfig.getMinGasPriceTarget());
 
         // One more second to force continuous reduction in difficulty
         // TODO(mc) move to MiningConstants
@@ -178,7 +150,7 @@ public class MinerServerImpl implements MinerServer {
         secsBetweenFallbackMinedBlocks =
                 config.getAverageFallbackMiningTime();
         // default
-        if (secsBetweenFallbackMinedBlocks==0) {
+        if (secsBetweenFallbackMinedBlocks == 0) {
             secsBetweenFallbackMinedBlocks = (config.getBlockchainConfig().getCommonConstants().getDurationLimit());
         }
         autoSwitchBetweenNormalAndFallbackMining = !config.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BlockDifficulty.ZERO);
@@ -189,11 +161,10 @@ public class MinerServerImpl implements MinerServer {
         secsBetweenFallbackMinedBlocks = m;
     }
 
-    private LinkedHashMap<Sha3Hash, Block> createNewBlocksWaitingList() {
-        return new LinkedHashMap<Sha3Hash, Block>(CACHE_SIZE)
-        {
+    private LinkedHashMap<Keccak256, Block> createNewBlocksWaitingList() {
+        return new LinkedHashMap<Keccak256, Block>(CACHE_SIZE) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<Sha3Hash, Block> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<Keccak256, Block> eldest) {
                 return size() > CACHE_SIZE;
             }
         };
@@ -216,15 +187,14 @@ public class MinerServerImpl implements MinerServer {
                     fallbackMiningTimer = new Timer("Private mining timer");
                 }
                 if (!fallbackMiningScheduled) {
-                    fallbackMiningTimer.schedule(new FallbackMiningTask(), 1000,1000 );
+                    fallbackMiningTimer.schedule(new FallbackMiningTask(), 1000, 1000);
                     fallbackMiningScheduled = true;
                 }
                 // Because the Refresh occurs only once every minute,
                 // we need to create at least one first block to mine
                 Block bestBlock = blockchain.getBestBlock();
                 buildBlockToMine(bestBlock, false);
-            }
-            else {
+            } else {
                 if (fallbackMiningTimer != null) {
                     fallbackMiningTimer.cancel();
                     fallbackMiningTimer = null;
@@ -258,7 +228,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @VisibleForTesting
-    public Map<Sha3Hash, Block> getBlocksWaitingforPoW() {
+    public Map<Keccak256, Block> getBlocksWaitingforPoW() {
         return blocksWaitingforPoW;
     }
 
@@ -349,7 +319,7 @@ public class MinerServerImpl implements MinerServer {
         }
 
         if (!isEvenBlockNumber && privKey1 == null) {
-           return false;
+            return false;
         }
 
         if (isEvenBlockNumber && privKey0 == null) {
@@ -370,7 +340,7 @@ public class MinerServerImpl implements MinerServer {
         BlockHeader newHeader = newBlock.getHeader();
 
         newHeader.setTimestamp(this.getCurrentTimeInSeconds());
-        Block parentBlock =blockchain.getBlockByHash(newHeader.getParentHash());
+        Block parentBlock = blockchain.getBlockByHash(newHeader.getParentHash().getBytes());
         newHeader.setDifficulty(
                 difficultyCalculator.calcDifficulty(newHeader, parentBlock.getHeader()));
 
@@ -411,18 +381,55 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
-    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+    public SubmitBlockResult submitBitcoinBlockPartialMerkle(
+            String blockHashForMergedMining,
+            BtcBlock blockWithHeaderOnly,
+            BtcTransaction coinbase,
+            List<String> merkleHashes,
+            int blockTxnCount) {
+        logger.debug("Received merkle solution with hash {} for merged mining", blockHashForMergedMining);
+
+        PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranchForCoinbase(blockWithHeaderOnly.getParams(), merkleHashes, blockTxnCount);
+
+        return processSolution(blockHashForMergedMining, blockWithHeaderOnly, coinbase, bitcoinMergedMiningMerkleBranch, true);
+    }
+
+    @Override
+    public SubmitBlockResult submitBitcoinBlockTransactions(
+            String blockHashForMergedMining,
+            BtcBlock blockWithHeaderOnly,
+            BtcTransaction coinbase,
+            List<String> txHashes) {
+        logger.debug("Received tx solution with hash {} for merged mining", blockHashForMergedMining);
+
+        PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(blockWithHeaderOnly.getParams(), txHashes);
+
+        return processSolution(blockHashForMergedMining, blockWithHeaderOnly, coinbase, bitcoinMergedMiningMerkleBranch, true);
+    }
+
+    @Override
+    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock) {
         return submitBitcoinBlock(blockHashForMergedMining, bitcoinMergedMiningBlock, true);
     }
 
-
-    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
+    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
         logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningBlock.getTransactions().get(0);
-        co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
 
+        //noinspection ConstantConditions
+        BtcTransaction coinbase = bitcoinMergedMiningBlock.getTransactions().get(0);
+        PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
+
+        return processSolution(blockHashForMergedMining, bitcoinMergedMiningBlock, coinbase, bitcoinMergedMiningMerkleBranch, lastTag);
+    }
+
+    private SubmitBlockResult processSolution(
+            String blockHashForMergedMining,
+            BtcBlock blockWithHeaderOnly,
+            BtcTransaction coinbase,
+            PartialMerkleTree bitcoinMergedMiningMerkleBranch,
+            boolean lastTag) {
         Block newBlock;
-        Sha3Hash key = new Sha3Hash(TypeConverter.removeZeroX(blockHashForMergedMining));
+        Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
 
         synchronized (lock) {
             Block workingBlock = blocksWaitingforPoW.get(key);
@@ -447,10 +454,10 @@ public class MinerServerImpl implements MinerServer {
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
-        logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
+        logger.info("Received block {} {}", newBlock.getNumber(), newBlock.getHash());
 
-        newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
-        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(bitcoinMergedMiningCoinbaseTransaction.bitcoinSerialize(), lastTag));
+        newBlock.setBitcoinMergedMiningHeader(blockWithHeaderOnly.cloneAsHeader().bitcoinSerialize());
+        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), lastTag));
         newBlock.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleBranch.bitcoinSerialize());
         newBlock.seal();
 
@@ -463,7 +470,7 @@ public class MinerServerImpl implements MinerServer {
             ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
 
             logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getShortHash(), newBlock.getShortHashForMergedMining(), newBlock.getNumber());
-            SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash(), newBlock.getNumber());
+            SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash().getBytes(), newBlock.getNumber());
 
             return new SubmitBlockResult("OK", "OK", blockInfo);
         }
@@ -482,12 +489,12 @@ public class MinerServerImpl implements MinerServer {
         return compressCoinbase(bitcoinMergedMiningCoinbaseTransactionSerialized, true);
     }
 
-    public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized, boolean lastOcurrence) {
+    public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized, boolean lastOccurrence) {
         List<Byte> coinBaseTransactionSerializedAsList = java.util.Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionSerialized));
         List<Byte> tagAsList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
 
         int rskTagPosition;
-        if (lastOcurrence) {
+        if (lastOccurrence) {
             rskTagPosition = Collections.lastIndexOfSubList(coinBaseTransactionSerializedAsList, tagAsList);
         } else {
             rskTagPosition = Collections.indexOfSubList(coinBaseTransactionSerializedAsList, tagAsList);
@@ -513,25 +520,78 @@ public class MinerServerImpl implements MinerServer {
      * getBitcoinMergedMerkleBranch returns the Partial Merkle Branch needed to validate that the coinbase tx
      * is part of the Merkle Tree.
      *
+     * @param networkParams      bitcoin network params.
+     * @param merkleStringHashes hashes for the partial merkle tree of the bitcoin block used for merged mining.
+     * @param blockTxnCount      number of transactions in the block.
+     * @return A Partial Merkle Branch in which you can validate the coinbase tx.
+     */
+    private PartialMerkleTree getBitcoinMergedMerkleBranchForCoinbase(
+            NetworkParameters networkParams,
+            List<String> merkleStringHashes,
+            int blockTxnCount) {
+        List<Sha256Hash> merkleHashes = merkleStringHashes.stream().map(mk -> Sha256Hash.wrapReversed(Hex.decode(mk))).collect(Collectors.toList());
+        int merkleTreeHeight = (int) Math.ceil(Math.log(blockTxnCount) / Math.log(2));
+
+        // bitlist will always have ones at the beginning because merkle branch is built for coinbase tx
+        List<Boolean> bitList = new ArrayList<>();
+        for (int i = 0; i < merkleHashes.size() + merkleTreeHeight; i++) {
+            bitList.add(i < merkleHashes.size());
+        }
+
+        // bits indicates which nodes are going to be used for building the partial merkle tree
+        // for more information please refer to {@link co.rsk.bitcoinj.core.PartialMerkleTree#buildFromLeaves } method
+        byte[] bits = new byte[(bitList.size() + 7) / 8];
+        for (int i = 0; i < bitList.size(); i++) {
+            if (bitList.get(i)) {
+                Utils.setBitLE(bits, i);
+            }
+        }
+
+        return new PartialMerkleTree(networkParams, bits, merkleHashes, blockTxnCount);
+    }
+
+    /**
+     * getBitcoinMergedMerkleBranch returns the Partial Merkle Branch needed to validate that the coinbase tx
+     * is part of the Merkle Tree.
+     *
+     * @param networkParams  bitcoin network params.
+     * @param txStringHashes hashes for the txs of the bitcoin block used for merged mining.
+     * @return A Partial Merkle Branch in which you can validate the coinbase tx.
+     */
+    private PartialMerkleTree getBitcoinMergedMerkleBranch(NetworkParameters networkParams, List<String> txStringHashes) {
+        List<Sha256Hash> txHashes = txStringHashes.stream().map(Sha256Hash::wrap).collect(Collectors.toList());
+
+        return buildMerkleBranch(txHashes, networkParams);
+    }
+
+    /**
+     * getBitcoinMergedMerkleBranch returns the Partial Merkle Branch needed to validate that the coinbase tx
+     * is part of the Merkle Tree.
+     *
      * @param bitcoinMergedMiningBlock the bitcoin block that includes all the txs.
      * @return A Partial Merkle Branch in which you can validate the coinbase tx.
      */
-    public static co.rsk.bitcoinj.core.PartialMerkleTree getBitcoinMergedMerkleBranch(co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
-        List<co.rsk.bitcoinj.core.BtcTransaction> txs = bitcoinMergedMiningBlock.getTransactions();
-        List<co.rsk.bitcoinj.core.Sha256Hash> txHashes = new ArrayList<>(txs.size());
-        for (co.rsk.bitcoinj.core.BtcTransaction tx : txs) {
+    public static PartialMerkleTree getBitcoinMergedMerkleBranch(BtcBlock bitcoinMergedMiningBlock) {
+        List<BtcTransaction> txs = bitcoinMergedMiningBlock.getTransactions();
+        List<Sha256Hash> txHashes = new ArrayList<>(txs.size());
+        for (BtcTransaction tx : txs) {
             txHashes.add(tx.getHash());
         }
-        /**
-         *  We need to convert the txs to a bitvector to choose which ones
-         *  will be included in the Partial Merkle Tree.
-         *
-         *  We need txs.size() / 8 bytes to represent this vector.
-         *  The coinbase tx is the first one of the txs so we set the first bit to 1.
+
+        return buildMerkleBranch(txHashes, bitcoinMergedMiningBlock.getParams());
+    }
+
+    private static PartialMerkleTree buildMerkleBranch(List<Sha256Hash> txHashes, NetworkParameters params) {
+        /*
+           We need to convert the txs to a bitvector to choose which ones
+           will be included in the Partial Merkle Tree.
+
+           We need txs.size() / 8 bytes to represent this vector.
+           The coinbase tx is the first one of the txs so we set the first bit to 1.
          */
-        byte[] bitvector = new byte[(int) Math.ceil(txs.size() / 8.0)];
-        co.rsk.bitcoinj.core.Utils.setBitLE(bitvector, 0);
-        return co.rsk.bitcoinj.core.PartialMerkleTree.buildFromLeaves(bitcoinMergedMiningBlock.getParams(), bitvector, txHashes);
+        byte[] bitvector = new byte[(txHashes.size() + 7) / 8];
+        Utils.setBitLE(bitvector, 0);
+        return PartialMerkleTree.buildFromLeaves(params, bitvector, txHashes);
     }
 
     @Override
@@ -551,7 +611,7 @@ public class MinerServerImpl implements MinerServer {
         if (work == null) {
             return null;
         }
-        
+
         if (work.getNotify()) {
             /**
              * Set currentWork.notify to false for the next time this function is called.
@@ -561,11 +621,11 @@ public class MinerServerImpl implements MinerServer {
              * currentWork, regardless of what it is.
              */
             synchronized (lock) {
-                if (currentWork != work ||  currentWork == null) {
+                if (currentWork != work || currentWork == null) {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
-                                            currentWork.getFeesPaidToMiner(),false, currentWork.getParentBlockHash());
+                        currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash());
             }
         }
         return work;
@@ -577,7 +637,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     public MinerWork updateGetWork(@Nonnull final Block block, @Nonnull final boolean notify) {
-        Sha3Hash blockMergedMiningHash = new Sha3Hash(block.getHashForMergedMining());
+        Keccak256 blockMergedMiningHash = new Keccak256(block.getHashForMergedMining());
 
         BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
         byte[] targetUnknownLengthArray = targetBI.toByteArray();
@@ -595,7 +655,7 @@ public class MinerServerImpl implements MinerServer {
     /**
      * buildBlockToMine creates a block to mine based on the given block as parent.
      *
-     * @param newBlockParent              the new block parent.
+     * @param newBlockParent         the new block parent.
      * @param createCompetitiveBlock used for testing.
      */
     @Override
@@ -603,29 +663,12 @@ public class MinerServerImpl implements MinerServer {
         // See BlockChainImpl.calclBloom() if blocks has txs
         if (createCompetitiveBlock) {
             // Just for testing, mine on top of bestblock's parent
-            newBlockParent = blockchain.getBlockByHash(newBlockParent.getParentHash());
+            newBlockParent = blockchain.getBlockByHash(newBlockParent.getParentHash().getBytes());
         }
 
-        logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), Hex.toHexString(newBlockParent.getHash()));
+        logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
 
-        List<BlockHeader> uncles;
-        if (blockStore != null) {
-            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash(), this.miningConfig.getUncleGenerationLimit());
-        } else {
-            uncles = new ArrayList<>();
-        }
-
-        if (uncles.size() > this.miningConfig.getUncleListLimit()) {
-            uncles = uncles.subList(0, this.miningConfig.getUncleListLimit());
-        }
-
-        final List<Transaction> txsToRemove = new ArrayList<>();
-
-        Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(newBlockParent.getMinimumGasPrice(), new Coin(minerMinGasPriceTarget));
-        final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
-        minimumAcceptableTime = newBlockParent.getTimestamp() + 1;
-
-        final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice);
+        final Block newBlock = builder.build(newBlockParent, extraData);
 
         if (autoSwitchBetweenNormalAndFallbackMining) {
             if (ProofOfWorkRule.isFallbackMiningPossible(
@@ -638,12 +681,8 @@ public class MinerServerImpl implements MinerServer {
             }
         }
 
-        newBlock.setExtraData(extraData);
-        removePendingTransactions(txsToRemove);
-        executor.executeAndFill(newBlock, newBlockParent);
-
         synchronized (lock) {
-            Sha3Hash parentHash = new Sha3Hash(newBlockParent.getHash());
+            Keccak256 parentHash = newBlockParent.getHash();
             boolean notify = this.getNotify(newBlock, parentHash);
 
             if (notify) {
@@ -655,14 +694,14 @@ public class MinerServerImpl implements MinerServer {
 
 
             currentWork = updateGetWork(newBlock, notify);
-            latestblockHashWaitingforPoW = new Sha3Hash(newBlock.getHashForMergedMining());
+            latestblockHashWaitingforPoW = new Keccak256(newBlock.getHashForMergedMining());
 
             blocksWaitingforPoW.put(latestblockHashWaitingforPoW, latestBlock);
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
         logger.debug("Built block {}. Parent {}", newBlock.getShortHashForMergedMining(), newBlockParent.getShortHashForMergedMining());
-        for (BlockHeader uncleHeader : uncles) {
+        for (BlockHeader uncleHeader : newBlock.getUncleList()) {
             logger.debug("With uncle {}", uncleHeader.getShortHashForMergedMining());
         }
     }
@@ -675,7 +714,7 @@ public class MinerServerImpl implements MinerServer {
      * @return true if miners should be notified about this new block to mine.
      */
     @GuardedBy("lock")
-    private boolean getNotify(Block block, Sha3Hash parentHash) {
+    private boolean getNotify(Block block, Keccak256 parentHash) {
         if (!parentHash.equals(latestParentHash)) {
             return true;
         }
@@ -691,48 +730,21 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
+    public Optional<Block> getLatestBlock() {
+        return Optional.ofNullable(latestBlock);
+    }
+
+    @Override
+    @VisibleForTesting
     public long getCurrentTimeInSeconds() {
-        long ret = System.currentTimeMillis() / 1000 + this.timeAdjustment;
-        return Long.max(ret, minimumAcceptableTime);
+        // this is not great, but it was the simplest way to extract BlockToMineBuilder
+        return builder.getCurrentTimeInSeconds();
     }
 
     @Override
     public long increaseTime(long seconds) {
-        if (seconds <= 0) {
-            return this.timeAdjustment;
-        }
-
-        this.timeAdjustment += seconds;
-
-        return this.timeAdjustment;
-    }
-
-    private void removePendingTransactions(List<Transaction> transactions) {
-        if (transactions != null) {
-            for (Transaction tx : transactions) {
-                logger.debug("Removing transaction {}", Hex.toHexString(tx.getHash()));
-            }
-        }
-
-        pendingState.clearPendingState(transactions);
-        pendingState.clearWire(transactions);
-    }
-
-    private List<Transaction> getTransactions(List<Transaction> txsToRemove, Block parent, Coin minGasPrice) {
-
-        logger.debug("Starting getTransactions");
-
-        List<Transaction> txs = new MinerUtils().getAllTransactions(pendingState);
-        logger.debug("txsList size {}", txs.size());
-
-        Transaction remascTx = new RemascTransaction(parent.getNumber() + 1);
-        txs.add(remascTx);
-
-        Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
-
-        Repository originalRepo = blockchain.getRepository().getSnapshotTo(parent.getStateRoot());
-
-        return new MinerUtils().filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
+        // this is not great, but it was the simplest way to extract BlockToMineBuilder
+        return builder.increaseTime(seconds);
     }
 
     class NewBlockListener extends EthereumListenerAdapter {
@@ -770,47 +782,6 @@ public class MinerServerImpl implements MinerServer {
         }
     }
 
-    private BlockHeader createHeader(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, Coin minimumGasPrice) {
-        final byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
-
-        final long timestampSeconds = this.getCurrentTimeInSeconds();
-
-        // Set gas limit before executing block
-        BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getMininimum());
-        BigInteger targetGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getTarget());
-        BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
-        BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
-        boolean forceLimit = miningConfig.getGasLimit().isTargetForced();
-        BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
-                gasUsed, minGasLimit, targetGasLimit, forceLimit);
-
-        final BlockHeader newHeader = new BlockHeader(newBlockParent.getHash(),
-                unclesListHash,
-                coinbaseAddress.getBytes(),
-                new Bloom().getData(),
-                new byte[]{1},
-                newBlockParent.getNumber() + 1,
-                gasLimit.toByteArray(),
-                0,
-                timestampSeconds,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                minimumGasPrice.getBytes(),
-                CollectionUtils.size(uncles)
-        );
-        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
-        return newHeader;
-    }
-
-    private Block createBlock(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, Coin minimumGasPrice) {
-        final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice);
-        final Block newBlock = new Block(newHeader, txs, uncles);
-        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, null);
-    }
-
     private class FallbackMiningTask extends TimerTask {
         @Override
         public void run() {
@@ -819,16 +790,16 @@ public class MinerServerImpl implements MinerServer {
                 long curtimestampSeconds = getCurrentTimeInSeconds();
 
 
-                if (curtimestampSeconds > bestBlock.getTimestamp() + secsBetweenFallbackMinedBlocks)
-                    {
-                        generateFallbackBlock();
-            }
+                if (curtimestampSeconds > bestBlock.getTimestamp() + secsBetweenFallbackMinedBlocks) {
+                    generateFallbackBlock();
+                }
             } catch (Throwable th) {
                 logger.error("Unexpected error: {}", th);
                 panicProcessor.panic("mserror", th.getMessage());
             }
         }
     }
+
     /**
      * RefreshBlocks rebuilds the block to mine.
      */

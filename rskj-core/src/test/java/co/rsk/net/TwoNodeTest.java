@@ -66,7 +66,7 @@ public class TwoNodeTest {
 
         Assert.assertEquals(100, node1.getBestBlock().getNumber());
         Assert.assertEquals(100, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
     }
 
     @Test
@@ -89,6 +89,6 @@ public class TwoNodeTest {
 
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
     }
 }

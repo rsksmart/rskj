@@ -22,6 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.SnapshotManager;
+import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
@@ -30,6 +31,7 @@ import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.InvalidInetAddressException;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
@@ -37,6 +39,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -92,27 +95,31 @@ public class Web3Impl implements Web3 {
     private final PeerServer peerServer;
 
     private final Blockchain blockchain;
+    private final ReceiptStore receiptStore;
     private final BlockProcessor nodeBlockProcessor;
     private final HashRateCalculator hashRateCalculator;
     private final ConfigCapabilities configCapabilities;
     private final BlockStore blockStore;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
     private final RskSystemProperties config;
 
     private final PersonalModule personalModule;
     private final EthModule ethModule;
 
     private FilterManager filterManager = new FilterManager();
+    private TxPoolModule txPoolModule;
 
     protected Web3Impl(Ethereum eth,
                        Blockchain blockchain,
-                       PendingState pendingState,
+                       TransactionPool transactionPool,
                        BlockStore blockStore,
+                       ReceiptStore receiptStore,
                        RskSystemProperties config,
                        MinerClient minerClient,
                        MinerServer minerServer,
                        PersonalModule personalModule,
                        EthModule ethModule,
+                       TxPoolModule txPoolModule,
                        ChannelManager channelManager,
                        Repository repository,
                        PeerScoringManager peerScoringManager,
@@ -123,12 +130,14 @@ public class Web3Impl implements Web3 {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
         this.repository = repository;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
         this.minerClient = minerClient;
         this.minerServer = minerServer;
         this.personalModule = personalModule;
         this.ethModule = ethModule;
+        this.txPoolModule = txPoolModule;
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
@@ -207,7 +216,7 @@ public class Web3Impl implements Web3 {
     public String web3_sha3(String data) throws Exception {
         String s = null;
         try {
-            byte[] result = HashUtil.sha3(data.getBytes(StandardCharsets.UTF_8));
+            byte[] result = HashUtil.keccak256(data.getBytes(StandardCharsets.UTF_8));
             return s = TypeConverter.toJsonHex(result);
         } finally {
             if (logger.isDebugEnabled()) {
@@ -376,11 +385,6 @@ public class Web3Impl implements Web3 {
                 logger.debug("eth_gasPrice(): " + gasPrice);
             }
         }
-    }
-
-    @Override
-    public String[] eth_accounts() {
-        return ethModule.accounts();
     }
 
     @Override
@@ -587,16 +591,6 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_sign(String addr, String data) throws Exception {
-        return ethModule.sign(addr, data);
-    }
-
-    @Override
-    public String eth_sendTransaction(CallArguments args) throws Exception {
-        return this.ethModule.sendTransaction(args);
-    }
-
-    @Override
     public String eth_sendRawTransaction(String rawData) throws Exception {
         String s = null;
         try {
@@ -610,22 +604,12 @@ public class Web3Impl implements Web3 {
 
             eth.submitTransaction(tx);
 
-            return s = TypeConverter.toJsonHex(tx.getHash());
+            return s = tx.getHash().toJsonString();
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_sendRawTransaction(" + rawData + "): " + s);
             }
         }
-    }
-
-    @Override
-    public String eth_call(CallArguments args, String bnOrId) throws Exception {
-        return ethModule.call(args, bnOrId);
-    }
-
-    @Override
-    public String eth_estimateGas(CallArguments args) throws Exception {
-        return ethModule.estimateGas(args);
     }
 
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
@@ -657,7 +641,7 @@ public class Web3Impl implements Web3 {
         br.receiptsRoot = TypeConverter.toJsonHex(b.getReceiptsRoot());
         br.miner = isPending ? null : TypeConverter.toJsonHex(b.getCoinbase().getBytes());
         br.difficulty = TypeConverter.toJsonHex(b.getDifficulty().getBytes());
-        br.totalDifficulty = TypeConverter.toJsonHex(this.blockchain.getBlockStore().getTotalDifficultyForHash(b.getHash()).asBigInteger());
+        br.totalDifficulty = TypeConverter.toJsonHex(this.blockchain.getBlockStore().getTotalDifficultyForHash(b.getHash().getBytes()).asBigInteger());
         br.extraData = TypeConverter.toJsonHex(b.getExtraData());
         br.size = TypeConverter.toJsonHex(b.getEncoded().length);
         br.gasLimit = TypeConverter.toJsonHex(b.getGasLimit());
@@ -674,7 +658,7 @@ public class Web3Impl implements Web3 {
             }
         } else {
             for (Transaction tx : b.getTransactionsList()) {
-                txes.add(toJsonHex(tx.getHash()));
+                txes.add(tx.getHash().toJsonString());
             }
         }
 
@@ -683,7 +667,7 @@ public class Web3Impl implements Web3 {
         List<String> ul = new ArrayList<>();
 
         for (BlockHeader header : b.getUncleList()) {
-            ul.add(toJsonHex(header.getHash()));
+            ul.add(toJsonHex(header.getHash().getBytes()));
         }
 
         br.uncles = ul.toArray(new String[ul.size()]);
@@ -743,21 +727,16 @@ public class Web3Impl implements Web3 {
     public TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception {
         TransactionResultDTO s = null;
         try {
-            byte[] txHash = stringHexToByteArray(transactionHash);
+            Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
             Block block = null;
 
-            TransactionInfo txInfo = blockchain.getTransactionInfo(txHash);
+            TransactionInfo txInfo = blockchain.getTransactionInfo(txHash.getBytes());
 
             if (txInfo == null) {
-                if (transactionHash != null && transactionHash.startsWith("0x")) {
-                    transactionHash = transactionHash.substring(2);
-                }
-
                 List<Transaction> txs = this.getTransactionsByJsonBlockId("pending");
 
                 for (Transaction tx : txs) {
-                    if (Hex.toHexString(tx.getHash()).equals(transactionHash))
-                    {
+                    if (tx.getHash().equals(txHash)) {
                         return s = new TransactionResultDTO(null, null, tx);
                     }
                 }
@@ -765,7 +744,7 @@ public class Web3Impl implements Web3 {
                 block = blockchain.getBlockByHash(txInfo.getBlockHash());
                 // need to return txes only from main chain
                 Block mainBlock = blockchain.getBlockByNumber(block.getNumber());
-                if (!Arrays.equals(block.getHash(), mainBlock.getHash())) {
+                if (!block.getHash().equals(mainBlock.getHash())) {
                     return null;
                 }
                 txInfo.setTransaction(block.getTransactionsList().get(txInfo.getIndex()));
@@ -777,9 +756,7 @@ public class Web3Impl implements Web3 {
 
             return s = new TransactionResultDTO(block, txInfo.getIndex(), txInfo.getReceipt().getTransaction());
         } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("eth_getTransactionByHash(" + transactionHash + "): " + s);
-            }
+            logger.debug("eth_getTransactionByHash({}): {}", transactionHash, s);
         }
     }
 
@@ -841,7 +818,7 @@ public class Web3Impl implements Web3 {
         logger.trace("eth_getTransactionReceipt(" + transactionHash + ")");
 
         byte[] hash = stringHexToByteArray(transactionHash);
-        TransactionInfo txInfo = blockchain.getReceiptStore().getInMainChain(hash, blockStore);
+        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore);
 
         if (txInfo == null) {
             logger.trace("No transaction info for " + transactionHash);
@@ -872,7 +849,7 @@ public class Web3Impl implements Web3 {
             }
 
             BlockHeader uncleHeader = block.getUncleList().get(idx);
-            Block uncle = blockchain.getBlockByHash(uncleHeader.getHash());
+            Block uncle = blockchain.getBlockByHash(uncleHeader.getHash().getBytes());
 
             if (uncle == null) {
                 uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList());
@@ -893,7 +870,7 @@ public class Web3Impl implements Web3 {
             Block block = getByJsonBlockId(blockId);
 
             return s = block == null ? null :
-                    eth_getUncleByBlockHashAndIndex(Hex.toHexString(block.getHash()), uncleIdx);
+                    eth_getUncleByBlockHashAndIndex(Hex.toHexString(block.getHash().getBytes()), uncleIdx);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getUncleByBlockNumberAndIndex(" + blockId + ", " + uncleIdx + "): " + s);
@@ -916,11 +893,6 @@ public class Web3Impl implements Web3 {
     @Override
     public Map<String, CompilationResultDTO> eth_compileLLL(String contract) {
         throw new UnsupportedOperationException("LLL compiler not supported");
-    }
-
-    @Override
-    public Map<String, CompilationResultDTO> eth_compileSolidity(String contract) throws Exception {
-        return ethModule.compileSolidity(contract);
     }
 
     @Override
@@ -1079,7 +1051,7 @@ public class Web3Impl implements Web3 {
 
     private List<Transaction> getTransactionsByJsonBlockId(String id) {
         if ("pending".equalsIgnoreCase(id)) {
-            return pendingState.getAllPendingTransactions();
+            return transactionPool.getPendingTransactions();
         } else {
             Block block = getByJsonBlockId(id);
             return block != null ? block.getTransactionsList() : null;
@@ -1105,11 +1077,11 @@ public class Web3Impl implements Web3 {
 
     private Repository getRepoByJsonBlockId(String id) {
         if ("pending".equalsIgnoreCase(id)) {
-            return pendingState.getRepository();
+            return transactionPool.getRepository();
         } else {
             Block block = getByJsonBlockId(id);
             if (block != null) {
-                return ((Repository) this.repository).getSnapshotTo(block.getStateRoot());
+                return this.repository.getSnapshotTo(block.getStateRoot());
             } else {
                 return null;
             }
@@ -1157,8 +1129,13 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public Map<String, Object> eth_bridgeState() throws Exception {
-        return ethModule.bridgeState(blockchain);
+    public EthModule getEthModule() {
+        return ethModule;
+    }
+
+    @Override
+    public TxPoolModule getTxPoolModule() {
+        return txPoolModule;
     }
 
     @Override
@@ -1227,10 +1204,10 @@ public class Web3Impl implements Web3 {
     @Override
     public String evm_increaseTime(String seconds) {
         try {
-            long nseconds = stringHexToBigInteger(seconds).longValue();
+            long nseconds = stringNumberAsBigInt(seconds).longValue();
             String result = toJsonHex(minerServer.increaseTime(nseconds));
             if (logger.isDebugEnabled()) {
-                logger.debug("evm_increaseTime({}): {}", seconds, result);
+                logger.debug("evm_increaseTime({}): {}", nseconds, result);
             }
             return result;
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {

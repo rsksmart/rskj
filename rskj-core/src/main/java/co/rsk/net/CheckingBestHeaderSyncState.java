@@ -17,13 +17,13 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
 
     @Override
     public void onEnter(){
-        syncEventsHandler.sendBlockHeadersRequest(miniChunk);
+        trySendRequest();
     }
 
     @Override
     public void newBlockHeaders(List<BlockHeader> chunk){
         BlockHeader header = chunk.get(0);
-        if (!ByteUtil.fastEquals(header.getHash(), miniChunk.getHash()) ||
+        if (!ByteUtil.fastEquals(header.getHash().getBytes(), miniChunk.getHash()) ||
                 !syncInformation.blockHeaderIsValid(header)) {
             syncEventsHandler.onErrorSyncing(
                     "Invalid chunk received from node {}", EventType.INVALID_HEADER, this.getClass(),
@@ -32,5 +32,13 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
         }
 
         syncEventsHandler.startFindingConnectionPoint();
+    }
+
+    private void trySendRequest() {
+        boolean sent = syncEventsHandler.sendBlockHeadersRequest(miniChunk);
+        if (!sent) {
+            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
+                    this.getClass(), syncInformation.getSelectedPeerId());
+        }
     }
 }

@@ -46,7 +46,7 @@ public class FreeBlock {
 
         this.header.setPaidFees(paidFees);
 
-        byte[] calculatedRoot = getTxTrie(transactionsList).getHash();
+        byte[] calculatedRoot = getTxTrie(transactionsList).getHash().getBytes();
         this.header.setTransactionsRoot(calculatedRoot);
 
         this.header.setStateRoot(stateRoot);
@@ -92,7 +92,7 @@ public class FreeBlock {
         // Parse Transactions
         RLPList txTransactions = (RLPList) block.get(1);
         this.transactionsList = parseTxs(txTransactions);
-        byte[] calculatedRoot = getTxTrie(this.transactionsList).getHash();
+        byte[] calculatedRoot = getTxTrie(this.transactionsList).getHash().getBytes();
 
         // Parse Uncles
         RLPList uncleBlocks = (RLPList) block.get(2);

@@ -21,7 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Repository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
@@ -68,7 +68,7 @@ public class BridgeStorageProvider {
     // key = rsk tx hash, value = btc tx
     private ReleaseRequestQueue releaseRequestQueue;
     private ReleaseTransactionSet releaseTransactionSet;
-    private SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures;
+    private SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures;
 
     private List<UTXO> newFederationBtcUTXOs;
     private List<UTXO> oldFederationBtcUTXOs;
@@ -186,7 +186,7 @@ public class BridgeStorageProvider {
         safeSaveToRepository(RELEASE_TX_SET, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSet);
     }
 
-    public SortedMap<Sha3Hash, BtcTransaction> getRskTxsWaitingForSignatures() throws IOException {
+    public SortedMap<Keccak256, BtcTransaction> getRskTxsWaitingForSignatures() throws IOException {
         if (rskTxsWaitingForSignatures != null) {
             return rskTxsWaitingForSignatures;
         }

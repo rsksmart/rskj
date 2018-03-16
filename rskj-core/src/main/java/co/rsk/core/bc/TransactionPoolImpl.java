@@ -20,22 +20,21 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.FastByteComparisons;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -44,20 +43,20 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.ethereum.crypto.HashUtil.sha3;
 import static org.ethereum.util.BIUtil.toBI;
 
 /**
  * Created by ajlopez on 08/08/2016.
  */
-public class PendingStateImpl implements PendingState {
-    private static final Logger logger = LoggerFactory.getLogger("pendingstate");
-    private static final byte[] emptyUncleHashList = sha3(RLP.encodeList(new byte[0]));
+public class TransactionPoolImpl implements TransactionPool {
+    private static final Logger logger = LoggerFactory.getLogger("txpool");
+    private static final byte[] emptyUncleHashList = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
-    private final Map<ByteArrayWrapper, Transaction> pendingTransactions = new HashMap<>();
-    private final Map<ByteArrayWrapper, Transaction> wireTransactions = new HashMap<>();
-    private final Map<ByteArrayWrapper, Long> transactionBlocks = new HashMap<>();
-    private final Map<ByteArrayWrapper, Long> transactionTimes = new HashMap<>();
+    private final TransactionSet pendingTransactions = new TransactionSet();
+    private final TransactionSet queuedTransactions = new TransactionSet();
+
+    private final Map<Keccak256, Long> transactionBlocks = new HashMap<>();
+    private final Map<Keccak256, Long> transactionTimes = new HashMap<>();
 
     private final RskSystemProperties config;
     private final BlockStore blockStore;
@@ -73,15 +72,15 @@ public class PendingStateImpl implements PendingState {
 
     private Block bestBlock;
 
-    private Repository pendingStateRepository;
+    private Repository poolRepository;
     private final TxPendingValidator validator = new TxPendingValidator();
 
-    public PendingStateImpl(BlockStore blockStore,
-                            ReceiptStore receiptStore,
-                            EthereumListener listener,
-                            ProgramInvokeFactory programInvokeFactory,
-                            Repository repository,
-                            RskSystemProperties config) {
+    public TransactionPoolImpl(BlockStore blockStore,
+                               ReceiptStore receiptStore,
+                               EthereumListener listener,
+                               ProgramInvokeFactory programInvokeFactory,
+                               Repository repository,
+                               RskSystemProperties config) {
         this(config,
                 repository,
                 blockStore,
@@ -92,14 +91,14 @@ public class PendingStateImpl implements PendingState {
                 config.txOutdatedTimeout());
     }
 
-    public PendingStateImpl(RskSystemProperties config,
-                            Repository repository,
-                            BlockStore blockStore,
-                            ReceiptStore receiptStore,
-                            ProgramInvokeFactory programInvokeFactory,
-                            EthereumListener listener,
-                            int outdatedThreshold,
-                            int outdatedTimeout) {
+    public TransactionPoolImpl(RskSystemProperties config,
+                               Repository repository,
+                               BlockStore blockStore,
+                               ReceiptStore receiptStore,
+                               ProgramInvokeFactory programInvokeFactory,
+                               EthereumListener listener,
+                               int outdatedThreshold,
+                               int outdatedTimeout) {
         this.config = config;
         this.blockStore = blockStore;
         this.repository = repository;
@@ -109,10 +108,10 @@ public class PendingStateImpl implements PendingState {
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
 
-        this.pendingStateRepository = repository.startTracking();
+        this.poolRepository = repository.startTracking();
 
         if (this.outdatedTimeout > 0) {
-            this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PendingStateCleanerTimer"));
+            this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
         }
     }
 
@@ -156,93 +155,115 @@ public class PendingStateImpl implements PendingState {
     }
 
     @Override
-    public synchronized List<Transaction> addWireTransactions(List<Transaction> transactions) {
+    public synchronized Repository getRepository() { return this.poolRepository; }
+
+    @Override
+    public synchronized List<Transaction> addTransactions(final List<Transaction> txs) {
         List<Transaction> added = new ArrayList<>();
-        Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
-        logger.trace("Trying add {} wire transactions using block {} {}", transactions.size(), bnumber, bestBlock.getShortHash());
+        for (Transaction tx : txs) {
+            if (this.addTransaction(tx)) {
+                added.add(tx);
 
-        for (Transaction tx : transactions) {
-            if (!shouldAcceptTx(tx)) {
-                continue;
+                Optional<Transaction> succesor = this.getQueuedSuccesor(tx);
+
+                while (succesor.isPresent()) {
+                    Transaction found = succesor.get();
+                    queuedTransactions.removeTransactionByHash(found.getHash());
+
+                    if (!this.addTransaction(found)) {
+                        break;
+                    }
+
+                    added.add(found);
+
+                    succesor = this.getQueuedSuccesor(found);
+                }
             }
-
-            logger.trace("Trying add wire transaction nonce {} hash {}", tx.getHash(), toBI(tx.getNonce()));
-
-            ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash());
-
-            if (pendingTransactions.containsKey(hash) || wireTransactions.containsKey(hash)) {
-                logger.trace("TX already exists: {} ", tx);
-                continue;
-            }
-
-            wireTransactions.put(hash, tx);
-            transactionBlocks.put(hash, bnumber);
-            final long timestampSeconds = this.getCurrentTimeInSeconds();
-            transactionTimes.put(hash, timestampSeconds);
-
-            added.add(tx);
         }
 
         if (listener != null && !added.isEmpty()) {
             EventDispatchThread.invokeLater(() -> {
                 listener.onPendingTransactionsReceived(added);
-                listener.onPendingStateChanged(PendingStateImpl.this);
+                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
             });
         }
-
-        logger.trace("Wire transaction list added: {} new, {} valid of received {}, #of known txs: {}", added.size(), added.size(), transactions.size(), transactions.size());
 
         return added;
     }
 
-    @Override
-    public synchronized Repository getRepository() { return this.pendingStateRepository; }
+    private Optional<Transaction> getQueuedSuccesor(Transaction tx) {
+        BigInteger next = tx.getNonceAsInteger().add(BigInteger.ONE);
 
-    @Override
-    public synchronized List<Transaction> getWireTransactions() {
-        List<Transaction> txs = new ArrayList<>();
-        txs.addAll(wireTransactions.values());
-        return txs;
-    }
+        List<Transaction> txsaccount = this.queuedTransactions.getTransactionsWithSender(tx.getSender());
 
-    @Override
-    public synchronized List<Transaction> getPendingTransactions() {
-        List<Transaction> txs = new ArrayList<>();
-
-        txs.addAll(pendingTransactions.values());
-
-        return txs;
-    }
-
-    @Override
-    public synchronized void addPendingTransaction(final Transaction tx) {
-        if (!shouldAcceptTx(tx)) {
-            return;
+        if (txsaccount == null) {
+            return Optional.empty();
         }
 
-        logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        return txsaccount
+                .stream()
+                .filter(t -> t.getNonceAsInteger().equals(next))
+                .findFirst();
+    }
 
-        ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash());
+    @Override
+    public synchronized boolean addTransaction(final Transaction tx) {
+        if (!shouldAcceptTx(tx)) {
+            return false;
+        }
+
+        Keccak256 hash = tx.getHash();
+        logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
-        if (pendingTransactions.containsKey(hash)) {
-            return;
+        if (pendingTransactions.hasTransaction(tx)) {
+            return false;
         }
 
-        pendingTransactions.put(hash, tx);
+        if (queuedTransactions.hasTransaction(tx)) {
+            return false;
+        }
+
         transactionBlocks.put(hash, bnumber);
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         transactionTimes.put(hash, timestampSeconds);
+
+        BigInteger txnonce = tx.getNonceAsInteger();
+
+        if (!txnonce.equals(this.getNextNonceByAccount(tx.getSender()))) {
+            this.addQueuedTransaction(tx);
+
+            return false;
+        }
+
+        pendingTransactions.addTransaction(tx);
 
         executeTransaction(tx);
 
         if (listener != null) {
             EventDispatchThread.invokeLater(() -> {
                 listener.onPendingTransactionsReceived(Collections.singletonList(tx));
-                listener.onPendingStateChanged(PendingStateImpl.this);
+                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
             });
         }
+
+        return true;
+    }
+
+    private BigInteger getNextNonceByAccount(RskAddress account) {
+        BigInteger nextNonce = this.repository.getNonce(account);
+
+        for (Transaction tx : this.pendingTransactions.getTransactionsWithSender(account)) {
+            BigInteger txNonce = tx.getNonceAsInteger();
+
+            if (txNonce.compareTo(nextNonce) >= 0) {
+                nextNonce = txNonce.add(BigInteger.ONE);
+            }
+        }
+
+        return nextNonce;
     }
 
     @Override
@@ -268,7 +289,7 @@ public class PendingStateImpl implements PendingState {
         bestBlock = block;
 
         if (listener != null) {
-            EventDispatchThread.invokeLater(() -> listener.onPendingStateChanged(PendingStateImpl.this));
+            EventDispatchThread.invokeLater(() -> listener.onTransactionPoolChanged(TransactionPoolImpl.this));
         }
     }
 
@@ -276,23 +297,22 @@ public class PendingStateImpl implements PendingState {
     public void acceptBlock(Block block) {
         List<Transaction> txs = block.getTransactionsList();
 
-        clearPendingState(txs);
-        clearWire(txs);
+        removeTransactions(txs);
     }
 
     @VisibleForTesting
     public void retractBlock(Block block) {
         List<Transaction> txs = block.getTransactionsList();
 
-        addWireTransactions(txs);
+        this.addTransactions(txs);
     }
 
     @VisibleForTesting
     public void removeObsoleteTransactions(long currentBlock, int depth, int timeout) {
-        List<ByteArrayWrapper> toremove = new ArrayList<>();
+        List<Keccak256> toremove = new ArrayList<>();
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 
-        for (Map.Entry<ByteArrayWrapper, Long> entry : transactionBlocks.entrySet()) {
+        for (Map.Entry<Keccak256, Long> entry : transactionBlocks.entrySet()) {
             long block = entry.getValue().longValue();
 
             if (block < currentBlock - depth) {
@@ -300,7 +320,7 @@ public class PendingStateImpl implements PendingState {
                 logger.trace(
                         "Clear outdated transaction, block.number: [{}] hash: [{}]",
                         block,
-                        entry.getKey().toString());
+                        entry.getKey());
             }
         }
 
@@ -313,66 +333,65 @@ public class PendingStateImpl implements PendingState {
 
     @VisibleForTesting
     public synchronized void removeObsoleteTransactions(long timeSeconds) {
-        List<ByteArrayWrapper> toremove = new ArrayList<>();
+        List<Keccak256> toremove = new ArrayList<>();
 
-        for (Map.Entry<ByteArrayWrapper, Long> entry : transactionTimes.entrySet()) {
+        for (Map.Entry<Keccak256, Long> entry : transactionTimes.entrySet()) {
             long txtime = entry.getValue().longValue();
 
             if (txtime <= timeSeconds) {
                 toremove.add(entry.getKey());
                 logger.trace(
                         "Clear outdated transaction, hash: [{}]",
-                        entry.getKey().toString());
+                        entry.getKey());
             }
         }
 
         removeTransactionList(toremove);
     }
 
-    private void removeTransactionList(List<ByteArrayWrapper> toremove) {
-        for (ByteArrayWrapper key : toremove) {
-            pendingTransactions.remove(key);
-            wireTransactions.remove(key);
+    private void removeTransactionList(List<Keccak256> toremove) {
+        for (Keccak256 key : toremove) {
+            pendingTransactions.removeTransactionByHash(key);
+            queuedTransactions.removeTransactionByHash(key);
+
             transactionBlocks.remove(key);
             transactionTimes.remove(key);
         }
     }
 
     @Override
-    public synchronized void clearPendingState(List<Transaction> txs) {
+    public synchronized void removeTransactions(List<Transaction> txs) {
         for (Transaction tx : txs) {
-            byte[] bhash = tx.getHash();
-            ByteArrayWrapper hash = new ByteArrayWrapper(bhash);
-            pendingTransactions.remove(hash);
-            logger.trace("Clear pending transaction, hash: [{}]", Hex.toHexString(bhash));
+            Keccak256 khash = tx.getHash();
+            pendingTransactions.removeTransactionByHash(khash);
+            queuedTransactions.removeTransactionByHash(khash);
+
+            logger.trace("Clear transaction, hash: [{}]", khash);
         }
     }
 
     @Override
-    public synchronized void clearWire(List<Transaction> txs) {
-        for (Transaction tx: txs) {
-            byte[] bhash = tx.getHash();
-            ByteArrayWrapper hash = new ByteArrayWrapper(bhash);
-            wireTransactions.remove(hash);
-            logger.trace("Clear wire transaction, hash: [{}]", Hex.toHexString(bhash));
-        }
-    }
-
-    @Override
-    public synchronized List<Transaction> getAllPendingTransactions() {
+    public synchronized List<Transaction> getPendingTransactions() {
         removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
         List<Transaction> ret = new ArrayList<>();
-        ret.addAll(pendingTransactions.values());
-        ret.addAll(wireTransactions.values());
+        ret.addAll(pendingTransactions.getTransactions());
+        return ret;
+    }
+
+    @Override
+    public synchronized List<Transaction> getQueuedTransactions() {
+        removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
+        List<Transaction> ret = new ArrayList<>();
+        ret.addAll(queuedTransactions.getTransactions());
         return ret;
     }
 
     public synchronized void updateState() {
         logger.trace("update state");
-        pendingStateRepository = repository.startTracking();
+        poolRepository = repository.startTracking();
 
         TransactionSortedSet sorted = new TransactionSortedSet();
-        sorted.addAll(pendingTransactions.values());
+        sorted.addAll(pendingTransactions.getTransactions());
 
         for (Transaction tx : sorted.toArray(new Transaction[0])) {
             executeTransaction(tx);
@@ -380,10 +399,10 @@ public class PendingStateImpl implements PendingState {
     }
 
     private void executeTransaction(Transaction tx) {
-        logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
 
         TransactionExecutor executor = new TransactionExecutor(
-                config, tx, 0, bestBlock.getCoinbase(), pendingStateRepository,
+                config, tx, 0, bestBlock.getCoinbase(), poolRepository,
                 blockStore, receiptStore, programInvokeFactory, createFakePendingBlock(bestBlock)
         );
 
@@ -393,11 +412,19 @@ public class PendingStateImpl implements PendingState {
         executor.finalization();
     }
 
+    private void addQueuedTransaction(Transaction tx) {
+        this.queuedTransactions.addTransaction(tx);
+    }
+
     private long getCurrentTimeInSeconds() {
         return System.currentTimeMillis() / 1000;
     }
 
     private long getCurrentBestBlockNumber() {
+        if (bestBlock == null) {
+            return -1;
+        }
+
         return bestBlock.getNumber();
     }
 
@@ -405,7 +432,7 @@ public class PendingStateImpl implements PendingState {
         Trie txsTrie = new TrieImpl();
 
         // creating fake lightweight calculated block with no hashes calculations
-        return new Block(best.getHash(),
+        return new Block(best.getHash().getBytes(),
                             emptyUncleHashList, // uncleHash
                             RskAddress.nullAddress().getBytes(), //coinbase
                             new byte[32], // log bloom - from tx receipts
@@ -421,7 +448,7 @@ public class PendingStateImpl implements PendingState {
                             new byte[0],
                             new byte[0],
                             new byte[32],  // receiptsRoot
-                            txsTrie.getHash(),  // TransactionsRoot-
+                            txsTrie.getHash().getBytes(),  // TransactionsRoot-
                             new byte[32],  // stateRoot
                             Collections.<Transaction>emptyList(), // tx list
                             Collections.<BlockHeader>emptyList(), // uncle list
@@ -444,7 +471,7 @@ public class PendingStateImpl implements PendingState {
                 if (nonceDiff != 0) {
                     return nonceDiff > 0 ? 1 : -1;
                 }
-                return FastByteComparisons.compareTo(tx1.getHash(), 0, 32, tx2.getHash(), 0, 32);
+                return tx1.getHash().compareTo(tx2.getHash());
             });
         }
     }

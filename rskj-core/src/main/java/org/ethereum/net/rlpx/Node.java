@@ -26,20 +26,24 @@ import org.ethereum.util.Utils;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.Serializable;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
 
 public class Node implements Serializable {
     private static final long serialVersionUID = -4267600517925770636L;
 
-    byte[] id;
-    String host;
-    int port;
+    private final byte[] id;
+    private final String host;
+    private final int port;
 
     public Node(String enodeURL) {
         try {
@@ -57,8 +61,8 @@ public class Node implements Serializable {
 
     public Node(byte[] id, String host, int port) {
         this.id = id;
-        this.port = port;
         this.host = host;
+        this.port = port;
     }
 
     public Node(byte[] rlp) {
@@ -79,17 +83,15 @@ public class Node implements Serializable {
         String host = new String(hostB, Charset.forName("UTF-8"));
         int port = byteArrayToInt(portB);
 
-        this.port = port;
         this.id = idB;
         this.host = host;
+        this.port = port;
     }
 
 
-    public byte[] getId() {
-        return id;
+    public NodeID getId() {
+        return new NodeID(id);
     }
-
-    public NodeID getNodeId() { return new NodeID(id); }
 
     public String getHexId() {
         return Hex.toHexString(id);
@@ -99,24 +101,12 @@ public class Node implements Serializable {
         return Utils.getNodeIdShort(getHexId());
     }
 
-    public void setId(byte[] id) {
-        this.id = id;
-    }
-
     public String getHost() {
         return host;
     }
 
-    public void setHost(String host) {
-        this.host = host;
-    }
-
     public int getPort() {
         return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
     }
 
     public byte[] getRLP() {
@@ -145,13 +135,13 @@ public class Node implements Serializable {
         return "Node{" +
                 " host='" + host + '\'' +
                 ", port=" + port +
-                ", id=" + Hex.toHexString(id) +
+                ", id=" + getHexId() +
                 '}';
     }
 
     @Override
     public int hashCode() {
-        return this.toString().hashCode();
+        return Objects.hash(host, port, id);
     }
 
     @Override
@@ -164,10 +154,11 @@ public class Node implements Serializable {
             return true;
         }
 
-        if (o instanceof Node) {
-            return Arrays.equals(((Node) o).getId(), this.getId());
+        if (!(o instanceof Node)) {
+            return false;
         }
 
-        return false;
+        // TODO(mc): do we need to check host and port too?
+        return Arrays.equals(id, ((Node) o).id);
     }
 }

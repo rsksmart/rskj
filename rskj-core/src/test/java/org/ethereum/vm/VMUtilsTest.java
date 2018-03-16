@@ -25,7 +25,7 @@ public class VMUtilsTest {
     @Test
     public void savePlainProgramTraceFile() throws Exception {
         Path traceFilePath = tempRule.newFolder().toPath();
-        ProgramTrace mockTrace = new ProgramTrace(config);
+        ProgramTrace mockTrace = new ProgramTrace(config.getVmConfig(), null);
         String mockTxHash = "1234";
 
         VMUtils.saveProgramTraceFile(
@@ -42,7 +42,7 @@ public class VMUtilsTest {
     @Test
     public void saveZippedProgramTraceFile() throws Exception {
         Path traceFilePath = tempRule.newFolder().toPath();
-        ProgramTrace mockTrace = new ProgramTrace(config);
+        ProgramTrace mockTrace = new ProgramTrace(config.getVmConfig(), null);
         String mockTxHash = "1234";
 
         VMUtils.saveProgramTraceFile(

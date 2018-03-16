@@ -18,11 +18,13 @@
 
 package co.rsk.trie;
 
+import co.rsk.crypto.Keccak256;
+
 /**
  * Created by ajlopez on 29/03/2017.
  */
 public interface Trie {
-    byte[] getHash();
+    Keccak256 getHash();
 
     byte[] get(byte[] key);
 
@@ -42,6 +44,8 @@ public interface Trie {
 
     void save();
 
+    void copyTo(TrieStore store);
+
     int trieSize();
 
     Trie cloneTrie();
@@ -52,9 +56,9 @@ public interface Trie {
 
     void removeValue();
 
-    void setHash(int n, byte[] hash);
+    void setHash(int n, Keccak256 hash);
 
-    Trie getSnapshotTo(byte[] hash);
+    Trie getSnapshotTo(Keccak256 hash);
 
     byte[] serialize();
 

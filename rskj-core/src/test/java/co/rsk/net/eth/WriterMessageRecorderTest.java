@@ -140,7 +140,7 @@ public class WriterMessageRecorderTest {
 
     public static Message createRskMessage() {
         Block block = new BlockGenerator().getBlock(1);
-        GetBlockMessage message = new GetBlockMessage(block.getHash());
+        GetBlockMessage message = new GetBlockMessage(block.getHash().getBytes());
         return new RskMessage(config, message);
     }
 

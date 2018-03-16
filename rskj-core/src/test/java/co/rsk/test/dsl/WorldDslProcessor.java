@@ -146,7 +146,7 @@ public class WorldDslProcessor {
 
         Block best = world.getBlockChain().getStatus().getBestBlock();
 
-        if (Arrays.equals(best.getHash(), block.getHash()))
+        if (best.getHash().equals(block.getHash()))
             return;
 
         throw new DslProcessorException(String.format("Expected best block '%s'", name));
@@ -226,7 +226,7 @@ public class WorldDslProcessor {
             }
             Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
             BlockExecutor executor = new BlockExecutor(new RskSystemProperties(), world.getRepository(),
-                    world.getBlockChain(), world.getBlockChain().getBlockStore(), null);
+                    null, world.getBlockChain().getBlockStore(), null);
             executor.executeAndFill(block, parent);
             world.saveBlock(name, block);
             parent = block;

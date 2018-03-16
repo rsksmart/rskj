@@ -1,4 +1,4 @@
-package org.ethereum.rpc;
+package co.rsk.rpc.netty;
 
 import co.rsk.rpc.CorsConfiguration;
 import io.netty.bootstrap.ServerBootstrap;
@@ -17,9 +17,9 @@ import io.netty.handler.logging.LoggingHandler;
 
 import java.net.InetAddress;
 
-public class JsonRpcNettyServer {
+public class Web3HttpServer {
 
-    private final InetAddress host;
+    private final InetAddress bindAddress;
     private int port;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
@@ -29,14 +29,14 @@ public class JsonRpcNettyServer {
     private final JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private final JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
 
-    public JsonRpcNettyServer(InetAddress host,
-                              int port,
-                              int socketLinger,
-                              boolean reuseAddress,
-                              CorsConfiguration corsConfiguration,
-                              JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
-                              JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
-        this.host = host;
+    public Web3HttpServer(InetAddress bindAddress,
+                          int port,
+                          int socketLinger,
+                          boolean reuseAddress,
+                          CorsConfiguration corsConfiguration,
+                          JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
+                          JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
+        this.bindAddress = bindAddress;
         this.port = port;
         this.socketLinger = socketLinger;
         this.reuseAddress = reuseAddress;
@@ -75,7 +75,7 @@ public class JsonRpcNettyServer {
                     p.addLast(jsonRpcWeb3ServerHandler);
                 }
             });
-        b.bind(host, port).sync();
+        b.bind(bindAddress, port).sync();
     }
 
     public void stop() {

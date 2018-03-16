@@ -20,9 +20,11 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
@@ -37,7 +39,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -49,7 +50,6 @@ import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 
 /**
@@ -68,6 +68,8 @@ public class TransactionExecutor {
     private final Repository cacheTrack;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final VmConfig vmConfig;
+    private final PrecompiledContracts precompiledContracts;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
@@ -113,6 +115,8 @@ public class TransactionExecutor {
         this.executionBlock = executionBlock;
         this.listener = listener;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
+        this.vmConfig = config.getVmConfig();
+        this.precompiledContracts = new PrecompiledContracts(config);
     }
 
 
@@ -151,7 +155,7 @@ public class TransactionExecutor {
         if (isNotEqual(reqNonce, txNonce)) {
 
             if (logger.isWarnEnabled()) {
-                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, Hex.toHexString(tx.getHash()));
+                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, tx.getHash());
                 logger.warn("Transaction Data: {}", tx);
                 logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
             }
@@ -172,7 +176,7 @@ public class TransactionExecutor {
 
         if (!isCovers(senderBalance, totalCost)) {
 
-            logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, Hex.toHexString(tx.getHash()));
+            logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, tx.getHash());
             logger.warn("Transaction Data: {}", tx);
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
@@ -184,7 +188,7 @@ public class TransactionExecutor {
         // Prevent transactions with excessive address size
         byte[] receiveAddress = tx.getReceiveAddress().getBytes();
         if (receiveAddress != null && !Arrays.equals(receiveAddress, EMPTY_BYTE_ARRAY) && receiveAddress.length > Constants.getMaxAddressByteLength()) {
-            logger.warn("Receiver address to long: size: {}, tx {}", receiveAddress.length, Hex.toHexString(tx.getHash()));
+            logger.warn("Receiver address to long: size: {}, tx {}", receiveAddress.length, tx.getHash());
             logger.warn("Transaction Data: {}", tx);
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
@@ -192,12 +196,14 @@ public class TransactionExecutor {
         }
 
         if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
-            logger.warn("Transaction {} signature not accepted: {}", Hex.toHexString(tx.getHash()), tx.getSignature());
+            logger.warn("Transaction {} signature not accepted: {}", tx.getHash(), tx.getSignature());
             logger.warn("Transaction Data: {}", tx);
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
-            panicProcessor.panic("invalidsignature", String.format("Transaction %s signature not accepted: %s", Hex.toHexString(tx.getHash()), tx.getSignature().toString()));
-            execError(String.format("Transaction signature not accepted: %s", tx.getSignature().toString()));
+            panicProcessor.panic("invalidsignature",
+                                 String.format("Transaction %s signature not accepted: %s",
+                                               tx.getHash(), tx.getSignature()));
+            execError(String.format("Transaction signature not accepted: %s", tx.getSignature()));
 
             return false;
         }
@@ -212,7 +218,7 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
 
@@ -237,7 +243,7 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.trace("Call transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         RskAddress targetAddress = tx.getReceiveAddress();
 
@@ -245,7 +251,7 @@ public class TransactionExecutor {
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        precompiledContract = PrecompiledContracts.getContractForAddress(config, new DataWord(targetAddress.getBytes()));
+        precompiledContract = precompiledContracts.getContractForAddress(new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -282,8 +288,9 @@ public class TransactionExecutor {
                 ProgramInvoke programInvoke =
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
-                this.vm = new VM(config);
-                this.program = new Program(config, code, programInvoke, tx);
+                this.vm = new VM(vmConfig, precompiledContracts);
+                BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+                this.program = new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
             }
         }
 
@@ -301,8 +308,9 @@ public class TransactionExecutor {
         } else {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
-            this.vm = new VM(config);
-            this.program = new Program(config, tx.getData(), programInvoke, tx);
+            this.vm = new VM(vmConfig, precompiledContracts);
+            BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+            this.program = new Program(vmConfig, precompiledContracts, configForBlock, tx.getData(), programInvoke, tx);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
@@ -337,7 +345,7 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.trace("Go transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Go transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         try {
 
@@ -424,7 +432,7 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         cacheTrack.commit();
 
@@ -500,7 +508,7 @@ public class TransactionExecutor {
 
         if (config.vmTrace() && program != null && result != null) {
             ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
-            String txHash = toHexString(tx.getHash());
+            String txHash = tx.getHash().toHexString();
             try {
                 saveProgramTraceFile(config, txHash, trace);
                 if (listener != null) {
