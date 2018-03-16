@@ -939,14 +939,14 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processTransactionsMessageUsingPendingState() throws UnknownHostException {
-        final SimpleTransactionPool pendingState = new SimpleTransactionPool();
+    public void processTransactionsMessageUsingTransactionPool() throws UnknownHostException {
+        final SimpleTransactionPool transactionPool = new SimpleTransactionPool();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TxHandler txmock = mock(TxHandler.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, pendingState, txmock, RskMockFactory.getPeerScoringManager(),
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionPool, txmock, RskMockFactory.getPeerScoringManager(),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();

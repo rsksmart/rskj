@@ -118,12 +118,12 @@ public class TestRunner {
 
         blockchain.setNoValidation(true);
 
-        TransactionPoolImpl pendingState = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
         blockchain.setBestBlock(genesis);
         blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
 
-        blockchain.setTransactionPool(pendingState);
+        blockchain.setTransactionPool(transactionPool);
 
         /* 2 */ // Create block traffic list
         List<Block> blockTraffic = new ArrayList<>();

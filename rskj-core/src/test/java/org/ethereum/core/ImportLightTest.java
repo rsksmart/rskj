@@ -74,9 +74,9 @@ public class ImportLightTest {
 
         blockchain.setNoValidation(true);
 
-        TransactionPoolImpl pendingState = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
-        blockchain.setTransactionPool(pendingState);
+        blockchain.setTransactionPool(transactionPool);
 
         Repository track = repository.startTracking();
 

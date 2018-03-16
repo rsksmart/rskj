@@ -239,7 +239,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void rejectPendingStateTransaction() {
+    public void rejectTransactionPoolTransaction() {
         BlockChainImpl blockchain = createBlockchain();
         Coin balance = Coin.valueOf(1000000);
         TransactionPoolImpl transactionPool = createSampleNewTransactionPoolWithAccounts(2, balance, blockchain);
@@ -498,7 +498,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void updatePendingState() {
+    public void updateTransactionPool() {
         BlockChainImpl blockchain = createBlockchain();
         Coin balance = Coin.valueOf(1000000);
         TransactionPoolImpl transactionPool = createSampleNewTransactionPoolWithAccounts(2, balance, blockchain);

@@ -56,7 +56,7 @@ public class EthereumListenerAdapter implements EthereumListener {
     }
 
     @Override
-    public void onPendingStateChanged(TransactionPool transactionPool) {
+    public void onTransactionPoolChanged(TransactionPool transactionPool) {
     }
 
     @Deprecated

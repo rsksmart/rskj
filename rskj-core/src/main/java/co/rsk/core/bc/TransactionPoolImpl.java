@@ -72,7 +72,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private Block bestBlock;
 
-    private Repository pendingStateRepository;
+    private Repository poolRepository;
     private final TxPendingValidator validator = new TxPendingValidator();
 
     public TransactionPoolImpl(BlockStore blockStore,
@@ -108,10 +108,10 @@ public class TransactionPoolImpl implements TransactionPool {
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
 
-        this.pendingStateRepository = repository.startTracking();
+        this.poolRepository = repository.startTracking();
 
         if (this.outdatedTimeout > 0) {
-            this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PendingStateCleanerTimer"));
+            this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
         }
     }
 
@@ -155,7 +155,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public synchronized Repository getRepository() { return this.pendingStateRepository; }
+    public synchronized Repository getRepository() { return this.poolRepository; }
 
     @Override
     public synchronized List<Transaction> addTransactions(final List<Transaction> txs) {
@@ -185,7 +185,7 @@ public class TransactionPoolImpl implements TransactionPool {
         if (listener != null && !added.isEmpty()) {
             EventDispatchThread.invokeLater(() -> {
                 listener.onPendingTransactionsReceived(added);
-                listener.onPendingStateChanged(TransactionPoolImpl.this);
+                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
             });
         }
 
@@ -245,7 +245,7 @@ public class TransactionPoolImpl implements TransactionPool {
         if (listener != null) {
             EventDispatchThread.invokeLater(() -> {
                 listener.onPendingTransactionsReceived(Collections.singletonList(tx));
-                listener.onPendingStateChanged(TransactionPoolImpl.this);
+                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
             });
         }
 
@@ -289,7 +289,7 @@ public class TransactionPoolImpl implements TransactionPool {
         bestBlock = block;
 
         if (listener != null) {
-            EventDispatchThread.invokeLater(() -> listener.onPendingStateChanged(TransactionPoolImpl.this));
+            EventDispatchThread.invokeLater(() -> listener.onTransactionPoolChanged(TransactionPoolImpl.this));
         }
     }
 
@@ -388,7 +388,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     public synchronized void updateState() {
         logger.trace("update state");
-        pendingStateRepository = repository.startTracking();
+        poolRepository = repository.startTracking();
 
         TransactionSortedSet sorted = new TransactionSortedSet();
         sorted.addAll(pendingTransactions.getTransactions());
@@ -402,7 +402,7 @@ public class TransactionPoolImpl implements TransactionPool {
         logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
 
         TransactionExecutor executor = new TransactionExecutor(
-                config, tx, 0, bestBlock.getCoinbase(), pendingStateRepository,
+                config, tx, 0, bestBlock.getCoinbase(), poolRepository,
                 blockStore, receiptStore, programInvokeFactory, createFakePendingBlock(bestBlock)
         );
 
