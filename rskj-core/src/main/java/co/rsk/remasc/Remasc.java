@@ -142,10 +142,10 @@ public class Remasc {
         BridgeSupport bridgeSupport = new BridgeSupport(
                 config,
                 processingRepository,
-                null,
                 PrecompiledContracts.BRIDGE_ADDR,
                 processingBlock
         );
+
         RemascFederationProvider federationProvider = new RemascFederationProvider(bridgeSupport);
 
         Coin payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
