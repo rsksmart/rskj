@@ -1199,7 +1199,7 @@ public class TrieImpl implements Trie {
     }
 
     public Trie getSnapshotTo(Keccak256 hash) {
-        this.save();
+        //this.save();
 
         if (emptyHash.equals(hash)) {
             return new TrieImpl(this.store, this.isSecure);

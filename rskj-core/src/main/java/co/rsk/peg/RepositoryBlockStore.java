@@ -28,6 +28,8 @@ import org.ethereum.vm.DataWord;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
@@ -36,6 +38,8 @@ import java.nio.charset.StandardCharsets;
 public class RepositoryBlockStore implements BtcBlockStore{
 
     public static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
+
+    private static Map<Sha256Hash, StoredBlock> knownBlocks = new HashMap<>();
 
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -67,16 +71,27 @@ public class RepositoryBlockStore implements BtcBlockStore{
         Sha256Hash hash = block.getHeader().getHash();
         byte[] ba = storedBlockToByteArray(block);
         repository.addStorageBytes(contractAddress, new DataWord(hash.toString()), ba);
+        knownBlocks.put(hash, block);
     }
 
     @Override
     public synchronized StoredBlock get(Sha256Hash hash) throws BlockStoreException {
+        StoredBlock storedBlock = knownBlocks.get(hash);
+
+        if (storedBlock != null) {
+            return storedBlock;
+        }
+
         byte[] ba = repository.getStorageBytes(contractAddress, new DataWord(hash.toString()));
+
         if (ba==null) {
             return null;
         }
         
-        StoredBlock storedBlock = byteArrayToStoredBlock(ba);
+        storedBlock = byteArrayToStoredBlock(ba);
+
+        knownBlocks.put(hash, storedBlock);
+
         return storedBlock;
     }
 
