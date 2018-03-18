@@ -13,6 +13,9 @@ import java.util.stream.Stream;
 
 public class Migrator {
 
+    private static final String NEW_CONFIG_PREFIX = "[new]";
+    private static final String MINIMAL_CONFIG_FORMAT = "{%s = %s}";
+
     private final MigratorConfiguration configuration;
 
     public Migrator(MigratorConfiguration configuration) {
@@ -31,7 +34,15 @@ public class Migrator {
         Enumeration migrationPaths = migrationConfiguration.propertyNames();
         while (migrationPaths.hasMoreElements()) {
             String originalPath = (String) migrationPaths.nextElement();
-            if (migratedConfig.hasPath(originalPath)) {
+            if (originalPath.startsWith(NEW_CONFIG_PREFIX)) {
+                try {
+                    String newConfigPath = originalPath.substring(NEW_CONFIG_PREFIX.length()).trim();
+                    Config newConfiguration = ConfigFactory.parseString(String.format(MINIMAL_CONFIG_FORMAT, newConfigPath, migrationConfiguration.getProperty(originalPath)));
+                    migratedConfig = migratedConfig.withFallback(newConfiguration);
+                } catch (ConfigException e) {
+                    throw new IllegalArgumentException(String.format("Unable to parse value for the %s property", originalPath), e);
+                }
+            } else if (migratedConfig.hasPath(originalPath)) {
                 ConfigValue configurationValueToMigrate = migratedConfig.getValue(originalPath);
                 migratedConfig = migratedConfig.withValue(migrationConfiguration.getProperty(originalPath), configurationValueToMigrate).withoutPath(originalPath);
             }
