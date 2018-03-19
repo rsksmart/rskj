@@ -13,6 +13,8 @@ import java.util.stream.Stream;
 
 public class Migrator {
 
+    private static final String MINIMAL_CONFIG_FORMAT = "{%s: %s}";
+
     private final MigratorConfiguration configuration;
 
     public Migrator(MigratorConfiguration configuration) {
@@ -34,6 +36,13 @@ public class Migrator {
             if (migratedConfig.hasPath(originalPath)) {
                 ConfigValue configurationValueToMigrate = migratedConfig.getValue(originalPath);
                 migratedConfig = migratedConfig.withValue(migrationConfiguration.getProperty(originalPath), configurationValueToMigrate).withoutPath(originalPath);
+            } else {
+                try {
+                    Config newConfiguration = ConfigFactory.parseString(String.format(MINIMAL_CONFIG_FORMAT, originalPath, migrationConfiguration.getProperty(originalPath)));
+                    migratedConfig = migratedConfig.withFallback(newConfiguration);
+                } catch (ConfigException e) {
+                    throw new IllegalArgumentException(String.format("Unable to parse value for the %s property", originalPath), e);
+                }
             }
         }
 
