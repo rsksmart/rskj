@@ -93,9 +93,6 @@ public class MinerServerImpl implements MinerServer {
 
     @GuardedBy("lock")
     private LinkedHashMap<Keccak256, Block> blocksWaitingforPoW;
-
-    @GuardedBy("lock")
-    private Keccak256 latestblockHashWaitingforPoW;
     @GuardedBy("lock")
     private Keccak256 latestParentHash;
     @GuardedBy("lock")
@@ -441,13 +438,6 @@ public class MinerServerImpl implements MinerServer {
                 return new SubmitBlockResult("ERROR", message);
             }
 
-            // just in case, remove all references to this block.
-            if (latestBlock == workingBlock) {
-                latestBlock = null;
-                latestblockHashWaitingforPoW = null;
-                currentWork = null;
-            }
-
             // clone the block
             newBlock = workingBlock.cloneBlock();
 
@@ -603,14 +593,14 @@ public class MinerServerImpl implements MinerServer {
      * getWork returns the latest MinerWork for miners. Subsequent calls to this function with no new work will return
      * currentWork with the notify flag turned off. (they will be different objects too).
      *
+     * This method must be called with MinerServer started. That and the fact that work is never set to null
+     * will ensure that currentWork is not null.
+     *
      * @return the latest MinerWork available.
      */
     @Override
     public MinerWork getWork() {
         MinerWork work = currentWork;
-        if (work == null) {
-            return null;
-        }
 
         if (work.getNotify()) {
             /**
@@ -621,7 +611,7 @@ public class MinerServerImpl implements MinerServer {
              * currentWork, regardless of what it is.
              */
             synchronized (lock) {
-                if (currentWork != work || currentWork == null) {
+                if (currentWork != work) {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
@@ -692,11 +682,10 @@ public class MinerServerImpl implements MinerServer {
             latestParentHash = parentHash;
             latestBlock = newBlock;
 
-
             currentWork = updateGetWork(newBlock, notify);
-            latestblockHashWaitingforPoW = new Keccak256(newBlock.getHashForMergedMining());
+            Keccak256 latestBlockHashWaitingForPoW = new Keccak256(newBlock.getHashForMergedMining());
 
-            blocksWaitingforPoW.put(latestblockHashWaitingforPoW, latestBlock);
+            blocksWaitingforPoW.put(latestBlockHashWaitingForPoW, latestBlock);
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
@@ -767,7 +756,7 @@ public class MinerServerImpl implements MinerServer {
             MinerWork work = currentWork;
             String bestBlockHash = bestBlock.getHashJsonString();
 
-            if (work == null || !work.getParentBlockHash().equals(bestBlockHash)) {
+            if (!work.getParentBlockHash().equals(bestBlockHash)) {
                 logger.debug("There is a new best block: {}, number: {}", bestBlock.getShortHashForMergedMining(), bestBlock.getNumber());
                 buildBlockToMine(bestBlock, false);
             } else {
