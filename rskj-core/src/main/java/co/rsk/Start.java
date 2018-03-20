@@ -77,8 +77,14 @@ public class Start {
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
         Start runner = ctx.getBean(Start.class);
-        runner.startNode(args);
-        Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
+        try {
+            runner.startNode(args);
+            Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
+        }catch(Exception e){
+            logger.error(e.getMessage(), e);
+            runner.stop();
+            System.exit(1);
+        }
     }
 
     @Autowired
