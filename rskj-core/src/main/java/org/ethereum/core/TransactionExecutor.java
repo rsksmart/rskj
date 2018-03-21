@@ -218,6 +218,13 @@ public class TransactionExecutor {
             return;
         }
 
+        prepare();
+        go();
+        end();
+
+    }
+
+    private void prepare() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
@@ -236,15 +243,9 @@ public class TransactionExecutor {
         } else {
             call();
         }
-
-        go();
-        finalization();
     }
 
     private void call() {
-        if (!readyToExecute) {
-            return;
-        }
 
         logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
@@ -338,9 +339,6 @@ public class TransactionExecutor {
     }
 
     private void go() {
-        if (!readyToExecute) {
-            return;
-        }
 
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
@@ -425,10 +423,7 @@ public class TransactionExecutor {
     }
 
 
-    private void finalization() {
-        if (!readyToExecute) {
-            return;
-        }
+    private void end() {
 
         // RSK if local call gas balances must not be changed
         if (localCall) {
@@ -524,7 +519,7 @@ public class TransactionExecutor {
             }
         }
 
-        logger.trace("tx finalization done");
+        logger.trace("tx end done");
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {
