@@ -19,6 +19,7 @@
 package co.rsk.trie;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.ConfigLoader;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockExecutor;
@@ -45,7 +46,7 @@ import java.util.Random;
  */
 public class TrieCopierTest {
     private static Random random = new Random();
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final RskSystemProperties config = new RskSystemProperties(new ConfigLoader());
 
     @Test
     public void copyTrie() {
@@ -171,10 +172,9 @@ public class TrieCopierTest {
 
         addBlocks(world, blockchain, 100);
 
-        byte[] state98 = blockchain.getBlockByNumber(98).getStateRoot();
         byte[] state99 = blockchain.getBlockByNumber(99).getStateRoot();
 
-        TrieCopier.trieContractStateCopy(store, store2, blockchain, 99, world.getRepository(), PrecompiledContracts.REMASC_ADDR);
+        TrieCopier.trieContractStateCopy(store, store2, blockchain, 99, 100, world.getRepository(), PrecompiledContracts.REMASC_ADDR);
 
         Repository repository99 = repository.getSnapshotTo(state99);
         AccountState accountState99 = repository99.getAccountState(PrecompiledContracts.REMASC_ADDR);
