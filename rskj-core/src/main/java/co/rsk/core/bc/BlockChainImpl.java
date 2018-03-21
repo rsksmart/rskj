@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -88,8 +89,11 @@ public class BlockChainImpl implements Blockchain {
     private BlockValidator blockValidator;
 
     private volatile BlockChainStatus status = new BlockChainStatus(null, BlockDifficulty.ZERO);
+
     private final Object connectLock = new Object();
     private final Object accessLock = new Object();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
     private final BlockExecutor blockExecutor;
     private BlockRecorder blockRecorder;
     private boolean noValidation;
@@ -149,44 +153,61 @@ public class BlockChainImpl implements Blockchain {
      */
     @Override
     public ImportResult tryToConnect(Block block) {
-        if (block == null) {
-            return ImportResult.INVALID_BLOCK;
-        }
-
-        if (!block.isSealed()) {
-            panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
-            block.seal();
-        }
-
-        if (blockRecorder != null) {
-            blockRecorder.writeBlock(block);
-        }
+        this.lock.readLock().lock();
 
         try {
-            logger.trace("Try connect block hash: {}, number: {}",
-                         block.getShortHash(),
-                         block.getNumber());
-
-            synchronized (connectLock) {
-                logger.trace("Start try connect");
-                long saveTime = System.nanoTime();
-                ImportResult result = internalTryToConnect(block);
-                long totalTime = System.nanoTime() - saveTime;
-                logger.info("block: num: [{}] hash: [{}], processed after: [{}]nano, result {}", block.getNumber(), block.getShortHash(), totalTime, result);
-                return result;
+            if (block == null) {
+                return ImportResult.INVALID_BLOCK;
             }
-        } catch (Throwable t) {
-            logger.error("Unexpected error: ", t);
-            return ImportResult.INVALID_BLOCK;
+
+            if (!block.isSealed()) {
+                panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
+                block.seal();
+            }
+
+            if (blockRecorder != null) {
+                blockRecorder.writeBlock(block);
+            }
+
+            try {
+                logger.trace("Try connect block hash: {}, number: {}",
+                        block.getShortHash(),
+                        block.getNumber());
+
+                synchronized (connectLock) {
+                    logger.trace("Start try connect");
+                    long saveTime = System.nanoTime();
+                    ImportResult result = internalTryToConnect(block);
+                    long totalTime = System.nanoTime() - saveTime;
+                    logger.info("block: num: [{}] hash: [{}], processed after: [{}]nano, result {}", block.getNumber(), block.getShortHash(), totalTime, result);
+                    return result;
+                }
+            } catch (Throwable t) {
+                logger.error("Unexpected error: ", t);
+                return ImportResult.INVALID_BLOCK;
+            }
         }
+        finally {
+            this.lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public void suspendProcess() {
+        this.lock.writeLock().lock();
+    }
+
+    @Override
+    public void resumeProcess() {
+        this.lock.writeLock().unlock();
     }
 
     private ImportResult internalTryToConnect(Block block) {
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
                 !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
-                         block.getShortHash(),
-                         block.getNumber());
+                    block.getShortHash(),
+                    block.getNumber());
 
             return ImportResult.EXIST;
         }
@@ -404,10 +425,17 @@ public class BlockChainImpl implements Blockchain {
 
     @Override
     public void removeBlocksByNumber(long number) {
-        List<Block> blocks = this.getBlocksByNumber(number);
+        this.lock.writeLock().lock();
 
-        for (Block block : blocks) {
-            blockStore.removeBlock(block);
+        try {
+            List<Block> blocks = this.getBlocksByNumber(number);
+
+            for (Block block : blocks) {
+                blockStore.removeBlock(block);
+            }
+        }
+        finally {
+            this.lock.writeLock().unlock();
         }
     }
 
