@@ -23,9 +23,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static java.lang.System.getProperty;
 
 public class FileUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger("file");
+
+    public static Path getDatabaseDirectoryPath(String databaseDirectory, String name) {
+        if (Paths.get(databaseDirectory).isAbsolute()) {
+            return Paths.get(databaseDirectory, name);
+        } else {
+            return Paths.get(getProperty("user.dir"), databaseDirectory, name);
+        }
+    }
+
+    public static boolean fileRename(String originalName, String newName) {
+        File file = new File(originalName);
+        return file.renameTo(new File(newName));
+    }
 
     public static boolean recursiveDelete(String fileName) {
         File file = new File(fileName);
