@@ -236,6 +236,9 @@ public class TransactionExecutor {
         } else {
             call();
         }
+
+        go();
+        finalization();
     }
 
     private void call() {
@@ -334,7 +337,7 @@ public class TransactionExecutor {
         executionError = err;
     }
 
-    public void go() {
+    private void go() {
         if (!readyToExecute) {
             return;
         }
@@ -422,7 +425,7 @@ public class TransactionExecutor {
     }
 
 
-    public void finalization() {
+    private void finalization() {
         if (!readyToExecute) {
             return;
         }

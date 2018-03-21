@@ -403,8 +403,6 @@ public class TransactionPoolImpl implements TransactionPool {
 
         executor.init();
         executor.execute();
-        executor.go();
-        executor.finalization();
     }
 
     private void addQueuedTransaction(Transaction tx) {

@@ -92,8 +92,6 @@ public class MinerHelper {
 
             executor.init();
             executor.execute();
-            executor.go();
-            executor.finalization();
 
             long gasUsed = executor.getGasUsed();
             Coin paidFees = executor.getPaidFees();

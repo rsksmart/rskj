@@ -102,8 +102,6 @@ public class RskTestFactory {
                 getProgramInvokeFactory(), getBlockchain().getBestBlock());
         executor.init();
         executor.execute();
-        executor.go();
-        executor.finalization();
         track.commit();
         return executor;
     }
