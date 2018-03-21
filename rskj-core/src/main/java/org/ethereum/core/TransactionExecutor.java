@@ -84,7 +84,7 @@ public class TransactionExecutor {
 
     private final EthereumListener listener;
 
-    private VM vm;
+    private IVM vm;
     private Program program;
 
     PrecompiledContracts.PrecompiledContract precompiledContract;
@@ -258,50 +258,25 @@ public class TransactionExecutor {
         precompiledContract = precompiledContracts.getContractForAddress(new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
-            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
-            long requiredGas = precompiledContract.getGasForData(tx.getData());
-            BigInteger txGasLimit = toBI(tx.getGasLimit());
+            precompiledContract.init(tx, executionBlock, cacheTrack, blockStore, receiptStore, result.getLogInfoList());
+            this.vm = new PCVM(precompiledContract, tx.getData());
+            setProgramForData((byte[])null);
 
-            if (!localCall && txGasLimit.compareTo(BigInteger.valueOf(requiredGas)) < 0) {
-                // no refund
-                // no endowment
-                execError(String.format("Out of Gas calling precompiled contract 0x%s, required: %d, left: %s ",
-                        targetAddress.toString(), (requiredGas + basicTxCost), mEndGas));
-                mEndGas = BigInteger.ZERO;
-                return;
-            } else {
-                long gasUsed = requiredGas + basicTxCost;
-                mEndGas = txGasLimit.subtract(BigInteger.valueOf(requiredGas + basicTxCost));
-
-                // FIXME: save return for vm trace
-                try {
-                    byte[] out = precompiledContract.execute(tx.getData());
-                    result.setHReturn(out);
-                } catch (RuntimeException e) {
-                    result.setException(e);
-                }
-
-                result.spendGas(gasUsed);
-            }
         } else {
             byte[] code = track.getCode(targetAddress);
             if (isEmpty(code)) {
                 mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
                 result.spendGas(basicTxCost);
             } else {
-                ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
-
                 this.vm = new VM(vmConfig, precompiledContracts);
-                BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
-                this.program = new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
+                setProgramForData(code);
             }
         }
-
         if (result.getException() == null) {
             Coin endowment = tx.getValue();
             cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
         }
+
     }
 
     private void create() {
@@ -310,11 +285,8 @@ public class TransactionExecutor {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
             cacheTrack.createAccount(newContractAddress);
         } else {
-            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
-
             this.vm = new VM(vmConfig, precompiledContracts);
-            BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
-            this.program = new Program(vmConfig, precompiledContracts, configForBlock, tx.getData(), programInvoke, tx);
+            setProgramForData(tx.getData());
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
@@ -340,7 +312,6 @@ public class TransactionExecutor {
 
     private void go() {
 
-        // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
             cacheTrack.commit();
             return;
@@ -520,6 +491,12 @@ public class TransactionExecutor {
         }
 
         logger.trace("tx end done");
+    }
+
+    private void setProgramForData(byte[] data) {
+        ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
+        BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+        this.program = new Program(vmConfig, precompiledContracts, configForBlock, data, programInvoke, tx);
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {
