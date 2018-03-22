@@ -45,20 +45,6 @@ public class MinerManagerTest {
     private static final RskSystemProperties config = new RskSystemProperties();
 
     @Test
-    public void mineBlockWhenStopped() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        MinerServerImpl minerServer = getMinerServer(blockchain);
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        minerClient.stop();
-        Assert.assertFalse(minerClient.mineBlock());
-    }
-
-    @Test
     public void refreshWorkRunOnce() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
@@ -135,8 +121,6 @@ public class MinerManagerTest {
         Assert.assertEquals(1, bestBlock.getNumber());
 
         // reuse the same work
-        Assert.assertNull(minerServer.getWork());
-        minerServer.setWork(minerWork);
         Assert.assertNotNull(minerServer.getWork());
 
         Assert.assertTrue(minerClient.mineBlock());
@@ -213,23 +197,6 @@ public class MinerManagerTest {
         minerClient.doWork();
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
-    }
-
-    @Test
-    public void doWorkWithoutGetWork() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        MinerServerImpl minerServer = getMinerServer(blockchain);
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        Assert.assertNull(minerServer.getWork());
-
-        minerClient.doWork();
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
     }
 
     @Test
