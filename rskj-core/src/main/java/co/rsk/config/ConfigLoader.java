@@ -32,13 +32,13 @@ public class ConfigLoader {
     private static final String NO = "no";
 
     public static Config getConfigFromFiles() {
-        Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
         File installerFile = new File("/etc/rsk/node.conf");
         Config installerConfig = installerFile.exists() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
         logger.info(
                 "Config ( {} ): default properties from installer '/etc/rsk/node.conf'",
                 installerConfig.entrySet().isEmpty() ? NO : YES
         );
+
         String file = System.getProperty("rsk.conf.file");
         Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
         logger.info(
@@ -46,8 +46,32 @@ public class ConfigLoader {
                 cmdLineConfigFile.entrySet().isEmpty() ? NO : YES,
                 file
         );
-        return javaSystemProperties
+
+        Config userConfig = ConfigFactory.systemProperties()
                 .withFallback(cmdLineConfigFile)
                 .withFallback(installerConfig);
+        Config networkBaseConfig = getNetworkBaseConfig(userConfig);
+        return userConfig.withFallback(networkBaseConfig);
+    }
+
+    /**
+     * @return the network-specific configuration based on the user config, or mainnet if no configuration is specified.
+     */
+    public static Config getNetworkBaseConfig(Config userConfig) {
+        // these read reference.conf automatically, and overlay the network config on top
+        if (userConfig.hasPath("blockchain.config.name")) {
+            String network = userConfig.getString("blockchain.config.name");
+            if ("testnet".equals(network)) {
+                return ConfigFactory.load("config/testnet");
+            } else if ("regtest".equals(network)) {
+                return ConfigFactory.load("config/regtest");
+            } else {
+                logger.info("Invalid network '{}', using mainnet by default", network);
+            }
+        } else {
+            logger.info("Network not set, using mainnet by default");
+        }
+
+        return ConfigFactory.load("config/main");
     }
 }
