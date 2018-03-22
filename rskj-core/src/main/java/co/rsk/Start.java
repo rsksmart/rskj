@@ -80,7 +80,7 @@ public class Start {
         try {
             runner.startNode(args);
             Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
             runner.stop();
             System.exit(1);
@@ -215,46 +215,32 @@ public class Start {
 
     public void stop() {
         logger.info("Shutting down RSK node");
-        if(syncPool != null) {
-            syncPool.stop();
+        syncPool.stop();
+
+
+        if (rskSystemProperties.isRpcEnabled()) {
+            web3Service.stop();
+            web3HttpServer.stop();
         }
+        if (rskSystemProperties.isMinerServerEnabled()) {
+            minerServer.stop();
+            if (rskSystemProperties.isMinerClientEnabled()) {
+                minerClient.stop();
+            }
+        }
+        rsk.close();
+        messageHandler.stop();
+        channelManager.stop();
+
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {
             try {
-                if(udpServer!= null) {
-                    udpServer.stop();
-                }
-            } catch(InterruptedException e){
+                udpServer.stop();
+            } catch (InterruptedException e) {
                 logger.error("Couldn't stop the updServer", e);
+                Thread.currentThread().interrupt();
             }
         }
 
-        if (rskSystemProperties.isRpcEnabled()) {
-            if(web3Service != null) {
-                web3Service.stop();
-            }
-            if(web3HttpServer != null) {
-                web3HttpServer.stop();
-            }
-        }
-        if (rskSystemProperties.isMinerServerEnabled()) {
-            if(minerServer != null) {
-                minerServer.stop();
-            }
-            if (rskSystemProperties.isMinerClientEnabled()) {
-                if(minerClient != null) {
-                    minerClient.stop();
-                }
-            }
-        }
-        if(rsk != null) {
-            rsk.close();
-        }
-        if(messageHandler != null) {
-            messageHandler.stop();
-        }
-        if(channelManager != null) {
-            channelManager.stop();
-        }
         logger.info("RSK node Shut down");
     }
 

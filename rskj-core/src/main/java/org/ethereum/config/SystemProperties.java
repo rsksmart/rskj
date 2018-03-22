@@ -49,7 +49,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
 
 /**
  * Utility class to retrieve property values from the rskj.conf files
@@ -99,7 +98,7 @@ public abstract class SystemProperties {
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ValidateMe {}
 
-    protected static Config configFromFiles;
+    protected Config configFromFiles;
 
     // mutable options for tests
     private String databaseDir = null;
@@ -164,13 +163,13 @@ public abstract class SystemProperties {
         logger.info("Config ( {} ): test properties from resource 'test-rskj.conf'", testConfig.entrySet().isEmpty() ? NO : YES);
         String file = System.getProperty("rsk.conf.file");
         Config cmdLineConfigFile = ConfigFactory.empty();
-        if(file != null) {
+        if (file != null) {
             File cmdLineFile = new File(file);
-            if(!cmdLineFile.isFile()) {
-                throw new IllegalArgumentException("File does not exits " + file + " from argument -Drsk.conf.file");
+            if (!cmdLineFile.isFile()) {
+                throw new IllegalArgumentException(String.format("File does not exists '%s' from argument -Drsk.conf.file", file));
             }
-            if(!cmdLineFile.canRead()) {
-                throw new IllegalArgumentException("You don't have read permissions over the file " + file + " from argument -Drsk.conf.file");
+            if (!cmdLineFile.canRead()) {
+                throw new IllegalArgumentException(String.format("You don't have read permissions over the file '%s' from argument -Drsk.conf.file", file));
             }
             cmdLineConfigFile = ConfigFactory.parseFile(cmdLineFile);
             logger.info(
@@ -179,7 +178,7 @@ public abstract class SystemProperties {
                     file
             );
         }
-        if(cmdLineConfigFile.isEmpty() && testConfig.isEmpty() && referenceConfig.isEmpty() && installerConfig.isEmpty()){
+        if (cmdLineConfigFile.isEmpty() && testConfig.isEmpty() && referenceConfig.isEmpty() && installerConfig.isEmpty()) {
             throw new IllegalArgumentException("Couldn't find a valid config file path");
         }
 

@@ -54,6 +54,6 @@ public class JsonRpcMethodFilter implements RequestInterceptor {
             }
         }
 
-        throw new IOException("Method not supported: " + methodName);
+        throw new IOException(String.format("Method:'%s' not enabled in rpc modules list at node config file", methodName));
     }
 }
