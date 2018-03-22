@@ -33,21 +33,11 @@ public class ConfigLoader {
 
     public static Config getConfigFromFiles() {
         Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
-        Config referenceConfig = ConfigFactory.parseResources("rskj.conf");
-        logger.info(
-                "Config ( {} ): default properties from resource 'rskj.conf'",
-                referenceConfig.entrySet().isEmpty() ? NO : YES
-        );
         File installerFile = new File("/etc/rsk/node.conf");
         Config installerConfig = installerFile.exists() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
         logger.info(
                 "Config ( {} ): default properties from installer '/etc/rsk/node.conf'",
                 installerConfig.entrySet().isEmpty() ? NO : YES
-        );
-        Config testConfig = ConfigFactory.parseResources("test-rskj.conf");
-        logger.info(
-                "Config ( {} ): test properties from resource 'test-rskj.conf'",
-                testConfig.entrySet().isEmpty() ? NO : YES
         );
         String file = System.getProperty("rsk.conf.file");
         Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
@@ -58,8 +48,6 @@ public class ConfigLoader {
         );
         return javaSystemProperties
                 .withFallback(cmdLineConfigFile)
-                .withFallback(testConfig)
-                .withFallback(referenceConfig)
                 .withFallback(installerConfig);
     }
 }
