@@ -19,6 +19,7 @@
 
 package org.ethereum.config;
 
+import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.*;
 import org.ethereum.config.blockchain.DevNetConfig;
@@ -48,8 +49,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
 
 /**
  * Utility class to retrieve property values from the rskj.conf files
@@ -88,9 +87,6 @@ public abstract class SystemProperties {
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
     private static final String DEFAULT_BLOCKS_LOADER = "";
 
-    private static final String YES = "yes";
-    private static final String NO = "no";
-
     /**
      * Marks config accessor methods which need to be called (for value validation)
      * upon config creation or modification
@@ -121,7 +117,7 @@ public abstract class SystemProperties {
         try {
             // could be locked but the result should be the same if there is no race condition
             if (configFromFiles == null){
-                configFromFiles = getConfigFromFiles();
+                configFromFiles = ConfigLoader.getConfigFromFiles();
                 logger.debug("Config trace: " + configFromFiles.root().render(ConfigRenderOptions.defaults().
                         setComments(false).setJson(false)));
                 validateConfig();
@@ -151,25 +147,6 @@ public abstract class SystemProperties {
 
     private static String getProjectVersionModifier(Properties props) {
         return props.getProperty("modifier").replaceAll("\"", "");
-    }
-
-    private static Config getConfigFromFiles() {
-        Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
-        Config referenceConfig = ConfigFactory.parseResources("rskj.conf");
-        logger.info("Config ( {} ): default properties from resource 'rskj.conf'", referenceConfig.entrySet().isEmpty() ? NO : YES);
-        File installerFile = new File("/etc/rsk/node.conf");
-        Config installerConfig = installerFile.exists() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
-        logger.info("Config ( {} ): default properties from installer '/etc/rsk/node.conf'", installerConfig.entrySet().isEmpty() ? NO : YES);
-        Config testConfig = ConfigFactory.parseResources("test-rskj.conf");
-        logger.info("Config ( {} ): test properties from resource 'test-rskj.conf'", testConfig.entrySet().isEmpty() ? NO : YES);
-        String file = System.getProperty("rsk.conf.file");
-        Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
-        logger.info("Config ( {} ): user properties from -Drsk.conf.file file '{}'", cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
-        return javaSystemProperties
-                .withFallback(cmdLineConfigFile)
-                .withFallback(testConfig)
-                .withFallback(referenceConfig)
-                .withFallback(installerConfig);
     }
 
     public Config getConfig() {
