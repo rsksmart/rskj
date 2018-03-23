@@ -18,7 +18,7 @@
 
 package co.rsk.db;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.db.ContractDetails;
@@ -29,7 +29,7 @@ import org.ethereum.vm.DataWord;
  */
 public class RepositoryImplForTesting extends RepositoryImpl {
     public RepositoryImplForTesting() {
-        super(new RskSystemProperties());
+        super(new TestSystemProperties());
     }
 
     @Override

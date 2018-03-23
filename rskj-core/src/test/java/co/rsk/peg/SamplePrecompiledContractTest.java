@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.CallTransaction;
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertNull;
  */
 public class SamplePrecompiledContractTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
     @Test

@@ -19,7 +19,7 @@
 package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
@@ -62,7 +62,7 @@ public class TxPendingValidatorTest {
     }
 
     private Transaction createTransaction(long value, long gaslimit, long gasprice, long nonce, long data, long sender) {
-        return Tx.create(new RskSystemProperties(), value, gaslimit, gasprice, nonce, data, sender);
+        return Tx.create(new TestSystemProperties(), value, gaslimit, gasprice, nonce, data, sender);
     }
 
 }

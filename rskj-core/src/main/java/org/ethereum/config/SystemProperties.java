@@ -113,11 +113,11 @@ public abstract class SystemProperties {
 
     private BlockchainNetConfig blockchainConfig;
     
-    protected SystemProperties() {
+    protected SystemProperties(ConfigLoader loader) {
         try {
             // could be locked but the result should be the same if there is no race condition
             if (configFromFiles == null){
-                configFromFiles = ConfigLoader.getConfigFromFiles();
+                configFromFiles = loader.getConfigFromFiles();
                 logger.debug("Config trace: " + configFromFiles.root().render(ConfigRenderOptions.defaults().
                         setComments(false).setJson(false)));
                 validateConfig();

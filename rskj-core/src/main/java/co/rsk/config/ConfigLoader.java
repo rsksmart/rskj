@@ -31,7 +31,7 @@ public class ConfigLoader {
     private static final String YES = "yes";
     private static final String NO = "no";
 
-    public static Config getConfigFromFiles() {
+    public Config getConfigFromFiles() {
         File installerFile = new File("/etc/rsk/node.conf");
         Config installerConfig = installerFile.exists() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
         logger.info(
@@ -57,7 +57,7 @@ public class ConfigLoader {
     /**
      * @return the network-specific configuration based on the user config, or mainnet if no configuration is specified.
      */
-    public static Config getNetworkBaseConfig(Config userConfig) {
+    private Config getNetworkBaseConfig(Config userConfig) {
         // these read reference.conf automatically, and overlay the network config on top
         if (userConfig.hasPath("blockchain.config.name")) {
             String network = userConfig.getString("blockchain.config.name");

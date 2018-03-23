@@ -19,7 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.asm.EVMAssembler;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -41,7 +41,7 @@ import java.util.Arrays;
  */
 public class CodeReplaceTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void replaceCodeTest1() throws IOException, InterruptedException {

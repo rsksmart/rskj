@@ -18,7 +18,7 @@
 
 package co.rsk.datasource;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.junit.Assert;
@@ -30,11 +30,11 @@ import org.junit.Test;
  */
 public class DataSourcePoolTest {
 
-    private RskSystemProperties config;
+    private TestSystemProperties config;
 
     @Before
     public void setup(){
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
     }
 
     @Test

@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.AbstractNetConfig;
 import org.json.simple.parser.ParseException;
@@ -43,13 +43,13 @@ public class GitHubStateTest {
 
 
     private long oldForkValue;
-    private static RskSystemProperties config;
+    private static TestSystemProperties config;
 
     @BeforeClass
     public void setup() {
         // TODO remove this after Homestead launch and shacommit update with actual block number
         // for this JSON test commit the Homestead block was defined as 900000
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new AbstractNetConfig() {{
             add(0, new GenesisConfig());
 

@@ -18,7 +18,7 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
@@ -84,7 +84,7 @@ public class Web3ImplLogsTest {
     private final static String GET_VALUED_EVENT_SIGNATURE = "1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
     private final static String INCREMENT_METHOD_SIGNATURE = "371303c0";
     private final static String GET_VALUE_METHOD_SIGNATURE = "20965255";
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     //20965255 getValue()
     //371303c0 inc()
@@ -779,11 +779,11 @@ public class Web3ImplLogsTest {
         return web3;
     }
 
-    public static World getWorld3WithBlockWithEventInContractCreation(RskSystemProperties config) {
+    public static World getWorld3WithBlockWithEventInContractCreation(TestSystemProperties config) {
         return getWorld3WithBlockWithEventInContractCreation(config, null);
     }
 
-    public static World getWorld3WithBlockWithEventInContractCreation(RskSystemProperties config, ReceiptStore receiptStore) {
+    public static World getWorld3WithBlockWithEventInContractCreation(TestSystemProperties config, ReceiptStore receiptStore) {
         World world = new World(receiptStore);
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 

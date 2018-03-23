@@ -18,7 +18,7 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 
 public class TransactionTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {

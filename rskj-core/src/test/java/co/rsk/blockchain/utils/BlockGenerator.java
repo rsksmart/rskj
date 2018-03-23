@@ -18,7 +18,7 @@
 
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
@@ -61,7 +61,7 @@ public class BlockGenerator {
 
     private static final Block[] blockCache = new Block[5];
 
-    private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(new RskSystemProperties());
+    private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(new TestSystemProperties());
     private int count = 0;
 
     public Genesis getGenesisBlock() {

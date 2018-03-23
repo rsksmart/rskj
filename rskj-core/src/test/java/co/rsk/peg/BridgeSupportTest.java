@@ -29,7 +29,7 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -103,7 +103,7 @@ public class BridgeSupportTest {
 
     private static BridgeConstants bridgeConstants;
     private static NetworkParameters btcParams;
-    private RskSystemProperties config;
+    private TestSystemProperties config;
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
@@ -115,7 +115,7 @@ public class BridgeSupportTest {
 
     @Before
     public void setUpOnEachTest(){
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestConfig());
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcParams = bridgeConstants.getBtcParams();
@@ -135,7 +135,7 @@ public class BridgeSupportTest {
 
     @Test
     public void testInitialChainHeadWithBtcCheckpoints() throws Exception {
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new TestNetConfig());
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcParams = bridgeConstants.getBtcParams();
