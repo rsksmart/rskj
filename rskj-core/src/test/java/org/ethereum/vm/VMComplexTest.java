@@ -19,7 +19,7 @@
 
 package org.ethereum.vm;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -51,7 +51,7 @@ import static org.mockito.Mockito.mock;
 public class VMComplexTest {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 

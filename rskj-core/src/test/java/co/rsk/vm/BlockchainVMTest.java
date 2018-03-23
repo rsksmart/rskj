@@ -19,7 +19,7 @@
 package co.rsk.vm;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.test.World;
@@ -79,7 +79,7 @@ public class BlockchainVMTest {
                 dstAddress ,
                 transferAmount.getBytes(),
                 null,
-                new RskSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
+                new TestSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
 
         t.sign(binfo.faucetKey.getPrivKeyBytes());
         txs.add(t);

@@ -1,7 +1,7 @@
 package co.rsk.validators;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class BlockUnclesValidationRuleTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void rejectBlockWithSiblingUncle() {

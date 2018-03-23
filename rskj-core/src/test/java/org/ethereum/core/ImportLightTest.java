@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
@@ -45,7 +45,7 @@ import java.util.HashMap;
 public class ImportLightTest {
 
     public static BlockChainImpl createBlockchain(Genesis genesis) {
-        RskSystemProperties config = new RskSystemProperties();
+        TestSystemProperties config = new TestSystemProperties();
         config.setBlockchainConfig(new GenesisConfig(new GenesisConfig.GenesisConstants() {
             @Override
             public BlockDifficulty getMinimumDifficulty() {

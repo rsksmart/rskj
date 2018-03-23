@@ -18,7 +18,7 @@
 
 package co.rsk.blocks;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -33,7 +33,7 @@ public class FileBlockPlayerTest {
         FileBlockRecorder recorder = new FileBlockRecorder("testblocks.txt");
         recorder.close();
 
-        FileBlockPlayer player = new FileBlockPlayer(new RskSystemProperties(), "testblocks.txt");
+        FileBlockPlayer player = new FileBlockPlayer(new TestSystemProperties(), "testblocks.txt");
 
         File file = new File("testblocks.txt");
         Assert.assertTrue(file.exists());

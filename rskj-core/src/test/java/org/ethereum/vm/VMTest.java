@@ -20,7 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.asm.EVMAssembler;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import org.ethereum.config.BlockchainConfig;
@@ -51,7 +51,7 @@ public class VMTest {
 
     private ProgramInvokeMockImpl invoke;
     private Program program;
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 

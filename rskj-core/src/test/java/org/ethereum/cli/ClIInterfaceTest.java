@@ -19,7 +19,7 @@
 
 package org.ethereum.cli;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.rpc.CorsConfigurationTest;
 import org.ethereum.config.SystemProperties;
 import org.junit.Assert;
@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public class ClIInterfaceTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void callPrintHelp() {

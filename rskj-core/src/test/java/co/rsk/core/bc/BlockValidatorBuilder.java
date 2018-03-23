@@ -18,7 +18,7 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.validators.*;
 import org.ethereum.core.Repository;
@@ -30,7 +30,7 @@ import org.mockito.Mockito;
  */
 public class BlockValidatorBuilder {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private BlockTxsValidationRule blockTxsValidationRule;
 
     private BlockTxsFieldsValidationRule blockTxsFieldsValidationRule;

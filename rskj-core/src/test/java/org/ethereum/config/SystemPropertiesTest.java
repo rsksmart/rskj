@@ -19,7 +19,7 @@
 
 package org.ethereum.config;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,7 +31,7 @@ import java.net.InetAddress;
 public class SystemPropertiesTest {
     @Test
     public void punchBindIpTest() {
-        RskSystemProperties config = new RskSystemProperties();
+        TestSystemProperties config = new TestSystemProperties();
         config.overrideParams("bind.address", "");
         long st = System.currentTimeMillis();
         InetAddress ip = config.getBindAddress();
@@ -43,7 +43,7 @@ public class SystemPropertiesTest {
 
     @Test
     public void externalIpTest() {
-        RskSystemProperties config = new RskSystemProperties();
+        TestSystemProperties config = new TestSystemProperties();
         config.overrideParams("public.ip", "");
         long st = System.currentTimeMillis();
         String ip = config.getPublicIp();

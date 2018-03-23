@@ -18,7 +18,7 @@
 
 package co.rsk.vm;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.Bridge;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -28,7 +28,7 @@ import org.junit.Test;
 
 public class PrecompiledContractTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
     @Test

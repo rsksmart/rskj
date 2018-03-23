@@ -18,7 +18,7 @@
 
 package co.rsk.vm;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -54,7 +54,7 @@ import static org.junit.Assert.assertEquals;
  * Created by Sergio on 03/07/2016.
  */
 public class VMPerformanceTest {
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private final BlockchainConfig blockchainConfig = new RegTestConfig();

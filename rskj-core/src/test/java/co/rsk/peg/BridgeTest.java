@@ -24,7 +24,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
@@ -64,7 +64,7 @@ public class BridgeTest {
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
-    private static RskSystemProperties config = new RskSystemProperties();
+    private static TestSystemProperties config = new TestSystemProperties();
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {

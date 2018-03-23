@@ -1,6 +1,6 @@
 package org.ethereum.vm;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.Serializers;
 import org.junit.Assert;
@@ -18,7 +18,7 @@ import static org.hamcrest.core.Is.is;
 
 public class VMUtilsTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     @Rule
     public TemporaryFolder tempRule = new TemporaryFolder();
 

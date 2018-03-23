@@ -19,7 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
@@ -42,7 +42,7 @@ import java.util.concurrent.Callable;
  */
 public class MinerManagerTest {
 
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void refreshWorkRunOnce() {

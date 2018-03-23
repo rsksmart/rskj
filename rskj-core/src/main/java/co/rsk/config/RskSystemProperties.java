@@ -65,6 +65,10 @@ public class RskSystemProperties extends SystemProperties {
     private List<ModuleDescription> moduleDescriptions;
     private VmConfig vmConfig;
 
+    public RskSystemProperties(ConfigLoader loader) {
+        super(loader);
+    }
+
     @Nullable
     public RskAddress coinbaseAddress() {
         if (!isMinerServerEnabled()) {

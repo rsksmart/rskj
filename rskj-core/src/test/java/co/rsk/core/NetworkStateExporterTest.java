@@ -18,7 +18,7 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
@@ -40,7 +40,6 @@ import org.spongycastle.util.encoders.Hex;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,11 +50,11 @@ public class NetworkStateExporterTest {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     static String jsonFileName = "networkStateExporterTest.json";
-    private RskSystemProperties config;
+    private TestSystemProperties config;
 
     @Before
     public void setup(){
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
     }
 
     @AfterClass

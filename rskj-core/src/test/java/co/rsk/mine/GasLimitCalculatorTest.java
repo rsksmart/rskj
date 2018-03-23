@@ -18,7 +18,7 @@
 
 package co.rsk.mine;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.validator.ParentGasLimitRule;
@@ -34,7 +34,7 @@ import static org.ethereum.validator.ParentGasLimitRuleTest.getHeader;
  */
 public class GasLimitCalculatorTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private Constants constants = new Constants();
     private ParentGasLimitRule rule = new ParentGasLimitRule(1024);
 

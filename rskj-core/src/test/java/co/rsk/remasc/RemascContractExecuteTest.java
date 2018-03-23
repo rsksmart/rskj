@@ -20,7 +20,7 @@ package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.vm.PrecompiledContracts;
@@ -34,11 +34,11 @@ public class RemascContractExecuteTest {
 
     private static BlockchainNetConfig blockchainNetConfigOriginal;
     private static RemascConfig remascConfig;
-    private static RskSystemProperties config;
+    private static TestSystemProperties config;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestConfig());
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
     }
