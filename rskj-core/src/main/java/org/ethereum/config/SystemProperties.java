@@ -95,7 +95,7 @@ public abstract class SystemProperties {
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ValidateMe {}
 
-    protected static Config configFromFiles;
+    protected Config configFromFiles;
 
     // mutable options for tests
     private String databaseDir = null;
@@ -115,13 +115,12 @@ public abstract class SystemProperties {
     
     protected SystemProperties(ConfigLoader loader) {
         try {
-            // could be locked but the result should be the same if there is no race condition
-            if (configFromFiles == null){
-                configFromFiles = loader.getConfigFromFiles();
-                logger.debug("Config trace: " + configFromFiles.root().render(ConfigRenderOptions.defaults().
-                        setComments(false).setJson(false)));
-                validateConfig();
-            }
+            this.configFromFiles = loader.getConfigFromFiles();
+            logger.debug(
+                    "Config trace: {}",
+                    configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
+            );
+            validateConfig();
 
             Properties props = new Properties();
             InputStream is = getClass().getResourceAsStream("/version.properties");
