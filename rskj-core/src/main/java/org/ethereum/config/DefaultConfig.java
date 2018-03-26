@@ -19,6 +19,7 @@
 
 package org.ethereum.config;
 
+import co.rsk.config.ConfigLoader;
 import co.rsk.config.GasLimitConfig;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
@@ -134,7 +135,7 @@ public class DefaultConfig {
 
     @Bean
     public RskSystemProperties rskSystemProperties() {
-        return new RskSystemProperties();
+        return new RskSystemProperties(new ConfigLoader());
     }
 
     @Bean

@@ -19,7 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.net.sync.SyncConfiguration;
@@ -49,10 +49,10 @@ public class TwoNodeTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        RskSystemProperties config = new RskSystemProperties();
+        TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(new RskSystemProperties(), processor, null, null, null, null, null, new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(new TestSystemProperties(), processor, null, null, null, null, null, new DummyBlockValidationRule());
 
         return new SimpleNode(handler);
     }

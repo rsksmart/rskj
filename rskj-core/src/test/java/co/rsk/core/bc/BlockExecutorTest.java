@@ -19,7 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -55,7 +55,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class BlockExecutorTest {
     public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void executeBlockWithoutTransaction() {

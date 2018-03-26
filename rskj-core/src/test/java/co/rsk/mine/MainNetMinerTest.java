@@ -2,7 +2,7 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
@@ -42,11 +42,11 @@ public class MainNetMinerTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
-    private RskSystemProperties config;
+    private TestSystemProperties config;
 
     @Before
     public void setup() {
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new FallbackMainNetConfig());
         DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
         World world = new World();
@@ -124,7 +124,7 @@ public class MainNetMinerTest {
         byte[] privKey1 = privateMiningKey1.getPrivKeyBytes();
         saveToFile(privKey1, new File(folder.getRoot().getCanonicalPath(), "privkey1.bin"));
 
-        RskSystemProperties tempConfig = new RskSystemProperties() {
+        TestSystemProperties tempConfig = new TestSystemProperties() {
 
             BlockchainNetConfig blockchainNetConfig = config.getBlockchainConfig();
 

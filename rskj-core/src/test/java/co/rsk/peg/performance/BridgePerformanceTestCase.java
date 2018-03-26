@@ -20,7 +20,7 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.Bridge;
@@ -52,7 +52,7 @@ import java.util.Random;
 public abstract class BridgePerformanceTestCase {
     protected static NetworkParameters networkParameters;
     protected static BridgeConstants bridgeConstants;
-    private static RskSystemProperties config;
+    private static TestSystemProperties config;
 
     private boolean oldCpuTimeEnabled;
     private ThreadMXBean thread;
@@ -98,7 +98,7 @@ public abstract class BridgePerformanceTestCase {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestConfig());
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         networkParameters = bridgeConstants.getBtcParams();

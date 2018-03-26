@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite.runners;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import org.ethereum.core.Block;
@@ -51,7 +51,7 @@ import java.util.List;
 public class StateTestRunner {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     public static List<String> run(StateTestCase stateTestCase2) {
         return new StateTestRunner(stateTestCase2).runImpl();

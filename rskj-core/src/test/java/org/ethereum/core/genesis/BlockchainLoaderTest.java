@@ -19,15 +19,13 @@
 
 package org.ethereum.core.genesis;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -46,7 +44,7 @@ public class BlockchainLoaderTest {
     public void testLoadBlockchainEmptyBlockchain() throws IOException {
         String jsonFile = "blockchain_loader_genesis.json";
 
-        RskSystemProperties systemProperties = Mockito.mock(RskSystemProperties.class);
+        TestSystemProperties systemProperties = Mockito.mock(TestSystemProperties.class);
 
         Constants constants = Mockito.mock(Constants.class);
         Mockito.when(constants.getInitialNonce()).thenReturn(BigInteger.ZERO);
@@ -54,7 +52,7 @@ public class BlockchainLoaderTest {
         BlockchainNetConfig blockchainNetConfig = Mockito.mock(BlockchainNetConfig.class);
         Mockito.when(blockchainNetConfig.getCommonConstants()).thenReturn(constants);
 
-        Mockito.when(systemProperties.databaseDir()).thenReturn(new RskSystemProperties().databaseDir());
+        Mockito.when(systemProperties.databaseDir()).thenReturn(new TestSystemProperties().databaseDir());
         Mockito.when(systemProperties.getBlockchainConfig()).thenReturn(blockchainNetConfig);
         Mockito.when(systemProperties.genesisInfo()).thenReturn(jsonFile);
 

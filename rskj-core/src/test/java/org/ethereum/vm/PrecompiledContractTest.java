@@ -19,7 +19,7 @@
 
 package org.ethereum.vm;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -37,7 +37,7 @@ import static org.junit.Assert.*;
 public class PrecompiledContractTest {
 
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
     @Test

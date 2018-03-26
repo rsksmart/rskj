@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.apache.commons.codec.binary.Base64;
 import org.h2.util.IOUtils;
 import org.json.simple.JSONArray;
@@ -38,7 +38,7 @@ import java.util.List;
 
 public class JSONReader {
 
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
 
     public static String loadJSON(String filename) {

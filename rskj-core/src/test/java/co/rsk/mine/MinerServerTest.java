@@ -22,7 +22,7 @@ import co.rsk.TestHelpers.Tx;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
@@ -55,7 +55,7 @@ import static org.junit.Assert.*;
  * Created by adrian.eidelman on 3/16/2016.
  */
 public class MinerServerTest {
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
 
     private BlockChainImpl blockchain;

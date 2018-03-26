@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -132,7 +132,7 @@ public class StateTest {
 
     private Trie generateGenesisState() {
         Trie trie = new TrieImpl();
-        Genesis genesis = (Genesis)Genesis.getInstance(new RskSystemProperties());
+        Genesis genesis = (Genesis)Genesis.getInstance(new TestSystemProperties());
 
         for (RskAddress addr : genesis.getPremine().keySet()) {
             trie = trie.put(addr.getBytes(), genesis.getPremine().get(addr).getAccountState().getEncoded());

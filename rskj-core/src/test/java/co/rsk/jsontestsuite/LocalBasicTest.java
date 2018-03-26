@@ -18,7 +18,7 @@
 
 package co.rsk.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.net.MainNetConfig;
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 public class LocalBasicTest {
 
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private RskSystemProperties config = new RskSystemProperties();;
+    private TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void runDifficultyTest() throws IOException, ParseException {

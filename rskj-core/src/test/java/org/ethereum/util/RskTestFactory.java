@@ -1,7 +1,7 @@
 package org.ethereum.util;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
@@ -31,7 +31,7 @@ import java.util.HashMap;
  * tests yet.
  */
 public class RskTestFactory {
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private BlockChainImpl blockchain;
     private IndexedBlockStore blockStore;
     private TransactionPool transactionPool;

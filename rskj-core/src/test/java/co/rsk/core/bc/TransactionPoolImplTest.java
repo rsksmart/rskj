@@ -19,7 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.test.builders.BlockBuilder;
@@ -44,7 +44,7 @@ import static org.ethereum.util.TransactionFactoryHelper.*;
  * Created by ajlopez on 08/08/2016.
  */
 public class TransactionPoolImplTest {
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void usingRepository() {

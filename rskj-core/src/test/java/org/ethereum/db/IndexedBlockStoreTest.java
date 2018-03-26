@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
@@ -57,7 +57,7 @@ public class IndexedBlockStoreTest {
     private static final Logger logger = LoggerFactory.getLogger("test");
     private List<Block> blocks = new ArrayList<>();
     private BlockDifficulty cumDifficulty = ZERO;
-    private RskSystemProperties config;
+    private TestSystemProperties config;
 
     @Before
     public void setup() throws URISyntaxException, IOException {
@@ -67,7 +67,7 @@ public class IndexedBlockStoreTest {
 
         File file = new File(scenario1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
         Block genesis = Genesis.getInstance(config);
         blocks.add(genesis);
         cumDifficulty = cumDifficulty.add(genesis.getCumulativeDifficulty());

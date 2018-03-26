@@ -18,7 +18,7 @@
 
 package co.rsk.vm;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.vm.DataWord;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.mock;
  * Created by ajlopez on 25/01/2017.
  */
 public class VMExecutionTest {
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private ProgramInvokeMockImpl invoke;
