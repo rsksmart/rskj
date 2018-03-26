@@ -33,6 +33,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
@@ -222,30 +223,33 @@ public class BridgeSupport {
     /**
      * In case of a lock tx: Transfers some SBTCs to the sender of the btc tx and keeps track of the new UTXOs available for spending.
      * In case of a release tx: Keeps track of the change UTXOs, now available for spending.
-     * @param btcTx The bitcoin transaction
-     * @param height The height of the bitcoin block that contains the tx
-     * @param pmt Partial Merklee Tree that proves the tx is included in the btc block
+     * @param rskTx The RSK transaction
+     * @param btcTxSerialized The raw BTC tx
+     * @param height The height of the BTC block that contains the tx
+     * @param pmtSerialized The raw partial Merkle tree
      * @throws BlockStoreException
      * @throws IOException
      */
-    public void registerBtcTransaction(Transaction rskTx, BtcTransaction btcTx, int height, PartialMerkleTree pmt) throws BlockStoreException, IOException {
+    public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized) throws IOException, BlockStoreException {
         Context.propagate(btcContext);
-
-        Federation federation = getActiveFederation();
-
+        Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
         // Check the tx was not already processed
-        if (provider.getBtcTxHashesAlreadyProcessed().keySet().contains(btcTx.getHash())) {
+        if (provider.getBtcTxHashesAlreadyProcessed().keySet().contains(btcTxHash)) {
             logger.warn("Supplied tx was already processed");
             return;
         }
 
-        // Check the tx is in the partial merkle tree
-        List<Sha256Hash> hashesInPmt = new ArrayList<>();
-        Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
-        if (!hashesInPmt.contains(btcTx.getHash())) {
-            logger.warn("Supplied tx is not in the supplied partial merkle tree");
-            panicProcessor.panic("btclock", "Supplied tx is not in the supplied partial merkle tree");
-            return;
+        Sha256Hash merkleRoot;
+        try {
+            PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(), pmtSerialized, 0);
+            List<Sha256Hash> hashesInPmt = new ArrayList<>();
+            merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
+            if (!hashesInPmt.contains(btcTxHash)) {
+                logger.warn("Supplied tx is not in the supplied partial merkle tree");
+                return;
+            }
+        } catch (VerificationException e) {
+            throw new BridgeIllegalArgumentException("PartialMerkleTree could not be parsed " + Hex.toHexString(pmtSerialized), e);
         }
 
         if (height < 0) {
@@ -261,6 +265,12 @@ public class BridgeSupport {
             return;
         }
 
+        if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
+            logger.warn("Tx {} has no inputs ", btcTxHash);
+            // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+            throw new VerificationException.EmptyInputsOrOutputs();
+        }
+
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         BtcBlock blockHeader = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height).getHeader();
         if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
@@ -269,16 +279,12 @@ public class BridgeSupport {
             return;
         }
 
-        // Checks the transaction contents for sanity
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
         btcTx.verify();
-        if (btcTx.getInputs().isEmpty()) {
-            logger.warn("Tx has no inputs " + btcTx);
-            panicProcessor.panic("btclock", "Tx has no inputs " + btcTx);
-            return;
-        }
 
         boolean locked = true;
 
+        Federation federation = getActiveFederation();
         // Specific code for lock/release/none txs
         if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
@@ -374,8 +380,6 @@ public class BridgeSupport {
             panicProcessor.panic("btclock", "This is not a lock, a release nor a migration tx " + btcTx);
             return;
         }
-
-        Sha256Hash btcTxHash = btcTx.getHash();
 
         // Mark tx as processed on this block
         provider.getBtcTxHashesAlreadyProcessed().put(btcTxHash, rskExecutionBlock.getNumber());
