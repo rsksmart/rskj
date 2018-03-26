@@ -28,6 +28,8 @@ public class MigratorTest {
         migrationProperties.put("inline.config.name", "inline.config.new.name");
         migrationProperties.put("nested.nested.config", "nested.nested.new.config");
         migrationProperties.put("unknown.config", "none");
+        migrationProperties.put("[new]new.key", "new value");
+        migrationProperties.put("[new] other.new.key", "12");
 
         String migratedConfiguration = Migrator.migrateConfiguration(initialConfiguration, migrationProperties);
         Config config = ConfigFactory.parseString(migratedConfiguration);
@@ -37,5 +39,7 @@ public class MigratorTest {
         assertThat(config.getInt("nested.nested.new.config"), is(13));
         assertThat(config.hasPath("unknown.config"), is(false));
         assertThat(config.getString("another.config"), is("don't change"));
+        assertThat(config.getString("new.key"), is("new value"));
+        assertThat(config.getInt("other.new.key"), is(12));
     }
 }
