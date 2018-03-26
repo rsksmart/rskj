@@ -1,6 +1,6 @@
 package co.rsk.cli.config;
 
-import co.rsk.cli.CliArgsParser;
+import co.rsk.cli.CliArgs;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,9 +13,8 @@ import java.util.Collection;
 public class MigrationTool {
 
     public static void main(String[] commandLineArgs) throws IOException {
-        CliArgsParser<Migrator.MigratorOptions, Migrator.MigratorFlags> cliArgs = new CliArgsParser<>(
-                commandLineArgs,
-                new CliArgsParser.ArgByNameProvider<Migrator.MigratorOptions>() {
+        CliArgs.Parser<Migrator.MigratorOptions, Migrator.MigratorFlags> parser = new CliArgs.Parser<>(
+                new CliArgs.ArgByNameProvider<Migrator.MigratorOptions>() {
                     @Override
                     public Migrator.MigratorOptions byName(String name) {
                         return Migrator.MigratorOptions.getByOptionName(name);
@@ -26,7 +25,7 @@ public class MigrationTool {
                         return Arrays.asList(Migrator.MigratorOptions.values());
                     }
                 },
-                new CliArgsParser.ArgByNameProvider<Migrator.MigratorFlags>() {
+                new CliArgs.ArgByNameProvider<Migrator.MigratorFlags>() {
                     @Override
                     public Migrator.MigratorFlags byName(String name) {
                         return Migrator.MigratorFlags.getByFlagName(name);
@@ -38,6 +37,8 @@ public class MigrationTool {
                     }
                 }
         );
+
+        CliArgs<Migrator.MigratorOptions, Migrator.MigratorFlags> cliArgs = parser.parse(commandLineArgs);
 
         MigratorConfiguration configuration = new MigratorConfiguration(
                 cliArgs.getOptions().get(Migrator.MigratorOptions.INPUT_FILE),
