@@ -26,7 +26,6 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.*;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -77,7 +76,6 @@ public class DoPrune {
         int blocksToProcess = DEFAULT_BLOCKS_TO_PROCESS;
         RskAddress contractAddress = DEFAULT_CONTRACT_ADDRESS;
 
-        CLIInterface.call(rskSystemProperties, args);
         logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
         BuildInfo.printInfo();
 
