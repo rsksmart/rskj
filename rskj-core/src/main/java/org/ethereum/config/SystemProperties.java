@@ -95,7 +95,7 @@ public abstract class SystemProperties {
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ValidateMe {}
 
-    protected Config configFromFiles;
+    protected final Config configFromFiles;
 
     // mutable options for tests
     private String databaseDir = null;
@@ -151,49 +151,6 @@ public abstract class SystemProperties {
 
     public Config getConfig() {
         return configFromFiles;
-    }
-
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param overrideOptions - atop config
-     */
-    public void overrideParams(Config overrideOptions) {
-        configFromFiles = overrideOptions.withFallback(configFromFiles);
-        validateConfig();
-    }
-
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param keyValuePairs [name] [value] [name] [value] ...
-     */
-    public void overrideParams(String ... keyValuePairs) {
-        if (keyValuePairs.length % 2 != 0) {
-            throw new RuntimeException("Odd argument number");
-        }
-
-        Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < keyValuePairs.length; i += 2) {
-            map.put(keyValuePairs[i], keyValuePairs[i + 1]);
-        }
-        overrideParams(map);
-    }
-
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param cliOptions -  command line options to take presidency
-     */
-    public void overrideParams(Map<String, String> cliOptions) {
-        Config cliConf = ConfigFactory.parseMap(cliOptions);
-        overrideParams(cliConf);
     }
 
     private void validateConfig() {
