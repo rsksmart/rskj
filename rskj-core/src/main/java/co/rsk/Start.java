@@ -34,7 +34,6 @@ import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.rpc.netty.Web3HttpServer;
-import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.*;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
@@ -45,8 +44,6 @@ import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
@@ -76,9 +73,9 @@ public class Start {
     private final SyncPool.PeerClientFactory peerClientFactory;
 
     public static void main(String[] args) throws Exception {
-        ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
-        Start runner = ctx.getBean(Start.class);
-        runner.startNode(args);
+        NodeBootstrapper ctx = new NodeBootstrapper(args);
+        Start runner = ctx.getStart();
+        runner.startNode();
         Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
     }
 
@@ -119,7 +116,7 @@ public class Start {
         this.peerClientFactory = peerClientFactory;
     }
 
-    public void startNode(String[] args) throws Exception {
+    public void startNode() throws Exception {
         logger.info("Starting RSK");
 
         logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
