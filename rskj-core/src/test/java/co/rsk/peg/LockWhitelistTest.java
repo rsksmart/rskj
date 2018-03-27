@@ -28,9 +28,11 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
@@ -111,5 +113,35 @@ public class LockWhitelistTest {
         Assert.assertFalse(whitelist.isWhitelisted(existingAddress.getHash160()));
 
         Assert.assertFalse(whitelist.remove(existingAddress));
+    }
+
+    @Test
+    public void isWhitelistedTestnetP2SH() {
+        NetworkParameters testnetParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+
+        Address a1 = Address.fromBase58(testnetParams, "n2A2NYcg1Ff8j7gkj9EjBoxZ3RZqQ4Jgi5");
+        Address a2 = Address.fromBase58(testnetParams, "2NDtJ4mxAMb3cExY7ooYpQU6RYJU1jyhmNu");
+        Address a3 = Address.fromBase58(testnetParams, "mfn7tDVKbZ1iQ4VyXqfGvsJUR2cVGVVa34");
+
+        Assert.assertTrue(Arrays.equals(a1.getHash160(), a2.getHash160()));
+        Assert.assertFalse(Arrays.equals(a1.getHash160(), a3.getHash160()));
+        Assert.assertFalse(Arrays.equals(a2.getHash160(), a3.getHash160()));
+
+//        Stream<String> whitelistBase58Addresses = Stream.of(
+//                "mfn7tDVKbZ1iQ4VyXqfGvsJUR2cVGVVa34",
+//                "mzFW1hHTJ5Vm3YG4VewKVdzmm5Vna873Ct",
+//                "n2A2NYcg1Ff8j7gkj9EjBoxZ3RZqQ4Jgi5",
+//                "n34jKU87CVGgeHgquhpASntARjp9pasPBu"
+//        );
+//
+//        Address nonWhitelistedAddress = Address.fromBase58(testnetParams, "2NDtJ4mxAMb3cExY7ooYpQU6RYJU1jyhmNu");
+//
+//        LockWhitelist whitelist = new LockWhitelist(
+//                whitelistBase58Addresses
+//                        .map(addressBase58 -> Address.fromBase58(testnetParams, addressBase58))
+//                        .collect(Collectors.toMap(Function.identity(), a -> Coin.CENT))
+//        );
+//
+//        Assert.assertFalse(whitelist.isWhitelisted(nonWhitelistedAddress));
     }
 }
