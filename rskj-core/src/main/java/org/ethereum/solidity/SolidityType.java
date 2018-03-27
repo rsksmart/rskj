@@ -22,6 +22,7 @@ package org.ethereum.solidity;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.Utils;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
@@ -182,9 +183,10 @@ public abstract class SolidityType {
 
         @Override
         public Object[] decode(byte[] encoded, int offset) {
+            Utils.validateArrayAllegedSize(encoded, size);
             Object[] result = new Object[size];
             for (int i = 0; i < size; i++) {
-                result[i] = elementType.decode(encoded, offset + i * elementType.getFixedSize());
+                result[i] = elementType.decode(encoded, Math.addExact(offset, i * elementType.getFixedSize()));
             }
 
             return result;
@@ -234,17 +236,18 @@ public abstract class SolidityType {
         @Override
         public Object decode(byte[] encoded, int origOffset) {
             int len = IntType.decodeInt(encoded, origOffset).intValue();
-            origOffset += 32;
+            origOffset = Math.addExact(origOffset, 32);
             int offset = origOffset;
+            Utils.validateArrayAllegedSize(encoded, len);
             Object[] ret = new Object[len];
 
             for (int i = 0; i < len; i++) {
                 if (elementType.isDynamicType()) {
-                    ret[i] = elementType.decode(encoded, origOffset + IntType.decodeInt(encoded, offset).intValue());
+                    ret[i] = elementType.decode(encoded, Math.addExact(origOffset, IntType.decodeInt(encoded, offset).intValue()));
                 } else {
                     ret[i] = elementType.decode(encoded, offset);
                 }
-                offset += elementType.getFixedSize();
+                offset = Math.addExact(offset, elementType.getFixedSize());
             }
             return ret;
         }
@@ -279,8 +282,9 @@ public abstract class SolidityType {
         @Override
         public Object decode(byte[] encoded, int offset) {
             int len = IntType.decodeInt(encoded, offset).intValue();
-            offset += 32;
-            return Arrays.copyOfRange(encoded, offset, offset + len);
+            offset = Math.addExact(offset, 32);
+            Utils.validateArrayAllegedSize(encoded, len, offset);
+            return Arrays.copyOfRange(encoded, offset, Math.addExact(offset, len));
         }
 
         @Override
@@ -330,6 +334,7 @@ public abstract class SolidityType {
 
         @Override
         public Object decode(byte[] encoded, int offset) {
+            Utils.validateArrayAllegedSize(encoded, offset, getFixedSize());
             return Arrays.copyOfRange(encoded, offset, getFixedSize());
         }
     }
@@ -408,7 +413,12 @@ public abstract class SolidityType {
         }
 
         public static BigInteger decodeInt(byte[] encoded, int offset) {
-            return new BigInteger(Arrays.copyOfRange(encoded, offset, offset + 32));
+            int to = Math.addExact(offset, 32);
+            if (encoded.length == 0) {
+                return new BigInteger(new byte[32]);
+            }
+            Utils.validateArrayAllegedSize(encoded, to);
+            return new BigInteger(Arrays.copyOfRange(encoded, offset, to));
         }
 
         public static byte[] encodeInt(int i) {
