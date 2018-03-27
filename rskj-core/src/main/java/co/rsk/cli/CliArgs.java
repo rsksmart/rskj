@@ -20,6 +20,9 @@ package co.rsk.cli;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * A simple representation of command line arguments, broken into "options", "flags" and "arguments".
+ */
 public class CliArgs<O, F> {
 
     private final List<String> arguments;
@@ -44,14 +47,25 @@ public class CliArgs<O, F> {
         return flags;
     }
 
-    public static class Parser<O extends Enum<O> & OptionalizableArgument, F extends Enum<F>> {
+    /**
+     * Parses a {@code String[]} of command line arguments in order to populate a
+     * {@link CliArgs} object.
+     *
+     * <h3>Working with option arguments</h3>
+     * Option arguments must adhere to the exact syntax:
+     * <pre class="code">-optName optValue</pre>
+     * <pre class="code">--flagName</pre>
+     * That is, options must be prefixed with "{@code -}", and must specify a value,
+     * and flags must be prefixed with "{@code --}", and may not specify a value.
+     */
+    public static class Parser<O extends Enum<O> & OptionalizableCliArg, F extends Enum<F> & CliArg> {
 
-        private final ArgByNameProvider<O> optionsProvider;
-        private final ArgByNameProvider<F> flagsProvider;
+        private final EnumSet<O> options;
+        private final EnumSet<F> flags;
 
-        public Parser(ArgByNameProvider<O> optionsProvider, ArgByNameProvider<F> flagsProvider) {
-            this.optionsProvider = optionsProvider;
-            this.flagsProvider = flagsProvider;
+        public Parser(Class<O> optionsClass, Class<F> flagsClass) {
+            this.options = EnumSet.allOf(optionsClass);
+            this.flags = EnumSet.allOf(flagsClass);
         }
 
         public CliArgs<O, F> parse(String[] args) {
@@ -69,14 +83,14 @@ public class CliArgs<O, F> {
                             if (args[i].length() < 3) {
                                 throw new IllegalArgumentException("You must provide a flag name, e.g. --quiet");
                             }
-                            flags.add(flagsProvider.byName(args[i].substring(2, args[i].length())));
+                            flags.add(getFlagByName(args[i].substring(2, args[i].length())));
                         } else {
                             if (args.length - 1 == i) {
                                 throw new IllegalArgumentException(
                                         String.format("A value must be provided after the option -%s", args[i])
                                 );
                             }
-                            options.put(optionsProvider.byName(args[i].substring(1, args[i].length())), args[i + 1]);
+                            options.put(getOptionByName(args[i].substring(1, args[i].length())), args[i + 1]);
                             i++;
                         }
                         break;
@@ -86,8 +100,7 @@ public class CliArgs<O, F> {
                 }
             }
 
-            Set<O> missingOptions = optionsProvider.values()
-                    .stream()
+            Set<O> missingOptions = this.options.stream()
                     .filter(arg -> !arg.isOptional())
                     .collect(Collectors.toSet());
             missingOptions.removeAll(options.keySet());
@@ -99,11 +112,23 @@ public class CliArgs<O, F> {
 
             return new CliArgs<>(arguments, options, flags);
         }
-    }
 
-    public interface ArgByNameProvider<E extends Enum<E>> {
-        E byName(String name);
+        private F getFlagByName(String flagName) {
+            Optional<F> cliFlag = flags.stream()
+                    .filter(flag -> flag.getName().equals(flagName))
+                    .findFirst();
+            return cliFlag.orElseThrow(
+                    () -> new NoSuchElementException(String.format("--%s is not a valid flag", flagName))
+            );
+        }
 
-        Collection<E> values();
+        private O getOptionByName(String optionName) {
+            Optional<O> cliFlag = options.stream()
+                    .filter(opt -> opt.getName().equals(optionName))
+                    .findFirst();
+            return cliFlag.orElseThrow(
+                    () -> new NoSuchElementException(String.format("-%s is not a valid option", optionName))
+            );
+        }
     }
 }
