@@ -116,7 +116,7 @@ public abstract class SystemProperties {
     protected SystemProperties(ConfigLoader loader) {
         try {
             this.configFromFiles = loader.getConfigFromFiles();
-            logger.debug(
+            logger.trace(
                     "Config trace: {}",
                     configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
             );

@@ -66,7 +66,7 @@ public class ConfigLoader {
             } else if ("regtest".equals(network)) {
                 return ConfigFactory.load("config/regtest");
             } else {
-                logger.info("Invalid network '{}', using mainnet by default", network);
+                logger.warn("Invalid network '{}', using mainnet by default", network);
             }
         } else {
             logger.info("Network not set, using mainnet by default");
