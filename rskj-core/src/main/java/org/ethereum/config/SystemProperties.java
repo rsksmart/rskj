@@ -70,6 +70,7 @@ public abstract class SystemProperties {
     private static final int DEFAULT_RPC_PORT = 4444;
     private static Logger logger = LoggerFactory.getLogger("general");
 
+    public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
     public static final String PROPERTY_DB_DIR = "database.dir";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_PEER_ACTIVE = "peer.active";
@@ -183,7 +184,10 @@ public abstract class SystemProperties {
         if (blockchainConfig == null) {
             String netName = netName();
             if (netName != null && configFromFiles.hasPath("blockchain.config.class")) {
-                throw new RuntimeException("Only one of two options should be defined: 'blockchain.config.name' and 'blockchain.config.class'");
+                throw new RuntimeException(String.format(
+                        "Only one of two options should be defined: '%s' and 'blockchain.config.class'",
+                        PROPERTY_BC_CONFIG_NAME)
+                );
             }
             if (netName != null) {
                 switch(netName) {
@@ -203,7 +207,11 @@ public abstract class SystemProperties {
                         blockchainConfig = new RegTestConfig();
                         break;
                     default:
-                        throw new RuntimeException("Unknown value for 'blockchain.config.name': '" + configFromFiles.getString("blockchain.config.name") + "'");
+                        throw new RuntimeException(String.format(
+                                "Unknown value for '%s': '%s'",
+                                PROPERTY_BC_CONFIG_NAME,
+                                netName)
+                        );
                 }
             } else {
                 String className = configFromFiles.getString("blockchain.config.class");
@@ -680,7 +688,7 @@ public abstract class SystemProperties {
     }
 
     public String netName() {
-        return configFromFiles.hasPath("blockchain.config.name") ? configFromFiles.getString("blockchain.config.name") : null;
+        return configFromFiles.getString(PROPERTY_BC_CONFIG_NAME);
     }
 
     public boolean isRpcEnabled() {

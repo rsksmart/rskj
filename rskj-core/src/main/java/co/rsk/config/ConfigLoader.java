@@ -19,6 +19,7 @@ package co.rsk.config;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.ethereum.config.SystemProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,8 +60,8 @@ public class ConfigLoader {
      */
     private Config getNetworkBaseConfig(Config userConfig) {
         // these read reference.conf automatically, and overlay the network config on top
-        if (userConfig.hasPath("blockchain.config.name")) {
-            String network = userConfig.getString("blockchain.config.name");
+        if (userConfig.hasPath(SystemProperties.PROPERTY_BC_CONFIG_NAME)) {
+            String network = userConfig.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME);
             if ("testnet".equals(network)) {
                 return ConfigFactory.load("config/testnet");
             } else if ("regtest".equals(network)) {
