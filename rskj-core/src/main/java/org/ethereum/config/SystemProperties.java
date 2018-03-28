@@ -101,7 +101,6 @@ public abstract class SystemProperties {
     // mutable options for tests
     private String databaseDir = null;
     private String fallbackMiningKeysDir = null;
-    private Boolean databaseReset = null;
     private String projectVersion = null;
     private String projectVersionModifier = null;
 
@@ -116,7 +115,7 @@ public abstract class SystemProperties {
     
     protected SystemProperties(ConfigLoader loader) {
         try {
-            this.configFromFiles = loader.getConfigFromFiles();
+            this.configFromFiles = loader.getConfig();
             logger.trace(
                     "Config trace: {}",
                     configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
@@ -266,11 +265,7 @@ public abstract class SystemProperties {
 
     @ValidateMe
     public boolean databaseReset() {
-        return databaseReset == null ? configFromFiles.getBoolean("database.reset") : databaseReset;
-    }
-
-    public void setDatabaseReset(Boolean reset) {
-        databaseReset = reset;
+        return configFromFiles.getBoolean("database.reset");
     }
 
     @ValidateMe

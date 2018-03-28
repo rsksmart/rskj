@@ -18,25 +18,39 @@
 package co.rsk.config;
 
 import co.rsk.cli.CliArg;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigValueFactory;
+import org.ethereum.config.SystemProperties;
 
 /**
  * Flags that the node can receive via command line arguments.
  * E.g. --testnet
  */
 public enum NodeCliFlags implements CliArg {
-    DB_RESET("reset"),
-    NETWORK_TESTNET("testnet"),
-    NETWORK_REGTEST("regtest"),
+    DB_RESET("reset", SystemProperties.PROPERTY_DB_RESET, true),
+    NETWORK_TESTNET("testnet", SystemProperties.PROPERTY_BC_CONFIG_NAME, "testnet"),
+    NETWORK_REGTEST("regtest", SystemProperties.PROPERTY_BC_CONFIG_NAME, "regtest"),
     ;
 
     private final String flagName;
+    private final String configPath;
+    private final Object configValue;
 
-    NodeCliFlags(String flagName) {
+    NodeCliFlags(String flagName, String configPath, Object configValue) {
         this.flagName = flagName;
+        this.configPath = configPath;
+        this.configValue = configValue;
     }
 
     @Override
     public String getName() {
         return flagName;
+    }
+
+    /**
+     * @return a new, augmented config with settings for this flag.
+     */
+    public Config withConfig(Config config) {
+        return config.withValue(configPath, ConfigValueFactory.fromAnyRef(configValue));
     }
 }
