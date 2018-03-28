@@ -35,6 +35,14 @@ public class CliArgs<O, F> {
         this.flags = Collections.unmodifiableSet(flags);
     }
 
+    public static <O, F> CliArgs<O, F> empty() {
+        return new CliArgs<>(
+                Collections.emptyList(),
+                Collections.emptyMap(),
+                Collections.emptySet()
+        );
+    }
+
     public List<String> getArguments() {
         return arguments;
     }
@@ -114,21 +122,21 @@ public class CliArgs<O, F> {
         }
 
         private F getFlagByName(String flagName) {
-            Optional<F> cliFlag = flags.stream()
+            return flags.stream()
                     .filter(flag -> flag.getName().equals(flagName))
-                    .findFirst();
-            return cliFlag.orElseThrow(
-                    () -> new NoSuchElementException(String.format("--%s is not a valid flag", flagName))
-            );
+                    .findFirst()
+                    .orElseThrow(
+                            () -> new NoSuchElementException(String.format("--%s is not a valid flag", flagName))
+                    );
         }
 
         private O getOptionByName(String optionName) {
-            Optional<O> cliFlag = options.stream()
+            return options.stream()
                     .filter(opt -> opt.getName().equals(optionName))
-                    .findFirst();
-            return cliFlag.orElseThrow(
-                    () -> new NoSuchElementException(String.format("-%s is not a valid option", optionName))
-            );
+                    .findFirst()
+                    .orElseThrow(
+                            () -> new NoSuchElementException(String.format("-%s is not a valid option", optionName))
+                    );
         }
     }
 }
