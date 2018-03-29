@@ -49,7 +49,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
 
 /**
  * Utility class to retrieve property values from the rskj.conf files
@@ -99,7 +98,7 @@ public abstract class SystemProperties {
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ValidateMe {}
 
-    protected static Config configFromFiles;
+    protected Config configFromFiles;
 
     // mutable options for tests
     private String databaseDir = null;
@@ -158,13 +157,31 @@ public abstract class SystemProperties {
         Config referenceConfig = ConfigFactory.parseResources("rskj.conf");
         logger.info("Config ( {} ): default properties from resource 'rskj.conf'", referenceConfig.entrySet().isEmpty() ? NO : YES);
         File installerFile = new File("/etc/rsk/node.conf");
-        Config installerConfig = installerFile.exists() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
+        Config installerConfig = installerFile.isFile() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
         logger.info("Config ( {} ): default properties from installer '/etc/rsk/node.conf'", installerConfig.entrySet().isEmpty() ? NO : YES);
         Config testConfig = ConfigFactory.parseResources("test-rskj.conf");
         logger.info("Config ( {} ): test properties from resource 'test-rskj.conf'", testConfig.entrySet().isEmpty() ? NO : YES);
         String file = System.getProperty("rsk.conf.file");
-        Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
-        logger.info("Config ( {} ): user properties from -Drsk.conf.file file '{}'", cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
+        Config cmdLineConfigFile = ConfigFactory.empty();
+        if (file != null) {
+            File cmdLineFile = new File(file);
+            if (!cmdLineFile.isFile()) {
+                throw new IllegalArgumentException(String.format("File does not exists '%s' from argument -Drsk.conf.file", file));
+            }
+            if (!cmdLineFile.canRead()) {
+                throw new IllegalArgumentException(String.format("You don't have read permissions over the file '%s' from argument -Drsk.conf.file", file));
+            }
+            cmdLineConfigFile = ConfigFactory.parseFile(cmdLineFile);
+            logger.info(
+                    "Config ( {} ): user properties from -Drsk.conf.file file '{}'",
+                    cmdLineConfigFile.entrySet().isEmpty() ? NO : YES,
+                    file
+            );
+        }
+        if (cmdLineConfigFile.isEmpty() && testConfig.isEmpty() && referenceConfig.isEmpty() && installerConfig.isEmpty()) {
+            throw new IllegalArgumentException("Couldn't find a valid config file path");
+        }
+
         return javaSystemProperties
                 .withFallback(cmdLineConfigFile)
                 .withFallback(testConfig)

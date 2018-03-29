@@ -56,7 +56,11 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<FullHt
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules) {
         this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
-        jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
+        jsonRpcServer.setErrorResolver(new MultipleErrorResolver(
+                new RskErrorResolver(),
+                AnnotationsErrorResolver.INSTANCE,
+                DefaultErrorResolver.INSTANCE
+        ));
     }
 
     @Override
@@ -76,12 +80,15 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<FullHt
         ByteBuf responseContent = Unpooled.buffer();
         HttpResponseStatus responseStatus = HttpResponseStatus.OK;
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())){
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
             int result = jsonRpcServer.handleRequest(is, os);
             responseStatus = HttpResponseStatus.valueOf(DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result));
         } catch (Exception e) {
             LOGGER.error("Unexpected error", e);
-            responseContent = buildErrorContent(JSON_RPC_SERVER_ERROR_HIGH_CODE, HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase());
+            responseContent = buildErrorContent(
+                    JSON_RPC_SERVER_ERROR_HIGH_CODE,
+                    HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase()
+            );
             responseStatus = HttpResponseStatus.INTERNAL_SERVER_ERROR;
         } finally {
             response = new DefaultFullHttpResponse(
@@ -108,7 +115,10 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<FullHt
         Map<String, JsonNode> errorProperties = new HashMap<>();
         errorProperties.put("code", jsonNodeFactory.numberNode(errorCode));
         errorProperties.put("message", jsonNodeFactory.textNode(errorMessage));
-        JsonNode error = jsonNodeFactory.objectNode().set("error", jsonNodeFactory.objectNode().setAll(errorProperties));
+        JsonNode error = jsonNodeFactory.objectNode().set(
+                "error",
+                jsonNodeFactory.objectNode().setAll(errorProperties)
+        );
         return Unpooled.wrappedBuffer(mapper.writeValueAsBytes(mapper.treeToValue(error, Object.class)));
     }
 }
