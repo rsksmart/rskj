@@ -390,9 +390,10 @@ public class Web3ImplTest {
 
     @Test
     public void getTransactionByHash() throws Exception {
-        World world = new World();
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
 
-        Web3Impl web3 = createWeb3(world);
+        Web3Impl web3 = createWeb3(world, receiptStore);
 
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
@@ -419,11 +420,13 @@ public class Web3ImplTest {
 
     @Test
     public void getPendingTransactionByHash() throws Exception {
-        World world = new World();
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
         BlockChainImpl blockChain = world.getBlockChain();
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, null, null, 10, 100);
         transactionPool.processBest(blockChain.getBestBlock());
-        Web3Impl web3 = createWeb3(world, transactionPool, null);
+        Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
@@ -446,9 +449,10 @@ public class Web3ImplTest {
 
     @Test
     public void getTransactionByHashNotInMainBlockchain() throws Exception {
-        World world = new World();
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
 
-        Web3Impl web3 = createWeb3(world);
+        Web3Impl web3 = createWeb3(world, receiptStore);
 
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();

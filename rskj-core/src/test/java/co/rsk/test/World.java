@@ -64,6 +64,7 @@ public class World {
             genesis = (Genesis) BlockChainImplTest.getGenesisBlock(blockChain);
             this.blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
         }
+
         this.saveBlock("g00", genesis);
 
         BlockStore store = new BlockStore();
