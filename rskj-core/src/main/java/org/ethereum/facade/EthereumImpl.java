@@ -72,6 +72,8 @@ public class EthereumImpl implements Ethereum {
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.blockchain = blockchain;
+
+        compositeEthereumListener.addListener(gasPriceTracker);
     }
 
     @Override
@@ -86,7 +88,6 @@ public class EthereumImpl implements Ethereum {
             });
             peerServiceExecutor.execute(() -> peerServer.start(config.getBindAddress(), config.getPeerPort()));
         }
-        compositeEthereumListener.addListener(gasPriceTracker);
 
         gLogger.info("RskJ node started: enode://{}@{}:{}" , Hex.toHexString(config.nodeId()), config.getPublicIp(), config.getPeerPort());
     }

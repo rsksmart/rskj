@@ -30,6 +30,7 @@ import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.junit.Assert;
 import org.junit.Test;
@@ -358,7 +359,7 @@ public class MinerManagerTest {
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
             super(null, null, null, null,
-                  null, null, null, null);
+                  new CompositeEthereumListener(), null, null, null);
         }
     }
 }
