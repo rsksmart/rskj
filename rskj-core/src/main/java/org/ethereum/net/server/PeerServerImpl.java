@@ -35,6 +35,8 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * This class establishes a listener for incoming connections.
@@ -50,6 +52,7 @@ public class PeerServerImpl implements PeerServer {
 
     // TODO review this variable use
     private boolean listening;
+    private ExecutorService peerServiceExecutor;
 
     public PeerServerImpl(SystemProperties config, EthereumListener ethereumListener, EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
         this.config = config;
@@ -57,7 +60,30 @@ public class PeerServerImpl implements PeerServer {
         this.ethereumChannelInitializerFactory = ethereumChannelInitializerFactory;
     }
 
-    public void start(InetAddress host, int port) {
+    @Override
+    public void start() {
+        if (config.getPeerPort() > 0) {
+            peerServiceExecutor = Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "Peer Server");
+                thread.setUncaughtExceptionHandler(
+                        (exceptionThread, exception) -> logger.error("Unable to start peer server", exception)
+                );
+                return thread;
+            });
+            peerServiceExecutor.execute(() -> start(config.getBindAddress(), config.getPeerPort()));
+        }
+
+        logger.info("RskJ node started: enode://{}@{}:{}" , Hex.toHexString(config.nodeId()), config.getPublicIp(), config.getPeerPort());
+    }
+
+    @Override
+    public void stop() {
+        if (peerServiceExecutor != null) {
+            peerServiceExecutor.shutdown();
+        }
+    }
+
+    private void start(InetAddress host, int port) {
         // TODO review listening use
         listening = true;
 

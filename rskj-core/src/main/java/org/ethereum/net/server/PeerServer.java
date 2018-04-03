@@ -19,8 +19,6 @@
 
 package org.ethereum.net.server;
 
-import java.net.InetAddress;
-
 /**
  * This class establishes a listener for incoming connections.
  * See <a href="http://netty.io">http://netty.io</a>.
@@ -31,7 +29,9 @@ import java.net.InetAddress;
 
 public interface PeerServer {
 
-    void start(InetAddress host, int port);
+    void start();
+
+    void stop();
 
     boolean isListening();
 }
