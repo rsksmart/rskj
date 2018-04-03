@@ -132,7 +132,6 @@ public class DoPrune {
 
     public void stop() {
         logger.info("Shutting down RSK node");
-        rsk.close();
     }
 
     private static String getDataSourceName(RskAddress contractAddress) {

@@ -24,12 +24,9 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
-import org.ethereum.rpc.Web3;
-import org.ethereum.vm.program.ProgramResult;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.List;
 import java.util.concurrent.Future;
 
 /**
@@ -64,11 +61,6 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public void close() {
-
-    }
-
-    @Override
     public ImportResult addNewMinedBlock(final @Nonnull Block block) {
         final ImportResult importResult = blockchain.tryToConnect(block);
 
@@ -88,11 +80,6 @@ public class SimpleEthereum implements Ethereum {
 
     public Repository getRepository() {
         return repository;
-    }
-
-    @Override
-    public void init() {
-
     }
 
     @Override

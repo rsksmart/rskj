@@ -27,7 +27,6 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.PeerServer;
 import org.ethereum.net.submit.TransactionExecutor;
 import org.ethereum.net.submit.TransactionTask;
 import org.ethereum.util.ByteUtil;
@@ -42,7 +41,6 @@ import java.util.concurrent.Future;
 public class EthereumImpl implements Ethereum {
 
     private final ChannelManager channelManager;
-    private final PeerServer peerServer;
     private final TransactionPool transactionPool;
     private final RskSystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
@@ -53,12 +51,10 @@ public class EthereumImpl implements Ethereum {
     public EthereumImpl(
             RskSystemProperties config,
             ChannelManager channelManager,
-            PeerServer peerServer,
             TransactionPool transactionPool,
             CompositeEthereumListener compositeEthereumListener,
             Blockchain blockchain) {
         this.channelManager = channelManager;
-        this.peerServer = peerServer;
         this.transactionPool = transactionPool;
 
         this.config = config;
@@ -66,11 +62,6 @@ public class EthereumImpl implements Ethereum {
         this.blockchain = blockchain;
 
         compositeEthereumListener.addListener(gasPriceTracker);
-    }
-
-    @Override
-    public void init() {
-        peerServer.start();
     }
 
     @Override
@@ -91,11 +82,6 @@ public class EthereumImpl implements Ethereum {
     @Override
     public void removeListener(EthereumListener listener) {
         compositeEthereumListener.removeListener(listener);
-    }
-
-    @Override
-    public void close() {
-        peerServer.stop();
     }
 
     @Override
