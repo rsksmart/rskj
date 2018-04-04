@@ -17,34 +17,6 @@
  */
 package co.rsk;
 
-import co.rsk.cli.CliArgs;
-import co.rsk.config.NodeCliFlags;
-import co.rsk.config.NodeCliOptions;
-import org.ethereum.config.DefaultConfig;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-
-/**
- * Bootstraps the node, creating the initial object graph.
- * It uses Spring at the moment.
- */
-public class NodeBootstrapper {
-    private final AnnotationConfigApplicationContext ctx;
-
-    public NodeBootstrapper(String[] args) {
-        ctx = new AnnotationConfigApplicationContext();
-        CliArgs.Parser<NodeCliOptions, NodeCliFlags> parser = new CliArgs.Parser<>(
-                NodeCliOptions.class,
-                NodeCliFlags.class
-        );
-
-        // register it into the Spring context so it can be injected into components
-        CliArgs<NodeCliOptions, NodeCliFlags> cliArgs = parser.parse(args);
-        ctx.getBeanFactory().registerSingleton("cliArgs", cliArgs);
-        ctx.register(DefaultConfig.class);
-        ctx.refresh();
-    }
-
-    public Start getStart() {
-        return ctx.getBean(Start.class);
-    }
+public interface NodeBootstrapper {
+    NodeRunner getNodeRunner();
 }
