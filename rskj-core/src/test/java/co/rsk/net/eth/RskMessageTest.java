@@ -19,7 +19,7 @@
 package co.rsk.net.eth;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
 import org.ethereum.core.Block;
@@ -34,7 +34,7 @@ import org.junit.Test;
  */
 public class RskMessageTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void encodeDecodeGetBlockMessage() {

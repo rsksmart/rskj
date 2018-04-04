@@ -19,10 +19,9 @@
 package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.test.World;
-import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +30,7 @@ import org.junit.Test;
  * Created by ajlopez on 17/01/2018.
  */
 public class LogFilterTest {
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void noEvents() {

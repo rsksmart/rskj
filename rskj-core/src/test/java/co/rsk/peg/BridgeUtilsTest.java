@@ -27,7 +27,7 @@ import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -67,11 +67,11 @@ public class BridgeUtilsTest {
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
-    private RskSystemProperties config;
+    private TestSystemProperties config;
 
     @Before
     public void setupConfig(){
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
     }
 
     @Test

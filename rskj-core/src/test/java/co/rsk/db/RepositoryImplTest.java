@@ -18,7 +18,7 @@
 
 package co.rsk.db;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -42,7 +42,7 @@ import java.util.Set;
  */
 public class RepositoryImplTest {
     private static Keccak256 emptyHash = TrieImplHashTest.makeEmptyHash();
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void getNonceUnknownAccount() {

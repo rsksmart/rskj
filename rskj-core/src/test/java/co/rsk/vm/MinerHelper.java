@@ -18,7 +18,7 @@
 
 package co.rsk.vm;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.GasLimitCalculator;
@@ -39,7 +39,7 @@ import java.util.List;
 public class MinerHelper {
     private static final Logger logger = LoggerFactory.getLogger("minerhelper");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     private final Blockchain blockchain;
     private final Repository repository;

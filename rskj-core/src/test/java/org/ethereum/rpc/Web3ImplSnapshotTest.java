@@ -20,7 +20,7 @@ package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.*;
@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class Web3ImplSnapshotTest {
 
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void takeFirstSnapshot() {

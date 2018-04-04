@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.AddressFormatException;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
@@ -50,11 +50,11 @@ import java.util.List;
 
 public class RskForksBridgeTest {
     private static BlockchainNetConfig blockchainNetConfigOriginal;
-    private static RskSystemProperties config;
+    private static TestSystemProperties config;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestConfig());
     }
 

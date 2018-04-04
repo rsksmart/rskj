@@ -18,7 +18,7 @@
 
 package co.rsk.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
@@ -38,7 +38,7 @@ import java.util.Collections;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalBlockTest {
     private ClassLoader loader = LocalBlockTest.class.getClassLoader();
-    private static RskSystemProperties config = new RskSystemProperties();
+    private static TestSystemProperties config = new TestSystemProperties();
 
     @BeforeClass
     public static void init() {
