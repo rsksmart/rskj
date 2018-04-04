@@ -55,6 +55,7 @@ public class PeerScoring {
                 case INVALID_TRANSACTION:
                 case INVALID_MESSAGE:
                 case INVALID_HEADER:
+                    /*
                     // TODO(lsebrie): review how to handle timeouts properly
                     //case TIMEOUT_MESSAGE:
                     if (score > 0) {
@@ -62,7 +63,7 @@ public class PeerScoring {
                     }
                     score--;
                     break;
-
+                    */
                 case UNEXPECTED_MESSAGE:
                 case FAILED_HANDSHAKE:
                 case SUCCESSFUL_HANDSHAKE:
@@ -153,6 +154,8 @@ public class PeerScoring {
      * @return <tt>true</tt> or <tt>false</tt>
      */
     public boolean hasGoodReputation() {
+        return true;
+        /*
         try {
             rwlock.writeLock().lock();
             if (this.goodReputation) {
@@ -168,6 +171,7 @@ public class PeerScoring {
         } finally {
             rwlock.writeLock().unlock();
         }
+        */
     }
 
     /**
