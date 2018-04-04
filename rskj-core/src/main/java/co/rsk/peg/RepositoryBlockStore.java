@@ -22,13 +22,13 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -39,7 +39,8 @@ public class RepositoryBlockStore implements BtcBlockStore{
 
     public static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
 
-    private static Map<Sha256Hash, StoredBlock> knownBlocks = new HashMap<>();
+    private static final int MAX_SIZE_MAP_STORED_BLOCKS = 8000;
+    private static Map<Sha256Hash, StoredBlock> knownBlocks = new MaxSizeHashMap<>(MAX_SIZE_MAP_STORED_BLOCKS);
 
     private final Repository repository;
     private final RskAddress contractAddress;
