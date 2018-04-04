@@ -48,7 +48,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
         super(
                 config,
                 channelManager,
-                peerServer,
                 transactionPool,
                 compositeEthereumListener,
                 blockchain
