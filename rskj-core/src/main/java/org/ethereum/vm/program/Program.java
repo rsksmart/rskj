@@ -183,6 +183,7 @@ public class Program {
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
+
     boolean isLogEnabled;
     boolean isGasLogEnabled;
 
@@ -652,7 +653,7 @@ public class Program {
         InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, new DataWord(newAddressBytes), getOwnerAddress(), value, gasLimit,
-                newBalance, null, track, this.invoke.getBlockStore(), byTestingSuite());
+                newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         ProgramResult programResult = ProgramResult.empty();
         returnDataBuffer = null; // reset return buffer right before the call
@@ -877,11 +878,13 @@ public class Program {
 
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult = null;
+
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, new DataWord(contextAddress.getBytes()),
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
-                limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(), byTestingSuite());
+                limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(),
+                msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
         Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
@@ -889,9 +892,10 @@ public class Program {
         childResult  = program.getResult();
 
         getTrace().merge(program.getTrace());
-        getResult().merge(childResult );
+        getResult().merge(childResult);
 
         boolean childCallSuccessful = true;
+
         if (childResult.getException() != null || childResult.isRevert()) {
             if (isGasLogEnabled) {
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
@@ -900,7 +904,7 @@ public class Program {
             }
 
             internalTx.reject();
-            childResult .rejectInternalTransactions();
+            childResult.rejectInternalTransactions();
             childResult.rejectLogInfos();
 
             track.rollback();
@@ -1117,6 +1121,10 @@ public class Program {
 
     public DataWord getGasLimit() {
         return invoke.getGaslimit().clone();
+    }
+
+    public boolean isStaticCall() {
+        return invoke.isStaticCall();
     }
 
     public ProgramResult getResult() {
@@ -1633,9 +1641,20 @@ public class Program {
         }
     }
 
+    @SuppressWarnings("serial")
+    public static class StaticCallModificationException extends RuntimeException {
+        public StaticCallModificationException() {
+            super("Attempt to call a state modifying opcode inside STATICCALL");
+        }
+    }
+
     public static class ExceptionHelper {
 
         private ExceptionHelper() { }
+
+        public static StaticCallModificationException modificationException() {
+            return new StaticCallModificationException();
+        }
 
         public static OutOfGasException notEnoughOpGas(OpCode op, long opGas, long programGas) {
             return new OutOfGasException("Not enough gas for '%s' operation executing: opGas[%d], programGas[%d];", op, opGas, programGas);
