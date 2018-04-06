@@ -1579,6 +1579,10 @@ public class Program {
 
             byte[] out = contract.execute(data);
 
+            if (getBlockchainConfig().isRfs50()) {
+                this.returnDataBuffer = out;
+            }
+
             this.memorySave(msg.getOutDataOffs().intValue(), out);
             this.stackPushOne();
             track.commit();
@@ -1587,6 +1591,10 @@ public class Program {
 
     public boolean byTestingSuite() {
         return invoke.byTestingSuite();
+    }
+
+    public BlockchainConfig getBlockchainConfig() {
+        return blockchainConfig;
     }
 
     public interface ProgramOutListener {
