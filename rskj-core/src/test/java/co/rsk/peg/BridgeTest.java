@@ -36,7 +36,8 @@ import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -298,6 +299,37 @@ public class BridgeTest {
         }
 
         track.commit();
+    }
+
+    @Test
+    public void executeGetStateForDebuggingInBamboo() {
+        executeBridgeMethod(new RegTestConfig() {
+            @Override
+            public boolean isRfs94() {
+                return false;
+            }
+        }, Bridge.GET_STATE_FOR_DEBUGGING);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void executeGetStateForDebuggingAfterBamboo() {
+        executeBridgeMethod(new RegTestConfig() {
+            @Override
+            public boolean isRfs94() {
+                return true;
+            }
+        }, Bridge.GET_STATE_FOR_DEBUGGING);
+    }
+
+    private void executeBridgeMethod(BlockchainNetConfig blockchainConfig, CallTransaction.Function bridgeMethod) {
+        TestSystemProperties propertiesInBamboo = new TestSystemProperties();
+        propertiesInBamboo.setBlockchainConfig(blockchainConfig);
+
+        Repository repository = new RepositoryImpl(propertiesInBamboo).startTracking();
+        Bridge bridge = new Bridge(propertiesInBamboo, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mock(Transaction.class), mock(Block.class), repository, mock(BlockStore.class), mock(ReceiptStore.class), Collections.emptyList());
+
+        bridge.execute(bridgeMethod.encodeSignature());
     }
 
     @Test

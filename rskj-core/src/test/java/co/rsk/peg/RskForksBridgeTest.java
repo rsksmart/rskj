@@ -339,7 +339,14 @@ public class RskForksBridgeTest {
     }
 
     private BridgeState callGetStateForDebuggingTx() throws IOException, ClassNotFoundException {
-        Transaction rskTx = CallTransaction.createRawTransaction(config, 0,
+        TestSystemProperties beforeBambooProperties = new TestSystemProperties();
+        beforeBambooProperties.setBlockchainConfig(new RegTestConfig() {
+            @Override
+            public boolean isRfs94() {
+                return false;
+            }
+        });
+        Transaction rskTx = CallTransaction.createRawTransaction(beforeBambooProperties, 0,
                 Long.MAX_VALUE,
                 Long.MAX_VALUE,
                 PrecompiledContracts.BRIDGE_ADDR,
@@ -347,7 +354,7 @@ public class RskForksBridgeTest {
                 Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}));
         rskTx.sign(new byte[32]);
 
-        TransactionExecutor executor = new TransactionExecutor(config, rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository,
+        TransactionExecutor executor = new TransactionExecutor(beforeBambooProperties, rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository,
                         blockChain.getBlockStore(), null, new ProgramInvokeFactoryImpl(), blockChain.getBestBlock())
                 .setLocalCall(true);
 
@@ -360,7 +367,7 @@ public class RskForksBridgeTest {
 
         Object[] result = Bridge.GET_STATE_FOR_DEBUGGING.decodeResult(res.getHReturn());
 
-        return BridgeState.create(config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), (byte[])result[0]);
+        return BridgeState.create(beforeBambooProperties.getBlockchainConfig().getCommonConstants().getBridgeConstants(), (byte[])result[0]);
     }
 
 
