@@ -29,6 +29,7 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
@@ -41,12 +42,14 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -60,7 +63,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockSettings;
 import org.mockito.Mockito;
+import org.mockito.internal.creation.MockSettingsImpl;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
@@ -1162,7 +1167,7 @@ public class BridgeSupportTest {
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 0, null);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 0, null);
         bridgeSupport.save();
 
         track.commit();
@@ -1193,7 +1198,7 @@ public class BridgeSupportTest {
 
         PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 0, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 0, pmt.bitcoinSerialize());
         bridgeSupport.save();
 
         track.commit();
@@ -1224,7 +1229,7 @@ public class BridgeSupportTest {
 
         PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, -1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), -1, pmt.bitcoinSerialize());
         bridgeSupport.save();
 
         track.commit();
@@ -1257,7 +1262,7 @@ public class BridgeSupportTest {
 
         PartialMerkleTree pmt = new PartialMerkleTree(_networkParameters, bits, hashes, 1);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
         bridgeSupport.save();
 
         track.commit();
@@ -1269,6 +1274,38 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
+    }
+
+    @Test(expected = VerificationException.EmptyInputsOrOutputs.class)
+    public void registerBtcTransactionWithoutInputs() throws IOException, BlockStoreException {
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        BtcTransaction noInputsTx = new BtcTransaction(btcParams);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x01;
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(noInputsTx.getHash());
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
+
+        int btcTxHeight = 2;
+
+        BridgeConstants bridgeConstants = mock(BridgeConstants.class);
+        doReturn(btcParams).when(bridgeConstants).getBtcParams();
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
+        BtcBlockChain btcBlockChain = mock(BtcBlockChain.class);
+        doReturn(storedBlock).when(btcBlockChain).getChainHead();
+
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                mock(RskSystemProperties.class),
+                mock(Repository.class),
+                mock(BridgeEventLogger.class),
+                bridgeConstants,
+                mock(BridgeStorageProvider.class),
+                mock(BtcBlockStore.class),
+                btcBlockChain);
+
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), noInputsTx.bitcoinSerialize(), btcTxHeight, pmt.bitcoinSerialize());
     }
 
     @Test
@@ -1305,7 +1342,7 @@ public class BridgeSupportTest {
 
         btcBlockChain.add(block);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
         bridgeSupport.save();
 
         track.commit();
@@ -1384,7 +1421,7 @@ public class BridgeSupportTest {
 
         btcBlockChain.add(block);
         ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
         bridgeSupport.save();
         ((SimpleBlockChain)btcBlockChain).useBlock();
 
@@ -1479,7 +1516,7 @@ public class BridgeSupportTest {
 
         btcBlockChain.add(block);
         ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
         bridgeSupport.save();
         ((SimpleBlockChain)btcBlockChain).useBlock();
 
@@ -1573,9 +1610,9 @@ public class BridgeSupportTest {
         btcBlockChain.add(block);
 
         ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1, 1, pmt);
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx2, 1, pmt);
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx3, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx2.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx3.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
         bridgeSupport.save();
         ((SimpleBlockChain)btcBlockChain).useBlock();
 
@@ -1691,9 +1728,9 @@ public class BridgeSupportTest {
         Transaction rskTx3 = getMockedRskTxWithHash("cc");
 
         ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(rskTx1, tx1, 1, pmt);
-        bridgeSupport.registerBtcTransaction(rskTx2, tx2, 1, pmt);
-        bridgeSupport.registerBtcTransaction(rskTx3, tx3, 1, pmt);
+        bridgeSupport.registerBtcTransaction(rskTx1, tx1.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(rskTx2, tx2.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(rskTx3, tx3.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
         bridgeSupport.save();
         ((SimpleBlockChain)btcBlockChain).useBlock();
 
