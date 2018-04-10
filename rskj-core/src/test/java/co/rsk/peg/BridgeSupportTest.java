@@ -682,7 +682,7 @@ public class BridgeSupportTest {
 
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
@@ -708,7 +708,7 @@ public class BridgeSupportTest {
 
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
@@ -1285,7 +1285,7 @@ public class BridgeSupportTest {
 
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
@@ -1363,7 +1363,7 @@ public class BridgeSupportTest {
         tx.getInput(0).setScriptSig(scriptSig);
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
@@ -1457,7 +1457,7 @@ public class BridgeSupportTest {
 
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
@@ -1539,7 +1539,7 @@ public class BridgeSupportTest {
         tx3.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey3));
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
@@ -1662,7 +1662,7 @@ public class BridgeSupportTest {
         tx3.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey3));
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());

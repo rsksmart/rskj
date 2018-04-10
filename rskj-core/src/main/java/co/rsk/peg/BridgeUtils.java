@@ -48,7 +48,7 @@ public class BridgeUtils {
     private static final int MAX_MAP_PARENTS_SIZE = 8000;
     private static Map<Sha256Hash, Sha256Hash> parentMap = new MaxSizeHashMap<>(MAX_MAP_PARENTS_SIZE);
 
-    public static StoredBlock getStoredBlockAtHeight(BtcBlockStore blockStore, int height) throws BlockStoreException {
+    public static StoredBlock getStoredBlockAtHeight(BtcBlockstoreWithCache blockStore, int height) throws BlockStoreException {
         StoredBlock storedBlock = blockStore.getChainHead();
         Sha256Hash blockHash = storedBlock.getHeader().getHash();
 
@@ -66,7 +66,7 @@ public class BridgeUtils {
             Sha256Hash prevBlockHash = parentMap.get(blockHash);
 
             if (prevBlockHash == null) {
-                StoredBlock currentBlock = blockStore.get(blockHash);
+                StoredBlock currentBlock = blockStore.getFromCache(blockHash);
 
                 if (currentBlock == null) {
                     return null;
@@ -83,7 +83,7 @@ public class BridgeUtils {
             return null;
         }
 
-        storedBlock = blockStore.get(blockHash);
+        storedBlock = blockStore.getFromCache(blockHash);
 
         if (storedBlock != null) {
             if (storedBlock.getHeight() != height) {
