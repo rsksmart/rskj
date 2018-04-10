@@ -77,7 +77,7 @@ public class BridgeSupport {
 
     private final BridgeConstants bridgeConstants;
     private final Context btcContext;
-    private final BtcBlockStore btcBlockStore;
+    private final BtcBlockstoreWithCache btcBlockStore;
     private final BtcBlockChain btcBlockChain;
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
@@ -132,7 +132,7 @@ public class BridgeSupport {
 
 
     // Used by unit tests
-    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, BridgeConstants bridgeConstants, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain) {
+    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, BridgeConstants bridgeConstants, BridgeStorageProvider provider, BtcBlockstoreWithCache btcBlockStore, BtcBlockChain btcBlockChain) {
         this.provider = provider;
         this.config = config;
         this.bridgeConstants = bridgeConstants;
