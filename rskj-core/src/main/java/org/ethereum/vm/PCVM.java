@@ -2,11 +2,9 @@ package org.ethereum.vm;
 
 import org.ethereum.vm.program.Program;
 
-import java.math.BigInteger;
-
 import static org.ethereum.util.BIUtil.toBI;
 
-public class PCVM implements IVM {
+public class PCVM implements VM {
 
     PrecompiledContracts.PrecompiledContract contract;
     byte[] data;

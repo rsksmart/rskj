@@ -84,7 +84,7 @@ public class TransactionExecutor {
 
     private final EthereumListener listener;
 
-    private IVM vm;
+    private VM vm;
     private Program program;
 
     PrecompiledContracts.PrecompiledContract precompiledContract;
@@ -260,7 +260,7 @@ public class TransactionExecutor {
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, cacheTrack, blockStore, receiptStore, result.getLogInfoList());
             this.vm = new PCVM(precompiledContract, tx.getData());
-            setProgramForData((byte[])null);
+            this.program = buildProgram((byte[])null);
 
         } else {
             byte[] code = track.getCode(targetAddress);
@@ -268,8 +268,8 @@ public class TransactionExecutor {
                 mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
                 result.spendGas(basicTxCost);
             } else {
-                this.vm = new VM(vmConfig, precompiledContracts);
-                setProgramForData(code);
+                this.vm = new VMImpl(vmConfig, precompiledContracts);
+                this.program = buildProgram(code);
             }
         }
         if (result.getException() == null) {
@@ -285,8 +285,8 @@ public class TransactionExecutor {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
             cacheTrack.createAccount(newContractAddress);
         } else {
-            this.vm = new VM(vmConfig, precompiledContracts);
-            setProgramForData(tx.getData());
+            this.vm = new VMImpl(vmConfig, precompiledContracts);
+            this.program = buildProgram(tx.getData());
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
@@ -493,10 +493,10 @@ public class TransactionExecutor {
         logger.trace("tx end done");
     }
 
-    private void setProgramForData(byte[] data) {
+    private Program buildProgram(byte[] code) {
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
         BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
-        this.program = new Program(vmConfig, precompiledContracts, configForBlock, data, programInvoke, tx);
+        return new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {
