@@ -55,7 +55,6 @@ public class PeerScoring {
                 case INVALID_TRANSACTION:
                 case INVALID_MESSAGE:
                 case INVALID_HEADER:
-                    /*
                     // TODO(lsebrie): review how to handle timeouts properly
                     //case TIMEOUT_MESSAGE:
                     if (score > 0) {
@@ -63,7 +62,6 @@ public class PeerScoring {
                     }
                     score--;
                     break;
-                    */
                 case UNEXPECTED_MESSAGE:
                 case FAILED_HANDSHAKE:
                 case SUCCESSFUL_HANDSHAKE:
