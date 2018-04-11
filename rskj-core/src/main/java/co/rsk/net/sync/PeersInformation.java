@@ -59,20 +59,20 @@ public class PeersInformation {
     }
 
     private int peerComparator(Map.Entry<NodeID, SyncPeerStatus> entry, Map.Entry<NodeID, SyncPeerStatus> other) {
-        int score = syncInformation.getScore(entry.getKey());
-        int otherScore = syncInformation.getScore(other.getKey());
+//        int score = syncInformation.getScore(entry.getKey());
+//        int otherScore = syncInformation.getScore(other.getKey());
         Instant failInstant = syncInformation.getFailInstant(entry.getKey());
         Instant otherFailInstant = syncInformation.getFailInstant(other.getKey());
         if (failInstant.isAfter(otherFailInstant) ){
             return -1;
         } else if (failInstant.isBefore(otherFailInstant)){
             return 1;
-        } else if (score >= 0 && otherScore >= 0) {
-            return entry.getValue().peerTotalDifficultyComparator(other.getValue());
-        } else if (score < otherScore){
-            return -1;
-        } else if (score > otherScore){
-            return 1;
+//        } else if (score >= 0 && otherScore >= 0) {
+//            return entry.getValue().peerTotalDifficultyComparator(other.getValue());
+//        } else if (score < otherScore){
+//            return -1;
+//        } else if (score > otherScore){
+//            return 1;
         }
         return entry.getValue().peerTotalDifficultyComparator(other.getValue());
     }
