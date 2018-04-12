@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
@@ -297,6 +298,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("receiveHeaders");
 
         Object[] btcBlockSerializedArray = (Object[]) args[0];
+
+        // Before going and actually deserializing and calling the underlying function,
+        // check that all block headers passed in are actually block headers doing
+        // a simple size check. If this check fails, just fail.
+        if (Arrays.stream(btcBlockSerializedArray).anyMatch(bytes -> !BtcTransactionFormatUtils.isBlockHeaderSize(((byte[])bytes).length))) {
+            // This exception type bypasses bridge teardown, signalling no work done
+            // and preventing the overhead of saving bridge storage
+            logger.warn("Unexpected BTC header(s) received (size mismatch). Aborting processing.");
+            throw new BridgeIllegalArgumentException("Unexpected BTC header(s) received (size mismatch). Aborting processing.");
+        }
+
         BtcBlock[] btcBlockArray = new BtcBlock[btcBlockSerializedArray.length];
         for (int i = 0; i < btcBlockSerializedArray.length; i++) {
             byte[] btcBlockSerialized = (byte[]) btcBlockSerializedArray[i];
