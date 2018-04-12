@@ -1109,7 +1109,7 @@ public class BridgeSupport {
      * @return the retiring federation.
      */
     @Nullable
-    private Federation getRetiringFederation() {
+    public Federation getRetiringFederation() {
         switch (getRetiringFederationReference()) {
             case OLD:
                 return provider.getOldFederation();
