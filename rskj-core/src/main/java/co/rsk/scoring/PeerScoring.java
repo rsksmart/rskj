@@ -16,6 +16,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Created by ajlopez on 27/06/2017.
  */
 public class PeerScoring {
+    private final boolean punishmentEnabled;
+
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
     private int[] counters = new int[EventType.values().length];
     private boolean goodReputation = true;
@@ -23,6 +25,14 @@ public class PeerScoring {
     private long punishmentTime;
     private int punishmentCounter;
     private int score;
+
+    public PeerScoring() {
+        this(true);
+    }
+
+    public PeerScoring(boolean punishmentEnabled) {
+        this.punishmentEnabled = punishmentEnabled;
+    }
 
     /**
      * Records an event.
@@ -169,6 +179,10 @@ public class PeerScoring {
      */
     @VisibleForTesting
     public void startPunishment(long expirationTime) {
+        if (!punishmentEnabled) {
+            return;
+        }
+
         try {
             rwlock.writeLock().lock();
             this.goodReputation = false;
@@ -186,6 +200,10 @@ public class PeerScoring {
      *
      */
     private void endPunishment() {
+        if (!punishmentEnabled) {
+            return;
+        }
+
         //Check locks before doing this function public
         for (int i = 0; i < counters.length; i++) {
             this.counters[i] = 0;
@@ -212,5 +230,9 @@ public class PeerScoring {
     @VisibleForTesting
     public long getTimeLostGoodReputation() {
         return this.timeLostGoodReputation;
+    }
+
+    public interface Factory {
+        PeerScoring newInstance();
     }
 }
