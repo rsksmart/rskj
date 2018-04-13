@@ -155,6 +155,7 @@ public abstract class SolidityType {
 
     public static class StaticArrayType extends ArrayType {
         int size;
+        private final int fixedSize;
 
         public StaticArrayType(String name) {
             super(name);
@@ -162,6 +163,7 @@ public abstract class SolidityType {
             int idx2 = name.indexOf("]", idx1);
             String dim = name.substring(idx1 + 1, idx2);
             size = Integer.parseInt(dim);
+            fixedSize = Math.multiplyExact(elementType.getFixedSize(), size);
         }
 
         @Override
@@ -183,10 +185,10 @@ public abstract class SolidityType {
 
         @Override
         public Object[] decode(byte[] encoded, int offset) {
-            Utils.validateArrayAllegedSize(encoded, size);
+            Utils.validateArrayAllegedSize(encoded, offset, getFixedSize());
             Object[] result = new Object[size];
             for (int i = 0; i < size; i++) {
-                result[i] = elementType.decode(encoded, Math.addExact(offset, i * elementType.getFixedSize()));
+                result[i] = elementType.decode(encoded, offset + i * elementType.getFixedSize());
             }
 
             return result;
@@ -194,8 +196,7 @@ public abstract class SolidityType {
 
         @Override
         public int getFixedSize() {
-            // return negative if elementType is dynamic
-            return elementType.getFixedSize() * size;
+            return fixedSize;
         }
     }
 
@@ -236,18 +237,21 @@ public abstract class SolidityType {
         @Override
         public Object decode(byte[] encoded, int origOffset) {
             int len = IntType.decodeInt(encoded, origOffset).intValue();
-            origOffset = Math.addExact(origOffset, 32);
-            int offset = origOffset;
-            Utils.validateArrayAllegedSize(encoded, len);
+            int offset = origOffset + IntType.INT_SIZE;
+            // This is a lower bound check as we don't know the exact length of each element
+            // Sub-elements will perform stricter checks
+            Utils.validateArrayAllegedSize(encoded, origOffset, len);
             Object[] ret = new Object[len];
 
+            int elementOffset = offset;
             for (int i = 0; i < len; i++) {
                 if (elementType.isDynamicType()) {
-                    ret[i] = elementType.decode(encoded, Math.addExact(origOffset, IntType.decodeInt(encoded, offset).intValue()));
+                    int dynamicElementOffset = IntType.decodeInt(encoded, elementOffset).intValue();
+                    ret[i] = elementType.decode(encoded, Math.addExact(offset, dynamicElementOffset));
                 } else {
-                    ret[i] = elementType.decode(encoded, offset);
+                    ret[i] = elementType.decode(encoded, elementOffset);
                 }
-                offset = Math.addExact(offset, elementType.getFixedSize());
+                elementOffset = Math.addExact(elementOffset, elementType.getFixedSize());
             }
             return ret;
         }
@@ -282,9 +286,9 @@ public abstract class SolidityType {
         @Override
         public Object decode(byte[] encoded, int offset) {
             int len = IntType.decodeInt(encoded, offset).intValue();
-            offset = Math.addExact(offset, 32);
-            Utils.validateArrayAllegedSize(encoded, len, offset);
-            return Arrays.copyOfRange(encoded, offset, Math.addExact(offset, len));
+            offset += IntType.INT_SIZE;
+            Utils.validateArrayAllegedSize(encoded, offset, len);
+            return Arrays.copyOfRange(encoded, offset, offset + len);
         }
 
         @Override
@@ -335,7 +339,7 @@ public abstract class SolidityType {
         @Override
         public Object decode(byte[] encoded, int offset) {
             Utils.validateArrayAllegedSize(encoded, offset, getFixedSize());
-            return Arrays.copyOfRange(encoded, offset, getFixedSize());
+            return Arrays.copyOfRange(encoded, offset, offset + getFixedSize());
         }
     }
 
@@ -367,6 +371,9 @@ public abstract class SolidityType {
     }
 
     public static class IntType extends SolidityType {
+
+        public static final int INT_SIZE = 32;
+
         public IntType(String name) {
             super(name);
         }
@@ -413,12 +420,13 @@ public abstract class SolidityType {
         }
 
         public static BigInteger decodeInt(byte[] encoded, int offset) {
-            int to = Math.addExact(offset, 32);
+            // This is here because getGasForData might send an empty payload which will produce an exception
+            // But currently the bridge would return the cost of RELEASE_BTC in this situation
             if (encoded.length == 0) {
-                return new BigInteger(new byte[32]);
+                return BigInteger.ZERO;
             }
-            Utils.validateArrayAllegedSize(encoded, to);
-            return new BigInteger(Arrays.copyOfRange(encoded, offset, to));
+            Utils.validateArrayAllegedSize(encoded, offset, INT_SIZE);
+            return new BigInteger(Arrays.copyOfRange(encoded, offset, offset + INT_SIZE));
         }
 
         public static byte[] encodeInt(int i) {
@@ -426,10 +434,10 @@ public abstract class SolidityType {
         }
 
         public static byte[] encodeInt(BigInteger bigInt) {
-            byte[] ret = new byte[32];
+            byte[] ret = new byte[INT_SIZE];
             Arrays.fill(ret, bigInt.signum() < 0 ? (byte) 0xFF : 0);
             byte[] bytes = bigInt.toByteArray();
-            System.arraycopy(bytes, 0, ret, 32 - bytes.length, bytes.length);
+            System.arraycopy(bytes, 0, ret, INT_SIZE - bytes.length, bytes.length);
             return ret;
         }
     }
