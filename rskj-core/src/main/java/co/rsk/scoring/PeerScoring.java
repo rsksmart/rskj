@@ -62,7 +62,6 @@ public class PeerScoring {
                     }
                     score--;
                     break;
-
                 case UNEXPECTED_MESSAGE:
                 case FAILED_HANDSHAKE:
                 case SUCCESSFUL_HANDSHAKE:

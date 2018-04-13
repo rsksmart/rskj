@@ -78,8 +78,8 @@ public class BridgeSupport {
 
     private final BridgeConstants bridgeConstants;
     private final Context btcContext;
-    private final BtcBlockStore btcBlockStore;
-    private final BtcBlockChain btcBlockChain;
+    private final BtcBlockstoreWithCache btcBlockStore;
+    private BtcBlockChain btcBlockChain;
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
     private final RskSystemProperties config;
@@ -88,39 +88,79 @@ public class BridgeSupport {
     private org.ethereum.core.Block rskExecutionBlock;
     private StoredBlock initialBtcStoredBlock;
 
-    // Used by bridge
-    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, RskAddress contractAddress, Block rskExecutionBlock) throws IOException, BlockStoreException {
-        this(config, repository, eventLogger, new BridgeStorageProvider(repository, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants()), rskExecutionBlock);
+    // Used by remasc
+    public BridgeSupport(RskSystemProperties config, Repository repository, RskAddress contractAddress,
+                         Block rskExecutionBlock) throws IOException, BlockStoreException {
+        this(config, repository, null,
+             new BridgeStorageProvider(repository, contractAddress,
+                                       config.getBlockchainConfig().getCommonConstants().getBridgeConstants()),
+             rskExecutionBlock, null, null);
     }
 
-    // Used by unit tests
-    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, BridgeStorageProvider provider, Block rskExecutionBlock) throws IOException, BlockStoreException {
+    // Used by bridge
+    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger,
+                         RskAddress contractAddress, Block rskExecutionBlock) throws IOException, BlockStoreException {
+        this(config, repository, eventLogger,
+             new BridgeStorageProvider(repository, contractAddress,
+                                       config.getBlockchainConfig().getCommonConstants().getBridgeConstants()),
+             rskExecutionBlock);
+    }
+
+    public BridgeSupport(
+            RskSystemProperties config,
+            Repository repository,
+            BridgeEventLogger eventLogger,
+            BridgeStorageProvider provider,
+            Block rskExecutionBlock,
+            Context btcContext,
+            RepositoryBlockStore btcBlockStore,
+            BtcBlockChain btcBlockChain) throws IOException, BlockStoreException {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = rskExecutionBlock;
         this.config = config;
         this.bridgeConstants = this.config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         this.eventLogger = eventLogger;
+        this.btcContext = btcContext;
+        this.btcBlockStore = btcBlockStore;
+        this.btcBlockChain = btcBlockChain;
+    }
 
-        NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
-        this.btcContext = new Context(btcParams);
+    public BridgeSupport(
+            RskSystemProperties config,
+            Repository repository,
+            BridgeEventLogger eventLogger,
+            BridgeStorageProvider provider,
+            Block rskExecutionBlock,
+            Context btcContext,
+            RepositoryBlockStore btcBlockStore) throws IOException, BlockStoreException {
+        this(config, repository, eventLogger, provider, rskExecutionBlock, btcContext, btcBlockStore, null);
+    }
 
-        this.btcBlockStore = new RepositoryBlockStore(config, repository, PrecompiledContracts.BRIDGE_ADDR);
-        if (btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
+    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger,
+                         BridgeStorageProvider provider, Block rskExecutionBlock) throws IOException, BlockStoreException {
+        this(config, repository, eventLogger, provider, rskExecutionBlock,
+             new Context(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams()),
+             new RepositoryBlockStore(config, repository, PrecompiledContracts.BRIDGE_ADDR));
+        this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+        trySetCheckpoint(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams());
+        this.initialBtcStoredBlock = this.getLowestBlock();
+    }
+
+    private void trySetCheckpoint(NetworkParameters btcParams) throws BlockStoreException, IOException {
+        if (this.btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
             // We are building the blockstore for the first time, so we have not set the checkpoints yet.
             long time = getActiveFederation().getCreationTime().toEpochMilli();
             InputStream checkpoints = this.getCheckPoints();
             if (time > 0 && checkpoints != null) {
-                CheckpointManager.checkpoint(btcParams, checkpoints, btcBlockStore, time);
+                CheckpointManager.checkpoint(btcParams, checkpoints, this.btcBlockStore, time);
             }
         }
-        this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
-        this.initialBtcStoredBlock = this.getLowestBlock();
     }
 
-
-    // Used by unit tests
-    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, BridgeConstants bridgeConstants, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain) {
+    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger,
+                         BridgeConstants bridgeConstants, BridgeStorageProvider provider,
+                         BtcBlockstoreWithCache btcBlockStore, BtcBlockChain btcBlockChain) {
         this.provider = provider;
         this.config = config;
         this.bridgeConstants = bridgeConstants;

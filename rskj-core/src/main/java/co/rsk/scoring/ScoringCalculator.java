@@ -16,9 +16,9 @@ public class ScoringCalculator {
      * @return  <tt>true</tt> if the peer has good reputation
      */
     public boolean hasGoodReputation(PeerScoring scoring) {
+        //TODO(lsebrie): implement empty messages as responses so timeout can be handled as it should
         return  scoring.getEventCounter(EventType.INVALID_BLOCK) < 1 &&
                 scoring.getEventCounter(EventType.INVALID_MESSAGE) < 1 &&
                 scoring.getEventCounter(EventType.INVALID_HEADER) < 1;
-        //TODO: implement empty messages as responses so timeout can be handled as it should
     }
 }
