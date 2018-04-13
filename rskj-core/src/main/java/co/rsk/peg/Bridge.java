@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
@@ -314,34 +315,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public void registerBtcTransaction(Object[] args)
-    {
+    public void registerBtcTransaction(Object[] args) {
         logger.trace("registerBtcTransaction");
 
         byte[] btcTxSerialized = (byte[]) args[0];
-        BtcTransaction btcTx;
-        try {
-            btcTx = new BtcTransaction(bridgeConstants.getBtcParams(),btcTxSerialized);
-        } catch (ProtocolException e) {
-            throw new BridgeIllegalArgumentException("Transaction could not be parsed " + Hex.toHexString(btcTxSerialized), e);
-        }
         int height = ((BigInteger)args[1]).intValue();
 
         byte[] pmtSerialized = (byte[]) args[2];
-        PartialMerkleTree pmt;
         try {
-            pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(),pmtSerialized, 0);
-        } catch (ProtocolException e) {
-            throw new BridgeIllegalArgumentException("PartialMerkleTree could not be parsed " + Hex.toHexString(pmtSerialized), e);
-        }
-        try {
-            pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
-        } catch (VerificationException e) {
-            throw new BridgeIllegalArgumentException("PartialMerkleTree could not be parsed " + Hex.toHexString(pmtSerialized), e);
-        }
-        try {
-            bridgeSupport.registerBtcTransaction(rskTx, btcTx, height, pmt);
-        } catch (Exception e) {
+            bridgeSupport.registerBtcTransaction(rskTx, btcTxSerialized, height, pmtSerialized);
+        } catch (IOException | BlockStoreException e) {
             logger.warn("Exception in registerBtcTransaction", e);
             throw new RuntimeException("Exception in registerBtcTransaction", e);
         }
