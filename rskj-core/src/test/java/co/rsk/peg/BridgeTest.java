@@ -27,6 +27,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.net.messages.Message;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.test.World;
@@ -41,6 +42,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
@@ -251,11 +253,25 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
 
+        MessageSerializer serializer = bridgeConstants.getBtcParams().getDefaultSerializer();
+        MessageSerializer spySerializer = Mockito.spy(serializer);
+
+        NetworkParameters btcParamsMock = mock(NetworkParameters.class);
+        BridgeConstants bridgeConstantsMock = mock(BridgeConstants.class);
+
+        when(bridgeConstantsMock.getBtcParams()).thenReturn(btcParamsMock);
+        when(btcParamsMock.getDefaultSerializer()).thenReturn(spySerializer);
+
+        Whitebox.setInternalState(bridge, "bridgeConstants", bridgeConstantsMock);
+
         bridge.execute(Bridge.RECEIVE_HEADERS.encode(new Object[]{headersSerialized}));
 
         track.commit();
 
         verify(bridgeSupportMock, times(1)).receiveHeaders(headers);
+        for (int i = 0; i < headers.length; i++) {
+            verify(spySerializer, times(1)).makeBlock(headersSerialized[i]);
+        }
     }
 
     @Test
@@ -301,11 +317,19 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
 
+        NetworkParameters btcParamsMock = mock(NetworkParameters.class);
+        BridgeConstants bridgeConstantsMock = mock(BridgeConstants.class);
+
+        when(bridgeConstantsMock.getBtcParams()).thenReturn(btcParamsMock);
+
+        Whitebox.setInternalState(bridge, "bridgeConstants", bridgeConstantsMock);
+
         bridge.execute(Bridge.RECEIVE_HEADERS.encode(new Object[]{headersSerialized}));
 
         track.commit();
 
         verify(bridgeSupportMock, never()).receiveHeaders(headers);
+        verify(btcParamsMock, never()).getDefaultSerializer();
     }
 
     @Test
