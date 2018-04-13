@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import co.rsk.util.DifficultyUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
@@ -129,12 +130,13 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        if (header.getBitcoinMergedMiningMerkleProof()==null) {
+        byte[] pmtSerialized = header.getBitcoinMergedMiningMerkleProof();
+        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
             return false;
         }
 
         BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
-        PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new PartialMerkleTree(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof(), 0);
+        PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new PartialMerkleTree(bitcoinNetworkParameters, pmtSerialized, 0);
 
         BigInteger target = DifficultyUtils.difficultyToTarget(header.getDifficulty());
 

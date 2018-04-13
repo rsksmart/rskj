@@ -34,6 +34,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
@@ -237,6 +238,10 @@ public class BridgeSupport {
         if (provider.getBtcTxHashesAlreadyProcessed().keySet().contains(btcTxHash)) {
             logger.warn("Supplied tx was already processed");
             return;
+        }
+
+        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
+            throw new BridgeIllegalArgumentException("PartialMerkleTree doesn't have expected size");
         }
 
         Sha256Hash merkleRoot;
