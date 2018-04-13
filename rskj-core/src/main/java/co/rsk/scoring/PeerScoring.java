@@ -152,8 +152,6 @@ public class PeerScoring {
      * @return <tt>true</tt> or <tt>false</tt>
      */
     public boolean hasGoodReputation() {
-        return true;
-        /*
         try {
             rwlock.writeLock().lock();
             if (this.goodReputation) {
@@ -169,7 +167,6 @@ public class PeerScoring {
         } finally {
             rwlock.writeLock().unlock();
         }
-        */
     }
 
     /**
