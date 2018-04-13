@@ -1199,6 +1199,7 @@ public class TrieImpl implements Trie {
     }
 
     public Trie getSnapshotTo(Keccak256 hash) {
+        // This call shouldn't be needed since internally try can know it should store data
         //this.save();
 
         if (emptyHash.equals(hash)) {

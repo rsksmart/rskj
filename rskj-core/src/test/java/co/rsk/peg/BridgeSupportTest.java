@@ -1301,7 +1301,7 @@ public class BridgeSupportTest {
                 mock(BridgeEventLogger.class),
                 bridgeConstants,
                 mock(BridgeStorageProvider.class),
-                mock(BtcBlockStore.class),
+                mock(BtcBlockstoreWithCache.class),
                 btcBlockChain);
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), noInputsTx.bitcoinSerialize(), btcTxHeight, pmt.bitcoinSerialize());
