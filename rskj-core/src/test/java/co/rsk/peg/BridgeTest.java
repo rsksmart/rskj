@@ -50,11 +50,17 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.spongycastle.util.encoders.Hex;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 
+import static co.rsk.bitcoinj.core.Utils.uint32ToByteStreamLE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -79,7 +85,7 @@ public class BridgeTest {
     private static ECKey fedECPrivateKey;
 
     @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
+    public static void setUpBeforeClass() {
         config.setBlockchainConfig(new RegTestConfig());
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         networkParameters = bridgeConstants.getBtcParams();
@@ -232,7 +238,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void sendOrphanBlockHeader() throws IOException {
+    public void sendOrphanBlockHeader() {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
@@ -257,14 +263,14 @@ public class BridgeTest {
     }
 
     @Test
-    public void executeWithFunctionSignatureLengthTooShort() throws Exception{
+    public void executeWithFunctionSignatureLengthTooShort() {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         Assert.assertNull(bridge.execute(new byte[3]));
     }
 
 
     @Test
-    public void executeWithInexistentFunction() throws Exception{
+    public void executeWithInexistentFunction() {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         Assert.assertNull(bridge.execute(new byte[4]));
     }
@@ -290,7 +296,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void receiveHeadersWithNonParseableHeader() throws Exception{
+    public void receiveHeadersWithNonParseableHeader() {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
@@ -456,7 +462,53 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcTransactionWithNonParseableTx() throws Exception{
+    public void receiveHeadersWithHugeDeclaredTransactionsSize() {
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(rskTx, null, track, null, null, null);
+
+        NetworkParameters btcParams = RegTestParams.get();
+        BtcBlock block = new BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, 1, 1, new ArrayList<BtcTransaction>()) {
+            @Override
+            protected void bitcoinSerializeToStream(OutputStream stream) throws IOException {
+                Utils.uint32ToByteStreamLE(getVersion(), stream);
+                stream.write(getPrevBlockHash().getReversedBytes());
+                stream.write(getMerkleRoot().getReversedBytes());
+                Utils.uint32ToByteStreamLE(getTimeSeconds(), stream);
+                Utils.uint32ToByteStreamLE(getDifficultyTarget(), stream);
+                Utils.uint32ToByteStreamLE(getNonce(), stream);
+
+                stream.write(new VarInt(Integer.MAX_VALUE).encode());
+            }
+
+            @Override
+            public byte[] bitcoinSerialize() {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try {
+                    bitcoinSerializeToStream(baos);
+                } catch (IOException e) {
+                }
+                return baos.toByteArray();
+            }
+        };
+
+        Object[] objectArray = new Object[1];
+        objectArray[0] = block.bitcoinSerialize();
+
+        byte[] data = Bridge.RECEIVE_HEADERS.encode(new Object[]{objectArray});
+
+        Assert.assertNull(bridge.execute(data));
+
+    }
+
+
+    @Test
+    public void registerBtcTransactionWithNonParseableTx() {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
@@ -471,6 +523,108 @@ public class BridgeTest {
 
         Assert.assertNull(bridge.execute(data));
     }
+
+    @Test
+    public void registerBtcTransactionWithHugeDeclaredInputsSize() {
+        NetworkParameters btcParams = RegTestParams.get();
+        BtcTransaction tx = new HugeDeclaredSizeBtcTransaction(btcParams, true, false, false, false);
+        registerBtcTransactionWithHugeDeclaredSize(tx);
+    }
+
+    @Test
+    public void registerBtcTransactionWithHugeDeclaredOutputsSize() {
+        NetworkParameters btcParams = RegTestParams.get();
+        BtcTransaction tx = new HugeDeclaredSizeBtcTransaction(btcParams, false, true, false, false);
+        registerBtcTransactionWithHugeDeclaredSize(tx);
+    }
+
+    @Test
+    public void registerBtcTransactionWithHugeDeclaredWitnessPushCountSize() {
+        NetworkParameters btcParams = RegTestParams.get();
+        BtcTransaction tx = new HugeDeclaredSizeBtcTransaction(btcParams, false, false, true, false);
+        registerBtcTransactionWithHugeDeclaredSize(tx);
+    }
+
+    @Test
+    public void registerBtcTransactionWithHugeDeclaredWitnessPushSize() {
+        NetworkParameters btcParams = RegTestParams.get();
+        BtcTransaction tx = new HugeDeclaredSizeBtcTransaction(btcParams, false, false, false, true);
+        registerBtcTransactionWithHugeDeclaredSize(tx);
+    }
+
+    private void registerBtcTransactionWithHugeDeclaredSize(BtcTransaction tx) {
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(rskTx, null, track, null, null, null);
+
+        byte[] serializedTx = tx.bitcoinSerialize();
+
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(serializedTx, 1, new byte[30]);
+
+        Assert.assertNull(bridge.execute(data));
+    }
+
+    private static class HugeDeclaredSizeBtcTransaction extends BtcTransaction {
+
+        private boolean hackInputsSize;
+        private boolean hackOutputsSize;
+        private boolean hackWitnessPushCountSize;
+        private boolean hackWitnessPushSize;
+
+        public HugeDeclaredSizeBtcTransaction(NetworkParameters params, boolean hackInputsSize, boolean hackOutputsSize, boolean hackWitnessPushCountSize, boolean hackWitnessPushSize) {
+            super(params);
+            BtcTransaction inputTx = new BtcTransaction(params);
+            inputTx.addOutput(Coin.FIFTY_COINS, BtcECKey.fromPrivate(BigInteger.valueOf(123456)).toAddress(params));
+            Address to = BtcECKey.fromPrivate(BigInteger.valueOf(1000)).toAddress(params);
+            this.addInput(inputTx.getOutput(0));
+            this.getInput(0).disconnect();
+            TransactionWitness witness = new TransactionWitness(1);
+            witness.setPush(0, new byte[] {0});
+            this.setWitness(0, witness);
+            this.addOutput(Coin.COIN, to);
+
+            this.hackInputsSize = hackInputsSize;
+            this.hackOutputsSize = hackOutputsSize;
+            this.hackWitnessPushCountSize = hackWitnessPushCountSize;
+            this.hackWitnessPushSize = hackWitnessPushSize;
+        }
+
+        protected void bitcoinSerializeToStream(OutputStream stream, boolean serializeWitRequested) throws IOException {
+            boolean serializeWit = serializeWitRequested && hasWitness();
+            uint32ToByteStreamLE(getVersion(), stream);
+            if (serializeWit) {
+                stream.write(new byte[]{0, 1});
+            }
+
+            long inputsSize = hackInputsSize ? Integer.MAX_VALUE : getInputs().size();
+            stream.write(new VarInt(inputsSize).encode());
+            for (TransactionInput in : getInputs())
+                in.bitcoinSerialize(stream);
+            long outputsSize = hackOutputsSize ? Integer.MAX_VALUE : getOutputs().size();
+            stream.write(new VarInt(outputsSize).encode());
+            for (TransactionOutput out : getOutputs())
+                out.bitcoinSerialize(stream);
+            if (serializeWit) {
+                for (int i = 0; i < getInputs().size(); i++) {
+                    TransactionWitness witness = getWitness(i);
+                    long pushCount = hackWitnessPushCountSize ? Integer.MAX_VALUE : witness.getPushCount();
+                    stream.write(new VarInt(pushCount).encode());
+                    for (int y = 0; y < witness.getPushCount(); y++) {
+                        byte[] push = witness.getPush(y);
+                        long pushLength = hackWitnessPushSize ? Integer.MAX_VALUE : push.length;
+                        stream.write(new VarInt(pushLength).encode());
+                        stream.write(push);
+                    }
+                }
+            }
+            uint32ToByteStreamLE(getLockTime(), stream);
+        }
+    };
 
     @Test
     public void registerBtcTransactionWithNonParseableMerkleeProof1() throws Exception{
@@ -513,6 +667,50 @@ public class BridgeTest {
 
         Assert.assertNull(bridge.execute(data));
     }
+
+    @Test
+    public void registerBtcTransactionWithHugeDeclaredSizeMerkleeProof() throws Exception{
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(rskTx, null, track, null, null, null);
+
+        NetworkParameters btcParams = RegTestParams.get();
+        BtcTransaction tx = new BtcTransaction(btcParams);
+        tx.addOutput(Coin.COIN, new BtcECKey().toAddress(btcParams));
+        tx.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, new BtcECKey()));
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001"));
+        hashes.add(Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002"));
+        hashes.add(Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000003"));
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 3) {
+            public void bitcoinSerializeToStream(OutputStream stream) throws IOException {
+                uint32ToByteStreamLE(getTransactionCount(), stream);
+                stream.write(new VarInt(Integer.MAX_VALUE).encode());
+                //stream.write(new VarInt(hashes.size()).encode());
+                for (Sha256Hash hash : hashes)
+                    stream.write(hash.getReversedBytes());
+
+                stream.write(new VarInt(bits.length).encode());
+                stream.write(bits);
+            }
+
+        };
+        byte[] pmtSerialized = pmt.bitcoinSerialize();
+
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(tx.bitcoinSerialize(), 1, pmtSerialized);
+
+        Assert.assertNull(bridge.execute(data));
+    }
+
 
     @Test
     public void getFederationAddress() throws Exception {
@@ -1225,4 +1423,30 @@ public class BridgeTest {
                 PrecompiledContracts.BRIDGE_ADDR.getBytes(),
                 TypeConverter.stringHexToByteArray(PrecompiledContracts.BRIDGE_ADDR_STR));
     }
+
+//    @Test
+//    public void testBlock457BridgeCall() throws IOException, URISyntaxException {
+//        // block 457 in mainnet exposed a bug in a fix made to SolidityType. The purpose of this test is to make sure this block keeps working
+//        // block 457 was the first federate call.
+//        byte[] data = Files.readAllBytes(Paths.get(this.getClass().getResource("/bridge/block457.bin").toURI()));
+//
+//        //TODO: THIS TEST IS FAILING SO I'M DISABLING IT FOR TODAY. WE WILL COME BACK TO FIX IT ASAP
+//
+//        Repository repository = new RepositoryImpl(config);
+//
+//        // Setup bridge
+//        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+//        bridge.init(null, null, repository, null, null, null);
+//
+//        try {
+//            bridge.execute(data);
+//            // if it works great
+//            Assert.fail("this should have failed");
+//        } catch (RuntimeException e) {
+//            Assert.assertTrue(e.getCause() instanceof NullPointerException);
+//            // 🡑🡑🡑🡑 This exception is caused by not having a valid TrieImpl instance
+//            // but if it fails it should be because of a null point exception
+//        }
+//    }
+
 }

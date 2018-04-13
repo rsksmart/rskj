@@ -23,7 +23,6 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.apache.commons.collections4.MapUtils;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
@@ -284,7 +283,7 @@ public class ContractDetailsCacheImpl implements ContractDetails {
             byte[] oldvalue = origContract.getBytes(key);
             byte[] newvalue = bytesStorage.get(key);
 
-            if (ByteUtil.fastEquals(oldvalue, newvalue)) {
+            if (Arrays.equals(oldvalue, newvalue)) {
                 continue;
             }
 
