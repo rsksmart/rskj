@@ -39,6 +39,7 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.netty.JsonRpcWeb3FilterHandler;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
 import co.rsk.rpc.netty.Web3HttpServer;
+import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.validators.ProofOfWorkRule;
@@ -93,8 +94,14 @@ public class RskFactory {
         int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();
         long addressPunishmentMaximunDuration = config.scoringAddressesPunishmentMaximumDuration();
 
-        return new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement,
-                nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
+        boolean punishmentEnabled = config.scoringPunishmentEnabled();
+
+        return new PeerScoringManager(
+                () -> new PeerScoring(punishmentEnabled),
+                nnodes,
+                new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement, nodePunhishmentMaximumDuration),
+                new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration)
+        );
     }
 
     @Bean
