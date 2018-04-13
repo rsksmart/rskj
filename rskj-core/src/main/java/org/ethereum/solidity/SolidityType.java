@@ -236,6 +236,9 @@ public abstract class SolidityType {
 
         @Override
         public Object decode(byte[] encoded, int origOffset) {
+            if (encoded.length == 0) {
+                return new Object[0];
+            }
             int len = IntType.decodeInt(encoded, origOffset).intValue();
             int offset = origOffset + IntType.INT_SIZE;
             // This is a lower bound check as we don't know the exact length of each element
