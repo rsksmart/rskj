@@ -22,6 +22,8 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.VarInt;
 
 public class BtcTransactionFormatUtils {
+    private static int MIN_BLOCK_HEADER_SIZE = 80;
+    private static int MAX_BLOCK_HEADER_SIZE = 85;
 
     public static Sha256Hash calculateBtcTxHash(byte[] btcTxSerialized) {
         return Sha256Hash.wrapReversed(Sha256Hash.hashTwice(btcTxSerialized));
@@ -30,5 +32,9 @@ public class BtcTransactionFormatUtils {
     public static long getInputsCount(byte[] btcTxSerialized) {
         VarInt inputsCounter = new VarInt(btcTxSerialized, 4);
         return inputsCounter.value;
+    }
+
+    public static boolean isBlockHeaderSize(int size) {
+        return size >= MIN_BLOCK_HEADER_SIZE && size <= MAX_BLOCK_HEADER_SIZE;
     }
 }

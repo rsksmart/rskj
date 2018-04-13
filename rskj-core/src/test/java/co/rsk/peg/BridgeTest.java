@@ -27,19 +27,27 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.net.messages.Message;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.invocation.InvocationOnMock;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
@@ -54,6 +62,8 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 6/8/2016.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(Bridge.class)
 public class BridgeTest {
 
     private static NetworkParameters networkParameters;
@@ -216,6 +226,110 @@ public class BridgeTest {
 
         Assert.assertNull(bridge.execute(data));
 
+    }
+
+    @Test
+    public void receiveHeadersWithCorrectSizeHeaders() throws Exception {
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, track, null, null, null);
+
+        final int numBlocks = 10;
+        co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[numBlocks];
+
+        for (int i = 0; i < numBlocks; i++) {
+            co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<>());
+            headers[i] = block;
+        }
+
+        byte[][] headersSerialized = new byte[headers.length][];
+
+        for (int i = 0; i < headers.length; i++) {
+            headersSerialized[i] = headers[i].bitcoinSerialize();
+        }
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+
+        MessageSerializer serializer = bridgeConstants.getBtcParams().getDefaultSerializer();
+        MessageSerializer spySerializer = Mockito.spy(serializer);
+
+        NetworkParameters btcParamsMock = mock(NetworkParameters.class);
+        BridgeConstants bridgeConstantsMock = mock(BridgeConstants.class);
+
+        when(bridgeConstantsMock.getBtcParams()).thenReturn(btcParamsMock);
+        when(btcParamsMock.getDefaultSerializer()).thenReturn(spySerializer);
+
+        Whitebox.setInternalState(bridge, "bridgeConstants", bridgeConstantsMock);
+
+        bridge.execute(Bridge.RECEIVE_HEADERS.encode(new Object[]{headersSerialized}));
+
+        track.commit();
+
+        verify(bridgeSupportMock, times(1)).receiveHeaders(headers);
+        for (int i = 0; i < headers.length; i++) {
+            verify(spySerializer, times(1)).makeBlock(headersSerialized[i]);
+        }
+    }
+
+    @Test
+    public void receiveHeadersWithIncorrectSizeHeaders() throws Exception {
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, track, null, null, null);
+
+        final int numBlocks = 10;
+        co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[numBlocks];
+        byte[][] headersSerialized = new byte[headers.length][];
+
+        // Add a couple of transactions to the block so that it doesn't serialize as just the header
+        for (int i = 0; i < numBlocks; i++) {
+            co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<>());
+
+            BtcECKey from = new BtcECKey();
+            BtcECKey to = new BtcECKey();
+
+            // Coinbase TX
+            BtcTransaction coinbaseTx = new BtcTransaction(networkParameters);
+            coinbaseTx.addInput(Sha256Hash.ZERO_HASH, -1, ScriptBuilder.createOpReturnScript(new byte[0]));
+            block.addTransaction(coinbaseTx);
+
+            // Random TX
+            BtcTransaction inputTx = new BtcTransaction(networkParameters);
+            inputTx.addOutput(Coin.FIFTY_COINS, from.toAddress(networkParameters));
+            BtcTransaction outputTx = new BtcTransaction(networkParameters);
+            outputTx.addInput(inputTx.getOutput(0));
+            outputTx.getInput(0).disconnect();
+            outputTx.addOutput(Coin.COIN, to.toAddress(networkParameters));
+            block.addTransaction(outputTx);
+
+            headers[i] = block;
+            headersSerialized[i] = block.bitcoinSerialize();
+
+            // Make sure we would be able to deserialize the block
+            Assert.assertEquals(block, networkParameters.getDefaultSerializer().makeBlock(headersSerialized[i]));
+        }
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+
+        NetworkParameters btcParamsMock = mock(NetworkParameters.class);
+        BridgeConstants bridgeConstantsMock = mock(BridgeConstants.class);
+
+        when(bridgeConstantsMock.getBtcParams()).thenReturn(btcParamsMock);
+
+        Whitebox.setInternalState(bridge, "bridgeConstants", bridgeConstantsMock);
+
+        bridge.execute(Bridge.RECEIVE_HEADERS.encode(new Object[]{headersSerialized}));
+
+        track.commit();
+
+        verify(bridgeSupportMock, never()).receiveHeaders(headers);
+        verify(btcParamsMock, never()).getDefaultSerializer();
     }
 
     @Test
