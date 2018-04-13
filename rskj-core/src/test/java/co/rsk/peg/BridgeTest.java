@@ -466,8 +466,11 @@ public class BridgeTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
+        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
+
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, track, null, null, null);
+        bridge.init(rskTx, null, track, null, null, null);
 
         NetworkParameters btcParams = RegTestParams.get();
         BtcBlock block = new BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, 1, 1, new ArrayList<BtcTransaction>()) {
@@ -553,8 +556,11 @@ public class BridgeTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
+        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
+
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, track, null, null, null);
+        bridge.init(rskTx, null, track, null, null, null);
 
         byte[] serializedTx = tx.bitcoinSerialize();
 
@@ -667,8 +673,11 @@ public class BridgeTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
+        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
+
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, track, null, null, null);
+        bridge.init(rskTx, null, track, null, null, null);
 
         NetworkParameters btcParams = RegTestParams.get();
         BtcTransaction tx = new BtcTransaction(btcParams);
