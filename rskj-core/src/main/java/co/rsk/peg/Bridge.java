@@ -268,7 +268,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         catch(Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("bridgeexecute", ex.getMessage());
-            throw new RuntimeException("Exception executing bridge", ex);
+            throw new RuntimeException(String.format("Exception executing bridge: %s", ex.getMessage()), ex);
         }
     }
 
@@ -760,4 +760,25 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         return bridgeSupport.getFeePerKb().getValue();
     }
+
+
+    public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
+        return (self, args) -> {
+            if(self.rskTx == null){
+                String errorMessage = String.format("Rsk Transaction is null for function '%s'",funcName);
+                logger.warn(errorMessage);
+                throw new RuntimeException(errorMessage);
+            }
+            Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
+
+            if (!BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation())
+                    && ( retiringFederation == null || (retiringFederation != null && !BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation)))) {
+                String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);
+                logger.warn(errorMessage);
+                throw new RuntimeException(errorMessage);
+            }
+            return decoratee.execute(self, args);
+        };
+    }
+
 }

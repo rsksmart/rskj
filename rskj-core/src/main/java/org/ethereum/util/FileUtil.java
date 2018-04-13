@@ -41,7 +41,7 @@ public class FileUtil {
             }
 
             if (!file.setWritable(true)) {
-                LOGGER.error("File is not writable");
+                LOGGER.error(String.format("File %s is not writable",file));
             }
 
             boolean result = file.delete();
