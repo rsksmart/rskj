@@ -240,7 +240,7 @@ public abstract class SolidityType {
             int offset = origOffset + IntType.INT_SIZE;
             // This is a lower bound check as we don't know the exact length of each element
             // Sub-elements will perform stricter checks
-            Utils.validateArrayAllegedSize(encoded, origOffset, len);
+            Utils.validateArrayAllegedSize(encoded, offset, len);
             Object[] ret = new Object[len];
 
             int elementOffset = offset;
@@ -287,8 +287,7 @@ public abstract class SolidityType {
         public Object decode(byte[] encoded, int offset) {
             int len = IntType.decodeInt(encoded, offset).intValue();
             offset += IntType.INT_SIZE;
-            Utils.validateArrayAllegedSize(encoded, offset, len);
-            return Arrays.copyOfRange(encoded, offset, offset + len);
+            return Utils.safeCopyOfRange(encoded, offset, len);
         }
 
         @Override
@@ -338,8 +337,7 @@ public abstract class SolidityType {
 
         @Override
         public Object decode(byte[] encoded, int offset) {
-            Utils.validateArrayAllegedSize(encoded, offset, getFixedSize());
-            return Arrays.copyOfRange(encoded, offset, offset + getFixedSize());
+            return Utils.safeCopyOfRange(encoded, offset, getFixedSize());
         }
     }
 
@@ -425,8 +423,7 @@ public abstract class SolidityType {
             if (encoded.length == 0) {
                 return BigInteger.ZERO;
             }
-            Utils.validateArrayAllegedSize(encoded, offset, INT_SIZE);
-            return new BigInteger(Arrays.copyOfRange(encoded, offset, offset + INT_SIZE));
+            return new BigInteger(Utils.safeCopyOfRange(encoded, offset, INT_SIZE));
         }
 
         public static byte[] encodeInt(int i) {
