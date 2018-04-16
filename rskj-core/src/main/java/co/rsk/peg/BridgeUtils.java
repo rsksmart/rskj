@@ -21,7 +21,6 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
@@ -35,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-import javax.swing.text.html.Option;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -144,11 +142,7 @@ public class BridgeUtils {
             return false;
         }
         // This indicates that the tx is a P2PKH transaction which is the only one we support for now
-        if (tx.getInput(0).getScriptSig().getChunks().size() != 2) {
-            logger.warn("[btctx:{}] is not a valid lock tx and won't be processed!", Hex.toHexString(tx.getHash().getBytes()));
-            return false;
-        }
-        return true;
+        return tx.getInput(0).getScriptSig().getChunks().size() == 2;
     }
 
     /**
@@ -178,7 +172,7 @@ public class BridgeUtils {
 
         int valueSentToMeSignum = valueSentToMe.signum();
         if (valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue())) {
-            logger.warn("[btctx:{}]Someone sent to the federation less than {} satoshis", Hex.toHexString(tx.getHash().getBytes()), bridgeConstants.getMinimumLockTxValue());
+            logger.warn("[btctx:{}]Someone sent to the federation less than {} satoshis", tx.getHash(), bridgeConstants.getMinimumLockTxValue());
         }
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
