@@ -45,7 +45,8 @@ public class BridgeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
-    private static final int MAX_MAP_PARENTS_SIZE = 8000;
+    // power of 2 size that contains enough hashes to handle one year of hashes
+    private static final int MAX_MAP_PARENTS_SIZE = 65535;
     private static Map<Sha256Hash, Sha256Hash> parentMap = new MaxSizeHashMap<>(MAX_MAP_PARENTS_SIZE);
 
     public static StoredBlock getStoredBlockAtHeight(BtcBlockstoreWithCache blockStore, int height) throws BlockStoreException {
