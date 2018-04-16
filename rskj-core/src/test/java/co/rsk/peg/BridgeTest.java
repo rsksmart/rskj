@@ -48,11 +48,15 @@ import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -1424,29 +1428,35 @@ public class BridgeTest {
                 TypeConverter.stringHexToByteArray(PrecompiledContracts.BRIDGE_ADDR_STR));
     }
 
-//    @Test
-//    public void testBlock457BridgeCall() throws IOException, URISyntaxException {
-//        // block 457 in mainnet exposed a bug in a fix made to SolidityType. The purpose of this test is to make sure this block keeps working
-//        // block 457 was the first federate call.
-//        byte[] data = Files.readAllBytes(Paths.get(this.getClass().getResource("/bridge/block457.bin").toURI()));
-//
-//        //TODO: THIS TEST IS FAILING SO I'M DISABLING IT FOR TODAY. WE WILL COME BACK TO FIX IT ASAP
-//
-//        Repository repository = new RepositoryImpl(config);
-//
-//        // Setup bridge
-//        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-//        bridge.init(null, null, repository, null, null, null);
-//
-//        try {
-//            bridge.execute(data);
-//            // if it works great
-//            Assert.fail("this should have failed");
-//        } catch (RuntimeException e) {
-//            Assert.assertTrue(e.getCause() instanceof NullPointerException);
-//            // 🡑🡑🡑🡑 This exception is caused by not having a valid TrieImpl instance
-//            // but if it fails it should be because of a null point exception
-//        }
-//    }
+    @Test
+    public void testBlock457BridgeCall() throws Exception {
+        // block 457 in mainnet exposed a bug in a fix made to SolidityType. The purpose of this test is to make sure this block keeps working
+        // block 457 was the first federate call.
+        byte[] data = Files.readAllBytes(Paths.get(this.getClass().getResource("/bridge/block457.bin").toURI()));
 
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
+
+        // Setup bridge
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
+
+        Logger mockedLogger = mock(Logger.class);
+        setFinalStatic(Bridge.class.getDeclaredField("logger"), mockedLogger);
+
+        bridge.execute(data);
+        verify(mockedLogger, never()).warn(any(String.class), any(), any()); // "Invalid function arguments {} for function {}."
+    }
+
+    // We need reflection to mock static final fields
+    private void setFinalStatic(Field field, Object newValue) throws Exception {
+        field.setAccessible(true);
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+        field.set(null, newValue);
+    }
 }
