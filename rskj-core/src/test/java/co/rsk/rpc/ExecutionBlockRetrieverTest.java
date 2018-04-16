@@ -22,6 +22,7 @@ import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.junit.Before;
 import org.junit.Test;
@@ -154,8 +155,32 @@ public class ExecutionBlockRetrieverTest {
         assertThat(retriever.getExecutionBlock("pending"), is(builtBlock2));
     }
 
+    @Test
+    public void getByNumberBlockExists() {
+        Block myBlock = mock(Block.class);
+        when(blockchain.getBlockByNumber(123))
+                .thenReturn(myBlock);
+
+        assertThat(retriever.getExecutionBlock("0x7B"), is(myBlock));
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void getByNumberBlockDoesntExist() {
+        when(blockchain.getBlockByNumber(123))
+                .thenReturn(null);
+
+        retriever.getExecutionBlock("0x7B");
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void getByNumberInvalidHex() {
+        retriever.getExecutionBlock("0xzz");
+
+        verify(blockchain, never()).getBlockByNumber(any(long.class));
+    }
+
     @Test(expected = JsonRpcUnimplementedMethodException.class)
-    public void getOtherThanLatestThrows() {
+    public void getOtherThanPendingLatestOrNumberThrows() {
         retriever.getExecutionBlock("other");
     }
 }
