@@ -340,9 +340,9 @@ public class BridgeSupport {
         }
 
         // Check there are at least N blocks on top of the supplied height
-        int headHeight = btcBlockChain.getBestChainHeight();
-        if ((headHeight - height + 1) < bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()) {
-            logger.warn("At least " + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() + " confirmations are required, but there are only " + (headHeight - height) + " confirmations");
+        int confirmations = btcBlockChain.getBestChainHeight() - height + 1;
+        if (confirmations < bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()) {
+            logger.warn("At least " + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() + " confirmations are required, but there are only " + confirmations + " confirmations");
             return;
         }
 
@@ -369,8 +369,8 @@ public class BridgeSupport {
         // Specific code for lock/release/none txs
         if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
-            Script scriptSig = btcTx.getInput(0).getScriptSig();
-            if (scriptSig.getChunks().size() != 2) {
+            Optional<Script> scriptSig = BridgeUtils.getFirstInputScriptSig(btcTx);
+            if (!scriptSig.isPresent()) {
                 logger.warn("First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0));
                 panicProcessor.panic("btclock", "First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0));
                 return;
@@ -388,7 +388,7 @@ public class BridgeSupport {
             Coin totalAmount = amountToActive.add(amountToRetiring);
 
             // Get the sender public key
-            byte[] data = scriptSig.getChunks().get(1).data;
+            byte[] data = scriptSig.get().getChunks().get(1).data;
 
             // Tx is a lock tx, check whether the sender is whitelisted
             BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
