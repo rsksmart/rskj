@@ -21,7 +21,6 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
@@ -33,10 +32,12 @@ import org.ethereum.core.Transaction;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Oscar Guindzberg
@@ -132,6 +133,31 @@ public class BridgeUtils {
         }
     }
 
+    /**
+     * Indicates whether a tx is a valid lock tx or not, checking the first input's script sig
+     * @param tx
+     * @return
+     */
+    public static boolean isValidLockTx(BtcTransaction tx) {
+        if (tx.getInputs().size() == 0) {
+            return false;
+        }
+        // This indicates that the tx is a P2PKH transaction which is the only one we support for now
+        return tx.getInput(0).getScriptSig().getChunks().size() == 2;
+    }
+
+    /**
+     * Will return a valid scriptsig for the first input
+     * @param tx
+     * @return
+     */
+    public static Optional<Script> getFirstInputScriptSig(BtcTransaction tx) {
+        if (!isValidLockTx(tx)) {
+            return Optional.empty();
+        }
+        return Optional.of(tx.getInput(0).getScriptSig());
+    }
+
     public static boolean isLockTx(BtcTransaction tx, List<Federation> federations, Context btcContext, BridgeConstants bridgeConstants) {
         // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
         // optionally sending some change to any of the federation addresses)
@@ -147,7 +173,7 @@ public class BridgeUtils {
 
         int valueSentToMeSignum = valueSentToMe.signum();
         if (valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue())) {
-            logger.warn("Someone sent to the federation less than {} satoshis", bridgeConstants.getMinimumLockTxValue());
+            logger.warn("[btctx:{}]Someone sent to the federation less than {} satoshis", tx.getHash(), bridgeConstants.getMinimumLockTxValue());
         }
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
