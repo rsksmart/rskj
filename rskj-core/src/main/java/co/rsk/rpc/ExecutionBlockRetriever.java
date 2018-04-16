@@ -22,6 +22,7 @@ import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -69,6 +70,21 @@ public class ExecutionBlockRetriever {
             }
 
             return cachedBlock;
+        }
+
+        if (bnOrId.startsWith("0x")) {
+            long executionBlockNumber;
+            try {
+                executionBlockNumber = Long.parseLong(bnOrId.substring(2), 16);
+            } catch (NumberFormatException e) {
+                throw new JsonRpcInvalidParamException(String.format("Not a number: %s", bnOrId), e);
+            }
+
+            Block executionBlock = blockchain.getBlockByNumber(executionBlockNumber);
+            if (executionBlock == null) {
+                throw new JsonRpcInvalidParamException(String.format("Invalid block number %d", executionBlockNumber));
+            }
+            return executionBlock;
         }
 
         throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' and 'pending' as parameters so far.");
