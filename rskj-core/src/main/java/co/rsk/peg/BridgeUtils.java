@@ -32,7 +32,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 import java.util.List;
