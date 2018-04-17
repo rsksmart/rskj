@@ -38,8 +38,8 @@ public class PeerDiscoveryRequestTest {
     public void create() {
         ECKey key = new ECKey();
         String check = UUID.randomUUID().toString();
-        PingPeerMessage pingPeerMessage = PingPeerMessage.create("localhost", 80, check, key);
-        PongPeerMessage pongPeerMessage = PongPeerMessage.create("localhost", 80, check, key);
+        PingPeerMessage pingPeerMessage = PingPeerMessage.create("localhost", 80, check, key, 1);
+        PongPeerMessage pongPeerMessage = PongPeerMessage.create("localhost", 80, check, key, 1);
         InetSocketAddress address = new InetSocketAddress("localhost", 8080);
 
         PeerDiscoveryRequest request = PeerDiscoveryRequestBuilder.builder().messageId(check)
