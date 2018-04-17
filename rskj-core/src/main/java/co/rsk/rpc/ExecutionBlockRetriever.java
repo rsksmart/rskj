@@ -23,7 +23,7 @@ import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
-import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
+import org.ethereum.util.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -72,21 +72,27 @@ public class ExecutionBlockRetriever {
             return cachedBlock;
         }
 
-        if (bnOrId.startsWith("0x")) {
-            long executionBlockNumber;
-            try {
-                executionBlockNumber = Long.parseLong(bnOrId.substring(2), 16);
-            } catch (NumberFormatException e) {
-                throw new JsonRpcInvalidParamException(String.format("Not a number: %s", bnOrId), e);
-            }
+        // Is the block specifier either a hexadecimal or decimal number?
+        Optional<Long> executionBlockNumber = Optional.empty();
 
-            Block executionBlock = blockchain.getBlockByNumber(executionBlockNumber);
+        if (Utils.isHexadecimalString(bnOrId)) {
+            executionBlockNumber = Optional.of(Utils.hexadecimalStringToLong(bnOrId));
+        } else if (Utils.isDecimalString(bnOrId)) {
+            executionBlockNumber = Optional.of(Utils.decimalStringToLong(bnOrId));
+        }
+
+        if (executionBlockNumber.isPresent()) {
+            Block executionBlock = blockchain.getBlockByNumber(executionBlockNumber.get());
             if (executionBlock == null) {
-                throw new JsonRpcInvalidParamException(String.format("Invalid block number %d", executionBlockNumber));
+                throw new JsonRpcInvalidParamException(String.format("Invalid block number %d", executionBlockNumber.get()));
             }
             return executionBlock;
         }
 
-        throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' and 'pending' as parameters so far.");
+        // If we got here, the specifier given is unsupported
+        throw new JsonRpcInvalidParamException(String.format(
+                "Unsupported block specifier '%s'. Can only be either 'latest', " +
+                "'pending' or a specific block number (either hex - prepending '0x' or decimal).",
+                bnOrId));
     }
 }
