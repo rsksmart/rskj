@@ -156,20 +156,38 @@ public class ExecutionBlockRetrieverTest {
     }
 
     @Test
-    public void getByNumberBlockExists() {
+    public void getByNumberBlockExistsHex() {
         Block myBlock = mock(Block.class);
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(myBlock);
 
         assertThat(retriever.getExecutionBlock("0x7B"), is(myBlock));
+        assertThat(retriever.getExecutionBlock("0x7b"), is(myBlock));
+    }
+
+    @Test
+    public void getByNumberBlockExistsDec() {
+        Block myBlock = mock(Block.class);
+        when(blockchain.getBlockByNumber(123))
+                .thenReturn(myBlock);
+
+        assertThat(retriever.getExecutionBlock("123"), is(myBlock));
     }
 
     @Test(expected = JsonRpcInvalidParamException.class)
-    public void getByNumberBlockDoesntExist() {
+    public void getByNumberInvalidBlockNumberHex() {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(null);
 
         retriever.getExecutionBlock("0x7B");
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void getByNumberInvalidBlockNumberDec() {
+        when(blockchain.getBlockByNumber(123))
+                .thenReturn(null);
+
+        retriever.getExecutionBlock("123");
     }
 
     @Test(expected = JsonRpcInvalidParamException.class)
@@ -179,7 +197,14 @@ public class ExecutionBlockRetrieverTest {
         verify(blockchain, never()).getBlockByNumber(any(long.class));
     }
 
-    @Test(expected = JsonRpcUnimplementedMethodException.class)
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void getByNumberInvalidDec() {
+        retriever.getExecutionBlock("zz");
+
+        verify(blockchain, never()).getBlockByNumber(any(long.class));
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
     public void getOtherThanPendingLatestOrNumberThrows() {
         retriever.getExecutionBlock("other");
     }
