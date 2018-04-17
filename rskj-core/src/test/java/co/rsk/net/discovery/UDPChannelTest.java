@@ -59,7 +59,7 @@ public class UDPChannelTest {
     public void write() {
         String check = UUID.randomUUID().toString();
         ECKey key = new ECKey();
-        PingPeerMessage nodeMessage = PingPeerMessage.create("localhost", 80, check, key);
+        PingPeerMessage nodeMessage = PingPeerMessage.create("localhost", 80, check, key, 1);
 
         Channel channel = Mockito.mock(Channel.class);
         PeerExplorer peerExplorer = Mockito.mock(PeerExplorer.class);
