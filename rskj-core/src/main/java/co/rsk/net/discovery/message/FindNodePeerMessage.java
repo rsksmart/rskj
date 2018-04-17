@@ -20,6 +20,7 @@ package co.rsk.net.discovery.message;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
@@ -27,6 +28,9 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+
+import static org.ethereum.util.ByteUtil.longToBytes;
+import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 /**
  * Created by mario on 16/02/17.
@@ -44,20 +48,28 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     private FindNodePeerMessage() {
     }
 
-    public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey) {
+    public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, Integer networkId) {
 
         /* RLP Encode data */
         byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
         byte[] rlpNodeId = RLP.encodeElement(nodeId);
 
         byte[] type = new byte[]{(byte) DiscoveryMessageType.FIND_NODE.getTypeValue()};
-        byte[] data = RLP.encodeList(rlpNodeId, rlpCheck);
+
+        byte[] data;
+        if (networkId != null) {
+            byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(longToBytes(networkId)));
+            data = RLP.encodeList(rlpNodeId, rlpCheck, rlpNetworkId);
+        } else {
+            data = RLP.encodeList(rlpNodeId, rlpCheck);
+        }
 
         FindNodePeerMessage message = new FindNodePeerMessage();
         message.encode(type, data, privKey);
 
         message.messageId = check;
         message.nodeId = nodeId;
+        message.setNetworkId(networkId);
 
         return message;
     }
@@ -72,6 +84,10 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
         RLPItem nodeRlp = (RLPItem) dataList.get(0);
 
         this.nodeId = nodeRlp.getRLPData();
+
+        if (dataList.get(2) != null) {
+            this.setNetworkId(ByteUtil.byteArrayToInt(dataList.get(2).getRLPData()));
+        }
     }
 
 
@@ -88,6 +104,7 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     public String toString() {
         return new ToStringBuilder(this)
                 .append(Hex.toHexString(this.nodeId))
+                .append(this.getNetworkId())
                 .append(this.messageId).toString();
     }
 

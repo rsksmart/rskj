@@ -38,6 +38,7 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
     private String host;
     private int port;
     private String messageId;
+    private Integer networkId;
 
     public PongPeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         super(wire, mdc, signature, type, data);
@@ -47,7 +48,7 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
     private PongPeerMessage() {
     }
 
-    public static PongPeerMessage create(String host, int port, String check, ECKey privKey) {
+    public static PongPeerMessage create(String host, int port, String check, ECKey privKey, Integer networkId) {
         /* RLP Encode data */
         byte[] rlpIp = RLP.encodeElement(host.getBytes(StandardCharsets.UTF_8));
 
@@ -63,16 +64,28 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         byte[] type = new byte[]{(byte) DiscoveryMessageType.PONG.getTypeValue()};
         byte[] rlpFromList = RLP.encodeList(rlpIp, rlpPort, rlpPort);
         byte[] rlpToList = RLP.encodeList(rlpIpTo, rlpPortTo, rlpPortTo);
-        byte[] data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck);
+        byte[] data;
+        if (networkId != null) {
+            byte[] tmpNetworkId = longToBytes(networkId);
+            byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
+            data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkID);
+        } else {
+            data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck);
+        }
 
         PongPeerMessage message = new PongPeerMessage();
         message.encode(type, data, privKey);
 
+        message.networkId = networkId;
         message.messageId = check;
         message.host = host;
         message.port = port;
 
         return message;
+    }
+
+    public Integer getNetworkId() {
+        return this.networkId;
     }
 
     public String getHost() {
@@ -95,6 +108,11 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         RLPItem chk = (RLPItem) dataList.get(2);
 
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
+
+        //Message from nodes that do not have this
+        if (dataList.get(3) != null) {
+            this.networkId = ByteUtil.byteArrayToInt(dataList.get(3).getRLPData());
+        }
     }
 
     public String getMessageId() {

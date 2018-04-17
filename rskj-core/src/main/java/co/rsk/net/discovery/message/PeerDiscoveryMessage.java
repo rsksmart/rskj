@@ -41,6 +41,7 @@ public abstract class PeerDiscoveryMessage {
     private byte[] signature;
     private byte[] type;
     private byte[] data;
+    private Integer networkId;
 
     public PeerDiscoveryMessage() {}
 
@@ -51,6 +52,7 @@ public abstract class PeerDiscoveryMessage {
         this.data = data;
         this.wire = wire;
     }
+
     public PeerDiscoveryMessage encode(byte[] type, byte[] data, ECKey privKey) {
         /* [1] Calc sha3 - prepare for sig */
         byte[] payload = new byte[type.length + data.length];
@@ -108,6 +110,14 @@ public abstract class PeerDiscoveryMessage {
         }
 
         return outKey;
+    }
+
+    public Integer getNetworkId() {
+        return this.networkId;
+    }
+
+    protected void setNetworkId(final Integer networkId) {
+        this.networkId = networkId;
     }
 
     public NodeID getNodeId() {
