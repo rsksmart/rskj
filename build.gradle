@@ -27,6 +27,11 @@ subprojects {
 
     compileTestJava.options.encoding = 'UTF-8'
 
+    task jar(type: Jar, overwrite: true) {
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+    }
+
     repositories {
         jcenter()
     }
