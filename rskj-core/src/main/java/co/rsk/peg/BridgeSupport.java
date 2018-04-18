@@ -371,8 +371,7 @@ public class BridgeSupport {
             logger.debug("This is a lock tx {}", btcTx);
             Optional<Script> scriptSig = BridgeUtils.getFirstInputScriptSig(btcTx);
             if (!scriptSig.isPresent()) {
-                logger.warn("First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0));
-                panicProcessor.panic("btclock", "First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0));
+                logger.warn("[btctx:{}] First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0), btcTx.getHash());
                 return;
             }
 
