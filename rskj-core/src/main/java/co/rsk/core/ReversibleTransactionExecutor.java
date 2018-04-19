@@ -119,5 +119,10 @@ public class ReversibleTransactionExecutor {
             // in the context of a reversible transaction execution.
             return true;
         }
+
+        @Override
+        public boolean isLocalCallTransaction() {
+            return true;
+        }
     }
 }

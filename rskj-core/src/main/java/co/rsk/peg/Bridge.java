@@ -287,6 +287,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 throw new NoSuchMethodException(GET_STATE_FOR_DEBUGGING.name + " call is not supported after Bamboo");
             }
 
+            // If this is not a local call, then first check whether the function
+            // allows for non-local calls
+            if (!isLocalCall() && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
+                logger.info("Non-local-call to {}. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
+                return null;
+            }
+
             this.bridgeSupport = setup();
 
             Optional<?> result;
@@ -892,4 +899,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         };
     }
 
+    private boolean isLocalCall() {
+        return rskTx.isLocalCallTransaction();
+    }
 }

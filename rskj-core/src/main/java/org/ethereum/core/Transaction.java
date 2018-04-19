@@ -613,4 +613,7 @@ public class Transaction {
         return data == null ? ZERO_BYTE_ARRAY : data;
     }
 
+    public boolean isLocalCallTransaction() {
+        return false;
+    }
 }
