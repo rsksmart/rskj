@@ -83,7 +83,12 @@ test {
     systemProperty "file.encoding", "UTF-8"
 }
 
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
 repositories {
+    jcenter()
     maven {
         url "https://deps.rsklabs.io"
     }
@@ -99,6 +104,8 @@ if (project.hasProperty("mainClass")) {
 
 tasks.withType(JavaCompile){
     options.warnings = false
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-XDignore.symbol.file'
 }
 
 tasks.withType(AbstractArchiveTask) {
