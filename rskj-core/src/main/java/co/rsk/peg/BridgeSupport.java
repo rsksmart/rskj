@@ -88,29 +88,6 @@ public class BridgeSupport {
     private org.ethereum.core.Block rskExecutionBlock;
     private StoredBlock initialBtcStoredBlock;
 
-    // Used by remasc
-    public BridgeSupport(
-            RskSystemProperties config,
-            Repository repository,
-            RskAddress contractAddress,
-            Block rskExecutionBlock) {
-        this(
-                repository,
-                new BridgeStorageProvider(
-                        repository,
-                        contractAddress,
-                        config.getBlockchainConfig().getCommonConstants().getBridgeConstants()
-                ),
-                rskExecutionBlock,
-                config,
-                config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
-                null
-        );
-        this.btcContext = null;
-        this.btcBlockStore = null;
-        this.btcBlockChain = null;
-    }
-
     // Used by unit tests
     public BridgeSupport(
             RskSystemProperties config,
