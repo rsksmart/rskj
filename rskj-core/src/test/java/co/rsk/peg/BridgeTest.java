@@ -237,8 +237,6 @@ public class BridgeTest {
         track.commit();
     }
 
-
-
     @Test
     public void sendNoBlockHeader() throws IOException {
         Repository repository = new RepositoryImpl(config);
@@ -283,6 +281,8 @@ public class BridgeTest {
     @Test
     public void executeWithFunctionSignatureLengthTooShort() {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Transaction mockedTx = mock(Transaction.class);
+        bridge.init(mockedTx, null, null, null, null, null);
         Assert.assertNull(bridge.execute(new byte[3]));
     }
 
@@ -290,6 +290,8 @@ public class BridgeTest {
     @Test
     public void executeWithInexistentFunction() {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Transaction mockedTx = mock(Transaction.class);
+        bridge.init(mockedTx, null, null, null, null, null);
         Assert.assertNull(bridge.execute(new byte[4]));
     }
 
@@ -759,7 +761,9 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, getGenesisBlock(), track, null, null, null);
+        Transaction mockedTx = mock(Transaction.class);
+        when(mockedTx.isLocalCallTransaction()).thenReturn(true);
+        bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
 
         byte[] data = Bridge.GET_FEDERATION_ADDRESS.encode();
 
@@ -773,7 +777,9 @@ public class BridgeTest {
 
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, getGenesisBlock(), track, null, null, null);
+        Transaction mockedTx = mock(Transaction.class);
+        when(mockedTx.isLocalCallTransaction()).thenReturn(true);
+        bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
 
         byte[] data = Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
 
@@ -1720,6 +1726,67 @@ public class BridgeTest {
 
         bridge.execute(data);
         verify(mockedLogger, never()).warn(any(String.class), any(), any()); // "Invalid function arguments {} for function {}."
+    }
+
+    @Test
+    public void executeMethodWithOnlyLocalCallsAllowed_localCallTx() throws Exception {
+        Transaction tx = mock(Transaction.class);
+        when(tx.isLocalCallTransaction()).thenReturn(true);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(tx, null, null, null, null, null);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+        Address mockedAddress = mock(Address.class);
+        when(mockedAddress.toString()).thenReturn("i-am-an-address");
+        when(bridgeSupportMock.getFederationAddress()).thenReturn(mockedAddress);
+
+        byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
+        bridge.execute(data);
+
+        verify(bridgeSupportMock, times(1)).getFederationAddress();
+    }
+
+    @Test
+    public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx() throws Exception {
+        Transaction tx = mock(Transaction.class);
+        when(tx.isLocalCallTransaction()).thenReturn(false);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(tx, null, null, null, null, null);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+
+        byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
+        bridge.execute(data);
+
+        verify(bridgeSupportMock, never()).getFederationAddress();
+    }
+
+    @Test
+    public void executeMethodWithAnyCallsAllowed_localCallTx() throws Exception {
+        executeAndCheckMethodWithAnyCallsAllowed(true);
+    }
+
+    @Test
+    public void executeMethodWithAnyCallsAllowed_nonLocalCallTx() throws Exception {
+        executeAndCheckMethodWithAnyCallsAllowed(false);
+    }
+
+    private void executeAndCheckMethodWithAnyCallsAllowed(boolean localCall) throws Exception {
+        Transaction tx = mock(Transaction.class);
+        when(tx.isLocalCallTransaction()).thenReturn(localCall);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(tx, null, null, null, null, null);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+        when(bridgeSupportMock.voteFeePerKbChange(tx, Coin.CENT)).thenReturn(1);
+
+        byte[] data = BridgeMethods.VOTE_FEE_PER_KB.getFunction().encode(new Object[]{ Coin.CENT.longValue() });
+        bridge.execute(data);
+
+        verify(bridgeSupportMock, times(1)).voteFeePerKbChange(tx, Coin.CENT);
     }
 
     // We need reflection to mock static final fields

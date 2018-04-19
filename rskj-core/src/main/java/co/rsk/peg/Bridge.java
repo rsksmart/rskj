@@ -277,6 +277,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public byte[] execute(byte[] data) {
         try
         {
+            // Preliminary validation: the transaction on which we execute cannot be null
+            if (rskTx == null) {
+                throw new RuntimeException("Rsk Transaction is null");
+            }
+
             BridgeParsedData bridgeParsedData = parseData(data);
 
             if (bridgeParsedData == null) {
@@ -882,11 +887,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
-            if(self.rskTx == null){
-                String errorMessage = String.format("Rsk Transaction is null for function '%s'",funcName);
-                logger.warn(errorMessage);
-                throw new RuntimeException(errorMessage);
-            }
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
 
             if (!BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation())
