@@ -47,9 +47,6 @@ sourceCompatibility = 1.8
 
 mainClassName = 'co.rsk.Start'
 applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
-if (project.hasProperty("mainClass")) {
-    mainClassName = mainClass
-}
 
 tasks.withType(JavaCompile){
     options.warnings = false
