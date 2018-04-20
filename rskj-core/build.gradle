@@ -62,8 +62,6 @@ jacoco {
 }
 
 test {
-    systemProperty "solc", System.getProperty("solc")
-
     beforeTest { descriptor ->
         logger.lifecycle("Running test: ${descriptor}")
     }
@@ -79,8 +77,6 @@ test {
         append = false
         destinationFile = file("build/reports/jacoco/jacoco.exec")
     }
-
-    systemProperty "file.encoding", "UTF-8"
 }
 
 tasks.withType(Javadoc) {
