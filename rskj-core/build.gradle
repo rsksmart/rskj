@@ -14,7 +14,6 @@ buildscript {
 plugins {
     id 'application'
     id 'com.github.johnrengelman.shadow' version '1.2.4'
-    id "jacoco"
     id "org.sonarqube" version "2.5"
 }
 
@@ -49,10 +48,6 @@ sonarqube {
     }
 }
 
-jacoco {
-    toolVersion = "0.7.7.201606060606"
-}
-
 test {
     beforeTest { descriptor ->
         logger.lifecycle("Running test: ${descriptor}")
@@ -63,11 +58,6 @@ test {
     testLogging {
         events "failed"
         exceptionFormat "short"
-    }
-
-    jacoco {
-        append = false
-        destinationFile = file("build/reports/jacoco/jacoco.exec")
     }
 }
 
