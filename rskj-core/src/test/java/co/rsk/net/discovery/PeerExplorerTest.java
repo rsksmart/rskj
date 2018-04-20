@@ -173,7 +173,7 @@ public class PeerExplorerTest {
         Assert.assertEquals(NETWORK_ID1, toSenderPong.getNetworkId());
 
         //After a pong returns from a node, when we receive a ping from that node, we only answer with a pong (no additional ping)
-        PongPeerMessage pongResponseFromSender = PongPeerMessage.create(HOST_1, PORT_1, toSenderPing.getMessageId(), key1, null);
+        PongPeerMessage pongResponseFromSender = PongPeerMessage.create(HOST_1, PORT_1, toSenderPing.getMessageId(), key1, OptionalInt.empty());
         DiscoveryEvent incomingPongEvent = new DiscoveryEvent(pongResponseFromSender, new InetSocketAddress(HOST_1, PORT_1));
         channel.channelRead0(ctx, incomingPongEvent);
         channel.clearEvents();
@@ -318,7 +318,7 @@ public class PeerExplorerTest {
         peerExplorer.startConversationWithNewNodes();
         sentEvents = channel.getEventsWritten();
         Assert.assertEquals(2, sentEvents.size());
-        incomingPongMessage = PongPeerMessage.create(HOST_1, PORT_1, ((PingPeerMessage) sentEvents.get(0).getMessage()).getMessageId(), key1, null);
+        incomingPongMessage = PongPeerMessage.create(HOST_1, PORT_1, ((PingPeerMessage) sentEvents.get(0).getMessage()).getMessageId(), key1, OptionalInt.empty());
         incomingPongEvent = new DiscoveryEvent(incomingPongMessage, new InetSocketAddress(HOST_1, PORT_1));
         channel.clearEvents();
         List<Node> addedNodes = peerExplorer.getNodes();
