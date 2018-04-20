@@ -27,8 +27,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
+import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -49,7 +51,7 @@ public class UDPServerTest {
     private static final int PORT_1 = 40305;
     private static final int PORT_2 = 40306;
     private static final int PORT_3 = 40307;
-    private static final int NETWORK_ID = 1;
+    private static final OptionalInt NETWORK_ID = OptionalInt.of(1);
 
     private static final long TIMEOUT = 30000;
     private static final long REFRESH = 60000;

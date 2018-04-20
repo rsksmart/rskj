@@ -31,7 +31,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 
+import static org.ethereum.util.ByteUtil.intToBytes;
 import static org.ethereum.util.ByteUtil.longToBytes;
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
@@ -67,12 +69,10 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
 
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
 
-        if (list.get(2) != null) {
-            this.setNetworkId(ByteUtil.byteArrayToInt(list.get(2).getRLPData()));
-        }
+        this.setNetworkIdWithRLP(list.get(2));
     }
 
-    public static NeighborsPeerMessage create(List<Node> nodes, String check, ECKey privKey, Integer networkId) {
+    public static NeighborsPeerMessage create(List<Node> nodes, String check, ECKey privKey, OptionalInt networkId) {
         byte[][] nodeRLPs = null;
 
         if (nodes != null) {
@@ -89,8 +89,8 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
 
         byte[] type = new byte[]{(byte) DiscoveryMessageType.NEIGHBORS.getTypeValue()};
         byte[] data;
-        if (networkId != null) {
-            byte[] tmpNetworkId = longToBytes(networkId);
+        if (networkId.isPresent()) {
+            byte[] tmpNetworkId = intToBytes(networkId.getAsInt());
             byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
             data = RLP.encodeList(rlpListNodes, rlpCheck, rlpNetworkId);
         } else {
