@@ -20,16 +20,14 @@ package co.rsk.net.discovery.message;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
+import org.ethereum.util.*;
 import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.OptionalInt;
 
-import static org.ethereum.util.ByteUtil.longToBytes;
+import static org.ethereum.util.ByteUtil.intToBytes;
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 /**
@@ -48,7 +46,7 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     private FindNodePeerMessage() {
     }
 
-    public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, Integer networkId) {
+    public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, OptionalInt networkId) {
 
         /* RLP Encode data */
         byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
@@ -57,8 +55,8 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
         byte[] type = new byte[]{(byte) DiscoveryMessageType.FIND_NODE.getTypeValue()};
 
         byte[] data;
-        if (networkId != null) {
-            byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(longToBytes(networkId)));
+        if (networkId.isPresent()) {
+            byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(intToBytes(networkId.getAsInt())));
             data = RLP.encodeList(rlpNodeId, rlpCheck, rlpNetworkId);
         } else {
             data = RLP.encodeList(rlpNodeId, rlpCheck);
@@ -85,9 +83,7 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
 
         this.nodeId = nodeRlp.getRLPData();
 
-        if (dataList.get(2) != null) {
-            this.setNetworkId(ByteUtil.byteArrayToInt(dataList.get(2).getRLPData()));
-        }
+        this.setNetworkIdWithRLP(dataList.get(2));
     }
 
 

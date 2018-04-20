@@ -27,12 +27,15 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.net.InetSocketAddress;
+import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
  * Created by mario on 15/02/17.
  */
 public class UDPChannelTest {
+
+    private static final OptionalInt NETWORK_ID = OptionalInt.of(1);
 
     @Test
     public void create() {
@@ -59,7 +62,7 @@ public class UDPChannelTest {
     public void write() {
         String check = UUID.randomUUID().toString();
         ECKey key = new ECKey();
-        PingPeerMessage nodeMessage = PingPeerMessage.create("localhost", 80, check, key, 1);
+        PingPeerMessage nodeMessage = PingPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
 
         Channel channel = Mockito.mock(Channel.class);
         PeerExplorer peerExplorer = Mockito.mock(PeerExplorer.class);
