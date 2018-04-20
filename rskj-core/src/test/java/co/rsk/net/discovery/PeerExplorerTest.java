@@ -33,10 +33,7 @@ import org.mockito.Mockito;
 import org.spongycastle.util.encoders.Hex;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Created by mario on 15/02/17.
@@ -62,8 +59,8 @@ public class PeerExplorerTest {
     private static final long UPDATE = 60000;
     private static final long CLEAN = 60000;
 
-    private static final Integer NETWORK_ID1 = 1;
-    private static final Integer NETWORK_ID2 = 2;
+    private static final OptionalInt NETWORK_ID1 = OptionalInt.of(1);
+    private static final OptionalInt NETWORK_ID2 = OptionalInt.of(2);
 
     @Test
     public void sendInitialMessageToNodesNoNodes() {
@@ -158,7 +155,7 @@ public class PeerExplorerTest {
 
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         String check = UUID.randomUUID().toString();
-        PingPeerMessage nodeMessage = PingPeerMessage.create(HOST_1, PORT_1, check, key1, null);
+        PingPeerMessage nodeMessage = PingPeerMessage.create(HOST_1, PORT_1, check, key1, OptionalInt.empty());
         DiscoveryEvent incomingPingEvent = new DiscoveryEvent(nodeMessage, new InetSocketAddress(HOST_1, PORT_1));
 
         //A message is received
@@ -313,7 +310,7 @@ public class PeerExplorerTest {
 
         //A incoming pong for a Ping we did not sent.
         String check = UUID.randomUUID().toString();
-        PongPeerMessage incomingPongMessage = PongPeerMessage.create(HOST_1, PORT_1, check, key1, null);
+        PongPeerMessage incomingPongMessage = PongPeerMessage.create(HOST_1, PORT_1, check, key1, OptionalInt.empty());
         DiscoveryEvent incomingPongEvent = new DiscoveryEvent(incomingPongMessage, new InetSocketAddress(HOST_1, PORT_1));
         channel.clearEvents();
         channel.channelRead0(ctx, incomingPongEvent);
@@ -510,7 +507,7 @@ public class PeerExplorerTest {
 
         Node node = new Node(key2.getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(1, 1, node);
-        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, 199, UPDATE, CLEAN, 200);
+        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, 199, UPDATE, CLEAN, OptionalInt.of(200));
 
         Channel internalChannel = Mockito.mock(Channel.class);
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);

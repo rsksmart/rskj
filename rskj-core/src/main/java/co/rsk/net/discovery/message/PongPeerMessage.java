@@ -27,7 +27,9 @@ import org.ethereum.util.RLPList;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.OptionalInt;
 
+import static org.ethereum.util.ByteUtil.intToBytes;
 import static org.ethereum.util.ByteUtil.longToBytes;
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
@@ -38,7 +40,6 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
     private String host;
     private int port;
     private String messageId;
-    private Integer networkId;
 
     public PongPeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         super(wire, mdc, signature, type, data);
@@ -48,7 +49,7 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
     private PongPeerMessage() {
     }
 
-    public static PongPeerMessage create(String host, int port, String check, ECKey privKey, Integer networkId) {
+    public static PongPeerMessage create(String host, int port, String check, ECKey privKey, OptionalInt networkId) {
         /* RLP Encode data */
         byte[] rlpIp = RLP.encodeElement(host.getBytes(StandardCharsets.UTF_8));
 
@@ -65,8 +66,8 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         byte[] rlpFromList = RLP.encodeList(rlpIp, rlpPort, rlpPort);
         byte[] rlpToList = RLP.encodeList(rlpIpTo, rlpPortTo, rlpPortTo);
         byte[] data;
-        if (networkId != null) {
-            byte[] tmpNetworkId = longToBytes(networkId);
+        if (networkId.isPresent()) {
+            byte[] tmpNetworkId = intToBytes(networkId.getAsInt());
             byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
             data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkID);
         } else {
@@ -76,16 +77,12 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         PongPeerMessage message = new PongPeerMessage();
         message.encode(type, data, privKey);
 
-        message.networkId = networkId;
+        message.setNetworkId(networkId);
         message.messageId = check;
         message.host = host;
         message.port = port;
 
         return message;
-    }
-
-    public Integer getNetworkId() {
-        return this.networkId;
     }
 
     public String getHost() {
@@ -110,9 +107,7 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
 
         //Message from nodes that do not have this
-        if (dataList.get(3) != null) {
-            this.networkId = ByteUtil.byteArrayToInt(dataList.get(3).getRLPData());
-        }
+        this.setNetworkIdWithRLP(dataList.get(3));
     }
 
     public String getMessageId() {

@@ -28,6 +28,7 @@ import org.mockito.Mockito;
 import org.spongycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
+import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
@@ -38,7 +39,7 @@ public class NodeChallengeManagerTest {
     private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
     private static final String HOST_1 = "localhost";
     private static final int PORT_1 = 44035;
-    private static final int NETWORK_ID = 1;
+    private static final OptionalInt NETWORK_ID = OptionalInt.of(1);
 
     private static final String KEY_2 = "bd2d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38262f";
     private static final String HOST_2 = "localhost";

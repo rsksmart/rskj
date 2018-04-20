@@ -27,7 +27,9 @@ import org.ethereum.util.RLPList;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.OptionalInt;
 
+import static org.ethereum.util.ByteUtil.intToBytes;
 import static org.ethereum.util.ByteUtil.longToBytes;
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
@@ -46,7 +48,7 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
 
     private PingPeerMessage() {}
 
-    public static PingPeerMessage create(String host, int port, String check, ECKey privKey, Integer networkId) {
+    public static PingPeerMessage create(String host, int port, String check, ECKey privKey, OptionalInt networkId) {
         /* RLP Encode data */
         byte[] rlpIp = RLP.encodeElement(host.getBytes(StandardCharsets.UTF_8));
 
@@ -61,8 +63,8 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
         byte[] rlpToList = RLP.encodeList(rlpIpTo, rlpPortTo, rlpPortTo);
         byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
         byte[] data;
-        if (networkId != null) {
-            byte[] tmpNetworkId = longToBytes(networkId);
+        if (networkId.isPresent()) {
+            byte[] tmpNetworkId = intToBytes(networkId.getAsInt());
             byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
             data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkID);
         } else {
@@ -93,9 +95,7 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
 
         //Message from nodes that do not have this
-        if (dataList.get(3) != null) {
-            this.setNetworkId(ByteUtil.byteArrayToInt(dataList.get(3).getRLPData()));
-        }
+        this.setNetworkIdWithRLP(dataList.get(3));
     }
 
     public String getMessageId() {
