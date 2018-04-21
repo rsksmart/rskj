@@ -60,7 +60,6 @@ config/pmd/reports/
 blocksminer1.txt
 
 blocksminer1.txt
-build-info.properties
 
 # Test File
 fileMonitor.txt

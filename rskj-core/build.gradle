@@ -5,6 +5,8 @@ import java.util.zip.ZipEntry
 import java.nio.file.Files
 import java.nio.file.Paths
 
+import java.util.jar.JarOutputStream
+
 buildscript {
     dependencies {
         classpath files('libs/rsk-gradle-witness.jar')
@@ -181,6 +183,34 @@ javadoc {
     options.encoding = "UTF-8"
 }
 
+def generatedResources = "$buildDir/generated-resources"
+sourceSets {
+    generated {
+        output.dir(generatedResources, builtBy: 'generateResources')
+    }
+}
+
+task generateResources << {
+    mkdir generatedResources
+    def generated = new File(generatedResources, 'build-info.properties')
+    def commitHash = gitCommitHash()
+    def currentBranch = gitCurrentBranch()
+    generated.text = """
+build.hash=$commitHash
+build.branch=$currentBranch
+"""
+}
+
+tasks.withType(Jar) {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+    dirMode = 0775
+    fileMode = 0664
+    doLast {
+        stripJar(outputs.files.singleFile)
+    }
+}
+
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     from sourceSets.main.allSource
@@ -191,11 +221,16 @@ task javadocJar(type: Jar) {
     from javadoc
 }
 
-task buildPropertiesFile(type: Jar) {
-    println 'build info generated succesfully'
-
-    File versionFile = file(new File("src/main/resources/build-info.properties"))
-    versionFile.text = 'build.hash=' + gitCommitHash() + '\nbuild.branch=' + gitCurrentBranch()
+task jar(type:Jar, overwrite: true) {
+    def commitHash = gitCommitHash()
+    def currentBranch = gitCurrentBranch()
+    manifest {
+        attributes  'Git-Commit': commitHash,
+                    'Git-Branch': currentBranch
+    }
+    from sourceSets.main.output.classesDirs
+    from sourceSets.main.output.resourcesDir
+    from sourceSets.generated.output.dirs
 }
 
 task reproducible(dependsOn: 'shadowJar') {
@@ -286,7 +321,7 @@ tasks.withType(Tar) {
 artifacts {
     archives sourcesJar
     archives javadocJar
-    archives buildPropertiesFile
+    archives jar
     archives(generatePom.file) {
         type 'text'
         builtBy generatePom
@@ -307,4 +342,21 @@ def gitCommitHash() {
 def gitDateHash() {
     def process = "git show -s --format=%ct ${gitCommitHash()}".execute()
     return process.text.toLong()
+}
+
+def stripJar(File originalFile) {
+    def constantTimeForZipEntries = new GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).timeInMillis
+    def reproducibleFile = File.createTempFile("temp", ".tmp")
+    reproducibleFile.withOutputStream { fout ->
+        def out = new JarOutputStream(fout)
+        def jf = new JarFile(originalFile)
+        jf.entries().unique {it.name}.sort {it.name}.each {
+            def copy = new JarEntry(it.name)
+            copy.time = constantTimeForZipEntries
+            out.putNextEntry(copy)
+            out << jf.getInputStream(it)
+        }
+        out.finish()
+    }
+    reproducibleFile.renameTo originalFile
 }
