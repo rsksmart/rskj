@@ -280,6 +280,11 @@ void copyBinaryData(InputStream is, ZipOutputStream zos) {
     }
 }
 
+tasks.withType(Tar) {
+    compression = Compression.GZIP
+    extension = 'tar.gz'
+}
+
 artifacts {
     archives sourcesJar
     archives javadocJar
@@ -288,6 +293,7 @@ artifacts {
         type 'text'
         builtBy generatePom
     }
+    archives distTar
 }
 
 def gitCurrentBranch() {
