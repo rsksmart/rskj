@@ -1,10 +1,5 @@
-import java.util.zip.ZipOutputStream
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
-import java.util.zip.ZipEntry
-import java.nio.file.Files
-import java.nio.file.Paths
-
 import java.util.jar.JarOutputStream
 
 buildscript {
@@ -15,7 +10,6 @@ buildscript {
 
 plugins {
     id 'application'
-    id 'com.github.johnrengelman.shadow' version '1.2.4'
 }
 
 apply plugin: 'witness'
@@ -235,26 +229,6 @@ task jar(type:Jar, overwrite: true) {
     from sourceSets.generated.output.dirs
 }
 
-task reproducible(dependsOn: 'shadowJar') {
-    doLast {
-        long fixDateJar = gitDateHash() * 1000
-        File newJar = new File(shadowJar.archivePath.parent, 'tmp-' + shadowJar.archiveName)
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(newJar))
-        JarFile jf = new JarFile(shadowJar.archivePath)
-        jf.entries().each { entry ->
-            cloneAndCopyEntry(jf, entry, zos, fixDateJar)
-        }
-        zos.finish()
-        jf.close()
-    // -- Enable this line to debug -- //
-        //compareJars(archivePath, newJar, fixDateJar)
-    // -- Remove old Jar -- //
-        Files.deleteIfExists(Paths.get(shadowJar.archivePath.getAbsolutePath()));
-    // -- Rename reproducible Jar -- //
-        newJar.renameTo(shadowJar.archivePath)
-    }
-}
-
 task generatePom(dependsOn: jar) {
     def jarName = jar.outputs.files.singleFile.name
     def pomFile = "$libsDir/${jarName.take(jarName.lastIndexOf('.'))}.pom"
@@ -278,41 +252,14 @@ task generatePom(dependsOn: jar) {
     }
 }
 
-void compareJars(File original, File copy, long ts) {
-    def jf = new JarFile(original)
-    def cjf = new JarFile(copy)
-    jf.entries().each { entry ->
-        def centry = cjf.getJarEntry(entry.name)
-        compareEntries(entry, centry, ts)
+task fatJar(type: Jar, dependsOn: jar) {
+    manifest {
+        attributes 'Main-Class': "$mainClassName"
     }
-}
-
-void compareEntries(JarEntry entry, JarEntry centry, long ts) {
-    assert entry.name == centry.name
-    assert entry.comment == centry.comment
-    assert entry.compressedSize == centry.compressedSize
-    assert entry.crc == centry.crc
-    assert entry.extra == centry.extra
-    assert entry.method == centry.method
-    assert entry.size == centry.size
-    assert ts == centry.time
-    assert entry.hashCode() == centry.hashCode()
-}
-
-void cloneAndCopyEntry(JarFile originalFile, JarEntry original, ZipOutputStream zos, long newTimestamp) {
-    ZipEntry clone = new ZipEntry(original)
-    clone.time = newTimestamp
-    def entryIs = originalFile.getInputStream(original)
-    zos.putNextEntry(clone)
-    copyBinaryData(entryIs, zos)
-}
-
-void copyBinaryData(InputStream is, ZipOutputStream zos) {
-    byte[] buffer = new byte[1024*1024]
-    int len = 0
-    while((len = is.read(buffer)) != -1) {
-        zos.write(buffer, 0, len)
-    }
+    exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+    classifier = 'all'
+    from { configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
 
 tasks.withType(Tar) {
@@ -328,6 +275,7 @@ artifacts {
         type 'text'
         builtBy generatePom
     }
+    archives fatJar
     archives distTar
 }
 
