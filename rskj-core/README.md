@@ -3,15 +3,14 @@
 
 #### Compile, test and package
 
-Run `../gradlew build`.
+Run `$ ../gradlew build`
 
  - find jar artifacts at `build/libs`
  - find unit test and code coverage reports at `build/reports`
 
 #### Run a RSK node
 
- - run `../gradlew run`, or
- - build a standalone executable jar with `../gradlew shadow` and execute the `-all` jar in `build/libs` using `java -jar [jarfile]`.
+ - execute the `-all` jar in `build/libs` using `$ java -jar [jarfile]`.
 
 #### Import sources into IntelliJ IDEA
 
