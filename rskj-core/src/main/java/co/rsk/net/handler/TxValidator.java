@@ -20,13 +20,11 @@ package co.rsk.net.handler;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.net.handler.txvalidator.*;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.BigIntegers;
@@ -34,7 +32,6 @@ import org.spongycastle.util.BigIntegers;
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Used to validate transactions before relaying. This class is highly
