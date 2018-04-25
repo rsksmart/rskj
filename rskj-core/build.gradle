@@ -283,12 +283,12 @@ artifacts {
 
 def gitCurrentBranch() {
     def process = "git rev-parse --abbrev-ref HEAD".execute()
-    return process.text
+    return process.text.trim()
 }
 
 def gitCommitHash() {
     def process = "git rev-parse --short HEAD".execute()
-    return process.text
+    return process.text.trim()
 }
 
 def gitDateHash() {
