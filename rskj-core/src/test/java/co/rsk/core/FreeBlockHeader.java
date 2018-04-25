@@ -5,25 +5,9 @@ package co.rsk.core;
  */
 
 import com.google.common.collect.Lists;
-import org.ethereum.core.SerializableObject;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.ethereum.util.Utils;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
-import org.spongycastle.util.BigIntegers;
-
-import java.math.BigInteger;
-import java.util.List;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.toHexString;
-
-import com.google.common.collect.Lists;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.ethereum.util.Utils;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.BigIntegers;
 
@@ -37,9 +21,7 @@ import static org.ethereum.util.ByteUtil.toHexString;
  * Block header is a value object containing
  * the basic information of a block
  */
-
-// TODO review implements SerializableObject
-public class FreeBlockHeader implements SerializableObject {
+public class FreeBlockHeader {
 
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
@@ -346,7 +328,7 @@ public class FreeBlockHeader implements SerializableObject {
     }
 
     public byte[] getHash() {
-        return HashUtil.sha3(getEncoded());
+        return HashUtil.keccak256(getEncoded());
     }
 
     public byte[] getEncoded() {
@@ -515,7 +497,7 @@ public class FreeBlockHeader implements SerializableObject {
     }
 
     public byte[] getHashForMergedMining() {
-        return HashUtil.sha3(getEncoded(false));
+        return HashUtil.keccak256(getEncoded(false));
     }
 
     public String getShortHash() {

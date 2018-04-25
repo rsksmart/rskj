@@ -19,28 +19,28 @@
 
 package org.ethereum.vm;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.util.ByteUtil;
-
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 public class ProgramMemoryTest {
 
     ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
     Program program;
-    ByteBuffer memory;
 
     @Before
     public void createProgram() {
-        program = new Program(ConfigHelper.CONFIG, ByteUtil.EMPTY_BYTE_ARRAY, pi);
+        TestSystemProperties config = new TestSystemProperties();
+        program = new Program(config.getVmConfig(), new PrecompiledContracts(config), mock(BlockchainConfig.class), ByteUtil.EMPTY_BYTE_ARRAY, pi, null);
     }
 
     @Test

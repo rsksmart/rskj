@@ -27,7 +27,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
         Optional<ChunkDescriptor> currentChunk = chunksDownloadHelper.getCurrentChunk();
         if (!currentChunk.isPresent()
                 || chunk.size() != currentChunk.get().getCount()
-                || !ByteUtil.fastEquals(chunk.get(0).getHash(), currentChunk.get().getHash())) {
+                || !ByteUtil.fastEquals(chunk.get(0).getHash().getBytes(), currentChunk.get().getHash())) {
             syncEventsHandler.onErrorSyncing(
                     "Invalid chunk received from node {} {}", EventType.INVALID_MESSAGE,
                     syncInformation.getSelectedPeerId(), currentChunk.get().getHash());
@@ -62,16 +62,24 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
         }
 
         resetTimeElapsed();
-        syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk());
+        trySendRequest();
     }
 
     @Override
     public void onEnter() {
-        syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk());
+        trySendRequest();
     }
 
     @VisibleForTesting
     public List<BlockIdentifier> getSkeleton() {
         return chunksDownloadHelper.getSkeleton();
+    }
+
+    private void trySendRequest() {
+        boolean sent = syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk());
+        if (!sent) {
+            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
+                    this.getClass(), syncInformation.getSelectedPeerId());
+        }
     }
 }

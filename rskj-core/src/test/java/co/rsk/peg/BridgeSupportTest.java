@@ -27,9 +27,12 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.*;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.simples.SimpleRskTransaction;
@@ -38,13 +41,12 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -53,9 +55,8 @@ import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -96,11 +97,13 @@ import static org.mockito.Mockito.*;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ BridgeUtils.class })
 public class BridgeSupportTest {
+    private static final co.rsk.core.Coin LIMIT_MONETARY_BASE = new co.rsk.core.Coin(new BigInteger("21000000000000000000000000"));
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
+    public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
 
-    private static BlockchainNetConfig blockchainNetConfigOriginal;
     private static BridgeConstants bridgeConstants;
     private static NetworkParameters btcParams;
+    private TestSystemProperties config;
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
@@ -110,78 +113,66 @@ public class BridgeSupportTest {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
 
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
-        bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+    @Before
+    public void setUpOnEachTest(){
+        config = new TestSystemProperties();
+        config.setBlockchainConfig(new RegTestConfig());
+        bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcParams = bridgeConstants.getBtcParams();
-    }
-
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception {
-        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
     public void testInitialChainHeadWithoutBtcCheckpoints() throws Exception {
-        BlockchainNetConfig blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
-        NetworkParameters _networkParameters = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
-
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        NetworkParameters _networkParameters = btcParams;
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
         Assert.assertEquals(0, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
         Assert.assertEquals(_networkParameters.getGenesisBlock(), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
-
-        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
     public void testInitialChainHeadWithBtcCheckpoints() throws Exception {
-        BlockchainNetConfig blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new TestNetConfig());
+        config = new TestSystemProperties();
+        config.setBlockchainConfig(new TestNetConfig());
+        bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        btcParams = bridgeConstants.getBtcParams();
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
         Assert.assertEquals(1229760, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
-
-        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
     public void feePerKbFromStorageProvider() throws Exception {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Coin expected = Coin.MILLICOIN;
         provider.setFeePerKb(expected);
         provider.saveFeePerKb();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
         Assert.assertEquals(expected, bridgeSupport.getFeePerKb());
     }
 
     @Test
     public void testGetBtcBlockchainBlockLocatorWithoutBtcCheckpoints() throws Exception {
-        BlockchainNetConfig blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
-        NetworkParameters _networkParameters = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+        NetworkParameters _networkParameters = btcParams;
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
         Assert.assertEquals(0, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
         Assert.assertEquals(_networkParameters.getGenesisBlock(), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
 
@@ -199,23 +190,19 @@ public class BridgeSupportTest {
         Assert.assertEquals(blocks.get(5).getHash(), locator.get(3));
         Assert.assertEquals(blocks.get(1).getHash(), locator.get(4));
         Assert.assertEquals(_networkParameters.getGenesisBlock().getHash(), locator.get(5));
-
-        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
 
     @Test
     public void testGetBtcBlockchainBlockLocatorWithBtcCheckpoints() throws Exception {
-        BlockchainNetConfig blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
-        NetworkParameters _networkParameters = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+        NetworkParameters _networkParameters = btcParams;
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         List<BtcBlock> checkpoints = createBtcBlocks(_networkParameters, _networkParameters.getGenesisBlock(), 10);
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null) {
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null) {
             @Override
             InputStream getCheckPoints() {
                 return getCheckpoints(_networkParameters, checkpoints);
@@ -238,8 +225,6 @@ public class BridgeSupportTest {
         Assert.assertEquals(blocks.get(5).getHash(), locator.get(3));
         Assert.assertEquals(blocks.get(1).getHash(), locator.get(4));
         Assert.assertEquals(checkpoints.get(9).getHash(), locator.get(5));
-
-        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     private List<BtcBlock> createBtcBlocks(NetworkParameters _networkParameters, BtcBlock parent, int numberOfBlocksToCreate) {
@@ -288,16 +273,17 @@ public class BridgeSupportTest {
 
     @Test
     public void callUpdateCollectionsGenerateEventLog() throws IOException, BlockStoreException {
-        Repository track = new RepositoryImpl(ConfigHelper.CONFIG).startTracking();
+        Repository track = new RepositoryImpl(config).startTracking();
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
 
         List<LogInfo> eventLogs = new LinkedList<>();
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, eventLogger, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
 
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         ECKey key = new ECKey();
         tx.sign(key.getPrivKeyBytes());
 
@@ -322,10 +308,10 @@ public class BridgeSupportTest {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(30,0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(20,0));
@@ -347,13 +333,14 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
 
         bridgeSupport.updateCollections(tx);
 
@@ -361,7 +348,7 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
@@ -377,10 +364,10 @@ public class BridgeSupportTest {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(37500));
         provider0.setFeePerKb(Coin.MILLICOIN);
@@ -399,20 +386,21 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
         BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).build();
 
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
+            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
 
         bridgeSupport.updateCollections(tx);
 
@@ -420,7 +408,7 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
@@ -434,10 +422,10 @@ public class BridgeSupportTest {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN.multiply(7));
         for (int i = 0; i < 2000; i++) {
@@ -457,21 +445,22 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
         BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).build();
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
+            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
+        ReceiptStore rskReceiptStore = null;
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
 
         bridgeSupport.updateCollections(tx);
 
@@ -479,7 +468,7 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
@@ -514,11 +503,11 @@ public class BridgeSupportTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 35
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(35, 1);
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, rskCurrentBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, rskCurrentBlock);
 
         // One MICROCOIN is less than half the fee per kb, which is the minimum funds to migrate,
         // and so it won't be removed from the old federation UTXOs list for migration.
@@ -567,25 +556,26 @@ public class BridgeSupportTest {
         Federation federation = bridgeConstants.getGenesisFederation();
 
         Map<byte[], BigInteger> preMineMap = new HashMap<byte[], BigInteger>();
-        preMineMap.put(PrecompiledContracts.BRIDGE_ADDR.getBytes(), Denomination.satoshisToWeis(BigInteger.valueOf(21000000)));
+        preMineMap.put(PrecompiledContracts.BRIDGE_ADDR.getBytes(), LIMIT_MONETARY_BASE.asBigInteger());
 
-        Genesis genesisBlock = (Genesis) BlockGenerator.getInstance().getNewGenesisBlock(0, preMineMap);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Genesis genesisBlock = (Genesis) blockGenerator.getNewGenesisBlock(0, preMineMap);
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(genesisBlock, 10);
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(genesisBlock, 10);
 
         BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
+            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
 
         Repository repository = blockchain.getRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN);
         provider0.getNewFederationBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
@@ -595,10 +585,10 @@ public class BridgeSupportTest {
         track.commit();
 
         track = repository.startTracking();
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
 
         bridgeSupport.updateCollections(tx);
 
@@ -606,13 +596,13 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
-        Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(21000000-2600)), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
-        Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress()));
+        Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600))), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600)), repository.getBalance(config.getBlockchainConfig().getCommonConstants().getBurnAddress()));
         // Check the wallet has been emptied
         Assert.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
@@ -620,17 +610,17 @@ public class BridgeSupportTest {
     @Test
     public void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException, BlockStoreException {
         // Bridge constants and btc context
-        BridgeConstants bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         Context context = new Context(bridgeConstants.getBtcParams());
 
         // Fake wallet returned every time
         PowerMockito.mockStatic(BridgeUtils.class);
         PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(Context.class), any(Federation.class), any(List.class))).thenReturn(new SimpleWallet(context));
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         BtcTransaction txs = new BtcTransaction(btcParams);
         txs.addOutput(Coin.FIFTY_COINS, new BtcECKey());
@@ -656,28 +646,29 @@ public class BridgeSupportTest {
         track.commit();
 
         track = repository.startTracking();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
 
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).build();
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
+            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction rskTx = Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, rskCurrentBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, rskCurrentBlock);
 
         bridgeSupport.updateCollections(rskTx);
         bridgeSupport.save();
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(2, provider2.getReleaseTransactionSet().getEntries().size());
@@ -686,17 +677,17 @@ public class BridgeSupportTest {
 
     @Test
     public void sendOrphanBlockHeader() throws IOException, BlockStoreException {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(ConfigHelper.CONFIG, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
 
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, 1, 1, new ArrayList<BtcTransaction>());
         co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
@@ -712,17 +703,17 @@ public class BridgeSupportTest {
 
     @Test
     public void addBlockHeaderToBlockchain() throws IOException, BlockStoreException {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(ConfigHelper.CONFIG, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
 
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, 1, 1, new ArrayList<BtcTransaction>());
         co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
@@ -740,34 +731,34 @@ public class BridgeSupportTest {
     public void addSignatureToMissingTransaction() throws Exception {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, (Block) null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, (Block) null);
 
         bridgeSupport.addSignature(1, federation.getPublicKeys().get(0), null, PegTestUtils.createHash().getBytes());
         bridgeSupport.save();
 
         track.commit();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
     }
 
     @Test
     public void addSignatureFromInvalidFederator() throws Exception {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, (Block) null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, (Block) null);
 
         bridgeSupport.addSignature(1, new BtcECKey(), null, PegTestUtils.createHash().getBytes());
         bridgeSupport.save();
 
         track.commit();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
     }
@@ -799,7 +790,7 @@ public class BridgeSupportTest {
     public void addSignatureCreateEventLog() throws Exception {
         // Setup
         Federation federation = bridgeConstants.getGenesisFederation();
-        Repository track = new RepositoryImpl(ConfigHelper.CONFIG).startTracking();
+        Repository track = new RepositoryImpl(config).startTracking();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
 
         // Build prev btc tx
@@ -814,7 +805,7 @@ public class BridgeSupportTest {
         btcTx.addOutput(output);
 
         // Save btc tx to be signed
-        final Sha3Hash rskTxHash = PegTestUtils.createHash3();
+        final Keccak256 rskTxHash = PegTestUtils.createHash3();
         provider.getRskTxsWaitingForSignatures().put(rskTxHash, btcTx);
         provider.save();
         track.commit();
@@ -822,7 +813,7 @@ public class BridgeSupportTest {
         // Setup BridgeSupport
         List<LogInfo> eventLogs = new ArrayList<>();
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, eventLogger, contractAddress, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, contractAddress, null);
 
         // Create signed hash of Btc tx
         Script inputScript = btcTx.getInputs().get(0).getScriptSig();
@@ -882,9 +873,9 @@ public class BridgeSupportTest {
     public void addSignatureMultipleInputsPartiallyValid() throws Exception {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
-        final Sha3Hash sha3Hash = PegTestUtils.createHash3();
+        final Keccak256 keccak256 = PegTestUtils.createHash3();
 
         Repository track = repository.startTracking();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
@@ -905,14 +896,14 @@ public class BridgeSupportTest {
         t.addInput(prevOut1).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
         t.addInput(prevOut2).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
         t.addInput(prevOut3).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
-        provider.getRskTxsWaitingForSignatures().put(sha3Hash, t);
+        provider.getRskTxsWaitingForSignatures().put(keccak256, t);
         provider.save();
         track.commit();
 
         track = repository.startTracking();
         List<LogInfo> logs = new ArrayList<>();
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, eventLogger, contractAddress, (Block) null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, contractAddress, (Block) null);
 
         // Generate valid signatures for inputs
         List<byte[]> derEncodedSigsFirstFed = new ArrayList<>();
@@ -940,7 +931,7 @@ public class BridgeSupportTest {
         }
 
         // Sign with two valid signatuers and one invalid signature
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
@@ -950,18 +941,18 @@ public class BridgeSupportTest {
             malformedSignature[i] = (byte) i;
         }
         derEncodedSigsFirstFed.set(2, malformedSignature);
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
         // Sign with fully valid signatures for same federator
         derEncodedSigsFirstFed.set(2, lastSig.encodeToDER());
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
         // Sign with second federation
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
@@ -994,12 +985,12 @@ public class BridgeSupportTest {
     private void addSignatureFromValidFederator(List<BtcECKey> privateKeysToSignWith, int numberOfInputsToSign, boolean signatureCanonical, boolean signTwice, String expectedResult) throws Exception {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
-        final Sha3Hash sha3Hash = PegTestUtils.createHash3();
+        final Keccak256 keccak256 = PegTestUtils.createHash3();
 
         Repository track = repository.startTracking();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         BtcTransaction prevTx = new BtcTransaction(btcParams);
         TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
@@ -1009,14 +1000,14 @@ public class BridgeSupportTest {
         TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
         t.addOutput(output);
         t.addInput(prevOut).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
-        provider.getRskTxsWaitingForSignatures().put(sha3Hash, t);
+        provider.getRskTxsWaitingForSignatures().put(keccak256, t);
         provider.save();
         track.commit();
 
         track = repository.startTracking();
         List<LogInfo> logs = new ArrayList<>();
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, eventLogger, contractAddress, (Block) null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, contractAddress, (Block) null);
 
         Script inputScript = t.getInputs().get(0).getScriptSig();
         List<ScriptChunk> chunks = inputScript.getChunks();
@@ -1034,7 +1025,7 @@ public class BridgeSupportTest {
         for (int i = 0; i < numberOfInputsToSign; i++) {
             derEncodedSigs.add(derEncodedSig);
         }
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, keccak256.getBytes());
         if (signTwice) {
             // Create another valid signature with the same private key
             ECDSASigner signer = new ECDSASigner();
@@ -1042,7 +1033,7 @@ public class BridgeSupportTest {
             signer.init(true, privKey);
             BigInteger[] components = signer.generateSignature(sighash.getBytes());
             BtcECKey.ECDSASignature sig2 = new BtcECKey.ECDSASignature(components[0], components[1]).toCanonicalised();
-            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), Lists.newArrayList(sig2.encodeToDER()), sha3Hash.getBytes());
+            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), Lists.newArrayList(sig2.encodeToDER()), keccak256.getBytes());
         }
         if (privateKeysToSignWith.size()>1) {
             BtcECKey.ECDSASignature sig2 = privateKeysToSignWith.get(1).sign(sighash);
@@ -1051,12 +1042,12 @@ public class BridgeSupportTest {
             for (int i = 0; i < numberOfInputsToSign; i++) {
                 derEncodedSigs2.add(derEncodedSig2);
             }
-            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, sha3Hash.getBytes());
+            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, keccak256.getBytes());
         }
         bridgeSupport.save();
         track.commit();
 
-        provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         if ("FullySigned".equals(expectedResult)) {
             Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
@@ -1071,7 +1062,7 @@ public class BridgeSupportTest {
             Assert.assertEquals(true, retrievedScriptSig.getChunks().get(1).data.length > 0);
             Assert.assertEquals(true, retrievedScriptSig.getChunks().get(2).data.length > 0);
         } else {
-            Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(sha3Hash).getInput(0).getScriptSig();
+            Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(keccak256).getInput(0).getScriptSig();
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
             boolean expectSignatureToBePersisted = false; // for "InvalidParameters"
             if ("PartiallySigned".equals(expectedResult)) {
@@ -1093,22 +1084,22 @@ public class BridgeSupportTest {
 
     @Test
     public void releaseBtcWithDustOutput() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
+        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
         bridgeSupport.releaseBtc(tx);
         bridgeSupport.save();
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
@@ -1117,22 +1108,22 @@ public class BridgeSupportTest {
 
     @Test
     public void releaseBtc() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
+        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
         bridgeSupport.releaseBtc(tx);
         bridgeSupport.save();
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(1, provider2.getReleaseRequestQueue().getEntries().size());
@@ -1141,15 +1132,15 @@ public class BridgeSupportTest {
 
     @Test
     public void releaseBtcFromContract() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
+        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
         track.saveCode(tx.getSender(), new byte[] {0x1});
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
         try {
             bridgeSupport.releaseBtc(tx);
@@ -1161,22 +1152,22 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionOfAlreadyProcessedTransaction() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
         BtcTransaction tx = createTransaction();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         provider.getBtcTxHashesAlreadyProcessed().put(tx.getHash(), 1L);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 0, null);
         bridgeSupport.save();
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
@@ -1187,13 +1178,13 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionOfTransactionNotInMerkleTree() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
         BtcTransaction tx = createTransaction();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1207,7 +1198,7 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
@@ -1218,13 +1209,13 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionOfTransactionInMerkleTreeWithNegativeHeight() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
         BtcTransaction tx = createTransaction();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1238,7 +1229,7 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
@@ -1249,17 +1240,15 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionOfTransactionInMerkleTreeWithNotEnoughtHeight() throws BlockStoreException, AddressFormatException, IOException {
-        BlockchainNetConfig blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
-        NetworkParameters _networkParameters = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+        NetworkParameters _networkParameters = btcParams;
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
         BtcTransaction tx = createTransaction();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1273,23 +1262,21 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
-
-        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
     public void registerBtcTransactionTxNotLockNorReleaseTx() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
         BtcTransaction tx = new BtcTransaction(this.btcParams);
         Address address = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey())).getToAddress(bridgeConstants.getBtcParams());
@@ -1298,12 +1285,12 @@ public class BridgeSupportTest {
 
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(ConfigHelper.CONFIG, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1323,7 +1310,7 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
 
@@ -1337,8 +1324,8 @@ public class BridgeSupportTest {
     public void registerBtcTransactionReleaseTx() throws BlockStoreException, AddressFormatException, IOException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        Repository repository = new RepositoryImpl(config);
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Repository track = repository.startTracking();
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(10L);
@@ -1376,12 +1363,12 @@ public class BridgeSupportTest {
         tx.getInput(0).setScriptSig(scriptSig);
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(ConfigHelper.CONFIG, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
         Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
 
         byte[] bits = new byte[1];
@@ -1403,9 +1390,9 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        Assert.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(1, provider2.getNewFederationBtcUTXOs().size());
         Assert.assertEquals(Coin.COIN, provider2.getNewFederationBtcUTXOs().get(0).getValue());
@@ -1433,8 +1420,8 @@ public class BridgeSupportTest {
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
         Federation retiringFederation = new Federation(retiringFederationKeys, Instant.ofEpochMilli(1000L), 1L, parameters);
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        Repository repository = new RepositoryImpl(config);
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(15L);
 
@@ -1470,13 +1457,13 @@ public class BridgeSupportTest {
 
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(ConfigHelper.CONFIG, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         provider.setNewFederation(activeFederation);
         provider.setOldFederation(retiringFederation);
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
         Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
 
         byte[] bits = new byte[1];
@@ -1506,7 +1493,7 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionLockTxWhitelisted() throws BlockStoreException, AddressFormatException, IOException {
-        BridgeConstants bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         NetworkParameters parameters = bridgeConstants.getBtcParams();
 
         List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
@@ -1524,8 +1511,8 @@ public class BridgeSupportTest {
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
         Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, parameters);
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        Repository repository = new RepositoryImpl(config);
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
@@ -1552,10 +1539,10 @@ public class BridgeSupportTest {
         tx3.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey3));
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(ConfigHelper.CONFIG, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         provider.setNewFederation(federation1);
         provider.setOldFederation(federation2);
 
@@ -1568,7 +1555,7 @@ public class BridgeSupportTest {
         whitelist.put(address2, Coin.COIN.multiply(10));
         whitelist.put(address3, Coin.COIN.multiply(2).add(Coin.COIN.multiply(3)));
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
         Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -1597,10 +1584,10 @@ public class BridgeSupportTest {
         Assert.assertThat(whitelist.isWhitelisted(address2), is(false));
         Assert.assertThat(whitelist.isWhitelisted(address3), is(false));
 
-        BigInteger amountToHaveBeenCreditedToSrc1 = Denomination.SBTC.value().multiply(BigInteger.valueOf(5));
-        BigInteger amountToHaveBeenCreditedToSrc2 = Denomination.SBTC.value().multiply(BigInteger.valueOf(10));
-        BigInteger amountToHaveBeenCreditedToSrc3 = Denomination.SBTC.value().multiply(BigInteger.valueOf(5));
-        BigInteger totalAmountExpectedToHaveBeenLocked = amountToHaveBeenCreditedToSrc1
+        co.rsk.core.Coin amountToHaveBeenCreditedToSrc1 = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(5, 0));
+        co.rsk.core.Coin amountToHaveBeenCreditedToSrc2 = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(10, 0));
+        co.rsk.core.Coin amountToHaveBeenCreditedToSrc3 = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(5, 0));
+        co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = amountToHaveBeenCreditedToSrc1
                 .add(amountToHaveBeenCreditedToSrc2)
                 .add(amountToHaveBeenCreditedToSrc3);
         RskAddress srcKey1RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey1.getPrivKey()).getAddress());
@@ -1610,9 +1597,9 @@ public class BridgeSupportTest {
         Assert.assertEquals(amountToHaveBeenCreditedToSrc1, repository.getBalance(srcKey1RskAddress));
         Assert.assertEquals(amountToHaveBeenCreditedToSrc2, repository.getBalance(srcKey2RskAddress));
         Assert.assertEquals(amountToHaveBeenCreditedToSrc3, repository.getBalance(srcKey3RskAddress));
-        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()).subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(2, provider2.getNewFederationBtcUTXOs().size());
         Assert.assertEquals(2, provider2.getOldFederationBtcUTXOs().size());
@@ -1629,7 +1616,7 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionLockTxNotWhitelisted() throws BlockStoreException, AddressFormatException, IOException {
-        BridgeConstants bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         NetworkParameters parameters = bridgeConstants.getBtcParams();
 
         List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
@@ -1647,8 +1634,8 @@ public class BridgeSupportTest {
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
         Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, parameters);
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        Repository repository = new RepositoryImpl(config);
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
@@ -1675,14 +1662,14 @@ public class BridgeSupportTest {
         tx3.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey3));
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockStore btcBlockStore = new RepositoryBlockStore(ConfigHelper.CONFIG, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockStore btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         provider.setNewFederation(federation1);
         provider.setOldFederation(federation2);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain);
         Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -1716,12 +1703,12 @@ public class BridgeSupportTest {
         RskAddress srcKey2RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey2.getPrivKey()).getAddress());
         RskAddress srcKey3RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey3.getPrivKey()).getAddress());
 
-        Assert.assertEquals(0, repository.getBalance(srcKey1RskAddress).intValue());
-        Assert.assertEquals(0, repository.getBalance(srcKey2RskAddress).intValue());
-        Assert.assertEquals(0, repository.getBalance(srcKey3RskAddress).intValue());
-        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        Assert.assertEquals(0, repository.getBalance(srcKey1RskAddress).asBigInteger().intValue());
+        Assert.assertEquals(0, repository.getBalance(srcKey2RskAddress).asBigInteger().intValue());
+        Assert.assertEquals(0, repository.getBalance(srcKey3RskAddress).asBigInteger().intValue());
+        Assert.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
         Assert.assertEquals(0, provider2.getOldFederationBtcUTXOs().size());
@@ -1771,7 +1758,7 @@ public class BridgeSupportTest {
 
     @Test
     public void isBtcTxHashAlreadyProcessed() throws IOException, BlockStoreException {
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, null, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), getBridgeStorageProviderMockWithProcessedHashes(), null, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, null, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), getBridgeStorageProviderMockWithProcessedHashes(), null, null);
 
         for (int i = 0; i < 10; i++) {
             Assert.assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(Sha256Hash.of(("hash_" + i).getBytes())));
@@ -1781,7 +1768,7 @@ public class BridgeSupportTest {
 
     @Test
     public void getBtcTxHashProcessedHeight() throws IOException, BlockStoreException {
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, null, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), getBridgeStorageProviderMockWithProcessedHashes(), null, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, null, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), getBridgeStorageProviderMockWithProcessedHashes(), null, null);
 
         for (int i = 0; i < 10; i++) {
             Assert.assertEquals((long) i, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of(("hash_" + i).getBytes())).longValue());
@@ -2531,7 +2518,7 @@ public class BridgeSupportTest {
     @Test
     public void commitFederation_noPendingFederation() throws IOException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
-                new Sha3Hash(HashUtil.sha3(Hex.decode("aabbcc"))).getBytes()
+                new Keccak256(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
         }, true);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
@@ -2558,7 +2545,7 @@ public class BridgeSupportTest {
         }));
 
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
-                new Sha3Hash(HashUtil.sha3(Hex.decode("aabbcc"))).getBytes()
+                new Keccak256(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
         }, true);
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -2587,7 +2574,7 @@ public class BridgeSupportTest {
         }));
 
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
-                new Sha3Hash(HashUtil.sha3(Hex.decode("aabbcc"))).getBytes()
+                new Keccak256(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
         }, true);
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -2861,7 +2848,7 @@ public class BridgeSupportTest {
         when(authorizer.isAuthorized(tx))
                 .thenReturn(true);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, repositoryMock, null, constants, provider, null, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, repositoryMock, null, constants, provider, null, null);
         bridgeSupport.voteFeePerKbChange(tx, null);
         verify(provider, never()).setFeePerKb(any());
     }
@@ -2884,7 +2871,7 @@ public class BridgeSupportTest {
         when(authorizer.isAuthorized(tx))
                 .thenReturn(false);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, repositoryMock, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, null, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, repositoryMock, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, null, null);
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(-10));
         verify(provider, never()).setFeePerKb(any());
     }
@@ -2911,7 +2898,7 @@ public class BridgeSupportTest {
         when(authorizer.getRequiredAuthorizedKeys())
                 .thenReturn(2);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, repositoryMock, null, constants, provider, null, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, repositoryMock, null, constants, provider, null, null);
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
         verify(provider, never()).setFeePerKb(any());
     }
@@ -2938,7 +2925,7 @@ public class BridgeSupportTest {
         when(authorizer.getRequiredAuthorizedKeys())
                 .thenReturn(1);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, repositoryMock, null, constants, provider, null, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, repositoryMock, null, constants, provider, null, null);
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
         verify(provider).setFeePerKb(Coin.CENT);
     }
@@ -3043,7 +3030,7 @@ public class BridgeSupportTest {
             return null;
         }).when(providerMock).setPendingFederation(any());
 
-        BridgeSupport result = new BridgeSupport(ConfigHelper.CONFIG, null, eventLogger, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), providerMock, null, null);
+        BridgeSupport result = new BridgeSupport(config, null, eventLogger, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), providerMock, null, null);
 
         Whitebox.setInternalState(result, "bridgeConstants", constantsMock);
         Whitebox.setInternalState(result, "rskExecutionBlock", executionBlock);
@@ -3059,7 +3046,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
         when(providerMock.getLockWhitelist()).thenReturn(mockedWhitelist);
 
-        BridgeSupport result = new BridgeSupport(ConfigHelper.CONFIG, null, null, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), providerMock, null, null);
+        BridgeSupport result = new BridgeSupport(config, null, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), providerMock, null, null);
 
         Whitebox.setInternalState(result, "bridgeConstants", constantsMock);
 
@@ -3084,7 +3071,7 @@ public class BridgeSupportTest {
     }
 
     private Transaction getMockedRskTxWithHash(String s) {
-        byte[] hash = SHA3Helper.sha3(s);
+        byte[] hash = Keccak256Helper.keccak256(s);
         return new SimpleRskTransaction(hash);
     }
 

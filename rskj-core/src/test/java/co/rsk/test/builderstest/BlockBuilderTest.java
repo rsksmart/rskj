@@ -32,7 +32,7 @@ import java.math.BigInteger;
 public class BlockBuilderTest {
     @Test
     public void buildBlockWithGenesisAsParent() {
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block genesis = new BlockGenerator().getGenesisBlock();
 
         BlockBuilder builder = new BlockBuilder();
 
@@ -43,12 +43,12 @@ public class BlockBuilderTest {
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
         // Assert.assertTrue(genesis.getCumulativeDifficulty().compareTo(block.getDifficultyBI()) < 0);
-        Assert.assertArrayEquals(genesis.getHash(), block.getParentHash());
+        Assert.assertEquals(genesis.getHash(), block.getParentHash());
     }
 
     @Test
     public void buildBlockWithDifficulty() {
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block genesis = new BlockGenerator().getGenesisBlock();
 
         BlockBuilder builder = new BlockBuilder();
 
@@ -59,7 +59,7 @@ public class BlockBuilderTest {
 
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
-        Assert.assertEquals(BigInteger.ONE, block.getDifficultyBI());
-        Assert.assertArrayEquals(genesis.getHash(), block.getParentHash());
+        Assert.assertEquals(BigInteger.ONE, block.getDifficulty().asBigInteger());
+        Assert.assertEquals(genesis.getHash(), block.getParentHash());
     }
 }

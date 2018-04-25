@@ -29,11 +29,11 @@ import org.junit.Test;
 public class BlockResponseMessageTest {
     @Test
     public void createWithBlockHash() {
-        Block block = BlockGenerator.getInstance().getBlock(1);
+        Block block = new BlockGenerator().getBlock(1);
         BlockResponseMessage message = new BlockResponseMessage(100, block);
 
         Assert.assertEquals(100, message.getId());
-        Assert.assertArrayEquals(block.getHash(), message.getBlock().getHash());
+        Assert.assertEquals(block.getHash(), message.getBlock().getHash());
         Assert.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, message.getMessageType());
     }
 }

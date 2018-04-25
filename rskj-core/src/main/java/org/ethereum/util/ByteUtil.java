@@ -462,10 +462,6 @@ public class ByteUtil {
         return mergedArray;
     }
 
-    public static boolean isNullOrZeroArray(byte[] array){
-        return (array == null) || (array.length == 0);
-    }
-
     public static boolean isSingleZero(byte[] array){
         return (array.length == 1 && array[0] == 0);
     }

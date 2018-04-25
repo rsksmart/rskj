@@ -65,7 +65,7 @@ public class TrieStoreImpl implements TrieStore {
     @Override
     public void save(Trie trie) {
         this.saveCount++;
-        this.store.put(trie.getHash(), trie.toMessage());
+        this.store.put(trie.getHash().getBytes(), trie.toMessage());
 
         if (trie.hasLongValue()) {
             this.saveCount++;

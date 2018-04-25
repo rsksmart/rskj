@@ -70,8 +70,8 @@ public class EthMessageSender implements MessageChannel {
     }
 
     @Override
-    public void setPeerNodeID(@Nonnull final byte[] peerNodeId) {
-        this.nodeID = new NodeID(peerNodeId);
+    public void setPeerNodeID(@Nonnull final NodeID peerNodeId) {
+        this.nodeID = peerNodeId;
     }
 
     @Override

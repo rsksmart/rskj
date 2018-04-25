@@ -43,20 +43,20 @@ public class OneNodeTest {
     public void buildBlockchain() {
         SimpleNode node = SimpleNode.createNode();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
 
         for (Block block : blocks)
             node.receiveMessageFrom(null, new BlockMessage(block));
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 
     @Test
     public void buildBlockchainInReverse() {
         SimpleNode node = SimpleNode.createNode();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
         List<Block> reverse = new ArrayList<>();
 
         for (Block block : blocks)
@@ -66,6 +66,6 @@ public class OneNodeTest {
             node.receiveMessageFrom(null, new BlockMessage(block));
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 }

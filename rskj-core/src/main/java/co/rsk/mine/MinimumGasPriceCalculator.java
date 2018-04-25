@@ -18,7 +18,7 @@
 
 package co.rsk.mine;
 
-import java.math.BigInteger;
+import co.rsk.core.Coin;
 
 /**
  * This is the implementation of RSKIP-09
@@ -26,14 +26,16 @@ import java.math.BigInteger;
  */
 public class MinimumGasPriceCalculator {
 
-    public BigInteger calculate(BigInteger previousMGP, BigInteger targetMGP) {
-        BigInteger mgp;
+    public Coin calculate(Coin previousMGP, Coin targetMGP) {
         BlockGasPriceRange priceRange = new BlockGasPriceRange(previousMGP);
-        if(priceRange.inRange(targetMGP)) {
-            mgp = targetMGP;
-        } else {
-            mgp = (previousMGP.compareTo(targetMGP) < 0) ? priceRange.getUpperLimit() : priceRange.getLowerLimit();
+        if (priceRange.inRange(targetMGP)) {
+            return targetMGP;
         }
-        return mgp;
+
+        if (previousMGP.compareTo(targetMGP) < 0) {
+            return priceRange.getUpperLimit();
+        }
+
+        return priceRange.getLowerLimit();
     }
 }

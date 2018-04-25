@@ -19,11 +19,11 @@
 
 package org.ethereum.db;
 
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
 import javax.annotation.Nonnull;
-import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -60,9 +60,9 @@ public interface BlockStore {
 
     List<Block> getListBlocksEndWith(byte[] hash, long qty);
 
-    void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain);
+    void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain);
 
-    BigInteger getTotalDifficultyForHash(byte[] hash);
+    BlockDifficulty getTotalDifficultyForHash(byte[] hash);
 
     Block getBestBlock();
 

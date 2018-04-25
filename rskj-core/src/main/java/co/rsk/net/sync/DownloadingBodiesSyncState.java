@@ -1,6 +1,5 @@
 package co.rsk.net.sync;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
@@ -51,17 +50,17 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     // peers that can be used to download blocks
     private final List<NodeID> suitablePeers;
-    private final RskSystemProperties config;
+    // maximum time waiting for a peer to answer
+    private final Duration limit;
 
-    public DownloadingBodiesSyncState(RskSystemProperties config,
-                                      SyncConfiguration syncConfiguration,
+    public DownloadingBodiesSyncState(SyncConfiguration syncConfiguration,
                                       SyncEventsHandler syncEventsHandler,
                                       SyncInformation syncInformation,
                                       List<Deque<BlockHeader>> pendingHeaders,
                                       Map<NodeID, List<BlockIdentifier>> skeletons) {
 
         super(syncInformation, syncEventsHandler, syncConfiguration);
-        this.config = config;
+        this.limit = syncConfiguration.getTimeoutWaitingRequest();
         this.blockUnclesHashValidationRule = new BlockUnclesHashValidationRule();
         this.blockTransactionsValidationRule = new BlockRootValidationRule();
         this.pendingBodyResponses = new HashMap<>();
@@ -95,7 +94,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         }
 
         // handle block
-        if (syncInformation.processBlock(block).isInvalidBlock()){
+        if (syncInformation.processBlock(block, peer).isInvalidBlock()){
             handleInvalidBlock(peerId, header);
             return;
         }
@@ -116,7 +115,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private void tryRequestNextBody(NodeID peerId) {
         updateHeadersAndChunks(peerId, chunksBeingDownloaded.get(peerId))
-                .ifPresent(blockHeader -> requestBody(peerId, blockHeader));
+                .ifPresent(blockHeader -> tryRequestBody(peerId, blockHeader));
     }
 
     private void handleInvalidBlock(NodeID peerId, BlockHeader header) {
@@ -186,7 +185,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         BlockHeader header = headers.poll();
         while (header != null) {
             // we double check if the header was not downloaded or obtained by another way
-            if (!syncInformation.isKnownBlock(header.getHash())) {
+            if (!syncInformation.isKnownBlock(header.getHash().getBytes())) {
                 return Optional.of(header);
             }
             header = headers.poll();
@@ -213,7 +212,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                 BlockHeader header = headers.poll();
                 while (header != null) {
                     // we double check if the header was not downloaded or obtained by another way
-                    if (!syncInformation.isKnownBlock(header.getHash())) {
+                    if (!syncInformation.isKnownBlock(header.getHash().getBytes())) {
                         chunksBeingDownloaded.put(peerId, chunkNumber);
                         segmentsBeingDownloaded.put(peerId, segmentNumber);
                         return Optional.of(header);
@@ -231,7 +230,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void startDownloading(List<NodeID> peers) {
-        peers.forEach(p -> tryFindBlockHeader(p).ifPresent(header -> requestBody(p, header)));
+        peers.forEach(p -> tryFindBlockHeader(p).ifPresent(header -> tryRequestBody(p, header)));
     }
 
     @Override
@@ -243,8 +242,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
         updatedNodes.forEach(k -> timeElapsedByPeer.put(k, timeElapsedByPeer.get(k).plus(duration)));
 
-        // we get the nodes that got beyond timeout limit and ban them
-        Duration limit = syncConfiguration.getTimeoutWaitingRequest();
+        // we get the nodes that got beyond timeout limit and remove them
         updatedNodes.stream()
             .filter(k -> timeElapsedByPeer.get(k).compareTo(limit) >= 0)
             .forEach(this::handleTimeoutMessage);
@@ -262,7 +260,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void handleTimeoutMessage(NodeID peerId) {
-        syncInformation.reportEvent("Timeout waiting requests from node {}",
+        syncInformation.reportEvent("Timeout waiting body from node {}",
                 EventType.TIMEOUT_MESSAGE, peerId, peerId);
         Long messageId = messagesByPeers.remove(peerId);
         BlockHeader header = pendingBodyResponses.remove(messageId).header;
@@ -317,7 +315,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                     // the hash of the start of next chunk
                     e.getValue().get(chunkNumber + 1).getHash(),
                     // the first header of chunk
-                    pendingHeaders.get(chunkNumber).getLast().getHash()))
+                    pendingHeaders.get(chunkNumber).getLast().getHash().getBytes()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
@@ -327,11 +325,18 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         nodes.forEach(nodeID -> segmentByNode.put(nodeID, segmentNumber));
     }
 
-    private void requestBody(NodeID peerId, BlockHeader header){
-        long messageId = syncEventsHandler.sendBodyRequest(header, peerId);
-        pendingBodyResponses.put(messageId, new PendingBodyResponse(peerId, header));
-        timeElapsedByPeer.put(peerId, Duration.ZERO);
-        messagesByPeers.put(peerId, messageId);
+    private void tryRequestBody(NodeID peerId, BlockHeader header){
+        Long messageId = syncEventsHandler.sendBodyRequest(header, peerId);
+        if (messageId != null){
+            pendingBodyResponses.put(messageId, new PendingBodyResponse(peerId, header));
+            timeElapsedByPeer.put(peerId, Duration.ZERO);
+            messagesByPeers.put(peerId, messageId);
+        } else {
+            // since a message could fail to be delivered we have to discard peer if can't be reached
+            clearPeerInfo(peerId);
+            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
+                    this.getClass(), peerId);
+        }
     }
 
     private boolean isExpectedBody(long requestId, NodeID peerId) {

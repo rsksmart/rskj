@@ -18,7 +18,8 @@
 
 package co.rsk.test.dsl;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -32,10 +33,8 @@ import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.StringTokenizer;
 
 /**
@@ -46,9 +45,11 @@ public class WorldDslProcessor {
 
     private World world;
     private ImportResult latestImportResult;
+    private final BlockBuilder blockBuilder;
 
     public WorldDslProcessor(World world) {
         this.world = world;
+        this.blockBuilder = new BlockBuilder(world);
     }
 
     public World getWorld() { return this.world; }
@@ -105,7 +106,7 @@ public class WorldDslProcessor {
         builder.name(name);
 
         if (cmd.getArity() > 1)
-            builder.balance(new BigInteger(cmd.getArgument(1)));
+            builder.balance(new Coin(new BigInteger(cmd.getArgument(1))));
 
         Account account = builder.build();
 
@@ -114,7 +115,7 @@ public class WorldDslProcessor {
 
     private void processAssertBalanceCommand(DslCommand cmd) throws DslProcessorException {
         String accountName = cmd.getArgument(0);
-        BigInteger expected = new BigInteger(cmd.getArgument(1));
+        Coin expected = new Coin(new BigInteger(cmd.getArgument(1)));
 
         RskAddress accountAddress;
 
@@ -131,7 +132,7 @@ public class WorldDslProcessor {
                 accountAddress = new RskAddress(accountName);
         }
 
-        BigInteger accountBalance = world.getRepository().getBalance(accountAddress);
+        Coin accountBalance = world.getRepository().getBalance(accountAddress);
         if (expected.equals(accountBalance))
             return;
 
@@ -144,7 +145,7 @@ public class WorldDslProcessor {
 
         Block best = world.getBlockChain().getStatus().getBestBlock();
 
-        if (Arrays.equals(best.getHash(), block.getHash()))
+        if (best.getHash().equals(block.getHash()))
             return;
 
         throw new DslProcessorException(String.format("Expected best block '%s'", name));
@@ -222,9 +223,9 @@ public class WorldDslProcessor {
                 name = difficultyTokenizer.nextToken();
                 difficulty = difficultyTokenizer.hasMoreTokens()?parseDifficulty(difficultyTokenizer.nextToken(),k):k;
             }
-            Block block = new BlockBuilder().difficulty(difficulty).parent(parent).build();
-            BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, world.getRepository(),
-                    world.getBlockChain(), world.getBlockChain().getBlockStore(), null);
+            Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
+            BlockExecutor executor = new BlockExecutor(new TestSystemProperties(), world.getRepository(),
+                                                       null, world.getBlockChain().getBlockStore(), null);
             executor.executeAndFill(block, parent);
             world.saveBlock(name, block);
             parent = block;

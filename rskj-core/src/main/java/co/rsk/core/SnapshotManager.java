@@ -21,10 +21,9 @@ package co.rsk.core;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,22 +42,22 @@ public class SnapshotManager {
     public boolean resetSnapshots(Blockchain blockchain) {
         this.snapshots = new ArrayList<>();
 
-        PendingState pendingState = blockchain.getPendingState();
+        TransactionPool transactionPool = blockchain.getTransactionPool();
 
         long bestNumber = blockchain.getBestBlock().getNumber();
 
         BlockStore store = blockchain.getBlockStore();
 
         Block block = store.getChainBlockByNumber(0);
-        BigInteger difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash());
+        BlockDifficulty difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash().getBytes());
 
         blockchain.setStatus(block, difficulty);
 
         // To clean pending state, first process the fork
-        blockchain.getPendingState().processBest(block);
+        blockchain.getTransactionPool().processBest(block);
         // then, clear any reverted transaction
-        pendingState.clearPendingState(pendingState.getAllPendingTransactions());
-        pendingState.clearWire(pendingState.getWireTransactions());
+        transactionPool.removeTransactions(transactionPool.getPendingTransactions());
+        transactionPool.removeTransactions(transactionPool.getQueuedTransactions());
 
         // Remove removed blocks from store
         for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= bestNumber; nb++) {
@@ -79,7 +78,7 @@ public class SnapshotManager {
 
         this.snapshots = newSnapshots;
 
-        PendingState pendingState = blockchain.getPendingState();
+        TransactionPool transactionPool = blockchain.getTransactionPool();
 
         long currentBestBlockNumber = blockchain.getBestBlock().getNumber();
 
@@ -90,15 +89,15 @@ public class SnapshotManager {
         BlockStore store = blockchain.getBlockStore();
 
         Block block = store.getChainBlockByNumber(newBestBlockNumber);
-        BigInteger difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash());
+        BlockDifficulty difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash().getBytes());
 
         blockchain.setStatus(block, difficulty);
 
         // To clean pending state, first process the fork
-        blockchain.getPendingState().processBest(block);
+        blockchain.getTransactionPool().processBest(block);
         // then, clear any reverted transaction
-        pendingState.clearPendingState(pendingState.getAllPendingTransactions());
-        pendingState.clearWire(pendingState.getWireTransactions());
+        transactionPool.removeTransactions(transactionPool.getPendingTransactions());
+        transactionPool.removeTransactions(transactionPool.getQueuedTransactions());
 
         // Remove removed blocks from store
         for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= currentBestBlockNumber; nb++) {

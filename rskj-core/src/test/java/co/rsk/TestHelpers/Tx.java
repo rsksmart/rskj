@@ -18,8 +18,11 @@
 
 package co.rsk.TestHelpers;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.mockito.Mockito;
@@ -34,14 +37,20 @@ import static org.mockito.Matchers.eq;
 
 public class Tx {
 
-    public static Transaction create(long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {
+    public static Transaction create(
+            RskSystemProperties config,
+            long value,
+            long gaslimit,
+            long gasprice,
+            long nonce,
+            long data,
+            long sender) {
         Random r = new Random(sender);
         Transaction transaction = Mockito.mock(Transaction.class);
-        Mockito.when(transaction.getValue()).thenReturn(BigInteger.valueOf(value).toByteArray());
+        Mockito.when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(value)));
         Mockito.when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(gaslimit).toByteArray());
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(gaslimit));
-        Mockito.when(transaction.getGasPrice()).thenReturn(BigInteger.valueOf(gasprice).toByteArray());
-        Mockito.when(transaction.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(gasprice));
+        Mockito.when(transaction.getGasPrice()).thenReturn(Coin.valueOf(gasprice));
         Mockito.when(transaction.getNonce()).thenReturn(BigInteger.valueOf(nonce).toByteArray());
         Mockito.when(transaction.getNonceAsInteger()).thenReturn(BigInteger.valueOf(nonce));
 
@@ -54,8 +63,8 @@ public class Tx {
         RskAddress returnReceiveAddress = new RskAddress(returnReceiveAddressBytes);
 
         Mockito.when(transaction.getSender()).thenReturn(returnSender);
-        Mockito.when(transaction.getHash()).thenReturn(BigInteger.valueOf(hashes.nextLong()).toByteArray());
-        Mockito.when(transaction.acceptTransactionSignature(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())).thenReturn(Boolean.TRUE);
+        Mockito.when(transaction.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
+        Mockito.when(transaction.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
         ArrayList<Byte> bytes = new ArrayList();
         long amount = 21000;
@@ -76,7 +85,7 @@ public class Tx {
             b[i] = bytes.get(i);
         }
         Mockito.when(transaction.getData()).thenReturn(b);
-        Mockito.when(transaction.transactionCost(eq(ConfigHelper.CONFIG), any(Block.class))).thenReturn(amount);
+        Mockito.when(transaction.transactionCost(eq(config), any(Block.class))).thenReturn(amount);
 
         return transaction;
     }

@@ -18,18 +18,16 @@
 
 package co.rsk.vm;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
-import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -41,38 +39,27 @@ import java.util.List;
 public class MinerHelper {
     private static final Logger logger = LoggerFactory.getLogger("minerhelper");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-    @Autowired
-    private BlockStore blockStore;
+    private final TestSystemProperties config = new TestSystemProperties();
 
-    @Autowired
-    protected Blockchain blockchain;
+    private final Blockchain blockchain;
+    private final Repository repository;
+    private final GasLimitCalculator gasLimitCalculator;
 
-    @Autowired
-    protected Repository repository;
+    private byte[] latestStateRootHash;
+    private long totalGasUsed;
+    private Coin totalPaidFees = Coin.ZERO;
+    private List<TransactionReceipt> txReceipts;
 
-    @Autowired
-    ProgramInvokeFactory programInvokeFactory;
-
-
-
-    byte[] latestStateRootHash = null;
-    long totalGasUsed = 0;
-    BigInteger totalPaidFees = BigInteger.ZERO;
-    List<TransactionReceipt> txReceipts;
-    private GasLimitCalculator gasLimitCalculator;
-
-    public MinerHelper(Repository repository , Blockchain blockchain) // , BlockStore blockStore)
-    {
+    public MinerHelper(Repository repository , Blockchain blockchain) {
         this.repository = repository;
         this.blockchain = blockchain;
-       // this.blockStore =blockStore;
-        gasLimitCalculator = new GasLimitCalculator(ConfigHelper.CONFIG);
+        this.gasLimitCalculator = new GasLimitCalculator(config);
     }
 
     public void processBlock( Block block, Block parent) {
         latestStateRootHash = null;
         totalGasUsed = 0;
-        totalPaidFees = BigInteger.ZERO;
+        totalPaidFees = Coin.ZERO;
         txReceipts = new ArrayList<>();
 
         //Repository originalRepo  = ((Repository) ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
@@ -91,17 +78,17 @@ public class MinerHelper {
         String stateHash1 = Hex.toHexString(blockchain.getBestBlock().getStateRoot());
         String stateHash2 = Hex.toHexString(repository.getRoot());
         if (stateHash1.compareTo(stateHash2) != 0) {
-            logger.error("Strange state in block {} {}", block.getNumber(), Hex.toHexString(block.getHash()));
-            panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), Hex.toHexString(block.getHash())));
+            logger.error("Strange state in block {} {}", block.getNumber(), block.getHash());
+            panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), block.getHash()));
         }
 
         int txindex = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
 
-            TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, tx, txindex++, block.getCoinbase(),
-                    track, blockStore, blockchain.getReceiptStore(),
-                    programInvokeFactory, block, new EthereumListenerAdapter(), totalGasUsed);
+            TransactionExecutor executor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(),
+                    track, null, null,
+                    null, block, new EthereumListenerAdapter(), totalGasUsed);
 
             executor.init();
             executor.execute();
@@ -109,7 +96,7 @@ public class MinerHelper {
             executor.finalization();
 
             long gasUsed = executor.getGasUsed();
-            BigInteger paidFees = executor.getPaidFees();
+            Coin paidFees = executor.getPaidFees();
             totalGasUsed += gasUsed;
             totalPaidFees = totalPaidFees.add(paidFees);
 
@@ -126,7 +113,6 @@ public class MinerHelper {
             receipt.setLogInfoList(executor.getVMLogs());
 
             txReceipts.add(receipt);
-
         }
     }
 
@@ -138,14 +124,12 @@ public class MinerHelper {
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
         Bloom logBloom = new Bloom();
-        for (TransactionReceipt receipt : txReceipts) {
-            logBloom.or(receipt.getBloomFilter());
-        }
+        txReceipts.stream().map(TransactionReceipt::getBloomFilter).forEach(logBloom::or);
 
         newBlock.getHeader().setLogsBloom(logBloom.getData());
 
-        BigInteger minGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
+        BigInteger minGasLimit = BigInteger.valueOf(config.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit, false);
 

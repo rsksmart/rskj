@@ -19,15 +19,15 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
-import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -41,7 +41,7 @@ import java.util.List;
 public class NodeBlockProcessorUnclesTest {
     @Test
     public void addBlockWithoutUncles() {
-        NodeBlockProcessor processor = createNodeBlockProcessor();
+        NodeBlockProcessor processor = createNodeBlockProcessor(new BlockChainBuilder().build());
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
@@ -50,24 +50,26 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(null, block1);
 
         Assert.assertEquals(1, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block1.getHash(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertArrayEquals(block1.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
     }
 
     @Test
     public void addBlockWithTwoKnownUncles() throws UnknownHostException {
-        NodeBlockProcessor processor = createNodeBlockProcessor();
+        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
-        Block genesis = processor.getBlockchain().getBestBlock();
+        Block genesis = blockChain.getBestBlock();
 
-        Block block1 = new BlockBuilder().parent(genesis).build();
-        Block uncle1 = new BlockBuilder().parent(genesis).build();
-        Block uncle2 = new BlockBuilder().parent(genesis).build();
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, new BlockGenerator());
+        Block block1 = blockBuilder.parent(genesis).build();
+        Block uncle1 = blockBuilder.parent(genesis).build();
+        Block uncle2 = blockBuilder.parent(genesis).build();
 
         List<BlockHeader> uncles = new ArrayList<>();
         uncles.add(uncle1.getHeader());
         uncles.add(uncle2.getHeader());
 
-        Block block2 = new BlockBuilder().parent(block1).uncles(uncles).build();
+        Block block2 = blockBuilder.parent(block1).uncles(uncles).build();
 
         processor.processBlock(null, block1);
         processor.processBlock(null, uncle1);
@@ -78,25 +80,27 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(sender, block2);
 
         Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block2.getHash(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertArrayEquals(block2.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
         Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
     }
 
     @Test
     public void addBlockWithTwoUnknownUncles() throws UnknownHostException {
-        NodeBlockProcessor processor = createNodeBlockProcessor();
+        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
-        Block block1 = new BlockBuilder().parent(genesis).build();
-        Block uncle1 = new BlockBuilder().parent(genesis).build();
-        Block uncle2 = new BlockBuilder().parent(genesis).build();
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, new BlockGenerator());
+        Block block1 = blockBuilder.parent(genesis).build();
+        Block uncle1 = blockBuilder.parent(genesis).build();
+        Block uncle2 = blockBuilder.parent(genesis).build();
 
         List<BlockHeader> uncles = new ArrayList<>();
         uncles.add(uncle1.getHeader());
         uncles.add(uncle2.getHeader());
 
-        Block block2 = new BlockBuilder().parent(block1).uncles(uncles).build();
+        Block block2 = blockBuilder.parent(block1).uncles(uncles).build();
 
         processor.processBlock(null, block1);
 
@@ -105,14 +109,14 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(sender, block2);
 
         Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block2.getHash(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertArrayEquals(block2.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
 
         Assert.assertEquals(0, sender.getGetBlockMessages().size());
     }
 
     @Test
     public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() throws UnknownHostException {
-        NodeBlockProcessor processor = createNodeBlockProcessor();
+        NodeBlockProcessor processor = createNodeBlockProcessor(new BlockChainBuilder().build());
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
@@ -131,15 +135,13 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(sender, block2);
 
         Assert.assertEquals(0, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(genesis.getHash(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertArrayEquals(genesis.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
         Assert.assertEquals(1, sender.getGetBlockMessages().size());
-        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(new ByteArrayWrapper(block1.getHash())));
+        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(block1.getHash()));
     }
 
-    private static NodeBlockProcessor createNodeBlockProcessor() {
-        Blockchain blockChain = new BlockChainBuilder().build();
-
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+    private static NodeBlockProcessor createNodeBlockProcessor(BlockChainImpl blockChain) {
+        Block genesis = new BlockGenerator().getGenesisBlock();
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 
@@ -148,7 +150,8 @@ public class NodeBlockProcessorUnclesTest {
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, syncConfiguration);
+        TestSystemProperties config = new TestSystemProperties();
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
 
         return processor;

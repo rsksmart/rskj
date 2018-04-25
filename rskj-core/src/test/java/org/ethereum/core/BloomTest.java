@@ -35,10 +35,10 @@ public class BloomTest {
     public void test1(){
 
         byte[] address = Hex.decode("095e7baea6a6c7c4c2dfeb977efac326af552d87");
-        Bloom addressBloom = Bloom.create(HashUtil.sha3(address));
+        Bloom addressBloom = Bloom.create(HashUtil.keccak256(address));
 
         byte[] topic = Hex.decode("0000000000000000000000000000000000000000000000000000000000000000");
-        Bloom topicBloom = Bloom.create(HashUtil.sha3(topic));
+        Bloom topicBloom = Bloom.create(HashUtil.keccak256(topic));
 
         Bloom totalBloom = new Bloom();
         totalBloom.or(addressBloom);

@@ -19,18 +19,17 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -39,34 +38,38 @@ import java.util.Set;
  * Created by ajlopez on 12/08/2016.
  */
 public class FamilyUtilsTest {
+
+    public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
+
     @Test
     public void getFamilyGetParent() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block1 = blockGenerator.createChildBlock(genesis);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
 
-        Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, block1, 6);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block1, 6);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
         Assert.assertEquals(1, family.size());
 
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(genesis.getHash())));
+        Assert.assertTrue(family.contains(genesis.getHash()));
     }
 
     @Test
     public void getEmptyFamilyForGenesis() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block genesis = new BlockGenerator().getGenesisBlock();
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
 
-        Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, genesis, 6);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, genesis, 6);
 
         Assert.assertNotNull(family);
         Assert.assertTrue(family.isEmpty());
@@ -76,70 +79,72 @@ public class FamilyUtilsTest {
     public void getFamilyGetAncestorsUpToLevel() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(block2, BigInteger.ONE, true);
-        store.saveBlock(block3, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
+        store.saveBlock(block3, TEST_DIFFICULTY, true);
 
-        Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, block3, 2);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
         Assert.assertEquals(2, family.size());
 
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(block2.getHash())));
+        Assert.assertFalse(family.contains(genesis.getHash()));
+        Assert.assertFalse(family.contains(block3.getHash()));
+        Assert.assertTrue(family.contains(block1.getHash()));
+        Assert.assertTrue(family.contains(block2.getHash()));
     }
 
     @Test
     public void getFamilyGetAncestorsWithUncles() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block uncle11 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block uncle12 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block uncle21 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block uncle22 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
-        Block uncle31 = BlockGenerator.getInstance().createChildBlock(block2);
-        Block uncle32 = BlockGenerator.getInstance().createChildBlock(block2);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block uncle11 = blockGenerator.createChildBlock(genesis);
+        Block uncle12 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block uncle21 = blockGenerator.createChildBlock(block1);
+        Block uncle22 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
+        Block uncle31 = blockGenerator.createChildBlock(block2);
+        Block uncle32 = blockGenerator.createChildBlock(block2);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(uncle11, BigInteger.ONE, false);
-        store.saveBlock(uncle12, BigInteger.ONE, false);
-        store.saveBlock(block2, BigInteger.ONE, true);
-        store.saveBlock(uncle21, BigInteger.ONE, false);
-        store.saveBlock(uncle22, BigInteger.ONE, false);
-        store.saveBlock(block3, BigInteger.ONE, true);
-        store.saveBlock(uncle31, BigInteger.ONE, false);
-        store.saveBlock(uncle32, BigInteger.ONE, false);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle11, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle12, TEST_DIFFICULTY, false);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle21, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle22, TEST_DIFFICULTY, false);
+        store.saveBlock(block3, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle31, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
-        Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, block3, 2);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
         Assert.assertEquals(4, family.size());
 
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(uncle11.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(uncle12.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(uncle21.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(uncle22.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(uncle31.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(uncle32.getHash())));
+        Assert.assertFalse(family.contains(genesis.getHash()));
+        Assert.assertTrue(family.contains(block1.getHash()));
+        Assert.assertFalse(family.contains(uncle11.getHash()));
+        Assert.assertFalse(family.contains(uncle12.getHash()));
+        Assert.assertTrue(family.contains(block2.getHash()));
+        Assert.assertTrue(family.contains(uncle21.getHash()));
+        Assert.assertTrue(family.contains(uncle22.getHash()));
+        Assert.assertFalse(family.contains(block3.getHash()));
+        Assert.assertFalse(family.contains(uncle31.getHash()));
+        Assert.assertFalse(family.contains(uncle32.getHash()));
 
         family = FamilyUtils.getFamily(store, block3, 3);
 
@@ -147,47 +152,48 @@ public class FamilyUtilsTest {
         Assert.assertFalse(family.isEmpty());
         Assert.assertEquals(7, family.size());
 
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(uncle11.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(uncle12.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(uncle21.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(uncle22.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(uncle31.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(uncle32.getHash())));
+        Assert.assertTrue(family.contains(genesis.getHash()));
+        Assert.assertTrue(family.contains(block1.getHash()));
+        Assert.assertTrue(family.contains(uncle11.getHash()));
+        Assert.assertTrue(family.contains(uncle12.getHash()));
+        Assert.assertTrue(family.contains(block2.getHash()));
+        Assert.assertTrue(family.contains(uncle21.getHash()));
+        Assert.assertTrue(family.contains(uncle22.getHash()));
+        Assert.assertFalse(family.contains(block3.getHash()));
+        Assert.assertFalse(family.contains(uncle31.getHash()));
+        Assert.assertFalse(family.contains(uncle32.getHash()));
     }
 
     @Test
     public void getUnclesHeaders() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block uncle11 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block uncle111 = BlockGenerator.getInstance().createChildBlock(uncle11);
-        Block uncle12 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block uncle121 = BlockGenerator.getInstance().createChildBlock(uncle12);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block uncle21 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block uncle22 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
-        Block uncle31 = BlockGenerator.getInstance().createChildBlock(block2);
-        Block uncle32 = BlockGenerator.getInstance().createChildBlock(block2);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block uncle11 = blockGenerator.createChildBlock(genesis);
+        Block uncle111 = blockGenerator.createChildBlock(uncle11);
+        Block uncle12 = blockGenerator.createChildBlock(genesis);
+        Block uncle121 = blockGenerator.createChildBlock(uncle12);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block uncle21 = blockGenerator.createChildBlock(block1);
+        Block uncle22 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
+        Block uncle31 = blockGenerator.createChildBlock(block2);
+        Block uncle32 = blockGenerator.createChildBlock(block2);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(uncle11, BigInteger.ONE, false);
-        store.saveBlock(uncle12, BigInteger.ONE, false);
-        store.saveBlock(uncle111, BigInteger.ONE, false);
-        store.saveBlock(uncle121, BigInteger.ONE, false);
-        store.saveBlock(block2, BigInteger.ONE, true);
-        store.saveBlock(uncle21, BigInteger.ONE, false);
-        store.saveBlock(uncle22, BigInteger.ONE, false);
-        store.saveBlock(block3, BigInteger.ONE, true);
-        store.saveBlock(uncle31, BigInteger.ONE, false);
-        store.saveBlock(uncle32, BigInteger.ONE, false);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle11, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle12, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle111, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle121, TEST_DIFFICULTY, false);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle21, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle22, TEST_DIFFICULTY, false);
+        store.saveBlock(block3, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle31, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
         List<BlockHeader> list = FamilyUtils.getUnclesHeaders(store, block3, 3);
 
@@ -205,58 +211,57 @@ public class FamilyUtilsTest {
     public void getUncles() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block uncle11 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block uncle12 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block uncle21 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block uncle22 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
-        Block uncle31 = BlockGenerator.getInstance().createChildBlock(block2);
-        Block uncle32 = BlockGenerator.getInstance().createChildBlock(block2);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block uncle11 = blockGenerator.createChildBlock(genesis);
+        Block uncle12 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block uncle21 = blockGenerator.createChildBlock(block1);
+        Block uncle22 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
+        Block uncle31 = blockGenerator.createChildBlock(block2);
+        Block uncle32 = blockGenerator.createChildBlock(block2);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(uncle11, BigInteger.ONE, false);
-        store.saveBlock(uncle12, BigInteger.ONE, false);
-        store.saveBlock(block2, BigInteger.ONE, true);
-        store.saveBlock(uncle21, BigInteger.ONE, false);
-        store.saveBlock(uncle22, BigInteger.ONE, false);
-        store.saveBlock(block3, BigInteger.ONE, true);
-        store.saveBlock(uncle31, BigInteger.ONE, false);
-        store.saveBlock(uncle32, BigInteger.ONE, false);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle11, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle12, TEST_DIFFICULTY, false);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle21, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle22, TEST_DIFFICULTY, false);
+        store.saveBlock(block3, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle31, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
-        Set<ByteArrayWrapper> family = FamilyUtils.getUncles(store, block3, 3);
+        Set<Keccak256> family = FamilyUtils.getUncles(store, block3, 3);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
         Assert.assertEquals(4, family.size());
 
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(uncle11.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(uncle12.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(uncle21.getHash())));
-        Assert.assertTrue(family.contains(new ByteArrayWrapper(uncle22.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(uncle31.getHash())));
-        Assert.assertFalse(family.contains(new ByteArrayWrapper(uncle32.getHash())));
+        Assert.assertFalse(family.contains(genesis.getHash()));
+        Assert.assertFalse(family.contains(block1.getHash()));
+        Assert.assertTrue(family.contains(uncle11.getHash()));
+        Assert.assertTrue(family.contains(uncle12.getHash()));
+        Assert.assertFalse(family.contains(block2.getHash()));
+        Assert.assertTrue(family.contains(uncle21.getHash()));
+        Assert.assertTrue(family.contains(uncle22.getHash()));
+        Assert.assertFalse(family.contains(block3.getHash()));
+        Assert.assertFalse(family.contains(uncle31.getHash()));
+        Assert.assertFalse(family.contains(uncle32.getHash()));
     }
 
     private static BlockStore createBlockStore() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
-        blockStore.init(new HashMap<>(), new HashMapDB(), null);
-
-        return blockStore;
+        return new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
     }
 
-    private static boolean containsHash(byte[] hash, List<BlockHeader> headers) {
-        for (BlockHeader header : headers)
-            if (Arrays.equals(hash, header.getHash()))
+    private static boolean containsHash(Keccak256 hash, List<BlockHeader> headers) {
+        for (BlockHeader header : headers) {
+            if (hash.equals(header.getHash())) {
                 return true;
-
+            }
+        }
         return false;
     }
 }

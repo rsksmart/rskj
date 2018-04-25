@@ -18,11 +18,13 @@
 
 package co.rsk.remasc;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.TestUtils;
@@ -30,7 +32,6 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
-import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
  * Created by martin.medina on 1/5/17.
  */
 class RemascTestRunner {
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private ECKey txSigningKey;
 
@@ -104,8 +105,8 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
-        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(),
-                blockchain, blockchain.getBlockStore(), null);
+        BlockExecutor blockExecutor = new BlockExecutor(new TestSystemProperties(), blockchain.getRepository(),
+                                                        null, blockchain.getBlockStore(), null);
 
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;
@@ -117,7 +118,7 @@ class RemascTestRunner {
             List<BlockHeader> blockSiblings = new ArrayList<>();
 
             // Going to add siblings
-            BigInteger cummDifficulty = BigInteger.ZERO;
+            BlockDifficulty cummDifficulty = BlockDifficulty.ZERO;
             if (siblingsForCurrentHeight.size() > 0){
                 cummDifficulty = blockchain.getTotalDifficulty();
             }
@@ -154,31 +155,27 @@ class RemascTestRunner {
         return this.blockchain;
     }
 
-    public BigInteger getAccountBalance(byte[] address) {
-        return getAccountBalance(this.blockchain.getRepository(), address);
+    public Coin getAccountBalance(RskAddress addr) {
+        return getAccountBalance(this.blockchain.getRepository(), addr);
     }
 
-    public BigInteger getAccountBalance(RskAddress address) {
-        return getAccountBalance(this.blockchain.getRepository(), address);
-    }
-
-    public static BigInteger getAccountBalance(Repository repository, byte[] address) {
+    public static Coin getAccountBalance(Repository repository, byte[] address) {
         return getAccountBalance(repository, new RskAddress(address));
     }
 
-    public static BigInteger getAccountBalance(Repository repository, RskAddress addr) {
+    public static Coin getAccountBalance(Repository repository, RskAddress addr) {
         AccountState accountState = repository.getAccountState(addr);
 
         return accountState == null ? null : repository.getAccountState(addr).getBalance();
     }
 
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, RskAddress coinbase,
+    public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, long minerFee, long txNonce, long txValue,
                                     ECKey txSigningKey) {
         return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, minerFee, txNonce,
                 txValue, txSigningKey, null);
     }
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, RskAddress coinbase,
+    public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, long minerFee, long txNonce, long txValue,
                                     ECKey txSigningKey, Long difficulty) {
         if (minerFee == 0) throw new IllegalArgumentException();
@@ -189,14 +186,14 @@ class RemascTestRunner {
                 new ECKey().getAddress() ,
                 BigInteger.valueOf(txValue).toByteArray(),
                 null,
-                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                new TestSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
 
         tx.sign(txSigningKey.getPrivKeyBytes());
         //createBlook 1
         return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, difficulty, tx);
     }
 
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, RskAddress coinbase,
+    public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, Long difficulty, Transaction... txsToInlcude) {
         List<Transaction> txs = new ArrayList<>();
         if (txsToInlcude != null) {
@@ -208,22 +205,22 @@ class RemascTestRunner {
         Transaction remascTx = new RemascTransaction(parentBlock.getNumber() + 1);
         txs.add(remascTx);
 
-        long difficultyAsLong = difficulty == null?BigIntegers.fromUnsignedByteArray(parentBlock.getDifficulty()).longValue():difficulty;
+        long difficultyAsLong = difficulty == null ? parentBlock.getDifficulty().asBigInteger().longValue() : difficulty;
 
         if (difficultyAsLong == 0)
             difficultyAsLong = 1;
 
         byte[] diffBytes = BigInteger.valueOf(difficultyAsLong).toByteArray();
 
-        BigInteger paidFees = BigInteger.ZERO;
+        Coin paidFees = Coin.ZERO;
         for (Transaction tx : txs) {
-            BigInteger gasLimit = BigIntegers.fromUnsignedByteArray(tx.getGasLimit());
-            BigInteger gasPrice = BigIntegers.fromUnsignedByteArray(tx.getGasPrice());
-            paidFees = paidFees.add(gasLimit.multiply(gasPrice));
+            BigInteger gasLimit = new BigInteger(1, tx.getGasLimit());
+            Coin gasPrice = tx.getGasPrice();
+            paidFees = paidFees.add(gasPrice.multiply(gasLimit));
         }
 
         Block block =  new Block(
-                parentBlock.getHash(),          // parent hash
+                parentBlock.getHash().getBytes(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
                 coinbase.getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
@@ -250,8 +247,8 @@ class RemascTestRunner {
                 if (harcodedHashHeader==null) {
                     harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded(), false) {
                         @Override
-                        public byte[] getHash() {
-                            return blockHash.getBytes();
+                        public Keccak256 getHash() {
+                            return blockHash;
                         }
                     };
                 }
@@ -259,8 +256,8 @@ class RemascTestRunner {
             }
 
             @Override
-            public byte[] getHash() {
-                return blockHash.getBytes();
+            public Keccak256 getHash() {
+                return blockHash;
             }
 
             @Override

@@ -18,7 +18,7 @@
 
 package co.rsk.net.utils;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -49,7 +49,7 @@ public class TransactionUtils {
     }
 
     public static byte[] getPrivateKeyBytes() {
-        return HashUtil.sha3("this is a seed".getBytes());
+        return HashUtil.keccak256("this is a seed".getBytes());
     }
 
     public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {
@@ -57,7 +57,7 @@ public class TransactionUtils {
     }
 
     public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, toAddress, value, nonce, gasPrice, gasLimit);
+        Transaction tx = Transaction.create(new TestSystemProperties(), toAddress, value, nonce, gasPrice, gasLimit);
         tx.sign(privateKey);
         return tx;
     }

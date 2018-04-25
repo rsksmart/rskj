@@ -19,7 +19,8 @@
 
 package org.ethereum.datasource;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -33,9 +34,16 @@ import static org.junit.Assert.assertNotNull;
 @Ignore
 public class LevelDbDataSourceTest {
 
+    private TestSystemProperties config;
+
+    @Before
+    public void setup(){
+        config = new TestSystemProperties();
+    }
+
     @Test
     public void testBatchUpdating() {
-        LevelDbDataSource dataSource = new LevelDbDataSource(ConfigHelper.CONFIG, "test");
+        LevelDbDataSource dataSource = new LevelDbDataSource(config, "test");
         dataSource.init();
 
         final int batchSize = 100;
@@ -50,7 +58,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testPutting() {
-        LevelDbDataSource dataSource = new LevelDbDataSource(ConfigHelper.CONFIG, "test");
+        LevelDbDataSource dataSource = new LevelDbDataSource(config, "test");
         dataSource.init();
 
         byte[] key = randomBytes(32);

@@ -18,12 +18,11 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.core.Coin;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
 
 public class TxValidatorMinimumGasPriceValidatorTest {
 
@@ -33,16 +32,16 @@ public class TxValidatorMinimumGasPriceValidatorTest {
         Transaction tx2 = Mockito.mock(Transaction.class);
         Transaction tx3 = Mockito.mock(Transaction.class);
 
-        Mockito.when(tx1.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(10));
-        Mockito.when(tx2.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(11));
-        Mockito.when(tx3.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(500000000));
+        Mockito.when(tx1.getGasPrice()).thenReturn(Coin.valueOf(10));
+        Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(11));
+        Mockito.when(tx3.getGasPrice()).thenReturn(Coin.valueOf(500000000));
 
         TxValidatorMinimuGasPriceValidator tvmgpv = new TxValidatorMinimuGasPriceValidator();
 
 
-        Assert.assertTrue(tvmgpv.validate(tx1, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
-        Assert.assertTrue(tvmgpv.validate(tx2, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
-        Assert.assertTrue(tvmgpv.validate(tx3, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
+        Assert.assertTrue(tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
+        Assert.assertTrue(tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
+        Assert.assertTrue(tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
     }
 
     @Test
@@ -51,15 +50,15 @@ public class TxValidatorMinimumGasPriceValidatorTest {
         Transaction tx2 = Mockito.mock(Transaction.class);
         Transaction tx3 = Mockito.mock(Transaction.class);
 
-        Mockito.when(tx1.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(9));
-        Mockito.when(tx2.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(0));
-        Mockito.when(tx3.getGasPriceAsInteger()).thenReturn(null);
+        Mockito.when(tx1.getGasPrice()).thenReturn(Coin.valueOf(9));
+        Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(0));
+        Mockito.when(tx3.getGasPrice()).thenReturn(null);
 
         TxValidatorMinimuGasPriceValidator tvmgpv = new TxValidatorMinimuGasPriceValidator();
 
-        Assert.assertFalse(tvmgpv.validate(tx1, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
-        Assert.assertFalse(tvmgpv.validate(tx2, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
-        Assert.assertFalse(tvmgpv.validate(tx3, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
+        Assert.assertFalse(tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
+        Assert.assertFalse(tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
+        Assert.assertFalse(tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
     }
 
 }

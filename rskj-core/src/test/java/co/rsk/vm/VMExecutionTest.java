@@ -18,8 +18,11 @@
 
 package co.rsk.vm;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.config.VmConfig;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -34,11 +37,15 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 25/01/2017.
  */
 public class VMExecutionTest {
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final VmConfig vmConfig = config.getVmConfig();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private ProgramInvokeMockImpl invoke;
     private BytecodeCompiler compiler;
 
@@ -244,7 +251,7 @@ public class VMExecutionTest {
     @Test
     public void dupnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST DUPN 0x5b 0x5b");
-        Program program = new Program(ConfigHelper.CONFIG, code, invoke);
+        Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, null);
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -259,7 +266,7 @@ public class VMExecutionTest {
     @Test
     public void swapnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST SWAPN 0x5b 0x5b");
-        Program program = new Program(ConfigHelper.CONFIG, code, invoke);
+        Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, null);
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -356,9 +363,9 @@ public class VMExecutionTest {
     }
 
     private Program executeCode(byte[] code, int nsteps) {
-        VM vm = new VM(ConfigHelper.CONFIG);
+        VM vm = new VM(vmConfig, precompiledContracts);
 
-        Program program = new Program(ConfigHelper.CONFIG, code, invoke);
+        Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, null);
 
         for (int k = 0; k < nsteps; k++)
             vm.step(program);

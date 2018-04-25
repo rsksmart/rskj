@@ -18,7 +18,7 @@
 
 package co.rsk.core;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.*;
@@ -33,6 +33,9 @@ import java.math.BigInteger;
  * Created by ajlopez on 07/05/2017.
  */
 public class CallContractTest {
+
+    private static final TestSystemProperties config = new TestSystemProperties();
+
     @Test
     public void callContractReturningOne() {
         World world = new World();
@@ -51,7 +54,7 @@ public class CallContractTest {
     }
 
     private static ProgramResult callContract(World world, RskAddress receiveAddress, byte[] data) {
-        Transaction tx = CallTransaction.createRawTransaction(ConfigHelper.CONFIG, 0, 0, 100000000000000L,
+        Transaction tx = CallTransaction.createRawTransaction(config, 0, 0, 100000000000000L,
                 receiveAddress, 0, data);
         tx.sign(new byte[32]);
 
@@ -61,7 +64,7 @@ public class CallContractTest {
 
         try {
             org.ethereum.core.TransactionExecutor executor = new org.ethereum.core.TransactionExecutor
-                    (ConfigHelper.CONFIG, tx, 0, bestBlock.getCoinbase(), repository, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(),
+                    (config, tx, 0, bestBlock.getCoinbase(), repository, null, null,
                             new ProgramInvokeFactoryImpl(), bestBlock)
                     .setLocalCall(true);
 

@@ -20,15 +20,13 @@
 package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.net.NodeID;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeaderWrapper;
-import org.ethereum.core.BlockWrapper;
 import org.ethereum.core.Transaction;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.NodeStatistics;
@@ -255,10 +253,6 @@ public class Channel {
         return node == null ? "<null>" : node.getHexIdShort();
     }
 
-    public byte[] getNodeId() {
-        return node == null ? null : node.getId();
-    }
-
     /**
      * Indicates whether this connection was initiated by our peer
      */
@@ -266,8 +260,8 @@ public class Channel {
         return isActive;
     }
 
-    public ByteArrayWrapper getNodeIdWrapper() {
-        return node == null ? null : new ByteArrayWrapper(node.getId());
+    public NodeID getNodeId() {
+        return node == null ? null : node.getId();
     }
 
     public void disconnect(ReasonCode reason) {
@@ -283,14 +277,6 @@ public class Channel {
     }
 
     // RSK sub protocol
-
-    public void fetchBlockBodies(List<BlockHeaderWrapper> headers) {
-        eth.fetchBodies(headers);
-    }
-
-    public void recoverGap(BlockWrapper block) {
-        eth.recoverGap(block);
-    }
 
     public boolean isEthCompatible(Channel peer) {
         return peer != null && peer.getEthVersion().isCompatible(getEthVersion());

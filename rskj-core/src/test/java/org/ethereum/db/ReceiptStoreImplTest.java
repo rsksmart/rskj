@@ -54,7 +54,7 @@ public class ReceiptStoreImplTest {
 
         store.add(blockHash, 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash());
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes());
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getBlockHash());
@@ -72,7 +72,7 @@ public class ReceiptStoreImplTest {
 
         store.add(blockHash, 128, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash());
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes());
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getBlockHash());
@@ -90,7 +90,7 @@ public class ReceiptStoreImplTest {
 
         store.add(blockHash, 238, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash());
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes());
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getBlockHash());
@@ -113,7 +113,7 @@ public class ReceiptStoreImplTest {
 
         store.add(blockHash, 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash());
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes());
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getBlockHash());
@@ -136,7 +136,7 @@ public class ReceiptStoreImplTest {
 
         store.add(blockHash, 42, receipt);
 
-        List<TransactionInfo> result = store.getAll(receipt.getTransaction().getHash());
+        List<TransactionInfo> result = store.getAll(receipt.getTransaction().getHash().getBytes());
 
         Assert.assertNotNull(result);
         Assert.assertEquals(2, result.size());
@@ -159,7 +159,7 @@ public class ReceiptStoreImplTest {
 
         byte[] blockHash = Hex.decode("010203040506070809");
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash(), blockHash, null);
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash, null);
 
         Assert.assertNull(result);
     }
@@ -169,12 +169,12 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
         TransactionReceipt receipt = createReceipt();
 
-        byte[] blockHash0 = Hex.decode("0102030405060708");
-        byte[] blockHash = Hex.decode("010203040506070809");
+        byte[] blockHash0 = Hex.decode("0102030405060708000000000000000000000000000000000000000000000000");
+        byte[] blockHash = Hex.decode("0102030405060708090000000000000000000000000000000000000000000000");
 
         store.add(blockHash, 1, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash(), blockHash0, null);
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash0, null);
 
         Assert.assertNull(result);
     }
@@ -184,16 +184,16 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
-        byte[] blockHash0 = Hex.decode("010203040506070809");
+        byte[] blockHash0 = Hex.decode("0102030405060708090000000000000000000000000000000000000000000000");
 
         store.add(blockHash0, 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708");
+        byte[] blockHash = Hex.decode("0102030405060708000000000000000000000000000000000000000000000000");
 
         store.add(blockHash, 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash(), blockHash0, null);
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash0, null);
 
         Assert.assertNotNull(result.getBlockHash());
         Assert.assertArrayEquals(blockHash0, result.getBlockHash());
@@ -206,16 +206,16 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
-        byte[] blockHash0 = Hex.decode("010203040506070809");
+        byte[] blockHash0 = Hex.decode("0102030405060708090000000000000000000000000000000000000000000000");
 
         store.add(blockHash0, 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708");
+        byte[] blockHash = Hex.decode("0102030405060708000000000000000000000000000000000000000000000000");
 
         store.add(blockHash, 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash(), blockHash, null);
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash, null);
 
         Assert.assertNotNull(result.getBlockHash());
         Assert.assertArrayEquals(blockHash, result.getBlockHash());
@@ -229,7 +229,7 @@ public class ReceiptStoreImplTest {
         Block genesis = world.getBlockChain().getBestBlock();
 
         Block block1a = new BlockBuilder().difficulty(10).parent(genesis).build();
-        Block block1b = new BlockBuilder().difficulty(block1a.getDifficultyBI().longValue()-1).parent(genesis).build();
+        Block block1b = new BlockBuilder().difficulty(block1a.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
 
         Block block2a = new BlockBuilder().parent(block1a).build();
         Block block2b = new BlockBuilder().parent(block1b).build();
@@ -244,28 +244,28 @@ public class ReceiptStoreImplTest {
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
-        store.add(block1a.getHash(), 3, receipt0);
+        store.add(block1a.getHash().getBytes(), 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
-        store.add(block1b.getHash(), 42, receipt);
+        store.add(block1b.getHash().getBytes(), 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash(), block2a.getHash(), world.getBlockChain().getBlockStore());
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), block2a.getHash().getBytes(), world.getBlockChain().getBlockStore());
 
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(block1a.getHash(), result.getBlockHash());
+        Assert.assertArrayEquals(block1a.getHash().getBytes(), result.getBlockHash());
         Assert.assertEquals(3, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
 
-        result = store.get(receipt.getTransaction().getHash(), block2b.getHash(), world.getBlockChain().getBlockStore());
+        result = store.get(receipt.getTransaction().getHash().getBytes(), block2b.getHash().getBytes(), world.getBlockChain().getBlockStore());
 
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(block1b.getHash(), result.getBlockHash());
+        Assert.assertArrayEquals(block1b.getHash().getBytes(), result.getBlockHash());
         Assert.assertEquals(42, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
 
-        result = store.get(receipt.getTransaction().getHash(), genesis.getHash(), world.getBlockChain().getBlockStore());
+        result = store.get(receipt.getTransaction().getHash().getBytes(), genesis.getHash().getBytes(), world.getBlockChain().getBlockStore());
 
         Assert.assertNull(result);
     }

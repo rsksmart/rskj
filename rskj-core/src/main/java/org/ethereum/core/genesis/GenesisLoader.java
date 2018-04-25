@@ -20,27 +20,25 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JavaType;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
-import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ContractDetails;
-import co.rsk.trie.Trie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.ethereum.crypto.SHA3Helper.sha3;
-import static org.ethereum.util.ByteUtil.wrap;
 
 public class GenesisLoader {
     private static final Logger logger = LoggerFactory.getLogger("genesisloader");
@@ -62,7 +60,7 @@ public class GenesisLoader {
 
             Genesis genesis = new GenesisMapper().mapFromJson(genesisJson, isRsk);
 
-            Map<ByteArrayWrapper, InitialAddressState> premine = generatePreMine(config, initialNonce, genesisJson.getAlloc());
+            Map<RskAddress, InitialAddressState> premine = generatePreMine(config, initialNonce, genesisJson.getAlloc());
             genesis.setPremine(premine);
 
             byte[] rootHash = generateRootHash(premine);
@@ -79,44 +77,50 @@ public class GenesisLoader {
         }
     }
 
-    private static Map<ByteArrayWrapper, InitialAddressState> generatePreMine(RskSystemProperties config, BigInteger initialNonce, Map<String, AllocatedAccount> alloc){
-        Map<ByteArrayWrapper, InitialAddressState> premine = new HashMap<>();
+    private static Map<RskAddress, InitialAddressState> generatePreMine(RskSystemProperties config, BigInteger initialNonce, Map<String, AllocatedAccount> alloc){
+        Map<RskAddress, InitialAddressState> premine = new HashMap<>();
         ContractDetailsMapper detailsMapper = new ContractDetailsMapper(config);
+
         for (Map.Entry<String, AllocatedAccount> accountEntry : alloc.entrySet()) {
             if(!StringUtils.equals("00", accountEntry.getKey())) {
-                BigInteger balance = new BigInteger(accountEntry.getValue().getBalance());
+                Coin balance = new Coin(new BigInteger(accountEntry.getValue().getBalance()));
                 BigInteger nonce;
+
                 if (accountEntry.getValue().getNonce() != null) {
                     nonce = new BigInteger(accountEntry.getValue().getNonce());
                 } else {
                     nonce = initialNonce;
                 }
+
                 AccountState acctState = new AccountState(nonce, balance);
                 ContractDetails contractDetails = null;
                 Contract contract = accountEntry.getValue().getContract();
+
                 if (contract != null) {
                     contractDetails = detailsMapper.mapFromContract(contract);
+
                     if (contractDetails.getCode() != null) {
-                        acctState.setCodeHash(sha3(contractDetails.getCode()));
+                        acctState.setCodeHash(Keccak256Helper.keccak256(contractDetails.getCode()));
                     }
+
                     acctState.setStateRoot(contractDetails.getStorageHash());
                 }
-                premine.put(wrap(Hex.decode(accountEntry.getKey())), new InitialAddressState(acctState, contractDetails));
+
+                premine.put(new RskAddress(accountEntry.getKey()), new InitialAddressState(acctState, contractDetails));
             }
         }
 
         return premine;
     }
 
-    private static byte[] generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
-
+    private static byte[] generateRootHash(Map<RskAddress, InitialAddressState> premine){
         Trie state = new TrieImpl(null, true);
 
-        for (ByteArrayWrapper key : premine.keySet()) {
-            state = state.put(key.getData(), premine.get(key).getAccountState().getEncoded());
+        for (RskAddress addr : premine.keySet()) {
+            state = state.put(addr.getBytes(), premine.get(addr).getAccountState().getEncoded());
         }
 
-        return state.getHash();
+        return state.getHash().getBytes();
     }
 
 }

@@ -1,13 +1,13 @@
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.VerificationException;
-import co.rsk.config.ConfigHelper;
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
@@ -18,10 +18,13 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.EthereumImpl;
-import org.ethereum.rpc.TypeConverter;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
@@ -34,27 +37,23 @@ import java.math.BigInteger;
  * Created by SerAdmin on 1/3/2018.
  */
 public class MainNetMinerTest {
-    private BlockchainNetConfig oldConfig;
     private BlockChainImpl blockchain;
     public static DifficultyCalculator DIFFICULTY_CALCULATOR ;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+    private TestSystemProperties config;
 
     @Before
     public void setup() {
-        oldConfig = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new FallbackMainNetConfig());
-        DIFFICULTY_CALCULATOR = new DifficultyCalculator(ConfigHelper.CONFIG);
+        config = new TestSystemProperties();
+        config.setBlockchainConfig(new FallbackMainNetConfig());
+        DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
         World world = new World();
         blockchain = world.getBlockChain();
 
     }
 
-    @After
-    public void clean() {
-        ConfigHelper.CONFIG.setBlockchainConfig(oldConfig);
-    }
     /*
      * This test is probabilistic, but it has a really high chance to pass. We will generate
      * a random block that it is unlikely to pass the Long.MAX_VALUE difficulty, though
@@ -65,18 +64,24 @@ public class MainNetMinerTest {
         /* We need a low target */
         BlockChainImpl bc = new BlockChainBuilder().build();
         Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(bc);
-        gen.getHeader().setDifficulty(BigInteger.valueOf(Long.MAX_VALUE).toByteArray());
+        gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE)));
         bc.setStatus(gen, gen.getCumulativeDifficulty());
         World world = new World(bc, gen);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), null, null, null, 10, 100);
         blockchain = world.getBlockChain();
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, world.getBlockProcessor(), DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(ConfigHelper.CONFIG),
-                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
+        MinerServer minerServer = new MinerServerImpl(
+                config,
+                ethereumImpl,
+                blockchain,
+                null,
+                DIFFICULTY_CALCULATOR,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                blockToMineBuilder(),
+                ConfigUtils.getDefaultMiningConfig()
+        );
         try {
             minerServer.start();
             MinerWork work = minerServer.getWork();
@@ -119,9 +124,9 @@ public class MainNetMinerTest {
         byte[] privKey1 = privateMiningKey1.getPrivKeyBytes();
         saveToFile(privKey1, new File(folder.getRoot().getCanonicalPath(), "privkey1.bin"));
 
-        RskSystemProperties tempConfig = new RskSystemProperties() {
+        TestSystemProperties tempConfig = new TestSystemProperties() {
 
-            BlockchainNetConfig blockchainNetConfig = ConfigHelper.CONFIG.getBlockchainConfig();
+            BlockchainNetConfig blockchainNetConfig = config.getBlockchainConfig();
 
             @Override
             public String fallbackMiningKeysDir() {
@@ -161,13 +166,15 @@ public class MainNetMinerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(tempConfig, ethereumImpl, blockchain, null,
-                blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
-                unclesValidationRule, null, DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(ConfigHelper.CONFIG),
-                new ProofOfWorkRule(tempConfig).setFallbackMiningEnabled(true)
+        MinerServer minerServer = new MinerServerImpl(
+                tempConfig,
+                ethereumImpl,
+                blockchain,
+                null,
+                DIFFICULTY_CALCULATOR,
+                new ProofOfWorkRule(tempConfig).setFallbackMiningEnabled(true),
+                blockToMineBuilder(),
+                ConfigUtils.getDefaultMiningConfig()
         );
         try {
             minerServer.setFallbackMining(true);
@@ -226,7 +233,7 @@ public class MainNetMinerTest {
         /* We need a low, but not too low, target */
         BlockChainImpl bc = new BlockChainBuilder().build();
         Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(bc);
-        gen.getHeader().setDifficulty(BigInteger.valueOf(300000).toByteArray());
+        gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
         bc.setStatus(gen, gen.getCumulativeDifficulty());
         World world = new World(bc, gen);
         blockchain = world.getBlockChain();
@@ -234,14 +241,16 @@ public class MainNetMinerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, this.blockchain, null,
-                this.blockchain.getPendingState(), blockchain.getRepository(),
-                ConfigUtils.getDefaultMiningConfig(), unclesValidationRule,
-                world.getBlockProcessor(), DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(ConfigHelper.CONFIG),
-                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
+        MinerServer minerServer = new MinerServerImpl(
+                config,
+                ethereumImpl,
+                this.blockchain,
+                world.getBlockProcessor(),
+                DIFFICULTY_CALCULATOR,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                blockToMineBuilder(),
+                ConfigUtils.getDefaultMiningConfig()
+        );
         try {
         minerServer.start();
         MinerWork work = minerServer.getWork();
@@ -281,26 +290,25 @@ public class MainNetMinerTest {
         }
     }
 
-    private void findNonce(MinerWork work, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
-        BigInteger target = new BigInteger(TypeConverter.stringHexToByteArray(work.getTarget()));
-
-        while (true) {
-            try {
-                // Is our proof of work valid yet?
-                BigInteger blockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
-                if (blockHashBI.compareTo(target) <= 0) {
-                    break;
-                }
-                // No, so increment the nonce and try again.
-                bitcoinMergedMiningBlock.setNonce(bitcoinMergedMiningBlock.getNonce() + 1);
-            } catch (VerificationException e) {
-                throw new RuntimeException(e); // Cannot happen.
-            }
-        }
-    }
     private co.rsk.bitcoinj.core.BtcBlock getMergedMiningBlock(MinerWork work) {
         NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
         return MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
+    }
+
+    private BlockToMineBuilder blockToMineBuilder() {
+        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
+        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        return new BlockToMineBuilder(
+                ConfigUtils.getDefaultMiningConfig(),
+                blockchain.getRepository(),
+                this.blockchain.getBlockStore(),
+                this.blockchain.getTransactionPool(),
+                DIFFICULTY_CALCULATOR,
+                new GasLimitCalculator(config),
+                unclesValidationRule,
+                config,
+                null
+        );
     }
 }

@@ -33,11 +33,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 import static java.util.Arrays.copyOfRange;
-import static org.ethereum.crypto.SHA3Helper.Size.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class HashUtil {
-    public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+    public static final byte[] EMPTY_TRIE_HASH = keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
 
     private static final MessageDigest sha256digest;
 
@@ -57,7 +56,7 @@ public class HashUtil {
         return sha256digest.digest(input);
     }
 
-    public static byte[] sha3(byte[] input) {
+    public static byte[] keccak256(byte[] input) {
         Keccak256 digest =  new Keccak256();
         digest.update(input);
         return digest.digest();
@@ -70,8 +69,8 @@ public class HashUtil {
      * @param length - length of hashing chunk
      * @return - sha3 hash of the chunk
      */
-    public static byte[] sha3(byte[] input, int start, int length) {
-        return SHA3Helper.sha3(input, start, length);
+    public static byte[] keccak256(byte[] input, int start, int length) {
+        return Keccak256Helper.keccak256(input, start, length);
     }
 
 
@@ -98,7 +97,7 @@ public class HashUtil {
      * @return - 20 right bytes of the hash sha3 of the data
      */
     public static byte[] sha3omit12(byte[] input) {
-        byte[] hash = sha3(input);
+        byte[] hash = keccak256(input);
         return copyOfRange(hash, 12, hash.length);
     }
 

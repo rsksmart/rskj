@@ -19,7 +19,9 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
@@ -27,6 +29,7 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
@@ -43,14 +46,13 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.crypto.SHA3Helper.sha3;
 
 /**
  * Created by ajlopez on 29/03/2017.
  */
 public class RepositoryImpl implements Repository {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
+    private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
@@ -72,7 +74,7 @@ public class RepositoryImpl implements Repository {
         this(config, store, new DetailsDataStore(config, new DatabaseImpl(detailsDS)));
     }
 
-    public RepositoryImpl(RskSystemProperties config, TrieStore store, DetailsDataStore detailsDataStore) {
+    private RepositoryImpl(RskSystemProperties config, TrieStore store, DetailsDataStore detailsDataStore) {
         this.config = config;
         this.store = store;
         this.trie = new TrieImpl(store, true);
@@ -81,7 +83,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized AccountState createAccount(RskAddress addr) {
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        AccountState accountState = new AccountState();
         updateAccountState(addr, accountState);
         updateContractDetails(addr, new ContractDetailsImpl(config));
         return accountState;
@@ -165,7 +167,7 @@ public class RepositoryImpl implements Repository {
         }
 
         details.setCode(code);
-        accountState.setCodeHash(sha3(code));
+        accountState.setCodeHash(Keccak256Helper.keccak256(code));
 
         updateContractDetails(addr, details);
         updateAccountState(addr, accountState);
@@ -233,16 +235,16 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized BigInteger getBalance(RskAddress addr) {
+    public synchronized Coin getBalance(RskAddress addr) {
         AccountState account = getAccountState(addr);
-        return (account == null) ? AccountState.EMPTY.getBalance() : account.getBalance();
+        return (account == null) ? new AccountState().getBalance() : account.getBalance();
     }
 
     @Override
-    public synchronized BigInteger addBalance(RskAddress addr, BigInteger value) {
+    public synchronized Coin addBalance(RskAddress addr, Coin value) {
         AccountState account = getAccountStateOrCreateNew(addr);
 
-        BigInteger result = account.addToBalance(value);
+        Coin result = account.addToBalance(value);
         updateAccountState(addr, account);
 
         return result;
@@ -299,7 +301,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized void syncToRoot(byte[] root) {
-        this.trie = this.trie.getSnapshotTo(root);
+        this.trie = this.trie.getSnapshotTo(new Keccak256(root));
     }
 
     @Override
@@ -320,7 +322,7 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized void updateBatch(Map<RskAddress, AccountState> stateCache,
                                          Map<RskAddress, ContractDetails> detailsCache) {
-        logger.info("updatingBatch: detailsCache.size: {}", detailsCache.size());
+        logger.debug("updatingBatch: detailsCache.size: {}", detailsCache.size());
 
         for (Map.Entry<RskAddress, AccountState> entry : stateCache.entrySet()) {
             RskAddress addr = entry.getKey();
@@ -357,7 +359,7 @@ public class RepositoryImpl implements Repository {
             }
         }
 
-        logger.info("updated: detailsCache.size: {}", detailsCache.size());
+        logger.debug("updated: detailsCache.size: {}", detailsCache.size());
 
         stateCache.clear();
         detailsCache.clear();
@@ -369,7 +371,7 @@ public class RepositoryImpl implements Repository {
             this.trie.save();
         }
 
-        byte[] rootHash = this.trie.getHash();
+        byte[] rootHash = this.trie.getHash().getBytes();
 
         logger.trace("getting repository root hash {}", Hex.toHexString(rootHash));
 
@@ -383,7 +385,7 @@ public class RepositoryImpl implements Repository {
         AccountState account = getAccountState(addr);
         ContractDetails details = getContractDetails(addr);
 
-        account = (account == null) ? new AccountState(BigInteger.ZERO, BigInteger.ZERO) : account.clone();
+        account = (account == null) ? new AccountState() : account.clone();
         details = new ContractDetailsCacheImpl(details);
 
         cacheAccounts.put(addr, account);

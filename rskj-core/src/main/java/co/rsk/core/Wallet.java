@@ -23,7 +23,7 @@ import co.rsk.crypto.EncryptedData;
 import co.rsk.crypto.KeyCrypterAes;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.rpc.TypeConverter;
 import org.spongycastle.crypto.params.KeyParameter;
@@ -55,8 +55,8 @@ public class Wallet {
         Set<RskAddress> keys = new HashSet<>();
 
         synchronized(accessLock) {
-            for (RskAddress address: this.initialAccounts) {
-                addresses.add(address.getBytes());
+            for (RskAddress addr: this.initialAccounts) {
+                addresses.add(addr.getBytes());
             }
 
             for (byte[] address: keyDS.keys()) {
@@ -66,8 +66,8 @@ public class Wallet {
             keys.addAll(accounts.keySet());
             keys.removeAll(this.initialAccounts);
 
-            for (RskAddress address: keys) {
-                addresses.add(address.getBytes());
+            for (RskAddress addr: keys) {
+                addresses.add(addr.getBytes());
             }
         }
 
@@ -97,28 +97,28 @@ public class Wallet {
         return account.getAddress();
     }
 
-    public Account getAccount(RskAddress address) {
+    public Account getAccount(RskAddress addr) {
         synchronized (accessLock) {
-            if (!accounts.containsKey(address)) {
+            if (!accounts.containsKey(addr)) {
                 return null;
             }
 
-            if (unlocksTimeouts.containsKey(address)) {
-                long ending = unlocksTimeouts.get(address);
+            if (unlocksTimeouts.containsKey(addr)) {
+                long ending = unlocksTimeouts.get(addr);
                 long time = System.currentTimeMillis();
                 if (ending < time) {
-                    unlocksTimeouts.remove(address);
-                    accounts.remove(address);
+                    unlocksTimeouts.remove(addr);
+                    accounts.remove(addr);
                     return null;
                 }
             }
-            return new Account(ECKey.fromPrivate(accounts.get(address)));
+            return new Account(ECKey.fromPrivate(accounts.get(addr)));
         }
     }
 
-    public Account getAccount(RskAddress address, String passphrase) {
+    public Account getAccount(RskAddress addr, String passphrase) {
         synchronized (accessLock) {
-            byte[] encrypted = keyDS.get(address.getBytes());
+            byte[] encrypted = keyDS.get(addr.getBytes());
 
             if (encrypted == null) {
                 return null;
@@ -128,24 +128,24 @@ public class Wallet {
         }
     }
 
-    public boolean unlockAccount(RskAddress address, String passphrase, long duration) {
+    public boolean unlockAccount(RskAddress addr, String passphrase, long duration) {
         long ending = System.currentTimeMillis() + duration;
-        boolean unlocked = unlockAccount(address, passphrase);
+        boolean unlocked = unlockAccount(addr, passphrase);
 
         if (unlocked) {
             synchronized (accessLock) {
-                unlocksTimeouts.put(address, ending);
+                unlocksTimeouts.put(addr, ending);
             }
         }
 
         return unlocked;
     }
 
-    public boolean unlockAccount(RskAddress address, String passphrase) {
+    public boolean unlockAccount(RskAddress addr, String passphrase) {
         Account account;
 
         synchronized (accessLock) {
-            byte[] encrypted = keyDS.get(address.getBytes());
+            byte[] encrypted = keyDS.get(addr.getBytes());
 
             if (encrypted == null) {
                 return false;
@@ -159,27 +159,27 @@ public class Wallet {
         return true;
     }
 
-    public boolean lockAccount(RskAddress address) {
+    public boolean lockAccount(RskAddress addr) {
         synchronized (accessLock) {
-            if (!accounts.containsKey(address)) {
+            if (!accounts.containsKey(addr)) {
                 return false;
             }
 
-            accounts.remove(address);
+            accounts.remove(addr);
             return true;
         }
     }
 
     public byte[] addAccountWithSeed(String seed) {
-        return addAccountWithPrivateKey(SHA3Helper.sha3(seed.getBytes(StandardCharsets.UTF_8)));
+        return addAccountWithPrivateKey(Keccak256Helper.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
     }
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes) {
         Account account = new Account(ECKey.fromPrivate(privateKeyBytes));
         synchronized (accessLock) {
-            RskAddress address = addAccount(account);
-            this.initialAccounts.add(address);
-            return address.getBytes();
+            RskAddress addr = addAccount(account);
+            this.initialAccounts.add(addr);
+            return addr.getBytes();
         }
     }
 

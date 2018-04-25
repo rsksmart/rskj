@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program.invoke;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -52,7 +53,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
-        RskAddress address = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
+        RskAddress addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
@@ -63,16 +64,16 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         byte[] caller = tx.getSender().getBytes();
 
         /***         BALANCE op       ***/
-        byte[] balance = repository.getBalance(address).toByteArray();
+        Coin balance = repository.getBalance(addr);
 
         /***         GASPRICE op       ***/
-        byte[] gasPrice = tx.getGasPrice();
+        Coin gasPrice = tx.getGasPrice();
 
         /*** GAS op ***/
         byte[] gas = tx.getGasLimit();
 
         /***        CALLVALUE op      ***/
-        byte[] callValue = nullToEmpty(tx.getValue());
+        Coin callValue = tx.getValue();
 
         /***     CALLDATALOAD  op   ***/
         /***     CALLDATACOPY  op   ***/
@@ -80,7 +81,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         byte[] data = tx.isContractCreation() ? ByteUtil.EMPTY_BYTE_ARRAY : nullToEmpty(tx.getData());
 
         /***    PREVHASH  op  ***/
-        byte[] lastHash = block.getParentHash();
+        byte[] lastHash = block.getParentHash().getBytes();
 
         /***   COINBASE  op ***/
         byte[] coinbase = block.getCoinbase().getBytes();
@@ -92,7 +93,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         long number = block.getNumber();
 
         /*** DIFFICULTY  op  ***/
-        byte[] difficulty = block.getDifficulty();
+        byte[] difficulty = block.getDifficulty().getBytes();
 
         /*** GASLIMIT op ***/
         byte[] gaslimit = block.getGasLimit();
@@ -115,13 +116,13 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "difficulty={}\n" +
                             "gaslimit={}\n",
 
-                    address,
+                    addr,
                     Hex.toHexString(origin),
                     Hex.toHexString(caller),
-                    new BigInteger(1, balance).longValue(),
-                    new BigInteger(1, gasPrice).longValue(),
+                    balance,
+                    gasPrice,
                     new BigInteger(1, gas).longValue(),
-                    new BigInteger(1, callValue).longValue(),
+                    callValue,
                     Hex.toHexString(data),
                     Hex.toHexString(lastHash),
                     Hex.toHexString(coinbase),
@@ -132,7 +133,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     gaslimit);
         }
 
-        return new ProgramInvokeImpl(address.getBytes(), origin, caller, balance, gasPrice, gas, callValue, data,
+        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), gasPrice.getBytes(), gas, callValue.getBytes(), data,
                 lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
                 repository, blockStore);
     }
@@ -144,14 +145,14 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
     public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
                                              DataWord inValue,
                                              long inGas,
-                                             BigInteger balanceInt, byte[] dataIn,
+                                             Coin balanceInt, byte[] dataIn,
                                              Repository repository, BlockStore blockStore, boolean byTestingSuite) {
 
         DataWord address = toAddress;
         DataWord origin = program.getOriginAddress();
         DataWord caller = callerAddress;
 
-        DataWord balance = new DataWord(balanceInt.toByteArray());
+        DataWord balance = new DataWord(balanceInt.getBytes());
         DataWord gasPrice = program.getGasPrice();
         long agas = inGas;
         DataWord callValue = inValue;

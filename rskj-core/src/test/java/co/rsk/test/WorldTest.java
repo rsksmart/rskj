@@ -41,7 +41,7 @@ public class WorldTest {
     public void saveAndGetBlock() {
         World world = new World();
 
-        Block block = BlockGenerator.getInstance().getBlock(1);
+        Block block = new BlockGenerator().getBlock(1);
 
         world.saveBlock("b01", block);
         Assert.assertSame(block, world.getBlockByName("b01"));
@@ -60,7 +60,7 @@ public class WorldTest {
 
         Assert.assertNotNull(best);
         Assert.assertEquals(0, best.getNumber());
-        Assert.assertArrayEquals(genesis.getHash(), best.getHash());
+        Assert.assertEquals(genesis.getHash(), best.getHash());
     }
 
     @Test

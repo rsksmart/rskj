@@ -18,7 +18,7 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.validators.*;
 import org.ethereum.core.Repository;
@@ -30,6 +30,7 @@ import org.mockito.Mockito;
  */
 public class BlockValidatorBuilder {
 
+    private final TestSystemProperties config = new TestSystemProperties();
     private BlockTxsValidationRule blockTxsValidationRule;
 
     private BlockTxsFieldsValidationRule blockTxsFieldsValidationRule;
@@ -95,9 +96,9 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockValidationRule validationRule, BlockParentDependantValidationRule parentValidationRule) {
-        int uncleListLimit = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getUncleListLimit();
-        int uncleGenLimit = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
-        this.blockUnclesValidationRule = new BlockUnclesValidationRule(ConfigHelper.CONFIG, blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
+        int uncleListLimit = config.getBlockchainConfig().getCommonConstants().getUncleListLimit();
+        int uncleGenLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        this.blockUnclesValidationRule = new BlockUnclesValidationRule(config, blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
         return this;
     }
 
@@ -117,12 +118,12 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addDifficultyRule() {
-        this.difficultyRule = new BlockDifficultyRule(new DifficultyCalculator(ConfigHelper.CONFIG));
+        this.difficultyRule = new BlockDifficultyRule(new DifficultyCalculator(config));
         return this;
     }
 
     public BlockValidatorBuilder addParentGasLimitRule() {
-        parentGasLimitRule = new BlockParentGasLimitRule(ConfigHelper.CONFIG.getBlockchainConfig().
+        parentGasLimitRule = new BlockParentGasLimitRule(config.getBlockchainConfig().
                         getCommonConstants().getGasLimitBoundDivisor());
         return this;
     }

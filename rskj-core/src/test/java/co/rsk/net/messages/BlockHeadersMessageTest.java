@@ -61,7 +61,7 @@ public class BlockHeadersMessageTest {
         Assert.assertEquals(mblocks.size(), blocks.size());
 
         for (int i = 0; i < blocks.size(); i++) {
-            Assert.assertArrayEquals(blocks.get(1).getHash(), mblocks.get(1).getHash());
+            Assert.assertEquals(blocks.get(1).getHash(), mblocks.get(1).getHash());
         }
     }
 }

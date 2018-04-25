@@ -18,33 +18,32 @@
 
 package co.rsk.trie;
 
+import co.rsk.crypto.Keccak256;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
-
-import static org.ethereum.crypto.HashUtil.sha3;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Created by ajlopez on 11/01/2017.
  */
 public class TrieImplHashTest {
-    private static byte[] emptyHash = makeEmptyHash();
+    private static Keccak256 emptyHash = makeEmptyHash();
 
     @Test
     public void getNotNullHashOnEmptyTrie() {
         Trie trie = new TrieImpl();
 
-        Assert.assertNotNull(trie.getHash());
+        Assert.assertNotNull(trie.getHash().getBytes());
     }
 
     @Test
     public void getHashAs32BytesOnEmptyTrie() {
         Trie trie = new TrieImpl();
 
-        Assert.assertEquals(32, trie.getHash().length);
+        Assert.assertEquals(32, trie.getHash().getBytes().length);
     }
 
     @Test
@@ -53,16 +52,16 @@ public class TrieImplHashTest {
         Trie trie2 = new TrieImpl();
         Trie trie3 = new TrieImpl();
 
-        Assert.assertArrayEquals(trie1.getHash(), trie1.getHash());
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
-        Assert.assertArrayEquals(trie3.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie1.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie3.getHash(), trie2.getHash());
     }
 
     @Test
     public void emptyHashForEmptyTrie() {
         Trie trie = new TrieImpl();
 
-        Assert.assertArrayEquals(emptyHash, trie.getHash());
+        Assert.assertEquals(emptyHash, trie.getHash());
     }
 
     @Test
@@ -71,7 +70,7 @@ public class TrieImplHashTest {
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
 
-        Assert.assertFalse(Arrays.equals(emptyHash, trie.getHash()));
+        Assert.assertNotEquals(emptyHash, trie.getHash());
     }
 
     @Test
@@ -80,7 +79,7 @@ public class TrieImplHashTest {
 
         trie = trie.put("foo".getBytes(), TrieImplValueTest.makeValue(100));
 
-        Assert.assertFalse(Arrays.equals(emptyHash, trie.getHash()));
+        Assert.assertNotEquals(emptyHash, trie.getHash());
     }
 
     @Test
@@ -90,7 +89,7 @@ public class TrieImplHashTest {
         Trie trie2 = new TrieImpl().put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -100,7 +99,7 @@ public class TrieImplHashTest {
         Trie trie2 = new TrieImpl().put("foo", "bar".getBytes())
                 .put("bar", TrieImplValueTest.makeValue(100));
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -112,7 +111,7 @@ public class TrieImplHashTest {
                 .put("bar", "baz".getBytes())
                 .put("foo", "bar".getBytes());
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -124,7 +123,7 @@ public class TrieImplHashTest {
                 .put("bar", TrieImplValueTest.makeValue(200))
                 .put("foo", TrieImplValueTest.makeValue(100));
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -142,8 +141,8 @@ public class TrieImplHashTest {
                 .put("bar", "baz".getBytes())
                 .put("foo", "bar".getBytes());
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
-        Assert.assertArrayEquals(trie3.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie3.getHash(), trie2.getHash());
     }
 
     @Test
@@ -161,8 +160,8 @@ public class TrieImplHashTest {
                 .put("bar", TrieImplValueTest.makeValue(200))
                 .put("foo", TrieImplValueTest.makeValue(100));
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
-        Assert.assertArrayEquals(trie3.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie3.getHash(), trie2.getHash());
     }
 
     @Test
@@ -174,7 +173,7 @@ public class TrieImplHashTest {
                 .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
 
-        Assert.assertFalse(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertNotEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -186,10 +185,10 @@ public class TrieImplHashTest {
                 .put("foo", TrieImplValueTest.makeValue(150))
                 .put("bar", TrieImplValueTest.makeValue(250));
 
-        Assert.assertFalse(Arrays.equals(trie1.getHash(), trie2.getHash()));
+        Assert.assertNotEquals(trie1.getHash(), trie2.getHash());
     }
 
-    public static byte[] makeEmptyHash() {
-        return sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+    public static Keccak256 makeEmptyHash() {
+        return new Keccak256(HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
     }
 }

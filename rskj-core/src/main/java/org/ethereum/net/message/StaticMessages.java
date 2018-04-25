@@ -40,19 +40,22 @@ import java.util.regex.Pattern;
 @Component
 public class StaticMessages {
 
-    @Autowired
-    SystemProperties config;
-
-    @Autowired
-    ConfigCapabilities configCapabilities;
+    private final SystemProperties config;
+    private final ConfigCapabilities configCapabilities;
 
     public static final PingMessage PING_MESSAGE = new PingMessage();
     public static final PongMessage PONG_MESSAGE = new PongMessage();
     public static final GetPeersMessage GET_PEERS_MESSAGE = new GetPeersMessage();
     public static final DisconnectMessage DISCONNECT_MESSAGE = new DisconnectMessage(ReasonCode.REQUESTED);
 
+    @Autowired
+    public StaticMessages(SystemProperties config, ConfigCapabilities configCapabilities) {
+        this.config = config;
+        this.configCapabilities = configCapabilities;
+    }
+
     public HelloMessage createHelloMessage(String peerId) {
-        return createHelloMessage(peerId, config.listenPort());
+        return createHelloMessage(peerId, config.getPeerPort());
     }
     public HelloMessage createHelloMessage(String peerId, int listenPort) {
 

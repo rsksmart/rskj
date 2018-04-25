@@ -32,7 +32,7 @@ import java.util.Comparator;
  *
  * @author Ariel Mendelzon
  */
-public final class RskAddress {
+public class RskAddress {
 
     /**
      * This is the size of an RSK address in bytes.

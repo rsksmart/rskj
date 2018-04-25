@@ -20,18 +20,17 @@
 package org.ethereum.core;
 
 
-import co.rsk.config.ConfigHelper;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
-
+import org.ethereum.crypto.HashUtil;
 import org.junit.Ignore;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
@@ -41,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 
 public class StateTest {
 
-    private static final String GENESIS_STATE_ROOT = "7e204dc9cfb7acdf062ff0b8052f7fcb0b7e6593754773967932ce458d134af3";
+    private static final Keccak256 GENESIS_STATE_ROOT = new Keccak256("7e204dc9cfb7acdf062ff0b8052f7fcb0b7e6593754773967932ce458d134af3");
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
@@ -50,7 +49,7 @@ public class StateTest {
     @Test
     public void testGenesisAccounts() {
         Trie trie = generateGenesisState();
-        assertEquals(GENESIS_STATE_ROOT, Hex.toHexString(trie.getHash()));
+        assertEquals(GENESIS_STATE_ROOT, trie.getHash());
     }
 
     @Ignore
@@ -65,20 +64,21 @@ public class StateTest {
         // 4) calc the root
 
         Trie trie = generateGenesisState();
-        String expected = "c12b4d771fbcc0d56ec106f8d465d24b9d4c36d60275bbafa7d69694d6708660";
+        Keccak256 expected = new Keccak256("c12b4d771fbcc0d56ec106f8d465d24b9d4c36d60275bbafa7d69694d6708660");
 
         // Get and update sender in world state
         byte[] cowAddress = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
         byte[] rlpEncodedState = trie.get(cowAddress);
         AccountState account_1 = new AccountState(rlpEncodedState);
-        account_1.addToBalance(new BigInteger("-6260000000001000"));
+        final BigInteger value = new BigInteger("-6260000000001000");
+        account_1.addToBalance(new Coin(value));
         account_1.incrementNonce();
         trie = trie.put(cowAddress, account_1.getEncoded());
 
         // Add contract to world state
         byte[] codeData = Hex.decode("61778e600054");
-        AccountState account_2 = new AccountState(BigInteger.ZERO, BigInteger.valueOf(1000));
-        account_2.setCodeHash(HashUtil.sha3(codeData));
+        AccountState account_2 = new AccountState(BigInteger.ZERO, Coin.valueOf(1000));
+        account_2.setCodeHash(HashUtil.keccak256(codeData));
         byte[] contractAddress = Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051"); // generated based on sender + nonce
         trie = trie.put(contractAddress, account_2.getEncoded());
 
@@ -87,10 +87,11 @@ public class StateTest {
 
         // Update miner in world state
         byte[] minerAddress = Hex.decode("4c5f4d519dff3c16f0d54b6866e256fbbbc1a600");
-        AccountState account_3 = new AccountState(BigInteger.ZERO, new BigInteger("1506260000000000000"));
+        final BigInteger bigInteger = new BigInteger("1506260000000000000");
+        AccountState account_3 = new AccountState(BigInteger.ZERO, new Coin(bigInteger));
         trie = trie.put(minerAddress, account_3.getEncoded());
 
-        assertEquals(expected, Hex.toHexString(trie.getHash()));
+        assertEquals(expected, trie.getHash());
 
         /* *** GROSS DATA ***
 
@@ -126,15 +127,16 @@ public class StateTest {
          *   cd2a3d9f938e13cd947ec05abc7fe734df8dd826: #1 1606938044258990275541962092341162602522202987522792835300376 (-6260000000001000)
           */
 
-        assertEquals(expected, Hex.toHexString(trie.getHash()));
+        assertEquals(expected, trie.getHash());
     }
 
     private Trie generateGenesisState() {
         Trie trie = new TrieImpl();
-        Genesis genesis = (Genesis)Genesis.getInstance(ConfigHelper.CONFIG);
+        Genesis genesis = (Genesis)Genesis.getInstance(new TestSystemProperties());
 
-        for (ByteArrayWrapper key : genesis.getPremine().keySet())
-            trie = trie.put(key.getData(), genesis.getPremine().get(key).getAccountState().getEncoded());
+        for (RskAddress addr : genesis.getPremine().keySet()) {
+            trie = trie.put(addr.getBytes(), genesis.getPremine().get(addr).getAccountState().getEncoded());
+        }
 
         return trie;
     }

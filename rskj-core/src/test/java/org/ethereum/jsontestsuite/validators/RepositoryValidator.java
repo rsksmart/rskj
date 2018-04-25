@@ -47,22 +47,22 @@ public class RepositoryValidator {
             results.add(out);
         }
 
-        for (RskAddress address : currentKeys) {
-            AccountState state = currentRepository.getAccountState(address);
-            ContractDetails details = currentRepository.getContractDetails(address);
+        for (RskAddress addr : currentKeys) {
+            AccountState state = currentRepository.getAccountState(addr);
+            ContractDetails details = currentRepository.getContractDetails(addr);
 
-            AccountState postState = postRepository.getAccountState(address);
-            ContractDetails postDetails = postRepository.getContractDetails(address);
+            AccountState postState = postRepository.getAccountState(addr);
+            ContractDetails postDetails = postRepository.getContractDetails(addr);
 
             List<String> accountResult =
-                AccountValidator.valid(address, postState, postDetails, state, details);
+                AccountValidator.valid(addr, postState, postDetails, state, details);
 
             results.addAll(accountResult);
         }
 
         Set<RskAddress> expectedButAbsent = ByteUtil.difference(expectedKeys, currentKeys);
-        for (RskAddress address : expectedButAbsent){
-            String formattedString = String.format("Account: %s: expected but doesn't exist", address);
+        for (RskAddress addr : expectedButAbsent){
+            String formattedString = String.format("Account: %s: expected but doesn't exist", addr);
             results.add(formattedString);
         }
 

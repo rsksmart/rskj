@@ -19,15 +19,13 @@
 
 package org.ethereum.facade;
 
+import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.rpc.Web3;
-import org.ethereum.vm.program.ProgramResult;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.concurrent.Future;
 
 /**
@@ -36,15 +34,11 @@ import java.util.concurrent.Future;
  */
 public interface Ethereum {
 
-    Blockchain getBlockchain();
-
     void addListener(EthereumListener listener);
 
     void removeListener(EthereumListener listener);
 
     ImportResult addNewMinedBlock(Block block);
-
-    void close();
 
     /**
      * Factory for general transaction
@@ -75,13 +69,6 @@ public interface Ethereum {
      */
     Future<Transaction> submitTransaction(Transaction transaction);
 
-    void init();
-
-    /**
-     * @return - currently pending transactions received from the net
-     */
-    List<Transaction> getWireTransactions();
-
     /**
      * Calculates a 'reasonable' Gas price based on statistics of the latest transaction's Gas prices
      * Normally the price returned should be sufficient to execute a transaction since ~25% of the latest
@@ -89,8 +76,5 @@ public interface Ethereum {
      * If the transaction is wanted to be executed promptly with higher chances the returned price might
      * be increased at some ratio (e.g. * 1.2)
      */
-    long getGasPrice();
-
-    // TODO added method, to review
-    ProgramResult callConstant(Web3.CallArguments args);
+    Coin getGasPrice();
 }

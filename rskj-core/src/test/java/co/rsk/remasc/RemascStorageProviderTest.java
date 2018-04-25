@@ -19,7 +19,8 @@
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryImplForTesting;
@@ -29,7 +30,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -39,26 +39,29 @@ import java.util.SortedMap;
  * Created by usuario on 13/04/2017.
  */
 public class RemascStorageProviderTest {
+
+    private final TestSystemProperties config = new TestSystemProperties();
+
     @Test
     public void getDefautRewardBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(BigInteger.ZERO, provider.getRewardBalance());
+        Assert.assertEquals(Coin.ZERO, provider.getRewardBalance());
     }
 
     @Test
     public void setAndGetRewardBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        provider.setRewardBalance(BigInteger.ONE);
+        provider.setRewardBalance(Coin.valueOf(1));
 
-        Assert.assertEquals(BigInteger.ONE, provider.getRewardBalance());
+        Assert.assertEquals(Coin.valueOf(1), provider.getRewardBalance());
     }
 
     @Test
@@ -68,35 +71,35 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        provider.setRewardBalance(BigInteger.valueOf(255));
+        provider.setRewardBalance(Coin.valueOf(255));
 
         provider.save();
 
         RemascStorageProvider newProvider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(BigInteger.valueOf(255), newProvider.getRewardBalance());
+        Assert.assertEquals(Coin.valueOf(255), newProvider.getRewardBalance());
     }
 
     @Test
     public void getDefautBurnedBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(BigInteger.ZERO, provider.getBurnedBalance());
+        Assert.assertEquals(Coin.ZERO, provider.getBurnedBalance());
     }
 
     @Test
     public void setAndGetBurnedBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        provider.setBurnedBalance(BigInteger.ONE);
+        provider.setBurnedBalance(Coin.valueOf(1));
 
-        Assert.assertEquals(BigInteger.ONE, provider.getBurnedBalance());
+        Assert.assertEquals(Coin.valueOf(1), provider.getBurnedBalance());
     }
 
     @Test
@@ -106,19 +109,19 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        provider.setBurnedBalance(BigInteger.valueOf(255));
+        provider.setBurnedBalance(Coin.valueOf(255));
 
         provider.save();
 
         RemascStorageProvider newProvider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(BigInteger.valueOf(255), newProvider.getBurnedBalance());
+        Assert.assertEquals(Coin.valueOf(255), newProvider.getBurnedBalance());
     }
 
     @Test
     public void getDefaultBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -128,7 +131,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -156,7 +159,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefaultSiblings() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -169,12 +172,13 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetSiblings() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block = blockGenerator.createChildBlock(genesis);
 
         Sibling sibling1 = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
         Sibling sibling2 = new Sibling(block.getHeader(), block.getCoinbase(), 2);
@@ -201,8 +205,9 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block = blockGenerator.createChildBlock(genesis);
 
         Sibling sibling1 = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
         Sibling sibling2 = new Sibling(block.getHeader(), block.getCoinbase(), 2);
@@ -233,12 +238,13 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
-        Block block4 = BlockGenerator.getInstance().createChildBlock(block3);
-        Block block5 = BlockGenerator.getInstance().createChildBlock(block4);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
+        Block block4 = blockGenerator.createChildBlock(block3);
+        Block block5 = blockGenerator.createChildBlock(block4);
 
         Sibling sibling1 = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
         Sibling sibling2 = new Sibling(block1.getHeader(), block1.getCoinbase(), 2);
@@ -286,19 +292,19 @@ public class RemascStorageProviderTest {
         List<Sibling> list2 = map.get(Long.valueOf(2));
 
         Assert.assertEquals(1, list0.get(0).getIncludedHeight());
-        Assert.assertArrayEquals(genesis.getHeader().getHash(), list0.get(0).getHash());
+        Assert.assertArrayEquals(genesis.getHeader().getHash().getBytes(), list0.get(0).getHash());
         Assert.assertEquals(2, list0.get(1).getIncludedHeight());
-        Assert.assertArrayEquals(block1.getHeader().getHash(), list0.get(1).getHash());
+        Assert.assertArrayEquals(block1.getHeader().getHash().getBytes(), list0.get(1).getHash());
 
         Assert.assertEquals(3, list1.get(0).getIncludedHeight());
-        Assert.assertArrayEquals(block2.getHeader().getHash(), list1.get(0).getHash());
+        Assert.assertArrayEquals(block2.getHeader().getHash().getBytes(), list1.get(0).getHash());
         Assert.assertEquals(4, list1.get(1).getIncludedHeight());
-        Assert.assertArrayEquals(block3.getHeader().getHash(), list1.get(1).getHash());
+        Assert.assertArrayEquals(block3.getHeader().getHash().getBytes(), list1.get(1).getHash());
 
         Assert.assertEquals(5, list2.get(0).getIncludedHeight());
-        Assert.assertArrayEquals(block4.getHeader().getHash(), list2.get(0).getHash());
+        Assert.assertArrayEquals(block4.getHeader().getHash().getBytes(), list2.get(0).getHash());
         Assert.assertEquals(6, list2.get(1).getIncludedHeight());
-        Assert.assertArrayEquals(block5.getHeader().getHash(), list2.get(1).getHash());
+        Assert.assertArrayEquals(block5.getHeader().getHash().getBytes(), list2.get(1).getHash());
     }
 
     private RskAddress randomAddress() {

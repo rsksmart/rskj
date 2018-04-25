@@ -20,8 +20,11 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
@@ -36,7 +39,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -48,7 +50,6 @@ import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 
 /**
@@ -67,9 +68,11 @@ public class TransactionExecutor {
     private final Repository cacheTrack;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final VmConfig vmConfig;
+    private final PrecompiledContracts precompiledContracts;
     private String executionError = "";
     private final long gasUsedInTheBlock;
-    private BigInteger paidFees;
+    private Coin paidFees;
     private boolean readyToExecute = false;
 
     private final ProgramInvokeFactory programInvokeFactory;
@@ -112,6 +115,8 @@ public class TransactionExecutor {
         this.executionBlock = executionBlock;
         this.listener = listener;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
+        this.vmConfig = config.getVmConfig();
+        this.precompiledContracts = new PrecompiledContracts(config);
     }
 
 
@@ -150,7 +155,7 @@ public class TransactionExecutor {
         if (isNotEqual(reqNonce, txNonce)) {
 
             if (logger.isWarnEnabled()) {
-                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, Hex.toHexString(tx.getHash()));
+                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, tx.getHash());
                 logger.warn("Transaction Data: {}", tx);
                 logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
             }
@@ -160,22 +165,20 @@ public class TransactionExecutor {
         }
 
 
-        BigInteger totalCost = BigInteger.ZERO;
+        Coin totalCost = Coin.ZERO;
         if (basicTxCost > 0 ) {
             // Estimate transaction cost only if is not a free trx
-            BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
-            totalCost = toBI(tx.getValue()).add(txGasCost);
+            Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
+            totalCost = tx.getValue().add(txGasCost);
         }
 
-        BigInteger senderBalance = track.getBalance(tx.getSender());
+        Coin senderBalance = track.getBalance(tx.getSender());
 
         if (!isCovers(senderBalance, totalCost)) {
 
-            if (logger.isWarnEnabled()) {
-                logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, Hex.toHexString(tx.getHash()));
-                logger.warn("Transaction Data: {}", tx);
-                logger.warn("Tx Included in the following block: {}", this.executionBlock);
-            }
+            logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, tx.getHash());
+            logger.warn("Transaction Data: {}", tx);
+            logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             execError(String.format("Not enough cash: Require: %s, Sender cash: %s", totalCost, senderBalance));
 
@@ -185,24 +188,22 @@ public class TransactionExecutor {
         // Prevent transactions with excessive address size
         byte[] receiveAddress = tx.getReceiveAddress().getBytes();
         if (receiveAddress != null && !Arrays.equals(receiveAddress, EMPTY_BYTE_ARRAY) && receiveAddress.length > Constants.getMaxAddressByteLength()) {
-            if (logger.isWarnEnabled()) {
-                logger.warn("Receiver address to long: size: {}, tx {}", receiveAddress.length, Hex.toHexString(tx.getHash()));
-                logger.warn("Transaction Data: {}", tx);
-                logger.warn("Tx Included in the following block: {}", this.executionBlock);
-            }
+            logger.warn("Receiver address to long: size: {}, tx {}", receiveAddress.length, tx.getHash());
+            logger.warn("Transaction Data: {}", tx);
+            logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             return false;
         }
 
         if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
-            if (logger.isWarnEnabled()) {
-                logger.warn("Transaction {} signature not accepted: {}", Hex.toHexString(tx.getHash()), tx.getSignature());
-                logger.warn("Transaction Data: {}", tx);
-                logger.warn("Tx Included in the following block: {}", this.executionBlock);
-            }
+            logger.warn("Transaction {} signature not accepted: {}", tx.getHash(), tx.getSignature());
+            logger.warn("Transaction Data: {}", tx);
+            logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
-            panicProcessor.panic("invalidsignature", String.format("Transaction %s signature not accepted: %s", Hex.toHexString(tx.getHash()), tx.getSignature().toString()));
-            execError("Transaction signature not accepted: " + tx.getSignature());
+            panicProcessor.panic("invalidsignature",
+                                 String.format("Transaction %s signature not accepted: %s",
+                                               tx.getHash(), tx.getSignature()));
+            execError(String.format("Transaction signature not accepted: %s", tx.getSignature()));
 
             return false;
         }
@@ -217,19 +218,17 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.info("Execute transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
 
             track.increaseNonce(tx.getSender());
 
             BigInteger txGasLimit = toBI(tx.getGasLimit());
-            BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
+            Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
             track.addBalance(tx.getSender(), txGasCost.negate());
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, toBI(tx.getGasPrice()), txGasLimit);
-            }
+            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
         }
 
         if (tx.isContractCreation()) {
@@ -244,7 +243,7 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.info("Call transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         RskAddress targetAddress = tx.getReceiveAddress();
 
@@ -252,7 +251,7 @@ public class TransactionExecutor {
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        precompiledContract = PrecompiledContracts.getContractForAddress(config, new DataWord(targetAddress.getBytes()));
+        precompiledContract = precompiledContracts.getContractForAddress(new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -262,8 +261,8 @@ public class TransactionExecutor {
             if (!localCall && txGasLimit.compareTo(BigInteger.valueOf(requiredGas)) < 0) {
                 // no refund
                 // no endowment
-                execError("Out of Gas calling precompiled contract 0x" + targetAddress.toString() +
-                        ", required: " + (requiredGas + basicTxCost) + ", left: " + mEndGas);
+                execError(String.format("Out of Gas calling precompiled contract 0x%s, required: %d, left: %s ",
+                        targetAddress.toString(), (requiredGas + basicTxCost), mEndGas));
                 mEndGas = BigInteger.ZERO;
                 return;
             } else {
@@ -289,14 +288,15 @@ public class TransactionExecutor {
                 ProgramInvoke programInvoke =
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
-                this.vm = new VM(config);
-                this.program = new Program(config, code, programInvoke, tx);
+                this.vm = new VM(vmConfig, precompiledContracts);
+                BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+                this.program = new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
             }
         }
 
         if (result.getException() == null) {
-            BigInteger endowment = toBI(tx.getValue());
-            transfer(cacheTrack, tx.getSender(), targetAddress, endowment);
+            Coin endowment = tx.getValue();
+            cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
         }
     }
 
@@ -308,8 +308,9 @@ public class TransactionExecutor {
         } else {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
-            this.vm = new VM(config);
-            this.program = new Program(config, tx.getData(), programInvoke, tx);
+            this.vm = new VM(vmConfig, precompiledContracts);
+            BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+            this.program = new Program(vmConfig, precompiledContracts, configForBlock, tx.getData(), programInvoke, tx);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
@@ -319,8 +320,13 @@ public class TransactionExecutor {
             }
         }
 
-        BigInteger endowment = toBI(tx.getValue());
-        transfer(cacheTrack, tx.getSender(), newContractAddress, endowment);
+        Coin endowment = tx.getValue();
+        cacheTrack.transfer(tx.getSender(), newContractAddress, endowment);
+    }
+
+    private void execError(Throwable err) {
+        logger.warn("execError: ", err);
+        executionError = err.getMessage();
     }
 
     private void execError(String err) {
@@ -339,7 +345,7 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.info("Go transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Go transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         try {
 
@@ -397,7 +403,7 @@ public class TransactionExecutor {
 //            https://github.com/ethereum/cpp-ethereum/blob/develop/libethereum/Executive.cpp#L241
             cacheTrack.rollback();
             mEndGas = BigInteger.ZERO;
-            execError(e.getMessage());
+            execError(e);
 
         }
     }
@@ -426,7 +432,7 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.info("Finalize transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         cacheTrack.commit();
 
@@ -464,20 +470,20 @@ public class TransactionExecutor {
             }
         }
 
-        logger.info("Building transaction execution summary");
+        logger.trace("Building transaction execution summary");
 
         TransactionExecutionSummary summary = summaryBuilder.build();
 
         // Refund for gas leftover
         track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
-        logger.info("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
+        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
         // Transfer fees to miner
-        BigInteger summaryFee = summary.getFee();
+        Coin summaryFee = summary.getFee();
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
         if(config.isRemascEnabled()) {
-            logger.info("Adding fee to remasc contract account");
+            logger.trace("Adding fee to remasc contract account");
             track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
         } else {
             track.addBalance(coinbase, summaryFee);
@@ -486,7 +492,7 @@ public class TransactionExecutor {
         this.paidFees = summaryFee;
 
         if (result != null) {
-            logger.info("Processing result");
+            logger.trace("Processing result");
             logs = notRejectedLogInfos;
 
             result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
@@ -498,24 +504,24 @@ public class TransactionExecutor {
             listener.onTransactionExecuted(summary);
         }
 
-        logger.info("tx listener done");
+        logger.trace("tx listener done");
 
         if (config.vmTrace() && program != null && result != null) {
             ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
-            String txHash = toHexString(tx.getHash());
+            String txHash = tx.getHash().toHexString();
             try {
                 saveProgramTraceFile(config, txHash, trace);
                 if (listener != null) {
                     listener.onVMTraceCreated(txHash, trace);
                 }
             } catch (IOException e) {
-                String errorMessage = "Cannot write trace to file";
-                panicProcessor.panic("executor", errorMessage + ": " + e);
-                logger.error(errorMessage, e);
+                String errorMessage = String.format("Cannot write trace to file: %s", e.getMessage());
+                panicProcessor.panic("executor", errorMessage);
+                logger.error(errorMessage);
             }
         }
 
-        logger.info("tx finalization done");
+        logger.trace("tx finalization done");
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {
@@ -535,5 +541,5 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(mEndGas).longValue();
     }
 
-    public BigInteger getPaidFees() { return paidFees; }
+    public Coin getPaidFees() { return paidFees; }
 }

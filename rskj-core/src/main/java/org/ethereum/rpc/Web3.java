@@ -18,23 +18,21 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.rpc.Web3EthModule;
+import co.rsk.rpc.Web3TxPoolModule;
 import co.rsk.scoring.PeerScoringInformation;
-import org.ethereum.rpc.dto.CompilationResultDTO;
-import org.ethereum.rpc.dto.TransactionReceiptDTO;
-import org.ethereum.rpc.dto.TransactionResultDTO;
 
 import java.util.Arrays;
 import java.util.Map;
 
-public interface Web3 {
-
-    public class SyncingResult {
+public interface Web3 extends Web3TxPoolModule, Web3EthModule {
+    class SyncingResult {
         public String startingBlock;
         public String currentBlock;
         public String highestBlock;
     }
 
-    public class CallArguments {
+    class CallArguments {
         public String from;
         public String to;
         public String gas;
@@ -136,57 +134,15 @@ public interface Web3 {
     String net_version();
     String net_peerCount();
     boolean net_listening();
+    String[] net_peerList();
     String rsk_protocolVersion();
-    String eth_protocolVersion();
-    Object eth_syncing();
-    String eth_coinbase();
-    boolean eth_mining();
-    String eth_hashrate();
-    String eth_gasPrice();
-    String[] eth_accounts();
-    String eth_blockNumber();
-    String eth_getBalance(String address, String block) throws Exception;
-    String eth_getBalance(String address) throws Exception;
-    String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception;
-    String eth_getTransactionCount(String address, String blockId) throws Exception ;
-    String eth_getBlockTransactionCountByHash(String blockHash)throws Exception;
-    String eth_getBlockTransactionCountByNumber(String bnOrId)throws Exception;
-    String eth_getUncleCountByBlockHash(String blockHash)throws Exception;
-    String eth_getUncleCountByBlockNumber(String bnOrId)throws Exception;
-    String eth_getCode(String addr, String bnOrId)throws Exception;
-    String eth_sign(String addr,String data) throws Exception;
-    String eth_sendTransaction(CallArguments transactionArgs) throws Exception;
-    String eth_sendRawTransaction(String rawData) throws Exception;
-    String eth_call(CallArguments args, String bnOrId) throws Exception;
-    String eth_estimateGas(CallArguments args) throws Exception;
-    BlockResult eth_getBlockByHash(String blockHash,Boolean fullTransactionObjects) throws Exception;
-    BlockResult eth_getBlockByNumber(String bnOrId,Boolean fullTransactionObjects) throws Exception;
-    TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception;
-    TransactionResultDTO eth_getTransactionByBlockHashAndIndex(String blockHash,String index) throws Exception;
-    TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(String bnOrId,String index) throws Exception;
-    TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception;
-    BlockResult eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) throws Exception;
-    BlockResult eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) throws Exception;
-    String[] eth_getCompilers();
-    Map<String, CompilationResultDTO> eth_compileLLL(String contract);
-    Map<String, CompilationResultDTO> eth_compileSolidity(String contract) throws Exception;
-    Map<String, CompilationResultDTO> eth_compileSerpent(String contract);
-
-    String eth_newFilter(FilterRequest fr) throws Exception;
-    String eth_newBlockFilter();
-    String eth_newPendingTransactionFilter();
-    boolean eth_uninstallFilter(String id);
-    Object[] eth_getFilterChanges(String id);
-    Object[] eth_getFilterLogs(String id);
-    Object[] eth_getLogs(FilterRequest fr) throws Exception;
 
     // methods required by dev environments
     Map<String, String> rpc_modules();
 
     void db_putString();
     void db_getString();
-    boolean eth_submitWork(String nonce, String header, String mince);
-    boolean eth_submitHashrate(String hashrate, String id);
+
     void db_putHex();
     void db_getHex();
 
@@ -198,10 +154,6 @@ public interface Web3 {
     boolean personal_unlockAccount(String key, String passphrase, String duration);
     boolean personal_lockAccount(String key);
     String personal_dumpRawKey(String address) throws Exception;
-
-    String eth_netHashrate();
-    String[] net_peerList();
-    Map<String, Object> eth_bridgeState() throws Exception;
 
     String evm_snapshot();
     boolean evm_revert(String snapshotId);

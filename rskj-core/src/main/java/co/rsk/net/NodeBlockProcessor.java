@@ -18,13 +18,13 @@
 
 package co.rsk.net;
 
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
-import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -33,7 +33,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * NodeBlockProcessor processes blocks to add into a blockchain.
@@ -74,10 +73,26 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.blockSyncService = blockSyncService;
         this.syncConfiguration = syncConfiguration;
     }
+
     @Override
     @Nonnull
     public Blockchain getBlockchain() {
         return this.blockchain;
+    }
+
+    /**
+     * Detect a block number that is too advanced
+     * based on sync chunk size and maximum number of chuncks
+     *
+     * @param blockNumber   the block number to check
+     * @return  true if the block number is too advanced
+     */
+    @Override
+    public boolean isAdvancedBlock(long blockNumber) {
+        int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
+        long bestBlockNumber = this.getBestBlockNumber();
+
+        return blockNumber > bestBlockNumber + syncMaxDistance;
     }
 
     /**
@@ -90,13 +105,12 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processNewBlockHashesMessage(@Nonnull final MessageChannel sender, @Nonnull final NewBlockHashesMessage message) {
         message.getBlockIdentifiers().stream()
-                .map(bi -> new ByteArrayWrapper(bi.getHash()))
-                .collect(Collectors.toSet()) // Eliminate duplicates
-                .stream()
-                .filter(b -> !hasBlock(b.getData()))
+                .map(bi -> new Keccak256(bi.getHash()))
+                .distinct()
+                .filter(b -> !hasBlock(b.getBytes()))
                 .forEach(
                         b -> {
-                            sender.sendMessage(new GetBlockMessage(b.getData()));
+                            sender.sendMessage(new GetBlockMessage(b.getBytes()));
                             nodeInformation.addBlockToNode(b, sender.getPeerNodeID());
                         }
                 );
@@ -112,12 +126,12 @@ public class NodeBlockProcessor implements BlockProcessor {
                 .forEach(h -> processBlockHeader(sender, h));
     }
 
-    private boolean hasHeader(@Nonnull final byte[] hash) {
-        return hasBlock(hash) || store.hasHeader(hash);
+    private boolean hasHeader(Keccak256 hash) {
+        return hasBlock(hash.getBytes()) || store.hasHeader(hash);
     }
 
     private void processBlockHeader(@Nonnull final MessageChannel sender, @Nonnull final BlockHeader header) {
-        sender.sendMessage(new GetBlockMessage(header.getHash()));
+        sender.sendMessage(new GetBlockMessage(header.getHash().getBytes()));
 
         this.store.saveHeader(header);
     }
@@ -137,7 +151,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             return;
         }
 
-        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getPeerNodeID());
+        nodeInformation.addBlockToNode(new Keccak256(hash), sender.getPeerNodeID());
         sender.sendMessage(new BlockMessage(block));
     }
 
@@ -157,7 +171,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             return;
         }
 
-        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getPeerNodeID());
+        nodeInformation.addBlockToNode(new Keccak256(hash), sender.getPeerNodeID());
         sender.sendMessage(new BlockResponseMessage(requestId, block));
     }
 
@@ -171,6 +185,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBlockHeadersRequest(@Nonnull final MessageChannel sender, long requestId, @Nonnull final byte[] hash, int count) {
+        logger.trace("Processing headers request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
         Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
@@ -178,11 +193,10 @@ public class NodeBlockProcessor implements BlockProcessor {
         }
 
         List<BlockHeader> headers = new ArrayList<>();
-
         headers.add(block.getHeader());
 
         for (int k = 1; k < count; k++) {
-            block = blockSyncService.getBlockFromStoreOrBlockchain(block.getParentHash());
+            block = blockSyncService.getBlockFromStoreOrBlockchain(block.getParentHash().getBytes());
 
             if (block == null) {
                 break;
@@ -205,7 +219,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBodyRequest(@Nonnull final MessageChannel sender, long requestId, @Nonnull final byte[] hash) {
-        logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID().toString());
+        logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
@@ -225,7 +239,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBlockHashRequest(@Nonnull final MessageChannel sender, long requestId, long height) {
-        logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getPeerNodeID().toString());
+        logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getPeerNodeID());
         if (height == 0){
             return;
         }
@@ -237,7 +251,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             return;
         }
 
-        BlockHashResponseMessage responseMessage = new BlockHashResponseMessage(requestId, block.getHash());
+        BlockHashResponseMessage responseMessage = new BlockHashResponseMessage(requestId, block.getHash().getBytes());
         sender.sendMessage(responseMessage);
     }
 
@@ -248,7 +262,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processSkeletonRequest(@Nonnull final MessageChannel sender, long requestId, long startNumber) {
-        logger.trace("Processing block hash request {} {} {} from {}", requestId, startNumber, sender.getPeerNodeID());
+        logger.trace("Processing skeleton request {} {} from {}", requestId, startNumber, sender.getPeerNodeID());
         int skeletonStep = syncConfiguration.getChunkSize();
         Block blockStart = this.getBlockFromBlockchainStore(startNumber);
 
@@ -279,6 +293,11 @@ public class NodeBlockProcessor implements BlockProcessor {
         sender.sendMessage(responseMessage);
     }
 
+    @Override
+    public boolean canBeIgnoredForUnclesRewards(long blockNumber) {
+        return blockSyncService.canBeIgnoredForUnclesRewards(blockNumber);
+    }
+
     /**
      *
      * @param skeletonBlockNumber a block number that belongs to the skeleton
@@ -290,7 +309,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (blockchain.getBestBlock().getNumber() - skeletonBlockNumber < syncConfiguration.getChunkSize()){
             Block block = getBlockFromBlockchainStore(skeletonBlockNumber);
             if (block != null){
-                return block.getHash();
+                return block.getHash().getBytes();
             }
         }
 
@@ -298,7 +317,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (hash == null){
             Block block = getBlockFromBlockchainStore(skeletonBlockNumber);
             if (block != null){
-                hash = block.getHash();
+                hash = block.getHash().getBytes();
                 skeletonCache.put(skeletonBlockNumber, hash);
             }
         }
@@ -358,7 +377,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public BlockProcessResult processBlock(@Nullable final MessageChannel sender, @Nonnull final Block block) {
-        return blockSyncService.processBlock(sender, block, false);
+        return blockSyncService.processBlock(block, sender, false);
     }
 
     @Override

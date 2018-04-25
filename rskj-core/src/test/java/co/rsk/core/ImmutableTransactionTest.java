@@ -22,7 +22,7 @@ public class ImmutableTransactionTest {
             tx.sign(new byte[32]);
         }
         catch (ImmutableTransaction.ImmutableTransactionException ex) {
-            Assert.assertEquals("Immutable transaction: trying to sign", ex.getMessage());
+            Assert.assertTrue(ex.getMessage().contains("Immutable transaction: trying to sign"));
         }
     }
 
@@ -34,7 +34,7 @@ public class ImmutableTransactionTest {
             tx.setGasLimit(new byte[32]);
         }
         catch (ImmutableTransaction.ImmutableTransactionException ex) {
-            Assert.assertEquals("Immutable transaction: trying to set gas limit", ex.getMessage());
+            Assert.assertTrue(ex.getMessage().contains("Immutable transaction: trying to set gas limit"));
         }
     }
 

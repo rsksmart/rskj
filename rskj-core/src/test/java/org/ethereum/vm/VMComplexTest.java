@@ -19,19 +19,21 @@
 
 package org.ethereum.vm;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.config.VmConfig;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.AccountState;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.core.Repository;
-
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -39,6 +41,7 @@ import org.spongycastle.util.encoders.Hex;
 import java.math.BigInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Roman Mandeleil
@@ -48,6 +51,9 @@ import static org.junit.Assert.assertEquals;
 public class VMComplexTest {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final VmConfig vmConfig = config.getVmConfig();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
     @Ignore //TODO #POC9
     @Test // contract call recursive
@@ -82,8 +88,8 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        byte[] codeKey = HashUtil.keccak256(codeB);
+        AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -91,15 +97,16 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(callerAddrB);
-        repository.addBalance(callerAddrB, new BigInteger("100000000000000000000"));
+        final BigInteger value = new BigInteger("100000000000000000000");
+        repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
         repository.saveCode(contractAddrB, codeB);
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -111,7 +118,7 @@ public class VMComplexTest {
         System.out.println();
         System.out.println("============ Results ============");
 
-        BigInteger balance = repository.getBalance(callerAddrB);
+        Coin balance = repository.getBalance(callerAddrB);
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         System.out.println("*** Contract Balance: " + balance);
@@ -176,14 +183,15 @@ public class VMComplexTest {
         repository.saveCode(contractB_addr, codeB);
 
         repository.createAccount(caller_addr);
-        repository.addBalance(caller_addr, new BigInteger("100000000000000000000"));
+        final BigInteger value = new BigInteger("100000000000000000000");
+        repository.addBalance(caller_addr, new Coin(value));
 
 
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -265,13 +273,14 @@ public class VMComplexTest {
         repository.saveCode(contractB_addr, codeB);
 
         repository.createAccount(caller_addr);
-        repository.addBalance(caller_addr, new BigInteger("100000000000000000000"));
+        final BigInteger value = new BigInteger("100000000000000000000");
+        repository.addBalance(caller_addr, new Coin(value));
 
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -348,8 +357,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeA, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeA, pi);
 
         try {
             while (!program.isStopped())
@@ -408,20 +417,22 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
         repository.createAccount(contractA_addr);
         repository.saveCode(contractA_addr, codeA);
-        repository.addBalance(contractA_addr, BigInteger.valueOf(23));
+        repository.addBalance(contractA_addr, Coin.valueOf(23));
 
         repository.createAccount(contractB_addr);
         repository.saveCode(contractB_addr, codeB);
-        repository.addBalance(contractB_addr, new BigInteger("1000000000000000000"));
+        final BigInteger value = new BigInteger("1000000000000000000");
+        repository.addBalance(contractB_addr, new Coin(value));
 
         repository.createAccount(caller_addr);
-        repository.addBalance(caller_addr, new BigInteger("100000000000000000000"));
+        final BigInteger value1 = new BigInteger("100000000000000000000");
+        repository.addBalance(caller_addr, new Coin(value1));
 
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -468,8 +479,8 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        byte[] codeKey = HashUtil.keccak256(codeB);
+        AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -477,15 +488,16 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(callerAddrB);
-        repository.addBalance(callerAddrB, new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));
+        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+        repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
         repository.saveCode(contractAddrB, codeB);
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -497,7 +509,7 @@ public class VMComplexTest {
         System.out.println();
         System.out.println("============ Results ============");
 
-        BigInteger balance = repository.getBalance(callerAddrB);
+        Coin balance = repository.getBalance(callerAddrB);
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         System.out.println("*** Contract Balance: " + balance);
@@ -527,8 +539,8 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        byte[] codeKey = HashUtil.keccak256(codeB);
+        AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -536,15 +548,16 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(callerAddrB);
-        repository.addBalance(callerAddrB, new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));
+        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+        repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
         repository.saveCode(contractAddrB, codeB);
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -556,7 +569,7 @@ public class VMComplexTest {
         System.out.println();
         System.out.println("============ Results ============");
 
-        BigInteger balance = repository.getBalance(callerAddrB);
+        Coin balance = repository.getBalance(callerAddrB);
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         System.out.println("*** Contract Balance: " + balance);
@@ -586,8 +599,8 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        byte[] codeKey = HashUtil.keccak256(codeB);
+        AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -595,15 +608,16 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(callerAddrB);
-        repository.addBalance(callerAddrB, new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));
+        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+        repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
         repository.saveCode(contractAddrB, codeB);
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -615,7 +629,7 @@ public class VMComplexTest {
         System.out.println();
         System.out.println("============ Results ============");
 
-        BigInteger balance = repository.getBalance(callerAddrB);
+        Coin balance = repository.getBalance(callerAddrB);
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         System.out.println("*** Contract Balance: " + balance);
@@ -645,8 +659,8 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        byte[] codeKey = HashUtil.keccak256(codeB);
+        AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -654,15 +668,16 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(callerAddrB);
-        repository.addBalance(callerAddrB, new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));
+        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+        repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
         repository.saveCode(contractAddrB, codeB);
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -674,7 +689,7 @@ public class VMComplexTest {
         System.out.println();
         System.out.println("============ Results ============");
 
-        BigInteger balance = repository.getBalance(callerAddrB);
+        Coin balance = repository.getBalance(callerAddrB);
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         System.out.println("*** Contract Balance: " + balance);
@@ -683,5 +698,13 @@ public class VMComplexTest {
 
         repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
+    }
+
+    private VM getSubject() {
+        return new VM(vmConfig, precompiledContracts);
+    }
+
+    private Program getProgram(byte[] code, ProgramInvoke pi) {
+        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, pi, null);
     }
 }

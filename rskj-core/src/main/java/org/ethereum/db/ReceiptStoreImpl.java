@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -41,7 +42,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
 
     @Override
     public void add(byte[] blockHash, int transactionIndex, TransactionReceipt receipt){
-        byte[] txHash = receipt.getTransaction().getHash();
+        byte[] txHash = receipt.getTransaction().getHash().getBytes();
 
         TransactionInfo newTxInfo = new TransactionInfo(receipt, blockHash, transactionIndex);
 
@@ -57,7 +58,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
 
         byte[][] txsBytes = encodedTxs.toArray(new byte[encodedTxs.size()][]);
 
-        receiptsDS.put(receipt.getTransaction().getHash(), RLP.encodeList(txsBytes));
+        receiptsDS.put(receipt.getTransaction().getHash().getBytes(), RLP.encodeList(txsBytes));
     }
 
     @Override
@@ -80,14 +81,14 @@ public class ReceiptStoreImpl implements ReceiptStore {
         }
 
         Block block = null;
-        Map<ByteArrayWrapper, Block> tiblocks = new HashMap();
+        Map<Keccak256, Block> tiblocks = new HashMap();
 
         if (store != null) {
             block = store.getBlockByHash(blockHash);
 
             for (TransactionInfo ti : txsInfo) {
                 byte[] bhash = ti.getBlockHash();
-                ByteArrayWrapper key = new ByteArrayWrapper(bhash);
+                Keccak256 key = new Keccak256(bhash);
                 tiblocks.put(key, store.getBlockByHash(bhash));
             }
         }
@@ -97,7 +98,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
 
             for (TransactionInfo ti : txsInfo) {
                 byte[] hash = ti.getBlockHash();
-                ByteArrayWrapper key = new ByteArrayWrapper(hash);
+                Keccak256 key = new Keccak256(hash);
                 Block tiblock = tiblocks.get(key);
 
                 if (tiblock != null && block != null) {
@@ -136,13 +137,13 @@ public class ReceiptStoreImpl implements ReceiptStore {
                 return null;
             }
 
-            block = store.getBlockByHash(block.getParentHash());
+            block = store.getBlockByHash(block.getParentHash().getBytes());
 
             if (block == null) {
                 return null;
             }
 
-            blockHash = block.getHash();
+            blockHash = block.getHash().getBytes();
         }
     }
 
@@ -169,7 +170,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
                 continue;
             }
 
-            if (new ByteArrayWrapper(bhash).equals(new ByteArrayWrapper(mblock.getHash()))) {
+            if (Arrays.equals(bhash, mblock.getHash().getBytes())) {
                 return ti;
             }
         }

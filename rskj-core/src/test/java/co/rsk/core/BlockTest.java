@@ -21,6 +21,7 @@ package co.rsk.core;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
@@ -39,7 +40,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class BlockTest {
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     @Test
     public void testParseRemascTransaction() {
@@ -87,7 +88,7 @@ public class BlockTest {
                 txs,                            // transaction list
                 null,  // uncle list
                 BigInteger.TEN.toByteArray(),
-                BigInteger.ZERO
+                Coin.ZERO
         );
 
         Block parsedBlock = new Block(block.getEncoded());
@@ -98,7 +99,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHasSealesBlockHeader() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -107,8 +108,9 @@ public class BlockTest {
 
     @Test
     public void sealedBlockAddUncle() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
-        Block uncle = BlockGenerator.getInstance().createBlock(9, 0);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block = blockGenerator.createBlock(10, 0);
+        Block uncle = blockGenerator.createBlock(9, 0);
 
         block.seal();
 
@@ -123,7 +125,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockSetStateRoot() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -138,7 +140,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockSetExtraData() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -153,7 +155,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockSetTransactionList() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -168,7 +170,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockSetBitcoinMergedMiningCoinbaseTransaction() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -183,7 +185,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockSetBitcoinMergedMiningHeader() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -198,7 +200,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockSetBitcoinMergedMiningMerkleProof() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -213,7 +215,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetStateRoot() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -228,7 +230,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetReceiptsRoot() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -243,7 +245,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetTransactionsRoot() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -258,12 +260,12 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetDifficulty() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
         try {
-            block.getHeader().setDifficulty(new byte[32]);
+            block.getHeader().setDifficulty(new BlockDifficulty(new byte[32]));
             Assert.fail();
         }
         catch (SealedBlockHeaderException ex) {
@@ -273,7 +275,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetTimestamp() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -288,7 +290,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetNumber() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -303,7 +305,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetGasLimit() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -318,12 +320,12 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetPaidFees() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
         try {
-            block.getHeader().setPaidFees(BigInteger.TEN);
+            block.getHeader().setPaidFees(Coin.valueOf(10L));
             Assert.fail();
         }
         catch (SealedBlockHeaderException ex) {
@@ -333,7 +335,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetGasUsed() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -348,7 +350,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetLogsBloom() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -363,7 +365,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetExtraData() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -377,23 +379,8 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockHeaderSetMinimumGasPrice() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setMinimumGasPrice(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter minimum gas price", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockHeaderSetBitcoinMergedMiningHeader() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -408,7 +395,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetBitcoinMergedMiningMerkleProof() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -423,7 +410,7 @@ public class BlockTest {
 
     @Test
     public void sealedBlockHeaderSetBitcoinMergedMiningCoinbaseTransaction() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
@@ -438,8 +425,9 @@ public class BlockTest {
 
     @Test
     public void checkTxTrieShouldBeDifferentForDifferentBlock() {
-        Block block1 = BlockGenerator.getInstance().createBlock(10, 1);
-        Block block2 = BlockGenerator.getInstance().createBlock(10, 2);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createBlock(10, 1);
+        Block block2 = blockGenerator.createBlock(10, 2);
         String trieHash1 = Hex.toHexString(block1.getTxTrieRoot());
         String trieHash2 = Hex.toHexString(block2.getTxTrieRoot());
         Assert.assertNotEquals(trieHash1, trieHash2);
@@ -447,9 +435,9 @@ public class BlockTest {
 
     @Test
     public void checkTxTrieShouldBeEqualForHeaderAndBody() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 5);
-        String trieHash = Hex.toHexString(block.getTxTrieRoot());
-        String trieListHash = Hex.toHexString(Block.getTxTrie(block.getTransactionsList()).getHash());
+        Block block = new BlockGenerator().createBlock(10, 5);
+        Keccak256 trieHash = new Keccak256(block.getTxTrieRoot());
+        Keccak256 trieListHash = Block.getTxTrie(block.getTransactionsList()).getHash();
         Assert.assertEquals(trieHash, trieListHash);
     }
 }

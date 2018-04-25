@@ -18,8 +18,6 @@
 
 package co.rsk.peg;
 
-import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
@@ -27,16 +25,18 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.config.ConfigHelper;
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Genesis;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +67,12 @@ public class BridgeUtilsTest {
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
+    private TestSystemProperties config;
+
+    @Before
+    public void setupConfig(){
+        config = new TestSystemProperties();
+    }
 
     @Test
     public void testIsLock() throws Exception {
@@ -274,7 +280,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void getAddressFromEthTransaction() {
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         byte[] privKey = generatePrivKey();
         tx.sign(privKey);
 
@@ -286,7 +292,7 @@ public class BridgeUtilsTest {
 
     @Test(expected = Exception.class)
     public void getAddressFromEthNotSignTransaction() {
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
     }
 
@@ -324,27 +330,31 @@ public class BridgeUtilsTest {
 
     @Test
     public void isFreeBridgeTxTrue() {
-        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, new UnitTestBlockchainNetConfig(), BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxOtherContract() {
-        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, new UnitTestBlockchainNetConfig(), BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxFreeTxDisabled() {
-        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, new RegTestConfig() {
+        config.setBlockchainConfig(new RegTestConfig() {
             @Override
             public boolean areBridgeTxsFree() {
                 return false;
             }
-        }, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        });
+        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxNonFederatorKey() {
-        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, new UnitTestBlockchainNetConfig(), new BtcECKey().getPrivKeyBytes());
+        config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, new BtcECKey().getPrivKeyBytes());
     }
 
     @Test
@@ -396,14 +406,11 @@ public class BridgeUtilsTest {
     }
 
 
-    private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, BlockchainNetConfig config, byte[] privKeyBytes) {
-        BlockchainNetConfig blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(config);
-
-        Bridge bridge = new Bridge(ConfigHelper.CONFIG, PrecompiledContracts.BRIDGE_ADDR);
+    private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, byte[] privKeyBytes) {
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
-                ConfigHelper.CONFIG, 0,
+                config, 0,
                 1,
                 1,
                 destinationAddress,
@@ -411,10 +418,8 @@ public class BridgeUtilsTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(privKeyBytes);
 
-        Block rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(Genesis.getInstance(ConfigHelper.CONFIG));
+        Block rskExecutionBlock = new BlockGenerator().createChildBlock(Genesis.getInstance(config));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
-        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(ConfigHelper.CONFIG, rskTx, rskExecutionBlock.getNumber()));
-
-        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(config, rskTx, rskExecutionBlock.getNumber()));
     }
 }

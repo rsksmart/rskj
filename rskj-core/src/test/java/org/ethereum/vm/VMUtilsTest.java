@@ -1,6 +1,6 @@
 package org.ethereum.vm;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.Serializers;
 import org.junit.Assert;
@@ -18,13 +18,14 @@ import static org.hamcrest.core.Is.is;
 
 public class VMUtilsTest {
 
+    private final TestSystemProperties config = new TestSystemProperties();
     @Rule
     public TemporaryFolder tempRule = new TemporaryFolder();
 
     @Test
     public void savePlainProgramTraceFile() throws Exception {
         Path traceFilePath = tempRule.newFolder().toPath();
-        ProgramTrace mockTrace = new ProgramTrace(ConfigHelper.CONFIG);
+        ProgramTrace mockTrace = new ProgramTrace(config.getVmConfig(), null);
         String mockTxHash = "1234";
 
         VMUtils.saveProgramTraceFile(
@@ -41,7 +42,7 @@ public class VMUtilsTest {
     @Test
     public void saveZippedProgramTraceFile() throws Exception {
         Path traceFilePath = tempRule.newFolder().toPath();
-        ProgramTrace mockTrace = new ProgramTrace(ConfigHelper.CONFIG);
+        ProgramTrace mockTrace = new ProgramTrace(config.getVmConfig(), null);
         String mockTxHash = "1234";
 
         VMUtils.saveProgramTraceFile(

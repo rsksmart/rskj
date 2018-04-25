@@ -70,7 +70,7 @@ public class CommonConfig {
     }
 
     @Bean
-    public List<Transaction> pendingStateTransactions() {
+    public List<Transaction> transactionPoolTransactions() {
         return Collections.synchronizedList(new ArrayList<Transaction>());
     }
 

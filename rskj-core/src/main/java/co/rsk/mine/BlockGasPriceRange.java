@@ -18,6 +18,8 @@
 
 package co.rsk.mine;
 
+import co.rsk.core.Coin;
+
 import java.math.BigInteger;
 
 /**
@@ -27,25 +29,25 @@ public class BlockGasPriceRange {
 
     private static final BigInteger VARIATION_PERCENTAGE_RANGE = BigInteger.ONE;
 
-    private final BigInteger upperLimit;
-    private final BigInteger lowerLimit;
+    private final Coin upperLimit;
+    private final Coin lowerLimit;
 
-    public BlockGasPriceRange(BigInteger center) {
-        BigInteger mgpDelta = center.multiply(VARIATION_PERCENTAGE_RANGE).divide(BigInteger.valueOf(100));
-        mgpDelta = (BigInteger.ZERO.compareTo(mgpDelta) == 0) ? BigInteger.ONE : mgpDelta;
+    public BlockGasPriceRange(Coin center) {
+        Coin mgpDelta = center.multiply(VARIATION_PERCENTAGE_RANGE).divide(BigInteger.valueOf(100));
+        mgpDelta = mgpDelta.equals(Coin.ZERO) ? Coin.valueOf(1L) : mgpDelta;
         this.upperLimit = center.add(mgpDelta);
         this.lowerLimit = center.subtract(mgpDelta);
     }
 
-    public boolean inRange(BigInteger mgp) {
-        return mgp.compareTo(upperLimit) <= 0 &&  mgp.compareTo(lowerLimit) >= 0;
+    public boolean inRange(Coin mgp) {
+        return mgp.compareTo(upperLimit) <= 0 && mgp.compareTo(lowerLimit) >= 0;
     }
 
-    public BigInteger getUpperLimit() {
+    public Coin getUpperLimit() {
         return upperLimit;
     }
 
-    public BigInteger getLowerLimit() {
+    public Coin getLowerLimit() {
         return lowerLimit;
     }
 }

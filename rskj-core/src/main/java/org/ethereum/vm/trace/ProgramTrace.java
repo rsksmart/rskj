@@ -19,7 +19,7 @@
 
 package org.ethereum.vm.trace;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
@@ -52,11 +52,7 @@ public class ProgramTrace {
     private int storageSize;
     private String contractAddress;
 
-    public ProgramTrace(RskSystemProperties config) {
-        this(config, null);
-    }
-
-    public ProgramTrace(RskSystemProperties config, ProgramInvoke programInvoke) {
+    public ProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
         if (config.vmTrace() && programInvoke != null) {
             contractAddress = Hex.toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
 
@@ -96,8 +92,8 @@ public class ProgramTrace {
             repository = ((RepositoryTrack) repository).getOriginRepository();
         }
 
-        RskAddress address = new RskAddress(programInvoke.getOwnerAddress());
-        return repository.getContractDetails(address);
+        RskAddress addr = new RskAddress(programInvoke.getOwnerAddress());
+        return repository.getContractDetails(addr);
     }
 
     public List<Op> getOps() {

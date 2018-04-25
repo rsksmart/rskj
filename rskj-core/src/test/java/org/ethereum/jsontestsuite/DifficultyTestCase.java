@@ -20,6 +20,7 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.BlockDifficulty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.ethereum.core.BlockHeader;
 
@@ -102,14 +103,18 @@ public class DifficultyTestCase {
     public BlockHeader getParent() {
         return new BlockHeader(
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, RskAddress.nullAddress().getBytes(), EMPTY_BYTE_ARRAY,
-                org.ethereum.json.Utils.parseNumericData(parentDifficulty),
+                parseDifficulty(parentDifficulty).toByteArray(),
                 org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1, new byte[] {0}, 0,
                 org.ethereum.json.Utils.parseLong(parentTimestamp),
                 EMPTY_BYTE_ARRAY, null, 0);
     }
 
-    public BigInteger getExpectedDifficulty() {
-        return new BigInteger(1, org.ethereum.json.Utils.parseNumericData(currentDifficulty));
+    public BlockDifficulty getExpectedDifficulty() {
+        return new BlockDifficulty(parseDifficulty(currentDifficulty));
+    }
+
+    public static BigInteger parseDifficulty(String difficulty) {
+        return new BigInteger(1, org.ethereum.json.Utils.parseNumericData(difficulty));
     }
 
     @Override

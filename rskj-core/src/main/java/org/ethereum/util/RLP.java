@@ -19,7 +19,9 @@
 
 package org.ethereum.util;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.util.ByteBufferUtil;
 import co.rsk.util.RLPElementType;
 import co.rsk.util.RLPElementView;
@@ -428,6 +430,15 @@ public class RLP {
         }
     }
 
+    @Nonnull
+    public static Coin parseCoin(@Nullable byte[] bytes) {
+        if (bytes == null || isAllZeroes(bytes)) {
+            return Coin.ZERO;
+        } else {
+            return new Coin(bytes);
+        }
+    }
+
     /**
      * Get exactly one message payload
      */
@@ -563,9 +574,20 @@ public class RLP {
         return encodeElement(addr.getBytes());
     }
 
-    public static byte[] encodeElement(byte[] srcData) {
+    public static byte[] encodeCoin(@Nullable Coin coin) {
+        if (coin == null) {
+            return encodeBigInteger(BigInteger.ZERO);
+        }
 
-        if (isNullOrZeroArray(srcData)) {
+        return encodeBigInteger(coin.asBigInteger());
+    }
+
+    public static byte[] encodeBlockDifficulty(BlockDifficulty difficulty) {
+        return encodeElement(difficulty.getBytes());
+    }
+
+    public static byte[] encodeElement(@Nullable byte[] srcData) {
+        if (srcData == null || srcData.length == 0) {
             return new byte[]{(byte) OFFSET_SHORT_ITEM};
         } else if (isSingleZero(srcData)) {
             return srcData;
@@ -601,31 +623,6 @@ public class RLP {
             return data;
         }
     }
-
-    public static int calcElementPrefixSize(byte[] srcData) {
-
-        if (isNullOrZeroArray(srcData)) {
-            return 0;
-        } else if (isSingleZero(srcData)) {
-            return 0;
-        } else if (srcData.length == 1 && (srcData[0] & 0xFF) < 0x80) {
-            return 0;
-        } else if (srcData.length < SIZE_THRESHOLD) {
-            return 1;
-        } else {
-            // length of length = BX
-            // prefix = [BX, [length]]
-            int tmpLength = srcData.length;
-            byte byteNum = 0;
-            while (tmpLength != 0) {
-                ++byteNum;
-                tmpLength = tmpLength >> 8;
-            }
-
-            return 1 + byteNum;
-        }
-    }
-
 
     public static byte[] encodeListHeader(int size) {
 

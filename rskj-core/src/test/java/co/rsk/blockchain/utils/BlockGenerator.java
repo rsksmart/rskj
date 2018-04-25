@@ -18,8 +18,11 @@
 
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
@@ -32,8 +35,6 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.BIUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -48,30 +49,19 @@ import java.util.Map;
 
 import static org.ethereum.core.Genesis.getZeroHash;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.wrap;
 
 /**
  * Created by ajlopez on 5/10/2016.
  */
 public class BlockGenerator {
-    private static final BlockGenerator INSTANCE = new BlockGenerator();
 
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private static final Block[] blockCache = new Block[5];
 
-    /**
-     * @deprecated
-     * Using this singleton instance is a bad idea because {@link #count} will be shared by all tests.
-     * This dependency makes tests flaky and prevents us from running tests in parallel or unordered.
-     */
-    public static BlockGenerator getInstance() {
-        return INSTANCE;
-    }
-
-    private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(ConfigHelper.CONFIG);
+    private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(new TestSystemProperties());
     private int count = 0;
 
     public Genesis getGenesisBlock() {
@@ -109,7 +99,7 @@ public class BlockGenerator {
                 bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray());
 
         if (preMineMap != null) {
-            Map<ByteArrayWrapper, InitialAddressState> preMineMap2 = generatePreMine(preMineMap);
+            Map<RskAddress, InitialAddressState> preMineMap2 = generatePreMine(preMineMap);
             genesis.setPremine(preMineMap2);
 
             byte[] rootHash = generateRootHash(preMineMap2);
@@ -119,21 +109,22 @@ public class BlockGenerator {
         return genesis;
     }
 
-    private byte[] generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
+    private byte[] generateRootHash(Map<RskAddress, InitialAddressState> premine){
         Trie state = new TrieImpl(null, true);
 
-        for (ByteArrayWrapper key : premine.keySet())
-            state = state.put(key.getData(), premine.get(key).getAccountState().getEncoded());
+        for (RskAddress addr : premine.keySet()) {
+            state = state.put(addr.getBytes(), premine.get(addr).getAccountState().getEncoded());
+        }
 
-        return state.getHash();
+        return state.getHash().getBytes();
     }
 
-    private Map<ByteArrayWrapper, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
-        Map<ByteArrayWrapper, InitialAddressState> premine = new HashMap<>();
+    private Map<RskAddress, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
+        Map<RskAddress, InitialAddressState> premine = new HashMap<>();
 
         for (byte[] key : alloc.keySet()) {
-            AccountState acctState = new AccountState(BigInteger.valueOf(0), alloc.get(key));
-            premine.put(wrap(key), new InitialAddressState(acctState, null));
+            AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(alloc.get(key)));
+            premine.put(new RskAddress(key), new InitialAddressState(acctState, null));
         }
 
         return premine;
@@ -166,10 +157,10 @@ public class BlockGenerator {
 
     public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
         List<Transaction> txs = new ArrayList<>();
-        byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 unclesListHash, // uncle hash
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
@@ -187,7 +178,7 @@ public class BlockGenerator {
                 txs,       // transaction list
                 uncles,        // uncle list
                 null,
-                BigInteger.valueOf(fees)
+                Coin.valueOf(fees)
         );
 //        return createChildBlock(parent, 0);
     }
@@ -204,11 +195,11 @@ public class BlockGenerator {
         }
 
         return new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 coinbase, // coinbase
                 logBloom.getData(), // logs bloom
-                parent.getDifficulty(), // difficulty
+                parent.getDifficulty().getBytes(), // difficulty
                 parent.getNumber() + 1,
                 parent.getGasLimit(),
                 parent.getGasUsed(),
@@ -222,12 +213,12 @@ public class BlockGenerator {
                 txs,       // transaction list
                 null,        // uncle list
                 null,
-                BigInteger.ZERO
+                Coin.ZERO
         );
     }
 
     public Block createChildBlock(Block parent, int ntxs) {
-        return createChildBlock(parent, ntxs, BIUtil.toBI(parent.getDifficulty()).longValue());
+        return createChildBlock(parent, ntxs, parent.getDifficulty().asBigInteger().longValue());
     }
 
     public Block createChildBlock(Block parent, int ntxs, long difficulty) {
@@ -243,7 +234,7 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs) {
-        return createChildBlock(parent, txs, new ArrayList<>(), BIUtil.toBI(parent.getDifficulty()).longValue(), null);
+        return createChildBlock(parent, txs, new ArrayList<>(), parent.getDifficulty().asBigInteger().longValue(), null);
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
@@ -261,9 +252,9 @@ public class BlockGenerator {
             uncles = new ArrayList<>();
         }
 
-        byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        BlockHeader newHeader = new BlockHeader(parent.getHash(),
+        BlockHeader newHeader = new BlockHeader(parent.getHash().getBytes(),
                 unclesListHash,
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
@@ -281,13 +272,13 @@ public class BlockGenerator {
         );
 
         if (difficulty == 0) {
-            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()).toByteArray());
+            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()));
         }
         else {
-            newHeader.setDifficulty(BigInteger.valueOf(difficulty).toByteArray());
+            newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
+        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
@@ -306,16 +297,15 @@ public class BlockGenerator {
             txs.add(new SimpleRskTransaction(null));
         }
 
-        byte[] parentMGP = (parent.getMinimumGasPrice() != null) ? parent.getMinimumGasPrice() : BigInteger.valueOf(10L).toByteArray();
-        BigInteger minimumGasPrice = new MinimumGasPriceCalculator().calculate(new BigInteger(1, parentMGP)
-                , BigInteger.valueOf(100L));
+        Coin previousMGP = parent.getMinimumGasPrice() != null ? parent.getMinimumGasPrice() : Coin.valueOf(10L);
+        Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
 
         return new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
-                parent.getDifficulty(), // difficulty
+                parent.getDifficulty().getBytes(), // difficulty
                 number,
                 parent.getGasLimit(),
                 parent.getGasUsed(),
@@ -328,8 +318,8 @@ public class BlockGenerator {
                 EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
-                minimumGasPrice.toByteArray(),
-                BigInteger.ZERO
+                minimumGasPrice.getBytes(),
+                Coin.ZERO
         );
     }
 
@@ -343,11 +333,11 @@ public class BlockGenerator {
         }
 
         return new SimpleBlock(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
-                parent.getDifficulty(), // difficulty
+                parent.getDifficulty().getBytes(), // difficulty
                 parent.getNumber() + 1,
                 parent.getGasLimit(),
                 parent.getGasUsed(),
@@ -366,7 +356,7 @@ public class BlockGenerator {
     public Block createFallbackMinedChildBlockWithTimeStamp(Block parent, byte[] difficulty, long timeStamp, boolean goodSig) {
         List<Transaction> txs = new ArrayList<>();
         Block block = new Block(
-                parent.getHash(), // parent hash
+                parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
@@ -384,7 +374,7 @@ public class BlockGenerator {
                 txs,       // transaction list
                 null,        // uncle list
                 null,
-                BigInteger.ZERO
+                Coin.ZERO
         );
 
         ECKey fallbackMiningKey0 = ECKey.fromPrivate(BigInteger.TEN);

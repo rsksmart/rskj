@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.RskAddress;
 import com.google.common.collect.Lists;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
@@ -38,8 +39,7 @@ public class BlockStoreTest {
     @Test
     public void getUnknownBlockAsNull() {
         BlockStore store = new BlockStore();
-
-        Assert.assertNull(store.getBlockByHash(new byte[] { 0x01, 0x20 }));
+        Assert.assertNull(store.getBlockByHash(TestUtils.randomBytes(32)));
     }
 
     @Test
@@ -53,11 +53,11 @@ public class BlockStoreTest {
     @Test
     public void saveAndGetBlockByHash() {
         BlockStore store = new BlockStore();
-        Block block = BlockGenerator.getInstance().getGenesisBlock();
+        Block block = new BlockGenerator().getGenesisBlock();
 
         store.saveBlock(block);
 
-        Assert.assertSame(block, store.getBlockByHash(block.getHash()));
+        Assert.assertSame(block, store.getBlockByHash(block.getHash().getBytes()));
         Assert.assertEquals(0, store.minimalHeight());
         Assert.assertEquals(0, store.maximumHeight());
     }
@@ -65,7 +65,7 @@ public class BlockStoreTest {
     @Test
     public void saveRemoveAndGetBlockByHash() {
         BlockStore store = new BlockStore();
-        Block block = BlockGenerator.getInstance().getBlock(1);
+        Block block = new BlockGenerator().getBlock(1);
 
         store.saveBlock(block);
 
@@ -74,7 +74,7 @@ public class BlockStoreTest {
 
         store.removeBlock(block);
 
-        Assert.assertNull(store.getBlockByHash(block.getHash()));
+        Assert.assertNull(store.getBlockByHash(block.getHash().getBytes()));
         Assert.assertTrue(store.getBlocksByNumber(block.getNumber()).isEmpty());
         Assert.assertTrue(store.getBlocksByParentHash(block.getParentHash()).isEmpty());
         Assert.assertEquals(0, store.size());
@@ -83,10 +83,11 @@ public class BlockStoreTest {
     @Test
     public void saveRemoveAndGetBlockByHashWithUncles() {
         BlockStore store = new BlockStore();
-        Block parent = BlockGenerator.getInstance().getGenesisBlock();
-        Block son1 = BlockGenerator.getInstance().createChildBlock(parent);
-        Block son2 = BlockGenerator.getInstance().createChildBlock(parent);
-        Block grandson = BlockGenerator.getInstance().createChildBlock(son1, new ArrayList<>(), Lists.newArrayList(son2.getHeader()), 1, BigInteger.ONE);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block parent = blockGenerator.getGenesisBlock();
+        Block son1 = blockGenerator.createChildBlock(parent);
+        Block son2 = blockGenerator.createChildBlock(parent);
+        Block grandson = blockGenerator.createChildBlock(son1, new ArrayList<>(), Lists.newArrayList(son2.getHeader()), 1, BigInteger.ONE);
 
         store.saveBlock(son1);
         store.saveBlock(son2);
@@ -97,7 +98,7 @@ public class BlockStoreTest {
 
         store.removeBlock(grandson);
 
-        Assert.assertNull(store.getBlockByHash(grandson.getHash()));
+        Assert.assertNull(store.getBlockByHash(grandson.getHash().getBytes()));
         Assert.assertTrue(store.getBlocksByNumber(grandson.getNumber()).isEmpty());
         Assert.assertTrue(store.getBlocksByParentHash(son1.getHash()).isEmpty());
         Assert.assertTrue(store.getBlocksByParentHash(son2.getHash()).isEmpty());
@@ -107,9 +108,10 @@ public class BlockStoreTest {
     @Test
     public void saveTwoBlocksRemoveOne() {
         BlockStore store = new BlockStore();
-        Block parent = BlockGenerator.getInstance().getGenesisBlock();
-        Block adam = BlockGenerator.getInstance().createChildBlock(parent);
-        Block eve = BlockGenerator.getInstance().createChildBlock(adam);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block parent = blockGenerator.getGenesisBlock();
+        Block adam = blockGenerator.createChildBlock(parent);
+        Block eve = blockGenerator.createChildBlock(adam);
 
         store.saveBlock(adam);
         store.saveBlock(eve);
@@ -119,7 +121,7 @@ public class BlockStoreTest {
 
         store.removeBlock(adam);
 
-        Assert.assertNull(store.getBlockByHash(adam.getHash()));
+        Assert.assertNull(store.getBlockByHash(adam.getHash().getBytes()));
         Assert.assertEquals(1, store.size());
         Assert.assertEquals(2, store.minimalHeight());
         Assert.assertEquals(2, store.maximumHeight());
@@ -129,27 +131,28 @@ public class BlockStoreTest {
         Assert.assertNotNull(childrenByNumber);
         Assert.assertEquals(1, childrenByNumber.size());
 
-        Assert.assertArrayEquals(eve.getHash(), childrenByNumber.get(0).getHash());
+        Assert.assertEquals(eve.getHash(), childrenByNumber.get(0).getHash());
 
         List<Block> childrenByParent = store.getBlocksByParentHash(adam.getHash());
 
         Assert.assertNotNull(childrenByParent);
         Assert.assertEquals(1, childrenByParent.size());
 
-        Assert.assertArrayEquals(eve.getHash(), childrenByParent.get(0).getHash());
+        Assert.assertEquals(eve.getHash(), childrenByParent.get(0).getHash());
 
-        Block daugther = store.getBlockByHash(eve.getHash());
+        Block daugther = store.getBlockByHash(eve.getHash().getBytes());
 
         Assert.assertNotNull(daugther);
-        Assert.assertArrayEquals(eve.getHash(), daugther.getHash());
+        Assert.assertEquals(eve.getHash(), daugther.getHash());
     }
 
     @Test
     public void saveAndGetBlocksByNumber() {
         BlockStore store = new BlockStore();
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(genesis);
 
         store.saveBlock(block1);
         store.saveBlock(block2);
@@ -187,9 +190,10 @@ public class BlockStoreTest {
     @Test
     public void saveAndGetBlocksByParentHash() {
         BlockStore store = new BlockStore();
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(genesis);
 
         store.saveBlock(block1);
         store.saveBlock(block2);

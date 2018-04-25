@@ -2,6 +2,7 @@ package org.ethereum.config.blockchain;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockHeader;
 
@@ -50,7 +51,7 @@ public class MainNetAfterBridgeSyncConfig extends GenesisConfig {
 
 
     @Override
-    public BigInteger calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
+    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
         // If more than 10 minutes, reset to original difficulty 0x00100000
         if (curBlock.getTimestamp() >= parent.getTimestamp() + 600) {
             return getConstants().getMinimumDifficulty();

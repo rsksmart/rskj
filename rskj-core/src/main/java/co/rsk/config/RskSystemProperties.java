@@ -38,8 +38,6 @@ import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,10 +63,15 @@ public class RskSystemProperties extends SystemProperties {
     private MessageRecorder messageRecorder;
 
     private List<ModuleDescription> moduleDescriptions;
+    private VmConfig vmConfig;
+
+    public RskSystemProperties(ConfigLoader loader) {
+        super(loader);
+    }
 
     @Nullable
     public RskAddress coinbaseAddress() {
-        if (!minerServerEnabled()) {
+        if (!isMinerServerEnabled()) {
             return RskAddress.nullAddress();
         }
 
@@ -88,7 +91,7 @@ public class RskSystemProperties extends SystemProperties {
 
     @Nullable
     public Account localCoinbaseAccount() {
-        if (!minerServerEnabled()) {
+        if (!isMinerServerEnabled()) {
             return null;
         }
 
@@ -107,15 +110,15 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         String coinbaseSecret = configFromFiles.getString(MINER_COINBASE_SECRET_CONFIG);
-        return new Account(ECKey.fromPrivate(HashUtil.sha3(coinbaseSecret.getBytes(StandardCharsets.UTF_8))));
+        return new Account(ECKey.fromPrivate(HashUtil.keccak256(coinbaseSecret.getBytes(StandardCharsets.UTF_8))));
     }
 
-    public boolean minerClientEnabled() {
+    public boolean isMinerClientEnabled() {
         return configFromFiles.hasPath("miner.client.enabled") ?
                 configFromFiles.getBoolean("miner.client.enabled") : false;
     }
 
-    public boolean minerServerEnabled() {
+    public boolean isMinerServerEnabled() {
         return configFromFiles.hasPath("miner.server.enabled") ?
                 configFromFiles.getBoolean("miner.server.enabled") : false;
     }
@@ -157,31 +160,6 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean waitForSync() {
         return configFromFiles.hasPath("sync.waitForSync") && configFromFiles.getBoolean("sync.waitForSync");
-    }
-
-    // TODO review added method
-    public boolean isRpcEnabled() {
-        return configFromFiles.hasPath("rpc.enabled") ?
-                configFromFiles.getBoolean("rpc.enabled") : false;
-    }
-
-    // TODO review added method
-    public int rpcPort() {
-        return configFromFiles.hasPath("rpc.port") ?
-                configFromFiles.getInt("rpc.port") : 4444;
-    }
-
-    public InetAddress rpcHost() {
-        if (!configFromFiles.hasPath("rpc.host")) {
-            return InetAddress.getLoopbackAddress();
-        }
-        String host = configFromFiles.getString("rpc.host");
-        try {
-            return InetAddress.getByName(host);
-        } catch (UnknownHostException e) {
-            logger.warn("Unable to bind to {}. Using loopback instead", e);
-            return InetAddress.getLoopbackAddress();
-        }
     }
 
     public boolean isWalletEnabled() {
@@ -414,5 +392,13 @@ public class RskSystemProperties extends SystemProperties {
     // its fixed, cannot be set by config file
     public int getChunkSize() {
         return CHUNK_SIZE;
+    }
+
+    public VmConfig getVmConfig() {
+        if (vmConfig == null) {
+            vmConfig = new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle());
+        }
+
+        return vmConfig;
     }
 }

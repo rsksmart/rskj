@@ -18,21 +18,15 @@
 
 package org.ethereum.rpc.Simples;
 
-import org.ethereum.core.Block;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.facade.Blockchain;
+import co.rsk.core.Coin;
+import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
-import org.ethereum.manager.WorldManager;
-import org.ethereum.rpc.Web3;
-import org.ethereum.vm.program.ProgramResult;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.List;
 import java.util.concurrent.Future;
 
 /**
@@ -41,40 +35,34 @@ import java.util.concurrent.Future;
 public class SimpleEthereum implements Ethereum {
 
     public Transaction tx;
-    public WorldManager worldManager;
     public Repository repository;
+    public Blockchain blockchain;
+    private EthereumListener listener;
 
     public SimpleEthereum() {
         this(null);
     }
 
-    public SimpleEthereum(SimpleWorldManager worldManager) {
-        this.worldManager = worldManager;
-    }
-
-    @Override
-    public Blockchain getBlockchain() {
-        return null;
+    public SimpleEthereum(Blockchain blockchain) {
+        this.blockchain = blockchain;
     }
 
     @Override
     public void addListener(EthereumListener listener) {
-        this.worldManager.addListener(listener);
+        if (this.listener == null) {
+            this.listener = new CompositeEthereumListener();
+        }
+        ((CompositeEthereumListener) this.listener).addListener(listener);
     }
 
     @Override
     public void removeListener(EthereumListener listener) {
-        this.worldManager.removeListener(listener);
-    }
-
-    @Override
-    public void close() {
 
     }
 
     @Override
     public ImportResult addNewMinedBlock(final @Nonnull Block block) {
-        final ImportResult importResult = worldManager.getBlockchain().tryToConnect(block);
+        final ImportResult importResult = blockchain.tryToConnect(block);
 
         return importResult;
     }
@@ -95,22 +83,7 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public void init() {
-
-    }
-
-    @Override
-    public List<Transaction> getWireTransactions() {
-        return null;
-    }
-
-    @Override
-    public long getGasPrice() {
+    public Coin getGasPrice() {
         return new GasPriceTracker().getGasPrice();
-    }
-
-    @Override
-    public ProgramResult callConstant(Web3.CallArguments args) {
-        return null;
     }
 }

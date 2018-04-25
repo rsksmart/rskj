@@ -19,11 +19,13 @@
 
 package org.ethereum.config;
 
+import co.rsk.config.ConfigLoader;
 import co.rsk.config.GasLimitConfig;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.NetworkStateExporter;
+import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.metrics.HashRateCalculatorMining;
@@ -92,9 +94,7 @@ public class DefaultConfig {
         KeyValueDataSource blocksDB = new LevelDbDataSource(config, "blocks");
         blocksDB.init();
 
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
-
-        indexedBlockStore.init(indexMap, blocksDB, indexDB);
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(indexMap, blocksDB, indexDB);
 
         return indexedBlockStore;
     }
@@ -108,8 +108,8 @@ public class DefaultConfig {
 
     @Bean
     public HashRateCalculator hashRateCalculator(RskSystemProperties rskSystemProperties, BlockStore blockStore, MiningConfig miningConfig) {
-        RskCustomCache<ByteArrayWrapper, BlockHeaderElement> cache = new RskCustomCache<>(60000L);
-        if (!rskSystemProperties.minerServerEnabled()) {
+        RskCustomCache<Keccak256, BlockHeaderElement> cache = new RskCustomCache<>(60000L);
+        if (!rskSystemProperties.isMinerServerEnabled()) {
             return new HashRateCalculatorNonMining(blockStore, cache);
         }
 
@@ -135,7 +135,7 @@ public class DefaultConfig {
 
     @Bean
     public RskSystemProperties rskSystemProperties() {
-        return new RskSystemProperties();
+        return new RskSystemProperties(new ConfigLoader());
     }
 
     @Bean
@@ -208,7 +208,7 @@ public class DefaultConfig {
     @Bean
     public PeerExplorer peerExplorer(RskSystemProperties rskConfig) {
         ECKey key = rskConfig.getMyKey();
-        Node localNode = new Node(key.getNodeId(), rskConfig.getExternalIp(), rskConfig.listenPort());
+        Node localNode = new Node(key.getNodeId(), rskConfig.getPublicIp(), rskConfig.getPeerPort());
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
         long msgTimeOut = rskConfig.peerDiscoveryMessageTimeOut();
         long refreshPeriod = rskConfig.peerDiscoveryRefreshPeriod();
@@ -225,6 +225,6 @@ public class DefaultConfig {
 
     @Bean
     public UDPServer udpServer(PeerExplorer peerExplorer, RskSystemProperties rskConfig) {
-        return new UDPServer(rskConfig.getPeerDiscoveryBindAddress(), rskConfig.listenPort(), peerExplorer);
+        return new UDPServer(rskConfig.getBindAddress().getHostAddress(), rskConfig.getPeerPort(), peerExplorer);
     }
 }

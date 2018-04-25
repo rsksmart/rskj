@@ -34,7 +34,7 @@ public class Value {
 
     private Object value;
     private byte[] rlp;
-    private byte[] sha3;
+    private byte[] keccak256;
 
     public static Value fromRlpEncoded(byte[] data) {
         if (data != null && data.length != 0) {
@@ -157,10 +157,10 @@ public class Value {
     }
 
     public byte[] hash(){
-        if (sha3 == null) {
-            sha3 = HashUtil.sha3(encode());
+        if (keccak256 == null) {
+            keccak256 = HashUtil.keccak256(encode());
         }
-        return sha3;
+        return keccak256;
     }
 
     /* *****************

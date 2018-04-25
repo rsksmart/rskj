@@ -19,25 +19,22 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.blockchain.GenesisConfig;
-import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.manager.AdminInfo;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -47,26 +44,17 @@ import java.util.HashMap;
  */
 public class ImportLightTest {
 
-    @BeforeClass
-    public static void setup() {
-        ConfigHelper.CONFIG.setBlockchainConfig(new GenesisConfig(new GenesisConfig.GenesisConstants() {
+    public static BlockChainImpl createBlockchain(Genesis genesis) {
+        TestSystemProperties config = new TestSystemProperties();
+        config.setBlockchainConfig(new GenesisConfig(new GenesisConfig.GenesisConstants() {
             @Override
-            public BigInteger getMinimumDifficulty() {
-                return BigInteger.ONE;
+            public BlockDifficulty getMinimumDifficulty() {
+                return new BlockDifficulty(BigInteger.ONE);
             }
         }));
-    }
+        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
-    @AfterClass
-    public static void cleanup() {
-        ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
-    }
-
-    public static BlockChainImpl createBlockchain(Genesis genesis) {
-        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
-        blockStore.init(new HashMap<>(), new HashMapDB(), null);
-
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
 
         EthereumListenerAdapter listener = new EthereumListenerAdapter();
 
@@ -75,7 +63,7 @@ public class ImportLightTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
         BlockChainImpl blockchain = new BlockChainImpl(
-                ConfigHelper.CONFIG, repository,
+                config, repository,
                 blockStore,
                 receiptStore,
                 null,
@@ -86,14 +74,15 @@ public class ImportLightTest {
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(ConfigHelper.CONFIG, blockchain, repository, null, null, listener, 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
-        blockchain.setPendingState(pendingState);
+        blockchain.setTransactionPool(transactionPool);
 
         Repository track = repository.startTracking();
-        for (ByteArrayWrapper key : genesis.getPremine().keySet()) {
-            track.createAccount(new RskAddress(key.getData()));
-            track.addBalance(new RskAddress(key.getData()), genesis.getPremine().get(key).getAccountState().getBalance());
+
+        for (RskAddress addr : genesis.getPremine().keySet()) {
+            track.createAccount(addr);
+            track.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
         }
 
         track.commit();

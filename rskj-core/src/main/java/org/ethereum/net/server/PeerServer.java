@@ -29,7 +29,9 @@ package org.ethereum.net.server;
 
 public interface PeerServer {
 
-    void start(int port);
+    void start();
+
+    void stop();
 
     boolean isListening();
 }

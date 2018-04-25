@@ -19,16 +19,16 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
-import org.ethereum.core.*;
 import co.rsk.validators.DummyBlockValidator;
-import org.ethereum.core.Block;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
@@ -38,7 +38,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 
@@ -46,6 +45,7 @@ import java.util.List;
  * Created by ajlopez on 8/6/2016.
  */
 public class BlockChainBuilder {
+    private final TestSystemProperties config = new TestSystemProperties();
     private boolean testing;
 
     private List<Block> blocks;
@@ -55,6 +55,7 @@ public class BlockChainBuilder {
     private Repository repository;
     private BlockStore blockStore;
     private Genesis genesis;
+    private ReceiptStore receiptStore;
 
     public BlockChainBuilder setAdminInfo(AdminInfo adminInfo) {
         this.adminInfo = adminInfo;
@@ -86,23 +87,28 @@ public class BlockChainBuilder {
         return this;
     }
 
+    public BlockChainBuilder setReceiptStore(ReceiptStore receiptStore) {
+        this.receiptStore = receiptStore;
+        return this;
+    }
+
     public BlockChainImpl build() {
         return build(false);
     }
 
     public BlockChainImpl build(boolean withoutCleaner) {
         if (repository == null)
-            repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
+            repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
 
         if (blockStore == null) {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
-            indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
-            blockStore = indexedBlockStore;
+            blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         }
 
-        KeyValueDataSource ds = new HashMapDB();
-        ds.init();
-        ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
+        if (receiptStore == null) {
+            KeyValueDataSource ds = new HashMapDB();
+            ds.init();
+            receiptStore = new ReceiptStoreImpl(ds);
+        }
 
         if (txinfos != null && !txinfos.isEmpty())
             for (TransactionInfo txinfo : txinfos)
@@ -120,29 +126,29 @@ public class BlockChainBuilder {
         if (this.adminInfo == null)
             this.adminInfo = new AdminInfo();
 
-        BlockChainImpl blockChain = new BlockChainImpl(ConfigHelper.CONFIG, this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator);
+        BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator);
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
             blockChain.setNoValidation(true);
         }
 
-        PendingStateImpl pendingState;
+        TransactionPoolImpl transactionPool;
         if (withoutCleaner) {
-            pendingState = new PendingStateImplNoCleaner(ConfigHelper.CONFIG, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            transactionPool = new TransactionPoolImplNoCleaner(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         } else {
-            pendingState = new PendingStateImpl(ConfigHelper.CONFIG, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            transactionPool = new TransactionPoolImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         }
-        blockChain.setPendingState(pendingState);
+        blockChain.setTransactionPool(transactionPool);
 
         if (this.genesis != null) {
-            for (ByteArrayWrapper key : this.genesis.getPremine().keySet()) {
-                this.repository.createAccount(new RskAddress(key.getData()));
-                this.repository.addBalance(new RskAddress(key.getData()), this.genesis.getPremine().get(key).getAccountState().getBalance());
+            for (RskAddress addr : this.genesis.getPremine().keySet()) {
+                this.repository.createAccount(addr);
+                this.repository.addBalance(addr, this.genesis.getPremine().get(addr).getAccountState().getBalance());
             }
 
             Repository track = this.repository.startTracking();
-            new RepositoryBlockStore(ConfigHelper.CONFIG, track, PrecompiledContracts.BRIDGE_ADDR);
+            new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
             track.commit();
 
             this.genesis.setStateRoot(this.repository.getRoot());
@@ -153,7 +159,7 @@ public class BlockChainBuilder {
         }
 
         if (this.blocks != null) {
-            BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, repository, blockChain, blockStore, listener);
+            BlockExecutor blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
 
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock());
@@ -164,7 +170,7 @@ public class BlockChainBuilder {
         return blockChain;
     }
 
-    public static Blockchain ofSizeWithNoPendingStateCleaner(int size) {
+    public static Blockchain ofSizeWithNoTransactionPoolCleaner(int size) {
         return ofSize(size, false, true);
     }
 
@@ -180,20 +186,21 @@ public class BlockChainBuilder {
         return ofSize(size, mining, null, null, withoutCleaner);
     }
 
-    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<BigInteger> balances) {
+    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<Coin> balances) {
         return ofSize(size, mining, accounts, balances, false);
     }
 
-    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<BigInteger> balances, boolean withoutCleaner) {
+    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<Coin> balances, boolean withoutCleaner) {
         BlockChainBuilder builder = new BlockChainBuilder();
         BlockChainImpl blockChain = builder.build(withoutCleaner);
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
 
         if (accounts != null)
             for (int k = 0; k < accounts.size(); k++) {
                 Account account = accounts.get(k);
-                BigInteger balance = balances.get(k);
+                Coin balance = balances.get(k);
                 blockChain.getRepository().createAccount(account.getAddress());
                 blockChain.getRepository().addBalance(account.getAddress(), balance);
             }
@@ -204,7 +211,7 @@ public class BlockChainBuilder {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         if (size > 0) {
-            List<Block> blocks = mining ? BlockGenerator.getInstance().getMinedBlockChain(genesis, size) : BlockGenerator.getInstance().getBlockChain(genesis, size);
+            List<Block> blocks = mining ? blockGenerator.getMinedBlockChain(genesis, size) : blockGenerator.getBlockChain(genesis, size);
 
             for (Block block: blocks)
                 Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
@@ -237,7 +244,7 @@ public class BlockChainBuilder {
 
     public static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining) {
         Block initial = blockchain.getBestBlock();
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(initial, size, 0, withUncles, mining, null);
+        List<Block> blocks = new BlockGenerator().getBlockChain(initial, size, 0, withUncles, mining, null);
 
         for (Block block: blocks)
             blockchain.tryToConnect(block);

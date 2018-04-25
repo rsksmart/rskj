@@ -19,7 +19,8 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
@@ -32,7 +33,7 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,6 +49,11 @@ import java.util.Set;
  * Created by ajlopez on 04/08/2016.
  */
 public class BlockValidatorTest {
+
+    public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
+
+    private final TestSystemProperties config = new TestSystemProperties();
+
     @Test
     public void validateGenesisBlock() {
         BlockValidatorImpl validator = new BlockValidatorBuilder().build();
@@ -58,8 +64,7 @@ public class BlockValidatorTest {
 
     @Test
     public void validateEmptyBlock() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
-        blockStore.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         Block genesis = new BlockGenerator().getGenesisBlock();
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
@@ -71,8 +76,7 @@ public class BlockValidatorTest {
 
     @Test
     public void validateChildBlock() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
-        blockStore.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         Block genesis = new BlockGenerator().getGenesisBlock();
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
@@ -110,7 +114,7 @@ public class BlockValidatorTest {
     public void invalidChildBlockBadDifficulty() {
         Block genesis = new BlockGenerator().getGenesisBlock();
         Block block = new BlockGenerator().createChildBlock(genesis);
-        block.getHeader().setDifficulty(new byte[]{0x00});
+        block.getHeader().setDifficulty(new BlockDifficulty(new byte[]{0x00}));
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addDifficultyRule()
@@ -185,15 +189,14 @@ public class BlockValidatorTest {
 
     @Test
     public void validateHeader() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block parent = new BlockBuilder().parent(genesis).build();
         Block block = new BlockBuilder().parent(parent).build();
 
-        store.saveBlock(parent, BigInteger.ONE, true);
+        store.saveBlock(parent, TEST_DIFFICULTY, true);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addParentBlockHeaderValidator()
@@ -207,8 +210,7 @@ public class BlockValidatorTest {
 
     @Test
     public void getGenesisEmptyAncestorSet() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Assert.assertTrue(FamilyUtils.getAncestors(store, genesis, 6).isEmpty());
@@ -216,53 +218,50 @@ public class BlockValidatorTest {
 
     @Test
     public void getBlockOneAncestorSet() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
-        store.saveBlock(genesis, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
         Block block = new BlockGenerator().createChildBlock(genesis);
 
-        Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block, 6);
+        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block, 6);
         Assert.assertFalse(ancestors.isEmpty());
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block.getHash())));
+        Assert.assertTrue(ancestors.contains(genesis.getHash()));
+        Assert.assertFalse(ancestors.contains(block.getHash()));
     }
 
     @Test
     public void getThreeAncestorSet() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
-        store.saveBlock(genesis, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
 
         Block block1 = blockGenerator.createChildBlock(genesis);
-        store.saveBlock(block1, BigInteger.ONE, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
         Block block2 = blockGenerator.createChildBlock(block1);
-        store.saveBlock(block2, BigInteger.ONE, true);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
         Block block3 = blockGenerator.createChildBlock(block2);
-        store.saveBlock(block3, BigInteger.ONE, true);
+        store.saveBlock(block3, TEST_DIFFICULTY, true);
         Block block4 = blockGenerator.createChildBlock(block3);
-        store.saveBlock(block4, BigInteger.ONE, true);
+        store.saveBlock(block4, TEST_DIFFICULTY, true);
         Block block5 = blockGenerator.createChildBlock(block4);
-        store.saveBlock(block5, BigInteger.ONE, true);
+        store.saveBlock(block5, TEST_DIFFICULTY, true);
 
-        Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block5, 3);
+        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block5, 3);
         Assert.assertFalse(ancestors.isEmpty());
         Assert.assertEquals(3, ancestors.size());
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block4.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block5.getHash())));
+        Assert.assertFalse(ancestors.contains(genesis.getHash()));
+        Assert.assertFalse(ancestors.contains(block1.getHash()));
+        Assert.assertTrue(ancestors.contains(block2.getHash()));
+        Assert.assertTrue(ancestors.contains(block3.getHash()));
+        Assert.assertTrue(ancestors.contains(block4.getHash()));
+        Assert.assertFalse(ancestors.contains(block5.getHash()));
     }
 
     @Test
     public void getUsedUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -284,25 +283,25 @@ public class BlockValidatorTest {
         Block block2 = blockGenerator.createChildBlock(block1, null, uncles2, 1, null);
         Block block3 = blockGenerator.createChildBlock(block2, null, uncles2, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(uncle1a, BigInteger.ONE, false);
-        store.saveBlock(uncle1b, BigInteger.ONE, false);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(uncle2a, BigInteger.ONE, false);
-        store.saveBlock(uncle2b, BigInteger.ONE, false);
-        store.saveBlock(block2, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle1b, TEST_DIFFICULTY, false);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle2a, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle2b, TEST_DIFFICULTY, false);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
 
-        Set<ByteArrayWrapper> used = FamilyUtils.getUsedUncles(store, block3, 6);
+        Set<Keccak256> used = FamilyUtils.getUsedUncles(store, block3, 6);
 
         Assert.assertFalse(used.isEmpty());
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle2a.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle2b.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle1a.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle1b.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(genesis.getHash())));
+        Assert.assertFalse(used.contains(block3.getHash()));
+        Assert.assertFalse(used.contains(block2.getHash()));
+        Assert.assertTrue(used.contains(uncle2a.getHash()));
+        Assert.assertTrue(used.contains(uncle2b.getHash()));
+        Assert.assertFalse(used.contains(block1.getHash()));
+        Assert.assertTrue(used.contains(uncle1a.getHash()));
+        Assert.assertTrue(used.contains(uncle1b.getHash()));
+        Assert.assertFalse(used.contains(genesis.getHash()));
     }
 
     @Test
@@ -320,8 +319,7 @@ public class BlockValidatorTest {
 
     @Test
     public void validUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -334,12 +332,12 @@ public class BlockValidatorTest {
         Block block1 = blockGenerator.createChildBlock(genesis);
         Block block2 = blockGenerator.createChildBlock(block1, null, uncles1, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(block2, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
 
-        store.saveBlock(uncle1a, BigInteger.ONE, false);
-        store.saveBlock(uncle1b, BigInteger.ONE, false);
+        store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle1b, TEST_DIFFICULTY, false);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store)
@@ -351,8 +349,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidSiblingUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -364,10 +361,10 @@ public class BlockValidatorTest {
         uncles1.add(uncle1b.getHeader());
         Block block1 = blockGenerator.createChildBlock(genesis, null, uncles1, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(uncle1a, BigInteger.ONE, false);
-        store.saveBlock(uncle1b, BigInteger.ONE, false);
-        store.saveBlock(block1, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle1b, TEST_DIFFICULTY, false);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store)
@@ -379,8 +376,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUnclesUncleIncludedMultipeTimes () {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -391,9 +387,9 @@ public class BlockValidatorTest {
         uncles1.add(uncle1a.getHeader());
         Block block1 = blockGenerator.createChildBlock(genesis, null, uncles1, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(uncle1a, BigInteger.ONE, false);
-        store.saveBlock(block1, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store)
@@ -405,8 +401,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidPOWUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -418,14 +413,14 @@ public class BlockValidatorTest {
         uncles1.add(uncle1a.getHeader());
         Block block1 = blockGenerator.createChildBlock(genesis, null, uncles1, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(uncle1a, BigInteger.ONE, false);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
 
         BlockParentDependantValidationRule parentValidationRule = Mockito.mock(BlockParentDependantValidationRule.class);
         Mockito.when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
       
         BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addBlockUnclesValidationRule(store, new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false), parentValidationRule)
+                .addBlockUnclesValidationRule(store, new ProofOfWorkRule(config).setFallbackMiningEnabled(false), parentValidationRule)
                 .blockStore(store)
                 .build();
 
@@ -434,8 +429,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleIsAncestor() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -446,9 +440,9 @@ public class BlockValidatorTest {
         uncles1.add(genesis.getHeader());
         Block block1 = blockGenerator.createChildBlock(genesis, null, uncles1, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(uncle1a, BigInteger.ONE, false);
-        store.saveBlock(block1, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store)
@@ -460,8 +454,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleHasNoSavedParent() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -471,8 +464,8 @@ public class BlockValidatorTest {
         uncles1.add(uncle1a.getHeader());
         Block block1 = blockGenerator.createChildBlock(genesis, null, uncles1, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store)
@@ -484,22 +477,21 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleHasNoCommonAncestor() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
         Block genesis = blockGenerator.getGenesisBlock();
-        Block uncle1a = blockGenerator.createChildBlock(new SimpleBlock(null, null, TestUtils.randomAddress().getBytes(), null, BigInteger.ONE.toByteArray(),
-                0, null, 0L, 0L, new byte[]{}, null, null, null, Block.getTxTrie(null).getHash(), null, null, null));
+        Block uncle1a = blockGenerator.createChildBlock(new SimpleBlock(null, null, TestUtils.randomAddress().getBytes(), null, TEST_DIFFICULTY.getBytes(),
+                0, null, 0L, 0L, new byte[]{}, null, null, null, Block.getTxTrie(null).getHash().getBytes(), null, null, null));
 
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
         Block block1 = blockGenerator.createChildBlock(genesis, null, uncles1, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(uncle1a, BigInteger.ONE, false);
-        store.saveBlock(block1, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store)
@@ -511,8 +503,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleHasParentThatIsNotAncestor() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -528,12 +519,12 @@ public class BlockValidatorTest {
         Block block2 = blockGenerator.createChildBlock(block1, null, null, 1, null);
         Block block3 = blockGenerator.createChildBlock(block2, null, uncles3, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(uncle1a, BigInteger.ONE, false);
-        store.saveBlock(uncle2a, BigInteger.ONE, false);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(block2, BigInteger.ONE, true);
-        store.saveBlock(block3, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle2a, TEST_DIFFICULTY, false);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
+        store.saveBlock(block3, TEST_DIFFICULTY, true);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store)
@@ -544,8 +535,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleAlreadyUsed() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -566,13 +556,13 @@ public class BlockValidatorTest {
         Block block2 = blockGenerator.createChildBlock(block1, null, uncles2, 1, null);
         Block block3 = blockGenerator.createChildBlock(block2, null, uncles2, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(uncle1a, BigInteger.ONE, false);
-        store.saveBlock(uncle1b, BigInteger.ONE, false);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(uncle2a, BigInteger.ONE, false);
-        store.saveBlock(uncle2b, BigInteger.ONE, false);
-        store.saveBlock(block2, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle1b, TEST_DIFFICULTY, false);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle2a, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle2b, TEST_DIFFICULTY, false);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store)
@@ -583,8 +573,7 @@ public class BlockValidatorTest {
 
     @Test
     public void tooManyUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -607,12 +596,12 @@ public class BlockValidatorTest {
 
         Block block2 = blockGenerator.createChildBlock(block1, null, uncles2, 1, null);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(uncle1a, BigInteger.ONE, false);
-        store.saveBlock(uncle1b, BigInteger.ONE, false);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(uncle2a, BigInteger.ONE, false);
-        store.saveBlock(uncle2b, BigInteger.ONE, false);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle1b, TEST_DIFFICULTY, false);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle2a, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle2b, TEST_DIFFICULTY, false);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store)
@@ -655,13 +644,13 @@ public class BlockValidatorTest {
                 .parent(new BlockGenerator().getGenesisBlock()).build();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN);
+        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN);
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
         Block block = new BlockBuilder().minGasPrice(BigInteger.TEN).transactions(txs)
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
+        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addTxsMinGasPriceRule()
@@ -685,7 +674,7 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder().minGasPrice(BigInteger.TEN)
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
+        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addPrevMinGasPriceRule()
@@ -707,14 +696,14 @@ public class BlockValidatorTest {
                 .parent(new BlockGenerator().getGenesisBlock()).build();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
+        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
         Block block = new BlockBuilder().transactions(txs).minGasPrice(BigInteger.valueOf(11L))
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
+        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addPrevMinGasPriceRule()
@@ -727,8 +716,7 @@ public class BlockValidatorTest {
 
     @Test
     public void parentInvalidNumber() {
-        IndexedBlockStore store = new IndexedBlockStore(ConfigHelper.CONFIG);
-        store.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -751,7 +739,7 @@ public class BlockValidatorTest {
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.TEN, BigInteger.valueOf(12L), BigInteger.TEN);
+        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.TEN, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{});
         txs.add(tx);
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
@@ -770,7 +758,7 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
+        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{});
         txs.add(tx);
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
@@ -794,7 +782,7 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
+        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{});
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         txs.add(tx);
@@ -814,7 +802,7 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
+        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{});
         txs.add(tx);
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
@@ -826,13 +814,12 @@ public class BlockValidatorTest {
         Assert.assertTrue(validator.isValid(block));
     }
 
-
     @Test
     public void blockInTheFuture() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
-        int validPeriod = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getNewBlockMaxSecondsInTheFuture();
+        int validPeriod = 6000;
 
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getTimestamp())
@@ -848,6 +835,32 @@ public class BlockValidatorTest {
 
         Mockito.when(block.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + validPeriod);
+
+        Assert.assertTrue(validator.isValid(block));
+    }
+
+
+    @Test
+    public void blockInTheFutureIsAcceptedWhenValidPeriodIsZero() {
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+
+        int validPeriod = 0;
+
+        Block block = Mockito.mock(Block.class);
+        Mockito.when(block.getTimestamp())
+                .thenReturn((System.currentTimeMillis() / 1000) + 2000);
+
+        Mockito.when(block.getParentHash()).thenReturn(genesis.getHash());
+
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockTimeStampValidationRule(validPeriod)
+                .build();
+
+        Assert.assertTrue(validator.isValid(block));
+
+        Mockito.when(block.getTimestamp())
+                .thenReturn((System.currentTimeMillis() / 1000) + 2000);
 
         Assert.assertTrue(validator.isValid(block));
     }
@@ -923,12 +936,12 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain) {
+        public void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain) {
 
         }
 
         @Override
-        public BigInteger getTotalDifficultyForHash(byte[] hash) {
+        public BlockDifficulty getTotalDifficultyForHash(byte[] hash) {
             return null;
         }
 

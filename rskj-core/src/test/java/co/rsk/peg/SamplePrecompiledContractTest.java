@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.CallTransaction;
@@ -38,11 +38,15 @@ import static org.junit.Assert.assertNull;
  * Created by adrian.eidelman on 3/15/2016.
  */
 public class SamplePrecompiledContractTest {
+
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+
     @Test
     public void samplePrecompiledContractMethod1Ok()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
 
 
         String funcJson = "{\n" +
@@ -61,7 +65,7 @@ public class SamplePrecompiledContractTest {
         byte[] bytes = new byte[]{(byte) 0xab, (byte) 0xcd, (byte) 0xef};
         byte[] data = function.encode(111, bytes, 222);
 
-        contract.init(null, null, new RepositoryImpl(ConfigHelper.CONFIG), null, null, new ArrayList<LogInfo>());
+        contract.init(null, null, new RepositoryImpl(config), null, null, new ArrayList<LogInfo>());
         byte[] result = contract.execute(data);
 
         Object[] results = function.decodeResult(result);
@@ -72,7 +76,7 @@ public class SamplePrecompiledContractTest {
     public void samplePrecompiledContractMethod1WrongData()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
 
 
         String funcJson = "{\n" +
@@ -90,7 +94,7 @@ public class SamplePrecompiledContractTest {
 
         byte[] data = new byte[]{(byte) 0xab, (byte) 0xcd, (byte) 0xef};
 
-        contract.init(null, null, new RepositoryImpl(ConfigHelper.CONFIG), null, null, new ArrayList<LogInfo>());
+        contract.init(null, null, new RepositoryImpl(config), null, null, new ArrayList<LogInfo>());
         byte[] result = contract.execute(data);
 
         assertNull(result);
@@ -100,7 +104,7 @@ public class SamplePrecompiledContractTest {
     public void samplePrecompiledContractMethodDoesNotExist()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
 
 
         String funcJson = "{\n" +
@@ -119,7 +123,7 @@ public class SamplePrecompiledContractTest {
         byte[] bytes = new byte[]{(byte) 0xab, (byte) 0xcd, (byte) 0xef};
         byte[] data = function.encode(111, bytes, 222);
 
-        contract.init(null, null, new RepositoryImpl(ConfigHelper.CONFIG), null, null, new ArrayList<LogInfo>());
+        contract.init(null, null, new RepositoryImpl(config), null, null, new ArrayList<LogInfo>());
         byte[] result = contract.execute(data);
 
         assertNull(result);
@@ -129,7 +133,7 @@ public class SamplePrecompiledContractTest {
     public void samplePrecompiledContractMethod1LargeData()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
 
 
         String funcJson = "{\n" +
@@ -146,7 +150,7 @@ public class SamplePrecompiledContractTest {
 
         byte[] data = function.encode(111, StringUtils.leftPad("foobar", 1000000, '*'));
 
-        contract.init(null, null, new RepositoryImpl(ConfigHelper.CONFIG), null, null, new ArrayList<LogInfo>());
+        contract.init(null, null, new RepositoryImpl(config), null, null, new ArrayList<LogInfo>());
         byte[] result = contract.execute(data);
 
         Object[] results = function.decodeResult(result);
@@ -157,7 +161,7 @@ public class SamplePrecompiledContractTest {
     public void samplePrecompiledContractAddBalanceOk()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
 
 
         String funcJson = "{\n" +
@@ -173,7 +177,7 @@ public class SamplePrecompiledContractTest {
 
         byte[] data = function.encode();
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         contract.init(null, null, repository, null, null, new ArrayList<LogInfo>());
         contract.execute(data);
 
@@ -184,7 +188,7 @@ public class SamplePrecompiledContractTest {
     @Test
     public void samplePrecompiledContractGetBalanceInitialBalance()
     {
-        int balance = this.GetBalance(new RepositoryImpl(ConfigHelper.CONFIG));
+        int balance = this.GetBalance(new RepositoryImpl(config));
         assertEquals(0, balance);
     }
 
@@ -192,7 +196,7 @@ public class SamplePrecompiledContractTest {
     public void samplePrecompiledContractIncrementResultOk()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
 
 
         String funcJson = "{\n" +
@@ -208,7 +212,7 @@ public class SamplePrecompiledContractTest {
 
         byte[] data = function.encode();
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
         contract.init(null, null, track, null, null, new ArrayList<LogInfo>());
         contract.execute(data);
@@ -221,14 +225,14 @@ public class SamplePrecompiledContractTest {
     @Test
     public void samplePrecompiledContractGetResultInitialValue()
     {
-        int result = this.GetResult(new RepositoryImpl(ConfigHelper.CONFIG));
+        int result = this.GetResult(new RepositoryImpl(config));
         assertEquals(0, result);
     }
 
     private int GetBalance(Repository repository)
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
 
 
         String funcJson = "{\n" +
@@ -255,7 +259,7 @@ public class SamplePrecompiledContractTest {
     private int GetResult(Repository repository)
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
 
 
         String funcJson = "{\n" +

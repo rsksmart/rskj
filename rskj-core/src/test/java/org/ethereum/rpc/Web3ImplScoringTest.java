@@ -18,23 +18,25 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.net.NodeID;
+import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
+import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
 import org.ethereum.rpc.Simples.SimpleRsk;
-import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -350,14 +352,34 @@ public class Web3ImplScoringTest {
         SimpleRsk rsk = new SimpleRsk();
 
         World world = new World();
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(world.getBlockChain());
-        rsk.worldManager = worldManager;
+        rsk.blockchain = world.getBlockChain();
 
         Wallet wallet = WalletFactory.createWallet();
-        PersonalModule pm = new PersonalModuleWalletEnabled(ConfigHelper.CONFIG, rsk, wallet, null);
-        EthModule em = new EthModule(ConfigHelper.CONFIG, rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(ConfigHelper.CONFIG, rsk, wallet, null));
-        return new Web3RskImpl(rsk, worldManager, ConfigHelper.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null, null);
+        TestSystemProperties config = new TestSystemProperties();
+        PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
+        EthModule em = new EthModule(config, world.getBlockChain(), null, new ExecutionBlockRetriever(world.getBlockChain(), null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
+        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        return new Web3RskImpl(
+                rsk,
+                world.getBlockChain(),
+                null,
+                config,
+                Web3Mocks.getMockMinerClient(),
+                Web3Mocks.getMockMinerServer(),
+                pm,
+                em,
+                tpm,
+                Web3Mocks.getMockChannelManager(),
+                rsk.getRepository(),
+                peerScoringManager,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 
     private static NodeID generateNodeID() {

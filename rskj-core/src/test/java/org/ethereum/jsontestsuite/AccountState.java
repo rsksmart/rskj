@@ -19,13 +19,16 @@
 
 package org.ethereum.jsontestsuite;
 
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.json.simple.JSONObject;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Roman Mandeleil
@@ -33,15 +36,15 @@ import java.util.*;
  */
 public class AccountState {
 
-    byte[] address;
-    byte[] balance;
+    RskAddress address;
+    Coin balance;
     byte[] code;
     byte[] nonce;
 
     Map<DataWord, DataWord> storage = new HashMap<>();
 
 
-    public AccountState(byte[] address, JSONObject accountState) {
+    public AccountState(RskAddress address, JSONObject accountState) {
 
         this.address = address;
         String balance = accountState.get("balance").toString();
@@ -50,7 +53,7 @@ public class AccountState {
 
         JSONObject store = (JSONObject) accountState.get("storage");
 
-        this.balance = TestCase.toBigInt(balance).toByteArray();
+        this.balance = new Coin(TestCase.toBigInt(balance));
 
         if (code != null && code.length() > 2)
             this.code = Hex.decode(code.substring(2));
@@ -72,18 +75,13 @@ public class AccountState {
         }
     }
 
-    public byte[] getAddress() {
+    public RskAddress getAddress() {
         return address;
     }
 
-    public byte[] getBalance() {
+    public Coin getBalance() {
         return balance;
     }
-
-    public BigInteger getBigIntegerBalance() {
-        return new BigInteger(balance);
-    }
-
 
     public byte[] getCode() {
         return code;
@@ -105,8 +103,8 @@ public class AccountState {
     @Override
     public String toString() {
         return "AccountState{" +
-                "address=" + Hex.toHexString(address) +
-                ", balance=" + Hex.toHexString(balance) +
+                "address=" + address +
+                ", balance=" + balance +
                 ", code=" + Hex.toHexString(code) +
                 ", nonce=" + Hex.toHexString(nonce) +
                 ", storage=" + storage +

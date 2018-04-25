@@ -1,10 +1,11 @@
 package co.rsk.trie;
 
+import co.rsk.crypto.Keccak256;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.ethereum.crypto.HashUtil.sha3;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -17,7 +18,7 @@ public class TrieImplDeleteTest {
 
         trie = trie.delete("key".getBytes());
 
-        Assert.assertArrayEquals(makeEmptyHash(), trie.getHash());
+        Assert.assertEquals(makeEmptyHash(), trie.getHash());
     }
 
     @Test
@@ -29,7 +30,7 @@ public class TrieImplDeleteTest {
 
         Trie trie2 = new TrieImpl().put("key2", "value2".getBytes());
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -41,7 +42,7 @@ public class TrieImplDeleteTest {
 
         Trie trie2 = new TrieImpl().put("key2", "value2".getBytes());
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -54,7 +55,7 @@ public class TrieImplDeleteTest {
 
         Trie trie2 = new TrieImpl().put("key2", "value2".getBytes());
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -72,7 +73,7 @@ public class TrieImplDeleteTest {
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, ("value" + k).getBytes());
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -90,12 +91,12 @@ public class TrieImplDeleteTest {
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, TrieImplValueTest.makeValue(k + 100));
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
-    public void deleteOneHundredValuesGivesTheSameHashUsingArity16() {
-        Trie trie1 = new TrieImpl(16, false);
+    public void deleteOneHundredValuesGivesTheSameHashUsingSecureKeys() {
+        Trie trie1 = new TrieImpl(true);
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, ("value" + k).getBytes());
@@ -103,17 +104,17 @@ public class TrieImplDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Trie trie2 = new TrieImpl(16, false);
+        Trie trie2 = new TrieImpl(true);
 
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, ("value" + k).getBytes());
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
-    public void deleteOneHundredLongValuesGivesTheSameHashUsingArity16() {
-        Trie trie1 = new TrieImpl(16, false);
+    public void deleteOneHundredLongValuesGivesTheSameHashUsingSecureKeys() {
+        Trie trie1 = new TrieImpl(true);
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
@@ -121,48 +122,12 @@ public class TrieImplDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Trie trie2 = new TrieImpl(16, false);
+        Trie trie2 = new TrieImpl(true);
 
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, TrieImplValueTest.makeValue(k + 200));
 
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
-    }
-
-    @Test
-    public void deleteOneHundredValuesGivesTheSameHashUsingArity16AndSecureKeys() {
-        Trie trie1 = new TrieImpl(16, true);
-
-        for (int k = 0; k < 200; k++)
-            trie1 = trie1.put("key" + k, ("value" + k).getBytes());
-
-        for (int k = 1; k < 200; k += 2)
-            trie1 = trie1.delete("key" + k);
-
-        Trie trie2 = new TrieImpl(16, true);
-
-        for (int k = 0; k < 200; k += 2)
-            trie2 = trie2.put("key" + k, ("value" + k).getBytes());
-
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
-    }
-
-    @Test
-    public void deleteOneHundredLongValuesGivesTheSameHashUsingArity16AndSecureKeys() {
-        Trie trie1 = new TrieImpl(16, true);
-
-        for (int k = 0; k < 200; k++)
-            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
-
-        for (int k = 1; k < 200; k += 2)
-            trie1 = trie1.delete("key" + k);
-
-        Trie trie2 = new TrieImpl(16, true);
-
-        for (int k = 0; k < 200; k += 2)
-            trie2 = trie2.put("key" + k, TrieImplValueTest.makeValue(k + 200));
-
-        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -175,7 +140,7 @@ public class TrieImplDeleteTest {
         for (int k = 0; k < 200; k++)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
+        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     @Test
@@ -188,7 +153,7 @@ public class TrieImplDeleteTest {
         for (int k = 0; k < 200; k++)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
+        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     @Test
@@ -204,7 +169,7 @@ public class TrieImplDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
+        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     @Test
@@ -220,12 +185,12 @@ public class TrieImplDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
+        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     @Test
-    public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHashUsingArity16() {
-        Trie trie1 = new TrieImpl(16, false);
+    public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHashUsingSecureKeys() {
+        Trie trie1 = new TrieImpl(true);
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, ("value" + k).getBytes());
@@ -236,12 +201,12 @@ public class TrieImplDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
+        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     @Test
-    public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHashUsingArity16() {
-        Trie trie1 = new TrieImpl(16, false);
+    public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHashUsingSecureKeys() {
+        Trie trie1 = new TrieImpl(true);
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
@@ -252,42 +217,10 @@ public class TrieImplDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
+        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
-    @Test
-    public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHashUsingArity16AndSecureKeys() {
-        Trie trie1 = new TrieImpl(16, true);
-
-        for (int k = 0; k < 200; k++)
-            trie1 = trie1.put("key" + k, ("value" + k).getBytes());
-
-        for (int k = 0; k < 200; k += 2)
-            trie1 = trie1.delete("key" + k);
-
-        for (int k = 1; k < 200; k += 2)
-            trie1 = trie1.delete("key" + k);
-
-        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
-    }
-
-    @Test
-    public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHashUsingArity16AndSecureKeys() {
-        Trie trie1 = new TrieImpl(16, true);
-
-        for (int k = 0; k < 200; k++)
-            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
-
-        for (int k = 0; k < 200; k += 2)
-            trie1 = trie1.delete("key" + k);
-
-        for (int k = 1; k < 200; k += 2)
-            trie1 = trie1.delete("key" + k);
-
-        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
-    }
-
-    public static byte[] makeEmptyHash() {
-        return sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+    public static Keccak256 makeEmptyHash() {
+        return new Keccak256(HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
     }
 }

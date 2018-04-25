@@ -19,12 +19,14 @@
 
 package org.ethereum.vm.program;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -54,7 +56,6 @@ import java.util.*;
 
 import static java.lang.StrictMath.min;
 import static java.lang.String.format;
-import static java.math.BigInteger.ZERO;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -86,7 +87,8 @@ public class Program {
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
 
-    private Transaction transaction;
+    private final BlockchainConfig blockchainConfig;
+    private final Transaction transaction;
 
     private final ProgramInvoke invoke;
     private final ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
@@ -179,12 +181,22 @@ public class Program {
 
     private static Boolean useDataWordPool = true;
 
-    private final RskSystemProperties config;
+    private final VmConfig config;
+    private final PrecompiledContracts precompiledContracts;
     boolean isLogEnabled;
     boolean isGasLogEnabled;
 
-    public Program(RskSystemProperties config, byte[] ops, ProgramInvoke programInvoke) {
+    public Program(
+            VmConfig config,
+            PrecompiledContracts precompiledContracts,
+            BlockchainConfig blockchainConfig,
+            byte[] ops,
+            ProgramInvoke programInvoke,
+            Transaction transaction) {
         this.config = config;
+        this.precompiledContracts = precompiledContracts;
+        this.blockchainConfig = blockchainConfig;
+        this.transaction = transaction;
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
 
@@ -217,11 +229,6 @@ public class Program {
         traceListener = new ProgramTraceListener(config);
     }
 
-    public Program(RskSystemProperties config, byte[] ops, ProgramInvoke programInvoke, Transaction transaction) {
-        this(config, ops, programInvoke);
-        this.transaction = transaction;
-    }
-
     public static void setUseDataWordPool(Boolean value) {
         useDataWordPool = value;
     }
@@ -237,7 +244,7 @@ public class Program {
 
 
     private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, RskAddress senderAddress, RskAddress receiveAddress,
-                                              BigInteger value, byte[] data, String note) {
+                                              Coin value, byte[] data, String note) {
         if (transaction == null) {
             return null;
         }
@@ -245,14 +252,14 @@ public class Program {
         byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
 
         return getResult().addInternalTransaction(
-                transaction.getHash(),
+                transaction.getHash().getBytes(),
                 getCallDeep(),
                 senderNonce,
                 getGasPrice(),
                 gasLimit,
                 senderAddress.getBytes(),
                 receiveAddress.getBytes(),
-                value.toByteArray(),
+                value.getBytes(),
                 data,
                 note);
     }
@@ -532,16 +539,12 @@ public class Program {
     public void suicide(DataWord obtainerAddress) {
 
         RskAddress owner = new RskAddress(getOwnerAddress());
-        BigInteger balance = getStorage().getBalance(owner);
+        Coin balance = getStorage().getBalance(owner);
 
-        if (!balance.equals(ZERO)) {
+        if (!balance.equals(Coin.ZERO)) {
             RskAddress obtainer = new RskAddress(obtainerAddress);
 
-            if (isLogEnabled) {
-                logger.info("Transfer to: [{}] heritage: [{}]",
-                        obtainer,
-                        balance);
-            }
+            logger.info("Transfer to: [{}] heritage: [{}]", obtainer, balance);
 
             addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
 
@@ -549,7 +552,7 @@ public class Program {
                 // if owner == obtainer just zeroing account according to Yellow Paper
                 getStorage().addBalance(owner, balance.negate());
             } else {
-                transfer(getStorage(), owner, obtainer, balance);
+                getStorage().transfer(owner, obtainer, balance);
             }
         }
         // In any case, remove the account
@@ -557,11 +560,11 @@ public class Program {
 
     }
 
-    public void send(DataWord destAddress,BigInteger amount) {
+    public void send(DataWord destAddress, Coin amount) {
 
         RskAddress owner = new RskAddress(getOwnerAddress());
         RskAddress dest = new RskAddress(destAddress);
-        BigInteger balance = getStorage().getBalance(owner);
+        Coin balance = getStorage().getBalance(owner);
 
         if (isNotCovers(balance, amount)) {
             return; // does not do anything.
@@ -575,7 +578,7 @@ public class Program {
 
         addInternalTx(null, null, owner, dest, amount, null, "send");
 
-        transfer(getStorage(), owner, dest, amount);
+        getStorage().transfer(owner, dest, amount);
     }
 
     public Repository getStorage() {
@@ -591,7 +594,7 @@ public class Program {
         }
 
         RskAddress senderAddress = new RskAddress(getOwnerAddress());
-        BigInteger endowment = value.value();
+        Coin endowment = new Coin(value.getData());
         if (isNotCovers(getStorage().getBalance(senderAddress), endowment)) {
             stackPushZero();
             return;
@@ -630,7 +633,7 @@ public class Program {
 
         //In case of hashing collisions, check for any balance before createAccount()
         if (track.isExist(newAddress)) {
-            BigInteger oldBalance = track.getBalance(newAddress);
+            Coin oldBalance = track.getBalance(newAddress);
             track.createAccount(newAddress);
             track.addBalance(newAddress, oldBalance);
         } else {
@@ -639,7 +642,7 @@ public class Program {
 
         // [4] TRANSFER THE BALANCE
         track.addBalance(senderAddress, endowment.negate());
-        BigInteger newBalance = ZERO;
+        Coin newBalance = Coin.ZERO;
         if (!byTestingSuite()) {
             newBalance = track.addBalance(newAddress, endowment);
         }
@@ -654,8 +657,8 @@ public class Program {
         ProgramResult programResult = ProgramResult.empty();
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
-            VM vm = new VM(config);
-            Program program = new Program(config, programCode, programInvoke, internalTx);
+            VM vm = new VM(config, precompiledContracts);
+            Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
         }
@@ -813,8 +816,8 @@ public class Program {
         Repository track = getStorage().startTracking();
 
         // 2.1 PERFORM THE VALUE (endowment) PART
-        BigInteger endowment = msg.getEndowment().value();
-        BigInteger senderBalance = track.getBalance(senderAddress);
+        Coin endowment = new Coin(msg.getEndowment().getData());
+        Coin senderBalance = track.getBalance(senderAddress);
         if (isNotCovers(senderBalance, endowment)) {
             stackPushZero();
             refundGas(msg.getGas().longValue(), "refund gas from message call");
@@ -827,7 +830,7 @@ public class Program {
         // Always first remove funds from sender
         track.addBalance(senderAddress, endowment.negate());
 
-        BigInteger contextBalance = ZERO;
+        Coin contextBalance;
 
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
@@ -865,7 +868,7 @@ public class Program {
     public boolean executeCode(
             MessageCall msg,
             RskAddress contextAddress,
-            BigInteger contextBalance,
+            Coin contextBalance,
             InternalTransaction internalTx,
             Repository track,
             byte[] programCode,
@@ -880,8 +883,8 @@ public class Program {
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(), byTestingSuite());
 
-        VM vm = new VM(config);
-        Program program = new Program(config, programCode, programInvoke, internalTx);
+        VM vm = new VM(config, precompiledContracts);
+        Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
         vm.play(program);
         childResult  = program.getResult();
 
@@ -1048,8 +1051,8 @@ public class Program {
     }
 
     public DataWord getBalance(DataWord address) {
-        BigInteger balance = getStorage().getBalance(new RskAddress(address));
-        return new DataWord(balance.toByteArray());
+        Coin balance = getStorage().getBalance(new RskAddress(address));
+        return new DataWord(balance.getBytes());
     }
 
     public DataWord getOriginAddress() {
@@ -1527,8 +1530,8 @@ public class Program {
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 
-        BigInteger endowment = msg.getEndowment().value();
-        BigInteger senderBalance = track.getBalance(senderAddress);
+        Coin endowment = new Coin(msg.getEndowment().getData());
+        Coin senderBalance = track.getBalance(senderAddress);
         if (senderBalance.compareTo(endowment) < 0) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), "refund gas from message call");
@@ -1539,7 +1542,7 @@ public class Program {
                 msg.getInDataSize().intValue());
 
         // Charge for endowment - is not reversible by rollback
-        transfer(track, senderAddress, contextAddress, msg.getEndowment().value());
+        track.transfer(senderAddress, contextAddress, new Coin(msg.getEndowment().getData()));
 
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test

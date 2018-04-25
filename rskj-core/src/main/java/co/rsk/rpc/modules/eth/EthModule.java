@@ -20,15 +20,16 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
+import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
-import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
-import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -49,14 +50,24 @@ public class EthModule
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
     private final RskSystemProperties config;
-    private final Ethereum eth;
+    private final Blockchain blockchain;
+    private final ReversibleTransactionExecutor reversibleTransactionExecutor;
+    private final ExecutionBlockRetriever executionBlockRetriever;
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
 
     @Autowired
-    public EthModule(RskSystemProperties config, Ethereum eth, EthModuleSolidity ethModuleSolidity, EthModuleWallet ethModuleWallet) {
+    public EthModule(
+            RskSystemProperties config,
+            Blockchain blockchain,
+            ReversibleTransactionExecutor reversibleTransactionExecutor,
+            ExecutionBlockRetriever executionBlockRetriever,
+            EthModuleSolidity ethModuleSolidity,
+            EthModuleWallet ethModuleWallet) {
         this.config = config;
-        this.eth = eth;
+        this.blockchain = blockchain;
+        this.reversibleTransactionExecutor = reversibleTransactionExecutor;
+        this.executionBlockRetriever = executionBlockRetriever;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
     }
@@ -66,7 +77,7 @@ public class EthModule
         return ethModuleWallet.accounts();
     }
 
-    public Map<String, Object> bridgeState(Blockchain blockchain) throws IOException, BlockStoreException {
+    public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
         Block block = blockchain.getBestBlock();
         Repository repository = blockchain.getRepository().getSnapshotTo(block.getStateRoot()).startTracking();
 
@@ -87,11 +98,8 @@ public class EthModule
     public String call(Web3.CallArguments args, String bnOrId) {
         String s = null;
         try {
-            if (!"latest".equals(bnOrId)) {
-                throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' as a parameter so far.");
-            }
-
-            ProgramResult res = eth.callConstant(args);
+            Block executionBlock = executionBlockRetriever.getExecutionBlock(bnOrId);
+            ProgramResult res = callConstant(args, executionBlock);
             return s = toJsonHex(res.getHReturn());
         } finally {
             LOGGER.debug("eth_call(): {}", s);
@@ -106,7 +114,7 @@ public class EthModule
     public String estimateGas(Web3.CallArguments args) {
         String s = null;
         try {
-            ProgramResult res = eth.callConstant(args);
+            ProgramResult res = callConstant(args, blockchain.getBestBlock());
             return s = toJsonHex(res.getGasUsed());
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
@@ -121,5 +129,19 @@ public class EthModule
     @Override
     public String sign(String addr, String data) {
         return ethModuleWallet.sign(addr, data);
+    }
+
+    private ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        return reversibleTransactionExecutor.executeTransaction(
+                executionBlock,
+                executionBlock.getCoinbase(),
+                hexArgs.getGasPrice(),
+                hexArgs.getGasLimit(),
+                hexArgs.getToAddress(),
+                hexArgs.getValue(),
+                hexArgs.getData(),
+                hexArgs.getFromAddress()
+        );
     }
 }

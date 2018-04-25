@@ -19,26 +19,26 @@
 
 package org.ethereum.net;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.util.ByteUtil;
-
 import org.junit.Ignore;
 import org.junit.Test;
-
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.Iterator;
 
-import java.util.*;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class TransactionsMessageTest {
+    private final TestSystemProperties config = new TestSystemProperties();
 
     /* TRANSACTIONS */
 
@@ -53,7 +53,7 @@ public class TransactionsMessageTest {
 
         byte[] payload = Hex.decode(txsPacketRaw);
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(ConfigHelper.CONFIG, payload);
+        TransactionsMessage transactionsMessage = new TransactionsMessage(config, payload);
         System.out.println(transactionsMessage);
 
         assertEquals(EthMessageCodes.TRANSACTIONS, transactionsMessage.getCommand());
@@ -61,11 +61,11 @@ public class TransactionsMessageTest {
 
         Transaction tx = transactionsMessage.getTransactions().iterator().next();
 
-        assertEquals("5d2aee0490a9228024158433d650335116b4af5a30b8abb10e9b7f9f7e090fd8", Hex.toHexString(tx.getHash()));
+        assertEquals("5d2aee0490a9228024158433d650335116b4af5a30b8abb10e9b7f9f7e090fd8", tx.getHash().toHexString());
         assertEquals("04", Hex.toHexString(tx.getNonce()));
-        assertEquals("1bc16d674ec80000", Hex.toHexString(tx.getValue()));
+        assertEquals("1bc16d674ec80000", Hex.toHexString(tx.getValue().getBytes()));
         assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", tx.getReceiveAddress().toString());
-        assertEquals("64", Hex.toHexString(tx.getGasPrice()));
+        assertEquals("64", Hex.toHexString(tx.getGasPrice().getBytes()));
         assertEquals("09184e72a000", Hex.toHexString(tx.getGasLimit()));
         assertEquals("", ByteUtil.toHexString(tx.getData()));
 
@@ -100,7 +100,7 @@ public class TransactionsMessageTest {
 
         byte[] payload = Hex.decode(txsPacketRaw);
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(ConfigHelper.CONFIG, payload);
+        TransactionsMessage transactionsMessage = new TransactionsMessage(config, payload);
         System.out.println(transactionsMessage);
 
         assertEquals(EthMessageCodes.TRANSACTIONS, transactionsMessage.getCommand());
@@ -112,14 +112,13 @@ public class TransactionsMessageTest {
         txIter.next(); // skip one
         Transaction tx3 = txIter.next();
 
-        assertEquals("1b9d9456293cbcbc2f28a0fdc67028128ea571b033fb0e21d0ee00bcd6167e5d",
-                Hex.toHexString(tx3.getHash()));
+        assertEquals("1b9d9456293cbcbc2f28a0fdc67028128ea571b033fb0e21d0ee00bcd6167e5d", tx3.getHash().toHexString());
 
         assertEquals("00",
                 Hex.toHexString(tx3.getNonce()));
 
         assertEquals("2710",
-                Hex.toHexString(tx3.getValue()));
+                Hex.toHexString(tx3.getValue().getBytes()));
 
         assertEquals("09184e72a000",
                 Hex.toHexString(tx3.getReceiveAddress().getBytes()));
@@ -143,14 +142,13 @@ public class TransactionsMessageTest {
 
         // Transaction #2
 
-        assertEquals("dde9543921850f41ca88e5401322cd7651c78a1e4deebd5ee385af8ac343f0ad",
-                Hex.toHexString(tx1.getHash()));
+        assertEquals("dde9543921850f41ca88e5401322cd7651c78a1e4deebd5ee385af8ac343f0ad", tx1.getHash().toHexString());
 
         assertEquals("02",
                 Hex.toHexString(tx1.getNonce()));
 
         assertEquals("2710",
-                Hex.toHexString(tx1.getValue()));
+                Hex.toHexString(tx1.getValue().getBytes()));
 
         assertEquals("09184e72a000",
                 Hex.toHexString(tx1.getReceiveAddress().getBytes()));
@@ -182,7 +180,7 @@ public class TransactionsMessageTest {
 
         BigInteger value = new BigInteger("1000000000000000000000000");
 
-        byte[] privKey = HashUtil.sha3("cat".getBytes());
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
         ECKey ecKey = ECKey.fromPrivate(privKey);
 
         byte[] gasPrice = Hex.decode("09184e72a000");
@@ -194,7 +192,7 @@ public class TransactionsMessageTest {
         tx.sign(privKey);
         tx.getEncoded();
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(ConfigHelper.CONFIG, Collections.singletonList(tx));
+        TransactionsMessage transactionsMessage = new TransactionsMessage(config, Collections.singletonList(tx));
 
         assertEquals(expected, Hex.toHexString(transactionsMessage.getEncoded()));
     }
@@ -202,7 +200,7 @@ public class TransactionsMessageTest {
     @Test
     public void test_4() {
         String msg = "f872f87083011a6d850ba43b740083015f9094ec210ec3715d5918b37cfa4d344a45d177ed849f881b461c1416b9d000801ba023a3035235ca0a6f80f08a1d4bd760445d5b0f8a25c32678fe18a451a88d6377a0765dde224118bdb40a67f315583d542d93d17d8637302b1da26e1013518d3ae8";
-        TransactionsMessage tmsg = new TransactionsMessage(ConfigHelper.CONFIG, Hex.decode(msg));
+        TransactionsMessage tmsg = new TransactionsMessage(config, Hex.decode(msg));
         assertEquals(1, tmsg.getTransactions().size());
     }
 }

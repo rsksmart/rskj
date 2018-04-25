@@ -91,8 +91,8 @@ public class NetworkStateExporter {
     private ObjectNode createAccountNode(ObjectNode mainNode, RskAddress addr, Repository frozenRepository) {
         ObjectNode accountNode = mainNode.objectNode();
         AccountState accountState = frozenRepository.getAccountState(addr);
-        BigInteger balance = accountState.getBalance();
-        accountNode.put("balance", balance.toString());
+        Coin balance = accountState.getBalance();
+        accountNode.put("balance", balance.asBigInteger().toString());
         BigInteger nonce = accountState.getNonce();
         accountNode.put("nonce", nonce.toString());
         ContractDetails contractDetails = frozenRepository.getContractDetails(addr);

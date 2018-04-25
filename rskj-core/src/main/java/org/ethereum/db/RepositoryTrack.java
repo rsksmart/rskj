@@ -20,12 +20,14 @@
 package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -38,7 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.Keccak256Helper.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -46,7 +48,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 17.11.2014
  */
 public class RepositoryTrack implements Repository {
-    private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
+    private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
     private final Map<RskAddress, AccountState> cacheAccounts = new HashMap<>();
@@ -69,7 +71,7 @@ public class RepositoryTrack implements Repository {
         synchronized (repository) {
             logger.trace("createAccount: [{}]", addr);
 
-            AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+            AccountState accountState = new AccountState();
             cacheAccounts.put(addr, accountState);
 
             ContractDetails contractDetails = new ContractDetailsCacheImpl(null);
@@ -218,17 +220,17 @@ public class RepositoryTrack implements Repository {
     @Override
     public BigInteger getNonce(RskAddress addr) {
         AccountState accountState = getAccountState(addr);
-        return accountState == null ? AccountState.EMPTY.getNonce() : accountState.getNonce();
+        return accountState == null ? new AccountState().getNonce() : accountState.getNonce();
     }
 
     @Override
-    public BigInteger getBalance(RskAddress addr) {
+    public Coin getBalance(RskAddress addr) {
         AccountState accountState = getAccountState(addr);
-        return accountState == null ? AccountState.EMPTY.getBalance() : accountState.getBalance();
+        return accountState == null ? new AccountState().getBalance() : accountState.getBalance();
     }
 
     @Override
-    public BigInteger addBalance(RskAddress addr, BigInteger value) {
+    public Coin addBalance(RskAddress addr, Coin value) {
 
         synchronized (repository) {
             AccountState accountState = getAccountState(addr);
@@ -237,7 +239,7 @@ public class RepositoryTrack implements Repository {
             }
 
             getContractDetails(addr).setDirty(true);
-            BigInteger newBalance = accountState.addToBalance(value);
+            Coin newBalance = accountState.addToBalance(value);
 
             logger.trace("adding to balance addr: [{}], balance: [{}], delta: [{}]", addr,
                     newBalance, value);
@@ -253,7 +255,7 @@ public class RepositoryTrack implements Repository {
         synchronized (repository) {
             getContractDetails(addr).setCode(code);
             getContractDetails(addr).setDirty(true);
-            getAccountState(addr).setCodeHash(sha3(code));
+            getAccountState(addr).setCodeHash(Keccak256Helper.keccak256(code));
         }
     }
 

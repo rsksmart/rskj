@@ -20,14 +20,14 @@ package org.ethereum.rpc.Simples;
 
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.blocks.BlockRecorder;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 
-import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -54,8 +54,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
 
     }
 
-    @Override
-    public PendingState getPendingState() {
+    public TransactionPool getTransactionPool() {
         return null;
     }
 
@@ -65,16 +64,21 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public void setStatus(Block block, BigInteger difficulty) {
+    public void setStatus(Block block, BlockDifficulty difficulty) {
         // not used
     }
 
     @Override
     public Block getBestBlock() {
 
-        Block block = BlockGenerator.getInstance().getGenesisBlock();
+        Block block = new BlockGenerator().getGenesisBlock();
 
         return block;
+    }
+
+    @Override
+    public void setBlockRecorder(BlockRecorder blockRecorder) {
+
     }
 
     @Override
@@ -88,12 +92,12 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public BigInteger getTotalDifficulty() {
+    public BlockDifficulty getTotalDifficulty() {
         return null;
     }
 
     @Override
-    public void setTotalDifficulty(BigInteger totalDifficulty) {
+    public void setTotalDifficulty(BlockDifficulty totalDifficulty) {
 
     }
 
@@ -131,9 +135,6 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     public List<Block> getBlocksByNumber(long blockNr) {
         return null;
     }
-
-    @Override
-    public ReceiptStore getReceiptStore() { return null; }
 
     @Override
     public BlockStore getBlockStore() { return null; }

@@ -18,9 +18,9 @@
 
 package co.rsk.net;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
-import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +37,9 @@ public class BlockProcessResult {
 
     private boolean additionalValidationsOk = false;
 
-    private Map<ByteArrayWrapper, ImportResult> result;
+    private Map<Keccak256, ImportResult> result;
 
-    public BlockProcessResult(boolean additionalValidations, Map<ByteArrayWrapper, ImportResult> result, String blockHash, Duration processingTime) {
+    public BlockProcessResult(boolean additionalValidations, Map<Keccak256, ImportResult> result, String blockHash, Duration processingTime) {
         this.additionalValidationsOk = additionalValidations;
         this.result = result;
         if (processingTime.compareTo(LOG_TIME_LIMIT) >= 0) {
@@ -48,7 +48,7 @@ public class BlockProcessResult {
     }
 
     public boolean wasBlockAdded(Block block) {
-        return additionalValidationsOk && !result.isEmpty() && importOk(result.get(new ByteArrayWrapper(block.getHash())));
+        return additionalValidationsOk && !result.isEmpty() && importOk(result.get(block.getHash()));
     }
 
     public static boolean importOk(ImportResult blockResult) {
@@ -67,7 +67,7 @@ public class BlockProcessResult {
             StringBuilder sb = new StringBuilder("[MESSAGE PROCESS] Block[")
                     .append(blockHash).append("] After[").append(processingTime.toNanos()).append("] nano, process result. Connections attempts: ").append(result.size()).append(" | ");
 
-            for(Map.Entry<ByteArrayWrapper, ImportResult> entry : this.result.entrySet()) {
+            for(Map.Entry<Keccak256, ImportResult> entry : this.result.entrySet()) {
                 sb.append(entry.getKey().toString()).append(" - ").append(entry.getValue()).append(" | ");
             }
             logger.debug(sb.toString());

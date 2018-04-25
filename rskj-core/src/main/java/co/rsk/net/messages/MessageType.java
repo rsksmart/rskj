@@ -18,6 +18,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.*;
@@ -26,7 +27,6 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,7 +51,7 @@ public enum MessageType {
 
             byte[] parentHash = list.get(2).getRLPData();
             byte[] rlpTotalDifficulty = list.get(3).getRLPData();
-            BigInteger totalDifficulty = rlpTotalDifficulty == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(rlpTotalDifficulty);
+            BlockDifficulty totalDifficulty = rlpTotalDifficulty == null ? BlockDifficulty.ZERO : new BlockDifficulty(rlpTotalDifficulty);
 
             return new StatusMessage(new Status(number, hash, parentHash, totalDifficulty));
         }

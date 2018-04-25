@@ -19,10 +19,10 @@
 
 package org.ethereum.sync;
 
-import co.rsk.panic.PanicProcessor;
+import co.rsk.net.NodeID;
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.NodeHandler;
 import org.ethereum.net.NodeManager;
@@ -59,42 +59,39 @@ import static org.ethereum.util.TimeUtils.timeAfterMillis;
 public class SyncPool implements Iterable<Channel> {
 
     public static final Logger logger = LoggerFactory.getLogger("sync");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private static final long WORKER_TIMEOUT = 3; // 3 seconds
 
     private static final long CONNECTION_TIMEOUT = secondsToMillis(30);
 
-    private final Map<ByteArrayWrapper, Channel> peers = new HashMap<>();
+    private final Map<NodeID, Channel> peers = new HashMap<>();
     private final List<Channel> activePeers = Collections.synchronizedList(new ArrayList<Channel>());
     private final Map<String, Long> pendingConnections = new HashMap<>();
 
-    private BigInteger lowerUsefulDifficulty = BigInteger.ZERO;
+    private BlockDifficulty lowerUsefulDifficulty = BlockDifficulty.ZERO;
 
     private final EthereumListener ethereumListener;
     private final Blockchain blockchain;
     private final SystemProperties config;
     private final NodeManager nodeManager;
-    private final PeerClientFactory peerClientFactory;
     private final ScheduledExecutorService syncPoolExecutor;
 
-    public SyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager, PeerClientFactory peerClientFactory) {
+    public SyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager) {
         this.ethereumListener = ethereumListener;
         this.blockchain = blockchain;
         this.config = config;
         this.nodeManager = nodeManager;
-        this.peerClientFactory = peerClientFactory;
         this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
     }
 
-    public void start() {
+    public void start(PeerClientFactory peerClientFactory) {
         syncPoolExecutor.scheduleWithFixedDelay(
             () -> {
                 try {
                     heartBeat();
                     processConnections();
                     updateLowerUsefulDifficulty();
-                    fillUp();
+                    fillUp(peerClientFactory);
                     prepareActive();
                 } catch (Throwable t) {
                     logger.error("Unhandled exception", t);
@@ -121,7 +118,7 @@ public class SyncPool implements Iterable<Channel> {
         }
 
         synchronized (peers) {
-            peers.put(peer.getNodeIdWrapper(), peer);
+            peers.put(peer.getNodeId(), peer);
         }
 
         synchronized (pendingConnections) {
@@ -157,10 +154,10 @@ public class SyncPool implements Iterable<Channel> {
     @Nullable
     public Channel getMasterCandidate() {
         synchronized (activePeers) {
-
             if (activePeers.isEmpty()) {
                 return null;
             }
+
             return activePeers.get(0);
         }
     }
@@ -186,6 +183,7 @@ public class SyncPool implements Iterable<Channel> {
         }
 
         boolean existed;
+
         synchronized (peers) {
             existed = peers.values().remove(peer);
             synchronized (activePeers) {
@@ -202,13 +200,14 @@ public class SyncPool implements Iterable<Channel> {
         logger.info("Peer {}: disconnected", peer.getPeerIdShort());
     }
 
-    private void connect(Node node) {
+    private void connect(Node node, PeerClientFactory peerClientFactory) {
         if (logger.isTraceEnabled()) {
             logger.trace(
                 "Peer {}: initiate connection",
                 node.getHexIdShort()
             );
         }
+
         if (isInUse(node.getHexId())) {
             if (logger.isTraceEnabled()) {
                 logger.trace(
@@ -216,31 +215,34 @@ public class SyncPool implements Iterable<Channel> {
                     node.getHexIdShort()
                 );
             }
+
             return;
         }
 
         synchronized (pendingConnections) {
-            connect(node.getHost(), node.getPort(), Hex.toHexString(node.getId()));
+            String ip = node.getHost();
+            int port = node.getPort();
+            String remoteId = Hex.toHexString(node.getId().getID());
+            logger.info("Connecting to: {}:{}", ip, port);
+            PeerClient peerClient = peerClientFactory.newInstance();
+            peerClient.connectAsync(ip, port, remoteId, false);
             pendingConnections.put(node.getHexId(), timeAfterMillis(CONNECTION_TIMEOUT));
         }
     }
 
-    private void connect(final String ip, final int port, final String remoteId) {
-        logger.info("Connecting to: {}:{}", ip, port);
-        PeerClient peerClient = peerClientFactory.newInstance();
-        peerClient.connectAsync(ip, port, remoteId, false);
-    }
-
     public Set<String> nodesInUse() {
         Set<String> ids = new HashSet<>();
+
         synchronized (peers) {
             for (Channel peer : peers.values()) {
                 ids.add(peer.getPeerId());
             }
         }
+
         synchronized (pendingConnections) {
             ids.addAll(pendingConnections.keySet());
         }
+
         return ids;
     }
 
@@ -270,6 +272,7 @@ public class SyncPool implements Iterable<Channel> {
             logger.info("\n");
             logger.info("Active peers");
             logger.info("============");
+
             for (Channel peer : activePeers) {
                 peer.logSyncStats();
             }
@@ -294,7 +297,7 @@ public class SyncPool implements Iterable<Channel> {
         return exceeded;
     }
 
-    private void fillUp() {
+    private void fillUp(PeerClientFactory peerClientFactory) {
         int lackSize = config.maxActivePeers() - peers.size();
         if(lackSize <= 0) {
             return;
@@ -309,7 +312,7 @@ public class SyncPool implements Iterable<Channel> {
         }
 
         for(NodeHandler n : newNodes) {
-            connect(n.getNode());
+            connect(n.getNode(), peerClientFactory);
         }
     }
 
@@ -359,21 +362,25 @@ public class SyncPool implements Iterable<Channel> {
 
     private void logDiscoveredNodes(List<NodeHandler> nodes) {
         StringBuilder sb = new StringBuilder();
+
         for(NodeHandler n : nodes) {
-            sb.append(Utils.getNodeIdShort(Hex.toHexString(n.getNode().getId())));
+            sb.append(Utils.getNodeIdShort(Hex.toHexString(n.getNode().getId().getID())));
             sb.append(", ");
         }
+
         if(sb.length() > 0) {
             sb.delete(sb.length() - 2, sb.length());
         }
+
         logger.trace(
                 "Node list obtained from discovery: {}",
-                nodes.size() > 0 ? sb.toString() : "empty"
+                nodes.isEmpty() ? "empty" : sb.toString()
         );
     }
 
     public void updateLowerUsefulDifficulty() {
-        BigInteger td = blockchain.getTotalDifficulty();
+        BlockDifficulty td = blockchain.getTotalDifficulty();
+
         if (td.compareTo(lowerUsefulDifficulty) > 0) {
             lowerUsefulDifficulty = td;
         }

@@ -18,11 +18,12 @@
 
 package co.rsk.trie;
 
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.Keccak256Helper.keccak256;
 
 /**
  * Created by ajlopez on 08/01/2017.
@@ -55,8 +56,8 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         Assert.assertEquals(1, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(1, store.getSaveCount());
     }
@@ -66,21 +67,21 @@ public class TrieStoreImplTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false).put(sha3("foo".getBytes()), "bar".getBytes());
+        Trie trie = new TrieImpl(store, false).put(Keccak256Helper.keccak256("foo".getBytes()), "bar".getBytes());
 
         store.save(trie);
 
         Assert.assertEquals(1, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(1, store.getSaveCount());
 
-        Trie newTrie = store.retrieve(trie.getHash());
+        Trie newTrie = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
-        Assert.assertNotNull(newTrie.get(sha3("foo".getBytes())));
+        Assert.assertNotNull(newTrie.get(Keccak256Helper.keccak256("foo".getBytes())));
     }
 
     @Test
@@ -88,7 +89,7 @@ public class TrieStoreImplTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        byte[] key = sha3("foo".getBytes());
+        byte[] key = Keccak256Helper.keccak256("foo".getBytes());
         byte[] value = new byte[33];
 
         Trie trie = new TrieImpl(store, false).put(key, value);
@@ -96,12 +97,12 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         Assert.assertEquals(2, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(2, store.getSaveCount());
 
-        Trie newTrie = store.retrieve(trie.getHash());
+        Trie newTrie = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
@@ -119,8 +120,8 @@ public class TrieStoreImplTest {
         trie.save();
 
         Assert.assertEquals(trie.trieSize(), map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(trie.trieSize(), store.getSaveCount());
     }
@@ -135,8 +136,8 @@ public class TrieStoreImplTest {
         trie.save();
 
         Assert.assertEquals(trie.trieSize() + 1, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(trie.trieSize() + 1, store.getSaveCount());
     }
@@ -153,8 +154,8 @@ public class TrieStoreImplTest {
         trie.save();
 
         Assert.assertEquals(trie.trieSize() + 2, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(trie.trieSize() + 2, store.getSaveCount());
     }
@@ -194,11 +195,11 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void saveFullTrieUpdateAndSaveAgainUsingArity16() {
+    public void saveFullTrieUpdateAndSaveAgain() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(16, store, false).put("foo", "bar".getBytes());
+        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
 
         trie.save();
 
@@ -230,7 +231,7 @@ public class TrieStoreImplTest {
         trie.save();
         int size = trie.trieSize();
 
-        Trie trie2 = store.retrieve(trie.getHash());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertEquals(1, store.getRetrieveCount());
 
@@ -248,7 +249,7 @@ public class TrieStoreImplTest {
                 .put("foo", "bar".getBytes())
                 .put("bar", "foo".getBytes());
 
-        byte[] root = trie.getHash();
+        byte[] root = trie.getHash().getBytes();
 
         trie.save();
 

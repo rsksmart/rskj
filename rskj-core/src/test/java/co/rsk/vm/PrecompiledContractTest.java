@@ -18,7 +18,7 @@
 
 package co.rsk.vm;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.Bridge;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -28,10 +28,13 @@ import org.junit.Test;
 
 public class PrecompiledContractTest {
 
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+
     @Test
     public void getBridgeContract() {
         DataWord bridgeAddress = new DataWord(PrecompiledContracts.BRIDGE_ADDR.getBytes());
-        PrecompiledContract bridge = PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, bridgeAddress);
+        PrecompiledContract bridge = precompiledContracts.getContractForAddress(bridgeAddress);
 
         Assert.assertNotNull(bridge);
         Assert.assertEquals(Bridge.class, bridge.getClass());
@@ -40,8 +43,8 @@ public class PrecompiledContractTest {
     @Test
     public void getBridgeContractTwice() {
         DataWord bridgeAddress = new DataWord(PrecompiledContracts.BRIDGE_ADDR.getBytes());
-        PrecompiledContract bridge1 = PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, bridgeAddress);
-        PrecompiledContract bridge2 = PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, bridgeAddress);
+        PrecompiledContract bridge1 = precompiledContracts.getContractForAddress(bridgeAddress);
+        PrecompiledContract bridge2 = precompiledContracts.getContractForAddress(bridgeAddress);
 
         Assert.assertNotNull(bridge1);
         Assert.assertNotNull(bridge2);

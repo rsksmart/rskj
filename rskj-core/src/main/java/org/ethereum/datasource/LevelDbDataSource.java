@@ -65,7 +65,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public LevelDbDataSource(RskSystemProperties config, String name) {
         this.config = config;
         this.name = name;
-        logger.info("New LevelDbDataSource: {}", name);
+        logger.debug("New LevelDbDataSource: {}", name);
     }
 
     @Override

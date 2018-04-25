@@ -18,10 +18,10 @@
 
 package co.rsk.metrics;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.core.BlockHeader;
 
-import java.math.BigInteger;
+import java.util.Objects;
 
 /**
  * Created by mario on 09/09/2016.
@@ -29,19 +29,19 @@ import java.math.BigInteger;
 public class BlockHeaderElement {
 
     private final BlockHeader blockHeader;
-    private final BigInteger difficulty;
+    private final BlockDifficulty difficulty;
 
-    public BlockHeaderElement(BlockHeader blockHeader, BigInteger difficulty) {
+    public BlockHeaderElement(BlockHeader blockHeader, BlockDifficulty difficulty) {
         this.blockHeader = blockHeader;
         this.difficulty = difficulty;
     }
 
-    public BigInteger getDifficulty() {
-        return difficulty;
-    }
-
     public BlockHeader getBlockHeader() {
         return blockHeader;
+    }
+
+    public BlockDifficulty getDifficulty() {
+        return difficulty;
     }
 
     @Override
@@ -56,15 +56,12 @@ public class BlockHeaderElement {
         
         BlockHeaderElement that = (BlockHeaderElement) o;
 
-        return new EqualsBuilder()
-                .append(blockHeader, that.blockHeader)
-                .append(difficulty, that.difficulty).isEquals();
+        return Objects.equals(blockHeader, that.blockHeader) &&
+                Objects.equals(difficulty, that.difficulty);
     }
 
     @Override
     public int hashCode() {
-        int result = blockHeader != null ? blockHeader.hashCode() : 0;
-        result = 31 * result + (difficulty != null ? difficulty.hashCode() : 0);
-        return result;
+        return Objects.hash(blockHeader, difficulty);
     }
 }

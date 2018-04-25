@@ -18,30 +18,33 @@
 
 package co.rsk.rpc;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
+import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,49 +54,72 @@ public class Web3RskImplTest {
     @Test
     public void web3_ext_dumpState() throws Exception {
         Rsk rsk = Mockito.mock(Rsk.class);
-        WorldManager worldManager = Mockito.mock(WorldManager.class);
         Blockchain blockchain = Mockito.mock(Blockchain.class);
 
         NetworkStateExporter networkStateExporter = Mockito.mock(NetworkStateExporter.class);
         Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
 
         Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHash()).thenReturn(PegTestUtils.createHash3().getBytes());
+        Mockito.when(block.getHash()).thenReturn(PegTestUtils.createHash3());
         Mockito.when(block.getNumber()).thenReturn(1L);
 
         BlockStore blockStore = Mockito.mock(BlockStore.class);
         Mockito.when(blockStore.getBestBlock()).thenReturn(block);
         Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
 
-        Mockito.when(worldManager.getBlockchain()).thenReturn(blockchain);
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
 
         Wallet wallet = WalletFactory.createWallet();
-        PersonalModule pm = new PersonalModuleWalletEnabled(ConfigHelper.CONFIG, rsk, wallet, null);
-        EthModule em = new EthModule(ConfigHelper.CONFIG, rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(ConfigHelper.CONFIG, rsk, wallet, null));
-        Web3RskImpl web3 = new Web3RskImpl(rsk, worldManager, ConfigHelper.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, networkStateExporter, blockStore, null);
+        TestSystemProperties config = new TestSystemProperties();
+        PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
+        EthModule em = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
+        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        Web3RskImpl web3 = new Web3RskImpl(
+                rsk,
+                blockchain,
+                Web3Mocks.getMockTransactionPool(),
+                config,
+                Web3Mocks.getMockMinerClient(),
+                Web3Mocks.getMockMinerServer(),
+                pm,
+                em,
+                tpm,
+                Web3Mocks.getMockChannelManager(),
+                Web3Mocks.getMockRepository(),
+                null,
+                networkStateExporter,
+                blockStore,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
         web3.ext_dumpState();
     }
 
     @Test
     public void web3_LogFilterElement_toString() {
         LogInfo logInfo = Mockito.mock(LogInfo.class);
-        Mockito.when(logInfo.getData()).thenReturn(new byte[]{1});
+        byte[] valueToTest = HashUtil.keccak256(new byte[]{1});
+        Mockito.when(logInfo.getData()).thenReturn(valueToTest);
         List<DataWord> topics = new ArrayList<>();
         topics.add(new DataWord("c1"));
         topics.add(new DataWord("c2"));
         Mockito.when(logInfo.getTopics()).thenReturn(topics);
         Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHash()).thenReturn(new byte[]{1});
+        Mockito.when(block.getHash()).thenReturn(new Keccak256(valueToTest));
         Mockito.when(block.getNumber()).thenReturn(1L);
         int txIndex = 1;
         Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getHash()).thenReturn(new byte[]{2});
+        byte[] bytes = new byte[32];
+        bytes[0] = 2;
+        Mockito.when(tx.getHash()).thenReturn(new Keccak256(bytes));
         int logIdx = 5;
 
         LogFilterElement logFilterElement = new LogFilterElement(logInfo, block, txIndex, tx, logIdx);
 
-        Assert.assertEquals(logFilterElement.toString(), "LogFilterElement{logIndex='0x5', blockNumber='0x1', blockHash='0x01', transactionHash='0x02', transactionIndex='0x1', address='0x00', data='0x01', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}");
+        Assert.assertEquals(logFilterElement.toString(), "LogFilterElement{logIndex='0x5', blockNumber='0x1', blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', transactionHash='0x0200000000000000000000000000000000000000000000000000000000000000', transactionIndex='0x1', address='0x00', data='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}");
     }
 
     @Test

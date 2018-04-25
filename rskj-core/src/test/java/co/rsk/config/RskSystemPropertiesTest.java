@@ -27,21 +27,24 @@ import java.util.List;
  * Created by ajlopez on 3/16/2016.
  */
 public class RskSystemPropertiesTest {
+
+    private final TestSystemProperties config = new TestSystemProperties();
+
     @Test
     public void defaultValues() {
-        Assert.assertEquals(false, ConfigHelper.CONFIG.minerClientEnabled());
-        Assert.assertEquals(false, ConfigHelper.CONFIG.minerServerEnabled());
-        Assert.assertEquals(0, ConfigHelper.CONFIG.minerMinGasPrice());
-        Assert.assertEquals(0, ConfigHelper.CONFIG.minerGasUnitInDollars(), 0.001);
-        Assert.assertEquals(0, ConfigHelper.CONFIG.minerMinFeesNotifyInDollars(), 0.001);
-        Assert.assertTrue(ConfigHelper.CONFIG.isFlushEnabled());
+        Assert.assertEquals(false, config.isMinerClientEnabled());
+        Assert.assertEquals(false, config.isMinerServerEnabled());
+        Assert.assertEquals(0, config.minerMinGasPrice());
+        Assert.assertEquals(0, config.minerGasUnitInDollars(), 0.001);
+        Assert.assertEquals(0, config.minerMinFeesNotifyInDollars(), 0.001);
+        Assert.assertTrue(config.isFlushEnabled());
     }
 
     @Test
     public void hasMessagesConfiguredInTestConfig() {
-        Assert.assertTrue(ConfigHelper.CONFIG.hasMessageRecorderEnabled());
+        Assert.assertTrue(config.hasMessageRecorderEnabled());
 
-        List<String> commands = ConfigHelper.CONFIG.getMessageRecorderCommands();
+        List<String> commands = config.getMessageRecorderCommands();
         Assert.assertNotNull(commands);
         Assert.assertEquals(2, commands.size());
         Assert.assertTrue(commands.contains("TRANSACTIONS"));

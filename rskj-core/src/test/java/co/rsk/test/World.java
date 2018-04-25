@@ -18,7 +18,7 @@
 
 package co.rsk.test;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
@@ -29,6 +29,7 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
+import org.ethereum.db.ReceiptStore;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,6 +49,10 @@ public class World {
         this(new BlockChainBuilder().build());
     }
 
+    public World(ReceiptStore receiptStore) {
+        this(new BlockChainBuilder().setReceiptStore(receiptStore).build());
+    }
+
     public World(BlockChainImpl blockChain) {
         this(blockChain, null);
     }
@@ -59,12 +64,14 @@ public class World {
             genesis = (Genesis) BlockChainImplTest.getGenesisBlock(blockChain);
             this.blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
         }
+
         this.saveBlock("g00", genesis);
 
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, syncConfiguration);
+        TestSystemProperties config = new TestSystemProperties();
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
         this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
     }
 
@@ -72,7 +79,7 @@ public class World {
 
     public BlockExecutor getBlockExecutor() {
         if (this.blockExecutor == null)
-            this.blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, this.getRepository(), this.getBlockChain(), this.getBlockChain().getBlockStore(), null);
+            this.blockExecutor = new BlockExecutor(new TestSystemProperties(), this.getRepository(), null, this.getBlockChain().getBlockStore(), null);
 
         return this.blockExecutor;
     }

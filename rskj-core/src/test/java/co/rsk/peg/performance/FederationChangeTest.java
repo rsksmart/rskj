@@ -44,7 +44,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
             "auth-c",
             "auth-d",
             "auth-e",
-    }).map(generator -> ECKey.fromPrivate(HashUtil.sha3(generator.getBytes(StandardCharsets.UTF_8)))).collect(Collectors.toList());
+    }).map(generator -> ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)))).collect(Collectors.toList());
 
     private ECKey winnerKeyToTry;
     private PendingFederation pendingFederation;

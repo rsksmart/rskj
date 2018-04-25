@@ -1,9 +1,8 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.MessageChannel;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 
-import java.math.BigInteger;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -14,19 +13,17 @@ import java.time.Instant;
 public class SyncPeerStatus {
     // Peer status
     private Status status;
-    private MessageChannel messageChannel;
 
     private final Clock clock = Clock.systemUTC();
     private Instant lastActivity;
 
-    public SyncPeerStatus(MessageChannel messageChannel) {
-        this.messageChannel = messageChannel;
+    public SyncPeerStatus() {
         this.updateActivity();
     }
 
     public int peerTotalDifficultyComparator(SyncPeerStatus other) {
-        BigInteger ttd = this.status.getTotalDifficulty();
-        BigInteger otd = other.status.getTotalDifficulty();
+        BlockDifficulty ttd = this.status.getTotalDifficulty();
+        BlockDifficulty otd = other.status.getTotalDifficulty();
 
         if (ttd == null && otd == null) {
             return 0;
@@ -54,10 +51,6 @@ public class SyncPeerStatus {
 
     public Status getStatus() {
         return this.status;
-    }
-
-    public MessageChannel getMessageChannel() {
-        return messageChannel;
     }
 
     /**

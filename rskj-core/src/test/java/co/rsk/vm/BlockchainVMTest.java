@@ -19,7 +19,8 @@
 package co.rsk.vm;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.test.World;
 import org.ethereum.core.*;
@@ -30,9 +31,7 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by ajlopez on 4/20/2016.
@@ -42,11 +41,11 @@ public class BlockchainVMTest {
 
     @Test
     public void genesisTest() {
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block genesis = new BlockGenerator().getGenesisBlock();
         Assert.assertEquals(0, genesis.getNumber());
     }
 
-    static BigInteger faucetAmount =new BigInteger("1000000000");
+    private static Coin faucetAmount = Coin.valueOf(1000000000L);
 
     public static class NewBlockChainInfo {
         public Blockchain blockchain;
@@ -65,24 +64,27 @@ public class BlockchainVMTest {
     public void testSEND_1() {
         NewBlockChainInfo binfo = createNewBlockchain();
         Blockchain blockchain = binfo.blockchain;
-        Block block1 = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock(), null, binfo.repository.getRoot());
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), null, binfo.repository.getRoot());
         List<Transaction> txs = new ArrayList<>();
-        BigInteger transferAmount = new BigInteger("100");
+        Coin transferAmount = Coin.valueOf(100L);
         // Add a single transaction paying to a new address
         byte[] dstAddress = randomAddress();
-        BigInteger transactionGas =new BigInteger("21000");
+        BigInteger transactionGasLimit = new BigInteger("21000");
+        Coin transactionGasPrice = Coin.valueOf(1);
         Transaction t = new Transaction(
                 ZERO_BYTE_ARRAY,
-                BigInteger.ONE.toByteArray(), transactionGas.toByteArray(),
+                transactionGasPrice.getBytes(),
+                transactionGasLimit.toByteArray(),
                 dstAddress ,
-                transferAmount.toByteArray(),
+                transferAmount.getBytes(),
                 null,
-                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                new TestSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
 
         t.sign(binfo.faucetKey.getPrivKeyBytes());
         txs.add(t);
 
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1, txs, binfo.repository.getRoot());
+        Block block2 = blockGenerator.createChildBlock(block1, txs, binfo.repository.getRoot());
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
 
         MinerHelper mh = new MinerHelper(
@@ -95,29 +97,23 @@ public class BlockchainVMTest {
         Assert.assertEquals(blockchain.getBestBlock(), block2);
         Assert.assertEquals(2, block2.getNumber());
 
-        BigInteger srcAmount;
-        srcAmount = faucetAmount.subtract(transferAmount);
-        srcAmount = srcAmount.subtract(transactionGas);
+        Coin srcAmount = faucetAmount.subtract(transferAmount);
+        srcAmount = srcAmount.subtract(transactionGasPrice.multiply(transactionGasLimit));
 
-        Assert.assertEquals(binfo.repository.getBalance(new RskAddress(binfo.faucetKey.getAddress())).toString(),
-                srcAmount.toString());
+        Assert.assertEquals(
+                binfo.repository.getBalance(new RskAddress(binfo.faucetKey.getAddress())),
+                srcAmount);
 
-        BigInteger dstAmount = transferAmount;
-        Assert.assertEquals(binfo.repository.getBalance(new RskAddress(dstAddress)).toString(),
-                dstAmount.toString());
+        Assert.assertEquals(
+                binfo.repository.getBalance(new RskAddress(dstAddress)),
+                transferAmount);
     }
 
     private static NewBlockChainInfo createNewBlockchain() {
         World world = new World();
         NewBlockChainInfo binfo = new NewBlockChainInfo();
-        Map<byte[], BigInteger> preMineMap = new HashMap<byte[], BigInteger>();
 
-        byte[] faucetAddress;
         binfo.faucetKey = createFaucetAccount(world);
-
-        faucetAddress = binfo.faucetKey.getAddress();
-        preMineMap.put(faucetAddress,faucetAmount);
-
         binfo.blockchain = world.getBlockChain();
         binfo.repository = world.getRepository();
         return binfo;

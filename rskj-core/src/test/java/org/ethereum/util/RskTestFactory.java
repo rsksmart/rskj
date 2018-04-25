@@ -1,10 +1,12 @@
 package org.ethereum.util;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
@@ -29,14 +31,16 @@ import java.util.HashMap;
  * tests yet.
  */
 public class RskTestFactory {
+    private final TestSystemProperties config = new TestSystemProperties();
     private BlockChainImpl blockchain;
     private IndexedBlockStore blockStore;
-    private PendingState pendingState;
+    private TransactionPool transactionPool;
     private RepositoryImpl repository;
     private ProgramInvokeFactoryImpl programInvokeFactory;
+    private ReversibleTransactionExecutor reversibleTransactionExecutor;
 
     public RskTestFactory() {
-        Genesis genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Genesis genesis = new BlockGenerator().getGenesisBlock();
         genesis.setStateRoot(getRepository().getRoot());
         genesis.flushRLP();
         getBlockchain().setBestBlock(genesis);
@@ -46,7 +50,7 @@ public class RskTestFactory {
     public ContractDetails addContract(String runtimeBytecode) {
         Account contractAccount = new AccountBuilder(getBlockchain())
                 .name(runtimeBytecode)
-                .balance(BigInteger.TEN)
+                .balance(Coin.valueOf(10))
                 .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                 .build();
 
@@ -57,7 +61,7 @@ public class RskTestFactory {
         Account sender = new AccountBuilder(getBlockchain())
                 .name("sender")
                 // a large balance will allow running any contract
-                .balance(BigInteger.valueOf(10000000))
+                .balance(Coin.valueOf(10000000L))
                 .build();
         BigInteger nonceCreate = getRepository().getNonce(sender.getAddress());
         Transaction creationTx = new TransactionBuilder()
@@ -82,7 +86,7 @@ public class RskTestFactory {
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, transaction, 0, RskAddress.nullAddress(),
+        TransactionExecutor executor = new TransactionExecutor(config, transaction, 0, RskAddress.nullAddress(),
                 getRepository(), getBlockStore(), getReceiptStore(),
                 getProgramInvokeFactory(), getBlockchain().getBestBlock());
         executor.init();
@@ -104,7 +108,7 @@ public class RskTestFactory {
     public BlockChainImpl getBlockchain() {
         if (blockchain == null) {
             blockchain = new BlockChainImpl(
-                    ConfigHelper.CONFIG, getRepository(),
+                    config, getRepository(),
                     getBlockStore(),
                     getReceiptStore(),
                     null, //circular dependency
@@ -112,8 +116,8 @@ public class RskTestFactory {
                     null,
                     new DummyBlockValidator()
             );
-            PendingState pendingState = getPendingState();
-            blockchain.setPendingState(pendingState);
+            TransactionPool transactionPool = getTransactionPool();
+            blockchain.setTransactionPool(transactionPool);
         }
 
         return blockchain;
@@ -126,35 +130,47 @@ public class RskTestFactory {
 
     public BlockStore getBlockStore() {
         if (blockStore == null) {
-            blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
-            HashMapDB blockStore = new HashMapDB();
-            this.blockStore.init(new HashMap<>(), blockStore, null);
+            this.blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         }
 
         return blockStore;
     }
 
-    public PendingState getPendingState() {
-        if (pendingState == null) {
-            pendingState = new PendingStateImpl(
-                    getBlockchain(),
+    public TransactionPool getTransactionPool() {
+        if (transactionPool == null) {
+            transactionPool = new TransactionPoolImpl(
                     getBlockStore(),
+                    getReceiptStore(),
                     null,
                     getProgramInvokeFactory(),
                     getRepository(),
-                    ConfigHelper.CONFIG
+                    config
             );
         }
 
-        return pendingState;
+        return transactionPool;
     }
 
     public Repository getRepository() {
         if (repository == null) {
             HashMapDB stateStore = new HashMapDB();
-            repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(stateStore));
+            repository = new RepositoryImpl(config, new TrieStoreImpl(stateStore));
         }
 
         return repository;
+    }
+
+    public ReversibleTransactionExecutor getReversibleTransactionExecutor() {
+        if (reversibleTransactionExecutor == null) {
+            reversibleTransactionExecutor = new ReversibleTransactionExecutor(
+                    config,
+                    getRepository(),
+                    getBlockStore(),
+                    getReceiptStore(),
+                    getProgramInvokeFactory()
+            );
+        }
+
+        return reversibleTransactionExecutor;
     }
 }

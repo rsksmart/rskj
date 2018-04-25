@@ -19,17 +19,18 @@
 
 package org.ethereum.jsontestsuite.builder;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.core.AccountState;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.jsontestsuite.model.AccountTck;
 import org.ethereum.vm.DataWord;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.ethereum.crypto.HashUtil.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.json.Utils.parseData;
 import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
 
@@ -37,16 +38,16 @@ public class AccountBuilder {
 
     public static StateWrap build(AccountTck account) {
 
-        ContractDetailsImpl details = new ContractDetailsImpl(ConfigHelper.CONFIG);
+        ContractDetailsImpl details = new ContractDetailsImpl(new TestSystemProperties());
         details.setCode(parseData(account.getCode()));
         details.setStorage(convertStorage(account.getStorage()));
 
-        AccountState state = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        AccountState state = new AccountState();
 
-        state.addToBalance(unifiedNumericToBigInteger(account.getBalance()));
+        state.addToBalance(new Coin(unifiedNumericToBigInteger(account.getBalance())));
         state.setNonce(unifiedNumericToBigInteger(account.getNonce()));
         state.setStateRoot(details.getStorageHash());
-        state.setCodeHash(sha3(details.getCode()));
+        state.setCodeHash(HashUtil.keccak256(details.getCode()));
 
         return new StateWrap(state, details);
     }

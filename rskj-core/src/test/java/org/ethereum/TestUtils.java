@@ -19,6 +19,7 @@
 
 package org.ethereum;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
@@ -94,14 +95,14 @@ public final class TestUtils {
 
         for (int i = 0; i < length; ++i){
 
-            byte[] difficutly = BigIntegers.asUnsignedByteArray(new BigInteger(8, new Random()));
+            byte[] difficutly = new BigInteger(8, new Random()).toByteArray();
             byte[] newHash = randomHash();
 
             Block block = new Block(lastHash, newHash,  RskAddress.nullAddress().getBytes(), null, difficutly, lastIndex, new byte[] {0}, 0, 0, null, null,
-                    null, null, EMPTY_TRIE_HASH, randomHash(), null, null, null, BigInteger.ZERO);
+                    null, null, EMPTY_TRIE_HASH, randomHash(), null, null, null, Coin.ZERO);
 
             ++lastIndex;
-            lastHash = block.getHash();
+            lastHash = block.getHash().getBytes();
             result.add(block);
         }
 

@@ -18,7 +18,7 @@
 
 package co.rsk.core;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
@@ -33,13 +33,13 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,6 +50,12 @@ public class NetworkStateExporterTest {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     static String jsonFileName = "networkStateExporterTest.json";
+    private TestSystemProperties config;
+
+    @Before
+    public void setup(){
+        config = new TestSystemProperties();
+    }
 
     @AfterClass
     public static void cleanup(){
@@ -58,7 +64,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testEmptyRepo() throws Exception {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
 
         Map result = writeAndReadJson(repository);
 
@@ -67,25 +73,25 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testNoContracts() throws Exception {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
         String address1String = "1000000000000000000000000000000000000000";
-        RskAddress address1 = new RskAddress(address1String);
-        repository.createAccount(address1);
-        repository.addBalance(address1, BigInteger.ONE);
-        repository.increaseNonce(address1);
+        RskAddress addr1 = new RskAddress(address1String);
+        repository.createAccount(addr1);
+        repository.addBalance(addr1, Coin.valueOf(1L));
+        repository.increaseNonce(addr1);
         String address2String = "2000000000000000000000000000000000000000";
-        RskAddress address2 = new RskAddress(address2String);
-        repository.createAccount(address2);
-        repository.addBalance(address2, BigInteger.TEN);
-        repository.increaseNonce(address2);
-        repository.increaseNonce(address2);
+        RskAddress addr2 = new RskAddress(address2String);
+        repository.createAccount(addr2);
+        repository.addBalance(addr2, Coin.valueOf(10L));
+        repository.increaseNonce(addr2);
+        repository.increaseNonce(addr2);
 
         RskAddress remascSender = RskAddress.nullAddress();
         repository.createAccount(remascSender);
         repository.increaseNonce(remascSender);
 
         repository.createAccount(PrecompiledContracts.REMASC_ADDR);
-        repository.addBalance(PrecompiledContracts.REMASC_ADDR, BigInteger.TEN);
+        repository.addBalance(PrecompiledContracts.REMASC_ADDR, Coin.valueOf(10L));
         repository.increaseNonce(PrecompiledContracts.REMASC_ADDR);
 
 
@@ -110,20 +116,20 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testContracts() throws Exception {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
         String address1String = "1000000000000000000000000000000000000000";
-        RskAddress address1 = new RskAddress(address1String);
-        repository.createAccount(address1);
-        repository.addBalance(address1, BigInteger.ONE);
-        repository.increaseNonce(address1);
-        ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(ConfigHelper.CONFIG);
+        RskAddress addr1 = new RskAddress(address1String);
+        repository.createAccount(addr1);
+        repository.addBalance(addr1, Coin.valueOf(1L));
+        repository.increaseNonce(addr1);
+        ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(config);
         contractDetails.setCode(new byte[] {1, 2, 3, 4});
         contractDetails.put(DataWord.ZERO, DataWord.ONE);
         contractDetails.putBytes(DataWord.ONE, new byte[] {5, 6, 7, 8});
-        repository.updateContractDetails(address1, contractDetails);
-        AccountState accountState = repository.getAccountState(address1);
+        repository.updateContractDetails(addr1, contractDetails);
+        AccountState accountState = repository.getAccountState(addr1);
         accountState.setStateRoot(contractDetails.getStorageHash());
-        repository.updateAccountState(address1, accountState);
+        repository.updateAccountState(addr1, accountState);
 
         Map result = writeAndReadJson(repository);
 

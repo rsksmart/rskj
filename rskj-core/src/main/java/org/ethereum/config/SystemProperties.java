@@ -19,14 +19,16 @@
 
 package org.ethereum.config;
 
+import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.*;
 import org.ethereum.config.blockchain.DevNetConfig;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
+import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.config.net.TestNetConfig;
-import org.ethereum.config.net.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;
@@ -42,12 +44,11 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static org.ethereum.crypto.SHA3Helper.sha3;
 
 /**
  * Utility class to retrieve property values from the rskj.conf files
@@ -65,24 +66,26 @@ import static org.ethereum.crypto.SHA3Helper.sha3;
  * @since 22.05.2014
  */
 public abstract class SystemProperties {
-    public static final String DEFAULT_BIND_IP = "::";
+    private static final String DEFAULT_BIND_ADDRESS = "::";
+    private static final int DEFAULT_RPC_PORT = 4444;
     private static Logger logger = LoggerFactory.getLogger("general");
 
     public static final String PROPERTY_DB_DIR = "database.dir";
-    public static final String PROPERTY_LISTEN_PORT = "peer.listen.port";
+    public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_PEER_ACTIVE = "peer.active";
     public static final String PROPERTY_DB_RESET = "database.reset";
     // TODO review rpc properties
     public static final String PROPERTY_RPC_ENABLED = "rpc.enabled";
     public static final String PROPERTY_RPC_PORT = "rpc.port";
+    public static final String PROPERTY_RPC_HOST = "rpc.host";
     public static final String PROPERTY_RPC_CORS = "rpc.cors";
+    public static final String PROPERTY_RPC_ADDRESS = "rpc.address";
+    public static final String PROPERTY_PUBLIC_IP = "public.ip";
+    public static final String PROPERTY_BIND_ADDRESS = "bind.address";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
     private static final String DEFAULT_BLOCKS_LOADER = "";
-
-    private static final String YES = "yes";
-    private static final String NO = "no";
 
     /**
      * Marks config accessor methods which need to be called (for value validation)
@@ -103,21 +106,21 @@ public abstract class SystemProperties {
 
     private String genesisInfo = null;
 
-    private String bindIp = null;
-    private String externalIp = null;
+    private String publicIp = null;
 
     private Boolean syncEnabled = null;
     private Boolean discoveryEnabled = null;
 
     private BlockchainNetConfig blockchainConfig;
     
-    protected SystemProperties() {
+    protected SystemProperties(ConfigLoader loader) {
         try {
-            configFromFiles = getConfigFromFiles();
+            this.configFromFiles = loader.getConfigFromFiles();
+            logger.trace(
+                    "Config trace: {}",
+                    configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
+            );
             validateConfig();
-
-            logger.debug("Config trace: " + configFromFiles.root().render(ConfigRenderOptions.defaults().
-                    setComments(false).setJson(false)));
 
             Properties props = new Properties();
             InputStream is = getClass().getResourceAsStream("/version.properties");
@@ -143,25 +146,6 @@ public abstract class SystemProperties {
 
     private static String getProjectVersionModifier(Properties props) {
         return props.getProperty("modifier").replaceAll("\"", "");
-    }
-
-    private static Config getConfigFromFiles() {
-        Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
-        Config referenceConfig = ConfigFactory.parseResources("rskj.conf");
-        logger.info("Config ( {} ): default properties from resource 'rskj.conf'", referenceConfig.entrySet().isEmpty() ? NO : YES);
-        File installerFile = new File("/etc/rsk/node.conf");
-        Config installerConfig = installerFile.exists() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
-        logger.info("Config ( {} ): default properties from installer '/etc/rsk/node.conf'", installerConfig.entrySet().isEmpty() ? NO : YES);
-        Config testConfig = ConfigFactory.parseResources("test-rskj.conf");
-        logger.info("Config ( {} ): test properties from resource 'test-rskj.conf'", testConfig.entrySet().isEmpty() ? NO : YES);
-        String file = System.getProperty("rsk.conf.file");
-        Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
-        logger.info("Config ( {} ): user properties from -Drsk.conf.file file '{}'", cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
-        return javaSystemProperties
-                .withFallback(cmdLineConfigFile)
-                .withFallback(testConfig)
-                .withFallback(referenceConfig)
-                .withFallback(installerConfig);
     }
 
     public Config getConfig() {
@@ -286,7 +270,7 @@ public abstract class SystemProperties {
     }
 
     @ValidateMe
-    public boolean peerDiscovery() {
+    public boolean isPeerDiscoveryEnabled() {
         return discoveryEnabled == null ? configFromFiles.getBoolean("peer.discovery.enabled") : discoveryEnabled;
     }
 
@@ -353,7 +337,7 @@ public abstract class SystemProperties {
             if (configObject.toConfig().hasPath("nodeName")) {
                 String nodeName = configObject.toConfig().getString("nodeName").trim();
                 // FIXME should be sha3-512 here ?
-                byte[] nodeId = ECKey.fromPrivate(sha3(nodeName.getBytes(StandardCharsets.UTF_8))).getNodeId();
+                byte[] nodeId = ECKey.fromPrivate(Keccak256Helper.keccak256(nodeName.getBytes(StandardCharsets.UTF_8))).getNodeId();
                 return new Node(nodeId, ip, port);
             }
 
@@ -414,11 +398,6 @@ public abstract class SystemProperties {
 
     public void setDataBaseDir(String dataBaseDir) {
         this.databaseDir = dataBaseDir;
-    }
-
-    @ValidateMe
-    public boolean dumpCleanOnRestart() {
-        return configFromFiles.getBoolean("dump.clean.on.restart");
     }
 
     @ValidateMe
@@ -557,72 +536,85 @@ public abstract class SystemProperties {
     }
 
     @ValidateMe
-    public int listenPort() {
-        return configFromFiles.getInt("peer.listen.port");
+    public int getPeerPort() {
+        return configFromFiles.getInt(PROPERTY_PEER_PORT);
     }
 
-    public String getPeerDiscoveryBindAddress() {
-        if (bindIp != null) {
-            return bindIp;
-        }
-
-        bindIp = DEFAULT_BIND_IP;
-        if (configFromFiles.hasPath("peer.discovery.bind.ip")) {
-            String bindIpFromConfig = configFromFiles.getString("peer.discovery.bind.ip").trim();
-            if (!bindIpFromConfig.isEmpty()) {
-                bindIp = bindIpFromConfig;
+    public InetAddress getBindAddress() {
+        try {
+            if (configFromFiles.hasPath(PROPERTY_BIND_ADDRESS)) {
+                String host = configFromFiles.getString(PROPERTY_BIND_ADDRESS);
+                return InetAddress.getByName(host);
             }
+        } catch (UnknownHostException e) {
+            logger.warn("Unable to parse bind address {}. Using DEFAULT instead", e);
         }
 
-        logger.info("Binding peer discovery on {}", bindIp);
-        return bindIp;
+        try {
+            return InetAddress.getByName(DEFAULT_BIND_ADDRESS);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Unable to parse DEFAULT BIND ADDRESS", e);
+        }
     }
 
     /**
      * This can be a blocking call with long timeout (thus no ValidateMe)
      */
-    public synchronized String getExternalIp() {
-        if (externalIp != null) {
-            return externalIp;
+    public synchronized String getPublicIp() {
+        if (publicIp != null) {
+            return publicIp;
         }
 
-        if (configFromFiles.hasPath("peer.discovery.external.ip")) {
-            String externalIpFromConfig = configFromFiles.getString("peer.discovery.external.ip").trim();
+        if (configFromFiles.hasPath(PROPERTY_PUBLIC_IP)) {
+            String externalIpFromConfig = configFromFiles.getString(PROPERTY_PUBLIC_IP).trim();
             if (!externalIpFromConfig.isEmpty()){
                 try {
-                    InetAddress addr = InetAddress.getByName(externalIpFromConfig);
-                    externalIp = addr.getHostAddress();
-                    logger.info("External address identified {}", externalIp);
-                    return externalIp;
+                    InetAddress address = tryParseIpOrThrow(externalIpFromConfig);
+                    publicIp = address.getHostAddress();
+                    logger.info("Public IP identified {}", publicIp);
+                    return publicIp;
                 } catch (IOException e) {
-                    externalIp = null;
-                    logger.warn("Can't resolve external address");
+                    logger.warn("Can't resolve public IP", e);
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Can't resolve public IP", e);
                 }
+                publicIp = null;
             }
         }
 
-        externalIp = getMyPublicIpFromRemoteService();
-        return externalIp;
+        publicIp = getMyPublicIpFromRemoteService();
+        return publicIp;
     }
 
-    public String getMyPublicIpFromRemoteService(){
-        logger.info("External IP wasn't set or resolved, using checkip.amazonaws.com to identify it...");
+    private String getMyPublicIpFromRemoteService(){
         try {
+            logger.info("Public IP wasn't set or resolved, using checkip.amazonaws.com to identify it...");
+
             try (BufferedReader in = new BufferedReader(new InputStreamReader(new URL("http://checkip.amazonaws.com").openStream()))) {
-                externalIp = in.readLine();
+                publicIp = in.readLine();
             }
 
-            if (externalIp == null || externalIp.trim().isEmpty()) {
-                throw new IOException("Invalid address: '" + externalIp + "'");
+            if (publicIp == null || publicIp.trim().isEmpty()) {
+                logger.warn("Unable to retrieve public IP from checkip.amazonaws.com {}.", publicIp);
+                throw new IOException("Invalid address: '" + publicIp + "'");
             }
 
-            tryParseIpOrThrow();
-            logger.info("External address identified: {}", externalIp);
+            tryParseIpOrThrow(publicIp);
+            logger.info("Identified public IP: {}", publicIp);
+            return publicIp;
         } catch (IOException e) {
-            logger.error("Can't get external IP. " + e);
-            externalIp = getPeerDiscoveryBindAddress();
+            logger.error("Can't get public IP", e);
+        } catch (IllegalArgumentException e) {
+            logger.error("Can't get public IP", e);
         }
-        return externalIp;
+
+        String bindAddress = getBindAddress().toString();
+        if (getBindAddress().isAnyLocalAddress()){
+            throw new RuntimeException("Wildcard on bind address it's not allowed as fallback for public IP " + bindAddress);
+        }
+        publicIp = bindAddress;
+
+        return publicIp;
     }
 
     @ValidateMe
@@ -728,6 +720,34 @@ public abstract class SystemProperties {
         return configFromFiles.hasPath("blockchain.config.name") ? configFromFiles.getString("blockchain.config.name") : null;
     }
 
+    public boolean isRpcEnabled() {
+        return configFromFiles.hasPath(PROPERTY_RPC_ENABLED) ?
+                configFromFiles.getBoolean(PROPERTY_RPC_ENABLED) : false;
+    }
+
+    public int rpcPort() {
+        return configFromFiles.hasPath(PROPERTY_RPC_PORT) ?
+                configFromFiles.getInt(PROPERTY_RPC_PORT) : DEFAULT_RPC_PORT;
+    }
+
+    public List<String> rpcHost() {
+        return !configFromFiles.hasPath(PROPERTY_RPC_HOST) ? new ArrayList<>() :
+                configFromFiles.getStringList(PROPERTY_RPC_HOST);
+    }
+
+    public InetAddress rpcAddress() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_ADDRESS)) {
+            return InetAddress.getLoopbackAddress();
+        }
+        String host = configFromFiles.getString(PROPERTY_RPC_ADDRESS);
+        try {
+            return InetAddress.getByName(host);
+        } catch (UnknownHostException e) {
+            logger.warn("Unable to bind to {}. Using loopback instead", e);
+            return InetAddress.getLoopbackAddress();
+        }
+    }
+
     public String corsDomains() {
         return configFromFiles.hasPath(PROPERTY_RPC_CORS) ?
                 configFromFiles.getString(PROPERTY_RPC_CORS) : null;
@@ -740,11 +760,11 @@ public abstract class SystemProperties {
         return configFromFiles.hasPath(propertyName) ? configFromFiles.getBoolean(propertyName) : defaultValue;
     }
 
-    private void tryParseIpOrThrow() throws IOException {
+    private InetAddress tryParseIpOrThrow(String ipToParse) throws IOException {
         try {
-            InetAddress.getByName(externalIp);
-        } catch (Exception e) {
-            throw new IOException("Invalid address: '" + externalIp + "'");
+            return InetAddress.getByName(ipToParse);
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException("Invalid address: '" + ipToParse + "'", e);
         }
     }
 }

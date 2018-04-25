@@ -21,28 +21,24 @@ package co.rsk.mine;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.Coin;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
-import com.google.common.collect.Lists;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.Arrays;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import static org.ethereum.util.BIUtil.toBI;
+import java.util.*;
 
 /**
  * Created by oscar on 26/09/2016.
@@ -127,67 +123,64 @@ public class MinerUtils {
         return coinbaseTransaction;
     }
 
-    public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(co.rsk.bitcoinj.core.NetworkParameters params,
-                                                                      co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction) {
-        List<BtcTransaction> transactions = Lists.newArrayList(coinbaseTransaction);
+    public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(co.rsk.bitcoinj.core.NetworkParameters params, BtcTransaction transaction) {
+        return getBitcoinMergedMiningBlock(params, Collections.singletonList(transaction));
+    }
+
+    public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(co.rsk.bitcoinj.core.NetworkParameters params, List<BtcTransaction> transactions) {
         co.rsk.bitcoinj.core.Sha256Hash prevBlockHash = co.rsk.bitcoinj.core.Sha256Hash.ZERO_HASH;
         long time = System.currentTimeMillis() / 1000;
         long difficultyTarget = co.rsk.bitcoinj.core.Utils.encodeCompactBits(params.getMaxTarget());
-        co.rsk.bitcoinj.core.BtcBlock bitcoinBlock = new co.rsk.bitcoinj.core.BtcBlock(params, params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT), prevBlockHash, null, time, difficultyTarget, 0, transactions);
-        return bitcoinBlock;
+        return new co.rsk.bitcoinj.core.BtcBlock(params, params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT), prevBlockHash, null, time, difficultyTarget, 0, transactions);
     }
 
-    public List<org.ethereum.core.Transaction> getAllTransactions(PendingState pendingState) {
+    public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool) {
         //TODO: optimize this by considering GasPrice (order by GasPrice/Nonce)
-        PendingStateImpl.TransactionSortedSet ret = new PendingStateImpl.TransactionSortedSet();
+        TransactionPoolImpl.TransactionSortedSet ret = new TransactionPoolImpl.TransactionSortedSet();
 
-        List<org.ethereum.core.Transaction> pendingTransactions = new LinkedList<>(pendingState.getPendingTransactions());
-        List<org.ethereum.core.Transaction> wireTransactions = new LinkedList<>(pendingState.getWireTransactions());
+        List<org.ethereum.core.Transaction> pendingTransactions = new LinkedList<>(transactionPool.getPendingTransactions());
 
         ret.addAll(pendingTransactions);
-        ret.addAll(wireTransactions);
 
         return new LinkedList<>(ret);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<org.ethereum.core.Transaction> txsToRemove, List<org.ethereum.core.Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, BigInteger minGasPrice) {
+    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, Coin minGasPrice) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
-                logger.info("Pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
-                RskAddress txSender = tx.getSender();
-
-                logger.info("Examining transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
-
+                Keccak256 hash = tx.getHash();
+                Coin txValue = tx.getValue();
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
+                RskAddress txSender = tx.getSender();
+                logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
 
                 BigInteger expectedNonce;
 
                 if (accountNonces.containsKey(txSender)) {
-                    expectedNonce = new BigInteger(1, accountNonces.get(txSender).toByteArray()).add(BigInteger.ONE);
+                    expectedNonce = accountNonces.get(txSender).add(BigInteger.ONE);
                 } else {
                     expectedNonce = originalRepo.getNonce(txSender);
                 }
 
-                if (!(tx instanceof RemascTransaction) && tx.getGasPriceAsInteger().compareTo(minGasPrice) < 0) {
-                    logger.warn("Rejected transaction {} because of low gas account {}, removing tx from pending state.", Hex.toHexString(tx.getHash()), txSender);
+                if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(minGasPrice) < 0) {
+                    logger.warn("Rejected tx={} because of low gas account {}, removing tx from pending state.", hash, txSender);
 
                     txsToRemove.add(tx);
                     continue;
                 }
 
                 if (!expectedNonce.equals(txNonce)) {
-                    logger.warn("Invalid nonce, expected {}, found {}, tx {}", expectedNonce.toString(), txNonce.toString(), Hex.toHexString(tx.getHash()));
+                    logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hash);
                     continue;
                 }
 
                 accountNonces.put(txSender, txNonce);
 
-                logger.info("Accepted transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
+                logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
-                String hash = null == tx.getHash() ? "" : Hex.toHexString(tx.getHash());
-                logger.warn("Error when processing transaction: " + hash, e);
+                logger.warn(String.format("Error when processing tx=%s", tx.getHash()), e);
                 if (txsToRemove != null) {
                     txsToRemove.add(tx);
                 } else {
@@ -199,7 +192,7 @@ public class MinerUtils {
             txsResult.add(tx);
         }
 
-        logger.info("Ending getTransactions {}", txsResult.size());
+        logger.debug("Ending getTransactions {}", txsResult.size());
 
         return txsResult;
     }

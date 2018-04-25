@@ -18,13 +18,14 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.Coin;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,13 +34,13 @@ import java.util.List;
  */
 public class TxsMinGasPriceValidatorTest {
 
-    private static final BigInteger BLOCK_MGP = BigInteger.TEN;
+    private static final Coin BLOCK_MGP = Coin.valueOf(10);
 
     @Test
     public void blockWithNullTxList() {
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getTransactionsList()).thenReturn(null);
-        Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
         Assert.assertTrue(tmgpv.isValid(block));
@@ -49,7 +50,7 @@ public class TxsMinGasPriceValidatorTest {
     public void blockWithEmptyTxList() {
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getTransactionsList()).thenReturn(new ArrayList<>());
-        Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
         Assert.assertTrue(tmgpv.isValid(block));
@@ -68,7 +69,7 @@ public class TxsMinGasPriceValidatorTest {
         Block block = Mockito.mock(Block.class);
         List<Transaction> txs = buildTxList(10, 0, BLOCK_MGP);
         Mockito.when(block.getTransactionsList()).thenReturn(txs);
-        Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
 
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
@@ -80,7 +81,7 @@ public class TxsMinGasPriceValidatorTest {
         Block block = Mockito.mock(Block.class);
         List<Transaction> txs = buildTxList(0, 10, BLOCK_MGP);
         Mockito.when(block.getTransactionsList()).thenReturn(txs);
-        Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
 
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
@@ -92,27 +93,26 @@ public class TxsMinGasPriceValidatorTest {
         Block block = Mockito.mock(Block.class);
         List<Transaction> txs = buildTxList(10, 10, BLOCK_MGP);
         Mockito.when(block.getTransactionsList()).thenReturn(txs);
-        Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
 
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
         Assert.assertFalse(tmgpv.isValid(block));
     }
 
-    private List<Transaction> buildTxList(int validTxNbr, int invalidTxNbr, BigInteger blockGasPrice) {
+    private List<Transaction> buildTxList(int validTxNbr, int invalidTxNbr, Coin blockGasPrice) {
         List<Transaction> ret = new ArrayList<>();
 
         for(int i = 0; i < validTxNbr; i++) {
             Transaction tx = Mockito.mock(Transaction.class);
-            Mockito.when(tx.getGasPrice()).thenReturn(blockGasPrice.add(BigInteger.ONE).toByteArray());
-            Mockito.when(tx.getGasPriceAsInteger()).thenReturn(blockGasPrice.add(BigInteger.ONE));
+            Mockito.when(tx.getGasPrice()).thenReturn(blockGasPrice.add(Coin.valueOf(1)));
             ret.add(tx);
         }
 
         for(int i = 0; i < invalidTxNbr; i++) {
             Transaction tx = Mockito.mock(Transaction.class);
-            Mockito.when(tx.getGasPrice()).thenReturn(blockGasPrice.subtract(BigInteger.ONE).toByteArray());
-            Mockito.when(tx.getGasPriceAsInteger()).thenReturn(blockGasPrice.subtract(BigInteger.ONE));
+            Mockito.when(tx.getGasPrice()).thenReturn(blockGasPrice.subtract(Coin.valueOf(1)));
+            Mockito.when(tx.getHash()).thenReturn(Keccak256.ZERO_HASH);
             ret.add(tx);
         }
         return ret;

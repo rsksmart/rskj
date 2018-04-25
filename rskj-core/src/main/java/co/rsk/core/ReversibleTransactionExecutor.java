@@ -26,65 +26,89 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.converters.CallArgumentsToByteArray;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-public final class ReversibleTransactionExecutor extends TransactionExecutor {
+/**
+ * Encapsulates the logic to execute a transaction in an
+ * isolated environment (e.g. no persistent state changes).
+ */
+@Component
+public class ReversibleTransactionExecutor {
 
-    private ReversibleTransactionExecutor(RskSystemProperties config, Transaction tx, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore, ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
-        super(config, tx, 0, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock);
-        setLocalCall(true);
+    private final RskSystemProperties config;
+    private final Repository track;
+    private final BlockStore blockStore;
+    private final ReceiptStore receiptStore;
+    private final ProgramInvokeFactory programInvokeFactory;
+
+    @Autowired
+    public ReversibleTransactionExecutor(
+            RskSystemProperties config,
+            Repository track,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            ProgramInvokeFactory programInvokeFactory) {
+        this.config = config;
+        this.track = track;
+        this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
+        this.programInvokeFactory = programInvokeFactory;
     }
 
-    public static TransactionExecutor executeTransaction(RskSystemProperties config,
-                                                         Repository track,
-                                                         BlockStore blockStore,
-                                                         ReceiptStore receiptStore,
-                                                         ProgramInvokeFactory programInvokeFactory,
-                                                         Block executionBlock,
-                                                         RskAddress coinbase,
-                                                         byte[] gasPrice,
-                                                         byte[] gasLimit,
-                                                         byte[] toAddress,
-                                                         byte[] value,
-                                                         byte[] data,
-                                                         byte[] fromAddress) {
+    public ProgramResult executeTransaction(
+            Block executionBlock,
+            RskAddress coinbase,
+            byte[] gasPrice,
+            byte[] gasLimit,
+            byte[] toAddress,
+            byte[] value,
+            byte[] data,
+            byte[] fromAddress) {
         Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
 
         byte[] nonce = repository.getNonce(new RskAddress(fromAddress)).toByteArray();
-        UnsignedTransaction tx = new UnsignedTransaction(nonce, gasPrice, gasLimit, toAddress, value, data, fromAddress);
+        UnsignedTransaction tx = new UnsignedTransaction(
+                nonce,
+                gasPrice,
+                gasLimit,
+                toAddress,
+                value,
+                data,
+                fromAddress
+        );
 
-        ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(config, tx, coinbase, repository, blockStore, receiptStore, programInvokeFactory, executionBlock);
-        return executor.executeTransaction();
-    }
+        TransactionExecutor executor = new TransactionExecutor(
+                config,
+                tx,
+                0,
+                coinbase,
+                repository,
+                blockStore,
+                receiptStore,
+                programInvokeFactory,
+                executionBlock
+        ).setLocalCall(true);
 
-    public static TransactionExecutor executeTransaction(RskSystemProperties config,
-                                                         Repository track,
-                                                         BlockStore blockStore,
-                                                         ReceiptStore receiptStore,
-                                                         ProgramInvokeFactory programInvokeFactory,
-                                                         Block executionBlock,
-                                                         RskAddress coinbase,
-                                                         Web3.CallArguments args) {
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-
-        return executeTransaction(config, track, blockStore, receiptStore, programInvokeFactory, executionBlock, coinbase,
-                hexArgs.getGasPrice(), hexArgs.getGasLimit(), hexArgs.getToAddress(), hexArgs.getValue(), hexArgs.getData(),
-                hexArgs.getFromAddress());
-    }
-
-    private TransactionExecutor executeTransaction() {
-        init();
-        execute();
-        go();
-        finalization();
-        return this;
+        executor.init();
+        executor.execute();
+        executor.go();
+        executor.finalization();
+        return executor.getResult();
     }
 
     private static class UnsignedTransaction extends Transaction {
 
-        private UnsignedTransaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] fromAddress) {
+        private UnsignedTransaction(
+                byte[] nonce,
+                byte[] gasPrice,
+                byte[] gasLimit,
+                byte[] receiveAddress,
+                byte[] value,
+                byte[] data,
+                byte[] fromAddress) {
             super(nonce, gasPrice, gasLimit, receiveAddress, value, data);
             this.sender = new RskAddress(fromAddress);
         }

@@ -21,8 +21,6 @@ package co.rsk.trie;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-
 /**
  * Created by ajlopez on 08/02/2017.
  */
@@ -42,7 +40,7 @@ public class PartialMerkleTreeTest {
 
         PartialMerkleTree tree = trie.getPartialMerkleTree("foo".getBytes());
 
-        Assert.assertArrayEquals(trie.getHash(), tree.getHash("bar".getBytes()));
+        Assert.assertArrayEquals(trie.getHash().getBytes(), tree.getHash("bar".getBytes()));
     }
 
     @Test
@@ -52,7 +50,7 @@ public class PartialMerkleTreeTest {
 
         PartialMerkleTree tree = trie.getPartialMerkleTree("foo".getBytes());
 
-        Assert.assertArrayEquals(trie.getHash(), tree.getHash("bar".getBytes()));
+        Assert.assertArrayEquals(trie.getHash().getBytes(), tree.getHash("bar".getBytes()));
     }
 
     @Test
@@ -63,19 +61,19 @@ public class PartialMerkleTreeTest {
 
         PartialMerkleTree tree = trie.getPartialMerkleTree("foo".getBytes());
 
-        Assert.assertArrayEquals(trie.getHash(), tree.getHash("bar".getBytes()));
+        Assert.assertArrayEquals(trie.getHash().getBytes(), tree.getHash("bar".getBytes()));
     }
 
     @Test
     public void getTreeFromOneHundredKeyValues() {
-        Trie trie = new TrieImpl(16, false);
+        Trie trie = new TrieImpl(false);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(k + "", (k + "").getBytes());
 
         PartialMerkleTree tree = trie.getPartialMerkleTree("50".getBytes());
 
-        Assert.assertArrayEquals(trie.getHash(), tree.getHash("50".getBytes()));
+        Assert.assertArrayEquals(trie.getHash().getBytes(), tree.getHash("50".getBytes()));
     }
 
     @Test
@@ -107,14 +105,14 @@ public class PartialMerkleTreeTest {
 
         Assert.assertNotNull(tree2);
         Assert.assertArrayEquals(tree.getHash("bar".getBytes()), tree2.getHash("bar".getBytes()));
-        Assert.assertArrayEquals(trie.getHash(), tree2.getHash("bar".getBytes()));
+        Assert.assertArrayEquals(trie.getHash().getBytes(), tree2.getHash("bar".getBytes()));
 
         Assert.assertArrayEquals(tree.toMessage(), tree2.toMessage());
     }
 
     @Test
-    public void toMessagefromMessagegetHashUsingOneHundredKeyValueHexadecimalTrie() {
-        Trie trie = new TrieImpl(16, false);
+    public void toMessagefromMessagegetHashUsingOneHundredKeyValue() {
+        Trie trie = new TrieImpl(false);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(k + "", (k + "").getBytes());
@@ -127,27 +125,7 @@ public class PartialMerkleTreeTest {
 
         Assert.assertNotNull(tree2);
         Assert.assertArrayEquals(tree.getHash("50".getBytes()), tree2.getHash("50".getBytes()));
-        Assert.assertArrayEquals(trie.getHash(), tree2.getHash("50".getBytes()));
-
-        Assert.assertArrayEquals(tree.toMessage(), tree2.toMessage());
-    }
-
-    @Test
-    public void toMessagefromMessagegetHashUsingOneHundredKeyValueBinaryTrie() {
-        Trie trie = new TrieImpl();
-
-        for (int k = 0; k < 100; k++)
-            trie = trie.put(k + "", (k + "").getBytes());
-
-        PartialMerkleTree tree = trie.getPartialMerkleTree("50".getBytes());
-
-        byte[] message = tree.toMessage();
-
-        PartialMerkleTree tree2 = PartialMerkleTree.fromMessage(message);
-
-        Assert.assertNotNull(tree2);
-        Assert.assertArrayEquals(tree.getHash("50".getBytes()), tree2.getHash("50".getBytes()));
-        Assert.assertArrayEquals(trie.getHash(), tree2.getHash("50".getBytes()));
+        Assert.assertArrayEquals(trie.getHash().getBytes(), tree2.getHash("50".getBytes()));
 
         Assert.assertArrayEquals(tree.toMessage(), tree2.toMessage());
     }

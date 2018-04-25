@@ -33,21 +33,24 @@ import java.util.List;
  * Created by ajlopez on 10/04/2017.
  */
 public class CommonConfigTest {
+
+    private final TestSystemProperties config = new TestSystemProperties();
+
     @Test
     public void createRepositoryUsingNewRepository() {
         CommonConfig config = new CommonConfig();
 
-        Repository repository = config.repository(ConfigHelper.CONFIG);
+        Repository repository = config.repository(this.config);
 
         Assert.assertNotNull(repository);
         Assert.assertTrue(repository instanceof RepositoryImpl);
     }
 
     @Test
-    public void createPendingStateTransactions() {
+    public void createTransactionPoolTransactions() {
         CommonConfig config = new CommonConfig();
 
-        List<Transaction> result = config.pendingStateTransactions();
+        List<Transaction> result = config.transactionPoolTransactions();
 
         Assert.assertNotNull(result);
         Assert.assertTrue(result.isEmpty());
@@ -57,7 +60,7 @@ public class CommonConfigTest {
     public void createParentHeaderValidator() {
         CommonConfig config = new CommonConfig();
 
-        ParentBlockHeaderValidator result = config.parentHeaderValidator(ConfigHelper.CONFIG, new DifficultyCalculator(ConfigHelper.CONFIG));
+        ParentBlockHeaderValidator result = config.parentHeaderValidator(this.config, new DifficultyCalculator(this.config));
 
         Assert.assertNotNull(result);
     }

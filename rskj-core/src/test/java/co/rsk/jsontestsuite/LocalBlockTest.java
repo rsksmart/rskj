@@ -18,11 +18,14 @@
 
 package co.rsk.jsontestsuite;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.io.IOException;
@@ -35,10 +38,11 @@ import java.util.Collections;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalBlockTest {
     private ClassLoader loader = LocalBlockTest.class.getClassLoader();
+    private static TestSystemProperties config = new TestSystemProperties();
 
     @BeforeClass
     public static void init() {
-        ConfigHelper.CONFIG.disableRemasc();
+        config.disableRemasc();
     }
 
     private void run(String name) throws IOException, ParseException {
@@ -49,7 +53,7 @@ public class LocalBlockTest {
     @Ignore // to fix after adding prefix to tx raw encode
     @Test
     public void runSingleTest() throws ParseException, IOException {
-        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
+        config.setGenesisInfo("frontier.json");
 
         String json = JSONReader.loadJSONFromResource("json/BlockchainTests/bcValidBlockTest.json", loader);
         GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(json, "RecallSuicidedContractInOneBlock");
@@ -88,7 +92,7 @@ public class LocalBlockTest {
     @Test
     @Ignore
     public void runBCValidBlockTest() throws ParseException, IOException {
-        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
+        config.setGenesisInfo("frontier.json");
         run("bcValidBlockTest");
     }
 
@@ -145,11 +149,4 @@ public class LocalBlockTest {
     public void runBCMultiChainTest() throws ParseException, IOException {
         run("bcMultiChainTest");
     }
-
-    @AfterClass
-    public static void destroy() {
-        ConfigHelper.CONFIG.enableRemasc();
-    }
-
-
 }

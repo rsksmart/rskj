@@ -18,7 +18,7 @@
 
 package co.rsk.rpc;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -47,7 +47,7 @@ public class CorsConfigurationTest {
 
     @Test
     public void hasHeaderFromTestConfig() {
-        CorsConfiguration config = new CorsConfiguration(ConfigHelper.CONFIG.corsDomains());
+        CorsConfiguration config = new CorsConfiguration(new TestSystemProperties().corsDomains());
 
         Assert.assertNotNull(config.getHeader());
         Assert.assertEquals(EXPECTED_CORS_CONFIG, config.getHeader());

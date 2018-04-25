@@ -18,7 +18,8 @@
 
 package co.rsk.net.handler.txvalidator;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.net.handler.TxsPerAccount;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -30,6 +31,8 @@ import java.math.BigInteger;
 import java.util.LinkedList;
 
 public class TxFilterAccumCostFilterTest {
+
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void twoTxsValidAccumGasPrice() {
@@ -45,21 +48,21 @@ public class TxFilterAccumCostFilterTest {
 
         Mockito.when(tx1.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
         Mockito.when(tx2.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx1.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx1.getValue()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getValue()).thenReturn(BigInteger.valueOf(1).toByteArray());
+        Mockito.when(tx1.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx1.getValue()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx2.getValue()).thenReturn(Coin.valueOf(1));
         Mockito.when(tx1.getNonce()).thenReturn(BigInteger.valueOf(0).toByteArray());
         Mockito.when(tx2.getNonce()).thenReturn(BigInteger.valueOf(1).toByteArray());
 
-        Mockito.when(as1.getBalance()).thenReturn(BigInteger.valueOf(1000));
-        Mockito.when(as2.getBalance()).thenReturn(BigInteger.valueOf(4));
-        Mockito.when(as3.getBalance()).thenReturn(BigInteger.valueOf(3));
+        Mockito.when(as1.getBalance()).thenReturn(Coin.valueOf(1000));
+        Mockito.when(as2.getBalance()).thenReturn(Coin.valueOf(4));
+        Mockito.when(as3.getBalance()).thenReturn(Coin.valueOf(3));
         Mockito.when(as1.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as2.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as3.getNonce()).thenReturn(BigInteger.valueOf(0));
 
-        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter(ConfigHelper.CONFIG);
+        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter(config);
 
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);
@@ -101,21 +104,21 @@ public class TxFilterAccumCostFilterTest {
 
         Mockito.when(tx1.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
         Mockito.when(tx2.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx1.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx1.getValue()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getValue()).thenReturn(BigInteger.valueOf(1).toByteArray());
+        Mockito.when(tx1.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx1.getValue()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx2.getValue()).thenReturn(Coin.valueOf(1));
         Mockito.when(tx1.getNonce()).thenReturn(BigInteger.valueOf(0).toByteArray());
         Mockito.when(tx2.getNonce()).thenReturn(BigInteger.valueOf(1).toByteArray());
 
-        Mockito.when(as1.getBalance()).thenReturn(BigInteger.valueOf(0));
-        Mockito.when(as2.getBalance()).thenReturn(BigInteger.valueOf(1));
-        Mockito.when(as3.getBalance()).thenReturn(BigInteger.valueOf(2));
+        Mockito.when(as1.getBalance()).thenReturn(Coin.valueOf(0));
+        Mockito.when(as2.getBalance()).thenReturn(Coin.valueOf(1));
+        Mockito.when(as3.getBalance()).thenReturn(Coin.valueOf(2));
         Mockito.when(as1.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as2.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as3.getNonce()).thenReturn(BigInteger.valueOf(0));
 
-        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter(ConfigHelper.CONFIG);
+        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter(config);
 
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);

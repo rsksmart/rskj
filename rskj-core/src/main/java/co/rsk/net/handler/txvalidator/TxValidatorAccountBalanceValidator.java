@@ -18,6 +18,7 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.core.Coin;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
@@ -29,9 +30,9 @@ import java.math.BigInteger;
 public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
-        BigInteger maximumPrice = txGasLimit.multiply(tx.getGasPriceAsInteger());
+        Coin maximumPrice = tx.getGasPrice().multiply(txGasLimit);
         return isFreeTx || state.getBalance().compareTo(maximumPrice) >= 0;
     }
 }

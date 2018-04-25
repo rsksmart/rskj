@@ -21,9 +21,9 @@ package org.ethereum.validator;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
-import co.rsk.config.ConfigHelper;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ProofOfWorkRuleTest {
 
-    private ProofOfWorkRule rule = new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false);
+    private ProofOfWorkRule rule = new ProofOfWorkRule(new TestSystemProperties()).setFallbackMiningEnabled(false);
 
     @Test
     public void test_1() {
@@ -126,13 +126,13 @@ public class ProofOfWorkRuleTest {
     }
 
     private static Block mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(Block block, byte[] compressed) {
-        Sha3Hash blockMergedMiningHash = new Sha3Hash(block.getHashForMergedMining());
+        Keccak256 blockMergedMiningHash = new Keccak256(block.getHashForMergedMining());
 
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, blockMergedMiningHash.getBytes());
         co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 
-        BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficultyBI());
+        BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
 
         BlockMiner.findNonce(bitcoinMergedMiningBlock, targetBI);
 

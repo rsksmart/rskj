@@ -21,6 +21,7 @@ package org.ethereum.config.blockchain;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.core.BlockDifficulty;
 
 import java.math.BigInteger;
 
@@ -29,11 +30,11 @@ public class RegTestConfig extends GenesisConfig {
 
     public static class RegTestConstants extends GenesisConstants {
 
-        private BigInteger minimumDifficulty = BigInteger.valueOf(1);
+        private final BlockDifficulty minimumDifficulty = new BlockDifficulty(BigInteger.valueOf(1));
         private static final byte CHAIN_ID = 33;
 
         @Override
-        public BigInteger getFallbackMiningDifficulty() { return BigInteger.ZERO; }
+        public BlockDifficulty getFallbackMiningDifficulty() { return BlockDifficulty.ZERO; }
 
         @Override
         public BridgeConstants getBridgeConstants() {
@@ -41,7 +42,7 @@ public class RegTestConfig extends GenesisConfig {
         }
 
         @Override
-        public BigInteger getMinimumDifficulty() {
+        public BlockDifficulty getMinimumDifficulty() {
             return minimumDifficulty;
         }
 
@@ -52,7 +53,7 @@ public class RegTestConfig extends GenesisConfig {
 
         @Override
         public int getNewBlockMaxSecondsInTheFuture() {
-            return 540;
+            return 0;
         }
 
         @Override

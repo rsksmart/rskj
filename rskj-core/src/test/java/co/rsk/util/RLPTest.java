@@ -28,7 +28,7 @@ public class RLPTest {
 
     @Test
     public void encodeNullByteArray() {
-        byte[] result = RLP.encodeElement(null);
+        byte[] result = RLP.encodeElement((byte[]) null);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.length);

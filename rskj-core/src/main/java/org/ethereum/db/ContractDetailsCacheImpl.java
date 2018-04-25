@@ -141,7 +141,7 @@ public class ContractDetailsCacheImpl implements ContractDetails {
                     RLP.encodeElement(value));
         }
 
-        return storageTrie.getHash();
+        return storageTrie.getHash().getBytes();
     }
 
     @Override

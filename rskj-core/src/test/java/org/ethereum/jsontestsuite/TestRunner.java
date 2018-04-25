@@ -19,13 +19,18 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.config.VmConfig;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.validators.DummyBlockValidator;
-import org.ethereum.core.*;
+import org.ethereum.config.BlockchainConfig;
+import org.ethereum.core.Block;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
@@ -39,6 +44,7 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -58,6 +64,7 @@ import static org.ethereum.crypto.HashUtil.shortHash;
 import static org.ethereum.json.Utils.parseData;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Roman Mandeleil
@@ -65,10 +72,12 @@ import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
  */
 public class TestRunner {
 
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final VmConfig vmConfig = config.getVmConfig();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
     private boolean setNewStateRoot;
-    private String bestStateRoot;
     private boolean validateGasUsed = false; // until EIP150 test cases are ready.
 
     public List<String> runTestSuite(TestSuite testSuite) {
@@ -94,8 +103,7 @@ public class TestRunner {
         Block genesis = BlockBuilder.build(testCase.getGenesisBlockHeader(), null, null);
         Repository repository = RepositoryBuilder.build(testCase.getPre());
 
-        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
-        blockStore.init(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
         EthereumListener listener = new CompositeEthereumListener();
@@ -104,18 +112,18 @@ public class TestRunner {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        BlockChainImpl blockchain = new BlockChainImpl(ConfigHelper.CONFIG, repository, blockStore, receiptStore, null, null, null, new DummyBlockValidator());
+        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, null, null, null, new DummyBlockValidator());
         //BlockchainImpl blockchain = new BlockchainImpl(blockStore, repository, wallet, adminInfo, listener,
         //        new CommonConfig().parentHeaderValidator(), receiptStore);
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(ConfigHelper.CONFIG, blockchain, repository, null, null, listener, 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
         blockchain.setBestBlock(genesis);
         blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
 
-        blockchain.setPendingState(pendingState);
+        blockchain.setTransactionPool(transactionPool);
 
         /* 2 */ // Create block traffic list
         List<Block> blockTraffic = new ArrayList<>();
@@ -152,7 +160,7 @@ public class TestRunner {
         for (Block block : blockTraffic) {
 
             ImportResult importResult = blockchain.tryToConnect(block);
-            logger.debug("{} ~ {} difficulty: {} ::: {}", block.getShortHash(), shortHash(block.getParentHash()),
+            logger.debug("{} ~ {} difficulty: {} ::: {}", block.getShortHash(), shortHash(block.getParentHash().getBytes()),
                     block.getCumulativeDifficulty(), importResult.toString());
         }
 
@@ -189,7 +197,7 @@ public class TestRunner {
 
 
         logger.info("--------- PRE ---------");
-        Repository repository = loadRepository(new RepositoryImpl(ConfigHelper.CONFIG).startTracking(), testCase.getPre());
+        Repository repository = loadRepository(new RepositoryImpl(config).startTracking(), testCase.getPre());
 
         try {
 
@@ -202,7 +210,7 @@ public class TestRunner {
             byte[] address = exec.getAddress();
             byte[] origin = exec.getOrigin();
             byte[] caller = exec.getCaller();
-            byte[] balance = ByteUtil.bigIntegerToBytes(repository.getBalance(new RskAddress(exec.getAddress())));
+            byte[] balance = ByteUtil.bigIntegerToBytes(repository.getBalance(new RskAddress(exec.getAddress())).asBigInteger());
             byte[] gasPrice = exec.getGasPrice();
             byte[] gas = exec.getGas();
             byte[] callValue = exec.getValue();
@@ -226,8 +234,8 @@ public class TestRunner {
 
             /* 3. Create Program - exec.code */
             /* 4. run VM */
-            VM vm = new VM(ConfigHelper.CONFIG);
-            Program program = new Program(ConfigHelper.CONFIG, exec.getCode(), programInvoke);
+            VM vm = new VM(vmConfig, precompiledContracts);
+            Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), exec.getCode(), programInvoke, null);
             boolean vmDidThrowAnEception = false;
             Exception e = null;
             ThreadMXBean thread;
@@ -252,7 +260,7 @@ public class TestRunner {
             }
 
             try {
-                saveProgramTraceFile(ConfigHelper.CONFIG, testCase.getName(), program.getTrace());
+                saveProgramTraceFile(config, testCase.getName(), program.getTrace());
             } catch (IOException ioe) {
                 vmDidThrowAnEception = true;
                 e = ioe;
@@ -280,54 +288,50 @@ public class TestRunner {
                 logger.info("--------- POST --------");
 
                 /* 5. Assert Post values */
-                for (ByteArrayWrapper key : testCase.getPost().keySet()) {
-                    RskAddress addr = new RskAddress(key.getData());
-
-                    AccountState accountState = testCase.getPost().get(key);
+                for (RskAddress addr : testCase.getPost().keySet()) {
+                    AccountState accountState = testCase.getPost().get(addr);
 
                     long expectedNonce = accountState.getNonceLong();
-                    BigInteger expectedBalance = accountState.getBigIntegerBalance();
+                    Coin expectedBalance = accountState.getBalance();
                     byte[] expectedCode = accountState.getCode();
 
                     boolean accountExist = (null != repository.getAccountState(addr));
-                    if (!accountExist) {
 
+                    if (!accountExist) {
                         String output =
                                 String.format("The expected account does not exist. key: [ %s ]",
-                                        Hex.toHexString(key.getData()));
+                                        addr);
                         logger.info(output);
                         results.add(output);
+
                         continue;
                     }
 
                     long actualNonce = repository.getNonce(addr).longValue();
-                    BigInteger actualBalance = repository.getBalance(addr);
+                    Coin actualBalance = repository.getBalance(addr);
                     byte[] actualCode = repository.getCode(addr);
                     if (actualCode == null) actualCode = "".getBytes();
 
                     if (expectedNonce != actualNonce) {
-
                         String output =
                                 String.format("The nonce result is different. key: [ %s ],  expectedNonce: [ %d ] is actualNonce: [ %d ] ",
-                                        Hex.toHexString(key.getData()), expectedNonce, actualNonce);
+                                        addr, expectedNonce, actualNonce);
                         logger.info(output);
                         results.add(output);
                     }
 
                     if (!expectedBalance.equals(actualBalance)) {
-
                         String output =
                                 String.format("The balance result is different. key: [ %s ],  expectedBalance: [ %s ] is actualBalance: [ %s ] ",
-                                        Hex.toHexString(key.getData()), expectedBalance.toString(), actualBalance.toString());
+                                        addr, expectedBalance.toString(), actualBalance.toString());
                         logger.info(output);
                         results.add(output);
                     }
 
                     if (!Arrays.equals(expectedCode, actualCode)) {
-
                         String output =
                                 String.format("The code result is different. account: [ %s ],  expectedCode: [ %s ] is actualCode: [ %s ] ",
-                                        Hex.toHexString(key.getData()),
+                                        addr,
                                         Hex.toHexString(expectedCode),
                                         Hex.toHexString(actualCode));
                         logger.info(output);
@@ -336,22 +340,23 @@ public class TestRunner {
 
                     // assert storage
                     Map<DataWord, DataWord> storage = accountState.getStorage();
-                    for (DataWord storageKey : storage.keySet()) {
 
+                    for (DataWord storageKey : storage.keySet()) {
                         byte[] expectedStValue = storage.get(storageKey).getData();
 
                         ContractDetails contractDetails =
-                                program.getStorage().getContractDetails(new RskAddress(accountState.getAddress()));
+                                program.getStorage().getContractDetails(accountState.getAddress());
 
                         if (contractDetails == null) {
-
                             String output =
                                     String.format("Storage raw doesn't exist: key [ %s ], expectedValue: [ %s ]",
                                             Hex.toHexString(storageKey.getData()),
                                             Hex.toHexString(expectedStValue)
                                     );
+
                             logger.info(output);
                             results.add(output);
+
                             continue;
                         }
 
@@ -375,14 +380,17 @@ public class TestRunner {
                     List<LogInfo> logResult = program.getResult().getLogInfoList();
 
                     Iterator<LogInfo> postLogs = logs.getIterator();
-                    int i = 0;
-                    while (postLogs.hasNext()) {
 
+                    int i = 0;
+
+                    while (postLogs.hasNext()) {
                         LogInfo expectedLogInfo = postLogs.next();
 
                         LogInfo foundLogInfo = null;
-                        if (logResult.size() > i)
+
+                        if (logResult.size() > i) {
                             foundLogInfo = logResult.get(i);
+                        }
 
                         if (foundLogInfo == null) {
                             String output =
@@ -579,16 +587,15 @@ public class TestRunner {
         return transaction;
     }
 
-    public Repository loadRepository(Repository track, Map<ByteArrayWrapper, AccountState> pre) {
+    public Repository loadRepository(Repository track, Map<RskAddress, AccountState> pre) {
 
 
             /* 1. Store pre-exist accounts - Pre */
-        for (ByteArrayWrapper key : pre.keySet()) {
+        for (RskAddress addr : pre.keySet()) {
 
-            AccountState accountState = pre.get(key);
-            RskAddress addr = new RskAddress(key.getData());
+            AccountState accountState = pre.get(addr);
 
-            track.addBalance(addr, new BigInteger(1, accountState.getBalance()));
+            track.addBalance(addr, accountState.getBalance());
             ((RepositoryTrack)track).setNonce(addr, new BigInteger(1, accountState.getNonce()));
 
             track.saveCode(addr, accountState.getCode());
@@ -600,7 +607,6 @@ public class TestRunner {
 
         return track;
     }
-
 
     public ProgramTrace getTrace() {
         return trace;

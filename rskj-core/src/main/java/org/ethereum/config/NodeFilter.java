@@ -19,12 +19,12 @@
 
 package org.ethereum.config;
 
+import co.rsk.net.NodeID;
 import org.ethereum.net.rlpx.Node;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -56,11 +56,11 @@ public class NodeFilter {
     }
 
     private class Entry {
-        byte[] nodeId;
-        String hostIpPattern;
+        private NodeID nodeId;
+        private String hostIpPattern;
 
         public Entry(byte[] nodeId, String hostIpPattern) {
-            this.nodeId = nodeId;
+            this.nodeId = new NodeID(nodeId);
             if (hostIpPattern != null) {
                 int idx = hostIpPattern.indexOf("*");
                 if (idx > 0) {
@@ -77,7 +77,7 @@ public class NodeFilter {
 
         public boolean accept(Node node) {
             try {
-                return (nodeId == null || Arrays.equals(node.getId(), nodeId))
+                return (nodeId == null || nodeId.equals(node.getId()))
                         && (hostIpPattern == null || accept(InetAddress.getByName(node.getHost())));
             } catch (UnknownHostException e) {
                 return false;

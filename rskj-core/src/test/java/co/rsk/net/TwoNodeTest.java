@@ -19,7 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.net.sync.SyncConfiguration;
@@ -42,16 +42,17 @@ public class TwoNodeTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), size);
+        List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        TestSystemProperties config = new TestSystemProperties();
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(ConfigHelper.CONFIG, processor, null, null, null, null, null, new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(new TestSystemProperties(), processor, null, null, null, null, null, new DummyBlockValidationRule());
 
         return new SimpleNode(handler);
     }
@@ -66,7 +67,7 @@ public class TwoNodeTest {
 
         Assert.assertEquals(100, node1.getBestBlock().getNumber());
         Assert.assertEquals(100, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
     }
 
     @Test
@@ -75,7 +76,7 @@ public class TwoNodeTest {
         SimpleNode node1 = createNode(0);
         SimpleNode node2 = createNode(0);
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(10);
 
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);
@@ -89,6 +90,6 @@ public class TwoNodeTest {
 
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
     }
 }

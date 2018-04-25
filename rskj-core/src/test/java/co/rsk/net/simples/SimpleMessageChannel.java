@@ -18,12 +18,12 @@
 
 package co.rsk.net.simples;
 
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
-import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
 
 import java.net.InetAddress;
@@ -74,10 +74,10 @@ public class SimpleMessageChannel implements MessageChannel {
                 .collect(Collectors.toList());
     }
 
-    public List<ByteArrayWrapper> getGetBlockMessagesHashes() {
+    public List<Keccak256> getGetBlockMessagesHashes() {
         return this.messages.stream()
                 .filter(message -> message.getMessageType() == MessageType.GET_BLOCK_MESSAGE)
-                .map(message -> new ByteArrayWrapper(((GetBlockMessage) message).getBlockHash()))
+                .map(message -> new Keccak256(((GetBlockMessage) message).getBlockHash()))
                 .collect(Collectors.toList());
     }
 
@@ -86,8 +86,8 @@ public class SimpleMessageChannel implements MessageChannel {
     }
 
     @Override
-    public void setPeerNodeID(byte[] peerNodeId) {
-        this.nodeID = new NodeID(peerNodeId);
+    public void setPeerNodeID(NodeID peerNodeId) {
+        this.nodeID = peerNodeId;
     }
 
     @Override

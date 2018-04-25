@@ -18,7 +18,7 @@
 
 package co.rsk.mine;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.validator.ParentGasLimitRule;
@@ -34,15 +34,16 @@ import static org.ethereum.validator.ParentGasLimitRuleTest.getHeader;
  */
 public class GasLimitCalculatorTest {
 
+    private final TestSystemProperties config = new TestSystemProperties();
     private Constants constants = new Constants();
     private ParentGasLimitRule rule = new ParentGasLimitRule(1024);
 
     @Test
     public void NextBlockGasLimitIsDecreasedByAFactor() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
+        GasLimitCalculator calc = new GasLimitCalculator(config);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger parentGasLimit = minGasLimit.add(BigInteger.valueOf(21000));
-        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
 
         BigInteger newGasLimit = calc.calculateBlockGasLimit(parentGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, false);
 
@@ -53,9 +54,9 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsNotDecreasedLowerThanMinGasLimit() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
+        GasLimitCalculator calc = new GasLimitCalculator(config);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, false);
 
         Assert.assertTrue(newGasLimit.compareTo(minGasLimit) == 0);
@@ -63,10 +64,10 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsIncreasedBasedOnGasUsed() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
+        GasLimitCalculator calc = new GasLimitCalculator(config);
         BigInteger parentGas = BigInteger.valueOf(3500000);
         BigInteger gasUsed = BigInteger.valueOf(3000000);
-        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
 
         BigInteger newGasLimit = calc.calculateBlockGasLimit(parentGas, gasUsed, BigInteger.ZERO, targetGasLimit, false);
 
@@ -77,10 +78,10 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsIncreasedBasedOnFullGasUsed() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
+        GasLimitCalculator calc = new GasLimitCalculator(config);
         BigInteger parentGas = BigInteger.valueOf(3500000);
         BigInteger gasUsed = BigInteger.valueOf(3500000);
-        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
 
         BigInteger newGasLimit = calc.calculateBlockGasLimit(parentGas, gasUsed, BigInteger.ZERO, targetGasLimit, false);
 
@@ -90,8 +91,8 @@ public class GasLimitCalculatorTest {
     }
     @Test
     public void NextBlockGasLimitIsNotIncreasedMoreThanTargetGasLimit() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
-        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
+        GasLimitCalculator calc = new GasLimitCalculator(config);
+        BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger gasUsed = targetGasLimit;
 
         BigInteger newGasLimit = calc.calculateBlockGasLimit(targetGasLimit, gasUsed, BigInteger.ZERO, targetGasLimit, false);
@@ -101,9 +102,9 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitRemainsTheSame() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
-        BigInteger minGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
+        GasLimitCalculator calc = new GasLimitCalculator(config);
+        BigInteger minGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger newGasLimit = calc.calculateBlockGasLimit(targetGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
         Assert.assertTrue(newGasLimit.compareTo(targetGasLimit) == 0);
         Assert.assertTrue(validByConsensus(newGasLimit, targetGasLimit));
@@ -111,9 +112,9 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsIncreasedByMaximumValue() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
+        GasLimitCalculator calc = new GasLimitCalculator(config);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
         BigInteger newGasLimit2 = calc.calculateBlockGasLimit(minGasLimit, minGasLimit, minGasLimit, targetGasLimit, true);
         Assert.assertTrue(newGasLimit.compareTo(newGasLimit2) == 0);
@@ -125,7 +126,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsIncreasedToTarget() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
+        GasLimitCalculator calc = new GasLimitCalculator(config);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = minGasLimit.add(BigInteger.ONE);
         BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
@@ -138,7 +139,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsDecreasedToTarget() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
+        GasLimitCalculator calc = new GasLimitCalculator(config);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = minGasLimit.add(BigInteger.ONE);
         BigInteger usedGas = targetGasLimit.add(BigInteger.ONE);
@@ -152,7 +153,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsDecreasedToMinimum() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
+        GasLimitCalculator calc = new GasLimitCalculator(config);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = minGasLimit.subtract(BigInteger.ONE);
         BigInteger usedGas = minGasLimit.add(BigInteger.ONE);
@@ -165,9 +166,9 @@ public class GasLimitCalculatorTest {
     }
     @Test
     public void NextBlockGasLimitIsDecreasedByMaximumValue() {
-        GasLimitCalculator calc = new GasLimitCalculator(ConfigHelper.CONFIG);
+        GasLimitCalculator calc = new GasLimitCalculator(config);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger usedGas = targetGasLimit.multiply(BigInteger.valueOf(2));
         BigInteger newGasLimit = calc.calculateBlockGasLimit(usedGas, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
         BigInteger newGasLimit2 = calc.calculateBlockGasLimit(usedGas, usedGas, minGasLimit, targetGasLimit, true);

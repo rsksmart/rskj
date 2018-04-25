@@ -59,8 +59,8 @@ public class TransactionTask implements Callable<List<Transaction>> {
     public List<Transaction> call() throws Exception {
 
         try {
-            logger.info("submit tx: {}", tx.toString());
-            channelManager.sendTransaction(tx, receivedFrom);
+            logger.trace("submit tx: {}", tx.toString());
+            channelManager.broadcastTransactionMessage(tx, receivedFrom);
             return tx;
 
         } catch (Throwable th) {

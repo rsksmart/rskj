@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite.builder;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
@@ -56,7 +56,7 @@ public class RepositoryBuilder {
             detailsBatch.put(addr, detailsCache);
         }
 
-        RepositoryImpl repositoryDummy = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        RepositoryImpl repositoryDummy = new RepositoryImpl(new TestSystemProperties(), new TrieStoreImpl(new HashMapDB()));
         Repository track = repositoryDummy.startTracking();
         track.updateBatch(stateBatch, detailsBatch);
         track.commit();

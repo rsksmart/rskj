@@ -19,7 +19,7 @@
 
 package org.ethereum.config;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import com.typesafe.config.*;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,7 +37,7 @@ public class ConfigTest {
         Config config = ConfigFactory.parseResources("test-rskj.conf");
         System.out.println(config.root().render(ConfigRenderOptions.defaults().setComments(false)));
 
-        System.out.println("peer.listen.port: " + config.getInt("peer.listen.port"));
+        System.out.println("peer.port: " + config.getInt("peer.port"));
         System.out.println("peer.discovery.ip.list: " + config.getAnyRefList("peer.discovery.ip.list"));
         System.out.println("peer.discovery.ip.list: " + config.getAnyRefList("peer.active"));
 
@@ -76,7 +76,8 @@ public class ConfigTest {
 
     @Test
     public void ethereumjConfTest() {
-        System.out.println("'" + ConfigHelper.CONFIG.databaseDir() + "'");
-        System.out.println(ConfigHelper.CONFIG.peerActive());
+        TestSystemProperties config = new TestSystemProperties();
+        System.out.println("'" + config.databaseDir() + "'");
+        System.out.println(config.peerActive());
     }
 }

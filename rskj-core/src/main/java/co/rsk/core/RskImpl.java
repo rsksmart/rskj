@@ -20,15 +20,12 @@ package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.NodeBlockProcessor;
-import org.ethereum.core.PendingState;
-import org.ethereum.core.Repository;
-import org.ethereum.db.ReceiptStore;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -39,17 +36,22 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private final NodeBlockProcessor nodeBlockProcessor;
 
     @Autowired
-    public RskImpl(WorldManager worldManager,
-                   ChannelManager channelManager,
-                   PeerServer peerServer,
-                   ProgramInvokeFactory programInvokeFactory,
-                   PendingState pendingState,
-                   RskSystemProperties config,
-                   CompositeEthereumListener compositeEthereumListener,
-                   ReceiptStore receiptStore,
-                   NodeBlockProcessor nodeBlockProcessor,
-                   Repository repository) {
-        super(config, worldManager, channelManager, peerServer, programInvokeFactory, pendingState, compositeEthereumListener, receiptStore, repository);
+    public RskImpl(
+            ChannelManager channelManager,
+            PeerServer peerServer,
+            TransactionPool transactionPool,
+            RskSystemProperties config,
+            CompositeEthereumListener compositeEthereumListener,
+            NodeBlockProcessor nodeBlockProcessor,
+            ReversibleTransactionExecutor reversibleTransactionExecutor,
+            Blockchain blockchain) {
+        super(
+                config,
+                channelManager,
+                transactionPool,
+                compositeEthereumListener,
+                blockchain
+        );
         this.nodeBlockProcessor = nodeBlockProcessor;
     }
 

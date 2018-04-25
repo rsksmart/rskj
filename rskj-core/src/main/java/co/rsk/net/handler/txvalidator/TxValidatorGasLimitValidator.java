@@ -18,12 +18,12 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.core.Coin;
 import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -36,14 +36,14 @@ public class TxValidatorGasLimitValidator implements TxValidatorStep {
     private static final Logger logger = LoggerFactory.getLogger("txvalidator");
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
 
         if (txGasLimit.compareTo(gasLimit) <= 0 && txGasLimit.compareTo(Constants.getTransactionGasCap()) <= 0) {
             return true;
         }
 
-        logger.warn("Invalid transaction {}: its gas limit {} is higher than the block gas limit {}", Hex.toHexString(tx.getHash()), txGasLimit.toString(), gasLimit.toString());
+        logger.warn("Invalid transaction {}: its gas limit {} is higher than the block gas limit {}", tx.getHash(), txGasLimit, gasLimit);
 
         return false;
     }

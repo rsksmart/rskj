@@ -84,14 +84,14 @@ public class InternalTransaction extends Transaction {
 
         byte[] nonce = getNonce();
         if (isEmpty(nonce) || getLength(nonce) == 1 && nonce[0] == 0) {
-            nonce = RLP.encodeElement(null);
+            nonce = RLP.encodeElement((byte[]) null);
         } else {
             nonce = RLP.encodeElement(nonce);
         }
         byte[] senderAddress = RLP.encodeElement(getSender().getBytes());
         byte[] receiveAddress = RLP.encodeElement(getReceiveAddress().getBytes());
-        byte[] value = RLP.encodeElement(getValue());
-        byte[] gasPrice = RLP.encodeElement(getGasPrice());
+        byte[] value = RLP.encodeCoin(getValue());
+        byte[] gasPrice = RLP.encodeCoin(getGasPrice());
         byte[] gasLimit = RLP.encodeElement(getGasLimit());
         byte[] data = RLP.encodeElement(getData());
         byte[] parentHash = RLP.encodeElement(this.parentHash);

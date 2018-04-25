@@ -51,7 +51,7 @@ public class TxBuilder {
     private static final Logger logger = LoggerFactory.getLogger("txbuilder");
     private volatile boolean stop = false;
 
-    private byte[] privateKeyBytes  = HashUtil.sha3("this is a seed".getBytes(StandardCharsets.UTF_8));
+    private byte[] privateKeyBytes  = HashUtil.keccak256("this is a seed".getBytes(StandardCharsets.UTF_8));
     private ECKey key;
 
     public TxBuilder(RskSystemProperties config, Ethereum ethereum, BlockProcessor blockProcessor, Repository repository) {
@@ -108,7 +108,7 @@ public class TxBuilder {
         //Adds created transaction to the local node's memory pool
         ethereum.submitTransaction(tx);
 
-        logger.info("Added pending tx: " + tx.getHash());
+        logger.info("Added pending tx={}", tx.getHash());
 
         try {
             SecureRandom random = new SecureRandom();

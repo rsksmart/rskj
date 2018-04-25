@@ -23,8 +23,6 @@ import org.ethereum.core.BlockHeader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.math.BigInteger;
-
 @Component
 public class DifficultyCalculator {
     private final RskSystemProperties config;
@@ -34,7 +32,7 @@ public class DifficultyCalculator {
         this.config = config;
     }
 
-    public BigInteger calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
+    public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
         return config.getBlockchainConfig().getConfigForBlock(header.getNumber()).
                 calcDifficulty(header, parentHeader);
     }

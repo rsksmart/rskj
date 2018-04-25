@@ -19,12 +19,12 @@
 package co.rsk.remasc;
 
 
+import co.rsk.core.Coin;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.spongycastle.util.BigIntegers;
 
-import java.math.BigInteger;
-import java.util.*;
+import java.util.List;
+import java.util.SortedMap;
 
 /**
  * DTO to send the contract state.
@@ -32,24 +32,24 @@ import java.util.*;
  * @author Oscar Guindzberg
  */
 public class RemascState {
-    private final BigInteger rewardBalance;
-    private final BigInteger burnedBalance;
+    private final Coin rewardBalance;
+    private final Coin burnedBalance;
     private final SortedMap<Long, List<Sibling>> siblings;
 
     private final Boolean brokenSelectionRule;
 
-    public RemascState(BigInteger rewardBalance, BigInteger burnedBalance, SortedMap<Long, List<Sibling>> siblings, Boolean brokenSelectionRule) {
+    public RemascState(Coin rewardBalance, Coin burnedBalance, SortedMap<Long, List<Sibling>> siblings, Boolean brokenSelectionRule) {
         this.rewardBalance = rewardBalance;
         this.burnedBalance = burnedBalance;
         this.siblings = siblings;
         this.brokenSelectionRule = brokenSelectionRule;
     }
 
-    public BigInteger getRewardBalance() {
+    public Coin getRewardBalance() {
         return rewardBalance;
     }
 
-    public BigInteger getBurnedBalance() {
+    public Coin getBurnedBalance() {
         return burnedBalance;
     }
 
@@ -62,8 +62,8 @@ public class RemascState {
     }
 
     public byte[] getEncoded() {
-        byte[] rlpRewardBalance = RLP.encodeBigInteger(this.rewardBalance);
-        byte[] rlpBurnedBalance = RLP.encodeBigInteger(this.burnedBalance);
+        byte[] rlpRewardBalance = RLP.encodeCoin(this.rewardBalance);
+        byte[] rlpBurnedBalance = RLP.encodeCoin(this.burnedBalance);
         byte[] rlpSiblings = RemascStorageProvider.getSiblingsBytes(this.siblings);
         byte[] rlpBrokenSelectionRule = new byte[1];
 
@@ -78,11 +78,9 @@ public class RemascState {
 
     public static RemascState create(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-        byte[] rlpRewardBalanceBytes = rlpList.get(0).getRLPData();
-        byte[] rlpBurnedBalanceBytes = rlpList.get(1).getRLPData();
 
-        BigInteger rlpRewardBalance = rlpRewardBalanceBytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(rlpRewardBalanceBytes);
-        BigInteger rlpBurnedBalance = rlpBurnedBalanceBytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(rlpBurnedBalanceBytes);
+        Coin rlpRewardBalance = RLP.parseCoin(rlpList.get(0).getRLPData());
+        Coin rlpBurnedBalance = RLP.parseCoin(rlpList.get(1).getRLPData());
 
         SortedMap<Long, List<Sibling>> rlpSiblings = RemascStorageProvider.getSiblingsFromBytes(rlpList.get(2).getRLPData());
 

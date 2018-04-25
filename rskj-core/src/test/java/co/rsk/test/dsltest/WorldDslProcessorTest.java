@@ -58,7 +58,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
-        Assert.assertArrayEquals(genesis.getHash(), block.getParentHash());
+        Assert.assertEquals(genesis.getHash(), block.getParentHash());
     }
 
     @Test
@@ -77,13 +77,13 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(block1);
         Assert.assertEquals(1, block1.getNumber());
-        Assert.assertArrayEquals(genesis.getHash(), block1.getParentHash());
+        Assert.assertEquals(genesis.getHash(), block1.getParentHash());
 
         Block block2 = world.getBlockByName("b02");
 
         Assert.assertNotNull(block2);
         Assert.assertEquals(2, block2.getNumber());
-        Assert.assertArrayEquals(block1.getHash(), block2.getParentHash());
+        Assert.assertEquals(block1.getHash(), block2.getParentHash());
     }
 
     @Test
@@ -101,7 +101,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
-        Assert.assertArrayEquals(genesis.getHash(), block.getParentHash());
+        Assert.assertEquals(genesis.getHash(), block.getParentHash());
     }
 
     @Test
@@ -120,7 +120,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(parent);
         Assert.assertNotNull(block);
         Assert.assertEquals(2, block.getNumber());
-        Assert.assertArrayEquals(parent.getHash(), block.getParentHash());
+        Assert.assertEquals(parent.getHash(), block.getParentHash());
     }
 
     @Test
@@ -139,7 +139,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(parent);
         Assert.assertNotNull(block);
         Assert.assertEquals(2, block.getNumber());
-        Assert.assertArrayEquals(parent.getHash(), block.getParentHash());
+        Assert.assertEquals(parent.getHash(), block.getParentHash());
     }
 
     @Test
@@ -176,7 +176,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(parent);
         Assert.assertNotNull(block);
         Assert.assertEquals(3, block.getNumber());
-        Assert.assertArrayEquals(parent.getHash(), block.getParentHash());
+        Assert.assertEquals(parent.getHash(), block.getParentHash());
     }
 
     @Test
@@ -252,7 +252,7 @@ public class WorldDslProcessorTest {
         Account account = world.getAccountByName("acc1");
 
         Assert.assertNotNull(account);
-        Assert.assertEquals(BigInteger.ZERO, world.getRepository().getBalance(account.getAddress()));
+        Assert.assertEquals(BigInteger.ZERO, world.getRepository().getBalance(account.getAddress()).asBigInteger());
     }
 
     @Test
@@ -268,12 +268,12 @@ public class WorldDslProcessorTest {
         Account account = world.getAccountByName("acc1");
 
         Assert.assertNotNull(account);
-        Assert.assertEquals(new BigInteger("1000000"), world.getRepository().getBalance(account.getAddress()));
+        Assert.assertEquals(new BigInteger("1000000"), world.getRepository().getBalance(account.getAddress()).asBigInteger());
     }
 
     @Test
     public void raiseIfUnknownCommand() {
-        WorldDslProcessor processor = new WorldDslProcessor(null);
+        WorldDslProcessor processor = new WorldDslProcessor(new World());
 
         try {
             processor.processCommands(new DslParser("foo"));
@@ -316,8 +316,8 @@ public class WorldDslProcessorTest {
         Assert.assertFalse(block.getUncleList().isEmpty());
         Assert.assertEquals(2, block.getUncleList().size());
 
-        Assert.assertArrayEquals(world.getBlockByName("u01").getHash(), block.getUncleList().get(0).getHash());
-        Assert.assertArrayEquals(world.getBlockByName("u02").getHash(), block.getUncleList().get(1).getHash());
+        Assert.assertEquals(world.getBlockByName("u01").getHash(), block.getUncleList().get(0).getHash());
+        Assert.assertEquals(world.getBlockByName("u02").getHash(), block.getUncleList().get(1).getHash());
     }
 
     @Test
@@ -342,7 +342,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
         Assert.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
-        Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
+        Assert.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assert.assertNotNull(tx01.getData());
         Assert.assertEquals(0, tx01.getData().length);
     }
@@ -369,7 +369,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
         Assert.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
-        Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
+        Assert.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assert.assertNotNull(tx01.getData());
         Assert.assertArrayEquals(new byte[] { 0x01, 0x02, 0x03, 0x04 }, tx01.getData());
     }
@@ -396,10 +396,10 @@ public class WorldDslProcessorTest {
 
         Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
         Assert.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
-        Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
+        Assert.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assert.assertNotNull(tx01.getData());
         Assert.assertEquals(0, tx01.getData().length);
-        Assert.assertEquals(new BigInteger("2"), tx01.getGasPriceAsInteger());
+        Assert.assertEquals(new BigInteger("2"), tx01.getGasPrice().asBigInteger());
         Assert.assertEquals(new BigInteger("1200000"), tx01.getGasLimitAsInteger());
     }
 
@@ -425,7 +425,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
         Assert.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
-        Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
+        Assert.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assert.assertNotNull(tx01.getData());
         Assert.assertEquals(0, tx01.getData().length);
         Assert.assertEquals(new BigInteger("10"), tx01.getNonceAsInteger());
@@ -457,7 +457,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(tx01);
         Assert.assertNotNull(tx02);
 
-        Assert.assertArrayEquals(tx01.getHash(), block.getTransactionsList().get(0).getHash());
-        Assert.assertArrayEquals(tx02.getHash(), block.getTransactionsList().get(1).getHash());
+        Assert.assertEquals(tx01.getHash(), block.getTransactionsList().get(0).getHash());
+        Assert.assertEquals(tx02.getHash(), block.getTransactionsList().get(1).getHash());
     }
 }

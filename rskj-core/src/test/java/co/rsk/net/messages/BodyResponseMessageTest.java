@@ -27,10 +27,11 @@ public class BodyResponseMessageTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block parent = BlockGenerator.getInstance().getGenesisBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block parent = blockGenerator.getGenesisBlock();
 
         for (int k = 1; k < 10; k++) {
-            Block block = BlockGenerator.getInstance().createChildBlock(parent);
+            Block block = blockGenerator.createChildBlock(parent);
             uncles.add(block.getHeader());
             parent = block;
         }
@@ -42,8 +43,9 @@ public class BodyResponseMessageTest {
         Assert.assertNotNull(message.getTransactions());
         Assert.assertEquals(transactions.size(), message.getTransactions().size());
 
-        for (int k = 0; k < transactions.size(); k++)
-            Assert.assertArrayEquals(transactions.get(k).getHash(), message.getTransactions().get(k).getHash());
+        Assert.assertEquals(
+                transactions,
+                message.getTransactions());
 
         Assert.assertNotNull(message.getUncles());
         Assert.assertEquals(uncles.size(), message.getUncles().size());

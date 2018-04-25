@@ -19,8 +19,8 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
-import co.rsk.core.BlockchainDummy;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStoreImpl;
@@ -55,22 +55,24 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class BlockExecutorTest {
     public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void executeBlockWithoutTransaction() {
-        Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock());
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
 
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
 
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, BigInteger.TEN);
+        Account account = createAccount("acctest1", track, Coin.valueOf(10L));
         Assert.assertTrue(account.getEcKey().hasPrivKey());
         track.commit();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, null, null, null);
+        BlockExecutor executor = new BlockExecutor(config, repository, null, null, null);
 
         BlockResult result = executor.execute(block, repository.getRoot(), false);
 
@@ -83,7 +85,7 @@ public class BlockExecutorTest {
         AccountState accountState = repository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.TEN, accountState.getBalance());
+        Assert.assertEquals(BigInteger.TEN, accountState.getBalance().asBigInteger());
     }
 
     @Test
@@ -91,7 +93,7 @@ public class BlockExecutorTest {
         SimpleEthereumListener listener = new SimpleEthereumListener();
         TestObjects objects = generateBlockWithOneTransaction();
         Block block = objects.getBlock();
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, objects.getRepository(), new BlockchainDummy(), null, listener);
+        BlockExecutor executor = new BlockExecutor(config, objects.getRepository(), null, null, listener);
         Repository repository = objects.getRepository();
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
@@ -113,7 +115,7 @@ public class BlockExecutorTest {
         Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
         Assert.assertEquals(21000, result.getGasUsed());
-        Assert.assertEquals(21000, result.getPaidFees().intValueExact());
+        Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
 
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
@@ -129,30 +131,30 @@ public class BlockExecutorTest {
         AccountState accountState = repository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance());
+        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance());
+        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
     }
 
     @Test
     public void executeBlockWithTwoTransactions() {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
 
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, BigInteger.valueOf(60000));
-        Account account2 = createAccount("acctest2", track, BigInteger.TEN);
+        Account account = createAccount("acctest1", track, Coin.valueOf(60000));
+        Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
         track.commit();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, repository, null, null, null);
 
         Transaction tx1 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
         Transaction tx2 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()).add(BigInteger.ONE));
@@ -162,7 +164,8 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock(), txs, uncles, 1, null);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock(), txs, uncles, 1, null);
 
         BlockResult result = executor.execute(block, repository.getRoot(), false);
 
@@ -185,7 +188,7 @@ public class BlockExecutorTest {
         Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
         Assert.assertEquals(42000, result.getGasUsed());
-        Assert.assertEquals(42000, result.getPaidFees().intValueExact());
+        Assert.assertEquals(42000, result.getPaidFees().asBigInteger().intValueExact());
 
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
@@ -199,14 +202,14 @@ public class BlockExecutorTest {
         AccountState accountState = repository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance());
+        Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance().asBigInteger());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance());
+        Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
     }
 
     @Test
@@ -214,7 +217,7 @@ public class BlockExecutorTest {
         TestObjects objects = generateBlockWithOneTransaction();
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, objects.getRepository(), new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, objects.getRepository(), null, null, null);
 
         BlockResult result = executor.execute(block, parent.getStateRoot(), false);
         executor.executeAndFill(block, parent);
@@ -230,19 +233,19 @@ public class BlockExecutorTest {
 
     @Test
     public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance() {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
 
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, BigInteger.valueOf(30000));
-        Account account2 = createAccount("acctest2", track, BigInteger.TEN);
-        Account account3 = createAccount("acctest3", track, BigInteger.ZERO);
+        Account account = createAccount("acctest1", track, Coin.valueOf(30000));
+        Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
+        Account account3 = createAccount("acctest3", track, Coin.ZERO);
 
         track.commit();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, repository, null, null, null);
 
         Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
         Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
@@ -252,35 +255,36 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFill(block, genesis);
 
         // Check tx2 was excluded
         Assert.assertEquals(1, block.getTransactionsList().size());
         Assert.assertEquals(tx, block.getTransactionsList().get(0));
-        Assert.assertArrayEquals(Block.getTxTrie(Lists.newArrayList(tx)).getHash(), block.getTxTrieRoot());
+        Assert.assertArrayEquals(Block.getTxTrie(Lists.newArrayList(tx)).getHash().getBytes(), block.getTxTrieRoot());
         
         Assert.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
     @Test
     public void executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalance() {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
 
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, BigInteger.valueOf(30000));
-        Account account2 = createAccount("acctest2", track, BigInteger.TEN);
-        Account account3 = createAccount("acctest3", track, BigInteger.ZERO);
+        Account account = createAccount("acctest1", track, Coin.valueOf(30000));
+        Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
+        Account account3 = createAccount("acctest3", track, Coin.ZERO);
 
         track.commit();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, repository, null, null, null);
 
         Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
         Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
@@ -290,9 +294,10 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
 
         BlockResult result = executor.execute(block, genesis.getStateRoot(), false);
 
@@ -304,7 +309,7 @@ public class BlockExecutorTest {
         TestObjects objects = generateBlockWithOneTransaction();
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, objects.getRepository(), new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, objects.getRepository(), null, null, null);
 
         Assert.assertTrue(executor.executeAndValidate(block, parent));
     }
@@ -314,7 +319,7 @@ public class BlockExecutorTest {
         TestObjects objects = generateBlockWithOneTransaction();
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, objects.getRepository(), new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, objects.getRepository(), null, null, null);
 
         byte[] stateRoot = block.getStateRoot();
         stateRoot[0] = (byte)((stateRoot[0] + 1) % 256);
@@ -327,7 +332,7 @@ public class BlockExecutorTest {
         TestObjects objects = generateBlockWithOneTransaction();
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, objects.getRepository(), new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, objects.getRepository(), null, null, null);
 
         byte[] receiptsRoot = block.getReceiptsRoot();
         receiptsRoot[0] = (byte)((receiptsRoot[0] + 1) % 256);
@@ -340,7 +345,7 @@ public class BlockExecutorTest {
         TestObjects objects = generateBlockWithOneTransaction();
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, objects.getRepository(), new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, objects.getRepository(), null, null, null);
 
         block.getHeader().setGasUsed(0);
 
@@ -352,9 +357,9 @@ public class BlockExecutorTest {
         TestObjects objects = generateBlockWithOneTransaction();
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, objects.getRepository(), new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, objects.getRepository(), null, null, null);
 
-        block.getHeader().setPaidFees(BigInteger.ZERO);
+        block.getHeader().setPaidFees(Coin.ZERO);
 
         Assert.assertFalse(executor.executeAndValidate(block, parent));
     }
@@ -364,7 +369,7 @@ public class BlockExecutorTest {
         TestObjects objects = generateBlockWithOneTransaction();
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, objects.getRepository(), new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, objects.getRepository(), null, null, null);
 
         byte[] logBloom = block.getLogBloom();
         logBloom[0] = (byte)((logBloom[0] + 1) % 256);
@@ -378,14 +383,14 @@ public class BlockExecutorTest {
 
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, BigInteger.valueOf(30000));
-        Account account2 = createAccount("acctest2", track, BigInteger.TEN);
+        Account account = createAccount("acctest1", track, Coin.valueOf(30000));
+        Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
         track.commit();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, repository, null, null, null);
 
         Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
         List<Transaction> txs = new ArrayList<>();
@@ -395,7 +400,7 @@ public class BlockExecutorTest {
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFill(block, genesis);
 
@@ -405,12 +410,12 @@ public class BlockExecutorTest {
     private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
         String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = Transaction.create(ConfigHelper.CONFIG, toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000));
+        Transaction tx = Transaction.create(config, toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000));
         tx.sign(privateKeyBytes);
         return tx;
     }
 
-    public static Account createAccount(String seed, Repository repository, BigInteger balance) {
+    public static Account createAccount(String seed, Repository repository, Coin balance) {
         Account account = createAccount(seed);
         repository.createAccount(account.getAddress());
         repository.addBalance(account.getAddress(), balance);
@@ -418,7 +423,7 @@ public class BlockExecutorTest {
     }
 
     public static Account createAccount(String seed) {
-        byte[] privateKeyBytes = HashUtil.sha3(seed.getBytes());
+        byte[] privateKeyBytes = HashUtil.keccak256(seed.getBytes());
         ECKey key = ECKey.fromPrivate(privateKeyBytes);
         Account account = new Account(key);
         return account;
@@ -447,7 +452,7 @@ public class BlockExecutorTest {
     public void executeBlockWithOneStrangeTransaction(boolean mustFailValidation, boolean mustFailExecution, TestObjects objects) {
         SimpleEthereumListener listener = new SimpleEthereumListener();
         Block block = objects.getBlock();
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, objects.getRepository(), new BlockchainDummy(), null, listener);
+        BlockExecutor executor = new BlockExecutor(config, objects.getRepository(), null, null, listener);
         Repository repository = objects.getRepository();
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
@@ -499,14 +504,14 @@ public class BlockExecutorTest {
         AccountState accountState = repository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance());
+        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance());
+        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
     }
 
     public static TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
@@ -516,14 +521,14 @@ public class BlockExecutorTest {
 
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, BigInteger.valueOf(30000));
-        Account account2 = createAccount("acctest2", track, BigInteger.TEN);
+        Account account = createAccount("acctest1", track, Coin.valueOf(30000));
+        Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
         track.commit();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, repository, null, null, null);
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = createStrangeTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()), strangeTransactionType);
@@ -533,7 +538,7 @@ public class BlockExecutorTest {
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFillReal(block, genesis); // Forces all transactions included
 
@@ -678,7 +683,7 @@ public class BlockExecutorTest {
         }
 
         @Override
-        public void onPendingStateChanged(PendingState pendingState) {
+        public void onTransactionPoolChanged(TransactionPool transactionPool) {
 
         }
 

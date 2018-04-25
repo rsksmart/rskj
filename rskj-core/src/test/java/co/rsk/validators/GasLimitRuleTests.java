@@ -18,13 +18,13 @@
 
 package co.rsk.validators;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
-
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -34,32 +34,33 @@ import static org.junit.Assert.assertTrue;
  * @since 02.23.2016
  */
 public class GasLimitRuleTests {
+    private final TestSystemProperties config = new TestSystemProperties();
     private GasLimitRule rule = new GasLimitRule(3000000);
 
     @Test // pass rule
     public void gasLimitGreaterThanMinimumGasLimit() {
-        Block block = getBlock(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit() + 1);
+        Block block = getBlock(config.getBlockchainConfig().getCommonConstants().getMinGasLimit() + 1);
         assertTrue(rule.isValid(block));
     }
 
     @Test // pass rule
     public void gasLimitEqualMinimumGasLimit() {
-        Block block = getBlock(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        Block block = getBlock(config.getBlockchainConfig().getCommonConstants().getMinGasLimit());
         assertTrue(rule.isValid(block));
     }
 
     @Test // no pass rule
     public void gasLimitLessThanMinimumGasLimit() {
-        Block block = getBlock(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit() - 1);
+        Block block = getBlock(config.getBlockchainConfig().getCommonConstants().getMinGasLimit() - 1);
         assertFalse(rule.isValid(block));
     }
 
     private static Block getBlock(long gasLimitValue) {
         byte[] gasLimit = new DataWord(gasLimitValue).getData();
 
-        BlockHeader header = new BlockHeader(null, null, RskAddress.nullAddress().getBytes(), null, null, 0,
-                gasLimit, 0,
-                0, null, null,0);
+        BlockHeader header = new BlockHeader(null, null, RskAddress.nullAddress().getBytes(),
+                null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
+                0, null, null, 0);
 
         return new Block(header);
     }

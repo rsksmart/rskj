@@ -1,6 +1,8 @@
 package org.ethereum.util;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.builders.AccountBuilder;
@@ -45,21 +47,21 @@ public class ContractRunner {
         this.receiptStore = receiptStore;
 
         // we build a new block with high gas limit because Genesis' is too low
-        Block block = new BlockBuilder(blockchain)
+        Block block = new BlockBuilder(blockchain, new BlockGenerator())
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .build();
         blockchain.setBestBlock(block);
         // create a test sender account with a large balance for running any contract
         this.sender = new AccountBuilder(blockchain)
                 .name("sender")
-                .balance(BigInteger.valueOf(1_000_000_000_000L))
+                .balance(Coin.valueOf(1_000_000_000_000L))
                 .build();
     }
 
     public ContractDetails addContract(String runtimeBytecode) {
         Account contractAccount = new AccountBuilder(blockchain)
                         .name(runtimeBytecode)
-                        .balance(BigInteger.TEN)
+                        .balance(Coin.valueOf(10))
                         .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                         .build();
 
@@ -104,9 +106,9 @@ public class ContractRunner {
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = repository.startTracking();
-        TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, transaction, 0, RskAddress.nullAddress(),
-                repository, blockStore, receiptStore,
-                new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
+        TransactionExecutor executor = new TransactionExecutor(new TestSystemProperties(), transaction, 0, RskAddress.nullAddress(),
+                                                               repository, blockStore, receiptStore,
+                                                               new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
         executor.init();
         executor.execute();
         executor.go();

@@ -19,14 +19,15 @@
 
 package org.ethereum.core.genesis;
 
-import co.rsk.config.ConfigHelper;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockChainImplTest;
+import co.rsk.db.RepositoryImpl;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.DataWord;
@@ -43,9 +44,7 @@ public class BlockchainLoaderTest {
     public void testLoadBlockchainEmptyBlockchain() throws IOException {
         String jsonFile = "blockchain_loader_genesis.json";
 
-        Blockchain blockchain = BlockChainImplTest.createBlockChain();
-
-        RskSystemProperties systemProperties = Mockito.mock(RskSystemProperties.class);
+        TestSystemProperties systemProperties = Mockito.mock(TestSystemProperties.class);
 
         Constants constants = Mockito.mock(Constants.class);
         Mockito.when(constants.getInitialNonce()).thenReturn(BigInteger.ZERO);
@@ -53,7 +52,7 @@ public class BlockchainLoaderTest {
         BlockchainNetConfig blockchainNetConfig = Mockito.mock(BlockchainNetConfig.class);
         Mockito.when(blockchainNetConfig.getCommonConstants()).thenReturn(constants);
 
-        Mockito.when(systemProperties.databaseDir()).thenReturn(ConfigHelper.CONFIG.databaseDir());
+        Mockito.when(systemProperties.databaseDir()).thenReturn(new TestSystemProperties().databaseDir());
         Mockito.when(systemProperties.getBlockchainConfig()).thenReturn(blockchainNetConfig);
         Mockito.when(systemProperties.genesisInfo()).thenReturn(jsonFile);
 
@@ -62,21 +61,21 @@ public class BlockchainLoaderTest {
 
         EthereumListener ethereumListener = Mockito.mock(EthereumListener.class);
 
-        Repository repository = blockchain.getRepository();
+        Repository repository = new RepositoryImpl(systemProperties, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));;
 
-        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, blockchain, blockStore, repository, ethereumListener);
+        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null, null);
 
         blockChainLoader.loadBlockchain();
 
         Assert.assertEquals(5, repository.getAccountsKeys().size());
 
-        Assert.assertEquals(BigInteger.valueOf(2000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
+        Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
         Assert.assertEquals(BigInteger.valueOf(24), repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
 
-        Assert.assertEquals(BigInteger.valueOf(1000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
+        Assert.assertEquals(Coin.valueOf(1000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
         Assert.assertEquals(BigInteger.ZERO, repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
 
-        Assert.assertEquals(BigInteger.valueOf(10), repository.getBalance(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
+        Assert.assertEquals(Coin.valueOf(10), repository.getBalance(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
         Assert.assertEquals(BigInteger.valueOf(25), repository.getNonce(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
         Assert.assertEquals(DataWord.ONE, repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ZERO));
         Assert.assertEquals(new DataWord(3), repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ONE));

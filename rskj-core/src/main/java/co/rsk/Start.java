@@ -33,15 +33,13 @@ import co.rsk.net.MessageHandler;
 import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.handler.TxHandler;
-import co.rsk.rpc.CorsConfiguration;
+import co.rsk.rpc.netty.Web3HttpServer;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.*;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.rpc.JsonRpcNettyServer;
-import org.ethereum.rpc.JsonRpcWeb3FilterHandler;
-import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
+import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
@@ -64,7 +62,7 @@ public class Start {
     private final MinerServer minerServer;
     private final MinerClient minerClient;
     private final RskSystemProperties rskSystemProperties;
-    private final Web3Factory web3Factory;
+    private final Web3HttpServer web3HttpServer;
     private final Repository repository;
     private final Blockchain blockchain;
     private final ChannelManager channelManager;
@@ -72,9 +70,11 @@ public class Start {
     private final MessageHandler messageHandler;
     private final TxHandler txHandler;
 
-    private Web3 web3Service;
+    private final Web3 web3Service;
     private final BlockProcessor nodeBlockProcessor;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
+    private final PeerServer peerServer;
+    private final SyncPool.PeerClientFactory peerClientFactory;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -89,7 +89,8 @@ public class Start {
                  MinerServer minerServer,
                  MinerClient minerClient,
                  RskSystemProperties rskSystemProperties,
-                 Web3Factory web3Factory,
+                 Web3 web3Service,
+                 Web3HttpServer web3HttpServer,
                  Repository repository,
                  Blockchain blockchain,
                  ChannelManager channelManager,
@@ -97,13 +98,16 @@ public class Start {
                  MessageHandler messageHandler,
                  TxHandler txHandler,
                  BlockProcessor nodeBlockProcessor,
-                 PendingState pendingState) {
+                 TransactionPool transactionPool,
+                 PeerServer peerServer,
+                 SyncPool.PeerClientFactory peerClientFactory) {
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.rskSystemProperties = rskSystemProperties;
-        this.web3Factory = web3Factory;
+        this.web3HttpServer = web3HttpServer;
+        this.web3Service = web3Service;
         this.repository = repository;
         this.blockchain = blockchain;
         this.channelManager = channelManager;
@@ -111,7 +115,9 @@ public class Start {
         this.messageHandler = messageHandler;
         this.txHandler = txHandler;
         this.nodeBlockProcessor = nodeBlockProcessor;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
+        this.peerServer = peerServer;
+        this.peerClientFactory = peerClientFactory;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -121,17 +127,18 @@ public class Start {
         logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
         BuildInfo.printInfo();
 
+        // this should be the genesis block at this point
+        transactionPool.start(blockchain.getBestBlock());
         channelManager.start();
-        txHandler.start();
         messageHandler.start();
+        peerServer.start();
 
-        rsk.init();
         if (logger.isInfoEnabled()) {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
             logger.info("Capability eth version: [{}]", versions);
         }
         if (rskSystemProperties.isBlocksEnabled()) {
-            setupRecorder(rsk, rskSystemProperties.blocksRecorder());
+            setupRecorder(rskSystemProperties.blocksRecorder());
             setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
         }
 
@@ -152,51 +159,37 @@ public class Start {
 
         if (rskSystemProperties.isRpcEnabled()) {
             logger.info("RPC enabled");
-            enableRpc();
+            startRPCServer();
         }
         else {
             logger.info("RPC disabled");
         }
 
+        if (rskSystemProperties.isPeerDiscoveryEnabled()) {
+            udpServer.start();
+        }
+
         if (rskSystemProperties.isSyncEnabled()) {
             syncPool.updateLowerUsefulDifficulty();
-            syncPool.start();
+            syncPool.start(peerClientFactory);
             if (rskSystemProperties.waitForSync()) {
-                waitRskSyncDone(rsk);
+                waitRskSyncDone();
             }
         }
 
-        if (rskSystemProperties.minerServerEnabled()) {
+        if (rskSystemProperties.isMinerServerEnabled()) {
             minerServer.start();
 
-            if (rskSystemProperties.minerClientEnabled()) {
+            if (rskSystemProperties.isMinerClientEnabled()) {
                 minerClient.mine();
             }
         }
 
-        if (rskSystemProperties.peerDiscovery()) {
-            enablePeerDiscovery();
-        }
     }
 
-    private void enablePeerDiscovery() {
-        udpServer.start();
-    }
-
-    private void enableRpc() throws InterruptedException {
-        web3Service = web3Factory.newInstance();
+    private void startRPCServer() throws InterruptedException {
         web3Service.start();
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
-        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains());
-        new JsonRpcNettyServer(
-            rskSystemProperties.rpcHost(),
-            rskSystemProperties.rpcPort(),
-            rskSystemProperties.soLingerTime(),
-            true,
-            new CorsConfiguration(rskSystemProperties.corsDomains()),
-            filterHandler,
-            serverHandler
-        ).start();
+        web3HttpServer.start();
     }
 
     private void enableSimulateTxs() {
@@ -204,10 +197,10 @@ public class Start {
     }
 
     private void enableSimulateTxsEx() {
-        new TxBuilderEx(rskSystemProperties, rsk, repository, nodeBlockProcessor, pendingState).simulateTxs();
+        new TxBuilderEx(rskSystemProperties, rsk, repository, nodeBlockProcessor, transactionPool).simulateTxs();
     }
 
-    private void waitRskSyncDone(Rsk rsk) throws InterruptedException {
+    private void waitRskSyncDone() throws InterruptedException {
         while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync() || rsk.isPlayingBlocks()) {
             try {
                 Thread.sleep(10000);
@@ -224,15 +217,14 @@ public class Start {
         if (rskSystemProperties.isRpcEnabled()) {
             web3Service.stop();
         }
-        rsk.close();
+        peerServer.stop();
         messageHandler.stop();
-        txHandler.stop();
         channelManager.stop();
     }
 
-    private void setupRecorder(Rsk rsk, @Nullable String blocksRecorderFileName) {
+    private void setupRecorder(@Nullable String blocksRecorderFileName) {
         if (blocksRecorderFileName != null) {
-            rsk.getBlockchain().setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
+            blockchain.setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
         }
     }
 
@@ -261,9 +253,5 @@ public class Start {
                 cm.broadcastBlock(block, null);
             }
         }
-    }
-
-    public interface Web3Factory {
-        Web3 newInstance();
     }
 }

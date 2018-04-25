@@ -19,9 +19,8 @@
 
 package org.ethereum.config;
 
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.core.BlockHeader;
-
-import java.math.BigInteger;
 
 /**
  * Describes constants and algorithms used for a specific blockchain at specific stage
@@ -38,7 +37,7 @@ public interface BlockchainConfig {
     /**
      * Calculates the difficulty for the block depending on the parent
      */
-    BigInteger calcDifficulty(BlockHeader curBlock, BlockHeader parent);
+    BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent);
 
     boolean areBridgeTxsFree();
 }

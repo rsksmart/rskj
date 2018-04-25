@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.json.simple.parser.ParseException;
@@ -41,8 +41,9 @@ public class GitHubBlockTest {
     @Ignore // test for conveniently running a single test
     @Test
     public void runSingleTest() throws ParseException, IOException {
-        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
-        ConfigHelper.CONFIG.setBlockchainConfig(new GenesisConfig());
+        TestSystemProperties config = new TestSystemProperties();
+        config.setGenesisInfo("frontier.json");
+        config.setBlockchainConfig(new GenesisConfig());
 
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/bcTotalDifficultyTest.json", shacommit);
         GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(json, "sideChainWithNewMaxDifficultyStartingFromBlock3AfterBlock4");
@@ -55,11 +56,12 @@ public class GitHubBlockTest {
 
     private void runHomestead(String name) throws IOException, ParseException {
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/" + name + ".json", shacommit);
-        ConfigHelper.CONFIG.setBlockchainConfig(new GenesisConfig());
+        TestSystemProperties config = new TestSystemProperties();
+        config.setBlockchainConfig(new GenesisConfig());
         try {
             GitHubJSONTestSuite.runGitHubJsonBlockTest(json, Collections.EMPTY_SET);
         } finally {
-            ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+            config.setBlockchainConfig(new MainNetConfig());
         }
     }
 
@@ -98,7 +100,8 @@ public class GitHubBlockTest {
     @Ignore
     @Test
     public void runBCValidBlockTest() throws ParseException, IOException {
-        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
+        TestSystemProperties config = new TestSystemProperties();
+        config.setGenesisInfo("frontier.json");
         run("bcValidBlockTest", true, true);
     }
 

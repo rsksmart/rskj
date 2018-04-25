@@ -18,12 +18,13 @@
 
 package co.rsk.rpc;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
 import org.junit.Assert;
@@ -38,10 +39,13 @@ public class Web3ImplRpcTest {
     @Test
     public void getRpcModules() {
         Ethereum eth = Web3Mocks.getMockEthereum();
-        WorldManager worldManager = Web3Mocks.getMockWorldManager();
+        Blockchain blockchain = Web3Mocks.getMockBlockchain();
+        TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModule pm = new PersonalModuleWalletDisabled();
         Repository repository = Web3Mocks.getMockRepository();
-        Web3Impl web3 = new Web3RskImpl(eth, worldManager, ConfigHelper.CONFIG, null, null, pm, null, null, repository, null, null, null, null);
+        Web3Impl web3 = new Web3RskImpl(eth, blockchain, transactionPool,
+                                        new TestSystemProperties(), null, null, pm, null, null,
+                                        null, repository, null, null, null, null, null, null, null, null);
 
         Map<String, String> result = web3.rpc_modules();
 

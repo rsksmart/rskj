@@ -19,8 +19,9 @@
 
 package org.ethereum.vm;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
@@ -34,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.ethereum.crypto.HashUtil.sha3;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 
@@ -87,7 +87,8 @@ public class VM {
 
     private static VMHook vmHook;
 
-    private final RskSystemProperties config;
+    private final VmConfig vmConfig;
+    private final PrecompiledContracts precompiledContracts;
 
     // Execution variables
     Program program;
@@ -103,8 +104,9 @@ public class VM {
     int stepBefore; // only for debugging
     boolean isLogEnabled;
 
-    public VM(RskSystemProperties config) {
-        this.config = config;
+    public VM(VmConfig vmConfig, PrecompiledContracts precompiledContracts) {
+        this.vmConfig = vmConfig;
+        this.precompiledContracts = precompiledContracts;
         isLogEnabled = logger.isInfoEnabled();
     }
 
@@ -614,7 +616,7 @@ public class VM {
         DataWord lengthData = program.stackPop();
         byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
 
-        byte[] encoded = sha3(buffer);
+        byte[] encoded = HashUtil.keccak256(buffer);
         DataWord word = program.newDataWord(encoded);
 
         if (isLogEnabled) {
@@ -1467,7 +1469,7 @@ public class VM {
     }
 
     private void callToAddress(DataWord codeAddress, MessageCall msg) {
-        PrecompiledContracts.PrecompiledContract contract = PrecompiledContracts.getContractForAddress(config, codeAddress);
+        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(codeAddress);
 
         if (contract != null) {
             program.callToPrecompiledAddress(msg, contract);
@@ -1871,7 +1873,7 @@ public class VM {
                     break;
                 }
 
-                if (this.config.vmTrace()) {
+                if (vmConfig.vmTrace()) {
                     program.saveOpTrace();
                 }
 
@@ -1894,14 +1896,14 @@ public class VM {
 
                 gasCost = op.getTier().asInt();
 
-                if (this.config.dumpBlock() >= 0) {
+                if (vmConfig.dumpBlock() >= 0) {
                     gasBefore = program.getRemainingGas();
                     stepBefore = program.getPC();
                     memWords = 0; // parameters for logging
                 }
 
                 // Log debugging line for VM
-                if (this.config.dumpBlock() >= 0 && program.getNumber().intValue() == this.config.dumpBlock()) {
+                if (vmConfig.dumpBlock() >= 0 && program.getNumber().intValue() == vmConfig.dumpBlock()) {
                     this.dumpLine(op, gasBefore, gasCost , memWords, program);
                 }
 
@@ -1980,7 +1982,7 @@ public class VM {
                     gasBefore, gasCost, memWords)
      */
     private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
-        if ("standard+".equals(config.dumpStyle())) {
+        if ("standard+".equals(vmConfig.dumpStyle())) {
             switch (op) {
                 case STOP:
                 case RETURN:
@@ -2004,7 +2006,7 @@ public class VM {
             String gasString = Long.toHexString(program.getRemainingGas());
 
             dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);
-        } else if ("pretty".equals(config.dumpStyle())) {
+        } else if ("pretty".equals(vmConfig.dumpStyle())) {
             dumpLogger.trace("-------------------------------------------------------------------------");
             dumpLogger.trace("    STACK");
             program.getStack().forEach(item -> dumpLogger.trace("{}", item));

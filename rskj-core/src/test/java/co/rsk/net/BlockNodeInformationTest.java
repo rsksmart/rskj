@@ -18,7 +18,7 @@
 
 package co.rsk.net;
 
-import org.ethereum.db.ByteArrayWrapper;
+import co.rsk.crypto.Keccak256;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,8 +28,8 @@ import java.util.Set;
 public class BlockNodeInformationTest {
 
     // createBlockHash is a convenience function to create a ByteArrayWrapper wrapping an int.
-    private ByteArrayWrapper createBlockHash(int i) {
-        return new ByteArrayWrapper(ByteBuffer.allocate(4).putInt(i).array());
+    private Keccak256 createBlockHash(int i) {
+        return new Keccak256(ByteBuffer.allocate(32).putInt(i).array());
     }
 
     // createNodeID is a convenience function to create a NodeID based on an int.
@@ -40,7 +40,7 @@ public class BlockNodeInformationTest {
     @Test
     public void nodeEvictionPolicy() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        final ByteArrayWrapper block = createBlockHash(10);
+        final Keccak256 block = createBlockHash(10);
 
         // Add a few nodes, not exceeding the node limit.
         // These nodes should contain the block when we call getBlocksByNode
@@ -76,7 +76,7 @@ public class BlockNodeInformationTest {
 
         // Add a few blocks, without exceeding the block limit. NodeID1 should contain them all.
         for (int i = 0; i < 500; i++) {
-            final ByteArrayWrapper hash1 = createBlockHash(i);
+            final Keccak256 hash1 = createBlockHash(i);
             nodeInformation.addBlockToNode(hash1, nodeID1);
         }
 
@@ -89,7 +89,7 @@ public class BlockNodeInformationTest {
         // Add more blocks, exceeding MAX_NODES. All previous blocks should be evicted.
         // Except from block 10, which is being constantly accessed.
         for (int i = 500; i < 2000; i++) {
-            final ByteArrayWrapper hash1 = createBlockHash(i);
+            final Keccak256 hash1 = createBlockHash(i);
             nodeInformation.addBlockToNode(hash1, nodeID1);
 
             nodeInformation.getNodesByBlock(createBlockHash(10));
@@ -113,22 +113,22 @@ public class BlockNodeInformationTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(new NodeID(new byte[]{})).size() == 0);
-        Assert.assertTrue(nodeInformation.getNodesByBlock(new ByteArrayWrapper(new byte[]{})).size() == 0);
-        Assert.assertTrue(nodeInformation.getBlocksByNode(new byte[]{}).size() == 0);
-        Assert.assertTrue(nodeInformation.getNodesByBlock(new byte[]{}).size() == 0);
+        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
+        Assert.assertTrue(nodeInformation.getBlocksByNode(createBlockHash(0).getBytes()).size() == 0);
+        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
     }
 
     @Test
     public void getIsNotEmptyIfPresent() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        final ByteArrayWrapper hash1 = new ByteArrayWrapper(new byte[]{1});
+        final Keccak256 hash1 = createBlockHash(1);
         final NodeID nodeID1 = new NodeID(new byte[]{2});
 
-        final ByteArrayWrapper badHash = new ByteArrayWrapper(new byte[]{3});
+        final Keccak256 badHash = createBlockHash(3);
         final NodeID badNode = new NodeID(new byte[]{4});
 
         nodeInformation.addBlockToNode(hash1, nodeID1);
-        Set<ByteArrayWrapper> blocks = nodeInformation.getBlocksByNode(nodeID1);
+        Set<Keccak256> blocks = nodeInformation.getBlocksByNode(nodeID1);
         Assert.assertTrue(blocks.size() == 1);
         Assert.assertTrue(blocks.contains(hash1));
         Assert.assertFalse(blocks.contains(badHash));
@@ -148,18 +148,18 @@ public class BlockNodeInformationTest {
     @Test
     public void twoNodesTwoBlocks() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        final ByteArrayWrapper hash1 = new ByteArrayWrapper(new byte[]{1});
+        final Keccak256 hash1 = createBlockHash(1);
         final NodeID nodeID1 = new NodeID(new byte[]{2});
 
-        final ByteArrayWrapper hash2 = new ByteArrayWrapper(new byte[]{3});
+        final Keccak256 hash2 = createBlockHash(3);
         final NodeID nodeID2 = new NodeID(new byte[]{4});
 
         nodeInformation.addBlockToNode(hash1, nodeID1);
         nodeInformation.addBlockToNode(hash2, nodeID1);
         nodeInformation.addBlockToNode(hash2, nodeID2);
 
-        Set<ByteArrayWrapper> blocks1 = nodeInformation.getBlocksByNode(nodeID1);
-        Set<ByteArrayWrapper> blocks2 = nodeInformation.getBlocksByNode(nodeID2);
+        Set<Keccak256> blocks1 = nodeInformation.getBlocksByNode(nodeID1);
+        Set<Keccak256> blocks2 = nodeInformation.getBlocksByNode(nodeID2);
         Set<NodeID> nodes1 = nodeInformation.getNodesByBlock(hash1);
         Set<NodeID> nodes2 = nodeInformation.getNodesByBlock(hash2);
 

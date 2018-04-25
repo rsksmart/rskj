@@ -18,7 +18,10 @@
  */
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
@@ -38,9 +41,7 @@ import static org.ethereum.util.ByteUtil.toHexString;
  * Block header is a value object containing
  * the basic information of a block
  */
-
-// TODO review implements SerializableObject
-public class BlockHeader implements SerializableObject {
+public class BlockHeader {
 
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
@@ -65,10 +66,15 @@ public class BlockHeader implements SerializableObject {
     private byte[] receiptTrieRoot;
     /* The bloom filter for the logs of the block */
     private byte[] logsBloom;
-    /* A scalar value corresponding to the difficulty level of this block.
+    /**
+     * A scalar value corresponding to the difficulty level of this block.
      * This can be calculated from the previous block’s difficulty level
-     * and the timestamp */
-    private byte[] difficulty;
+     * and the timestamp.
+     * Note that difficultyRaw is saved to perform {@link #getEncoded()},
+     * but for other uses you should only rely on difficulty.
+     */
+    private byte[] difficultyRaw;
+    private BlockDifficulty difficulty;
     /* A scalar value equalBytes to the reasonable output of Unix's time()
      * at this block's inception */
     private long timestamp;
@@ -80,7 +86,7 @@ public class BlockHeader implements SerializableObject {
     /* A scalar value equalBytes to the total gas used in transactions in this block */
     private long gasUsed;
     /* A scalar value equalBytes to the total paid fees in transactions in this block */
-    private BigInteger paidFees;
+    private Coin paidFees;
 
     /* An arbitrary byte array containing data relevant to this block.
      * With the exception of the genesis block, this must be 32 bytes or fewer */
@@ -92,8 +98,13 @@ public class BlockHeader implements SerializableObject {
     private byte[] bitcoinMergedMiningMerkleProof;
     /* The bitcoin protobuf serialized coinbase tx for merged mining */
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
-    /*The mgp for a tx to be included in the block*/
-    private byte[] minimumGasPrice;
+    /**
+     * The mgp for a tx to be included in the block.
+     * Note that minimumGasPriceRaw is saved to perform {@link #getEncoded()},
+     * but for other uses you should only rely on minimumGasPrice.
+     */
+    private byte[] minimumGasPriceRaw;
+    private Coin minimumGasPrice;
     private int uncleCount;
 
     /* Indicates if this block header cannot be changed */
@@ -123,7 +134,8 @@ public class BlockHeader implements SerializableObject {
         }
 
         this.logsBloom = rlpHeader.get(6).getRLPData();
-        this.difficulty = rlpHeader.get(7).getRLPData();
+        this.difficultyRaw = rlpHeader.get(7).getRLPData();
+        this.difficulty = new BlockDifficulty(difficultyRaw);
 
         byte[] nrBytes = rlpHeader.get(8).getRLPData();
         byte[] glBytes = rlpHeader.get(9).getRLPData();
@@ -138,9 +150,9 @@ public class BlockHeader implements SerializableObject {
 
         this.extraData = rlpHeader.get(12).getRLPData();
 
-        byte[] pfBytes = rlpHeader.get(13).getRLPData();
-        this.paidFees = parseBigInteger(pfBytes);
-        this.minimumGasPrice = rlpHeader.get(14).getRLPData();
+        this.paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
+        this.minimumGasPriceRaw = rlpHeader.get(14).getRLPData();
+        this.minimumGasPrice = RLP.parseCoin(this.minimumGasPriceRaw);
 
         int r = 15;
 
@@ -181,17 +193,19 @@ public class BlockHeader implements SerializableObject {
         this.unclesHash = unclesHash;
         this.coinbase = new RskAddress(coinbase);
         this.logsBloom = logsBloom;
-        this.difficulty = difficulty;
+        this.difficultyRaw = difficulty;
+        this.difficulty = new BlockDifficulty(difficultyRaw);
         this.number = number;
         this.gasLimit = gasLimit;
         this.gasUsed = gasUsed;
         this.timestamp = timestamp;
         this.extraData = extraData;
         this.stateRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
-        this.minimumGasPrice = minimumGasPrice;
+        this.minimumGasPriceRaw = minimumGasPrice;
+        this.minimumGasPrice = minimumGasPriceRaw == null ? null : new Coin(minimumGasPriceRaw);
         this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.uncleCount = uncleCount;
-        this.paidFees = BigInteger.ZERO;
+        this.paidFees = Coin.ZERO;
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
@@ -214,8 +228,8 @@ public class BlockHeader implements SerializableObject {
         return this.getNumber() == Genesis.NUMBER;
     }
 
-    public byte[] getParentHash() {
-        return parentHash;
+    public Keccak256 getParentHash() {
+        return new Keccak256(parentHash);
     }
 
     public int getUncleCount() {
@@ -283,20 +297,17 @@ public class BlockHeader implements SerializableObject {
         return logsBloom;
     }
 
-    public byte[] getDifficulty() {
+    public BlockDifficulty getDifficulty() {
         return difficulty;
     }
 
-    public BigInteger getDifficultyBI() {
-        return new BigInteger(1, difficulty);
-    }
-
-    public void setDifficulty(byte[] difficulty) {
+    public void setDifficulty(BlockDifficulty difficulty) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter difficulty");
         }
 
+        this.difficultyRaw = difficulty.getBytes();
         this.difficulty = difficulty;
     }
 
@@ -343,7 +354,7 @@ public class BlockHeader implements SerializableObject {
         return gasUsed;
     }
 
-    public void setPaidFees(BigInteger paidFees) {
+    public void setPaidFees(Coin paidFees) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter paid fees");
@@ -352,7 +363,7 @@ public class BlockHeader implements SerializableObject {
         this.paidFees = paidFees;
     }
 
-    public BigInteger getPaidFees() {
+    public Coin getPaidFees() {
         return this.paidFees;
     }
 
@@ -387,8 +398,8 @@ public class BlockHeader implements SerializableObject {
         this.extraData = extraData;
     }
 
-    public byte[] getHash() {
-        return HashUtil.sha3(getEncoded());
+    public Keccak256 getHash() {
+        return new Keccak256(HashUtil.keccak256(getEncoded()));
     }
 
     public byte[] getEncoded() {
@@ -399,17 +410,8 @@ public class BlockHeader implements SerializableObject {
         return this.getEncoded(false);
     }
 
-    public byte[] getMinimumGasPrice() {
+    public Coin getMinimumGasPrice() {
         return this.minimumGasPrice;
-    }
-
-    public void setMinimumGasPrice(byte[] minimumGasPrice) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter minimum gas price");
-        }
-
-        this.minimumGasPrice = minimumGasPrice;
     }
 
     public byte[] getEncoded(boolean withMergedMiningFields) {
@@ -433,14 +435,14 @@ public class BlockHeader implements SerializableObject {
         byte[] receiptTrieRoot = RLP.encodeElement(this.receiptTrieRoot);
 
         byte[] logsBloom = RLP.encodeElement(this.logsBloom);
-        byte[] difficulty = RLP.encodeElement(this.difficulty);
+        byte[] difficulty = RLP.encodeElement(this.difficultyRaw);
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
         byte[] gasLimit = RLP.encodeElement(this.gasLimit);
         byte[] gasUsed = RLP.encodeBigInteger(BigInteger.valueOf(this.gasUsed));
         byte[] timestamp = RLP.encodeBigInteger(BigInteger.valueOf(this.timestamp));
         byte[] extraData = RLP.encodeElement(this.extraData);
-        byte[] paidFees = RLP.encodeBigInteger(this.paidFees);
-        byte[] mgp = RLP.encodeElement(this.minimumGasPrice);
+        byte[] paidFees = RLP.encodeCoin(this.paidFees);
+        byte[] mgp = RLP.encodeElement(this.minimumGasPriceRaw);
         List<byte[]> fieldToEncodeList = Lists.newArrayList(parentHash, unclesHash, coinbase,
                 stateRoot, txTrieRoot, receiptTrieRoot, logsBloom, difficulty, number,
                 gasLimit, gasUsed, timestamp, extraData, paidFees, mgp);
@@ -500,7 +502,7 @@ public class BlockHeader implements SerializableObject {
     }
 
     public byte[] getPowBoundary() {
-        return BigIntegers.asUnsignedByteArray(32, BigInteger.ONE.shiftLeft(256).divide(getDifficultyBI()));
+        return BigIntegers.asUnsignedByteArray(32, BigInteger.ONE.shiftLeft(256).divide(getDifficulty().asBigInteger()));
     }
 
     public String toString() {
@@ -515,13 +517,13 @@ public class BlockHeader implements SerializableObject {
         toStringBuff.append("  stateRoot=").append(toHexString(stateRoot)).append(suffix);
         toStringBuff.append("  txTrieHash=").append(toHexString(txTrieRoot)).append(suffix);
         toStringBuff.append("  receiptsTrieHash=").append(toHexString(receiptTrieRoot)).append(suffix);
-        toStringBuff.append("  difficulty=").append(toHexString(difficulty)).append(suffix);
+        toStringBuff.append("  difficulty=").append(difficulty).append(suffix);
         toStringBuff.append("  number=").append(number).append(suffix);
         toStringBuff.append("  gasLimit=").append(toHexString(gasLimit)).append(suffix);
         toStringBuff.append("  gasUsed=").append(gasUsed).append(suffix);
         toStringBuff.append("  timestamp=").append(timestamp).append(" (").append(Utils.longToDateTime(timestamp)).append(")").append(suffix);
         toStringBuff.append("  extraData=").append(toHexString(extraData)).append(suffix);
-        toStringBuff.append("  minGasPrice=").append(toHexString(minimumGasPrice)).append(suffix);
+        toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
 
         return toStringBuff.toString();
     }
@@ -532,7 +534,7 @@ public class BlockHeader implements SerializableObject {
 
     // TODO added to comply with SerializableObject
 
-    public byte[] getRawHash() {
+    public Keccak256 getRawHash() {
         return getHash();
     }
     // TODO added to comply with SerializableObject
@@ -584,11 +586,15 @@ public class BlockHeader implements SerializableObject {
     }
 
     public byte[] getHashForMergedMining() {
-        return HashUtil.sha3(getEncoded(false));
+        return HashUtil.keccak256(getEncoded(false));
     }
 
     public String getShortHash() {
-        return HashUtil.shortHash(getHash());
+        return HashUtil.shortHash(getHash().getBytes());
+    }
+
+    public String getParentShortHash() {
+        return HashUtil.shortHash(getParentHash().getBytes());
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {

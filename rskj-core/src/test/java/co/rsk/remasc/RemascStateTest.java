@@ -19,11 +19,11 @@
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -35,15 +35,15 @@ import java.util.TreeMap;
 public class RemascStateTest {
     @Test
     public void serializeAndDeserializeWithNoValues() {
-        RemascState state = new RemascState(BigInteger.ZERO, BigInteger.ZERO, new TreeMap<>(), false);
+        RemascState state = new RemascState(Coin.ZERO, Coin.ZERO, new TreeMap<>(), false);
 
         byte[] bytes = state.getEncoded();
 
         RemascState result = RemascState.create(bytes);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(BigInteger.ZERO, result.getRewardBalance());
-        Assert.assertEquals(BigInteger.ZERO, result.getBurnedBalance());
+        Assert.assertEquals(Coin.ZERO, result.getRewardBalance());
+        Assert.assertEquals(Coin.ZERO, result.getBurnedBalance());
         Assert.assertNotNull(result.getSiblings());
         Assert.assertTrue(result.getSiblings().isEmpty());
         Assert.assertFalse(result.getBrokenSelectionRule());
@@ -51,12 +51,13 @@ public class RemascStateTest {
 
     @Test
     public void serializeAndDeserializeWithSomeValues() {
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
-        Block block4 = BlockGenerator.getInstance().createChildBlock(block3);
-        Block block5 = BlockGenerator.getInstance().createChildBlock(block4);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
+        Block block4 = blockGenerator.createChildBlock(block3);
+        Block block5 = blockGenerator.createChildBlock(block4);
 
         Sibling sibling1 = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
         Sibling sibling2 = new Sibling(block1.getHeader(), block1.getCoinbase(), 2);
@@ -84,15 +85,15 @@ public class RemascStateTest {
         siblings.put(Long.valueOf(1), siblings1);
         siblings.put(Long.valueOf(2), siblings2);
 
-        RemascState state = new RemascState(BigInteger.ONE, BigInteger.TEN, siblings, true);
+        RemascState state = new RemascState(Coin.valueOf(1), Coin.valueOf(10), siblings, true);
 
         byte[] bytes = state.getEncoded();
 
         RemascState result = RemascState.create(bytes);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(BigInteger.ONE, result.getRewardBalance());
-        Assert.assertEquals(BigInteger.TEN, result.getBurnedBalance());
+        Assert.assertEquals(Coin.valueOf(1), result.getRewardBalance());
+        Assert.assertEquals(Coin.valueOf(10), result.getBurnedBalance());
         Assert.assertNotNull(result.getSiblings());
         Assert.assertFalse(result.getSiblings().isEmpty());
         Assert.assertTrue(result.getBrokenSelectionRule());

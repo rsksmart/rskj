@@ -18,46 +18,45 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
-import org.mockito.Mockito;
 
 import java.util.concurrent.*;
-
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 5/15/2016.
  */
 public class SimpleAsyncNode extends SimpleNode {
+    private static final TestSystemProperties config = new TestSystemProperties();
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(5000);
     private SyncProcessor syncProcessor;
+    private SimpleChannelManager simpleChannelManager;
 
     public SimpleAsyncNode(MessageHandler handler) {
         super(handler);
     }
 
-    public SimpleAsyncNode(MessageHandler handler, SyncProcessor syncProcessor) {
+    public SimpleAsyncNode(MessageHandler handler, SyncProcessor syncProcessor, SimpleChannelManager simpleChannelManager) {
         super(handler);
         this.syncProcessor = syncProcessor;
+        this.simpleChannelManager = simpleChannelManager;
     }
 
     @Override
     public void receiveMessageFrom(SimpleNode peer, Message message) {
-        SimpleNodeChannel senderToPeer = new SimpleNodeChannel(this, peer);
+        MessageChannel senderToPeer = simpleChannelManager.getMessageChannel(this, peer);
         futures.add(
                 executor.submit(() -> this.getHandler().processMessage(senderToPeer, message)));
     }
@@ -112,15 +111,14 @@ public class SimpleAsyncNode extends SimpleNode {
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
-        PeerScoringManager peerScoringManager = Mockito.mock(PeerScoringManager.class);
-        when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
-        when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring());
-        SyncProcessor syncProcessor = new SyncProcessor(ConfigHelper.CONFIG, blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(ConfigHelper.CONFIG));
-        NodeMessageHandler handler = new NodeMessageHandler(ConfigHelper.CONFIG, processor, syncProcessor, new SimpleChannelManager(), null, null, peerScoringManager, blockValidationRule);
-        return new SimpleAsyncNode(handler, syncProcessor);
+        PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
+        SimpleChannelManager channelManager = new SimpleChannelManager();
+        SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config));
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, peerScoringManager, blockValidationRule);
+        return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }
 
     // TODO(mc) find out why the following two work differently

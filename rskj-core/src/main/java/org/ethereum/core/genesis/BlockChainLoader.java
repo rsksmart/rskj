@@ -20,15 +20,21 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.validators.BlockValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.manager.AdminInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -39,6 +45,7 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 /**
  * Created by mario on 13/01/17.
  */
+@Component
 public class BlockChainLoader {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
@@ -46,19 +53,44 @@ public class BlockChainLoader {
     private final RskSystemProperties config;
     private final BlockStore blockStore;
     private final Repository repository;
-    private final Blockchain blockchain;
+    private final ReceiptStore receiptStore;
+    private final TransactionPool transactionPool;
     private final EthereumListener listener;
+    private final AdminInfo adminInfo;
+    private final BlockValidator blockValidator;
 
-    public BlockChainLoader(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore, Repository repository, EthereumListener listener) {
+    @Autowired
+    public BlockChainLoader(
+            RskSystemProperties config,
+            org.ethereum.core.Repository repository,
+            org.ethereum.db.BlockStore blockStore,
+            ReceiptStore receiptStore,
+            TransactionPool transactionPool,
+            EthereumListener listener,
+            AdminInfo adminInfo,
+            BlockValidator blockValidator) {
+
         this.config = config;
         this.blockStore = blockStore;
         this.repository = repository;
-        this.blockchain = blockchain;
+        this.receiptStore = receiptStore;
+        this.transactionPool = transactionPool;
         this.listener = listener;
+        this.adminInfo = adminInfo;
+        this.blockValidator = blockValidator;
     }
 
-    public void loadBlockchain() {
-
+    public BlockChainImpl loadBlockchain() {
+        BlockChainImpl blockchain = new BlockChainImpl(
+                config,
+                repository,
+                blockStore,
+                receiptStore,
+                transactionPool,
+                listener,
+                adminInfo,
+                blockValidator
+        );
         if (!config.databaseReset()) {
             blockStore.load();
         }
@@ -69,18 +101,19 @@ public class BlockChainLoader {
 
             BigInteger initialNonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
             Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), initialNonce, true);
-            for (ByteArrayWrapper address : genesis.getPremine().keySet()) {
-                RskAddress addr = new RskAddress(address.getData());
+            for (RskAddress addr : genesis.getPremine().keySet()) {
                 repository.createAccount(addr);
-                InitialAddressState initialAddressState = genesis.getPremine().get(address);
+                InitialAddressState initialAddressState = genesis.getPremine().get(addr);
                 repository.addBalance(addr, initialAddressState.getAccountState().getBalance());
                 AccountState accountState = repository.getAccountState(addr);
                 accountState.setNonce(initialAddressState.getAccountState().getNonce());
+
                 if (initialAddressState.getContractDetails()!=null) {
                     repository.updateContractDetails(addr, initialAddressState.getContractDetails());
                     accountState.setStateRoot(initialAddressState.getAccountState().getStateRoot());
                     accountState.setCodeHash(initialAddressState.getAccountState().getCodeHash());
                 }
+
                 repository.updateAccountState(addr, accountState);
             }
 
@@ -96,7 +129,7 @@ public class BlockChainLoader {
 
             logger.info("Genesis block loaded");
         } else {
-            BigInteger totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash());
+            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
 
             blockchain.setBestBlock(bestBlock);
             blockchain.setTotalDifficulty(totalDifficulty);
@@ -124,5 +157,6 @@ public class BlockChainLoader {
                 this.repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
             }
         }
+        return blockchain;
     }
 }

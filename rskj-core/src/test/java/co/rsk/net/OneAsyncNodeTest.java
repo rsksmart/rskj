@@ -19,7 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
@@ -45,14 +45,16 @@ public class OneAsyncNodeTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
+        TestSystemProperties config = new TestSystemProperties();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        SyncProcessor syncProcessor = new SyncProcessor(ConfigHelper.CONFIG, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule(), new DifficultyCalculator(ConfigHelper.CONFIG));
-        NodeMessageHandler handler = new NodeMessageHandler(ConfigHelper.CONFIG, processor, syncProcessor, new SimpleChannelManager(), null, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
+        SimpleChannelManager channelManager = new SimpleChannelManager();
+        SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager, syncConfiguration, new DummyBlockValidationRule(), new DifficultyCalculator(config));
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
 
-        return new SimpleAsyncNode(handler);
+        return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }
 
     private static Block getGenesis() {
@@ -65,7 +67,7 @@ public class OneAsyncNodeTest {
     public void buildBlockchain() throws InterruptedException {
         SimpleAsyncNode node = createNode();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
 
         for (Block block : blocks)
             node.receiveMessageFrom(null, new BlockMessage(block));
@@ -74,14 +76,14 @@ public class OneAsyncNodeTest {
         node.joinWithTimeout();
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 
     @Test
     public void buildBlockchainInReverse() throws InterruptedException {
         SimpleAsyncNode node = createNode();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
 
         List<Block> reverse = new ArrayList<>();
 
@@ -95,6 +97,6 @@ public class OneAsyncNodeTest {
         node.joinWithTimeout();
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 }

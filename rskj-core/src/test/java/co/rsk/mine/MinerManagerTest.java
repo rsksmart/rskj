@@ -18,8 +18,8 @@
 
 package co.rsk.mine;
 
-import co.rsk.config.ConfigHelper;
 import co.rsk.config.ConfigUtils;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
@@ -30,12 +30,11 @@ import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.rpc.Simples.SimpleEthereum;
-import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -43,19 +42,8 @@ import java.util.concurrent.Callable;
  * Created by ajlopez on 15/04/2017.
  */
 public class MinerManagerTest {
-    @Test
-    public void mineBlockWhenStopped() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
 
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        MinerServerImpl minerServer = getMinerServer(blockchain);
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        minerClient.stop();
-        Assert.assertFalse(minerClient.mineBlock());
-    }
+    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void refreshWorkRunOnce() {
@@ -134,8 +122,6 @@ public class MinerManagerTest {
         Assert.assertEquals(1, bestBlock.getNumber());
 
         // reuse the same work
-        Assert.assertNull(minerServer.getWork());
-        minerServer.setWork(minerWork);
         Assert.assertNotNull(minerServer.getWork());
 
         Assert.assertTrue(minerClient.mineBlock());
@@ -144,7 +130,7 @@ public class MinerManagerTest {
 
         Assert.assertNotNull(blocks);
         Assert.assertEquals(2, blocks.size());
-        Assert.assertFalse(Arrays.equals(blocks.get(0).getHash(), blocks.get(1).getHash()));
+        Assert.assertFalse(blocks.get(0).getHash().equals(blocks.get(1).getHash()));
     }
 
     @Test
@@ -212,23 +198,6 @@ public class MinerManagerTest {
         minerClient.doWork();
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
-    }
-
-    @Test
-    public void doWorkWithoutGetWork() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        MinerServerImpl minerServer = getMinerServer(blockchain);
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        Assert.assertNull(minerServer.getWork());
-
-        minerClient.doWork();
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
     }
 
     @Test
@@ -303,13 +272,11 @@ public class MinerManagerTest {
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
 
         snapshotManager.resetSnapshots(blockchain);
-        Assert.assertTrue(blockchain.getPendingState().getWireTransactions().isEmpty());
-        Assert.assertTrue(blockchain.getPendingState().getPendingTransactions().isEmpty());
+        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
 
         manager.mineBlock(blockchain, minerClient, minerServer);
 
-        Assert.assertTrue(blockchain.getPendingState().getWireTransactions().isEmpty());
-        Assert.assertTrue(blockchain.getPendingState().getPendingTransactions().isEmpty());
+        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
     }
 
     @Test
@@ -352,21 +319,34 @@ public class MinerManagerTest {
     }
 
     private static MinerClientImpl getMinerClient(RskImplForTest rsk, MinerServerImpl minerServer) {
-        return new MinerClientImpl(rsk, minerServer, ConfigHelper.CONFIG);
+        return new MinerClientImpl(rsk, minerServer, config);
     }
 
     private static MinerServerImpl getMinerServer(Blockchain blockchain) {
         SimpleEthereum ethereum = new SimpleEthereum();
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(blockchain);
         ethereum.repository = blockchain.getRepository();
-        ethereum.worldManager = worldManager;
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(ConfigHelper.CONFIG);
-        return new MinerServerImpl(ConfigHelper.CONFIG, ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(),
-                blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
-                new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor(),
-                difficultyCalculator, new GasLimitCalculator(ConfigHelper.CONFIG),
-                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
+        ethereum.blockchain = blockchain;
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
+        return new MinerServerImpl(
+                config,
+                ethereum,
+                blockchain,
+                null,
+                difficultyCalculator,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        ConfigUtils.getDefaultMiningConfig(),
+                        blockchain.getRepository(),
+                        blockchain.getBlockStore(),
+                        blockchain.getTransactionPool(),
+                        difficultyCalculator,
+                        new GasLimitCalculator(config),
+                        new BlockValidationRuleDummy(),
+                        config,
+                        null
+                ),
+                ConfigUtils.getDefaultMiningConfig()
+        );
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {
@@ -378,8 +358,8 @@ public class MinerManagerTest {
 
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
-            super(null, null, null,
-                    null, null, null, null, null, null, null);
+            super(null, null, null, null,
+                  new CompositeEthereumListener(), null, null, null);
         }
     }
 }

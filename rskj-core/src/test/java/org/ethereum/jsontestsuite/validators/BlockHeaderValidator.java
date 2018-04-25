@@ -33,13 +33,12 @@ public class BlockHeaderValidator {
 
         ArrayList<String> outputSummary = new ArrayList<>();
 
-        if (!toHexString(orig.getParentHash())
-                .equals(toHexString(valid.getParentHash()))) {
+        if (!orig.getParentHash().equals(valid.getParentHash())) {
 
             String output =
                     String.format("wrong block.parentHash: \n expected: %s \n got: %s",
-                            toHexString(valid.getParentHash()),
-                            toHexString(orig.getParentHash())
+                            toHexString(valid.getParentHash().getBytes()),
+                            toHexString(orig.getParentHash().getBytes())
                     );
 
             outputSummary.add(output);
@@ -116,13 +115,12 @@ public class BlockHeaderValidator {
             outputSummary.add(output);
         }
 
-        if (!toHexString(orig.getDifficulty())
-                .equals(toHexString(valid.getDifficulty()))) {
+        if (!orig.getDifficulty().equals(valid.getDifficulty())) {
 
             String output =
                     String.format("wrong block.difficulty: \n expected: %s \n got: %s",
-                            toHexString(valid.getDifficulty()),
-                            toHexString(orig.getDifficulty())
+                            valid.getDifficulty(),
+                            orig.getDifficulty()
                     );
 
             outputSummary.add(output);

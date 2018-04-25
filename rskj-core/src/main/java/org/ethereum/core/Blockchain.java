@@ -19,43 +19,65 @@
 
 package org.ethereum.core;
 
+import co.rsk.blocks.BlockRecorder;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 
-import java.math.BigInteger;
 import java.util.List;
 
 public interface Blockchain {
+
+    /**
+     * Get block by number from the best chain
+     * @param number - number of the block
+     * @return block by that number
+     */
+    Block getBlockByNumber(long number);
+
+    /**
+     * Get block by hash
+     * @param hash - hash of the block
+     * @return - bloc by that hash
+     */
+    Block getBlockByHash(byte[] hash);
+
+    /**
+     * Get total difficulty from the start
+     * and until the head of the chain
+     *
+     * @return - total difficulty
+     */
+    BlockDifficulty getTotalDifficulty();
+
+    /**
+     * @return - last added block from blockchain
+     */
+    Block getBestBlock();
+
+    void setBlockRecorder(BlockRecorder blockRecorder);
+
     long getSize();
 
     ImportResult tryToConnect(Block block);
 
-    Block getBlockByNumber(long blockNr);
-
     void setBestBlock(Block block);
 
-    void setStatus(Block block, BigInteger totalDifficulty);
+    void setStatus(Block block, BlockDifficulty totalDifficulty);
 
     BlockChainStatus getStatus();
 
-    PendingState getPendingState();
-
-    Block getBestBlock();
+    TransactionPool getTransactionPool();
 
     TransactionInfo getTransactionInfo(byte[] hash);
 
     void close();
 
-    BigInteger getTotalDifficulty();
-
-    void setTotalDifficulty(BigInteger totalDifficulty);
+    void setTotalDifficulty(BlockDifficulty totalDifficulty);
 
     byte[] getBestBlockHash();
-
-    Block getBlockByHash(byte[] hash);
 
     void setExitOn(long exitOn);
 
@@ -68,8 +90,6 @@ public interface Blockchain {
     List<Block> getBlocksByNumber(long blockNr);
 
     void removeBlocksByNumber(long blockNr);
-
-    ReceiptStore getReceiptStore();
 
     BlockStore getBlockStore();
 

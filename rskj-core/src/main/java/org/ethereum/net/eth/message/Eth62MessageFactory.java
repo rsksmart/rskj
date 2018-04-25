@@ -58,7 +58,7 @@ public class Eth62MessageFactory implements MessageFactory {
             case BLOCK_BODIES:
                 return new BlockBodiesMessage(encoded);
             case NEW_BLOCK:
-                return new NewBlockMessage(config, encoded);
+                return new NewBlockMessage(encoded);
             // RSK new message
             case RSK_MESSAGE:
                 return new RskMessage(config, encoded);

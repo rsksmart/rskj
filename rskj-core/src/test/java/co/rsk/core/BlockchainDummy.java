@@ -18,14 +18,13 @@
 
 package co.rsk.core;
 
+import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 
-import java.math.BigInteger;
 import java.util.List;
 
 public class BlockchainDummy implements Blockchain {
@@ -56,7 +55,11 @@ public class BlockchainDummy implements Blockchain {
     }
 
     @Override
-    public PendingState getPendingState() {
+    public void setBlockRecorder(BlockRecorder blockRecorder) {
+
+    }
+
+    public TransactionPool getTransactionPool() {
         return null;
     }
 
@@ -66,7 +69,7 @@ public class BlockchainDummy implements Blockchain {
     }
 
     @Override
-    public void setStatus(Block block, BigInteger difficulty) {
+    public void setStatus(Block block, BlockDifficulty difficulty) {
         // not used
     }
 
@@ -81,12 +84,12 @@ public class BlockchainDummy implements Blockchain {
     }
 
     @Override
-    public BigInteger getTotalDifficulty() {
+    public BlockDifficulty getTotalDifficulty() {
         return null;
     }
 
     @Override
-    public void setTotalDifficulty(BigInteger totalDifficulty) {
+    public void setTotalDifficulty(BlockDifficulty totalDifficulty) {
 
     }
 
@@ -124,9 +127,6 @@ public class BlockchainDummy implements Blockchain {
     public List<Block> getBlocksByNumber(long blockNr) {
         return null;
     }
-
-    @Override
-    public ReceiptStore getReceiptStore() { return null; }
 
     @Override
     public Repository getRepository() { return null; }

@@ -27,9 +27,7 @@ import org.junit.Test;
 public class TrieImplTest {
     @Test
     public void bytesToKey() {
-        Assert.assertArrayEquals(new byte[] { 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00 }, TrieImpl.bytesToKey(new byte[] { (byte)0xaa }, 2));
-        Assert.assertArrayEquals(new byte[] { 0x0a, 0x0a }, TrieImpl.bytesToKey(new byte[] { (byte)0xaa }, 16));
-        Assert.assertArrayEquals(new byte[] { 0x02, 0x02, 0x02, 0x02 }, TrieImpl.bytesToKey(new byte[] { (byte)0xaa }, 4));
+        Assert.assertArrayEquals(new byte[] { 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00 }, TrieImpl.bytesToKey(new byte[] { (byte)0xaa }));
     }
 }
 

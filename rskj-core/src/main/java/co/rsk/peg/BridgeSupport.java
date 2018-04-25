@@ -30,13 +30,12 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
-import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.PrecompiledContracts;
@@ -52,9 +51,6 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.ethereum.util.BIUtil.toBI;
-import static org.ethereum.util.BIUtil.transfer;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -352,11 +348,10 @@ public class BridgeSupport {
                 org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
                 RskAddress sender = new RskAddress(key.getAddress());
 
-                transfer(
-                        rskRepository,
+                rskRepository.transfer(
                         PrecompiledContracts.BRIDGE_ADDR,
                         sender,
-                        Denomination.satoshisToWeis(BigInteger.valueOf(totalAmount.getValue()))
+                        co.rsk.core.Coin.fromBitcoin(totalAmount)
                 );
                 lockWhitelist.remove(senderBtcAddress);
             }
@@ -435,8 +430,7 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
-        BigInteger valueInWeis = toBI(rskTx.getValue());
-        Coin value = Coin.valueOf(Denomination.weisToSatoshis(valueInWeis).longValue());
+        Coin value = rskTx.getValue().toBitcoin();
         boolean addResult = requestRelease(btcDestinationAddress, value);
 
         if (addResult) {
@@ -681,7 +675,7 @@ public class BridgeSupport {
      * @param rskTx the RSK transaction that is causing this processing.
      */
     private void processReleaseTransactions(Transaction rskTx) {
-        final Map<Sha3Hash, BtcTransaction> txsWaitingForSignatures;
+        final Map<Keccak256, BtcTransaction> txsWaitingForSignatures;
         final ReleaseTransactionSet releaseTransactionSet;
 
         try {
@@ -709,8 +703,7 @@ public class BridgeSupport {
 
         // Add the btc transaction to the 'awaiting signatures' list
         if (txsWithEnoughConfirmations.size() > 0) {
-            Sha3Hash rskTxHash = new Sha3Hash(rskTx.getHash());
-            txsWaitingForSignatures.put(rskTxHash, txsWithEnoughConfirmations.iterator().next());
+            txsWaitingForSignatures.put(rskTx.getHash(), txsWithEnoughConfirmations.iterator().next());
         }
     }
 
@@ -735,7 +728,7 @@ public class BridgeSupport {
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
             RskAddress burnAddress = config.getBlockchainConfig().getCommonConstants().getBurnAddress();
-            transfer(rskRepository, PrecompiledContracts.BRIDGE_ADDR, burnAddress, Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
+            rskRepository.transfer(PrecompiledContracts.BRIDGE_ADDR, burnAddress, co.rsk.core.Coin.fromBitcoin(coinsToBurn));
         }
     }
 
@@ -756,9 +749,9 @@ public class BridgeSupport {
             logger.warn("Supplied federator public key {} does not belong to any of the federators.", federatorPublicKey);
             return;
         }
-        BtcTransaction btcTx = provider.getRskTxsWaitingForSignatures().get(new Sha3Hash(rskTxHash));
+        BtcTransaction btcTx = provider.getRskTxsWaitingForSignatures().get(new Keccak256(rskTxHash));
         if (btcTx == null) {
-            logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", new Sha3Hash(rskTxHash));
+            logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", new Keccak256(rskTxHash));
             return;
         }
         if (btcTx.getInputs().size() != signatures.size()) {
@@ -790,7 +783,7 @@ public class BridgeSupport {
             try {
                 sig = BtcECKey.ECDSASignature.decodeFromDER(signatures.get(i));
             } catch (RuntimeException e) {
-                logger.warn("Malformed signature for input {} of tx {}: {}", i, new Sha3Hash(rskTxHash), Hex.toHexString(signatures.get(i)));
+                logger.warn("Malformed signature for input {} of tx {}: {}", i, new Keccak256(rskTxHash), Hex.toHexString(signatures.get(i)));
                 return;
             }
 
@@ -826,7 +819,7 @@ public class BridgeSupport {
                     int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
                     inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigs.get(i).encodeToBitcoin(), sigIndex, 1, 1);
                     input.setScriptSig(inputScript);
-                    logger.debug("Tx input {} for tx {} signed.", i, new Sha3Hash(rskTxHash));
+                    logger.debug("Tx input {} for tx {} signed.", i, new Keccak256(rskTxHash));
                 } catch (IllegalStateException e) {
                     Federation retiringFederation = getRetiringFederation();
                     if (getActiveFederation().hasPublicKey(federatorPublicKey)) {
@@ -839,7 +832,7 @@ public class BridgeSupport {
                     throw e;
                 }
             } else {
-                logger.warn("Input {} of tx {} already signed by this federator.", i, new Sha3Hash(rskTxHash));
+                logger.warn("Input {} of tx {} already signed by this federator.", i, new Keccak256(rskTxHash));
                 break;
             }
         }
@@ -847,10 +840,10 @@ public class BridgeSupport {
         // If tx fully signed
         if (hasEnoughSignatures(btcTx)) {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
-            provider.getRskTxsWaitingForSignatures().remove(new Sha3Hash(rskTxHash));
+            provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
             eventLogger.logReleaseBtc(btcTx);
         } else {
-            logger.debug("Tx not yet fully signed {}.", new Sha3Hash(rskTxHash));
+            logger.debug("Tx not yet fully signed {}.", new Keccak256(rskTxHash));
         }
     }
 
@@ -1381,7 +1374,7 @@ public class BridgeSupport {
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    private Integer commitFederation(boolean dryRun, Sha3Hash hash) throws IOException {
+    private Integer commitFederation(boolean dryRun, Keccak256 hash) throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -1523,7 +1516,7 @@ public class BridgeSupport {
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
             case "commit":
-                Sha3Hash hash = new Sha3Hash((byte[]) callSpec.getArguments()[0]);
+                Keccak256 hash = new Keccak256((byte[]) callSpec.getArguments()[0]);
                 executionResult = commitFederation(dryRun, hash);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
