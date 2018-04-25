@@ -70,8 +70,6 @@ class TxValidator {
         List<Transaction> acceptedTxs = new LinkedList<>();
 
         for (Transaction tx : txs) {
-            String hash = tx.getHash().toJsonString();
-
             AccountState state = repository.getAccountState(tx.getSender());
 
             if (state == null) {
