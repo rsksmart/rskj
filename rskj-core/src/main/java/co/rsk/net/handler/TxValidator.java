@@ -47,7 +47,6 @@ class TxValidator {
     private final Blockchain blockchain;
 
     private final List<TxValidatorStep> validatorSteps = new LinkedList<>();
-    private final List<TxFilter> txFilters = new LinkedList<>();
 
     public TxValidator(RskSystemProperties config, Repository repository, Blockchain blockchain) {
         this.config = config;
@@ -59,8 +58,6 @@ class TxValidator {
         validatorSteps.add(new TxValidatorAccountBalanceValidator());
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(config));
-
-        txFilters.add(new TxFilterAccumCostFilter(config));
     }
 
     /**
