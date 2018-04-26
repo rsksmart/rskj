@@ -24,7 +24,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
@@ -37,7 +36,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Implements the actual Remasc distribution logic
@@ -82,6 +83,7 @@ public class Remasc {
         return new RemascState(this.provider.getRewardBalance(), this.provider.getBurnedBalance(), this.provider.getSiblings(), this.provider.getBrokenSelectionRule());
     }
 
+
     /**
      * Implements the actual Remasc distribution logic
      */
@@ -92,17 +94,38 @@ public class Remasc {
             // 2) invocation to remasc from another contract (ie call opcode)
             throw new RemascInvalidInvocationException("Invoked Remasc outside last tx of the block");
         }
+
+        // This is not necessary but maintained for consensus reasons before we do a network upgrade
         this.addNewSiblings();
 
         long blockNbr = executionBlock.getNumber();
-
         long processingBlockNumber = blockNbr - remascConstants.getMaturity();
         if (processingBlockNumber < 1 ) {
             logger.debug("First block has not reached maturity yet, current block is {}", blockNbr);
             return;
         }
 
-        Block processingBlock = blockStore.getBlockByHashAndDepth(executionBlock.getParentHash().getBytes(), remascConstants.getMaturity() - 1);
+        int uncleGenerationLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        List<Block> descendantsBlocks = new ArrayList<>(uncleGenerationLimit);
+
+        // this search can be optimized if have certainty that the execution block is not in a fork
+        // larger than depth
+        Block currentBlock = blockStore.getBlockByHashAndDepth(
+                executionBlock.getParentHash().getBytes(),
+                remascConstants.getMaturity() - 1 - uncleGenerationLimit
+        );
+        descendantsBlocks.add(currentBlock);
+
+        for (int i = 0; i < uncleGenerationLimit - 1; i++) {
+            currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
+            descendantsBlocks.add(currentBlock);
+        }
+
+        // descendants are reversed because the original order to pay siblings is defined in the way
+        // blocks are ordered in the blockchain (the same as were stored in remasc contract)
+        Collections.reverse(descendantsBlocks);
+
+        Block processingBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
         BlockHeader processingBlockHeader = processingBlock.getHeader();
 
         // Adds current block fees to accumulated rewardBalance
@@ -151,9 +174,8 @@ public class Remasc {
 
         syntheticReward = syntheticReward.subtract(payToFederation);
 
-        List<Sibling> siblings = provider.getSiblings().get(processingBlockNumber);
-
-        if (CollectionUtils.isNotEmpty(siblings)) {
+        List<Sibling> siblings = getSiblingsToReward(descendantsBlocks, processingBlockNumber);
+        if (!siblings.isEmpty()) {
             // Block has siblings, reward distribution is more complex
             boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
             this.payWithSiblings(processingBlockHeader, syntheticReward, siblings, previousBrokenSelectionRule);
@@ -170,8 +192,10 @@ public class Remasc {
             provider.setBrokenSelectionRule(Boolean.FALSE);
         }
 
+        // This is not necessary but maintained for consensus reasons before we do a network upgrade
         this.removeUsedSiblings(processingBlockHeader);
     }
+
 
     /**
      * Remove siblings just processed if any
@@ -199,6 +223,22 @@ public class Remasc {
             siblings.add(new Sibling(uncleHeader, executionBlock.getHeader().getCoinbase(), executionBlock.getNumber()));
             provider.getSiblings().put(uncleHeader.getNumber(), siblings);
         }
+    }
+
+    /**
+     * Descendants included on the same chain as the processing block could include siblings
+     * that should be rewarded when fees on this block are paid
+     * @param descendants blocks in the same blockchain that may include rewarded siblings
+     * @param blockNumber number of the block is looked for siblings
+     * @return
+     */
+    private List<Sibling> getSiblingsToReward(List<Block> descendants, long blockNumber) {
+        return descendants.stream()
+                .flatMap(block -> block.getUncleList().stream()
+                        .filter(header -> header.getNumber() == blockNumber)
+                        .map(header -> new Sibling(header, block.getCoinbase(), block.getNumber()))
+                )
+                .collect(Collectors.toList());
     }
 
     /**
