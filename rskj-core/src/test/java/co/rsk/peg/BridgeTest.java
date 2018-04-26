@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import co.rsk.asm.EVMAssembler;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -28,22 +29,28 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.GenesisConfig;
-import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.VM;
+import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -79,7 +86,6 @@ import static org.mockito.Mockito.*;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Bridge.class, BridgeUtils.class})
 public class BridgeTest {
-
     private static NetworkParameters networkParameters;
     private static BridgeConstants bridgeConstants;
 
@@ -280,19 +286,29 @@ public class BridgeTest {
 
     @Test
     public void executeWithFunctionSignatureLengthTooShort() {
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        Transaction mockedTx = mock(Transaction.class);
-        bridge.init(mockedTx, null, null, null, null, null);
-        Assert.assertNull(bridge.execute(new byte[3]));
+        try {
+            Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+            Transaction mockedTx = mock(Transaction.class);
+            bridge.init(mockedTx, null, null, null, null, null);
+            bridge.execute(new byte[3]);
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid data given"));
+        }
     }
 
 
     @Test
     public void executeWithInexistentFunction() {
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        Transaction mockedTx = mock(Transaction.class);
-        bridge.init(mockedTx, null, null, null, null, null);
-        Assert.assertNull(bridge.execute(new byte[4]));
+        try {
+            Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+            Transaction mockedTx = mock(Transaction.class);
+            bridge.init(mockedTx, null, null, null, null, null);
+            bridge.execute(new byte[4]);
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid data given"));
+        }
     }
 
     @Test
@@ -1749,18 +1765,22 @@ public class BridgeTest {
 
     @Test
     public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx() throws Exception {
-        Transaction tx = mock(Transaction.class);
-        when(tx.isLocalCallTransaction()).thenReturn(false);
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(tx, null, null, null, null, null);
-
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
 
-        byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
-        bridge.execute(data);
+        try {
+            Transaction tx = mock(Transaction.class);
+            when(tx.isLocalCallTransaction()).thenReturn(false);
+            Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+            bridge.init(tx, null, null, null, null, null);
 
-        verify(bridgeSupportMock, never()).getFederationAddress();
+            byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
+            bridge.execute(data);
+            Assert.fail();
+        } catch (RuntimeException e) {
+            verify(bridgeSupportMock, never()).getFederationAddress();
+            Assert.assertTrue(e.getMessage().contains("Non-local-call"));
+        }
     }
 
     @Test
@@ -1822,5 +1842,43 @@ public class BridgeTest {
 
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();
+    }
+
+    @Test
+    public void testCallFromContract() {
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+        EVMAssembler assembler = new EVMAssembler();
+        ProgramInvoke invoke = new ProgramInvokeMockImpl();
+
+        // Save code on the sender's address so that the bridge
+        // thinks its being called by a contract
+        byte[] callerCode = assembler.assemble("0xaabb 0xccdd 0xeeff");
+        invoke.getRepository().saveCode(new RskAddress(invoke.getOwnerAddress().getLast20Bytes()), callerCode);
+
+        VM vm = new VM(config.getVmConfig(), precompiledContracts);
+
+        // Encode a call to the bridge's getMinimumLockTxValue function
+        // That means first pushing the corresponding encoded ABI storage to memory (MSTORE)
+        // and then doing a DELEGATECALL to the corresponding address with the correct parameters
+        String bridgeFunctionHex = Hex.toHexString(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode());
+        bridgeFunctionHex = String.format("0x%s%s", bridgeFunctionHex, String.join("", Collections.nCopies(32 * 2 - bridgeFunctionHex.length(), "0")));
+        String asm = String.format("%s 0x00 MSTORE 0x20 0x30 0x20 0x00 0x0000000000000000000000000000000001000006 0x6000 DELEGATECALL", bridgeFunctionHex);
+        int numOps = asm.split(" ").length;
+        byte[] code = assembler.assemble(asm);
+
+        // Mock a transaction, all we really need is a hash
+        Transaction tx = mock(Transaction.class);
+        when(tx.getHash()).thenReturn(new Keccak256("001122334455667788990011223344556677889900112233445566778899aabb"));
+
+        // Run the program on the VM
+        Program program = new Program(config.getVmConfig(), precompiledContracts, mock(BlockchainConfig.class), code, invoke, tx);
+        try {
+            for (int i = 0; i < numOps; i++) {
+                vm.step(program);
+            }
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Non-local-call"));
+        }
     }
 }
