@@ -522,6 +522,7 @@ public class TransactionExecutor {
 
     public TransactionExecutor setLocalCall(boolean localCall) {
         this.localCall = localCall;
+        this.tx.setLocalCallTransaction(localCall);
         return this;
     }
 
