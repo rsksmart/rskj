@@ -1567,6 +1567,18 @@ public class Program {
             return;
         }
 
+        // Special initialization for Bridge and Remasc contracts
+        if (contract instanceof Bridge || contract instanceof RemascContract) {
+            // CREATE CALL INTERNAL TRANSACTION
+            InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
+
+            Block executionBlock = new Block(getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(), EMPTY_BYTE_ARRAY,
+                getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
+                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
+
+            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
+        }
+
         long requiredGas = contract.getGasForData(data);
         if (requiredGas > msg.getGas().longValue()) {
 
@@ -1576,18 +1588,6 @@ public class Program {
         } else {
 
             this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
-
-            // Special initialization for Bridge and Remasc contracts
-            if (contract instanceof Bridge || contract instanceof RemascContract) {
-                // CREATE CALL INTERNAL TRANSACTION
-                InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
-
-                Block executionBlock = new Block(getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getData(), EMPTY_BYTE_ARRAY,
-                        getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
-                        EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
-
-                contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
-            }
 
             byte[] out = contract.execute(data);
 

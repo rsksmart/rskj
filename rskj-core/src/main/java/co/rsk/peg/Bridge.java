@@ -284,8 +284,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             BridgeParsedData bridgeParsedData = parseData(data);
 
+            // Function parsing from data returned null => invalid function selected, halt!
             if (bridgeParsedData == null) {
-                return null;
+                String errorMessage = String.format("Invalid data given: %s.", Hex.toHexString(data));
+                logger.info(errorMessage);
+                throw new BridgeIllegalArgumentException(errorMessage);
             }
 
             if (blockchainConfig.isRskip88() && GET_STATE_FOR_DEBUGGING.equals(bridgeParsedData.bridgeMethod.getFunction())) {
@@ -295,8 +298,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             // If this is not a local call, then first check whether the function
             // allows for non-local calls
             if (!isLocalCall() && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
-                logger.info("Non-local-call to {}. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
-                return null;
+                String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
+                logger.info(errorMessage);
+                throw new BridgeIllegalArgumentException(errorMessage);
             }
 
             this.bridgeSupport = setup();
