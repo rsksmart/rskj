@@ -735,7 +735,7 @@ public class BridgeSupportTest {
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, (Block) null);
 
-        bridgeSupport.addSignature(1, federation.getPublicKeys().get(0), null, PegTestUtils.createHash().getBytes());
+        bridgeSupport.addSignature(federation.getPublicKeys().get(0), null, PegTestUtils.createHash().getBytes());
         bridgeSupport.save();
 
         track.commit();
@@ -752,7 +752,7 @@ public class BridgeSupportTest {
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, (Block) null);
 
-        bridgeSupport.addSignature(1, new BtcECKey(), null, PegTestUtils.createHash().getBytes());
+        bridgeSupport.addSignature(new BtcECKey(), null, PegTestUtils.createHash().getBytes());
         bridgeSupport.save();
 
         track.commit();
@@ -826,7 +826,7 @@ public class BridgeSupportTest {
         List derEncodedSigs = Collections.singletonList(sig.encodeToDER());
 
         BtcECKey federatorPubKey = findPublicKeySignedBy(federation.getPublicKeys(), privateKeyToSignWith);
-        bridgeSupport.addSignature(1, federatorPubKey, derEncodedSigs, rskTxHash.getBytes());
+        bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash.getBytes());
 
         Assert.assertEquals(1, eventLogs.size());
 
@@ -930,7 +930,7 @@ public class BridgeSupportTest {
         }
 
         // Sign with two valid signatuers and one invalid signature
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
@@ -940,18 +940,18 @@ public class BridgeSupportTest {
             malformedSignature[i] = (byte) i;
         }
         derEncodedSigsFirstFed.set(2, malformedSignature);
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
         // Sign with fully valid signatures for same federator
         derEncodedSigsFirstFed.set(2, lastSig.encodeToDER());
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
         // Sign with second federation
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, keccak256.getBytes());
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
@@ -1024,7 +1024,7 @@ public class BridgeSupportTest {
         for (int i = 0; i < numberOfInputsToSign; i++) {
             derEncodedSigs.add(derEncodedSig);
         }
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, keccak256.getBytes());
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, keccak256.getBytes());
         if (signTwice) {
             // Create another valid signature with the same private key
             ECDSASigner signer = new ECDSASigner();
@@ -1032,7 +1032,7 @@ public class BridgeSupportTest {
             signer.init(true, privKey);
             BigInteger[] components = signer.generateSignature(sighash.getBytes());
             BtcECKey.ECDSASignature sig2 = new BtcECKey.ECDSASignature(components[0], components[1]).toCanonicalised();
-            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), Lists.newArrayList(sig2.encodeToDER()), keccak256.getBytes());
+            bridgeSupport.addSignature(findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), Lists.newArrayList(sig2.encodeToDER()), keccak256.getBytes());
         }
         if (privateKeysToSignWith.size()>1) {
             BtcECKey.ECDSASignature sig2 = privateKeysToSignWith.get(1).sign(sighash);
@@ -1041,7 +1041,7 @@ public class BridgeSupportTest {
             for (int i = 0; i < numberOfInputsToSign; i++) {
                 derEncodedSigs2.add(derEncodedSig2);
             }
-            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, keccak256.getBytes());
+            bridgeSupport.addSignature(findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, keccak256.getBytes());
         }
         bridgeSupport.save();
         track.commit();

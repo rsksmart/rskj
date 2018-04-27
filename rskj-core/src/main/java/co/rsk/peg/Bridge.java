@@ -386,7 +386,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Hex.toHexString(rskTxHash));
         }
         try {
-            bridgeSupport.addSignature(rskExecutionBlock.getNumber(), federatorPublicKey, signatures, rskTxHash);
+            bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);
         } catch (BridgeIllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
