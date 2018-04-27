@@ -96,11 +96,12 @@ public class BridgeSupport {
             BridgeConstants bridgeConstants,
             BridgeStorageProvider provider,
             BtcBlockstoreWithCache btcBlockStore,
-            BtcBlockChain btcBlockChain) {
+            BtcBlockChain btcBlockChain,
+            Block executionBlock) {
         this(
                 repository,
                 provider,
-                null,
+                executionBlock,
                 config,
                 bridgeConstants,
                 eventLogger
