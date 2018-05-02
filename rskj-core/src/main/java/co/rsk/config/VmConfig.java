@@ -19,7 +19,7 @@
 package co.rsk.config;
 
 /**
- * Wraps configuration for the VMImpl, which is usually derived from configuration files.
+ * Wraps configuration for the VM, which is usually derived from configuration files.
  */
 public class VmConfig {
 

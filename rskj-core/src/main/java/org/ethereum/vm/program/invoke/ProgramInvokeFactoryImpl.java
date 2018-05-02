@@ -44,7 +44,7 @@ import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
 @Component("ProgramInvokeFactory")
 public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
-    private static final Logger logger = LoggerFactory.getLogger("VMImpl");
+    private static final Logger logger = LoggerFactory.getLogger("VM");
 
     // Invocation by the wire tx
     @Override

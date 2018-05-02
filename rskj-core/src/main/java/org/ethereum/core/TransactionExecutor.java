@@ -259,7 +259,7 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, cacheTrack, blockStore, receiptStore, result.getLogInfoList());
-            this.vm = new PCVM(precompiledContract, tx.getData());
+            this.vm = new PrecompiledContractVM(precompiledContract, tx.getData());
             this.program = buildProgram((byte[])null);
 
         } else {
@@ -268,10 +268,11 @@ public class TransactionExecutor {
                 mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
                 result.spendGas(basicTxCost);
             } else {
-                this.vm = new VMImpl(vmConfig, precompiledContracts);
+                this.vm = new EVM(vmConfig, precompiledContracts);
                 this.program = buildProgram(code);
             }
         }
+
         if (result.getException() == null) {
             Coin endowment = tx.getValue();
             cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
@@ -285,7 +286,7 @@ public class TransactionExecutor {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
             cacheTrack.createAccount(newContractAddress);
         } else {
-            this.vm = new VMImpl(vmConfig, precompiledContracts);
+            this.vm = new EVM(vmConfig, precompiledContracts);
             this.program = buildProgram(tx.getData());
 
             // reset storage if the contract with the same address already exists

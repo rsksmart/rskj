@@ -75,14 +75,14 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-public class VMImpl implements VM {
+public class EVM implements VM {
 
-    private static final Logger logger = LoggerFactory.getLogger("VMImpl");
+    private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger dumpLogger = LoggerFactory.getLogger("dump");
     private static final String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
     private static final boolean computeGas = true; // for performance comp
 
-    /* Keeps track of the number of steps performed in this VMImpl */
+    /* Keeps track of the number of steps performed in this EVM */
     private int vmCounter = 0;
 
     private static VMHook vmHook;
@@ -91,20 +91,20 @@ public class VMImpl implements VM {
     private final PrecompiledContracts precompiledContracts;
 
     // Execution variables
-    Program program;
-    Stack stack;
-    OpCode op;
-    long oldMemSize ;
+    private Program program;
+    private Stack stack;
+    private OpCode op;
+    private long oldMemSize ;
 
-    String hint ;
+    private String hint ;
 
-    long memWords; // parameters for logging
-    long gasCost;
-    long gasBefore; // only for tracing
-    int stepBefore; // only for debugging
-    boolean isLogEnabled;
+    private long memWords; // parameters for logging
+    private long gasCost;
+    private long gasBefore; // only for tracing
+    private int stepBefore; // only for debugging
+    private boolean isLogEnabled;
 
-    public VMImpl(VmConfig vmConfig, PrecompiledContracts precompiledContracts) {
+    public EVM(VmConfig vmConfig, PrecompiledContracts precompiledContracts) {
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
         isLogEnabled = logger.isInfoEnabled();
@@ -1902,7 +1902,7 @@ public class VMImpl implements VM {
                     memWords = 0; // parameters for logging
                 }
 
-                // Log debugging line for VMImpl
+                // Log debugging line for EVM
                 if (vmConfig.dumpBlock() >= 0 && program.getNumber().intValue() == vmConfig.dumpBlock()) {
                     this.dumpLine(op, gasBefore, gasCost , memWords, program);
                 }
@@ -1916,7 +1916,7 @@ public class VMImpl implements VM {
                 vmCounter++;
             } // for
         } catch (RuntimeException e) {
-                logger.error("VMImpl halted", e);
+                logger.error("EVM halted", e);
                 program.spendAllGas();
                 program.resetFutureRefund();
                 program.stop();
@@ -1957,7 +1957,7 @@ public class VMImpl implements VM {
     }
 
     public static void setVmHook(VMHook vmHook) {
-        VMImpl.vmHook = vmHook;
+        EVM.vmHook = vmHook;
     }
 
     /**
@@ -1974,7 +1974,7 @@ public class VMImpl implements VM {
     }
 
     /*
-     * Dumping the VMImpl state at the current operation in various styles
+     * Dumping the EVM state at the current operation in various styles
      *  - standard  Not Yet Implemented
      *  - standard+ (owner address, program counter, operation, gas left)
      *  - pretty (stack, memory, storage, level, contract,
