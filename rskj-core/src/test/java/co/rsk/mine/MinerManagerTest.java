@@ -19,7 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
@@ -30,6 +30,7 @@ import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,21 +43,7 @@ import java.util.concurrent.Callable;
  */
 public class MinerManagerTest {
 
-    private static final RskSystemProperties config = new RskSystemProperties();
-
-    @Test
-    public void mineBlockWhenStopped() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        MinerServerImpl minerServer = getMinerServer(blockchain);
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        minerClient.stop();
-        Assert.assertFalse(minerClient.mineBlock());
-    }
+    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void refreshWorkRunOnce() {
@@ -135,8 +122,6 @@ public class MinerManagerTest {
         Assert.assertEquals(1, bestBlock.getNumber());
 
         // reuse the same work
-        Assert.assertNull(minerServer.getWork());
-        minerServer.setWork(minerWork);
         Assert.assertNotNull(minerServer.getWork());
 
         Assert.assertTrue(minerClient.mineBlock());
@@ -213,23 +198,6 @@ public class MinerManagerTest {
         minerClient.doWork();
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
-    }
-
-    @Test
-    public void doWorkWithoutGetWork() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        MinerServerImpl minerServer = getMinerServer(blockchain);
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        Assert.assertNull(minerServer.getWork());
-
-        minerClient.doWork();
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
     }
 
     @Test
@@ -391,7 +359,7 @@ public class MinerManagerTest {
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
             super(null, null, null, null,
-                  null, null, null, null);
+                  new CompositeEthereumListener(), null, null, null);
         }
     }
 }

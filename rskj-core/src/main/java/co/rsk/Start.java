@@ -33,12 +33,13 @@ import co.rsk.net.MessageHandler;
 import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.handler.TxHandler;
+import co.rsk.rpc.netty.Web3HttpServer;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.*;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
-import co.rsk.rpc.netty.Web3HttpServer;
+import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
@@ -72,6 +73,7 @@ public class Start {
     private final Web3 web3Service;
     private final BlockProcessor nodeBlockProcessor;
     private final TransactionPool transactionPool;
+    private final PeerServer peerServer;
     private final SyncPool.PeerClientFactory peerClientFactory;
 
     public static void main(String[] args) throws Exception {
@@ -97,6 +99,7 @@ public class Start {
                  TxHandler txHandler,
                  BlockProcessor nodeBlockProcessor,
                  TransactionPool transactionPool,
+                 PeerServer peerServer,
                  SyncPool.PeerClientFactory peerClientFactory) {
         this.rsk = rsk;
         this.udpServer = udpServer;
@@ -113,6 +116,7 @@ public class Start {
         this.txHandler = txHandler;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.transactionPool = transactionPool;
+        this.peerServer = peerServer;
         this.peerClientFactory = peerClientFactory;
     }
 
@@ -127,8 +131,8 @@ public class Start {
         transactionPool.start(blockchain.getBestBlock());
         channelManager.start();
         messageHandler.start();
+        peerServer.start();
 
-        rsk.init();
         if (logger.isInfoEnabled()) {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
             logger.info("Capability eth version: [{}]", versions);
@@ -213,7 +217,7 @@ public class Start {
         if (rskSystemProperties.isRpcEnabled()) {
             web3Service.stop();
         }
-        rsk.close();
+        peerServer.stop();
         messageHandler.stop();
         channelManager.stop();
     }

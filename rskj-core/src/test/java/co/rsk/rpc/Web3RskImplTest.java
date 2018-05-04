@@ -18,7 +18,7 @@
 
 package co.rsk.rpc;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
@@ -70,7 +70,7 @@ public class Web3RskImplTest {
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
 
         Wallet wallet = WalletFactory.createWallet();
-        RskSystemProperties config = new RskSystemProperties();
+        TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());

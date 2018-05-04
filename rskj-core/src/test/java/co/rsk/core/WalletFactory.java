@@ -18,7 +18,7 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
@@ -26,7 +26,7 @@ import org.ethereum.datasource.LevelDbDataSource;
 public class WalletFactory {
 
     public static Wallet createPersistentWallet(String storeName) {
-        KeyValueDataSource ds = new LevelDbDataSource(new RskSystemProperties(), storeName);
+        KeyValueDataSource ds = new LevelDbDataSource(new TestSystemProperties(), storeName);
         ds.init();
         return new Wallet(ds);
     }

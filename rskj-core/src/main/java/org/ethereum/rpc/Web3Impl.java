@@ -730,7 +730,7 @@ public class Web3Impl implements Web3 {
             Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
             Block block = null;
 
-            TransactionInfo txInfo = blockchain.getTransactionInfo(txHash.getBytes());
+            TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore);
 
             if (txInfo == null) {
                 List<Transaction> txs = this.getTransactionsByJsonBlockId("pending");

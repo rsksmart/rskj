@@ -27,68 +27,41 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.PeerServer;
 import org.ethereum.net.submit.TransactionExecutor;
 import org.ethereum.net.submit.TransactionTask;
 import org.ethereum.util.ByteUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.util.concurrent.FutureAdapter;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class EthereumImpl implements Ethereum {
 
-    private static final Logger gLogger = LoggerFactory.getLogger("general");
-
     private final ChannelManager channelManager;
-    private final PeerServer peerServer;
     private final TransactionPool transactionPool;
     private final RskSystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final Blockchain blockchain;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
-    private ExecutorService peerServiceExecutor;
 
     public EthereumImpl(
             RskSystemProperties config,
             ChannelManager channelManager,
-            PeerServer peerServer,
             TransactionPool transactionPool,
             CompositeEthereumListener compositeEthereumListener,
             Blockchain blockchain) {
         this.channelManager = channelManager;
-        this.peerServer = peerServer;
         this.transactionPool = transactionPool;
 
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.blockchain = blockchain;
-    }
 
-    @Override
-    public void init() {
-        if (config.getPeerPort() > 0) {
-            peerServiceExecutor = Executors.newSingleThreadExecutor(runnable -> {
-                Thread thread = new Thread(runnable, "Peer Server");
-                thread.setUncaughtExceptionHandler((exceptionThread, exception) ->
-                    gLogger.error("Unable to start peer server", exception)
-                );
-                return thread;
-            });
-            peerServiceExecutor.execute(() -> peerServer.start(config.getBindAddress(), config.getPeerPort()));
-        }
         compositeEthereumListener.addListener(gasPriceTracker);
-
-        gLogger.info("RskJ node started: enode://{}@{}:{}" , Hex.toHexString(config.nodeId()), config.getPublicIp(), config.getPeerPort());
     }
 
     @Override
@@ -109,13 +82,6 @@ public class EthereumImpl implements Ethereum {
     @Override
     public void removeListener(EthereumListener listener) {
         compositeEthereumListener.removeListener(listener);
-    }
-
-    @Override
-    public void close() {
-        if (peerServiceExecutor != null) {
-            peerServiceExecutor.shutdown();
-        }
     }
 
     @Override

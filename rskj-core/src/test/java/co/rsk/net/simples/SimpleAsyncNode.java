@@ -18,7 +18,7 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
@@ -38,7 +38,7 @@ import java.util.concurrent.*;
  * Created by ajlopez on 5/15/2016.
  */
 public class SimpleAsyncNode extends SimpleNode {
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(5000);
     private SyncProcessor syncProcessor;

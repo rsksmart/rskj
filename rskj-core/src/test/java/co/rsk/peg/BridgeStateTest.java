@@ -19,7 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
@@ -36,7 +36,7 @@ import java.io.IOException;
 public class BridgeStateTest {
     @Test
     public void recreateFromEmptyStorageProvider() throws IOException {
-        RskSystemProperties config = new RskSystemProperties();
+        TestSystemProperties config = new TestSystemProperties();
         Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);

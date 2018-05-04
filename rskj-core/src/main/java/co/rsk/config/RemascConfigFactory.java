@@ -19,14 +19,12 @@
 package co.rsk.config;
 
 import co.rsk.remasc.RemascException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.io.InputStreamReader;
 
 /**
  * Created by mario on 12/12/16.
@@ -45,14 +43,9 @@ public class RemascConfigFactory {
     public RemascConfig createRemascConfig(String config) {
         RemascConfig remascConfig;
 
-        try (InputStream is = RemascConfigFactory.class.getClassLoader()
-                .getResourceAsStream(this.configPath); InputStreamReader fileReader = new InputStreamReader(is)){
-
-            JSONParser parser = new JSONParser();
-            JSONObject jsonObject = (JSONObject) parser.parse(fileReader);
-            JSONObject jsonConfig = (JSONObject) jsonObject.get(config);
-            String remascString = jsonConfig.toString();
-            remascConfig = mapper.readValue(remascString, RemascConfig.class);
+        try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(this.configPath)){
+            JsonNode node = mapper.readTree(is);
+            remascConfig = mapper.treeToValue(node.get(config), RemascConfig.class);
         } catch (Exception ex) {
             logger.error("Error reading REMASC configuration[{}]: {}", config, ex);
             throw new RemascException("Error reading REMASC configuration[" + config +"]: ", ex);

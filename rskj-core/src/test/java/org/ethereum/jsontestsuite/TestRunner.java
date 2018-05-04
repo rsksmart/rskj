@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -72,7 +72,7 @@ import static org.mockito.Mockito.mock;
  */
 public class TestRunner {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private Logger logger = LoggerFactory.getLogger("TCK-Test");

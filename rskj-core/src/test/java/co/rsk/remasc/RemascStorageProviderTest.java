@@ -19,7 +19,7 @@
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
@@ -40,7 +40,7 @@ import java.util.SortedMap;
  */
 public class RemascStorageProviderTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void getDefautRewardBalance() {

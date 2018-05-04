@@ -22,7 +22,7 @@ package org.ethereum.validator;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ProofOfWorkRuleTest {
 
-    private ProofOfWorkRule rule = new ProofOfWorkRule(new RskSystemProperties()).setFallbackMiningEnabled(false);
+    private ProofOfWorkRule rule = new ProofOfWorkRule(new TestSystemProperties()).setFallbackMiningEnabled(false);
 
     @Test
     public void test_1() {

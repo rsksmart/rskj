@@ -18,7 +18,7 @@
 
 package co.rsk.test.builders;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
@@ -92,7 +92,7 @@ public class TransactionBuilder {
 
     public Transaction build() {
         Transaction tx = Transaction.create(
-                new RskSystemProperties(), receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
+                new TestSystemProperties(), receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
                 value, nonce, gasPrice, gasLimit, data);
         tx.sign(sender.getEcKey().getPrivKeyBytes());
 

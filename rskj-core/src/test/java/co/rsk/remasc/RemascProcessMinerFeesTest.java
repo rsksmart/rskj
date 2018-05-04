@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
@@ -51,7 +51,7 @@ import static org.junit.Assert.assertNull;
 public class RemascProcessMinerFeesTest {
 
     private static RemascConfig remascConfig;
-    private static RskSystemProperties config;
+    private static TestSystemProperties config;
 
     private Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
     private long initialGasLimit = 10000000L;
@@ -72,7 +72,7 @@ public class RemascProcessMinerFeesTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestConfig());
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 

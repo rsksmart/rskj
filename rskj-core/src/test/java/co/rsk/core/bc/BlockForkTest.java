@@ -19,7 +19,6 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import org.ethereum.core.Block;
 import org.ethereum.datasource.HashMapDB;
