@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
  * Created by ajlopez on 28/06/2017.
  */
 public class PeerScoringManager {
+    private final PeerScoring.Factory peerScoringFactory;
     private final ScoringCalculator scoringCalculator;
     private final PunishmentCalculator nodePunishmentCalculator;
     private final PunishmentCalculator ipPunishmentCalculator;
@@ -37,11 +38,17 @@ public class PeerScoringManager {
      * Creates and initialize the scoring manager
      * usually only one object per running node
      *
-     * @param nodePeersSize     maximum number of nodes to keep
-     * @param nodeParameters    nodes punishment parameters (@see PunishmentParameters)
-     * @param ipParameters      address punishment parameters
+     * @param peerScoringFactory     creates empty peer scorings
+     * @param nodePeersSize          maximum number of nodes to keep
+     * @param nodeParameters         nodes punishment parameters (@see PunishmentParameters)
+     * @param ipParameters           address punishment parameters
      */
-    public PeerScoringManager(int nodePeersSize, PunishmentParameters nodeParameters, PunishmentParameters ipParameters) {
+    public PeerScoringManager(
+            PeerScoring.Factory peerScoringFactory,
+            int nodePeersSize,
+            PunishmentParameters nodeParameters,
+            PunishmentParameters ipParameters) {
+        this.peerScoringFactory = peerScoringFactory;
         this.scoringCalculator = new ScoringCalculator();
         this.nodePunishmentCalculator = new PunishmentCalculator(nodeParameters);
         this.ipPunishmentCalculator = new PunishmentCalculator(ipParameters);
@@ -66,20 +73,12 @@ public class PeerScoringManager {
     public void recordEvent(NodeID id, InetAddress address, EventType event) {
         synchronized (accessLock) {
             if (id != null) {
-                if (!peersByNodeID.containsKey(id)) {
-                    peersByNodeID.put(id, new PeerScoring());
-                }
-
-                PeerScoring scoring = peersByNodeID.get(id);
+                PeerScoring scoring = peersByNodeID.computeIfAbsent(id, k -> peerScoringFactory.newInstance());
                 recordEvent(scoring, event, this.nodePunishmentCalculator);
             }
 
             if (address != null) {
-                if (!peersByAddress.containsKey(address)) {
-                    peersByAddress.put(address, new PeerScoring());
-                }
-
-                PeerScoring scoring = peersByAddress.get(address);
+                PeerScoring scoring = peersByAddress.computeIfAbsent(address, k -> peerScoringFactory.newInstance());
                 recordEvent(scoring, event, this.ipPunishmentCalculator);
             }
         }
@@ -226,7 +225,7 @@ public class PeerScoringManager {
                 return peersByNodeID.get(id);
             }
 
-            return new PeerScoring();
+            return peerScoringFactory.newInstance();
         }
     }
 
@@ -237,7 +236,7 @@ public class PeerScoringManager {
                 return peersByAddress.get(address);
             }
 
-            return new PeerScoring();
+            return peerScoringFactory.newInstance();
         }
     }
 

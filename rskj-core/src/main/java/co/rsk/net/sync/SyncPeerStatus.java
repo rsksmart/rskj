@@ -1,6 +1,5 @@
 package co.rsk.net.sync;
 
-import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 
 import java.time.Clock;
@@ -19,25 +18,6 @@ public class SyncPeerStatus {
 
     public SyncPeerStatus() {
         this.updateActivity();
-    }
-
-    public int peerTotalDifficultyComparator(SyncPeerStatus other) {
-        BlockDifficulty ttd = this.status.getTotalDifficulty();
-        BlockDifficulty otd = other.status.getTotalDifficulty();
-
-        if (ttd == null && otd == null) {
-            return 0;
-        }
-
-        if (ttd == null) {
-            return -1;
-        }
-
-        if (otd == null) {
-            return 1;
-        }
-
-        return ttd.compareTo(otd);
     }
 
     private void updateActivity() {

@@ -423,6 +423,11 @@ public class PeerScoringManagerTest {
     }
 
     private static PeerScoringManager createPeerScoringManager(int nnodes) {
-        return new PeerScoringManager(nnodes, new PunishmentParameters(10, 10, 1000), new PunishmentParameters(10, 10, 1000));
+        return new PeerScoringManager(
+                PeerScoring::new,
+                nnodes,
+                new PunishmentParameters(10, 10, 1000),
+                new PunishmentParameters(10, 10, 1000)
+        );
     }
 }

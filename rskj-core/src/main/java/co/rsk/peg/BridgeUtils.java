@@ -21,11 +21,11 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Transaction;
@@ -35,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Oscar Guindzberg
@@ -43,20 +45,47 @@ public class BridgeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
-    public static StoredBlock getStoredBlockAtHeight(BtcBlockStore blockStore, int height) throws BlockStoreException {
+    // power of 2 size that contains enough hashes to handle one year of hashes
+    private static final int MAX_MAP_PARENTS_SIZE = 65535;
+    private static Map<Sha256Hash, Sha256Hash> parentMap = new MaxSizeHashMap<>(MAX_MAP_PARENTS_SIZE);
+
+    public static StoredBlock getStoredBlockAtHeight(BtcBlockstoreWithCache blockStore, int height) throws BlockStoreException {
         StoredBlock storedBlock = blockStore.getChainHead();
+        Sha256Hash blockHash = storedBlock.getHeader().getHash();
+
         int headHeight = storedBlock.getHeight();
+
         if (height > headHeight) {
             return null;
         }
+
         for (int i = 0; i < (headHeight - height); i++) {
-            if (storedBlock == null) {
+            if (blockHash == null) {
                 return null;
             }
 
-            Sha256Hash prevBlockHash = storedBlock.getHeader().getPrevBlockHash();
-            storedBlock = blockStore.get(prevBlockHash);
+            Sha256Hash prevBlockHash = parentMap.get(blockHash);
+
+            if (prevBlockHash == null) {
+                StoredBlock currentBlock = blockStore.getFromCache(blockHash);
+
+                if (currentBlock == null) {
+                    return null;
+                }
+
+                prevBlockHash = currentBlock.getHeader().getPrevBlockHash();
+                parentMap.put(blockHash, prevBlockHash);
+            }
+
+            blockHash = prevBlockHash;
         }
+
+        if (blockHash == null) {
+            return null;
+        }
+
+        storedBlock = blockStore.getFromCache(blockHash);
+
         if (storedBlock != null) {
             if (storedBlock.getHeight() != height) {
                 throw new IllegalStateException("Block height is " + storedBlock.getHeight() + " but should be " + headHeight);
@@ -103,6 +132,31 @@ public class BridgeUtils {
         }
     }
 
+    /**
+     * Indicates whether a tx is a valid lock tx or not, checking the first input's script sig
+     * @param tx
+     * @return
+     */
+    public static boolean isValidLockTx(BtcTransaction tx) {
+        if (tx.getInputs().size() == 0) {
+            return false;
+        }
+        // This indicates that the tx is a P2PKH transaction which is the only one we support for now
+        return tx.getInput(0).getScriptSig().getChunks().size() == 2;
+    }
+
+    /**
+     * Will return a valid scriptsig for the first input
+     * @param tx
+     * @return
+     */
+    public static Optional<Script> getFirstInputScriptSig(BtcTransaction tx) {
+        if (!isValidLockTx(tx)) {
+            return Optional.empty();
+        }
+        return Optional.of(tx.getInput(0).getScriptSig());
+    }
+
     public static boolean isLockTx(BtcTransaction tx, List<Federation> federations, Context btcContext, BridgeConstants bridgeConstants) {
         // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
         // optionally sending some change to any of the federation addresses)
@@ -118,7 +172,7 @@ public class BridgeUtils {
 
         int valueSentToMeSignum = valueSentToMe.signum();
         if (valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue())) {
-            logger.warn("Someone sent to the federation less than {} satoshis", bridgeConstants.getMinimumLockTxValue());
+            logger.warn("[btctx:{}]Someone sent to the federation less than {} satoshis", tx.getHash(), bridgeConstants.getMinimumLockTxValue());
         }
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
@@ -181,7 +235,7 @@ public class BridgeUtils {
                );
     }
 
-    private static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
+    public static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
         return federation.hasMemberWithRskAddress(rskTx.getSender().getBytes());
     }
 

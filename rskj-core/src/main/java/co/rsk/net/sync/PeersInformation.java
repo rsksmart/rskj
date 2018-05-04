@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.NodeID;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
@@ -19,12 +20,17 @@ public class PeersInformation {
     private final ChannelManager channelManager;
     private final SyncInformation syncInformation;
     private final SyncConfiguration syncConfiguration;
+    private final Comparator<Map.Entry<NodeID, SyncPeerStatus>> peerComparator;
     private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
 
     public PeersInformation(SyncInformation syncInformation, ChannelManager channelManager, SyncConfiguration syncConfiguration){
         this.channelManager = channelManager;
         this.syncInformation = syncInformation;
         this.syncConfiguration = syncConfiguration;
+        this.peerComparator = ((Comparator<Map.Entry<NodeID, SyncPeerStatus>>) this::comparePeerFailInstant)
+                // TODO reenable when unprocessable blocks stop being marked as invalid blocks
+//                .thenComparing(this::comparePeerScoring)
+                .thenComparing(this::comparePeerTotalDifficulty);
     }
 
     public int count() {
@@ -54,27 +60,8 @@ public class PeersInformation {
 
     public Optional<NodeID> getBestPeer() {
         return getCandidatesStream()
-                .max(this::peerComparator)
+                .max(this.peerComparator)
                 .map(Map.Entry::getKey);
-    }
-
-    private int peerComparator(Map.Entry<NodeID, SyncPeerStatus> entry, Map.Entry<NodeID, SyncPeerStatus> other) {
-        int score = syncInformation.getScore(entry.getKey());
-        int otherScore = syncInformation.getScore(other.getKey());
-        Instant failInstant = syncInformation.getFailInstant(entry.getKey());
-        Instant otherFailInstant = syncInformation.getFailInstant(other.getKey());
-        if (failInstant.isAfter(otherFailInstant) ){
-            return -1;
-        } else if (failInstant.isBefore(otherFailInstant)){
-            return 1;
-        } else if (score >= 0 && otherScore >= 0) {
-            return entry.getValue().peerTotalDifficultyComparator(other.getValue());
-        } else if (score < otherScore){
-            return -1;
-        } else if (score > otherScore){
-            return 1;
-        }
-        return entry.getValue().peerTotalDifficultyComparator(other.getValue());
     }
 
     private Stream<Map.Entry<NodeID, SyncPeerStatus>> getCandidatesStream(){
@@ -110,5 +97,49 @@ public class PeersInformation {
 
     private boolean peerNotExpired(SyncPeerStatus peer) {
         return !peer.isExpired(syncConfiguration.getExpirationTimePeerStatus());
+    }
+
+    private int comparePeerFailInstant(
+            Map.Entry<NodeID, SyncPeerStatus> entry,
+            Map.Entry<NodeID, SyncPeerStatus> other) {
+        Instant failInstant = syncInformation.getFailInstant(entry.getKey());
+        Instant otherFailInstant = syncInformation.getFailInstant(other.getKey());
+        // note that this is in inverse order
+        return otherFailInstant.compareTo(failInstant);
+    }
+
+    private int comparePeerScoring(
+            Map.Entry<NodeID, SyncPeerStatus> entry,
+            Map.Entry<NodeID, SyncPeerStatus> other) {
+        int score = syncInformation.getScore(entry.getKey());
+        int scoreOther = syncInformation.getScore(other.getKey());
+        // Treats all non-negative scores the same for calculating the best peer
+        if (score >= 0 && scoreOther >= 0) {
+            return 0;
+        }
+
+        return Integer.compare(score, scoreOther);
+    }
+
+    private int comparePeerTotalDifficulty(
+            Map.Entry<NodeID, SyncPeerStatus> entry,
+            Map.Entry<NodeID, SyncPeerStatus> other) {
+        BlockDifficulty ttd = entry.getValue().getStatus().getTotalDifficulty();
+        BlockDifficulty otd = other.getValue().getStatus().getTotalDifficulty();
+
+        // status messages from outdated nodes might have null difficulties
+        if (ttd == null && otd == null) {
+            return 0;
+        }
+
+        if (ttd == null) {
+            return -1;
+        }
+
+        if (otd == null) {
+            return 1;
+        }
+
+        return ttd.compareTo(otd);
     }
 }

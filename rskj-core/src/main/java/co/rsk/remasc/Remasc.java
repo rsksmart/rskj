@@ -25,6 +25,8 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
 import co.rsk.peg.BridgeSupport;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -142,10 +144,10 @@ public class Remasc {
         BridgeSupport bridgeSupport = new BridgeSupport(
                 config,
                 processingRepository,
-                null,
                 PrecompiledContracts.BRIDGE_ADDR,
                 processingBlock
         );
+
         RemascFederationProvider federationProvider = new RemascFederationProvider(bridgeSupport);
 
         Coin payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));

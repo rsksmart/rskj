@@ -22,20 +22,26 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
  * @author Oscar Guindzberg
  */
-public class RepositoryBlockStore implements BtcBlockStore{
+public class RepositoryBlockStore implements BtcBlockstoreWithCache {
 
     public static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
+
+    // power of 2 size that contains enough hashes to handle one year of blocks
+    private static final int MAX_SIZE_MAP_STORED_BLOCKS = 65535;
+    private static Map<Sha256Hash, StoredBlock> knownBlocks = new MaxSizeHashMap<>(MAX_SIZE_MAP_STORED_BLOCKS);
 
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -67,16 +73,39 @@ public class RepositoryBlockStore implements BtcBlockStore{
         Sha256Hash hash = block.getHeader().getHash();
         byte[] ba = storedBlockToByteArray(block);
         repository.addStorageBytes(contractAddress, new DataWord(hash.toString()), ba);
+        knownBlocks.put(hash, block);
     }
 
     @Override
     public synchronized StoredBlock get(Sha256Hash hash) throws BlockStoreException {
         byte[] ba = repository.getStorageBytes(contractAddress, new DataWord(hash.toString()));
+
         if (ba==null) {
             return null;
         }
         
         StoredBlock storedBlock = byteArrayToStoredBlock(ba);
+        knownBlocks.put(hash, storedBlock);
+        return storedBlock;
+    }
+
+    public synchronized StoredBlock getFromCache(Sha256Hash hash) throws BlockStoreException {
+        StoredBlock storedBlock = knownBlocks.get(hash);
+
+        if (storedBlock != null) {
+            return storedBlock;
+        }
+
+        byte[] ba = repository.getStorageBytes(contractAddress, new DataWord(hash.toString()));
+
+        if (ba==null) {
+            return null;
+        }
+
+        storedBlock = byteArrayToStoredBlock(ba);
+
+        knownBlocks.put(hash, storedBlock);
+
         return storedBlock;
     }
 

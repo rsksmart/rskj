@@ -220,4 +220,14 @@ public class Utils {
         return false;
     }
 
+    public static void validateArrayAllegedSize(byte[] data, int offset, int allegedSize) {
+        if (data.length < Math.addExact(allegedSize, offset)) {
+            throw new IllegalArgumentException("The specified size exceeds the size of the payload");
+        }
+    }
+
+    public static byte[] safeCopyOfRange(byte[] data, int from, int size) {
+        validateArrayAllegedSize(data, from, size);
+        return Arrays.copyOfRange(data, from, from + size);
+    }
 }

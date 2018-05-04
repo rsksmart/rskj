@@ -241,4 +241,37 @@ public class ABITest {
         Assert.assertEquals(((Number) objects[2]).intValue(), 222);
     }
 
+    @Test
+    public void encodeArrayWithInvalidInputShouldFail() {
+        String funcJson = "{\n" +
+                "   'constant':false, \n" +
+                "   'inputs':[" +
+                "{'name':'a','type':'string'}," +
+                "{'name':'s','type':'string[4]'}], \n" + // I define the input as a string array with 4 positions
+                "    'name':'f4', \n" +
+                "   'outputs':[], \n" +
+                "    'type':'function' \n" +
+                "}\n";
+        funcJson = funcJson.replaceAll("'", "\"");
+
+        CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson);
+        try {
+            String[] strings = new String[] {"aaa", "long string: 123456789012345678901234567890", "ccc"}; // but my input is a smaller array
+            function.encodeArguments("a", strings);
+            Assert.fail("should have thrown an exception");
+        }
+        catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("List size"));
+        }
+
+        try {
+            String[] strings = new String[] {"aaa", "long string: 123456789012345678901234567890", "ccc", "ddd", "eee"}; // but my input is a bigger array
+            function.encodeArguments("a", strings);
+            Assert.fail("should have thrown an exception");
+        }
+        catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("List size"));
+        }
+    }
+
 }

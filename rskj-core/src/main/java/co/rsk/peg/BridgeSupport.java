@@ -33,6 +33,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
@@ -75,35 +77,125 @@ public class BridgeSupport {
             "rollback"));
 
     private final BridgeConstants bridgeConstants;
-    private final Context btcContext;
-    private final BtcBlockStore btcBlockStore;
-    private final BtcBlockChain btcBlockChain;
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
     private final RskSystemProperties config;
-
     private final BridgeEventLogger eventLogger;
+
+    private Context btcContext;
+    private BtcBlockstoreWithCache btcBlockStore;
+    private BtcBlockChain btcBlockChain;
     private org.ethereum.core.Block rskExecutionBlock;
     private StoredBlock initialBtcStoredBlock;
 
-    // Used by bridge
-    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, RskAddress contractAddress, Block rskExecutionBlock) throws IOException, BlockStoreException {
-        this(config, repository, eventLogger, new BridgeStorageProvider(repository, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants()), rskExecutionBlock);
+    // Used by remasc
+    public BridgeSupport(
+            RskSystemProperties config,
+            Repository repository,
+            RskAddress contractAddress,
+            Block rskExecutionBlock) {
+        this(
+                repository,
+                new BridgeStorageProvider(
+                        repository,
+                        contractAddress,
+                        config.getBlockchainConfig().getCommonConstants().getBridgeConstants()
+                ),
+                rskExecutionBlock,
+                config,
+                config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                null
+        );
+        this.btcContext = null;
+        this.btcBlockStore = null;
+        this.btcBlockChain = null;
     }
 
     // Used by unit tests
-    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, BridgeStorageProvider provider, Block rskExecutionBlock) throws IOException, BlockStoreException {
+    public BridgeSupport(
+            RskSystemProperties config,
+            Repository repository,
+            BridgeEventLogger eventLogger,
+            BridgeConstants bridgeConstants,
+            BridgeStorageProvider provider,
+            BtcBlockstoreWithCache btcBlockStore,
+            BtcBlockChain btcBlockChain) {
+        this(
+                repository,
+                provider,
+                null,
+                config,
+                bridgeConstants,
+                eventLogger
+        );
+        this.btcContext = new Context(this.bridgeConstants.getBtcParams());
+        this.btcBlockStore = btcBlockStore;
+        this.btcBlockChain = btcBlockChain;
+    }
+
+    // Used by bridge
+    public BridgeSupport(
+            RskSystemProperties config,
+            Repository repository,
+            BridgeEventLogger eventLogger,
+            RskAddress contractAddress,
+            Block rskExecutionBlock) throws IOException, BlockStoreException {
+        this(
+                config,
+                repository,
+                eventLogger,
+                new BridgeStorageProvider(
+                        repository,
+                        contractAddress,
+                        config.getBlockchainConfig().getCommonConstants().getBridgeConstants()
+                ),
+                rskExecutionBlock
+        );
+    }
+
+    public BridgeSupport(
+            RskSystemProperties config,
+            Repository repository,
+            BridgeEventLogger eventLogger,
+            BridgeStorageProvider provider,
+            Block rskExecutionBlock) throws IOException, BlockStoreException {
+        this(
+                repository,
+                provider,
+                rskExecutionBlock,
+                config,
+                config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                eventLogger
+        );
+        this.btcContext = new Context(this.bridgeConstants.getBtcParams());
+        this.btcBlockStore = buildRepositoryBlockStore();
+        this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+        this.initialBtcStoredBlock = this.getLowestBlock();
+    }
+
+    // this constructor has all common parameters, mostly dependencies that aren't instantiated here
+    private BridgeSupport(
+            Repository repository,
+            BridgeStorageProvider provider,
+            Block executionBlock,
+            RskSystemProperties config,
+            BridgeConstants bridgeConstants,
+            BridgeEventLogger eventLogger) {
         this.rskRepository = repository;
         this.provider = provider;
-        this.rskExecutionBlock = rskExecutionBlock;
+        this.rskExecutionBlock = executionBlock;
         this.config = config;
-        this.bridgeConstants = this.config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        this.bridgeConstants = bridgeConstants;
         this.eventLogger = eventLogger;
+    }
 
+    private RepositoryBlockStore buildRepositoryBlockStore() throws BlockStoreException, IOException {
         NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
-        this.btcContext = new Context(btcParams);
-
-        this.btcBlockStore = new RepositoryBlockStore(config, repository, PrecompiledContracts.BRIDGE_ADDR);
+        RepositoryBlockStore btcBlockStore = new RepositoryBlockStore(
+                this.config,
+                this.rskRepository,
+                PrecompiledContracts.BRIDGE_ADDR
+        );
         if (btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
             // We are building the blockstore for the first time, so we have not set the checkpoints yet.
             long time = getActiveFederation().getCreationTime().toEpochMilli();
@@ -112,21 +204,7 @@ public class BridgeSupport {
                 CheckpointManager.checkpoint(btcParams, checkpoints, btcBlockStore, time);
             }
         }
-        this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
-        this.initialBtcStoredBlock = this.getLowestBlock();
-    }
-
-
-    // Used by unit tests
-    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, BridgeConstants bridgeConstants, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain) {
-        this.provider = provider;
-        this.config = config;
-        this.bridgeConstants = bridgeConstants;
-        this.btcContext = new Context(this.bridgeConstants.getBtcParams());
-        this.btcBlockStore = btcBlockStore;
-        this.btcBlockChain = btcBlockChain;
-        this.rskRepository = repository;
-        this.eventLogger = eventLogger;
+        return btcBlockStore;
     }
 
     @VisibleForTesting
@@ -222,30 +300,37 @@ public class BridgeSupport {
     /**
      * In case of a lock tx: Transfers some SBTCs to the sender of the btc tx and keeps track of the new UTXOs available for spending.
      * In case of a release tx: Keeps track of the change UTXOs, now available for spending.
-     * @param btcTx The bitcoin transaction
-     * @param height The height of the bitcoin block that contains the tx
-     * @param pmt Partial Merklee Tree that proves the tx is included in the btc block
+     * @param rskTx The RSK transaction
+     * @param btcTxSerialized The raw BTC tx
+     * @param height The height of the BTC block that contains the tx
+     * @param pmtSerialized The raw partial Merkle tree
      * @throws BlockStoreException
      * @throws IOException
      */
-    public void registerBtcTransaction(Transaction rskTx, BtcTransaction btcTx, int height, PartialMerkleTree pmt) throws BlockStoreException, IOException {
+    public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized) throws IOException, BlockStoreException {
         Context.propagate(btcContext);
-
-        Federation federation = getActiveFederation();
-
+        Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
         // Check the tx was not already processed
-        if (provider.getBtcTxHashesAlreadyProcessed().keySet().contains(btcTx.getHash())) {
+        if (provider.getBtcTxHashesAlreadyProcessed().keySet().contains(btcTxHash)) {
             logger.warn("Supplied tx was already processed");
             return;
         }
 
-        // Check the tx is in the partial merkle tree
-        List<Sha256Hash> hashesInPmt = new ArrayList<>();
-        Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
-        if (!hashesInPmt.contains(btcTx.getHash())) {
-            logger.warn("Supplied tx is not in the supplied partial merkle tree");
-            panicProcessor.panic("btclock", "Supplied tx is not in the supplied partial merkle tree");
-            return;
+        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
+            throw new BridgeIllegalArgumentException("PartialMerkleTree doesn't have expected size");
+        }
+
+        Sha256Hash merkleRoot;
+        try {
+            PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(), pmtSerialized, 0);
+            List<Sha256Hash> hashesInPmt = new ArrayList<>();
+            merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
+            if (!hashesInPmt.contains(btcTxHash)) {
+                logger.warn("Supplied tx is not in the supplied partial merkle tree");
+                return;
+            }
+        } catch (VerificationException e) {
+            throw new BridgeIllegalArgumentException("PartialMerkleTree could not be parsed " + Hex.toHexString(pmtSerialized), e);
         }
 
         if (height < 0) {
@@ -255,10 +340,16 @@ public class BridgeSupport {
         }
 
         // Check there are at least N blocks on top of the supplied height
-        int headHeight = btcBlockChain.getBestChainHeight();
-        if ((headHeight - height + 1) < bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()) {
-            logger.warn("At least " + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() + " confirmations are required, but there are only " + (headHeight - height) + " confirmations");
+        int confirmations = btcBlockChain.getBestChainHeight() - height + 1;
+        if (confirmations < bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()) {
+            logger.warn("At least " + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() + " confirmations are required, but there are only " + confirmations + " confirmations");
             return;
+        }
+
+        if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
+            logger.warn("Tx {} has no inputs ", btcTxHash);
+            // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+            throw new VerificationException.EmptyInputsOrOutputs();
         }
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
@@ -269,23 +360,18 @@ public class BridgeSupport {
             return;
         }
 
-        // Checks the transaction contents for sanity
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
         btcTx.verify();
-        if (btcTx.getInputs().isEmpty()) {
-            logger.warn("Tx has no inputs " + btcTx);
-            panicProcessor.panic("btclock", "Tx has no inputs " + btcTx);
-            return;
-        }
 
         boolean locked = true;
 
+        Federation federation = getActiveFederation();
         // Specific code for lock/release/none txs
         if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
-            Script scriptSig = btcTx.getInput(0).getScriptSig();
-            if (scriptSig.getChunks().size() != 2) {
-                logger.warn("First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0));
-                panicProcessor.panic("btclock", "First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0));
+            Optional<Script> scriptSig = BridgeUtils.getFirstInputScriptSig(btcTx);
+            if (!scriptSig.isPresent()) {
+                logger.warn("[btctx:{}] First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0), btcTx.getHash());
                 return;
             }
 
@@ -301,7 +387,7 @@ public class BridgeSupport {
             Coin totalAmount = amountToActive.add(amountToRetiring);
 
             // Get the sender public key
-            byte[] data = scriptSig.getChunks().get(1).data;
+            byte[] data = scriptSig.get().getChunks().get(1).data;
 
             // Tx is a lock tx, check whether the sender is whitelisted
             BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
@@ -374,8 +460,6 @@ public class BridgeSupport {
             panicProcessor.panic("btclock", "This is not a lock, a release nor a migration tx " + btcTx);
             return;
         }
-
-        Sha256Hash btcTxHash = btcTx.getHash();
 
         // Mark tx as processed on this block
         provider.getBtcTxHashesAlreadyProcessed().put(btcTxHash, rskExecutionBlock.getNumber());
@@ -1105,7 +1189,7 @@ public class BridgeSupport {
      * @return the retiring federation.
      */
     @Nullable
-    private Federation getRetiringFederation() {
+    public Federation getRetiringFederation() {
         switch (getRetiringFederationReference()) {
             case OLD:
                 return provider.getOldFederation();

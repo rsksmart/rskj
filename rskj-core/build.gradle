@@ -1,69 +1,21 @@
-import java.util.zip.ZipOutputStream
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
-import java.util.zip.ZipEntry
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.util.jar.JarOutputStream
 
 buildscript {
-    repositories {
-        maven {
-            url 'https://repo.spring.io/plugins-release-local'
-        }
-    }
     dependencies {
-        classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
         classpath files('libs/rsk-gradle-witness.jar')
     }
 }
 
 plugins {
     id 'application'
-    id 'com.github.johnrengelman.shadow' version '1.2.4'
-    id "jacoco"
-    id "org.sonarqube" version "2.5"
 }
 
 apply plugin: 'witness'
-apply plugin: 'propdeps'
-apply plugin: 'propdeps-idea'
 apply plugin: 'maven'
 
-sonarqube {
-    properties {
-        property "sonar.projectName", "RskJ"
-        property "sonar.projectKey", "co.rsk:rskJ"
-        property "sonar.java.source", "1.8"
-
-        def libs = "build/libs/*.jar"
-        def bins = "build/classes/java/main"
-        property "sonar.sourceEncoding", "UTF-8"
-        property "sonar.sources", "src/main/java,src/main/resources"
-        property "sonar.binaries", bins
-        property "sonar.libraries", libs
-        property "sonar.java.binaries", bins
-        property "sonar.java.libraries", libs
-
-        property "sonar.tests", "src/test/java,src/test/resources"
-        property "sonar.java.test.binaries", "build/classes/java/test"
-        property "sonar.java.test.libraries", libs
-        property "sonar.java.coveragePlugin", "jacoco"
-        property "sonar.jacoco.reportPaths", "build/reports/jacoco/jacoco.exec"
-
-        property "sonar.scm.provider", "git"
-
-        property "sonar.host.url", "$sonarHostUrl"
-        property "sonar.login", "$sonarLogin"
-    }
-}
-
-jacoco {
-    toolVersion = "0.7.7.201606060606"
-}
-
 test {
-    systemProperty "solc", System.getProperty("solc")
-
     beforeTest { descriptor ->
         logger.lifecycle("Running test: ${descriptor}")
     }
@@ -74,16 +26,14 @@ test {
         events "failed"
         exceptionFormat "short"
     }
+}
 
-    jacoco {
-        append = false
-        destinationFile = file("build/reports/jacoco/jacoco.exec")
-    }
-
-    systemProperty "file.encoding", "UTF-8"
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
 }
 
 repositories {
+    jcenter()
     maven {
         url "https://deps.rsklabs.io"
     }
@@ -93,12 +43,11 @@ sourceCompatibility = 1.8
 
 mainClassName = 'co.rsk.Start'
 applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
-if (project.hasProperty("mainClass")) {
-    mainClassName = mainClass
-}
 
 tasks.withType(JavaCompile){
     options.warnings = false
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-XDignore.symbol.file'
 }
 
 tasks.withType(AbstractArchiveTask) {
@@ -116,11 +65,7 @@ ext {
     powermockitoVersion = '1.6.4'
     rskLllVersion = '0.0.2'
     logbackVersion = '1.2.2'
-    bitcoinjVersion = '0.14.4-rsk-3'
-}
-
-run {
-    systemProperty "rsk.conf.file", System.getProperty("rsk.conf.file")
+    bitcoinjVersion = '0.14.4-rsk-4'
 }
 
 dependencies {
@@ -168,7 +113,7 @@ dependencyVerification {
         'aopalliance:aopalliance:0addec670fedcd3f113c5c8091d783280d23f75e3acb841b61a9cdb079376a08',
         'ch.qos.logback:logback-classic:48ade385bbae0222b2934b65738892117d8cb8366b3a3df442d3826c11cedff1',
         'ch.qos.logback:logback-core:280be7a9327e7434d214d6b9eb881c083c3e057a22d0ed7663a7ce81a718a494',
-        'co.rsk.bitcoinj:bitcoinj-thin:83c0296752a2d50cc543831a808a2964c659a5830b5a565ff313e58b5ca1d591',
+        'co.rsk.bitcoinj:bitcoinj-thin:4535d56e40a2cc67dde3b807a2dbb3e6763b996ee0d4184c4d87aa141edf7c19',
         'co.rsk:lll-compiler:a645fdb272f56721761f65dd32caa952453efc07d98d292259d99353b6f647d0',
         'com.fasterxml.jackson.core:jackson-annotations:4caf3936315439b509b8c3ef494d4e47eaa6d25c3b5299aadb0eafb3944ed32f',
         'com.fasterxml.jackson.core:jackson-core:256ff34118ab292d1b4f3ee4d2c3e5e5f0f609d8e07c57e8ad1f51c46d4fbb46',
@@ -232,6 +177,36 @@ javadoc {
     options.encoding = "UTF-8"
 }
 
+def generatedResources = "$buildDir/generated-resources"
+sourceSets {
+    main {
+        resources {
+            srcDirs += generatedResources
+        }
+    }
+}
+
+task generateResources << {
+    mkdir generatedResources
+    def generated = new File(generatedResources, 'build-info.properties')
+    def commitHash = gitCommitHash()
+    def currentBranch = gitCurrentBranch()
+    generated.text = """
+build.hash=$commitHash
+build.branch=$currentBranch
+"""
+}
+
+tasks.withType(Jar) {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+    dirMode = 0775
+    fileMode = 0664
+    doLast {
+        stripJar(outputs.files.singleFile)
+    }
+}
+
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     from sourceSets.main.allSource
@@ -242,106 +217,96 @@ task javadocJar(type: Jar) {
     from javadoc
 }
 
-task buildPropertiesFile(type: Jar) {
-    println 'build info generated succesfully'
-
-    File versionFile = file(new File("src/main/resources/build-info.properties"))
-    versionFile.text = 'build.hash=' + gitCommitHash() + '\nbuild.branch=' + gitCurrentBranch()
-}
-
-task reproducible(dependsOn: 'shadowJar') {
-    doLast {
-        long fixDateJar = gitDateHash() * 1000
-        File newJar = new File(shadowJar.archivePath.parent, 'tmp-' + shadowJar.archiveName)
-        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(newJar))
-        JarFile jf = new JarFile(shadowJar.archivePath)
-        jf.entries().each { entry ->
-            cloneAndCopyEntry(jf, entry, zos, fixDateJar)
-        }
-        zos.finish()
-        jf.close()
-    // -- Enable this line to debug -- //
-        //compareJars(archivePath, newJar, fixDateJar)
-    // -- Remove old Jar -- //
-        Files.deleteIfExists(Paths.get(shadowJar.archivePath.getAbsolutePath()));
-    // -- Rename reproducible Jar -- //
-        newJar.renameTo(shadowJar.archivePath)
+task jar(type:Jar, overwrite: true, dependsOn: generateResources) {
+    def commitHash = gitCommitHash()
+    def currentBranch = gitCurrentBranch()
+    manifest {
+        attributes  'Git-Commit': commitHash,
+                    'Git-Branch': currentBranch
     }
+    from sourceSets.main.output.classesDirs
+    from sourceSets.main.output.resourcesDir
+    from generatedResources
 }
 
+task generatePom(dependsOn: jar) {
+    def jarName = jar.outputs.files.singleFile.name
+    def pomFile = "$libsDir/${jarName.take(jarName.lastIndexOf('.'))}.pom"
+    ext.file = new File(pomFile)
+    doLast {
+        pom {
+            project {
+                groupId project.group
+                artifactId project.name
+                version project.version
 
-task generatePom << {
-    pom {
-        project {
-            groupId project.group
-            artifactId project.name
-            version project.version
-
-            licenses {
-                license {
-                    name 'GNU General Public License (GPL) version 3.0'
-                    url 'http://www.gnu.org/licenses/gpl-3.0.txt'
-                    distribution 'repo'
+                licenses {
+                    license {
+                        name 'GNU General Public License (GPL) version 3.0'
+                        url 'http://www.gnu.org/licenses/gpl-3.0.txt'
+                        distribution 'repo'
+                    }
                 }
             }
-        }
-    }.writeTo("$libsDir/pom.xml")
-}
-
-void compareJars(File original, File copy, long ts) {
-    def jf = new JarFile(original)
-    def cjf = new JarFile(copy)
-    jf.entries().each { entry ->
-        def centry = cjf.getJarEntry(entry.name)
-        compareEntries(entry, centry, ts)
+        }.writeTo(pomFile)
     }
 }
 
-void compareEntries(JarEntry entry, JarEntry centry, long ts) {
-    assert entry.name == centry.name
-    assert entry.comment == centry.comment
-    assert entry.compressedSize == centry.compressedSize
-    assert entry.crc == centry.crc
-    assert entry.extra == centry.extra
-    assert entry.method == centry.method
-    assert entry.size == centry.size
-    assert ts == centry.time
-    assert entry.hashCode() == centry.hashCode()
-}
-
-void cloneAndCopyEntry(JarFile originalFile, JarEntry original, ZipOutputStream zos, long newTimestamp) {
-    ZipEntry clone = new ZipEntry(original)
-    clone.time = newTimestamp
-    def entryIs = originalFile.getInputStream(original)
-    zos.putNextEntry(clone)
-    copyBinaryData(entryIs, zos)
-}
-
-void copyBinaryData(InputStream is, ZipOutputStream zos) {
-    byte[] buffer = new byte[1024*1024]
-    int len = 0
-    while((len = is.read(buffer)) != -1) {
-        zos.write(buffer, 0, len)
+task fatJar(type: Jar, dependsOn: jar) {
+    manifest {
+        attributes 'Main-Class': "$mainClassName"
     }
+    exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+    classifier = 'all'
+    from { configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+tasks.withType(Tar) {
+    compression = Compression.GZIP
+    extension = 'tar.gz'
 }
 
 artifacts {
     archives sourcesJar
     archives javadocJar
-    archives buildPropertiesFile
+    archives jar
+    archives(generatePom.file) {
+        type 'text'
+        builtBy generatePom
+    }
+    archives fatJar
+    archives distTar
 }
 
 def gitCurrentBranch() {
     def process = "git rev-parse --abbrev-ref HEAD".execute()
-    return process.text
+    return process.text.trim()
 }
 
 def gitCommitHash() {
     def process = "git rev-parse --short HEAD".execute()
-    return process.text
+    return process.text.trim()
 }
 
 def gitDateHash() {
     def process = "git show -s --format=%ct ${gitCommitHash()}".execute()
     return process.text.toLong()
+}
+
+def stripJar(File originalFile) {
+    def constantTimeForZipEntries = new GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).timeInMillis
+    def reproducibleFile = File.createTempFile("temp", ".tmp")
+    reproducibleFile.withOutputStream { fout ->
+        def out = new JarOutputStream(fout)
+        def jf = new JarFile(originalFile)
+        jf.entries().unique {it.name}.sort {it.name}.each {
+            def copy = new JarEntry(it.name)
+            copy.time = constantTimeForZipEntries
+            out.putNextEntry(copy)
+            out << jf.getInputStream(it)
+        }
+        out.finish()
+    }
+    reproducibleFile.renameTo originalFile
 }

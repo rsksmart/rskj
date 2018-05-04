@@ -31,10 +31,7 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
-import co.rsk.scoring.EventType;
-import co.rsk.scoring.PeerScoringInformation;
-import co.rsk.scoring.PeerScoringManager;
-import co.rsk.scoring.PunishmentParameters;
+import co.rsk.scoring.*;
 import co.rsk.test.World;
 import org.ethereum.rpc.Simples.SimpleRsk;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
@@ -391,6 +388,11 @@ public class Web3ImplScoringTest {
     }
 
     private static PeerScoringManager createPeerScoringManager() {
-        return new PeerScoringManager(100, new PunishmentParameters(10, 10, 1000), new PunishmentParameters(10, 10, 1000));
+        return new PeerScoringManager(
+                PeerScoring::new,
+                100,
+                new PunishmentParameters(10, 10, 1000),
+                new PunishmentParameters(10, 10, 1000)
+        );
     }
 }

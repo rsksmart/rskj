@@ -659,6 +659,11 @@ public abstract class SystemProperties {
         return configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false));
     }
 
+    public boolean scoringPunishmentEnabled() {
+        return configFromFiles.hasPath("scoring.punishmentEnabled") ?
+                configFromFiles.getBoolean("scoring.punishmentEnabled") : false;
+    }
+
     public int scoringNumberOfNodes() {
         return getInt("scoring.nodes.number", 100);
     }
