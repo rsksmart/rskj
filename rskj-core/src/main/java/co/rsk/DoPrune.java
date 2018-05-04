@@ -30,7 +30,6 @@ import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.*;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
