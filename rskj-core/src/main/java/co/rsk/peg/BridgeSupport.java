@@ -86,7 +86,6 @@ public class BridgeSupport {
     private BtcBlockstoreWithCache btcBlockStore;
     private BtcBlockChain btcBlockChain;
     private org.ethereum.core.Block rskExecutionBlock;
-    private StoredBlock initialBtcStoredBlock;
 
     // Used by unit tests
     public BridgeSupport(
@@ -148,7 +147,6 @@ public class BridgeSupport {
         this.btcContext = new Context(this.bridgeConstants.getBtcParams());
         this.btcBlockStore = buildRepositoryBlockStore();
         this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
-        this.initialBtcStoredBlock = this.getLowestBlock();
     }
 
     // this constructor has all common parameters, mostly dependencies that aren't instantiated here
@@ -1001,19 +999,20 @@ public class BridgeSupport {
      * @return a List of bitcoin block hashes
      */
     public List<Sha256Hash> getBtcBlockchainBlockLocator() throws IOException {
+        StoredBlock  initialBtcStoredBlock = this.getLowestBlock();
         final int maxHashesToInform = 100;
         List<Sha256Hash> blockLocator = new ArrayList<>();
         StoredBlock cursor = btcBlockChain.getChainHead();
         int bestBlockHeight = cursor.getHeight();
         blockLocator.add(cursor.getHeader().getHash());
-        if (bestBlockHeight > this.initialBtcStoredBlock.getHeight()) {
+        if (bestBlockHeight > initialBtcStoredBlock.getHeight()) {
             boolean stop = false;
             int i = 0;
             try {
                 while (blockLocator.size() <= maxHashesToInform && !stop) {
                     int blockHeight = (int) (bestBlockHeight - Math.pow(2, i));
-                    if (blockHeight <= this.initialBtcStoredBlock.getHeight()) {
-                        blockLocator.add(this.initialBtcStoredBlock.getHeader().getHash());
+                    if (blockHeight <= initialBtcStoredBlock.getHeight()) {
+                        blockLocator.add(initialBtcStoredBlock.getHeader().getHash());
                         stop = true;
                     } else {
                         cursor = this.getPrevBlockAtHeight(cursor, blockHeight);
@@ -1027,7 +1026,7 @@ public class BridgeSupport {
                 throw new RuntimeException(e);
             }
             if (!stop) {
-                blockLocator.add(this.initialBtcStoredBlock.getHeader().getHash());
+                blockLocator.add(initialBtcStoredBlock.getHeader().getHash());
             }
         }
         return blockLocator;
