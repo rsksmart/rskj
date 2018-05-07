@@ -120,8 +120,6 @@ public class BlockChainImpl implements Blockchain {
         return repository;
     }
 
-    public TransactionPool getTransactionPool() { return transactionPool; }
-
     @Override
     public BlockStore getBlockStore() { return blockStore; }
 

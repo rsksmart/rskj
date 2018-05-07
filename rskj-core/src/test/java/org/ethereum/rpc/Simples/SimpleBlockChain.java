@@ -54,10 +54,6 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
 
     }
 
-    public TransactionPool getTransactionPool() {
-        return null;
-    }
-
     @Override
     public BlockChainStatus getStatus() {
         return null;
