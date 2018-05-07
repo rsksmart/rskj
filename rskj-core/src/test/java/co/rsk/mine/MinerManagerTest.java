@@ -263,7 +263,7 @@ public class MinerManagerTest {
         Assert.assertFalse(blockchain.getBestBlock().getTransactionsList().isEmpty());
 
         SnapshotManager snapshotManager = new SnapshotManager();
-        snapshotManager.resetSnapshots(blockchain);
+        snapshotManager.resetSnapshots(blockchain, blockchain.getTransactionPool());
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
@@ -271,7 +271,7 @@ public class MinerManagerTest {
         manager.mineBlock(blockchain, minerClient, minerServer);
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
 
-        snapshotManager.resetSnapshots(blockchain);
+        snapshotManager.resetSnapshots(blockchain, blockchain.getTransactionPool());
         Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
 
         manager.mineBlock(blockchain, minerClient, minerServer);

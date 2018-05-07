@@ -1151,7 +1151,7 @@ public class Web3Impl implements Web3 {
     public boolean evm_revert(String snapshotId) {
         try {
             int sid = stringHexToBigInteger(snapshotId).intValue();
-            return snapshotManager.revertToSnapshot(this.blockchain, sid);
+            return snapshotManager.revertToSnapshot(this.blockchain, this.transactionPool, sid);
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw new JsonRpcInvalidParamException("invalid snapshot id " + snapshotId, e);
         } finally {
@@ -1163,7 +1163,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public void evm_reset() {
-        snapshotManager.resetSnapshots(this.blockchain);
+        snapshotManager.resetSnapshots(this.blockchain, this.transactionPool);
         if (logger.isDebugEnabled()) {
             logger.debug("evm_reset()");
         }

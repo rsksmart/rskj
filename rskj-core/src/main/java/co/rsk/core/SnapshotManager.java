@@ -39,10 +39,8 @@ public class SnapshotManager {
         return this.snapshots.size();
     }
 
-    public boolean resetSnapshots(Blockchain blockchain) {
+    public boolean resetSnapshots(Blockchain blockchain, TransactionPool transactionPool) {
         this.snapshots = new ArrayList<>();
-
-        TransactionPool transactionPool = blockchain.getTransactionPool();
 
         long bestNumber = blockchain.getBestBlock().getNumber();
 
@@ -54,7 +52,7 @@ public class SnapshotManager {
         blockchain.setStatus(block, difficulty);
 
         // To clean pending state, first process the fork
-        blockchain.getTransactionPool().processBest(block);
+        transactionPool.processBest(block);
         // then, clear any reverted transaction
         transactionPool.removeTransactions(transactionPool.getPendingTransactions());
         transactionPool.removeTransactions(transactionPool.getQueuedTransactions());
@@ -67,7 +65,7 @@ public class SnapshotManager {
         return true;
     }
 
-    public boolean revertToSnapshot(Blockchain blockchain, int snapshotId) {
+    public boolean revertToSnapshot(Blockchain blockchain, TransactionPool transactionPool, int snapshotId) {
         if (snapshotId <= 0 || snapshotId > this.snapshots.size()) {
             return false;
         }
@@ -77,8 +75,6 @@ public class SnapshotManager {
         List<Long> newSnapshots = this.snapshots.stream().limit(snapshotId).collect(Collectors.toList());
 
         this.snapshots = newSnapshots;
-
-        TransactionPool transactionPool = blockchain.getTransactionPool();
 
         long currentBestBlockNumber = blockchain.getBestBlock().getNumber();
 
@@ -94,7 +90,7 @@ public class SnapshotManager {
         blockchain.setStatus(block, difficulty);
 
         // To clean pending state, first process the fork
-        blockchain.getTransactionPool().processBest(block);
+        transactionPool.processBest(block);
         // then, clear any reverted transaction
         transactionPool.removeTransactions(transactionPool.getPendingTransactions());
         transactionPool.removeTransactions(transactionPool.getQueuedTransactions());

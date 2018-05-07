@@ -106,16 +106,16 @@ public class SnapshotManagerTest {
     public void revertToNegativeSnapshot() {
         SnapshotManager manager = new SnapshotManager();
 
-        Assert.assertFalse(manager.revertToSnapshot(null, -1));
+        Assert.assertFalse(manager.revertToSnapshot(null, null, -1));
     }
 
     @Test
     public void revertToNonExistentSnapshot() {
         SnapshotManager manager = new SnapshotManager();
 
-        Assert.assertFalse(manager.revertToSnapshot(null, 0));
-        Assert.assertFalse(manager.revertToSnapshot(null, 1));
-        Assert.assertFalse(manager.revertToSnapshot(null, 10));
+        Assert.assertFalse(manager.revertToSnapshot(null, null, 0));
+        Assert.assertFalse(manager.revertToSnapshot(null, null, 1));
+        Assert.assertFalse(manager.revertToSnapshot(null, null, 10));
     }
 
     @Test
@@ -133,7 +133,7 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(30, blockchain.getStatus().getBestBlockNumber());
 
-        Assert.assertTrue(manager.revertToSnapshot(blockchain, snapshotId));
+        Assert.assertTrue(manager.revertToSnapshot(blockchain, blockchain.getTransactionPool(), snapshotId));
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
@@ -175,7 +175,7 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(30, blockchain.getStatus().getBestBlockNumber());
 
-        Assert.assertTrue(manager.revertToSnapshot(blockchain, snapshotId));
+        Assert.assertTrue(manager.revertToSnapshot(blockchain, blockchain.getTransactionPool(), snapshotId));
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
@@ -217,10 +217,10 @@ public class SnapshotManagerTest {
 
         manager.takeSnapshot(blockchain);
         Assert.assertFalse(manager.getSnapshots().isEmpty());
-        Assert.assertTrue(manager.resetSnapshots(blockchain));
+        Assert.assertTrue(manager.resetSnapshots(blockchain, blockchain.getTransactionPool()));
         Assert.assertTrue(manager.getSnapshots().isEmpty());
 
-        Assert.assertTrue(manager.resetSnapshots(blockchain));
+        Assert.assertTrue(manager.resetSnapshots(blockchain, blockchain.getTransactionPool()));
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
