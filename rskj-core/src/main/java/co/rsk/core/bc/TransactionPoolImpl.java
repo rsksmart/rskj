@@ -142,10 +142,6 @@ public class TransactionPoolImpl implements TransactionPool {
         this.removeObsoleteTransactions(timestampSeconds - this.outdatedTimeout);
     }
 
-    public BlockStore getBlockStore() {
-        return blockStore;
-    }
-
     public int getOutdatedThreshold() { return outdatedThreshold; }
 
     public int getOutdatedTimeout() { return outdatedTimeout; }
