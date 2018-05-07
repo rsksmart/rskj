@@ -32,8 +32,8 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
-import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -130,9 +130,9 @@ public class BlockChainBuilder {
 
         TransactionPoolImpl transactionPool;
         if (withoutCleaner) {
-            transactionPool = new TransactionPoolImplNoCleaner(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new CompositeEthereumListener(), 10, 100);
+            transactionPool = new TransactionPoolImplNoCleaner(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
         } else {
-            transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new CompositeEthereumListener(), 10, 100);
+            transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
         }
 
         BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, transactionPool, listener, this.adminInfo, blockValidator);

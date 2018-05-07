@@ -29,30 +29,29 @@ import org.ethereum.net.server.Channel;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 /**
  * @author Roman Mandeleil
  * @since 12.11.2014
  */
-@Component(value = "compositeEthereumListener")
 public class CompositeEthereumListener implements EthereumListener {
     private static final Logger logger = LoggerFactory.getLogger("events");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-
-    // Using a single thread executor so we only execute one listener callback at a time.
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     // Using a concurrent list
     // (the add and remove methods copy an internal array,
     // but the iterator directly use the internal array)
     private final List<EthereumListener> listeners = new CopyOnWriteArrayList<>();
+    private final Executor executor;
+
+    public CompositeEthereumListener(Executor executor) {
+        this.executor = executor;
+    }
 
     public void addListener(EthereumListener listener) {
         listeners.add(listener);
@@ -143,7 +142,7 @@ public class CompositeEthereumListener implements EthereumListener {
 
     private void scheduleListenerCallbacks(Consumer<EthereumListener> callback) {
         for (EthereumListener listener : listeners) {
-            executor.submit(() -> {
+            executor.execute(() -> {
                 try {
                     callback.accept(listener);
                 } catch (Exception e) {

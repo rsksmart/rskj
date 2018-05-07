@@ -32,7 +32,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
-import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
@@ -346,7 +346,7 @@ public class MinerManagerTest {
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
             super(null, null, null, null,
-                  new CompositeEthereumListener(), null, null, null);
+                  new TestCompositeEthereumListener(), null, null, null);
         }
     }
 }

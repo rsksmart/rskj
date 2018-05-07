@@ -5,6 +5,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
+import co.rsk.core.RskImpl;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
@@ -19,6 +20,8 @@ import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -43,6 +46,9 @@ public class RskTestFactory {
     private ProgramInvokeFactoryImpl programInvokeFactory;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
     private NodeBlockProcessor blockProcessor;
+    private RskImpl rskImpl;
+    private CompositeEthereumListener compositeEthereumListener;
+    private ReceiptStoreImpl receiptStore;
 
     public RskTestFactory() {
         Genesis genesis = new BlockGenerator().getGenesisBlock();
@@ -117,7 +123,7 @@ public class RskTestFactory {
                     getBlockStore(),
                     getReceiptStore(),
                     getTransactionPool(),
-                    null,
+                    getCompositeEthereumListener(),
                     null,
                     new DummyBlockValidator()
             );
@@ -127,8 +133,12 @@ public class RskTestFactory {
     }
 
     public ReceiptStore getReceiptStore() {
-        HashMapDB receiptStore = new HashMapDB();
-        return new ReceiptStoreImpl(receiptStore);
+        if (receiptStore == null) {
+            HashMapDB inMemoryStore = new HashMapDB();
+            receiptStore = new ReceiptStoreImpl(inMemoryStore);
+        }
+
+        return receiptStore;
     }
 
     public BlockStore getBlockStore() {
@@ -156,7 +166,7 @@ public class RskTestFactory {
             transactionPool = new TransactionPoolImpl(
                     getBlockStore(),
                     getReceiptStore(),
-                    null,
+                    getCompositeEthereumListener(),
                     getProgramInvokeFactory(),
                     getRepository(),
                     config
@@ -187,5 +197,30 @@ public class RskTestFactory {
         }
 
         return reversibleTransactionExecutor;
+    }
+
+    public RskImpl getRskImpl() {
+        if (rskImpl == null) {
+            rskImpl = new RskImpl(
+                    null,
+                    null,
+                    getTransactionPool(),
+                    config,
+                    getCompositeEthereumListener(),
+                    getBlockProcessor(),
+                    getReversibleTransactionExecutor(),
+                    getBlockchain()
+            );
+        }
+
+        return rskImpl;
+    }
+
+    private CompositeEthereumListener getCompositeEthereumListener() {
+        if (compositeEthereumListener == null) {
+            compositeEthereumListener = new TestCompositeEthereumListener();
+        }
+
+        return compositeEthereumListener;
     }
 }
