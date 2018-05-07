@@ -37,7 +37,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
@@ -904,7 +904,7 @@ public class BlockChainImplTest {
 
         AdminInfo adminInfo = new SimpleAdminInfo();
 
-        EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
+        CompositeEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
         return new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, listener, adminInfo, blockValidator);

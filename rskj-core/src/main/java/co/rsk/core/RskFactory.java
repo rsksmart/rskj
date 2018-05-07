@@ -226,7 +226,7 @@ public class RskFactory {
                                         org.ethereum.core.Repository repository,
                                         RskSystemProperties config,
                                         ProgramInvokeFactory programInvokeFactory,
-                                        @Qualifier("compositeEthereumListener") EthereumListener listener) {
+                                        CompositeEthereumListener listener) {
         return new TransactionPoolImpl(
                 blockStore,
                 receiptStore,

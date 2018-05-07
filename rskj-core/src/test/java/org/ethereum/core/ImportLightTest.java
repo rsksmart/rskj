@@ -33,7 +33,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.manager.AdminInfo;
 
 import java.math.BigInteger;
@@ -56,7 +56,7 @@ public class ImportLightTest {
 
         Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
 
-        EthereumListenerAdapter listener = new EthereumListenerAdapter();
+        CompositeEthereumListener listener = new CompositeEthereumListener();
 
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
