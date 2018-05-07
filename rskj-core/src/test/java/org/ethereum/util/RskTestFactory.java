@@ -111,13 +111,11 @@ public class RskTestFactory {
                     config, getRepository(),
                     getBlockStore(),
                     getReceiptStore(),
-                    null, //circular dependency
+                    getTransactionPool(),
                     null,
                     null,
                     new DummyBlockValidator()
             );
-            TransactionPool transactionPool = getTransactionPool();
-            blockchain.setTransactionPool(transactionPool);
         }
 
         return blockchain;

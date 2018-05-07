@@ -906,11 +906,8 @@ public class BlockChainImplTest {
 
         EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
-        BlockChainImpl blockChain = new BlockChainImpl(config, repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator);
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
-        blockChain.setTransactionPool(transactionPool);
-
-        return blockChain;
+        return new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, listener, adminInfo, blockValidator);
     }
 
     public static Block getGenesisBlock(BlockChainImpl blockChain) {

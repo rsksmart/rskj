@@ -62,21 +62,19 @@ public class ImportLightTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
+
         BlockChainImpl blockchain = new BlockChainImpl(
                 config, repository,
                 blockStore,
                 receiptStore,
-                null,
+                transactionPool,
                 listener,
                 new AdminInfo(),
                 new DummyBlockValidator()
         );
 
         blockchain.setNoValidation(true);
-
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
-
-        blockchain.setTransactionPool(transactionPool);
 
         Repository track = repository.startTracking();
 

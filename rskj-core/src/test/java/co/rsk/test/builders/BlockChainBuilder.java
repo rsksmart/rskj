@@ -126,20 +126,20 @@ public class BlockChainBuilder {
         if (this.adminInfo == null)
             this.adminInfo = new AdminInfo();
 
-        BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator);
+
+        TransactionPoolImpl transactionPool;
+        if (withoutCleaner) {
+            transactionPool = new TransactionPoolImplNoCleaner(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        } else {
+            transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        }
+
+        BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, transactionPool, listener, this.adminInfo, blockValidator);
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
             blockChain.setNoValidation(true);
         }
-
-        TransactionPoolImpl transactionPool;
-        if (withoutCleaner) {
-            transactionPool = new TransactionPoolImplNoCleaner(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
-        } else {
-            transactionPool = new TransactionPoolImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
-        }
-        blockChain.setTransactionPool(transactionPool);
 
         if (this.genesis != null) {
             for (RskAddress addr : this.genesis.getPremine().keySet()) {
