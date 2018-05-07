@@ -8,6 +8,10 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.net.BlockNodeInformation;
+import co.rsk.net.BlockSyncService;
+import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStoreImpl;
@@ -38,6 +42,7 @@ public class RskTestFactory {
     private RepositoryImpl repository;
     private ProgramInvokeFactoryImpl programInvokeFactory;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
+    private NodeBlockProcessor blockProcessor;
 
     public RskTestFactory() {
         Genesis genesis = new BlockGenerator().getGenesisBlock();
@@ -132,6 +137,18 @@ public class RskTestFactory {
         }
 
         return blockStore;
+    }
+
+    public NodeBlockProcessor getBlockProcessor() {
+        if (blockProcessor == null) {
+            co.rsk.net.BlockStore store = new co.rsk.net.BlockStore();
+            BlockNodeInformation nodeInformation = new BlockNodeInformation();
+            SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+            BlockSyncService blockSyncService = new BlockSyncService(config, store, getBlockchain(), nodeInformation, syncConfiguration);
+            this.blockProcessor = new NodeBlockProcessor(store, getBlockchain(), nodeInformation, blockSyncService, syncConfiguration);
+        }
+
+        return blockProcessor;
     }
 
     public TransactionPool getTransactionPool() {
