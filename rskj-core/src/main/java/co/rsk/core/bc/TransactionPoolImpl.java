@@ -182,10 +182,8 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         if (listener != null && !added.isEmpty()) {
-            EventDispatchThread.invokeLater(() -> {
-                listener.onPendingTransactionsReceived(added);
-                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
-            });
+            listener.onPendingTransactionsReceived(added);
+            listener.onTransactionPoolChanged(TransactionPoolImpl.this);
         }
 
         return added;
@@ -242,10 +240,8 @@ public class TransactionPoolImpl implements TransactionPool {
         executeTransaction(tx);
 
         if (listener != null) {
-            EventDispatchThread.invokeLater(() -> {
-                listener.onPendingTransactionsReceived(Collections.singletonList(tx));
-                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
-            });
+            listener.onPendingTransactionsReceived(Collections.singletonList(tx));
+            listener.onTransactionPoolChanged(TransactionPoolImpl.this);
         }
 
         return true;
@@ -288,7 +284,7 @@ public class TransactionPoolImpl implements TransactionPool {
         bestBlock = block;
 
         if (listener != null) {
-            EventDispatchThread.invokeLater(() -> listener.onTransactionPoolChanged(TransactionPoolImpl.this));
+            listener.onTransactionPoolChanged(TransactionPoolImpl.this);
         }
     }
 

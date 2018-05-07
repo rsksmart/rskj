@@ -42,7 +42,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.net.client.Capability;
@@ -84,9 +83,7 @@ public class Web3Impl implements Web3 {
 
     private final String baseClientVersion = "RskJ";
 
-    CompositeEthereumListener compositeEthereumListener;
-
-    long initialBlockNumber;
+    private long initialBlockNumber;
 
     private final MinerClient minerClient;
     protected MinerServer minerServer;
@@ -147,11 +144,7 @@ public class Web3Impl implements Web3 {
         this.config = config;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
-        compositeEthereumListener = new CompositeEthereumListener();
-
-        compositeEthereumListener.addListener(this.setupListener());
-
-        this.eth.addListener(compositeEthereumListener);
+        this.eth.addListener(this.setupListener());
         personalModule.init(this.config);
     }
 
