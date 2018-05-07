@@ -19,12 +19,14 @@
 package co.rsk.core;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
+import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -35,6 +37,19 @@ import java.util.List;
  * Created by ajlopez on 15/04/2017.
  */
 public class SnapshotManagerTest {
+
+    private BlockChainImpl blockchain;
+    private TransactionPool transactionPool;
+
+    @Before
+    public void setUp() {
+        RskTestFactory factory = new RskTestFactory();
+        blockchain = factory.getBlockchain();
+        transactionPool = factory.getTransactionPool();
+        // don't call start to avoid creating threads
+        transactionPool.processBest(blockchain.getBestBlock());
+    }
+
     @Test
     public void createWithNoSnapshot() {
         SnapshotManager manager = new SnapshotManager();
@@ -45,8 +60,6 @@ public class SnapshotManagerTest {
 
     @Test
     public void takeSnapshotOnGenesis() {
-        Blockchain blockchain = createBlockchain();
-
         SnapshotManager manager = new SnapshotManager();
 
         int result = manager.takeSnapshot(blockchain);
@@ -61,8 +74,6 @@ public class SnapshotManagerTest {
 
     @Test
     public void takeSnapshotOnManyBlocks() {
-        Blockchain blockchain = createBlockchain();
-
         addBlocks(blockchain, 10);
 
         SnapshotManager manager = new SnapshotManager();
@@ -79,8 +90,6 @@ public class SnapshotManagerTest {
 
     @Test
     public void takeTwoSnapshots() {
-        Blockchain blockchain = createBlockchain();
-
         addBlocks(blockchain, 10);
 
         SnapshotManager manager = new SnapshotManager();
@@ -120,7 +129,6 @@ public class SnapshotManagerTest {
 
     @Test
     public void revertToSnapshot() {
-        Blockchain blockchain = createBlockchain();
         addBlocks(blockchain, 10);
 
         BlockChainStatus status = blockchain.getStatus();
@@ -133,7 +141,7 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(30, blockchain.getStatus().getBestBlockNumber());
 
-        Assert.assertTrue(manager.revertToSnapshot(blockchain, blockchain.getTransactionPool(), snapshotId));
+        Assert.assertTrue(manager.revertToSnapshot(blockchain, transactionPool, snapshotId));
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
@@ -147,7 +155,6 @@ public class SnapshotManagerTest {
 
     @Test
     public void revertToSnapshotClearingTransactionPool() {
-        Blockchain blockchain = createBlockchain();
         addBlocks(blockchain, 10);
 
         BlockChainStatus status = blockchain.getStatus();
@@ -162,8 +169,6 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(2, manager.getSnapshots().size());
 
-        TransactionPool transactionPool = blockchain.getTransactionPool();
-
         Assert.assertNotNull(transactionPool);
 
         List<Transaction> txs = new ArrayList<>();
@@ -175,7 +180,7 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(30, blockchain.getStatus().getBestBlockNumber());
 
-        Assert.assertTrue(manager.revertToSnapshot(blockchain, blockchain.getTransactionPool(), snapshotId));
+        Assert.assertTrue(manager.revertToSnapshot(blockchain, transactionPool, snapshotId));
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
@@ -183,7 +188,7 @@ public class SnapshotManagerTest {
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
         Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
 
-        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
+        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
 
         Assert.assertEquals(1, manager.getSnapshots().size());
 
@@ -193,7 +198,6 @@ public class SnapshotManagerTest {
 
     @Test
     public void resetSnapshotClearingTransactionPool() {
-        Blockchain blockchain = createBlockchain();
         Block genesis = blockchain.getBestBlock();
         BlockDifficulty genesisDifficulty = blockchain.getStatus().getTotalDifficulty();
 
@@ -202,8 +206,6 @@ public class SnapshotManagerTest {
         BlockChainStatus status = blockchain.getStatus();
 
         Assert.assertEquals(10, status.getBestBlockNumber());
-
-        TransactionPool transactionPool = blockchain.getTransactionPool();
 
         Assert.assertNotNull(transactionPool);
         List<Transaction> txs = new ArrayList<>();
@@ -217,10 +219,10 @@ public class SnapshotManagerTest {
 
         manager.takeSnapshot(blockchain);
         Assert.assertFalse(manager.getSnapshots().isEmpty());
-        Assert.assertTrue(manager.resetSnapshots(blockchain, blockchain.getTransactionPool()));
+        Assert.assertTrue(manager.resetSnapshots(blockchain, transactionPool));
         Assert.assertTrue(manager.getSnapshots().isEmpty());
 
-        Assert.assertTrue(manager.resetSnapshots(blockchain, blockchain.getTransactionPool()));
+        Assert.assertTrue(manager.resetSnapshots(blockchain, transactionPool));
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
@@ -228,16 +230,12 @@ public class SnapshotManagerTest {
         Assert.assertEquals(genesisDifficulty, newStatus.getTotalDifficulty());
         Assert.assertEquals(genesis.getHash(), newStatus.getBestBlock().getHash());
 
-        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
+        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
 
         Assert.assertTrue(manager.getSnapshots().isEmpty());
 
         for (int k = 1; k <= 10; k++)
             Assert.assertTrue(blockchain.getBlocksByNumber(k).isEmpty());
-    }
-
-    private static Blockchain createBlockchain() {
-        return new World().getBlockChain();
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {
