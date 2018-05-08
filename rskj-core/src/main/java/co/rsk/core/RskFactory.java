@@ -76,6 +76,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.concurrent.Executors;
+
 @Configuration
 @ComponentScan("org.ethereum")
 public class RskFactory {
@@ -226,7 +228,7 @@ public class RskFactory {
                                         org.ethereum.core.Repository repository,
                                         RskSystemProperties config,
                                         ProgramInvokeFactory programInvokeFactory,
-                                        @Qualifier("compositeEthereumListener") EthereumListener listener) {
+                                        CompositeEthereumListener listener) {
         return new TransactionPoolImpl(
                 blockStore,
                 receiptStore,
@@ -339,5 +341,11 @@ public class RskFactory {
     @Bean
     public BlockStore getBlockStore(){
         return new BlockStore();
+    }
+
+    @Bean(name = "compositeEthereumListener")
+    public CompositeEthereumListener getCompositeEthereumListener() {
+        // Using a single thread executor so we only execute one listener callback at a time, in a different thread.
+        return new CompositeEthereumListener(Executors.newSingleThreadExecutor());
     }
 }

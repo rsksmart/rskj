@@ -23,16 +23,20 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
-import co.rsk.test.World;
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.db.BlockStore;
+import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.rpc.Simples.SimpleEthereum;
+import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
@@ -44,15 +48,25 @@ import java.util.concurrent.Callable;
 public class MinerManagerTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
+    private BlockChainImpl blockchain;
+    private TransactionPool transactionPool;
+    private Repository repository;
+    private BlockStore blockStore;
+
+    @Before
+    public void setup() {
+        RskTestFactory factory = new RskTestFactory();
+        blockchain = factory.getBlockchain();
+        transactionPool = factory.getTransactionPool();
+        repository = factory.getRepository();
+        blockStore = factory.getBlockStore();
+    }
 
     @Test
     public void refreshWorkRunOnce() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
         MinerClientImpl.RefreshWork refreshWork = minerClient.createRefreshWork();
@@ -71,12 +85,9 @@ public class MinerManagerTest {
 
     @Test
     public void refreshWorkRunTwice() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
         MinerClientImpl.RefreshWork refreshWork = minerClient.createRefreshWork();
@@ -100,12 +111,9 @@ public class MinerManagerTest {
 
     @Test
     public void mineBlockTwiceReusingTheSameWork() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
@@ -135,9 +143,6 @@ public class MinerManagerTest {
 
     @Test
     public void mineBlockWhileSyncingBlocks() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         RskImplForTest rsk = new RskImplForTest() {
@@ -146,7 +151,7 @@ public class MinerManagerTest {
                 return true;
             }
         };
-        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
@@ -158,9 +163,6 @@ public class MinerManagerTest {
 
     @Test
     public void mineBlockWhilePlayingBlocks() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         RskImplForTest rsk = new RskImplForTest() {
@@ -174,7 +176,7 @@ public class MinerManagerTest {
                 return true;
             }
         };
-        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
@@ -186,12 +188,9 @@ public class MinerManagerTest {
 
     @Test
     public void doWork() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
@@ -202,12 +201,9 @@ public class MinerManagerTest {
 
     @Test
     public void doWorkEvenWithoutMinerServer() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(null);
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
@@ -218,12 +214,9 @@ public class MinerManagerTest {
 
     @Test
     public void doWorkInThread() throws Exception {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
@@ -247,14 +240,11 @@ public class MinerManagerTest {
 
     @Test
     public void mineBlock() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerManager manager = new MinerManager();
 
-        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
         manager.mineBlock(blockchain, minerClient, minerServer);
@@ -262,8 +252,8 @@ public class MinerManagerTest {
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
         Assert.assertFalse(blockchain.getBestBlock().getTransactionsList().isEmpty());
 
-        SnapshotManager snapshotManager = new SnapshotManager();
-        snapshotManager.resetSnapshots(blockchain);
+        SnapshotManager snapshotManager = new SnapshotManager(blockchain, transactionPool);
+        snapshotManager.resetSnapshots();
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
@@ -271,24 +261,21 @@ public class MinerManagerTest {
         manager.mineBlock(blockchain, minerClient, minerServer);
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
 
-        snapshotManager.resetSnapshots(blockchain);
-        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
+        snapshotManager.resetSnapshots();
+        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
 
         manager.mineBlock(blockchain, minerClient, minerServer);
 
-        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
+        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
     }
 
     @Test
     public void mineBlockUsingTimeTravel() {
-        World world = new World();
-        Blockchain blockchain = world.getBlockChain();
-
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerManager manager = new MinerManager();
 
-        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
         long currentTime = minerServer.getCurrentTimeInSeconds();
@@ -322,9 +309,9 @@ public class MinerManagerTest {
         return new MinerClientImpl(rsk, minerServer, config);
     }
 
-    private static MinerServerImpl getMinerServer(Blockchain blockchain) {
+    private MinerServerImpl getMinerServer() {
         SimpleEthereum ethereum = new SimpleEthereum();
-        ethereum.repository = blockchain.getRepository();
+        ethereum.repository = repository;
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
         return new MinerServerImpl(
@@ -336,9 +323,9 @@ public class MinerManagerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        blockchain.getBlockStore(),
-                        blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         difficultyCalculator,
                         new GasLimitCalculator(config),
                         new BlockValidationRuleDummy(),
@@ -359,7 +346,7 @@ public class MinerManagerTest {
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
             super(null, null, null, null,
-                  new CompositeEthereumListener(), null, null, null);
+                  new TestCompositeEthereumListener(), null, null, null);
         }
     }
 }

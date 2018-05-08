@@ -52,6 +52,10 @@ public class BlockBuilder {
         this(world.getBlockChain(), new BlockGenerator());
     }
 
+    public BlockBuilder(BlockChainImpl blockChain) {
+        this(blockChain, new BlockGenerator());
+    }
+
     public BlockBuilder(BlockChainImpl blockChain, BlockGenerator blockGenerator) {
         this.blockChain = blockChain;
         this.blockGenerator = blockGenerator;

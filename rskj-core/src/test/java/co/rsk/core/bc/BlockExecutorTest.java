@@ -30,7 +30,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.HelloMessage;
@@ -618,7 +618,7 @@ public class BlockExecutorTest {
         }
     }
 
-    public static class SimpleEthereumListener implements EthereumListener {
+    public static class SimpleEthereumListener extends TestCompositeEthereumListener {
         private Block latestBlock;
         private List<TransactionReceipt> latestReceipts;
         private String latestTransactionHash;

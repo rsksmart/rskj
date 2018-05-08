@@ -23,7 +23,6 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
@@ -33,7 +32,8 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.manager.AdminInfo;
 
 import java.math.BigInteger;
@@ -56,7 +56,7 @@ public class ImportLightTest {
 
         Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
 
-        EthereumListenerAdapter listener = new EthereumListenerAdapter();
+        CompositeEthereumListener listener = new TestCompositeEthereumListener();
 
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
@@ -66,17 +66,12 @@ public class ImportLightTest {
                 config, repository,
                 blockStore,
                 receiptStore,
-                null,
                 listener,
                 new AdminInfo(),
                 new DummyBlockValidator()
         );
 
         blockchain.setNoValidation(true);
-
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
-
-        blockchain.setTransactionPool(transactionPool);
 
         Repository track = repository.startTracking();
 
