@@ -332,7 +332,7 @@ public class BridgeSupport {
         }
 
         if (height < 0) {
-            logger.warn("Height is " + height + " but should be greater than 0");
+            logger.warn("Height is {} but should be greater than 0", height);
             panicProcessor.panic("btclock", "Height is " + height + " but should be greater than 0");
             return;
         }
@@ -340,7 +340,7 @@ public class BridgeSupport {
         // Check there are at least N blocks on top of the supplied height
         int confirmations = btcBlockChain.getBestChainHeight() - height + 1;
         if (confirmations < bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()) {
-            logger.warn("At least " + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() + " confirmations are required, but there are only " + confirmations + " confirmations");
+            logger.warn("At least {} confirmations are required, but there are only {} confirmations", bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(), confirmations);
             return;
         }
 
@@ -353,7 +353,7 @@ public class BridgeSupport {
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         BtcBlock blockHeader = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height).getHeader();
         if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
-            logger.warn("Supplied merkle root " + merkleRoot + "does not match block's merkle root " + blockHeader.getMerkleRoot());
+            logger.warn("Supplied merkle root {} does not match block's merkle root {}", merkleRoot, blockHeader.getMerkleRoot());
             panicProcessor.panic("btclock", "Supplied merkle root " + merkleRoot + "does not match block's merkle root " + blockHeader.getMerkleRoot());
             return;
         }
@@ -369,7 +369,7 @@ public class BridgeSupport {
             logger.debug("This is a lock tx {}", btcTx);
             Optional<Script> scriptSig = BridgeUtils.getFirstInputScriptSig(btcTx);
             if (!scriptSig.isPresent()) {
-                logger.warn("[btctx:{}] First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0), btcTx.getHash());
+                logger.warn("[btctx:{}] First input does not spend a Pay-to-PubkeyHash {}", btcTx.getHash(), btcTx.getInput(0));
                 return;
             }
 
