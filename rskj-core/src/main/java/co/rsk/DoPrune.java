@@ -19,16 +19,17 @@
 package co.rsk;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Rsk;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
-import org.ethereum.core.*;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Repository;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -51,33 +52,30 @@ public class DoPrune {
     private static RskAddress DEFAULT_CONTRACT_ADDRESS = PrecompiledContracts.REMASC_ADDR;
     private static int DEFAULT_BLOCKS_TO_PROCESS = 5000;
 
-    private final Rsk rsk;
     private final RskSystemProperties rskSystemProperties;
     private final Blockchain blockchain;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
         DoPrune runner = ctx.getBean(DoPrune.class);
-        runner.doPrune(args);
+        runner.doPrune();
         runner.stop();
     }
 
     @Autowired
-    public DoPrune(Rsk rsk,
-                   RskSystemProperties rskSystemProperties,
-                   Blockchain blockchain) {
-        this.rsk = rsk;
+    public DoPrune(
+            RskSystemProperties rskSystemProperties,
+            Blockchain blockchain) {
         this.rskSystemProperties = rskSystemProperties;
         this.blockchain = blockchain;
     }
 
-    public void doPrune(String[] args) throws Exception {
+    private void doPrune() {
         logger.info("Pruning Database");
 
         int blocksToProcess = DEFAULT_BLOCKS_TO_PROCESS;
         RskAddress contractAddress = DEFAULT_CONTRACT_ADDRESS;
 
-        CLIInterface.call(rskSystemProperties, args);
         logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
         BuildInfo.printInfo();
 
@@ -98,7 +96,7 @@ public class DoPrune {
         targetDataSource.close();
     }
 
-    public void processBlocks(long from, TrieImpl sourceTrie, RskAddress contractAddress, TrieStore targetStore) {
+    private void processBlocks(long from, TrieImpl sourceTrie, RskAddress contractAddress, TrieStore targetStore) {
         long n = from;
 
         if (n <= 0) {

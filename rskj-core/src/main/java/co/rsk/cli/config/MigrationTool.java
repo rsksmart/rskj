@@ -1,43 +1,39 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2018 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.cli.config;
 
-import co.rsk.cli.CliArgsParser;
+import co.rsk.cli.CliArgs;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
-import java.util.Collection;
 
 public class MigrationTool {
 
     public static void main(String[] commandLineArgs) throws IOException {
-        CliArgsParser<Migrator.MigratorOptions, Migrator.MigratorFlags> cliArgs = new CliArgsParser<>(
-                commandLineArgs,
-                new CliArgsParser.ArgByNameProvider<Migrator.MigratorOptions>() {
-                    @Override
-                    public Migrator.MigratorOptions byName(String name) {
-                        return Migrator.MigratorOptions.getByOptionName(name);
-                    }
-
-                    @Override
-                    public Collection<Migrator.MigratorOptions> values() {
-                        return Arrays.asList(Migrator.MigratorOptions.values());
-                    }
-                },
-                new CliArgsParser.ArgByNameProvider<Migrator.MigratorFlags>() {
-                    @Override
-                    public Migrator.MigratorFlags byName(String name) {
-                        return Migrator.MigratorFlags.getByFlagName(name);
-                    }
-
-                    @Override
-                    public Collection<Migrator.MigratorFlags> values() {
-                        return Arrays.asList(Migrator.MigratorFlags.values());
-                    }
-                }
+        CliArgs.Parser<Migrator.MigratorOptions, Migrator.MigratorFlags> parser = new CliArgs.Parser<>(
+                Migrator.MigratorOptions.class,
+                Migrator.MigratorFlags.class
         );
+
+        CliArgs<Migrator.MigratorOptions, Migrator.MigratorFlags> cliArgs = parser.parse(commandLineArgs);
 
         MigratorConfiguration configuration = new MigratorConfiguration(
                 cliArgs.getOptions().get(Migrator.MigratorOptions.INPUT_FILE),

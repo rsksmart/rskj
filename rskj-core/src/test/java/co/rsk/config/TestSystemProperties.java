@@ -18,11 +18,12 @@
 
 package co.rsk.config;
 
+import co.rsk.cli.CliArgs;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 public class TestSystemProperties extends RskSystemProperties {
-    private static final ConfigLoader TEST_LOADER = new ConfigLoader() {
+    private static final ConfigLoader TEST_LOADER = new ConfigLoader(CliArgs.empty()) {
         /**
          * Cache configurations that don't change so we don't read files multiple times.
          */
@@ -31,7 +32,7 @@ public class TestSystemProperties extends RskSystemProperties {
                 .withFallback(ConfigFactory.load("config/regtest"));
 
         @Override
-        public Config getConfigFromFiles() {
+        public Config getConfig() {
             return TEST_CONFIG;
         }
     };
