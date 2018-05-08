@@ -20,7 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blocks.DummyBlockRecorder;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
@@ -37,7 +37,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
@@ -58,7 +58,7 @@ import java.util.List;
 
 public class BlockChainImplTest {
 
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void addGenesisBlock() {
@@ -795,7 +795,7 @@ public class BlockChainImplTest {
 
     @Test
     public void createWithoutArgumentsAndUnusedMethods() {
-        BlockChainImpl blockChain = new BlockChainImpl(config, null, null, null, null, null, null, new DummyBlockValidator());
+        BlockChainImpl blockChain = new BlockChainImpl(config, null, null, null, null, null, new DummyBlockValidator());
         blockChain.setExitOn(0);
         blockChain.close();
     }
@@ -904,13 +904,9 @@ public class BlockChainImplTest {
 
         AdminInfo adminInfo = new SimpleAdminInfo();
 
-        EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
+        CompositeEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
-        BlockChainImpl blockChain = new BlockChainImpl(config, repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator);
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
-        blockChain.setTransactionPool(transactionPool);
-
-        return blockChain;
+        return new BlockChainImpl(config, repository, blockStore, receiptStore, listener, adminInfo, blockValidator);
     }
 
     public static Block getGenesisBlock(BlockChainImpl blockChain) {

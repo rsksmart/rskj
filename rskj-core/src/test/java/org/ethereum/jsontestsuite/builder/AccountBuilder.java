@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite.builder;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.core.AccountState;
@@ -38,7 +38,7 @@ public class AccountBuilder {
 
     public static StateWrap build(AccountTck account) {
 
-        ContractDetailsImpl details = new ContractDetailsImpl(new RskSystemProperties());
+        ContractDetailsImpl details = new ContractDetailsImpl(new TestSystemProperties());
         details.setCode(parseData(account.getCode()));
         details.setStorage(convertStorage(account.getStorage()));
 

@@ -18,7 +18,7 @@
 
 package co.rsk.mine;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -31,7 +31,7 @@ import java.math.BigInteger;
 
 public class TxBuilderTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void createBasicTransaction() {

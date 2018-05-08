@@ -18,7 +18,7 @@
 
 package co.rsk.validators;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
  * @since 02.23.2016
  */
 public class GasLimitRuleTests {
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private GasLimitRule rule = new GasLimitRule(3000000);
 
     @Test // pass rule

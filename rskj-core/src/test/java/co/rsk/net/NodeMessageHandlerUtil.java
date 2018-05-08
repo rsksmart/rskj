@@ -1,6 +1,6 @@
 package co.rsk.net;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
@@ -20,7 +20,7 @@ import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 
 public class NodeMessageHandlerUtil {
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
 
     public static NodeMessageHandler createHandler(BlockValidationRule validationRule) {

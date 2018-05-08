@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.config.blockchain.GenesisConfig;
@@ -54,7 +54,7 @@ import static org.junit.Assert.assertNull;
 
 public class TransactionTest {
 
-    private RskSystemProperties config = new RskSystemProperties();
+    private TestSystemProperties config = new TestSystemProperties();
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */
     public void test1() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, IOException {

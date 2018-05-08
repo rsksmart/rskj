@@ -19,7 +19,7 @@
 package co.rsk.net.eth;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.test.builders.AccountBuilder;
@@ -45,7 +45,7 @@ import java.util.Random;
  */
 public class WriterMessageRecorderTest {
 
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void recordRskMessage() throws IOException {

@@ -19,9 +19,8 @@
 package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.peg.Federation;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
@@ -40,13 +39,13 @@ import static org.mockito.Matchers.eq;
 public class TxValidatorTest {
 
 
-    private RskSystemProperties config;
+    private TestSystemProperties config;
 
     Random hashes = new Random(0);
 
     @Before
     public void setup(){
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
     }
 
     @Test
@@ -169,7 +168,7 @@ public class TxValidatorTest {
     }
 
     public static Transaction createBridgeTx(
-            RskSystemProperties config,
+            TestSystemProperties config,
             long value,
             long gaslimit,
             long gasprice,

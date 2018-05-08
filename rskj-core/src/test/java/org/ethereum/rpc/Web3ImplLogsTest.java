@@ -18,12 +18,12 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.RskImpl;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.eth.EthModule;
@@ -33,19 +33,16 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
-import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
-import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
+import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
@@ -84,14 +81,28 @@ public class Web3ImplLogsTest {
     private final static String GET_VALUED_EVENT_SIGNATURE = "1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
     private final static String INCREMENT_METHOD_SIGNATURE = "371303c0";
     private final static String GET_VALUE_METHOD_SIGNATURE = "20965255";
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
+    private BlockChainImpl blockChain;
+    private TransactionPool transactionPool;
+    private RskImpl eth;
+    private ReceiptStore receiptStore;
+    private Web3Impl web3;
 
     //20965255 getValue()
     //371303c0 inc()
 
+    @Before
+    public void setUp() {
+        RskTestFactory factory = new RskTestFactory();
+        blockChain = factory.getBlockchain();
+        transactionPool = factory.getTransactionPool();
+        eth = factory.getRskImpl();
+        receiptStore = factory.getReceiptStore();
+        web3 = createWeb3();
+    }
+
     @Test
     public void newFilterInEmptyBlockchain() throws Exception {
-        Web3Impl web3 = getWeb3();
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         String id = web3.eth_newFilter(fr);
@@ -101,7 +112,6 @@ public class Web3ImplLogsTest {
 
     @Test
     public void newFilterGetLogsInEmptyBlockchain() throws Exception {
-        Web3Impl web3 = getWeb3();
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         String id = web3.eth_newFilter(fr);
@@ -114,33 +124,21 @@ public class Web3ImplLogsTest {
 
     @Test
     public void newFilterGetLogsAfterBlock() throws Exception {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
-
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), null, null, null, 10, 100);
-
-        SimpleEthereum eth = new SimpleEthereum();
-        eth.repository = world.getBlockChain().getRepository();
-        eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), transactionPool , WalletFactory.createWallet());
-
-        // TODO tricky link to listener
-        world.getBlockChain().setListener(web3.setupListener());
-
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "latest";
         String id = web3.eth_newFilter(fr);
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Object[] logs = web3.eth_getFilterLogs(id);
 
@@ -153,29 +151,18 @@ public class Web3ImplLogsTest {
 
     @Test
     public void newFilterWithAccountAndTopicsCreatedAfterBlockAndGetLogs() throws Exception {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
-
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), null, null, null, 10, 100);
-
-        SimpleEthereum eth = new SimpleEthereum();
-        eth.repository = world.getBlockChain().getRepository();
-        eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), transactionPool, WalletFactory.createWallet());
-
-        // TODO tricky link to listener
-        world.getBlockChain().setListener(web3.setupListener());
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         web3.personal_newAccountWithSeed("notDefault");
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.address = Hex.toHexString(tx.getContractAddress().getBytes());
@@ -193,18 +180,7 @@ public class Web3ImplLogsTest {
 
     @Test
     public void newFilterGetLogsTwiceAfterBlock() throws Exception {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
-
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), null, null, null, 10, 100);
-
-        SimpleEthereum eth = new SimpleEthereum();
-        eth.repository = world.getBlockChain().getRepository();
-        eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), transactionPool, WalletFactory.createWallet());
-
-        // TODO tricky link to listener
-        world.getBlockChain().setListener(web3.setupListener());
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         web3.personal_newAccountWithSeed("notDefault");
 
@@ -212,14 +188,14 @@ public class Web3ImplLogsTest {
         fr.fromBlock = "earliest";
         String id = web3.eth_newFilter(fr);
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         web3.eth_getFilterLogs(id);
         Object[] logs = web3.eth_getFilterLogs(id);
@@ -233,7 +209,6 @@ public class Web3ImplLogsTest {
 
     @Test
     public void newFilterGetChangesInEmptyBlockchain() throws Exception {
-        Web3Impl web3 = getWeb3();
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         String id = web3.eth_newFilter(fr);
@@ -246,19 +221,7 @@ public class Web3ImplLogsTest {
 
     @Test
     public void newFilterGetChangesAfterBlock() throws Exception {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
-
-        BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, null, null, 10, 100);
-
-        SimpleEthereum eth = new SimpleEthereum();
-        eth.repository = world.getBlockChain().getRepository();
-        eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), transactionPool, WalletFactory.createWallet());
-
-        // TODO tricky link to listener
-        blockChain.setListener(web3.setupListener());
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         web3.personal_newAccountWithSeed("notDefault");
 
@@ -266,20 +229,19 @@ public class Web3ImplLogsTest {
         fr.fromBlock = "earliest";
         String id = web3.eth_newFilter(fr);
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        blockChain.tryToConnect(block1);
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Object[] logs = web3.eth_getFilterChanges(id);
 
         Assert.assertNotNull(id);
         Assert.assertNotNull(logs);
-        // TODO Fix
         Assert.assertEquals(1, logs.length);
 
         Assert.assertEquals("0x" + tx.getContractAddress().toString(),((LogFilterElement)logs[0]).address);
@@ -287,7 +249,6 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromEmptyBlockchain() throws Exception {
-        Web3Impl web3 = getWeb3();
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         Object[] logs = web3.eth_getLogs(fr);
@@ -298,7 +259,7 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromBlockchainWithThreeEmptyBlocks() throws Exception {
-        Web3Impl web3 = getWeb3WithThreeEmptyBlocks();
+        addTwoEmptyBlocks();
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
@@ -310,7 +271,7 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromBlockchainWithContractCreation() throws Exception {
-        Web3Impl web3 = getWeb3WithContractCreationWithoutEvents();
+        addContractCreationWithoutEvents();
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
@@ -322,7 +283,7 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromBlockchainWithEventInContractCreation() throws Exception {
-        Web3Impl web3 = getWeb3WithEventInContractCreation();
+        addEventInContractCreation();
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
@@ -339,7 +300,7 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromBlockchainWithInvokeContract() throws Exception {
-        Web3Impl web3 = getWeb3WithContractInvoke();
+        addContractInvoke();
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
@@ -357,8 +318,7 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromBlockchainWithCallContract() throws Exception {
-        World world = new World();
-        Web3Impl web3 = getWeb3WithContractCall(world);
+        addContractCall();
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
@@ -370,9 +330,8 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByContractAddress() throws Exception {
-        World world = new World();
-        Web3Impl web3 = getWeb3WithContractCall(world);
-        Block block1 = world.getBlockChain().getBlockByNumber(1l);
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.address = Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
@@ -390,8 +349,7 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByUnknownContractAddress() throws Exception {
-        World world = new World();
-        Web3Impl web3 = getWeb3WithContractCall(world);
+        addContractCall();
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
@@ -406,8 +364,7 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByUnknownTopic() throws Exception {
-        World world = new World();
-        Web3Impl web3 = getWeb3WithContractCall(world);
+        addContractCall();
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
@@ -421,10 +378,9 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByKnownTopic() throws Exception {
-        World world = new World();
-        Web3Impl web3 = getWeb3WithContractCall(world);
+        addContractCall();
 
-        Block block1 = world.getBlockChain().getBlockByNumber(1l);
+        Block block1 = blockChain.getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
@@ -439,9 +395,8 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByKnownTopicInList() throws Exception {
-        World world = new World();
-        Web3Impl web3 = getWeb3WithContractCall(world);
-        Block block1 = world.getBlockChain().getBlockByNumber(1l);
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
@@ -458,35 +413,21 @@ public class Web3ImplLogsTest {
 
     @Test
     public void createMainContractWithoutEvents() throws Exception {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
-
-
-        BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, null, null, 10, 100);
-
-        SimpleEthereum eth = new SimpleEthereum();
-        eth.repository = world.getBlockChain().getRepository();
-        eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), transactionPool, WalletFactory.createWallet());
-
-        // TODO tricky link to listener
-        blockChain.setListener(web3.setupListener());
-
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         String id = web3.eth_newFilter(fr);
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getMainContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        blockChain.tryToConnect(block1);
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Object[] logs = web3.eth_getFilterChanges(id);
 
@@ -497,34 +438,21 @@ public class Web3ImplLogsTest {
 
     @Test
     public void createCallerContractWithEvents() throws Exception {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
-
-        BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, null, null, 10, 100);
-
-        SimpleEthereum eth = new SimpleEthereum();
-        eth.repository = world.getBlockChain().getRepository();
-        eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), transactionPool, WalletFactory.createWallet());
-
-        // TODO tricky link to listener
-        blockChain.setListener(web3.setupListener());
-
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         String id = web3.eth_newFilter(fr);
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getMainContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        blockChain.tryToConnect(block1);
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         String mainAddress = tx.getContractAddress().toString();
 
@@ -534,8 +462,8 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
-        Block block2 = new BlockBuilder(world).parent(block1).transactions(txs2).build();
-        blockChain.tryToConnect(block2);
+        Block block2 = new BlockBuilder(blockChain).parent(block1).transactions(txs2).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Object[] logs = web3.eth_getFilterChanges(id);
 
@@ -549,34 +477,21 @@ public class Web3ImplLogsTest {
 
     @Test
     public void createCallerContractWithEventsOnInvoke() throws Exception {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
-
-        BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, null, null, 10, 100);
-
-        SimpleEthereum eth = new SimpleEthereum();
-        eth.repository = world.getBlockChain().getRepository();
-        eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), transactionPool, WalletFactory.createWallet());
-
-        // TODO tricky link to listener
-        blockChain.setListener(web3.setupListener());
-
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         String id = web3.eth_newFilter(fr);
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getMainContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        blockChain.tryToConnect(block1);
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         String mainAddress = tx.getContractAddress().toString();
 
@@ -586,16 +501,16 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
-        Block block2 = new BlockBuilder(world).parent(block1).transactions(txs2).build();
-        blockChain.tryToConnect(block2);
+        Block block2 = new BlockBuilder(blockChain).parent(block1).transactions(txs2).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Transaction tx3;
         tx3 = getCallerContractTransactionWithInvoke(acc1, tx2.getContractAddress().getBytes(), mainAddress);
 
         List<Transaction> txs3 = new ArrayList<>();
         txs3.add(tx3);
-        Block block3 = new BlockBuilder(world).parent(block2).transactions(txs3).build();
-        blockChain.tryToConnect(block3);
+        Block block3 = new BlockBuilder(blockChain).parent(block2).transactions(txs3).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
         Object[] logs = web3.eth_getFilterChanges(id);
 
@@ -610,48 +525,35 @@ public class Web3ImplLogsTest {
 
     @Test
     public void createCallerContractWithEventsOnInvokeUsingGetFilterLogs() throws Exception {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
-
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), null, null, null, 10, 100);
-
-        SimpleEthereum eth = new SimpleEthereum();
-        eth.repository = world.getBlockChain().getRepository();
-        eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), transactionPool, WalletFactory.createWallet());
-
-        // TODO tricky link to listener
-        world.getBlockChain().setListener(web3.setupListener());
-
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getMainContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         String mainAddress = tx.getContractAddress().toString();
 
         Transaction tx2;
         tx2 = getCallerContractTransaction(acc1, mainAddress);
-        String callerAddress = Hex.toHexString(tx2.getContractAddress().getBytes());
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
-        Block block2 = new BlockBuilder(world).parent(block1).transactions(txs2).build();
-        world.getBlockChain().tryToConnect(block2);
+        Block block2 = new BlockBuilder(blockChain).parent(block1).transactions(txs2).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Transaction tx3;
         tx3 = getCallerContractTransactionWithInvoke(acc1, tx2.getContractAddress().getBytes(), mainAddress);
 
         List<Transaction> txs3 = new ArrayList<>();
         txs3.add(tx3);
-        Block block3 = new BlockBuilder(world).parent(block2).transactions(txs3).build();
-        world.getBlockChain().tryToConnect(block3);
+        Block block3 = new BlockBuilder(blockChain).parent(block2).transactions(txs3).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.address = "0x" + mainAddress;
@@ -666,25 +568,14 @@ public class Web3ImplLogsTest {
         Assert.assertEquals("0x" + mainAddress, ((LogFilterElement)logs[0]).address);
     }
 
-    private Web3Impl createWeb3(Blockchain blockchain, TransactionPool transactionPool) {
-        return createWeb3(blockchain, transactionPool, null);
-    }
-
-    private Web3Impl createWeb3(Blockchain blockchain, TransactionPool transactionPool, ReceiptStore receiptStore) {
-        return createWeb3(Web3Mocks.getMockEthereum(), blockchain, transactionPool, receiptStore, WalletFactory.createWallet());
-    }
-
-    private Web3Impl createWeb3(Ethereum eth, Blockchain blockchain, TransactionPool transactionPool, Wallet wallet) {
-        return createWeb3(eth, blockchain, transactionPool, null, wallet);
-    }
-
-    private Web3Impl createWeb3(Ethereum eth, Blockchain blockchain, TransactionPool transactionPool, ReceiptStore receiptStore, Wallet wallet) {
-        PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
-        EthModule ethModule = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+    private Web3Impl createWeb3() {
+        Wallet wallet = WalletFactory.createWallet();
+        PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
+        EthModule ethModule = new EthModule(config, blockChain, null, new ExecutionBlockRetriever(blockChain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, transactionPool));
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         return new Web3RskImpl(
                 eth,
-                blockchain,
+                blockChain,
                 transactionPool,
                 config,
                 Web3Mocks.getMockMinerClient(),
@@ -693,10 +584,10 @@ public class Web3ImplLogsTest {
                 ethModule,
                 txPoolModule,
                 Web3Mocks.getMockChannelManager(),
-                Web3Mocks.getMockRepository(),
+                blockChain.getRepository(),
                 null,
                 null,
-                blockchain.getBlockStore(),
+                blockChain.getBlockStore(),
                 receiptStore,
                 null,
                 null,
@@ -705,33 +596,21 @@ public class Web3ImplLogsTest {
         );
     }
 
-    private Web3Impl getWeb3() {
-        World world = new World();
-        Web3Impl web3 = createWeb3(world.getBlockChain(), null);
-
-        return web3;
-    }
-
-    private Web3Impl getWeb3WithThreeEmptyBlocks() {
-        World world = new World();
-        Web3Impl web3 = createWeb3(world.getBlockChain(), null);
-
-        Block genesis = world.getBlockByName("g00");
-        Block block1 = new BlockBuilder().parent(genesis).build();
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block2 = new BlockBuilder().parent(block1).build();
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2));
-
-        return web3;
+    private void addTwoEmptyBlocks() {
+        Block genesis = blockChain.getBlockByNumber(0);
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
+        Block block2 = new BlockBuilder(blockChain).parent(block1).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
+        Assert.assertEquals(3, blockChain.getSize());
     }
 
     private String compiledGreeter = "60606040525b33600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff02191690836c010000000000000000000000009081020402179055505b610181806100516000396000f360606040526000357c010000000000000000000000000000000000000000000000000000000090048063ead710c41461003c57610037565b610002565b34610002576100956004808035906020019082018035906020019191908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050909091905050610103565b60405180806020018281038252838181518152602001915080519060200190808383829060006004602084601f0104600302600f01f150905090810190601f1680156100f55780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6020604051908101604052806000815260200150600060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561017357610002565b81905061017b565b5b91905056";
 
-    private Web3Impl getWeb3WithContractCreationWithoutEvents() {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
+    private void addContractCreationWithoutEvents() {
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
 
         /* contract compiled in data attribute of tx
         contract greeter {
@@ -755,64 +634,41 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        BlockChainImpl blockChain = world.getBlockChain();
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        blockChain.tryToConnect(block1);
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, null, null, 10, 100);
-
-        Web3Impl web3 = createWeb3(world.getBlockChain(), transactionPool);
         web3.personal_newAccountWithSeed("notDefault");
-
-        return web3;
     }
 
-    private Web3Impl getWeb3WithEventInContractCreation() {
-        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        World world = getWorld3WithBlockWithEventInContractCreation(config, receiptStore);
+    private void addEventInContractCreation() {
+        addEmptyBlockToBlockchain(blockChain);
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), receiptStore, null, null, 10, 100);
-
-        Web3Impl web3 = createWeb3(world.getBlockChain(), transactionPool, receiptStore);
         web3.personal_newAccountWithSeed("notDefault");
-
-        return web3;
     }
 
-    public static World getWorld3WithBlockWithEventInContractCreation(RskSystemProperties config) {
-        return getWorld3WithBlockWithEventInContractCreation(config, null);
-    }
+    public static void addEmptyBlockToBlockchain(BlockChainImpl blockChain) {
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
-    public static World getWorld3WithBlockWithEventInContractCreation(RskSystemProperties config, ReceiptStore receiptStore) {
-        World world = new World(receiptStore);
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
-
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        BlockChainImpl blockChain = world.getBlockChain();
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        blockChain.tryToConnect(block1);
-
-        return world;
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
     }
 
-    private Web3Impl getWeb3WithContractInvoke() {
-        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        World world = new World(receiptStore);
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
+    private void addContractInvoke() {
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        BlockChainImpl blockChain = world.getBlockChain();
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
@@ -820,29 +676,24 @@ public class Web3ImplLogsTest {
         Transaction tx2 = getContractTransactionWithInvoke(acc1, contractAddress);
         List<Transaction> tx2s = new ArrayList<>();
         tx2s.add(tx2);
-        Block block2 = new BlockBuilder(world).parent(block1).transactions(tx2s).build();
+        Block block2 = new BlockBuilder(blockChain).parent(block1).transactions(tx2s).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), receiptStore, null, null, 10, 100);
-
-        Web3Impl web3 = createWeb3(world.getBlockChain(), transactionPool, receiptStore);
         web3.personal_newAccountWithSeed("default");
         web3.personal_newAccountWithSeed("notDefault");
-        return web3;
     }
 
-    private Web3Impl getWeb3WithContractCall(World world) {
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
+    private void addContractCall() {
+        Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
         // acc1 Account created address should be 661b05ca9eb621164906671efd2731ce0d7dd8b4
 
-        Block genesis = world.getBlockByName("g00");
+        Block genesis = blockChain.getBlockByNumber(0);
         Transaction tx;
         tx = getContractTransaction(acc1);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        BlockChainImpl blockChain = world.getBlockChain();
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
@@ -851,22 +702,17 @@ public class Web3ImplLogsTest {
         Transaction tx2 = getContractTransactionWithInvoke(acc1, contractAddress);
         List<Transaction> tx2s = new ArrayList<>();
         tx2s.add(tx2);
-        Block block2 = new BlockBuilder(world).parent(block1).transactions(tx2s).build();
+        Block block2 = new BlockBuilder(blockChain).parent(block1).transactions(tx2s).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Transaction tx3 = getContractTransactionWithCall(acc1, contractAddress);
         List<Transaction> tx3s = new ArrayList<>();
         tx3s.add(tx3);
-        Block block3 = new BlockBuilder(world).parent(block2).transactions(tx3s).build();
+        Block block3 = new BlockBuilder(blockChain).parent(block2).transactions(tx3s).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, null, null, 10, 100);
-
-        Web3Impl web3 = createWeb3(world.getBlockChain(), transactionPool);
         web3.personal_newAccountWithSeed("default");
         web3.personal_newAccountWithSeed("notDefault");
-
-        return web3;
     }
 
     private static Transaction getContractTransaction(Account acc1) {

@@ -81,60 +81,66 @@ public class EVMAssembler {
         try {
             while (tokens.hasMoreTokens()) {
                 String tok = tokens.nextToken();
-
-                try {
-                    if (tok.endsWith(":")) { // label
-                        int id = helper.getNewLabel(tok.substring(0, tok.length() - 1));
-                        helper.setLabelPosition(id, block, block.writeOffset());
-                    } else if (tok.startsWith("@")) { // ref
-                        String label = tok.substring(1);
-                        int id = helper.findLabel(label);
-                        if (id == -1)
-                            id = helper.getNewLabel(label);
-
-                        int pushOpcode = 4 + PUSH1.val() - 1; // four bytes ref
-                        block.writer().write(pushOpcode);
-                        block.addTag(block.writer().size(), id);
-                        block.writer().write(0);
-                        block.writer().write(0);
-                        block.writer().write(0);
-                        block.writer().write(0);
-
-                    }
-                    // Data can be inserted by prefixing by '!' (e.g. !0x00 inserts a STOP opcode)
-                    String aBin = extractInsertBinary(tok);
-                    if (aBin != null) {
-                        byte[] value = bigUIntToByteArray(parseValue(aBin));
-
-                        block.writer().write(value);
-                    } else {
-                        // Other hex data is inserted as a PUSH
-                        byte[] value = bigUIntToByteArray(parseValue(tok));
-                        if (value.length > 32) {
-                            return null;
-                        }
-                        int pushOpcode = value.length + PUSH1.val() - 1;
-                        block.writer().write(pushOpcode);
-                        block.writer().write(value);
-                    }
-                } catch (NumberFormatException e) {
-                    byte opcode = OpCode.byteVal(tok);
-                    block.writer().write(opcode);
-                /*if ((code>=PUSH1.val()) && (code<=PUSH32.val())) {
-                    int nPush = code - PUSH1.val() + 1;
-                }*/
-                }
+                assembleToken(block,tok);
                 errorToken++;
-
             }
             block.endWrite();
             if (!helper.performFixUp(block))
                 return null;
 
             return block.getCode();
-        } catch (IOException e) {
+        } catch (Exception e) {
             return null;
         }
 
+    }
+
+    public void assembleToken(CodeBlock block,String tok) throws Exception {
+        try {
+            if (tok.endsWith(":")) { // label
+                String label = tok.substring(0, tok.length() - 1);
+                int id = helper.findLabel(label);
+                if (id < 0)
+                    id = helper.getNewLabel(label);
+                helper.setLabelPosition(id, block, block.writeOffset());
+            } else if (tok.startsWith("@")) { // ref
+                String label = tok.substring(1);
+                int id = helper.findLabel(label);
+                if (id == -1)
+                    id = helper.getNewLabel(label);
+
+                int pushOpcode = 4 + PUSH1.val() - 1; // four bytes ref
+                block.writer().write(pushOpcode);
+                block.addTag(block.writer().size(), id);
+                block.writer().write(0);
+                block.writer().write(0);
+                block.writer().write(0);
+                block.writer().write(0);
+
+            } else {
+                // Data can be inserted by prefixing by '!' (e.g. !0x00 inserts a STOP opcode)
+                String aBin = extractInsertBinary(tok);
+                if (aBin != null) {
+                    byte[] value = bigUIntToByteArray(parseValue(aBin));
+
+                    block.writer().write(value);
+                } else {
+                    // Other hex data is inserted as a PUSH
+                    byte[] value = bigUIntToByteArray(parseValue(tok));
+                    if (value.length > 32) {
+                        throw new Exception("Invalid value");
+                    }
+                    int pushOpcode = value.length + PUSH1.val() - 1;
+                    block.writer().write(pushOpcode);
+                    block.writer().write(value);
+                }
+            }
+        } catch (NumberFormatException e) {
+            byte opcode = OpCode.byteVal(tok);
+            block.writer().write(opcode);
+                /*if ((code>=PUSH1.val()) && (code<=PUSH32.val())) {
+                    int nPush = code - PUSH1.val() + 1;
+                }*/
+        }
     }
 }

@@ -141,15 +141,6 @@ public class MinerClientImpl implements MinerClient {
 
         newBestBlockArrivedFromAnotherNode = false;
         work = minerServer.getWork();
-        if (work == null) {
-            logger.warn("No work to do");
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException ex) {
-                logger.error("Interrupted mining sleep", ex);
-            }
-            return false;
-        }
 
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);

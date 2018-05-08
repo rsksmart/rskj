@@ -18,7 +18,7 @@
 
 package co.rsk.db;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
@@ -40,7 +40,7 @@ import static org.ethereum.util.ByteUtil.toHexString;
  * Created by ajlopez on 05/04/2017.
  */
 public class ContractDetailsImplTest {
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private final int IN_MEMORY_STORAGE_LIMIT = config.detailsInMemoryStorageLimit();
 
     @Test

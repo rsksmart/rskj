@@ -19,7 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.TestHelpers.Tx;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -36,7 +36,7 @@ import java.util.*;
 
 public class MinerUtilsTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void getAllTransactionsTest() {

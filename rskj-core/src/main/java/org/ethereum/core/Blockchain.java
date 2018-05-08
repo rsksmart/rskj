@@ -69,8 +69,6 @@ public interface Blockchain {
 
     BlockChainStatus getStatus();
 
-    TransactionPool getTransactionPool();
-
     TransactionInfo getTransactionInfo(byte[] hash);
 
     void close();

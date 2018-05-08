@@ -19,7 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -30,7 +30,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.HelloMessage;
@@ -55,7 +55,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class BlockExecutorTest {
     public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
-    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void executeBlockWithoutTransaction() {
@@ -618,7 +618,7 @@ public class BlockExecutorTest {
         }
     }
 
-    public static class SimpleEthereumListener implements EthereumListener {
+    public static class SimpleEthereumListener extends TestCompositeEthereumListener {
         private Block latestBlock;
         private List<TransactionReceipt> latestReceipts;
         private String latestTransactionHash;

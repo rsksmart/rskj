@@ -19,6 +19,7 @@
 
 package org.ethereum.listener;
 
+import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
@@ -26,22 +27,31 @@ import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 import org.ethereum.vm.trace.ProgramTrace;
-import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 /**
  * @author Roman Mandeleil
  * @since 12.11.2014
  */
-@Component(value = "compositeEthereumListener")
 public class CompositeEthereumListener implements EthereumListener {
+    private static final Logger logger = LoggerFactory.getLogger("events");
+    private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     // Using a concurrent list
     // (the add and remove methods copy an internal array,
     // but the iterator directly use the internal array)
-    List<EthereumListener> listeners = new CopyOnWriteArrayList<>();
+    private final List<EthereumListener> listeners = new CopyOnWriteArrayList<>();
+    private final Executor executor;
+
+    public CompositeEthereumListener(Executor executor) {
+        this.executor = executor;
+    }
 
     public void addListener(EthereumListener listener) {
         listeners.add(listener);
@@ -52,113 +62,94 @@ public class CompositeEthereumListener implements EthereumListener {
 
     @Override
     public void trace(String output) {
-        for (EthereumListener listener : listeners) {
-            listener.trace(output);
-        }
+        scheduleListenerCallbacks(listener -> listener.trace(output));
     }
 
     @Override
     public void onBlock(Block block, List<TransactionReceipt> receipts) {
-        for (EthereumListener listener : listeners) {
-            listener.onBlock(block, receipts);
-        }
+        scheduleListenerCallbacks(listener -> listener.onBlock(block, receipts));
     }
 
     @Override
     public void onRecvMessage(Channel channel, Message message) {
-        for (EthereumListener listener : listeners) {
-            listener.onRecvMessage(channel, message);
-        }
+        scheduleListenerCallbacks(listener -> listener.onRecvMessage(channel, message));
     }
 
     @Override
     public void onPeerDisconnect(String host, long port) {
-        for (EthereumListener listener : listeners) {
-            listener.onPeerDisconnect(host, port);
-        }
+        scheduleListenerCallbacks(listener -> listener.onPeerDisconnect(host, port));
     }
 
     @Override
     public void onPendingTransactionsReceived(List<Transaction> transactions) {
-        for (EthereumListener listener : listeners) {
-            listener.onPendingTransactionsReceived(transactions);
-        }
+        scheduleListenerCallbacks(listener -> listener.onPendingTransactionsReceived(transactions));
     }
 
     @Override
     public void onTransactionPoolChanged(TransactionPool transactionPool) {
-        for (EthereumListener listener : listeners) {
-            listener.onTransactionPoolChanged(transactionPool);
-        }
+        scheduleListenerCallbacks(listener -> listener.onTransactionPoolChanged(transactionPool));
     }
 
     @Override
     public void onSyncDone() {
-        for (EthereumListener listener : listeners) {
-            listener.onSyncDone();
-        }
+        scheduleListenerCallbacks(EthereumListener::onSyncDone);
     }
 
     @Override
     public void onNoConnections() {
-        for (EthereumListener listener : listeners) {
-            listener.onNoConnections();
-        }
+        scheduleListenerCallbacks(EthereumListener::onNoConnections);
     }
 
     @Override
     public void onHandShakePeer(Channel channel, HelloMessage helloMessage) {
-        for (EthereumListener listener : listeners) {
-            listener.onHandShakePeer(channel, helloMessage);
-        }
+        scheduleListenerCallbacks(listener -> listener.onHandShakePeer(channel, helloMessage));
     }
 
     @Override
     public void onVMTraceCreated(String transactionHash, ProgramTrace trace) {
-        for (EthereumListener listener : listeners) {
-            listener.onVMTraceCreated(transactionHash, trace);
-        }
+        scheduleListenerCallbacks(listener -> listener.onVMTraceCreated(transactionHash, trace));
     }
 
     @Override
     public void onNodeDiscovered(Node node) {
-        for (EthereumListener listener : listeners) {
-            listener.onNodeDiscovered(node);
-        }
+        scheduleListenerCallbacks(listener -> listener.onNodeDiscovered(node));
     }
 
     @Override
     public void onEthStatusUpdated(Channel channel, StatusMessage status) {
-        for (EthereumListener listener : listeners) {
-            listener.onEthStatusUpdated(channel, status);
-        }
+        scheduleListenerCallbacks(listener -> listener.onEthStatusUpdated(channel, status));
     }
 
     @Override
     public void onTransactionExecuted(TransactionExecutionSummary summary) {
-        for (EthereumListener listener : listeners) {
-            listener.onTransactionExecuted(summary);
-        }
+        scheduleListenerCallbacks(listener -> listener.onTransactionExecuted(summary));
     }
 
     @Override
     public void onPeerAddedToSyncPool(Channel peer) {
-        for (EthereumListener listener : listeners) {
-            listener.onPeerAddedToSyncPool(peer);
-        }
+        scheduleListenerCallbacks(listener -> listener.onPeerAddedToSyncPool(peer));
     }
 
     @Override
     public void onLongSyncDone() {
-        for (EthereumListener listener : listeners) {
-            listener.onLongSyncDone();
-        }
+        scheduleListenerCallbacks(EthereumListener::onLongSyncDone);
     }
 
     @Override
     public void onLongSyncStarted() {
+        scheduleListenerCallbacks(EthereumListener::onLongSyncStarted);
+    }
+
+    private void scheduleListenerCallbacks(Consumer<EthereumListener> callback) {
         for (EthereumListener listener : listeners) {
-            listener.onLongSyncStarted();
+            executor.execute(() -> {
+                try {
+                    callback.accept(listener);
+                } catch (Exception e) {
+                    logger.error("Listener callback failed with exception", e);
+                    panicProcessor.panic("thread", String.format("Listener callback failed with exception %s", e.getMessage()));
+                }
+            });
         }
     }
 }

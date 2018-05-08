@@ -18,7 +18,7 @@
 
 package co.rsk.net.handler.txvalidator;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -80,7 +80,7 @@ public class TxValidatorAccountBalanceValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
-                new RskSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
+                new TestSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
 
         tx.sign(new ECKey().getPrivKeyBytes());
 

@@ -19,7 +19,7 @@
 
 package org.ethereum.datasource;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -34,11 +34,11 @@ import static org.junit.Assert.assertNotNull;
 @Ignore
 public class LevelDbDataSourceTest {
 
-    private RskSystemProperties config;
+    private TestSystemProperties config;
 
     @Before
     public void setup(){
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
     }
 
     @Test
