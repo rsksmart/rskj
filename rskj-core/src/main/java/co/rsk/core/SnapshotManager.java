@@ -33,13 +33,20 @@ import java.util.stream.Collectors;
  */
 public class SnapshotManager {
     private List<Long> snapshots = new ArrayList<>();
+    private final Blockchain blockchain;
+    private final TransactionPool transactionPool;
 
-    public int takeSnapshot(Blockchain blockchain) {
-        snapshots.add(Long.valueOf(blockchain.getBestBlock().getNumber()));
+    public SnapshotManager(Blockchain blockchain, TransactionPool transactionPool) {
+        this.blockchain = blockchain;
+        this.transactionPool = transactionPool;
+    }
+
+    public int takeSnapshot() {
+        snapshots.add(blockchain.getBestBlock().getNumber());
         return this.snapshots.size();
     }
 
-    public boolean resetSnapshots(Blockchain blockchain, TransactionPool transactionPool) {
+    public boolean resetSnapshots() {
         this.snapshots = new ArrayList<>();
 
         long bestNumber = blockchain.getBestBlock().getNumber();
@@ -65,16 +72,14 @@ public class SnapshotManager {
         return true;
     }
 
-    public boolean revertToSnapshot(Blockchain blockchain, TransactionPool transactionPool, int snapshotId) {
+    public boolean revertToSnapshot(int snapshotId) {
         if (snapshotId <= 0 || snapshotId > this.snapshots.size()) {
             return false;
         }
 
-        long newBestBlockNumber = this.snapshots.get(snapshotId - 1).longValue();
+        long newBestBlockNumber = this.snapshots.get(snapshotId - 1);
 
-        List<Long> newSnapshots = this.snapshots.stream().limit(snapshotId).collect(Collectors.toList());
-
-        this.snapshots = newSnapshots;
+        this.snapshots = this.snapshots.stream().limit(snapshotId).collect(Collectors.toList());
 
         long currentBestBlockNumber = blockchain.getBestBlock().getNumber();
 
