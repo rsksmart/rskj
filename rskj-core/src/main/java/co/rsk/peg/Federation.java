@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  *
  * @author Ariel Mendelzon
  */
-public final class Federation {
+public class Federation {
     private final List<BtcECKey> publicKeys;
     private final List<ECKey> rskPublicKeys;
     private final Instant creationTime;

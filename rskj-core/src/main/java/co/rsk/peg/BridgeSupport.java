@@ -68,8 +68,6 @@ public class BridgeSupport {
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private enum StorageFederationReference { NONE, NEW, OLD, GENESIS;}
-
     private final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(
             "create",
             "add",
@@ -82,34 +80,13 @@ public class BridgeSupport {
     private final RskSystemProperties config;
     private final BridgeEventLogger eventLogger;
 
+    private final FederationSupport federationSupport;
+
     private Context btcContext;
     private BtcBlockstoreWithCache btcBlockStore;
     private BtcBlockChain btcBlockChain;
     private org.ethereum.core.Block rskExecutionBlock;
     private StoredBlock initialBtcStoredBlock;
-
-    // Used by remasc
-    public BridgeSupport(
-            RskSystemProperties config,
-            Repository repository,
-            RskAddress contractAddress,
-            Block rskExecutionBlock) {
-        this(
-                repository,
-                new BridgeStorageProvider(
-                        repository,
-                        contractAddress,
-                        config.getBlockchainConfig().getCommonConstants().getBridgeConstants()
-                ),
-                rskExecutionBlock,
-                config,
-                config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
-                null
-        );
-        this.btcContext = null;
-        this.btcBlockStore = null;
-        this.btcBlockChain = null;
-    }
 
     // Used by unit tests
     public BridgeSupport(
@@ -119,11 +96,12 @@ public class BridgeSupport {
             BridgeConstants bridgeConstants,
             BridgeStorageProvider provider,
             BtcBlockstoreWithCache btcBlockStore,
-            BtcBlockChain btcBlockChain) {
+            BtcBlockChain btcBlockChain,
+            Block executionBlock) {
         this(
                 repository,
                 provider,
-                null,
+                executionBlock,
                 config,
                 bridgeConstants,
                 eventLogger
@@ -187,6 +165,7 @@ public class BridgeSupport {
         this.config = config;
         this.bridgeConstants = bridgeConstants;
         this.eventLogger = eventLogger;
+        this.federationSupport = new FederationSupport(provider, bridgeConstants, executionBlock);
     }
 
     private RepositoryBlockStore buildRepositoryBlockStore() throws BlockStoreException, IOException {
@@ -198,7 +177,7 @@ public class BridgeSupport {
         );
         if (btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
             // We are building the blockstore for the first time, so we have not set the checkpoints yet.
-            long time = getActiveFederation().getCreationTime().toEpochMilli();
+            long time = federationSupport.getActiveFederation().getCreationTime().toEpochMilli();
             InputStream checkpoints = this.getCheckPoints();
             if (time > 0 && checkpoints != null) {
                 CheckpointManager.checkpoint(btcParams, checkpoints, btcBlockStore, time);
@@ -334,15 +313,20 @@ public class BridgeSupport {
         }
 
         if (height < 0) {
-            logger.warn("Height is " + height + " but should be greater than 0");
-            panicProcessor.panic("btclock", "Height is " + height + " but should be greater than 0");
+            String panicMessage = String.format("Height is %d but should be greater than 0", height);
+            logger.warn(panicMessage);
+            panicProcessor.panic("btclock", panicMessage);
             return;
         }
 
         // Check there are at least N blocks on top of the supplied height
         int confirmations = btcBlockChain.getBestChainHeight() - height + 1;
         if (confirmations < bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()) {
-            logger.warn("At least " + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() + " confirmations are required, but there are only " + confirmations + " confirmations");
+            logger.warn(
+                    "At least {} confirmations are required, but there are only {} confirmations",
+                    bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+                    confirmations
+            );
             return;
         }
 
@@ -355,8 +339,13 @@ public class BridgeSupport {
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         BtcBlock blockHeader = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height).getHeader();
         if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
-            logger.warn("Supplied merkle root " + merkleRoot + "does not match block's merkle root " + blockHeader.getMerkleRoot());
-            panicProcessor.panic("btclock", "Supplied merkle root " + merkleRoot + "does not match block's merkle root " + blockHeader.getMerkleRoot());
+            String panicMessage = String.format(
+                    "Supplied merkle root %s does not match block's merkle root %s",
+                    merkleRoot,
+                    blockHeader.getMerkleRoot()
+            );
+            logger.warn(panicMessage);
+            panicProcessor.panic("btclock", panicMessage);
             return;
         }
 
@@ -371,7 +360,11 @@ public class BridgeSupport {
             logger.debug("This is a lock tx {}", btcTx);
             Optional<Script> scriptSig = BridgeUtils.getFirstInputScriptSig(btcTx);
             if (!scriptSig.isPresent()) {
-                logger.warn("[btctx:{}] First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0), btcTx.getHash());
+                logger.warn(
+                        "[btctx:{}] First input does not spend a Pay-to-PubkeyHash {}",
+                        btcTx.getHash(),
+                        btcTx.getInput(0)
+                );
                 return;
             }
 
@@ -821,12 +814,11 @@ public class BridgeSupport {
      * The hash for the signature must be calculated with Transaction.SigHash.ALL and anyoneCanPay=false. The signature must be canonical.
      * If enough signatures were added, ask federators to broadcast the btc release tx.
      *
-     * @param executionBlockNumber The block number of the block that is currently being procesed
      * @param federatorPublicKey   Federator who is signing
      * @param signatures           1 signature per btc tx input
      * @param rskTxHash            The id of the rsk tx
      */
-    public void addSignature(long executionBlockNumber, BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
+    public void addSignature(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
         Context.propagate(btcContext);
         Federation retiringFederation = getRetiringFederation();
         if (!getActiveFederation().getPublicKeys().contains(federatorPublicKey) && (retiringFederation == null || !retiringFederation.getPublicKeys().contains(federatorPublicKey))) {
@@ -843,10 +835,10 @@ public class BridgeSupport {
             return;
         }
         eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
-        processSigning(executionBlockNumber, federatorPublicKey, signatures, rskTxHash, btcTx);
+        processSigning(federatorPublicKey, signatures, rskTxHash, btcTx);
     }
 
-    private void processSigning(long executionBlockNumber, BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash, BtcTransaction btcTx) throws IOException {
+    private void processSigning(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash, BtcTransaction btcTx) throws IOException {
         // Build input hashes for signatures
         int numInputs = btcTx.getInputs().size();
 
@@ -1087,100 +1079,12 @@ public class BridgeSupport {
     }
 
     /**
-     * Returns the currently active federation reference.
-     * Logic is as follows:
-     * When no "new" federation is recorded in the blockchain, then return GENESIS
-     * When a "new" federation is present and no "old" federation is present, then return NEW
-     * When both "new" and "old" federations are present, then
-     * 1) If the "new" federation is at least bridgeConstants::getFederationActivationAge() blocks old,
-     * return the NEW
-     * 2) Otherwise, return OLD
-     * @return a reference to where the currently active federation is stored.
-     */
-    private StorageFederationReference getActiveFederationReference() {
-        Federation newFederation = provider.getNewFederation();
-
-        // No new federation in place, then the active federation
-        // is the genesis federation
-        if (newFederation == null) {
-            return StorageFederationReference.GENESIS;
-        }
-
-        Federation oldFederation = provider.getOldFederation();
-
-        // No old federation in place, then the active federation
-        // is the new federation
-        if (oldFederation == null) {
-            return StorageFederationReference.NEW;
-        }
-
-        // Both new and old federations in place
-        // If the minimum age has gone by for the new federation's
-        // activation, then that federation is the currently active.
-        // Otherwise, the old federation is still the currently active.
-        if (shouldFederationBeActive(newFederation)) {
-            return StorageFederationReference.NEW;
-        }
-
-        return StorageFederationReference.OLD;
-    }
-
-    /**
-     * Returns the currently retiring federation reference.
-     * Logic is as follows:
-     * When no "new" or "old" federation is recorded in the blockchain, then return empty.
-     * When both "new" and "old" federations are present, then
-     * 1) If the "new" federation is at least bridgeConstants::getFederationActivationAge() blocks old,
-     * return OLD
-     * 2) Otherwise, return empty
-     * @return the retiring federation.
-     */
-    private StorageFederationReference getRetiringFederationReference() {
-        Federation newFederation = provider.getNewFederation();
-        Federation oldFederation = provider.getOldFederation();
-
-        if (oldFederation == null || newFederation == null) {
-            return StorageFederationReference.NONE;
-        }
-
-        // Both new and old federations in place
-        // If the minimum age has gone by for the new federation's
-        // activation, then the old federation is the currently retiring.
-        // Otherwise, there is no retiring federation.
-        if (shouldFederationBeActive(newFederation)) {
-            return StorageFederationReference.OLD;
-        }
-
-        return StorageFederationReference.NONE;
-    }
-
-    private boolean shouldFederationBeActive(Federation federation) {
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        return federationAge >= bridgeConstants.getFederationActivationAge();
-    }
-
-    private boolean amAwaitingFederationActivation() {
-        Federation newFederation = provider.getNewFederation();
-        Federation oldFederation = provider.getOldFederation();
-
-        return newFederation != null && oldFederation != null && !shouldFederationBeActive(newFederation);
-    }
-
-    /**
      * Returns the currently active federation.
      * See getActiveFederationReference() for details.
      * @return the currently active federation.
      */
     public Federation getActiveFederation() {
-        switch (getActiveFederationReference()) {
-            case NEW:
-                return provider.getNewFederation();
-            case OLD:
-                return provider.getOldFederation();
-            case GENESIS:
-            default:
-                return bridgeConstants.getGenesisFederation();
-        }
+        return federationSupport.getActiveFederation();
     }
 
     /**
@@ -1190,34 +1094,15 @@ public class BridgeSupport {
      */
     @Nullable
     public Federation getRetiringFederation() {
-        switch (getRetiringFederationReference()) {
-            case OLD:
-                return provider.getOldFederation();
-            case NONE:
-            default:
-                return null;
-        }
+        return federationSupport.getRetiringFederation();
     }
 
     private List<UTXO> getActiveFederationBtcUTXOs() throws IOException {
-        switch (getActiveFederationReference()) {
-            case OLD:
-                return provider.getOldFederationBtcUTXOs();
-            case NEW:
-            case GENESIS:
-            default:
-                return provider.getNewFederationBtcUTXOs();
-        }
+        return federationSupport.getActiveFederationBtcUTXOs();
     }
 
     private List<UTXO> getRetiringFederationBtcUTXOs() throws IOException {
-        switch (getRetiringFederationReference()) {
-            case OLD:
-                return provider.getOldFederationBtcUTXOs();
-            case NONE:
-            default:
-                return Collections.emptyList();
-        }
+        return federationSupport.getRetiringFederationBtcUTXOs();
     }
 
     /**
@@ -1233,7 +1118,7 @@ public class BridgeSupport {
      * @return the federation size
      */
     public Integer getFederationSize() {
-        return getActiveFederation().getPublicKeys().size();
+        return federationSupport.getFederationSize();
     }
 
     /**
@@ -1250,13 +1135,7 @@ public class BridgeSupport {
      * @return the federator's public key
      */
     public byte[] getFederatorPublicKey(int index) {
-        List<BtcECKey> publicKeys = getActiveFederation().getPublicKeys();
-
-        if (index < 0 || index >= publicKeys.size()) {
-            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and {}", publicKeys.size() - 1));
-        }
-
-        return publicKeys.get(index).getPubKey();
+        return federationSupport.getFederatorPublicKey(index);
     }
 
     /**
@@ -1396,7 +1275,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        if (amAwaitingFederationActivation()) {
+        if (federationSupport.amAwaitingFederationActivation()) {
             return -2;
         }
 
