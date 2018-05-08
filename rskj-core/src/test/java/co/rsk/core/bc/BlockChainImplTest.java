@@ -37,7 +37,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
@@ -795,7 +795,7 @@ public class BlockChainImplTest {
 
     @Test
     public void createWithoutArgumentsAndUnusedMethods() {
-        BlockChainImpl blockChain = new BlockChainImpl(config, null, null, null, null, null, null, new DummyBlockValidator());
+        BlockChainImpl blockChain = new BlockChainImpl(config, null, null, null, null, null, new DummyBlockValidator());
         blockChain.setExitOn(0);
         blockChain.close();
     }
@@ -904,13 +904,9 @@ public class BlockChainImplTest {
 
         AdminInfo adminInfo = new SimpleAdminInfo();
 
-        EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
+        CompositeEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
-        BlockChainImpl blockChain = new BlockChainImpl(config, repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator);
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
-        blockChain.setTransactionPool(transactionPool);
-
-        return blockChain;
+        return new BlockChainImpl(config, repository, blockStore, receiptStore, listener, adminInfo, blockValidator);
     }
 
     public static Block getGenesisBlock(BlockChainImpl blockChain) {

@@ -29,7 +29,8 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
@@ -63,7 +64,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private final Repository repository;
     private final ReceiptStore receiptStore;
     private final ProgramInvokeFactory programInvokeFactory;
-    private final EthereumListener listener;
+    private final CompositeEthereumListener listener;
     private final int outdatedThreshold;
     private final int outdatedTimeout;
 
@@ -77,7 +78,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     public TransactionPoolImpl(BlockStore blockStore,
                                ReceiptStore receiptStore,
-                               EthereumListener listener,
+                               CompositeEthereumListener listener,
                                ProgramInvokeFactory programInvokeFactory,
                                Repository repository,
                                RskSystemProperties config) {
@@ -96,7 +97,7 @@ public class TransactionPoolImpl implements TransactionPool {
                                BlockStore blockStore,
                                ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory,
-                               EthereumListener listener,
+                               CompositeEthereumListener listener,
                                int outdatedThreshold,
                                int outdatedTimeout) {
         this.config = config;
@@ -124,6 +125,8 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
+
+        this.listener.addListener(new OnBlockListener());
     }
 
     public void stop() {
@@ -140,10 +143,6 @@ public class TransactionPoolImpl implements TransactionPool {
     public void cleanUp() {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         this.removeObsoleteTransactions(timestampSeconds - this.outdatedTimeout);
-    }
-
-    public BlockStore getBlockStore() {
-        return blockStore;
     }
 
     public int getOutdatedThreshold() { return outdatedThreshold; }
@@ -183,10 +182,8 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         if (listener != null && !added.isEmpty()) {
-            EventDispatchThread.invokeLater(() -> {
-                listener.onPendingTransactionsReceived(added);
-                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
-            });
+            listener.onPendingTransactionsReceived(added);
+            listener.onTransactionPoolChanged(TransactionPoolImpl.this);
         }
 
         return added;
@@ -243,10 +240,8 @@ public class TransactionPoolImpl implements TransactionPool {
         executeTransaction(tx);
 
         if (listener != null) {
-            EventDispatchThread.invokeLater(() -> {
-                listener.onPendingTransactionsReceived(Collections.singletonList(tx));
-                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
-            });
+            listener.onPendingTransactionsReceived(Collections.singletonList(tx));
+            listener.onTransactionPoolChanged(TransactionPoolImpl.this);
         }
 
         return true;
@@ -289,7 +284,7 @@ public class TransactionPoolImpl implements TransactionPool {
         bestBlock = block;
 
         if (listener != null) {
-            EventDispatchThread.invokeLater(() -> listener.onTransactionPoolChanged(TransactionPoolImpl.this));
+            listener.onTransactionPoolChanged(TransactionPoolImpl.this);
         }
     }
 
@@ -464,6 +459,8 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     public static class TransactionSortedSet extends TreeSet<Transaction> {
+        private static final long serialVersionUID = -6064476246506094585L;
+
         public TransactionSortedSet() {
             super((tx1, tx2) -> {
                 long nonceDiff = ByteUtil.byteArrayToLong(tx1.getNonce()) -
@@ -473,6 +470,13 @@ public class TransactionPoolImpl implements TransactionPool {
                 }
                 return tx1.getHash().compareTo(tx2.getHash());
             });
+        }
+    }
+
+    private class OnBlockListener extends EthereumListenerAdapter {
+        @Override
+        public void onBlock(Block block, List<TransactionReceipt> receipts) {
+            processBest(block);
         }
     }
 }

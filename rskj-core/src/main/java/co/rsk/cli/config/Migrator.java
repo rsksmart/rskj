@@ -1,15 +1,32 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2018 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.cli.config;
 
-import co.rsk.cli.OptionalizableArgument;
+import co.rsk.cli.CliArg;
+import co.rsk.cli.OptionalizableCliArg;
 import com.typesafe.config.*;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.*;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.Enumeration;
+import java.util.Properties;
 
 public class Migrator {
 
@@ -51,7 +68,7 @@ public class Migrator {
         return migratedConfig.root().render(ConfigRenderOptions.defaults().setOriginComments(false).setJson(false));
     }
 
-    public enum MigratorOptions implements OptionalizableArgument {
+    public enum MigratorOptions implements OptionalizableCliArg {
         INPUT_FILE("i", false),
         OUTPUT_FILE("o", true),
         MIGRATION_FILE("m", false),
@@ -70,14 +87,13 @@ public class Migrator {
             return optional;
         }
 
-        public static MigratorOptions getByOptionName(String optionName) {
-            Optional<MigratorOptions> cliOption = Stream.of(values()).filter(option -> option.optionName.equals(optionName)).findFirst();
-            return cliOption.orElseThrow(() -> new NoSuchElementException(String.format("-%s is not a valid option", optionName)));
+        @Override
+        public String getName() {
+            return optionName;
         }
-
     }
 
-    public enum MigratorFlags {
+    public enum MigratorFlags implements CliArg {
         REPLACE_IN_PLACE("replace"),
         ;
 
@@ -87,9 +103,9 @@ public class Migrator {
             this.flagName = flagName;
         }
 
-        public static MigratorFlags getByFlagName(String flagName) {
-            Optional<MigratorFlags> cliFlag = Stream.of(values()).filter(flag -> flag.flagName.equals(flagName)).findFirst();
-            return cliFlag.orElseThrow(() -> new NoSuchElementException(String.format("--%s is not a valid flag", flagName)));
+        @Override
+        public String getName() {
+            return flagName;
         }
     }
 }

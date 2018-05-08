@@ -59,10 +59,6 @@ public class BlockchainDummy implements Blockchain {
 
     }
 
-    public TransactionPool getTransactionPool() {
-        return null;
-    }
-
     @Override
     public BlockChainStatus getStatus() {
         return null;

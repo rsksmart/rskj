@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,29 +15,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk;
 
-import org.ethereum.config.DefaultConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
- * The entrypoint for the RSK full node
+ * The entry interface of an RSK node. Think of full node, federate node, and maybe others in the future.
  */
-public class Start {
-    private static Logger logger = LoggerFactory.getLogger("start");
+public interface NodeRunner {
+    void run() throws Exception;
 
-    public static void main(String[] args) {
-        NodeBootstrapper ctx = new SpringNodeBootstrapper(DefaultConfig.class, args);
-        NodeRunner runner = ctx.getNodeRunner();
-        try {
-            runner.run();
-            Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            runner.stop();
-            System.exit(1);
-        }
-    }
+    void stop();
 }

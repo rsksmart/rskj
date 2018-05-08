@@ -19,10 +19,8 @@
 
 package org.ethereum.config;
 
-import co.rsk.config.ConfigLoader;
-import co.rsk.config.GasLimitConfig;
-import co.rsk.config.MiningConfig;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.cli.CliArgs;
+import co.rsk.config.*;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.crypto.Keccak256;
@@ -134,8 +132,8 @@ public class DefaultConfig {
     }
 
     @Bean
-    public RskSystemProperties rskSystemProperties() {
-        return new RskSystemProperties(new ConfigLoader());
+    public RskSystemProperties rskSystemProperties(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
+        return new RskSystemProperties(new ConfigLoader(cliArgs));
     }
 
     @Bean

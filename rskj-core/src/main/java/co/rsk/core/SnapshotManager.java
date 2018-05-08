@@ -33,16 +33,21 @@ import java.util.stream.Collectors;
  */
 public class SnapshotManager {
     private List<Long> snapshots = new ArrayList<>();
+    private final Blockchain blockchain;
+    private final TransactionPool transactionPool;
 
-    public int takeSnapshot(Blockchain blockchain) {
-        snapshots.add(Long.valueOf(blockchain.getBestBlock().getNumber()));
+    public SnapshotManager(Blockchain blockchain, TransactionPool transactionPool) {
+        this.blockchain = blockchain;
+        this.transactionPool = transactionPool;
+    }
+
+    public int takeSnapshot() {
+        snapshots.add(blockchain.getBestBlock().getNumber());
         return this.snapshots.size();
     }
 
-    public boolean resetSnapshots(Blockchain blockchain) {
+    public boolean resetSnapshots() {
         this.snapshots = new ArrayList<>();
-
-        TransactionPool transactionPool = blockchain.getTransactionPool();
 
         long bestNumber = blockchain.getBestBlock().getNumber();
 
@@ -54,7 +59,7 @@ public class SnapshotManager {
         blockchain.setStatus(block, difficulty);
 
         // To clean pending state, first process the fork
-        blockchain.getTransactionPool().processBest(block);
+        transactionPool.processBest(block);
         // then, clear any reverted transaction
         transactionPool.removeTransactions(transactionPool.getPendingTransactions());
         transactionPool.removeTransactions(transactionPool.getQueuedTransactions());
@@ -67,18 +72,14 @@ public class SnapshotManager {
         return true;
     }
 
-    public boolean revertToSnapshot(Blockchain blockchain, int snapshotId) {
+    public boolean revertToSnapshot(int snapshotId) {
         if (snapshotId <= 0 || snapshotId > this.snapshots.size()) {
             return false;
         }
 
-        long newBestBlockNumber = this.snapshots.get(snapshotId - 1).longValue();
+        long newBestBlockNumber = this.snapshots.get(snapshotId - 1);
 
-        List<Long> newSnapshots = this.snapshots.stream().limit(snapshotId).collect(Collectors.toList());
-
-        this.snapshots = newSnapshots;
-
-        TransactionPool transactionPool = blockchain.getTransactionPool();
+        this.snapshots = this.snapshots.stream().limit(snapshotId).collect(Collectors.toList());
 
         long currentBestBlockNumber = blockchain.getBestBlock().getNumber();
 
@@ -94,7 +95,7 @@ public class SnapshotManager {
         blockchain.setStatus(block, difficulty);
 
         // To clean pending state, first process the fork
-        blockchain.getTransactionPool().processBest(block);
+        transactionPool.processBest(block);
         // then, clear any reverted transaction
         transactionPool.removeTransactions(transactionPool.getPendingTransactions());
         transactionPool.removeTransactions(transactionPool.getQueuedTransactions());

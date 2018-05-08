@@ -28,7 +28,6 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.test.World;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -38,6 +37,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,8 +45,10 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
@@ -59,11 +61,17 @@ public class MinerServerTest {
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
 
     private BlockChainImpl blockchain;
+    private Repository repository;
+    private BlockStore blockStore;
+    private TransactionPool transactionPool;
 
     @Before
     public void setUp() {
-        World world = new World();
-        blockchain = world.getBlockChain();
+        RskTestFactory factory = new RskTestFactory();
+        blockchain = factory.getBlockchain();
+        repository = factory.getRepository();
+        blockStore = factory.getBlockStore();
+        transactionPool = factory.getTransactionPool();
     }
 
     @Test
@@ -71,7 +79,7 @@ public class MinerServerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Repository repository = Mockito.mock(Repository.class);
         Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
-        Mockito.when(repository.getRoot()).thenReturn(blockchain.getRepository().getRoot());
+        Mockito.when(repository.getRoot()).thenReturn(this.repository.getRoot());
         Mockito.when(repository.startTracking()).thenReturn(repository);
 
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
@@ -102,7 +110,7 @@ public class MinerServerTest {
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
-                        this.blockchain.getBlockStore(),
+                        blockStore,
                         localTransactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
@@ -140,9 +148,9 @@ public class MinerServerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        blockchain.getBlockStore(),
-                        blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -203,9 +211,9 @@ public class MinerServerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        blockchain.getBlockStore(),
-                        blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -251,9 +259,9 @@ public class MinerServerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        blockchain.getBlockStore(),
-                        blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -302,9 +310,9 @@ public class MinerServerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        blockchain.getBlockStore(),
-                        blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -360,9 +368,9 @@ public class MinerServerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        blockchain.getBlockStore(),
-                        blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -410,9 +418,9 @@ public class MinerServerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        blockchain.getBlockStore(),
-                        blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -465,9 +473,9 @@ public class MinerServerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        this.blockchain.getBlockStore(),
-                        this.blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -502,9 +510,9 @@ public class MinerServerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        this.blockchain.getBlockStore(),
-                        this.blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -539,9 +547,9 @@ public class MinerServerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        this.blockchain.getBlockStore(),
-                        this.blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -580,9 +588,9 @@ public class MinerServerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
-                        blockchain.getRepository(),
-                        blockchain.getBlockStore(),
-                        blockchain.getTransactionPool(),
+                        repository,
+                        blockStore,
+                        transactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,

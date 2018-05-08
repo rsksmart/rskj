@@ -70,6 +70,7 @@ public abstract class SystemProperties {
     private static final int DEFAULT_RPC_PORT = 4444;
     private static Logger logger = LoggerFactory.getLogger("general");
 
+    public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
     public static final String PROPERTY_DB_DIR = "database.dir";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_PEER_ACTIVE = "peer.active";
@@ -95,12 +96,11 @@ public abstract class SystemProperties {
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ValidateMe {}
 
-    protected Config configFromFiles;
+    protected final Config configFromFiles;
 
     // mutable options for tests
     private String databaseDir = null;
     private String fallbackMiningKeysDir = null;
-    private Boolean databaseReset = null;
     private String projectVersion = null;
     private String projectVersionModifier = null;
 
@@ -115,7 +115,7 @@ public abstract class SystemProperties {
     
     protected SystemProperties(ConfigLoader loader) {
         try {
-            this.configFromFiles = loader.getConfigFromFiles();
+            this.configFromFiles = loader.getConfig();
             logger.trace(
                     "Config trace: {}",
                     configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
@@ -123,8 +123,9 @@ public abstract class SystemProperties {
             validateConfig();
 
             Properties props = new Properties();
-            InputStream is = getClass().getResourceAsStream("/version.properties");
-            props.load(is);
+            try (InputStream is = getClass().getResourceAsStream("/version.properties")) {
+                props.load(is);
+            }
             this.projectVersion = getProjectVersion(props);
             this.projectVersionModifier = getProjectVersionModifier(props);
 
@@ -150,49 +151,6 @@ public abstract class SystemProperties {
 
     public Config getConfig() {
         return configFromFiles;
-    }
-
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param overrideOptions - atop config
-     */
-    public void overrideParams(Config overrideOptions) {
-        configFromFiles = overrideOptions.withFallback(configFromFiles);
-        validateConfig();
-    }
-
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param keyValuePairs [name] [value] [name] [value] ...
-     */
-    public void overrideParams(String ... keyValuePairs) {
-        if (keyValuePairs.length % 2 != 0) {
-            throw new RuntimeException("Odd argument number");
-        }
-
-        Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < keyValuePairs.length; i += 2) {
-            map.put(keyValuePairs[i], keyValuePairs[i + 1]);
-        }
-        overrideParams(map);
-    }
-
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param cliOptions -  command line options to take presidency
-     */
-    public void overrideParams(Map<String, String> cliOptions) {
-        Config cliConf = ConfigFactory.parseMap(cliOptions);
-        overrideParams(cliConf);
     }
 
     private void validateConfig() {
@@ -225,7 +183,10 @@ public abstract class SystemProperties {
         if (blockchainConfig == null) {
             String netName = netName();
             if (netName != null && configFromFiles.hasPath("blockchain.config.class")) {
-                throw new RuntimeException("Only one of two options should be defined: 'blockchain.config.name' and 'blockchain.config.class'");
+                throw new RuntimeException(String.format(
+                        "Only one of two options should be defined: '%s' and 'blockchain.config.class'",
+                        PROPERTY_BC_CONFIG_NAME)
+                );
             }
             if (netName != null) {
                 switch(netName) {
@@ -245,7 +206,11 @@ public abstract class SystemProperties {
                         blockchainConfig = new RegTestConfig();
                         break;
                     default:
-                        throw new RuntimeException("Unknown value for 'blockchain.config.name': '" + configFromFiles.getString("blockchain.config.name") + "'");
+                        throw new RuntimeException(String.format(
+                                "Unknown value for '%s': '%s'",
+                                PROPERTY_BC_CONFIG_NAME,
+                                netName)
+                        );
                 }
             } else {
                 String className = configFromFiles.getString("blockchain.config.class");
@@ -300,11 +265,7 @@ public abstract class SystemProperties {
 
     @ValidateMe
     public boolean databaseReset() {
-        return databaseReset == null ? configFromFiles.getBoolean("database.reset") : databaseReset;
-    }
-
-    public void setDatabaseReset(Boolean reset) {
-        databaseReset = reset;
+        return configFromFiles.getBoolean("database.reset");
     }
 
     @ValidateMe
@@ -498,8 +459,8 @@ public abstract class SystemProperties {
                 props.setProperty("nodeId", Hex.toHexString(key.getNodeId()));
                 file.getParentFile().mkdirs();
                 props.store(new FileWriter(file), "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
-                logger.info("New nodeID generated: " + props.getProperty("nodeId"));
-                logger.info("Generated nodeID and its private key stored in " + file);
+                logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
+                logger.info("Generated nodeID and its private key stored in {}", file);
             }
             return props.getProperty("nodeIdPrivateKey");
         } catch (IOException e) {
@@ -722,7 +683,7 @@ public abstract class SystemProperties {
     }
 
     public String netName() {
-        return configFromFiles.hasPath("blockchain.config.name") ? configFromFiles.getString("blockchain.config.name") : null;
+        return configFromFiles.getString(PROPERTY_BC_CONFIG_NAME);
     }
 
     public boolean isRpcEnabled() {

@@ -24,6 +24,7 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
+import org.ethereum.listener.TestCompositeEthereumListener;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -50,7 +51,7 @@ public class SimpleEthereum implements Ethereum {
     @Override
     public void addListener(EthereumListener listener) {
         if (this.listener == null) {
-            this.listener = new CompositeEthereumListener();
+            this.listener = new TestCompositeEthereumListener();
         }
         ((CompositeEthereumListener) this.listener).addListener(listener);
     }
