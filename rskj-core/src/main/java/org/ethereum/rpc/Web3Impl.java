@@ -179,7 +179,7 @@ public class Web3Impl implements Web3 {
                 config.projectVersionModifier() + "-" + BuildInfo.getBuildHash();
 
         if (logger.isDebugEnabled()) {
-            logger.debug("web3_clientVersion(): " + clientVersion);
+            logger.debug("web3_clientVersion(): {}", clientVersion);
         }
 
         return clientVersion;
@@ -207,7 +207,7 @@ public class Web3Impl implements Web3 {
         }
         finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("net_version(): " + s);
+                logger.debug("net_version(): {}", s);
             }
         }
     }
@@ -220,7 +220,7 @@ public class Web3Impl implements Web3 {
             return s = TypeConverter.toJsonHex(n);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("net_peerCount(): " + s);
+                logger.debug("net_peerCount(): {}", s);
             }
         }
     }
@@ -233,7 +233,7 @@ public class Web3Impl implements Web3 {
             return s = peerServer.isListening();
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("net_listening(): " + s);
+                logger.debug("net_listening(): {}", s);
             }
         }
     }
@@ -253,7 +253,7 @@ public class Web3Impl implements Web3 {
             return s = Integer.toString(version);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("rsk_protocolVersion(): " + s);
+                logger.debug("rsk_protocolVersion(): {}", s);
             }
         }
     }
@@ -291,7 +291,7 @@ public class Web3Impl implements Web3 {
             return s = toJsonHex(minerServer.getCoinbaseAddress().getBytes());
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_coinbase(): " + s);
+                logger.debug("eth_coinbase(): {}", s);
             }
         }
     }
@@ -304,7 +304,7 @@ public class Web3Impl implements Web3 {
             return s = minerClient.isMining();
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_mining(): " + s);
+                logger.debug("eth_mining(): {}", s);
             }
         }
     }
@@ -318,7 +318,7 @@ public class Web3Impl implements Web3 {
         String result = hashesPerSecond.toString();
 
         if (logger.isDebugEnabled()) {
-            logger.debug("eth_hashrate(): " + result);
+            logger.debug("eth_hashrate(): {}", result);
         }
 
         return result;
@@ -333,7 +333,7 @@ public class Web3Impl implements Web3 {
         String result = hashesPerSecond.toString();
 
         if (logger.isDebugEnabled()) {
-            logger.debug("eth_netHashrate(): " + result);
+            logger.debug("eth_netHashrate(): {}", result);
         }
 
         return result;
@@ -355,7 +355,7 @@ public class Web3Impl implements Web3 {
             return gasPrice = TypeConverter.toJsonHex(eth.getGasPrice().asBigInteger().longValue());
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_gasPrice(): " + gasPrice);
+                logger.debug("eth_gasPrice(): {}", gasPrice);
             }
         }
     }
@@ -426,7 +426,7 @@ public class Web3Impl implements Web3 {
             }
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getStorageAt(" + address + ", " + storageIdx + ", " + blockId + "): " + s);
+                logger.debug("eth_getStorageAt({}, {}, {}): {}", address, storageIdx, blockId, s);
             }
         }
     }
@@ -447,7 +447,7 @@ public class Web3Impl implements Web3 {
             }
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getTransactionCount(" + address + ", " + blockId + "): " + s);
+                logger.debug("eth_getTransactionCount({}, {}): {}", address, blockId, s);
             }
         }
     }
@@ -472,7 +472,7 @@ public class Web3Impl implements Web3 {
             return s = TypeConverter.toJsonHex(n);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getBlockTransactionCountByHash(" + blockHash + "): " + s);
+                logger.debug("eth_getBlockTransactionCountByHash({}): {}", blockHash, s);
             }
         }
     }
@@ -481,11 +481,11 @@ public class Web3Impl implements Web3 {
         synchronized (blockchain) {
             Block b;
 
-            if (bnOrId.equals("latest")) {
+            if ("latest".equals(bnOrId)) {
                 b = blockchain.getBestBlock();
-            } else if (bnOrId.equals("earliest")) {
+            } else if ("earliest".equals(bnOrId)) {
                 b = blockchain.getBlockByNumber(0);
-            } else if (bnOrId.equals("pending")) {
+            } else if ("pending".equals(bnOrId)) {
                 throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
             } else {
                 long bn = JSonHexToLong(bnOrId);
@@ -511,7 +511,7 @@ public class Web3Impl implements Web3 {
             return s = TypeConverter.toJsonHex(n);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getBlockTransactionCountByNumber(" + bnOrId + "): " + s);
+                logger.debug("eth_getBlockTransactionCountByNumber({}): {}", bnOrId, s);
             }
         }
     }
@@ -558,7 +558,7 @@ public class Web3Impl implements Web3 {
             return s;
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getCode(" + address + ", " + blockId + "): " + s);
+                logger.debug("eth_getCode({}, {}): {}", address, blockId, s);
             }
         }
     }
@@ -580,7 +580,7 @@ public class Web3Impl implements Web3 {
             return s = tx.getHash().toJsonString();
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_sendRawTransaction(" + rawData + "): " + s);
+                logger.debug("eth_sendRawTransaction({}): {}", rawData, s);
             }
         }
     }
@@ -677,7 +677,7 @@ public class Web3Impl implements Web3 {
             return getBlockResult(b, fullTransactionObjects);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getBlockByHash(" +  blockHash + ", " + fullTransactionObjects + "): " + s);
+                logger.debug("eth_getBlockByHash({}, {}): {}", blockHash, fullTransactionObjects, s);
             }
         }
     }
@@ -691,7 +691,7 @@ public class Web3Impl implements Web3 {
             return s = (b == null ? null : getBlockResult(b, fullTransactionObjects));
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getBlockByNumber(" +  bnOrId + ", " + fullTransactionObjects + "): " + s);
+                logger.debug("eth_getBlockByNumber({}, {}): {}", bnOrId, fullTransactionObjects, s);
             }
         }
     }
@@ -754,7 +754,7 @@ public class Web3Impl implements Web3 {
             return s = new TransactionResultDTO(b, idx, tx);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getTransactionByBlockHashAndIndex(" + blockHash + ", " + index + "): " + s);
+                logger.debug("eth_getTransactionByBlockHashAndIndex({}, {}): {}", blockHash, index, s);
             }
         }
     }
@@ -781,20 +781,20 @@ public class Web3Impl implements Web3 {
             return s = new TransactionResultDTO(b, idx, tx);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getTransactionByBlockNumberAndIndex(" + bnOrId + ", " + index + "): " + s);
+                logger.debug("eth_getTransactionByBlockNumberAndIndex({}, {}): {}", bnOrId, index, s);
             }
         }
     }
 
     @Override
     public TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception {
-        logger.trace("eth_getTransactionReceipt(" + transactionHash + ")");
+        logger.trace("eth_getTransactionReceipt({})", transactionHash);
 
         byte[] hash = stringHexToByteArray(transactionHash);
         TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore);
 
         if (txInfo == null) {
-            logger.trace("No transaction info for " + transactionHash);
+            logger.trace("No transaction info for {}", transactionHash);
             return null;
         }
 
@@ -831,7 +831,7 @@ public class Web3Impl implements Web3 {
             return s = getBlockResult(uncle, false);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getUncleByBlockHashAndIndex(" + blockHash + ", " + uncleIdx + "): " + s);
+                logger.debug("eth_getUncleByBlockHashAndIndex({}, {}): {}", blockHash, uncleIdx, s);
             }
         }
     }
@@ -846,7 +846,7 @@ public class Web3Impl implements Web3 {
                     eth_getUncleByBlockHashAndIndex(Hex.toHexString(block.getHash().getBytes()), uncleIdx);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getUncleByBlockNumberAndIndex(" + blockId + ", " + uncleIdx + "): " + s);
+                logger.debug("eth_getUncleByBlockNumberAndIndex({}, {}): {}", blockId, uncleIdx, s);
             }
         }
     }
@@ -858,7 +858,7 @@ public class Web3Impl implements Web3 {
             return s = new String[]{"solidity"};
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getCompilers(): " + Arrays.toString(s));
+                logger.debug("eth_getCompilers(): {}", Arrays.toString(s));
             }
         }
     }
@@ -884,7 +884,7 @@ public class Web3Impl implements Web3 {
             return str = toJsonHex(id);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_newFilter(" + fr + "): " + str);
+                logger.debug("eth_newFilter({}): {}", fr, str);
             }
         }
     }
@@ -898,7 +898,7 @@ public class Web3Impl implements Web3 {
             return s = toJsonHex(id);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_newBlockFilter(): " + s);
+                logger.debug("eth_newBlockFilter(): {}", s);
             }
         }
     }
@@ -912,7 +912,7 @@ public class Web3Impl implements Web3 {
             return s = toJsonHex(id);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_newPendingTransactionFilter(): " + s);
+                logger.debug("eth_newPendingTransactionFilter(): {}", s);
             }
         }
     }
@@ -929,7 +929,7 @@ public class Web3Impl implements Web3 {
             return filterManager.removeFilter(stringHexToBigInteger(id).intValue());
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_uninstallFilter(" + id + "): " + s);
+                logger.debug("eth_uninstallFilter({}): {}", id, s);
             }
         }
     }
@@ -944,7 +944,7 @@ public class Web3Impl implements Web3 {
             s = getFilterEvents(id, true);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getFilterChanges(" + id + "): " + Arrays.toString(s));
+                logger.debug("eth_getFilterChanges({}): {}", id, Arrays.toString(s));
             }
         }
 
@@ -961,7 +961,7 @@ public class Web3Impl implements Web3 {
             s = getFilterEvents(id, false);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getFilterLogs(" + id + "): " + Arrays.toString(s));
+                logger.debug("eth_getFilterLogs({}): {}", id, Arrays.toString(s));
             }
         }
 

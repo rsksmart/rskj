@@ -459,6 +459,8 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     public static class TransactionSortedSet extends TreeSet<Transaction> {
+        private static final long serialVersionUID = -6064476246506094585L;
+
         public TransactionSortedSet() {
             super((tx1, tx2) -> {
                 long nonceDiff = ByteUtil.byteArrayToLong(tx1.getNonce()) -
