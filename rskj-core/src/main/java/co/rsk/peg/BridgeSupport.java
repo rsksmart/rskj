@@ -86,7 +86,6 @@ public class BridgeSupport {
     private BtcBlockstoreWithCache btcBlockStore;
     private BtcBlockChain btcBlockChain;
     private org.ethereum.core.Block rskExecutionBlock;
-    private StoredBlock initialBtcStoredBlock;
 
     // Used by remasc
     public BridgeSupport(
@@ -170,7 +169,6 @@ public class BridgeSupport {
         this.btcContext = new Context(this.bridgeConstants.getBtcParams());
         this.btcBlockStore = buildRepositoryBlockStore();
         this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
-        this.initialBtcStoredBlock = this.getLowestBlock();
     }
 
     // this constructor has all common parameters, mostly dependencies that aren't instantiated here
@@ -334,7 +332,7 @@ public class BridgeSupport {
         }
 
         if (height < 0) {
-            logger.warn("Height is " + height + " but should be greater than 0");
+            logger.warn("Height is {} but should be greater than 0", height);
             panicProcessor.panic("btclock", "Height is " + height + " but should be greater than 0");
             return;
         }
@@ -342,7 +340,7 @@ public class BridgeSupport {
         // Check there are at least N blocks on top of the supplied height
         int confirmations = btcBlockChain.getBestChainHeight() - height + 1;
         if (confirmations < bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()) {
-            logger.warn("At least " + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() + " confirmations are required, but there are only " + confirmations + " confirmations");
+            logger.warn("At least {} confirmations are required, but there are only {} confirmations", bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(), confirmations);
             return;
         }
 
@@ -355,7 +353,7 @@ public class BridgeSupport {
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         BtcBlock blockHeader = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height).getHeader();
         if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
-            logger.warn("Supplied merkle root " + merkleRoot + "does not match block's merkle root " + blockHeader.getMerkleRoot());
+            logger.warn("Supplied merkle root {} does not match block's merkle root {}", merkleRoot, blockHeader.getMerkleRoot());
             panicProcessor.panic("btclock", "Supplied merkle root " + merkleRoot + "does not match block's merkle root " + blockHeader.getMerkleRoot());
             return;
         }
@@ -371,7 +369,7 @@ public class BridgeSupport {
             logger.debug("This is a lock tx {}", btcTx);
             Optional<Script> scriptSig = BridgeUtils.getFirstInputScriptSig(btcTx);
             if (!scriptSig.isPresent()) {
-                logger.warn("[btctx:{}] First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0), btcTx.getHash());
+                logger.warn("[btctx:{}] First input does not spend a Pay-to-PubkeyHash {}", btcTx.getHash(), btcTx.getInput(0));
                 return;
             }
 
@@ -1009,19 +1007,20 @@ public class BridgeSupport {
      * @return a List of bitcoin block hashes
      */
     public List<Sha256Hash> getBtcBlockchainBlockLocator() throws IOException {
+        StoredBlock  initialBtcStoredBlock = this.getLowestBlock();
         final int maxHashesToInform = 100;
         List<Sha256Hash> blockLocator = new ArrayList<>();
         StoredBlock cursor = btcBlockChain.getChainHead();
         int bestBlockHeight = cursor.getHeight();
         blockLocator.add(cursor.getHeader().getHash());
-        if (bestBlockHeight > this.initialBtcStoredBlock.getHeight()) {
+        if (bestBlockHeight > initialBtcStoredBlock.getHeight()) {
             boolean stop = false;
             int i = 0;
             try {
                 while (blockLocator.size() <= maxHashesToInform && !stop) {
                     int blockHeight = (int) (bestBlockHeight - Math.pow(2, i));
-                    if (blockHeight <= this.initialBtcStoredBlock.getHeight()) {
-                        blockLocator.add(this.initialBtcStoredBlock.getHeader().getHash());
+                    if (blockHeight <= initialBtcStoredBlock.getHeight()) {
+                        blockLocator.add(initialBtcStoredBlock.getHeader().getHash());
                         stop = true;
                     } else {
                         cursor = this.getPrevBlockAtHeight(cursor, blockHeight);
@@ -1035,7 +1034,7 @@ public class BridgeSupport {
                 throw new RuntimeException(e);
             }
             if (!stop) {
-                blockLocator.add(this.initialBtcStoredBlock.getHeader().getHash());
+                blockLocator.add(initialBtcStoredBlock.getHeader().getHash());
             }
         }
         return blockLocator;

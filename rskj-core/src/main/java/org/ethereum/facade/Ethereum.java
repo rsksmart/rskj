@@ -26,7 +26,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.concurrent.Future;
 
 /**
@@ -40,8 +39,6 @@ public interface Ethereum {
     void removeListener(EthereumListener listener);
 
     ImportResult addNewMinedBlock(Block block);
-
-    void close();
 
     /**
      * Factory for general transaction
@@ -71,8 +68,6 @@ public interface Ethereum {
      *                    return this transaction as approved
      */
     Future<Transaction> submitTransaction(Transaction transaction);
-
-    void init();
 
     /**
      * Calculates a 'reasonable' Gas price based on statistics of the latest transaction's Gas prices

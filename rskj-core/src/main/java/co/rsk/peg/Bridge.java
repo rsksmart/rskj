@@ -227,8 +227,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     // Parsed rsk transaction data field
     private static class BridgeParsedData {
-        BridgeMethods bridgeMethod;
-        Object[] args;
+        public BridgeMethods bridgeMethod;
+        public Object[] args;
     }
 
     @Override

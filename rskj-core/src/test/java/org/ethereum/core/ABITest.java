@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
@@ -34,7 +34,7 @@ import org.spongycastle.util.encoders.Hex;
 public class ABITest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void testTransactionCreate() {

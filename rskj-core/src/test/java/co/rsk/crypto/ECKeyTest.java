@@ -20,6 +20,7 @@ package co.rsk.crypto;
 
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Base64;
 import java.security.SignatureException;
@@ -34,5 +35,36 @@ public class ECKeyTest {
         String signature = Base64.toBase64String(new byte[128]);
         ECKey key = ECKey.signatureToKey(messageHash, signature);
         assertNull(key);
+    }
+
+    @Test
+    public void fromComponentsWithRecoveryCalculation() {
+        ECKey key = new ECKey();
+        byte[] hash = HashUtil.randomHash();
+        ECKey.ECDSASignature signature = key.sign(hash);
+
+        // With uncompressed public key
+        ECKey.ECDSASignature signatureWithCalculatedV = ECKey.ECDSASignature.fromComponentsWithRecoveryCalculation(
+                signature.r.toByteArray(),
+                signature.s.toByteArray(),
+                hash,
+                key.getPubKey(false)
+        );
+
+        Assert.assertEquals(signature.r, signatureWithCalculatedV.r);
+        Assert.assertEquals(signature.s, signatureWithCalculatedV.s);
+        Assert.assertEquals(signature.v, signatureWithCalculatedV.v);
+
+        // With compressed public key
+        signatureWithCalculatedV = ECKey.ECDSASignature.fromComponentsWithRecoveryCalculation(
+                signature.r.toByteArray(),
+                signature.s.toByteArray(),
+                hash,
+                key.getPubKey(true)
+        );
+
+        Assert.assertEquals(signature.r, signatureWithCalculatedV.r);
+        Assert.assertEquals(signature.s, signatureWithCalculatedV.s);
+        Assert.assertEquals(signature.v, signatureWithCalculatedV.v);
     }
 }

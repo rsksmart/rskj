@@ -19,7 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
@@ -61,18 +61,17 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 5/10/2016.
  */
 public class NodeMessageHandlerTest {
-    private static RskSystemProperties config;
+    private static TestSystemProperties config;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        config = new RskSystemProperties();
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestConfig());
     }
 

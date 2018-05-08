@@ -29,10 +29,15 @@ public class SimplePeerServer implements PeerServer {
 
     public boolean isListening = false;
 
-    public void start(InetAddress host, int port) {
+    @Override
+    public void start() {
 
     }
 
+    @Override
+    public void stop() {
+
+    }
 
     public boolean isListening() {
         return isListening;

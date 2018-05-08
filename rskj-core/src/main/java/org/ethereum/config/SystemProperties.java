@@ -19,6 +19,7 @@
 
 package org.ethereum.config;
 
+import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.*;
 import org.ethereum.config.blockchain.DevNetConfig;
@@ -49,8 +50,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
-
 /**
  * Utility class to retrieve property values from the rskj.conf files
  *
@@ -71,6 +70,7 @@ public abstract class SystemProperties {
     private static final int DEFAULT_RPC_PORT = 4444;
     private static Logger logger = LoggerFactory.getLogger("general");
 
+    public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
     public static final String PROPERTY_DB_DIR = "database.dir";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_PEER_ACTIVE = "peer.active";
@@ -88,9 +88,6 @@ public abstract class SystemProperties {
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
     private static final String DEFAULT_BLOCKS_LOADER = "";
 
-    private static final String YES = "yes";
-    private static final String NO = "no";
-
     /**
      * Marks config accessor methods which need to be called (for value validation)
      * upon config creation or modification
@@ -99,12 +96,11 @@ public abstract class SystemProperties {
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ValidateMe {}
 
-    protected static Config configFromFiles;
+    protected final Config configFromFiles;
 
     // mutable options for tests
     private String databaseDir = null;
     private String fallbackMiningKeysDir = null;
-    private Boolean databaseReset = null;
     private String projectVersion = null;
     private String projectVersionModifier = null;
 
@@ -117,19 +113,19 @@ public abstract class SystemProperties {
 
     private BlockchainNetConfig blockchainConfig;
     
-    protected SystemProperties() {
+    protected SystemProperties(ConfigLoader loader) {
         try {
-            // could be locked but the result should be the same if there is no race condition
-            if (configFromFiles == null){
-                configFromFiles = getConfigFromFiles();
-                logger.debug("Config trace: " + configFromFiles.root().render(ConfigRenderOptions.defaults().
-                        setComments(false).setJson(false)));
-                validateConfig();
-            }
+            this.configFromFiles = loader.getConfig();
+            logger.trace(
+                    "Config trace: {}",
+                    configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
+            );
+            validateConfig();
 
             Properties props = new Properties();
-            InputStream is = getClass().getResourceAsStream("/version.properties");
-            props.load(is);
+            try (InputStream is = getClass().getResourceAsStream("/version.properties")) {
+                props.load(is);
+            }
             this.projectVersion = getProjectVersion(props);
             this.projectVersionModifier = getProjectVersionModifier(props);
 
@@ -153,70 +149,8 @@ public abstract class SystemProperties {
         return props.getProperty("modifier").replaceAll("\"", "");
     }
 
-    private static Config getConfigFromFiles() {
-        Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
-        Config referenceConfig = ConfigFactory.parseResources("rskj.conf");
-        logger.info("Config ( {} ): default properties from resource 'rskj.conf'", referenceConfig.entrySet().isEmpty() ? NO : YES);
-        File installerFile = new File("/etc/rsk/node.conf");
-        Config installerConfig = installerFile.exists() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
-        logger.info("Config ( {} ): default properties from installer '/etc/rsk/node.conf'", installerConfig.entrySet().isEmpty() ? NO : YES);
-        Config testConfig = ConfigFactory.parseResources("test-rskj.conf");
-        logger.info("Config ( {} ): test properties from resource 'test-rskj.conf'", testConfig.entrySet().isEmpty() ? NO : YES);
-        String file = System.getProperty("rsk.conf.file");
-        Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
-        logger.info("Config ( {} ): user properties from -Drsk.conf.file file '{}'", cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
-        return javaSystemProperties
-                .withFallback(cmdLineConfigFile)
-                .withFallback(testConfig)
-                .withFallback(referenceConfig)
-                .withFallback(installerConfig);
-    }
-
     public Config getConfig() {
         return configFromFiles;
-    }
-
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param overrideOptions - atop config
-     */
-    public void overrideParams(Config overrideOptions) {
-        configFromFiles = overrideOptions.withFallback(configFromFiles);
-        validateConfig();
-    }
-
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param keyValuePairs [name] [value] [name] [value] ...
-     */
-    public void overrideParams(String ... keyValuePairs) {
-        if (keyValuePairs.length % 2 != 0) {
-            throw new RuntimeException("Odd argument number");
-        }
-
-        Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < keyValuePairs.length; i += 2) {
-            map.put(keyValuePairs[i], keyValuePairs[i + 1]);
-        }
-        overrideParams(map);
-    }
-
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param cliOptions -  command line options to take presidency
-     */
-    public void overrideParams(Map<String, String> cliOptions) {
-        Config cliConf = ConfigFactory.parseMap(cliOptions);
-        overrideParams(cliConf);
     }
 
     private void validateConfig() {
@@ -249,7 +183,10 @@ public abstract class SystemProperties {
         if (blockchainConfig == null) {
             String netName = netName();
             if (netName != null && configFromFiles.hasPath("blockchain.config.class")) {
-                throw new RuntimeException("Only one of two options should be defined: 'blockchain.config.name' and 'blockchain.config.class'");
+                throw new RuntimeException(String.format(
+                        "Only one of two options should be defined: '%s' and 'blockchain.config.class'",
+                        PROPERTY_BC_CONFIG_NAME)
+                );
             }
             if (netName != null) {
                 switch(netName) {
@@ -269,7 +206,11 @@ public abstract class SystemProperties {
                         blockchainConfig = new RegTestConfig();
                         break;
                     default:
-                        throw new RuntimeException("Unknown value for 'blockchain.config.name': '" + configFromFiles.getString("blockchain.config.name") + "'");
+                        throw new RuntimeException(String.format(
+                                "Unknown value for '%s': '%s'",
+                                PROPERTY_BC_CONFIG_NAME,
+                                netName)
+                        );
                 }
             } else {
                 String className = configFromFiles.getString("blockchain.config.class");
@@ -324,11 +265,7 @@ public abstract class SystemProperties {
 
     @ValidateMe
     public boolean databaseReset() {
-        return databaseReset == null ? configFromFiles.getBoolean("database.reset") : databaseReset;
-    }
-
-    public void setDatabaseReset(Boolean reset) {
-        databaseReset = reset;
+        return configFromFiles.getBoolean("database.reset");
     }
 
     @ValidateMe
@@ -522,8 +459,8 @@ public abstract class SystemProperties {
                 props.setProperty("nodeId", Hex.toHexString(key.getNodeId()));
                 file.getParentFile().mkdirs();
                 props.store(new FileWriter(file), "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
-                logger.info("New nodeID generated: " + props.getProperty("nodeId"));
-                logger.info("Generated nodeID and its private key stored in " + file);
+                logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
+                logger.info("Generated nodeID and its private key stored in {}", file);
             }
             return props.getProperty("nodeIdPrivateKey");
         } catch (IOException e) {
@@ -746,7 +683,7 @@ public abstract class SystemProperties {
     }
 
     public String netName() {
-        return configFromFiles.hasPath("blockchain.config.name") ? configFromFiles.getString("blockchain.config.name") : null;
+        return configFromFiles.getString(PROPERTY_BC_CONFIG_NAME);
     }
 
     public boolean isRpcEnabled() {

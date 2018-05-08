@@ -2,13 +2,12 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
-import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.test.World;
+import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -18,9 +17,12 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
+import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -42,16 +44,23 @@ public class MainNetMinerTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
-    private RskSystemProperties config;
+    private TestSystemProperties config;
+    private TransactionPool transactionPool;
+    private BlockStore blockStore;
+    private NodeBlockProcessor blockProcessor;
+    private Repository repository;
 
     @Before
     public void setup() {
-        config = new RskSystemProperties();
+        RskTestFactory factory = new RskTestFactory();
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new FallbackMainNetConfig());
         DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
-        World world = new World();
-        blockchain = world.getBlockChain();
-
+        blockchain = factory.getBlockchain();
+        transactionPool = factory.getTransactionPool();
+        blockStore = factory.getBlockStore();
+        blockProcessor = factory.getBlockProcessor();
+        repository = factory.getRepository();
     }
 
     /*
@@ -62,20 +71,17 @@ public class MainNetMinerTest {
     @Test
     public void submitBitcoinBlockProofOfWorkNotGoodEnough() {
         /* We need a low target */
-        BlockChainImpl bc = new BlockChainBuilder().build();
-        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(bc);
+        BlockChainImpl blockchain = new BlockChainBuilder().build();
+        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(blockchain);
         gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE)));
-        bc.setStatus(gen, gen.getCumulativeDifficulty());
-        World world = new World(bc, gen);
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), null, null, null, 10, 100);
-        blockchain = world.getBlockChain();
+        blockchain.setStatus(gen, gen.getCumulativeDifficulty());
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
-                blockchain,
+                this.blockchain,
                 null,
                 DIFFICULTY_CALCULATOR,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
@@ -124,7 +130,7 @@ public class MainNetMinerTest {
         byte[] privKey1 = privateMiningKey1.getPrivKeyBytes();
         saveToFile(privKey1, new File(folder.getRoot().getCanonicalPath(), "privkey1.bin"));
 
-        RskSystemProperties tempConfig = new RskSystemProperties() {
+        TestSystemProperties tempConfig = new TestSystemProperties() {
 
             BlockchainNetConfig blockchainNetConfig = config.getBlockchainConfig();
 
@@ -231,12 +237,9 @@ public class MainNetMinerTest {
         // medium minimum difficulty (this is not the mainnet nor the regnet)
         ////////////////////////////////////////////////////////////////////
         /* We need a low, but not too low, target */
-        BlockChainImpl bc = new BlockChainBuilder().build();
-        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(bc);
+        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(blockchain);
         gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
-        bc.setStatus(gen, gen.getCumulativeDifficulty());
-        World world = new World(bc, gen);
-        blockchain = world.getBlockChain();
+        blockchain.setStatus(gen, gen.getCumulativeDifficulty());
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
@@ -245,7 +248,7 @@ public class MainNetMinerTest {
                 config,
                 ethereumImpl,
                 this.blockchain,
-                world.getBlockProcessor(),
+                blockProcessor,
                 DIFFICULTY_CALCULATOR,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 blockToMineBuilder(),
@@ -301,9 +304,9 @@ public class MainNetMinerTest {
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
         return new BlockToMineBuilder(
                 ConfigUtils.getDefaultMiningConfig(),
-                blockchain.getRepository(),
-                this.blockchain.getBlockStore(),
-                this.blockchain.getTransactionPool(),
+                repository,
+                blockStore,
+                transactionPool,
                 DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(config),
                 unclesValidationRule,

@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class RskSystemPropertiesTest {
 
-    private final RskSystemProperties config = new RskSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void defaultValues() {

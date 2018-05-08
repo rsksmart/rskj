@@ -23,9 +23,9 @@ import co.rsk.bitcoinj.core.AddressFormatException;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
@@ -51,13 +51,13 @@ import java.util.Arrays;
 import java.util.List;
 
 public class RskForksBridgeTest {
-    private static RskSystemProperties config;
     private static BridgeConstants bridgeConstants;
     private static ECKey fedECPrivateKey;
+    private static TestSystemProperties config;
 
     @BeforeClass
-    public static void setUpBeforeClass() {
-        config = new RskSystemProperties();
+    public static void setUpBeforeClass() throws Exception {
+        config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestConfig());
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         BtcECKey fedBTCPrivateKey = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0);

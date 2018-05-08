@@ -23,7 +23,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 public class TransactionPoolImplNoCleaner extends TransactionPoolImpl {
@@ -32,7 +32,7 @@ public class TransactionPoolImplNoCleaner extends TransactionPoolImpl {
                                         BlockStore blockStore,
                                         ReceiptStore receiptStore,
                                         ProgramInvokeFactory programInvokeFactory,
-                                        EthereumListener listener,
+                                        CompositeEthereumListener listener,
                                         int outdatedThreshold,
                                         int outdatedTimeout) {
         super(config, repository, blockStore, receiptStore, programInvokeFactory, listener, outdatedThreshold, outdatedTimeout);
