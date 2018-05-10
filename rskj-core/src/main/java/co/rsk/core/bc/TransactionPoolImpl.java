@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.handler.TxPendingValidator;
@@ -228,6 +229,11 @@ public class TransactionPoolImpl implements TransactionPool {
         if (!txnonce.equals(this.getNextNonceByAccount(tx.getSender()))) {
             this.addQueuedTransaction(tx);
 
+            return false;
+        }
+
+        if (!senderCanPayPendingTransactionsAndNewTx(tx)) {
+            // discard this tx to prevent spam
             return false;
         }
 
@@ -459,6 +465,32 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         return validator.isValid(tx, bestBlock, state);
+    }
+
+    /**
+     * @param newTx a transaction to be added to the pending list (nonce = last pending nonce + 1)
+     * @return whether the sender balance is enough to pay for all pending transactions + newTx
+     */
+    private boolean senderCanPayPendingTransactionsAndNewTx(Transaction newTx) {
+        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender());
+
+        Coin accumTxCost = Coin.ZERO;
+        for (Transaction t : transactions) {
+            accumTxCost = accumTxCost.add(getTxBaseCost(t));
+        }
+
+        Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
+        return costWithNewTx.compareTo(repository.getBalance(newTx.getSender())) <= 0;
+    }
+
+    private Coin getTxBaseCost(Transaction tx) {
+        Coin gasCost = tx.getValue();
+        if (bestBlock == null || tx.transactionCost(config, bestBlock) > 0) {
+            BigInteger gasLimit = new BigInteger(1, tx.getGasLimit());
+            gasCost = gasCost.add(tx.getGasPrice().multiply(gasLimit));
+        }
+
+        return gasCost;
     }
 
     public static class TransactionSortedSet extends TreeSet<Transaction> {
