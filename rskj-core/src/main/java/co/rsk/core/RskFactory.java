@@ -365,4 +365,12 @@ public class RskFactory {
         // Using a single thread executor so we only execute one listener callback at a time, in a different thread.
         return new CompositeEthereumListener(Executors.newSingleThreadExecutor());
     }
+
+    @Bean
+    public TransactionGateway getTransactionGateway(
+            ChannelManager channelManager,
+            TransactionPool transactionPool,
+            CompositeEthereumListener emitter){
+        return new TransactionGateway(channelManager, transactionPool, emitter);
+    }
 }

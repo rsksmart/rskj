@@ -182,11 +182,6 @@ public class TransactionPoolImpl implements TransactionPool {
             }
         }
 
-        if (listener != null && !added.isEmpty()) {
-            listener.onPendingTransactionsReceived(added);
-            listener.onTransactionPoolChanged(TransactionPoolImpl.this);
-        }
-
         return added;
     }
 

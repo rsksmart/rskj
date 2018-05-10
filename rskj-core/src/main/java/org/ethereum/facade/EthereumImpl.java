@@ -27,16 +27,10 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.submit.TransactionExecutor;
-import org.ethereum.net.submit.TransactionTask;
 import org.ethereum.util.ByteUtil;
-import org.springframework.util.concurrent.FutureAdapter;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 public class EthereumImpl implements Ethereum {
 
@@ -102,21 +96,8 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public Future<Transaction> submitTransaction(Transaction transaction) {
-
-        TransactionTask transactionTask = new TransactionTask(transaction, channelManager);
-
-        final Future<List<Transaction>> listFuture =
-                TransactionExecutor.getInstance().submitTransaction(transactionTask);
-
+    public void submitTransaction(Transaction transaction) {
         transactionPool.addTransaction(transaction);
-
-        return new FutureAdapter<Transaction, List<Transaction>>(listFuture) {
-            @Override
-            protected Transaction adapt(List<Transaction> adapteeResult) throws ExecutionException {
-                return adapteeResult.get(0);
-            }
-        };
     }
 
     @Override
