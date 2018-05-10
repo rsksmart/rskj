@@ -256,16 +256,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             Benchmarker.get("rsk").end("bridge::bridgeSupportSetup");
 
             Optional<?> result;
-            String executionBenchmarkName = String.format("bridge::execute::%s", bridgeParsedData.bridgeMethod.getFunction().name);
             try {
                 // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
                 // If the user tries to call an non-existent function, parseData() will return null.
-                Benchmarker.get("rsk").start(executionBenchmarkName);
+                Benchmarker.get("rsk").start("bridge::execute", bridgeParsedData.bridgeMethod.getFunction().name);
                 result = bridgeParsedData.bridgeMethod.getExecutor().execute(this, bridgeParsedData.args);
-                Benchmarker.get("rsk").end(executionBenchmarkName);
+                Benchmarker.get("rsk").end("bridge::execute");
             } catch (BridgeIllegalArgumentException ex) {
                 logger.warn("Error executing: {}", bridgeParsedData.bridgeMethod, ex);
-                Benchmarker.get("rsk").end(executionBenchmarkName);
+                Benchmarker.get("rsk").end("bridge::execute");
                 return null;
             }
 
