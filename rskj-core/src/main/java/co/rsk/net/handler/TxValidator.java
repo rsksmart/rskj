@@ -20,13 +20,11 @@ package co.rsk.net.handler;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.net.handler.txvalidator.*;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.BigIntegers;
@@ -34,7 +32,6 @@ import org.spongycastle.util.BigIntegers;
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Used to validate transactions before relaying. This class is highly
@@ -50,7 +47,6 @@ class TxValidator {
     private final Blockchain blockchain;
 
     private final List<TxValidatorStep> validatorSteps = new LinkedList<>();
-    private final List<TxFilter> txFilters = new LinkedList<>();
 
     public TxValidator(RskSystemProperties config, Repository repository, Blockchain blockchain) {
         this.config = config;
@@ -62,8 +58,6 @@ class TxValidator {
         validatorSteps.add(new TxValidatorAccountBalanceValidator());
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(config));
-
-        txFilters.add(new TxFilterAccumCostFilter(config));
     }
 
     /**
@@ -73,8 +67,6 @@ class TxValidator {
         List<Transaction> acceptedTxs = new LinkedList<>();
 
         for (Transaction tx : txs) {
-            String hash = tx.getHash().toJsonString();
-
             AccountState state = repository.getAccountState(tx.getSender());
 
             if (state == null) {
@@ -90,7 +82,7 @@ class TxValidator {
 
             for (TxValidatorStep step : validatorSteps) {
                 if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0)) {
-                    logger.info("Tx validation failed: validator {} tx={}", step.getClass().getName(), tx.getHash());
+                    logger.info("[tx={}] {} failed", tx.getHash(), step.getClass());
                     valid = false;
                     break;
                 }
