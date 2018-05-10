@@ -24,6 +24,7 @@ import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.util.Benchmarker;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -96,13 +97,19 @@ public class EthModule
     }
 
     public String call(Web3.CallArguments args, String bnOrId) {
+        Benchmarker.get("rsk").start("eth::call");
+
         String s = null;
         try {
             Block executionBlock = executionBlockRetriever.getExecutionBlock(bnOrId);
             ProgramResult res = callConstant(args, executionBlock);
+
+            Benchmarker.get("rsk").end("eth::call");
+
             return s = toJsonHex(res.getHReturn());
         } finally {
             LOGGER.debug("eth_call(): {}", s);
+            Benchmarker.get("rsk").end("eth::call");
         }
     }
 
@@ -132,8 +139,9 @@ public class EthModule
     }
 
     private ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {
+        Benchmarker.get("rsk").start("eth::callConstant");
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        return reversibleTransactionExecutor.executeTransaction(
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
                 executionBlock,
                 executionBlock.getCoinbase(),
                 hexArgs.getGasPrice(),
@@ -143,5 +151,7 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress()
         );
+        Benchmarker.get("rsk").end("eth::callConstant");
+        return result;
     }
 }
