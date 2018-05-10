@@ -119,7 +119,9 @@ public class TransactionPoolImplTest {
 
     @Test
     public void addAndGetPendingTransaction() {
-        Transaction tx = createSampleTransaction();
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
 
         transactionPool.addTransaction(tx);
         List<Transaction> transactions = transactionPool.getPendingTransactions();
@@ -131,7 +133,9 @@ public class TransactionPoolImplTest {
 
     @Test
     public void addAndGetQueuedTransaction() {
-        Transaction tx = createSampleTransaction(10);
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+        Transaction tx = createSampleTransaction(1, 2, 1000, 4);
 
         transactionPool.addTransaction(tx);
 
@@ -150,8 +154,10 @@ public class TransactionPoolImplTest {
 
     @Test
     public void addAndGetTwoQueuedTransaction() {
-        Transaction tx1 = createSampleTransaction(1);
-        Transaction tx2 = createSampleTransaction(2);
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+        Transaction tx2 = createSampleTransaction(1, 2, 1000, 2);
 
         transactionPool.addTransaction(tx1);
         transactionPool.addTransaction(tx2);
@@ -172,9 +178,11 @@ public class TransactionPoolImplTest {
 
     @Test
     public void addAndGetTwoQueuedTransactionAsPendingOnes() {
-        Transaction tx1 = createSampleTransaction(1);
-        Transaction tx2 = createSampleTransaction(2);
-        Transaction tx0 = createSampleTransaction(0);
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+        Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+        Transaction tx2 = createSampleTransaction(1, 2, 1000, 2);
 
         Assert.assertFalse(transactionPool.addTransaction(tx1));
         Assert.assertFalse(transactionPool.addTransaction(tx2));
@@ -238,8 +246,7 @@ public class TransactionPoolImplTest {
     public void rejectTransactionPoolTransaction() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
-        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
-        tx.setGasLimit(BigInteger.valueOf(3000001).toByteArray());
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0, BigInteger.valueOf(3000001));
         Account receiver = createAccount(2);
 
         transactionPool.addTransaction(tx);
@@ -495,7 +502,9 @@ public class TransactionPoolImplTest {
 
     @Test
     public void addTwiceAndGetPendingTransaction() {
-        Transaction tx = createSampleTransaction();
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(1, balance);
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
 
         transactionPool.addTransaction(tx);
         transactionPool.addTransaction(tx);
