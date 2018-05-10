@@ -30,6 +30,7 @@ import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.InvalidInetAddressException;
@@ -103,6 +104,7 @@ public class Web3Impl implements Web3 {
     private final PersonalModule personalModule;
     private final EthModule ethModule;
     private final TxPoolModule txPoolModule;
+    private final MnrModule mnrModule;
 
     protected Web3Impl(Ethereum eth,
                        Blockchain blockchain,
@@ -115,6 +117,7 @@ public class Web3Impl implements Web3 {
                        PersonalModule personalModule,
                        EthModule ethModule,
                        TxPoolModule txPoolModule,
+                       MnrModule mnrModule,
                        ChannelManager channelManager,
                        Repository repository,
                        PeerScoringManager peerScoringManager,
@@ -133,6 +136,7 @@ public class Web3Impl implements Web3 {
         this.personalModule = personalModule;
         this.ethModule = ethModule;
         this.txPoolModule = txPoolModule;
+        this.mnrModule = mnrModule;
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
@@ -1111,6 +1115,9 @@ public class Web3Impl implements Web3 {
     public TxPoolModule getTxPoolModule() {
         return txPoolModule;
     }
+
+    @Override
+    public MnrModule getMnrModule() { return mnrModule; }
 
     @Override
     public String evm_snapshot() {

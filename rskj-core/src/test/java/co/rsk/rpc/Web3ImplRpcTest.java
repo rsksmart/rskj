@@ -44,7 +44,7 @@ public class Web3ImplRpcTest {
         PersonalModule pm = new PersonalModuleWalletDisabled();
         Repository repository = Web3Mocks.getMockRepository();
         Web3Impl web3 = new Web3RskImpl(eth, blockchain, transactionPool,
-                                        new TestSystemProperties(), null, null, pm, null, null,
+                                        new TestSystemProperties(), null, null, pm, null, null, null,
                                         null, repository, null, null, null, null, null, null, null, null);
 
         Map<String, String> result = web3.rpc_modules();

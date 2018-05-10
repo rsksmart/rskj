@@ -366,6 +366,7 @@ public class Web3ImplScoringTest {
                 pm,
                 em,
                 tpm,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 rsk.getRepository(),
                 peerScoringManager,

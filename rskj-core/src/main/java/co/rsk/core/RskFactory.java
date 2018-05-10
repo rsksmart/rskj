@@ -32,6 +32,7 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.eth.*;
+import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
@@ -156,6 +157,7 @@ public class RskFactory {
                         RskSystemProperties config,
                         MinerClient minerClient,
                         MinerServer minerServer,
+                        MnrModule mnrModule,
                         PersonalModule personalModule,
                         EthModule ethModule,
                         TxPoolModule txPoolModule,
@@ -179,6 +181,7 @@ public class RskFactory {
                 personalModule,
                 ethModule,
                 txPoolModule,
+                mnrModule,
                 channelManager,
                 repository,
                 peerScoringManager,

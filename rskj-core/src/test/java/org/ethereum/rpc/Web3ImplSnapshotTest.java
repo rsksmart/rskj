@@ -213,6 +213,7 @@ public class Web3ImplSnapshotTest {
                 pm,
                 null,
                 tpm,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 ethereum.repository,
                 null,
