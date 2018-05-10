@@ -19,6 +19,7 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.util.Benchmarker;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -41,7 +42,13 @@ public interface Web3EthModule {
     }
 
     default String eth_call(Web3.CallArguments args, String bnOrId) {
-        return getEthModule().call(args, bnOrId);
+        Benchmarker.get("rsk").start("web3::eth_call");
+
+        String result = getEthModule().call(args, bnOrId);
+
+        Benchmarker.get("rsk").end("web3::eth_call");
+
+        return result;
     }
 
     default String eth_estimateGas(Web3.CallArguments args) {
