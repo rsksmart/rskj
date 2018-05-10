@@ -241,11 +241,12 @@ public class TransactionExecutor {
     }
 
     private void call() {
-        String benchmarkName = String.format("transactionExecutor::call::%s::%s",
+        byte[] txData = tx.getData();
+        String benchmarkData = String.format("%s::%s",
                 Hex.toHexString(tx.getReceiveAddress().getBytes()),
-                Hex.toHexString(tx.getData())
+                Hex.toHexString(txData != null ? txData : new byte[0])
         );
-        Benchmarker.get("rsk").start(benchmarkName);
+        Benchmarker.get("rsk").start("transactionExecutor::call", benchmarkData);
         if (!readyToExecute) {
             return;
         }
@@ -271,7 +272,7 @@ public class TransactionExecutor {
                 execError(String.format("Out of Gas calling precompiled contract 0x%s, required: %d, left: %s ",
                         targetAddress.toString(), (requiredGas + basicTxCost), mEndGas));
                 mEndGas = BigInteger.ZERO;
-                Benchmarker.get("rsk").end(benchmarkName);
+                Benchmarker.get("rsk").end("transactionExecutor::call");
                 return;
             } else {
                 long gasUsed = requiredGas + basicTxCost;
@@ -306,7 +307,7 @@ public class TransactionExecutor {
             Coin endowment = tx.getValue();
             cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
         }
-        Benchmarker.get("rsk").end(benchmarkName);
+        Benchmarker.get("rsk").end("transactionExecutor::call");
     }
 
     private void create() {
