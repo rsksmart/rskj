@@ -20,6 +20,7 @@
 package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.util.Benchmarker;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -28,6 +29,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -67,6 +69,8 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             byte[] fromAddress) {
+        String benchmarkName = String.format("reversibleTransactionExecutor::executeTransaction::%s::%s", Hex.toHexString(toAddress), Hex.toHexString(data));
+        Benchmarker.get("rsk").start(benchmarkName);
         Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
 
         byte[] nonce = repository.getNonce(new RskAddress(fromAddress)).toByteArray();
@@ -80,6 +84,7 @@ public class ReversibleTransactionExecutor {
                 fromAddress
         );
 
+        Benchmarker.get("rsk").start("transactionExecutor::new");
         TransactionExecutor executor = new TransactionExecutor(
                 config,
                 tx,
@@ -91,11 +96,25 @@ public class ReversibleTransactionExecutor {
                 programInvokeFactory,
                 executionBlock
         ).setLocalCall(true);
+        Benchmarker.get("rsk").end("transactionExecutor::new");
 
+        Benchmarker.get("rsk").start("transactionExecutor::init");
         executor.init();
+        Benchmarker.get("rsk").end("transactionExecutor::init");
+
+        Benchmarker.get("rsk").start("transactionExecutor::execute");
         executor.execute();
+        Benchmarker.get("rsk").end("transactionExecutor::execute");
+
+        Benchmarker.get("rsk").start("transactionExecutor::go");
         executor.go();
+        Benchmarker.get("rsk").end("transactionExecutor::go");
+
+        Benchmarker.get("rsk").start("transactionExecutor::finalization");
         executor.finalization();
+        Benchmarker.get("rsk").end("transactionExecutor::finalization");
+
+        Benchmarker.get("rsk").end(benchmarkName);
         return executor.getResult();
     }
 
