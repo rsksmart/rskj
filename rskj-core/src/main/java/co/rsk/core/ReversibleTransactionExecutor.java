@@ -69,8 +69,8 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             byte[] fromAddress) {
-        String benchmarkName = String.format("reversibleTransactionExecutor::executeTransaction::%s::%s", Hex.toHexString(toAddress), Hex.toHexString(data));
-        Benchmarker.get("rsk").start(benchmarkName);
+        String benchmarkData = String.format("%s::%s", Hex.toHexString(toAddress), Hex.toHexString(data));
+        Benchmarker.get("rsk").start("reversibleTransactionExecutor::executeTransaction", benchmarkData);
         Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
 
         byte[] nonce = repository.getNonce(new RskAddress(fromAddress)).toByteArray();
@@ -114,7 +114,7 @@ public class ReversibleTransactionExecutor {
         executor.finalization();
         Benchmarker.get("rsk").end("transactionExecutor::finalization");
 
-        Benchmarker.get("rsk").end(benchmarkName);
+        Benchmarker.get("rsk").end("reversibleTransactionExecutor::executeTransaction");
         return executor.getResult();
     }
 
