@@ -32,4 +32,6 @@ public interface MessageHandler {
     void start();
 
     void stop();
+
+    long getMessageQueueSize();
 }

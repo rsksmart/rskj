@@ -169,6 +169,7 @@ public class RskFactory {
                         ReceiptStore receiptStore,
                         PeerServer peerServer,
                         BlockProcessor nodeBlockProcessor,
+                        MessageHandler messageHandler,
                         HashRateCalculator hashRateCalculator,
                         ConfigCapabilities configCapabilities) {
         return new Web3RskImpl(
@@ -190,6 +191,7 @@ public class RskFactory {
                 receiptStore,
                 peerServer,
                 nodeBlockProcessor,
+                messageHandler,
                 hashRateCalculator,
                 configCapabilities
         );

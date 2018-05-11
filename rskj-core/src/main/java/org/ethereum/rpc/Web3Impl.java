@@ -28,6 +28,7 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.MessageHandler;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
@@ -92,6 +93,7 @@ public class Web3Impl implements Web3 {
     private final Blockchain blockchain;
     private final ReceiptStore receiptStore;
     private final BlockProcessor nodeBlockProcessor;
+    private final MessageHandler messageHandler;
     private final HashRateCalculator hashRateCalculator;
     private final ConfigCapabilities configCapabilities;
     private final BlockStore blockStore;
@@ -123,6 +125,7 @@ public class Web3Impl implements Web3 {
                        PeerScoringManager peerScoringManager,
                        PeerServer peerServer,
                        BlockProcessor nodeBlockProcessor,
+                       MessageHandler messageHandler,
                        HashRateCalculator hashRateCalculator,
                        ConfigCapabilities configCapabilities) {
         this.eth = eth;
@@ -141,6 +144,7 @@ public class Web3Impl implements Web3 {
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
         this.nodeBlockProcessor = nodeBlockProcessor;
+        this.messageHandler = messageHandler;
         this.hashRateCalculator = hashRateCalculator;
         this.configCapabilities = configCapabilities;
         this.config = config;
@@ -1190,6 +1194,12 @@ public class Web3Impl implements Web3 {
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw new JsonRpcInvalidParamException("invalid number of seconds " + seconds, e);
         }
+    }
+
+    @Override
+    public String debug_wireProtocolQueueSize() {
+        long n = messageHandler.getMessageQueueSize();
+        return TypeConverter.toJsonHex(n);
     }
 
     /**

@@ -138,6 +138,8 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3MnrModule {
     String[] net_peerList();
     String rsk_protocolVersion();
 
+    String debug_wireProtocolQueueSize();
+
     // methods required by dev environments
     Map<String, String> rpc_modules();
 
