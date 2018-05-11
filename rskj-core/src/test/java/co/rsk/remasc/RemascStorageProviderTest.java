@@ -19,21 +19,36 @@
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryImplForTesting;
+import co.rsk.peg.PegTestUtils;
+import co.rsk.test.builders.BlockChainBuilder;
+import com.google.common.collect.Lists;
+import org.ethereum.TestUtils;
+import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.blockchain.testnet.TestNetFirstForkConfig;
+import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.SortedMap;
+import java.math.BigInteger;
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by usuario on 13/04/2017.
@@ -41,6 +56,12 @@ import java.util.SortedMap;
 public class RemascStorageProviderTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
+    private Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
+    private long initialGasLimit = 10000000L;
+    private byte[] cowAddress = cowKey.getAddress();
+    private Map<byte[], BigInteger> preMineMap = Collections.singletonMap(cowAddress, cowInitialBalance.asBigInteger());
+    private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
 
     @Test
     public void getDefautRewardBalance() {
@@ -305,6 +326,68 @@ public class RemascStorageProviderTest {
         Assert.assertArrayEquals(block4.getHeader().getHash().getBytes(), list2.get(0).getHash());
         Assert.assertEquals(6, list2.get(1).getIncludedHeight());
         Assert.assertArrayEquals(block5.getHeader().getHash().getBytes(), list2.get(1).getHash());
+    }
+
+    @Test
+    public void setSaveRetrieveAndGetSiblingsBeforeRFS() throws IOException {
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = new TestNetConfig();
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        long minerFee = 21000;
+        long txValue = 10000;
+
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
+
+        List<SiblingElement> siblings = Lists.newArrayList(new SiblingElement(5, 6, minerFee), new SiblingElement(10, 11, minerFee));
+
+        RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)
+                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey);
+
+        testRunner.start();
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(testRunner.getBlockChain()), Coin.valueOf(0), Coin.valueOf(0L), 1L);
+    }
+
+    @Test
+    public void setSaveRetrieveAndGetSiblingsAfterRFS() throws IOException {
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = new TestNetFirstForkConfig();
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        long minerFee = 21000;
+        long txValue = 10000;
+
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
+
+        List<SiblingElement> siblings = Lists.newArrayList(new SiblingElement(5, 6, minerFee), new SiblingElement(10, 11, minerFee));
+
+        RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)
+                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey);
+
+        testRunner.start();
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(testRunner.getBlockChain()), Coin.valueOf(0L), Coin.valueOf(0L), 0L);
+    }
+
+    private void validateRemascsStorageIsCorrect(RemascStorageProvider provider, Coin expectedRewardBalance, Coin expectedBurnedBalance, long expectedSiblingsSize) {
+        assertEquals(expectedRewardBalance, provider.getRewardBalance());
+        assertEquals(expectedBurnedBalance, provider.getBurnedBalance());
+        assertEquals(expectedSiblingsSize, provider.getSiblings().size());
+    }
+
+    private RemascStorageProvider getRemascStorageProvider(Blockchain blockchain) throws IOException {
+        return new RemascStorageProvider(blockchain.getRepository(), PrecompiledContracts.REMASC_ADDR);
+    }
+
+    private List<Block> createSimpleBlocks(Block parent, int size) {
+        List<Block> chain = new ArrayList<>();
+
+        while (chain.size() < size) {
+            Block newblock = RemascTestRunner.createBlock(this.genesisBlock, parent, PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
+            chain.add(newblock);
+            parent = newblock;
+        }
+
+        return chain;
     }
 
     private RskAddress randomAddress() {

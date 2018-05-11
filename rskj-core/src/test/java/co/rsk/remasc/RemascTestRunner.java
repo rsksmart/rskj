@@ -105,7 +105,7 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
-        BlockExecutor blockExecutor = new BlockExecutor(new TestSystemProperties(), blockchain.getRepository(),
+        BlockExecutor blockExecutor = new BlockExecutor(builder.getConfig(), blockchain.getRepository(),
                                                         null, blockchain.getBlockStore(), null);
 
         for(int i = 0; i <= this.initialHeight; i++) {
