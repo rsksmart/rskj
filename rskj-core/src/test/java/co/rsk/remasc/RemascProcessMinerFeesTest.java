@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -32,7 +33,9 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
 import org.ethereum.TestUtils;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
+import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
@@ -47,6 +50,8 @@ import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 public class RemascProcessMinerFeesTest {
 
@@ -72,8 +77,11 @@ public class RemascProcessMinerFeesTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestConfig());
+        config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = spy(new RegTestConfig());
+        when(((RegTestConfig) blockchainConfig).isRskIp15Bis()).thenReturn(false);
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        RemascProcessMinerFeesTest.config.setBlockchainConfig(blockchainConfig);
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 
         accountsAddressesUpToD = new LinkedList<>();

@@ -98,10 +98,11 @@ public class Remasc {
             throw new RemascInvalidInvocationException("Invoked Remasc outside last tx of the block");
         }
 
-        // This is not necessary but maintained for consensus reasons before we do a network upgrade
-        this.addNewSiblings();
-
         long blockNbr = executionBlock.getNumber();
+        if (!config.getBlockchainConfig().getConfigForBlock(blockNbr).isRskIp15Bis()) {
+            this.addNewSiblings();
+        }
+
         long processingBlockNumber = blockNbr - remascConstants.getMaturity();
         if (processingBlockNumber < 1 ) {
             logger.debug("First block has not reached maturity yet, current block is {}", blockNbr);
@@ -212,8 +213,9 @@ public class Remasc {
             provider.setBrokenSelectionRule(Boolean.FALSE);
         }
 
-        // This is not necessary but maintained for consensus reasons before we do a network upgrade
-        this.removeUsedSiblings(processingBlockHeader);
+        if (!config.getBlockchainConfig().getConfigForBlock(blockNbr).isRskIp15Bis()) {
+            this.removeUsedSiblings(processingBlockHeader);
+        }
     }
 
 

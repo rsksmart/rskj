@@ -41,6 +41,8 @@ public interface BlockchainConfig {
 
     boolean areBridgeTxsFree();
 
+    boolean isRskIp15Bis();
+
     boolean isRfs50();
 
     boolean isRfs55();
