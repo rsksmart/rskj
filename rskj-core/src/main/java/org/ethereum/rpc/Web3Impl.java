@@ -1117,7 +1117,9 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public MnrModule getMnrModule() { return mnrModule; }
+    public MnrModule getMnrModule() {
+        return mnrModule;
+    }
 
     @Override
     public String evm_snapshot() {
