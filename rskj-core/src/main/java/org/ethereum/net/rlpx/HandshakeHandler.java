@@ -333,13 +333,11 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         recordFailedHandshake(ctx);
         if (channel.isDiscoveryMode()) {
-            loggerNet.debug(String.format("Handshake failed: %s (%s)", ctx.channel().remoteAddress(), cause.getMessage()));
+            loggerNet.debug("Handshake failed: address {}", ctx.channel().remoteAddress(), cause);
+        } else if (cause instanceof IOException) {
+            loggerNet.info("Handshake failed: address {}", ctx.channel().remoteAddress(), cause);
         } else {
-            if (cause instanceof IOException) {
-                loggerNet.info(String.format("Handshake failed: %s", ctx.channel().remoteAddress(), cause));
-            } else {
-                loggerNet.warn("Handshake failed: ", cause);
-            }
+            loggerNet.warn("Handshake failed", cause);
         }
         ctx.close();
     }
