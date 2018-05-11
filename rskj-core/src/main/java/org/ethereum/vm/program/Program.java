@@ -183,8 +183,8 @@ public class Program {
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
-    boolean isLogEnabled;
-    boolean isGasLogEnabled;
+    private boolean isLogEnabled;
+    private boolean isGasLogEnabled;
 
     public Program(
             VmConfig config,
@@ -809,7 +809,7 @@ public class Program {
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 
         if (isLogEnabled) {
-            logger.info(msg.getType().name() + " for existing contract: address: [{}], outDataOffs: [{}], outDataSize: [{}]  ",
+            logger.info("{} for existing contract: address: [{}], outDataOffs: [{}], outDataSize: [{}]  ", msg.getType().name(),
                     contextAddress, msg.getOutDataOffs().longValue(), msg.getOutDataSize().longValue());
         }
 
@@ -1301,7 +1301,7 @@ public class Program {
         return ret;
     }
 
-    public void precompile() {
+    private void precompile() {
         int i = 0;
         exeVersion = 0;
         scriptVersion = 0;
@@ -1426,8 +1426,8 @@ public class Program {
     }
 
     static class ByteCodeIterator {
-        byte[] code;
-        int pc;
+        private byte[] code;
+        private int pc;
 
         public ByteCodeIterator(byte[] code) {
             this.code = code;

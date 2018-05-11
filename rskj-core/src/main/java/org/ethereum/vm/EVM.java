@@ -101,7 +101,6 @@ public class EVM implements VM {
     private long memWords; // parameters for logging
     private long gasCost;
     private long gasBefore; // only for tracing
-    private int stepBefore; // only for debugging
     private boolean isLogEnabled;
 
     public EVM(VmConfig vmConfig, PrecompiledContracts precompiledContracts) {
@@ -1898,7 +1897,6 @@ public class EVM implements VM {
 
                 if (vmConfig.dumpBlock() >= 0) {
                     gasBefore = program.getRemainingGas();
-                    stepBefore = program.getPC();
                     memWords = 0; // parameters for logging
                 }
 
@@ -1931,7 +1929,6 @@ public class EVM implements VM {
 
     public void initDebugData() {
         gasBefore = 0;
-        stepBefore = 0;
         memWords = 0;
     }
 
