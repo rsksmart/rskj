@@ -22,7 +22,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
@@ -71,15 +70,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private volatile boolean stopped;
 
-    private TxHandler txHandler;
-
     @Autowired
     public NodeMessageHandler(RskSystemProperties config,
                               @Nonnull final BlockProcessor blockProcessor,
                               final SyncProcessor syncProcessor,
                               @Nullable final ChannelManager channelManager,
                               @Nullable final TransactionGateway transactionGateway,
-                              final TxHandler txHandler,
                               @Nullable final PeerScoringManager peerScoringManager,
                               @Nonnull BlockValidationRule blockValidationRule) {
         this.config = config;
@@ -88,7 +84,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         this.syncProcessor = syncProcessor;
         this.transactionGateway = transactionGateway;
         this.blockValidationRule = blockValidationRule;
-        this.txHandler = txHandler;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
     }
