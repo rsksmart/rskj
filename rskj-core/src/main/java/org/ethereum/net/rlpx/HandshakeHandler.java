@@ -98,7 +98,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     }
 
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        loggerWire.debug("Decoding handshake... (" + in.readableBytes() + " bytes available)");
+        loggerWire.debug("Decoding handshake... ({} bytes available)", in.readableBytes());
         decodeHandshake(ctx, in);
         if (isHandshakeDone) {
             loggerWire.debug("Handshake done, removing HandshakeHandler from pipeline.");
@@ -177,7 +177,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                 loggerNet.trace("auth exchange done");
                 channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), null);
             } else {
-                loggerWire.debug("MessageCodec: Buffer bytes: " + buffer.readableBytes());
+                loggerWire.debug("MessageCodec: Buffer bytes: {}", buffer.readableBytes());
                 List<Frame> frames = frameCodec.readFrames(buffer);
                 if (frames == null || frames.isEmpty()) {
                     return;
@@ -239,8 +239,10 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                         responsePacket = handshake.encryptAuthResponseV4(response);
 
                     } catch (InvalidCipherTextException ce) {
-                        loggerNet.warn("Can't decrypt AuthInitiateMessage from " + ctx.channel().remoteAddress() +
-                                ". Most likely the remote peer used wrong public key (NodeID) to encrypt message.");
+                        loggerNet.warn(
+                                "Can't decrypt AuthInitiateMessage from {}. Most likely the remote peer used wrong public key (NodeID) to encrypt message.",
+                                ctx.channel().remoteAddress()
+                        );
                         return;
                     }
                 }
