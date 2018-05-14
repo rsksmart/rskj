@@ -26,6 +26,8 @@ import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
+import co.rsk.rpc.modules.debug.DebugModule;
+import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
@@ -573,6 +575,7 @@ public class Web3ImplLogsTest {
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
         EthModule ethModule = new EthModule(config, blockChain, null, new ExecutionBlockRetriever(blockChain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, transactionPool));
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
+        DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         return new Web3RskImpl(
                 eth,
                 blockChain,
@@ -584,13 +587,13 @@ public class Web3ImplLogsTest {
                 ethModule,
                 txPoolModule,
                 null,
+                debugModule,
                 Web3Mocks.getMockChannelManager(),
                 blockChain.getRepository(),
                 null,
                 null,
                 blockChain.getBlockStore(),
                 receiptStore,
-                null,
                 null,
                 null,
                 null,

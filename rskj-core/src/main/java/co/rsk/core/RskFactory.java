@@ -31,6 +31,7 @@ import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.Web3RskImpl;
+import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -161,6 +162,7 @@ public class RskFactory {
                         PersonalModule personalModule,
                         EthModule ethModule,
                         TxPoolModule txPoolModule,
+                        DebugModule debugModule,
                         ChannelManager channelManager,
                         Repository repository,
                         PeerScoringManager peerScoringManager,
@@ -169,7 +171,6 @@ public class RskFactory {
                         ReceiptStore receiptStore,
                         PeerServer peerServer,
                         BlockProcessor nodeBlockProcessor,
-                        MessageHandler messageHandler,
                         HashRateCalculator hashRateCalculator,
                         ConfigCapabilities configCapabilities) {
         return new Web3RskImpl(
@@ -183,6 +184,7 @@ public class RskFactory {
                 ethModule,
                 txPoolModule,
                 mnrModule,
+                debugModule,
                 channelManager,
                 repository,
                 peerScoringManager,
@@ -191,7 +193,6 @@ public class RskFactory {
                 receiptStore,
                 peerServer,
                 nodeBlockProcessor,
-                messageHandler,
                 hashRateCalculator,
                 configCapabilities
         );
