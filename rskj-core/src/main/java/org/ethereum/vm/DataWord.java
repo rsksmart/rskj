@@ -38,7 +38,7 @@ import java.nio.ByteBuffer;
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-public class DataWord implements Comparable<DataWord> {
+public final class DataWord implements Comparable<DataWord> {
 
     /* Maximum value of the DataWord */
     public static final BigInteger _2_256 = BigInteger.valueOf(2).pow(256);
