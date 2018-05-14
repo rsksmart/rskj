@@ -22,7 +22,8 @@ import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
-import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
+import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
+import org.ethereum.util.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -71,6 +72,27 @@ public class ExecutionBlockRetriever {
             return cachedBlock;
         }
 
-        throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' and 'pending' as parameters so far.");
+        // Is the block specifier either a hexadecimal or decimal number?
+        Optional<Long> executionBlockNumber = Optional.empty();
+
+        if (Utils.isHexadecimalString(bnOrId)) {
+            executionBlockNumber = Optional.of(Utils.hexadecimalStringToLong(bnOrId));
+        } else if (Utils.isDecimalString(bnOrId)) {
+            executionBlockNumber = Optional.of(Utils.decimalStringToLong(bnOrId));
+        }
+
+        if (executionBlockNumber.isPresent()) {
+            Block executionBlock = blockchain.getBlockByNumber(executionBlockNumber.get());
+            if (executionBlock == null) {
+                throw new JsonRpcInvalidParamException(String.format("Invalid block number %d", executionBlockNumber.get()));
+            }
+            return executionBlock;
+        }
+
+        // If we got here, the specifier given is unsupported
+        throw new JsonRpcInvalidParamException(String.format(
+                "Unsupported block specifier '%s'. Can only be either 'latest', " +
+                "'pending' or a specific block number (either hex - prepending '0x' or decimal).",
+                bnOrId));
     }
 }
