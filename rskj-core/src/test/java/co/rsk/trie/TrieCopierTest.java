@@ -21,6 +21,7 @@ package co.rsk.trie;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigLoader;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
@@ -46,7 +47,7 @@ import java.util.Random;
  */
 public class TrieCopierTest {
     private static Random random = new Random();
-    private final RskSystemProperties config = new RskSystemProperties(new ConfigLoader());
+    private final RskSystemProperties config = new TestSystemProperties();
 
     @Test
     public void copyTrie() {
