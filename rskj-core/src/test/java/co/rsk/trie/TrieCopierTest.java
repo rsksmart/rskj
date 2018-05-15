@@ -175,7 +175,7 @@ public class TrieCopierTest {
 
         byte[] state99 = blockchain.getBlockByNumber(99).getStateRoot();
 
-        TrieCopier.trieContractStateCopy(store, store2, blockchain, 99, 100, world.getRepository(), PrecompiledContracts.REMASC_ADDR);
+        TrieCopier.trieContractStateCopy(store2, blockchain, 99, 100, world.getRepository(), PrecompiledContracts.REMASC_ADDR);
 
         Repository repository99 = repository.getSnapshotTo(state99);
         AccountState accountState99 = repository99.getAccountState(PrecompiledContracts.REMASC_ADDR);
