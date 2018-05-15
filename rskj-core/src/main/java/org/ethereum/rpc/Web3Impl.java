@@ -367,11 +367,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_blockNumber() {
-        Block bestBlock;
-
-        synchronized (blockchain) {
-            bestBlock = blockchain.getBestBlock();
-        }
+        Block bestBlock = blockchain.getBestBlock();
 
         long b = 0;
         if (bestBlock != null) {
@@ -483,22 +479,20 @@ public class Web3Impl implements Web3 {
     }
 
     public static Block getBlockByNumberOrStr(String bnOrId, Blockchain blockchain) throws Exception {
-        synchronized (blockchain) {
-            Block b;
+        Block b;
 
-            if ("latest".equals(bnOrId)) {
-                b = blockchain.getBestBlock();
-            } else if ("earliest".equals(bnOrId)) {
-                b = blockchain.getBlockByNumber(0);
-            } else if ("pending".equals(bnOrId)) {
-                throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
-            } else {
-                long bn = JSonHexToLong(bnOrId);
-                b = blockchain.getBlockByNumber(bn);
-            }
-
-            return b;
+        if ("latest".equals(bnOrId)) {
+            b = blockchain.getBestBlock();
+        } else if ("earliest".equals(bnOrId)) {
+            b = blockchain.getBlockByNumber(0);
+        } else if ("pending".equals(bnOrId)) {
+            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
+        } else {
+            long bn = JSonHexToLong(bnOrId);
+            b = blockchain.getBlockByNumber(bn);
         }
+
+        return b;
     }
 
     @Override
