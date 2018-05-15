@@ -25,7 +25,6 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
-import org.ethereum.db.ContractDetails;
 
 import java.util.List;
 
@@ -33,6 +32,10 @@ import java.util.List;
  * Created by ajlopez on 09/03/2018.
  */
 public class TrieCopier {
+    private TrieCopier() {
+
+    }
+
     public static void trieStateCopy(TrieStore source, TrieStore target, Keccak256 hash)
     {
         Trie trie = source.retrieve(hash.getBytes());
@@ -54,7 +57,7 @@ public class TrieCopier {
         }
     }
 
-    public static void trieContractStateCopy(TrieStore source, TrieStore target, Blockchain blockchain, long initialHeight, long finalHeight, Repository repository, RskAddress contractAddress) {
+    public static void trieContractStateCopy(TrieStore target, Blockchain blockchain, long initialHeight, long finalHeight, Repository repository, RskAddress contractAddress) {
         long h = initialHeight;
 
         List<Block> blocks = blockchain.getBlocksByNumber(h);
