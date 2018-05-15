@@ -38,7 +38,6 @@ import static org.ethereum.datasource.DataSourcePool.closeDataSource;
 public class PruneService implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger("prune");
 
-    private final TrieCopier trieCopier = new TrieCopier();
     private final RskSystemProperties rskConfiguration;
     private final PruneConfiguration pruneConfiguration;
     private final Blockchain blockchain;
@@ -97,22 +96,21 @@ public class PruneService implements Runnable {
 
         String dataSourceName = getDataSourceName(contractAddress);
         KeyValueDataSource sourceDataSource = levelDbByName(this.rskConfiguration, dataSourceName);
-        TrieStore sourceStore = new TrieStoreImpl(sourceDataSource);
         KeyValueDataSource targetDataSource = levelDbByName(this.rskConfiguration, dataSourceName + "B");
         TrieStore targetStore = new TrieStoreImpl(targetDataSource);
 
-        trieCopier.trieContractStateCopy(sourceStore, targetStore, blockchain, from, to, blockchain.getRepository(), this.contractAddress);
+        TrieCopier.trieContractStateCopy(targetStore, blockchain, from, to, blockchain.getRepository(), this.contractAddress);
 
         long to2 = this.blockchain.getBestBlock().getNumber() - this.pruneConfiguration.getNoBlocksToAvoidForks();
 
-        trieCopier.trieContractStateCopy(sourceStore, targetStore, blockchain, to, to2, blockchain.getRepository(), this.contractAddress);
+        TrieCopier.trieContractStateCopy(targetStore, blockchain, to, to2, blockchain.getRepository(), this.contractAddress);
 
         blockchain.suspendProcess();
 
         logger.info("Suspend blockchain process");
 
         try {
-            trieCopier.trieContractStateCopy(sourceStore, targetStore, blockchain, to2, 0, blockchain.getRepository(), this.contractAddress);
+            TrieCopier.trieContractStateCopy(targetStore, blockchain, to2, 0, blockchain.getRepository(), this.contractAddress);
 
             closeDataSource(dataSourceName);
             targetDataSource.close();
