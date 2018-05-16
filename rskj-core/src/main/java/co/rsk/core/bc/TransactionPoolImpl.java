@@ -476,7 +476,9 @@ public class TransactionPoolImpl implements TransactionPool {
     private class OnBlockListener extends EthereumListenerAdapter {
         @Override
         public void onBlock(Block block, List<TransactionReceipt> receipts, ImportResult importResult) {
-            processBest(block);
+            if (importResult == ImportResult.IMPORTED_BEST) {
+                processBest(block);
+            }
         }
     }
 }
