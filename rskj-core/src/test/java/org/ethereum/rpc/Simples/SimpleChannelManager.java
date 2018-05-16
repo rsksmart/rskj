@@ -21,7 +21,7 @@ package org.ethereum.rpc.Simples;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
-import co.rsk.net.messages.MessageWithId;
+import co.rsk.net.messages.Message;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.net.simples.SimpleNodeChannel;
 import org.ethereum.core.Block;
@@ -139,7 +139,7 @@ public class SimpleChannelManager implements ChannelManager {
     }
 
     @Override
-    public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
+    public boolean sendMessageTo(NodeID nodeID, Message message) {
 //        simpleChannels.get(nodeID).sendMessage(message);
         MessageChannel channel = simpleChannels.get(nodeID);
         // TODO(lsebrie): handle better tests where channels are not initialized

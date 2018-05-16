@@ -345,7 +345,7 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     @Override
-    public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
+    public boolean sendMessageTo(NodeID nodeID, Message message) {
         synchronized (activePeers) {
             EthMessage msg = new RskMessage(config, message);
             Channel channel = activePeers.get(nodeID);
