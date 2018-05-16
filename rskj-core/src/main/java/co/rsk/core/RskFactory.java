@@ -127,6 +127,17 @@ public class RskFactory {
     }
 
     @Bean
+    public AltSyncProcessor getAltSyncProcessor(RskSystemProperties config,
+                                                Blockchain blockchain,
+                                                BlockSyncService blockSyncService,
+                                                ChannelManager channelManager,
+                                                SyncConfiguration syncConfiguration) {
+
+        return new AltSyncProcessor(config, blockchain, blockSyncService,
+                syncConfiguration, channelManager);
+    }
+
+    @Bean
     public BlockSyncService getBlockSyncService(RskSystemProperties config,
                                                 Blockchain blockchain,
                                                 BlockStore store,
