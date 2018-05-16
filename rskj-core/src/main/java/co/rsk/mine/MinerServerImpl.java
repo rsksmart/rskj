@@ -114,6 +114,9 @@ public class MinerServerImpl implements MinerServer {
     private boolean fallbackMiningScheduled;
     private final RskSystemProperties config;
 
+    private byte[] privKey0;
+    private byte[] privKey1;
+
     @Autowired
     public MinerServerImpl(
             RskSystemProperties config,
@@ -285,9 +288,6 @@ public class MinerServerImpl implements MinerServer {
             return null;
         }
     }
-
-    static byte[] privKey0;
-    static byte[] privKey1;
 
     @Override
     public boolean generateFallbackBlock() {
