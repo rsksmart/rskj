@@ -21,6 +21,7 @@ package org.ethereum.listener;
 
 import co.rsk.core.Coin;
 import org.ethereum.core.Block;
+import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.slf4j.Logger;
@@ -48,7 +49,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
     private Coin lastVal;
 
     @Override
-    public void onBlock(Block block, List<TransactionReceipt> receipts) {
+    public void onBlock(Block block, List<TransactionReceipt> receipts, ImportResult importResult) {
         logger.trace("Start onBlock");
 
         for (Transaction tx : block.getTransactionsList()) {

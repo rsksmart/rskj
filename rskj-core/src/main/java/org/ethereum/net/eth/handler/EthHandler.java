@@ -24,6 +24,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
@@ -62,7 +63,7 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
     protected Block bestBlock;
     protected EthereumListener listener = new EthereumListenerAdapter() {
         @Override
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
+        public void onBlock(Block block, List<TransactionReceipt> receipts, ImportResult importResult) {
             bestBlock = block;
         }
     };

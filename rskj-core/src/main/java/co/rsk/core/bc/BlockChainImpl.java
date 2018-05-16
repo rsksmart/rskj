@@ -286,7 +286,7 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("Start saveReceipts");
             saveReceipts(block, result);
             logger.trace("Start onBlock");
-            onBlock(block, result);
+            onBlock(block, result, ImportResult.IMPORTED_BEST);
             logger.trace("Start flushData");
             flushData();
 
@@ -312,7 +312,7 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("Start saveReceipts");
             saveReceipts(block, result);
             logger.trace("Start onBlock");
-            onBlock(block, result);
+            onBlock(block, result, ImportResult.IMPORTED_NOT_BEST);
             logger.trace("Start flushData");
             flushData();
 
@@ -503,10 +503,10 @@ public class BlockChainImpl implements Blockchain {
         receiptStore.saveMultiple(block.getHash().getBytes(), result.getTransactionReceipts());
     }
 
-    private void onBlock(Block block, BlockResult result) {
+    private void onBlock(Block block, BlockResult result, ImportResult importResult) {
         if (result != null && listener != null) {
             listener.trace(String.format("Block chain size: [ %d ]", this.getSize()));
-            listener.onBlock(block, result.getTransactionReceipts());
+            listener.onBlock(block, result.getTransactionReceipts(), importResult);
         }
     }
 

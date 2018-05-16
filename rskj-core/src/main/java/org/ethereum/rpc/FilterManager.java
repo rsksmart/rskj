@@ -19,6 +19,7 @@
 package org.ethereum.rpc;
 
 import org.ethereum.core.Block;
+import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
@@ -47,7 +48,10 @@ public class FilterManager {
     public FilterManager(Ethereum eth) {
         eth.addListener(new EthereumListenerAdapter() {
             @Override
-            public void onBlock(Block block, List<TransactionReceipt> receipts) {
+            public void onBlock(
+                    Block block,
+                    List<TransactionReceipt> receipts,
+                    ImportResult importResult) {
                 newBlockReceived(block);
             }
 

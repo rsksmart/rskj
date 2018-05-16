@@ -120,7 +120,7 @@ public class BlockChainLoader {
             blockchain.setBestBlock(genesis);
             blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
 
-            listener.onBlock(genesis, new ArrayList<TransactionReceipt>() );
+            listener.onBlock(genesis, new ArrayList<>(), ImportResult.IMPORTED_BEST);
             repository.dumpState(genesis, 0, 0, null);
 
             logger.info("Genesis block loaded");

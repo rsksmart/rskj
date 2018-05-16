@@ -746,7 +746,7 @@ public class MinerServerImpl implements MinerServer {
          * **/
         // This event executes in the thread context of the caller.
         // In case of private miner, it's the "Private Mining timer" task
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
+        public void onBlock(Block block, List<TransactionReceipt> receipts, ImportResult importResult) {
             if (isSyncing()) {
                 return;
             }
