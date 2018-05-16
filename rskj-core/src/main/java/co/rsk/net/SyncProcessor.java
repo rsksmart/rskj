@@ -1,12 +1,12 @@
 package co.rsk.net;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.MaxSizeHashMap;
 import co.rsk.validators.BlockHeaderValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
@@ -35,7 +35,6 @@ public class SyncProcessor implements SyncEventsHandler {
     public static final int TIME_LIMIT_FAILURE_RECORD = 600;
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
-    private final RskSystemProperties config;
     private final Blockchain blockchain;
     private final BlockSyncService blockSyncService;
     private final PeerScoringManager peerScoringManager;
@@ -49,15 +48,11 @@ public class SyncProcessor implements SyncEventsHandler {
     private SyncState syncState;
     private NodeID selectedPeerId;
 
-    public SyncProcessor(RskSystemProperties config,
-                         Blockchain blockchain,
-                         BlockSyncService blockSyncService,
-                         PeerScoringManager peerScoringManager,
-                         ChannelManager channelManager,
-                         SyncConfiguration syncConfiguration,
-                         BlockHeaderValidationRule blockHeaderValidationRule,
-                         DifficultyCalculator difficultyCalculator) {
-        this.config = config;
+    public SyncProcessor(
+            Blockchain blockchain, BlockSyncService blockSyncService, PeerScoringManager peerScoringManager,
+            ChannelManager channelManager, SyncConfiguration syncConfiguration,
+            BlockHeaderValidationRule blockHeaderValidationRule, DifficultyCalculator difficultyCalculator) {
+
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
         this.peerScoringManager = peerScoringManager;
@@ -66,12 +61,8 @@ public class SyncProcessor implements SyncEventsHandler {
         this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule, difficultyCalculator);
         this.peerStatuses = new PeersInformation(syncInformation, channelManager, syncConfiguration);
         this.pendingMessages = new PendingMessages();
-        this.failedPeers = new LinkedHashMap<NodeID, Instant>(MAX_SIZE_FAILURE_RECORDS, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<NodeID, Instant> eldest) {
-                return size() > MAX_SIZE_FAILURE_RECORDS;
-            }
-        };
+        this.failedPeers = new MaxSizeHashMap(MAX_SIZE_FAILURE_RECORDS);
+
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
     }
 
@@ -236,12 +227,10 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void stopSyncing() {
-        selectedPeerId = null;
-        this.pendingMessages.clear();
         // always that a syncing process ends unexpectedly the best block number is reset
         blockSyncService.setLastKnownBlockNumber(blockchain.getBestBlock().getNumber());
-        clearOldFailureEntries();
-        setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
+        restartSyncingPhase();
+        clearSyncingPhaseData();
     }
 
     @Override
@@ -261,7 +250,18 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void onCompletedSyncing() {
         logger.trace("Completed syncing phase with node {}", selectedPeerId);
-        stopSyncing();
+        clearSyncingPhaseData();
+        restartSyncingPhase();
+    }
+
+    private void clearSyncingPhaseData() {
+        selectedPeerId = null;
+        this.pendingMessages.clear();
+        clearOldFailureEntries();
+    }
+
+    private void restartSyncingPhase() {
+        setSyncState(new DecidingSyncState(syncConfiguration, this, syncInformation, peerStatuses));
     }
 
     private boolean sendMessage(NodeID nodeID, MessageWithId message) {
@@ -356,7 +356,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
         @Override
         public BlockProcessResult processBlock(Block block, MessageChannel channel) {
-            // this is a controled place where we ask for blocks, we never should look for missing hashes
+            // this is a controlled place where we ask for blocks, we never should look for missing hashes
             return blockSyncService.processBlock(block, channel, true);
         }
 
