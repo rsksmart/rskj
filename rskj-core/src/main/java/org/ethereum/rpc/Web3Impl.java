@@ -1202,11 +1202,6 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    @Override
-    public String debug_wireProtocolQueueSize() {
-        return debugModule.wireProtocolQueueSize();
-    }
-
     /**
      * Adds an address or block to the list of banned addresses
      * It supports IPV4 and IPV6 addresses with an optional number of bits to ignore

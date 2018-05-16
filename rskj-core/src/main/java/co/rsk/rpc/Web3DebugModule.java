@@ -1,7 +1,3 @@
-package co.rsk.rpc;
-
-import co.rsk.rpc.modules.debug.DebugModule;
-
 /*
  * This file is part of RskJ
  * Copyright (C) 2018 RSK Labs Ltd.
@@ -19,6 +15,11 @@ import co.rsk.rpc.modules.debug.DebugModule;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
+package co.rsk.rpc;
+
+import co.rsk.rpc.modules.debug.DebugModule;
+
 public interface Web3DebugModule {
 
     default String debug_wireProtocolQueueSize() {
