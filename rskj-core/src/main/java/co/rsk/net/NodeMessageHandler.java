@@ -313,18 +313,22 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         long blockNumber = block.getNumber();
 
+        /*
         if (this.blockProcessor.isAdvancedBlock(blockNumber)) {
             logger.trace("Too advanced block {} {}", blockNumber, block.getShortHash());
             return;
         }
+        */
 
         Metrics.processBlockMessage("start", block, sender.getPeerNodeID());
 
+        /*
         if (!isValidBlock(block)) {
             logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
             recordEvent(sender, EventType.INVALID_BLOCK);
             return;
         }
+        */
 
         if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
             logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
