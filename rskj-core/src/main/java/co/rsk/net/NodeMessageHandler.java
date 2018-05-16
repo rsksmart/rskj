@@ -168,6 +168,14 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void tryAddMessage(MessageChannel sender, Message message) {
+        if (this.queue.size() > 5000) {
+            return;
+        }
+
+        if (this.queue.size() > 1000 && message.getMessageType() == MessageType.STATUS_MESSAGE) {
+            return;
+        }
+
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         if (!receivedMessages.contains(encodedMessage)) {
             if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
