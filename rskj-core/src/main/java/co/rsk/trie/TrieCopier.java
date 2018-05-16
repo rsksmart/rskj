@@ -36,8 +36,7 @@ public class TrieCopier {
 
     }
 
-    public static void trieStateCopy(TrieStore source, TrieStore target, Keccak256 hash)
-    {
+    public static void trieStateCopy(TrieStore source, TrieStore target, Keccak256 hash) {
         Trie trie = source.retrieve(hash.getBytes());
         trie.copyTo(target);
     }

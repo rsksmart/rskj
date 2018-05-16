@@ -35,7 +35,7 @@ import static org.ethereum.datasource.DataSourcePool.closeDataSource;
 /**
  * Created by ajlopez on 21/03/2018.
  */
-public class PruneService implements Runnable {
+public class PruneService {
     private static final Logger logger = LoggerFactory.getLogger("prune");
 
     private final RskSystemProperties rskConfiguration;
@@ -56,7 +56,7 @@ public class PruneService implements Runnable {
 
     public void start() {
         this.stopped = false;
-        new Thread(this).run();
+        new Thread(this::run).run();
     }
 
     public void run() {
