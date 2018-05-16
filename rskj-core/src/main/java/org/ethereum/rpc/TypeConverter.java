@@ -93,4 +93,12 @@ public class TypeConverter {
     public static String removeZeroX(String str) {
         return str.substring(2);
     }
+
+    public static long JSonHexToLong(String x) {
+        if (!x.startsWith("0x")) {
+            throw new NumberFormatException("Incorrect hex syntax");
+        }
+        x = x.substring(2);
+        return Long.parseLong(x, 16);
+    }
 }

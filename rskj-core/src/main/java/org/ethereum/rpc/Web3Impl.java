@@ -166,14 +166,6 @@ public class Web3Impl implements Web3 {
         hashRateCalculator.stop();
     }
 
-    public static long JSonHexToLong(String x) throws Exception {
-        if (!x.startsWith("0x")) {
-            throw new Exception("Incorrect hex syntax");
-        }
-        x = x.substring(2);
-        return Long.parseLong(x, 16);
-    }
-
     public int JSonHexToInt(String x) throws Exception {
         if (!x.startsWith("0x")) {
             throw new Exception("Incorrect hex syntax");
