@@ -115,71 +115,75 @@ public class FullNodeRunner implements NodeRunner {
 
     @Override
     public void run() throws Exception {
-        logger.info("Starting RSK");
+        try {
+            logger.info("Starting RSK");
 
-        logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
-        BuildInfo.printInfo();
+            logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
+            BuildInfo.printInfo();
 
-        // this should be the genesis block at this point
-        transactionPool.start(blockchain.getBestBlock());
-        channelManager.start();
-        messageHandler.start();
-        peerServer.start();
+            // this should be the genesis block at this point
+            transactionPool.start(blockchain.getBestBlock());
+            channelManager.start();
+            messageHandler.start();
+            peerServer.start();
 
-        if (logger.isInfoEnabled()) {
-            String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
-            logger.info("Capability eth version: [{}]", versions);
-        }
-        if (rskSystemProperties.isBlocksEnabled()) {
-            setupRecorder(rskSystemProperties.blocksRecorder());
-            setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
-        }
+            if (logger.isInfoEnabled()) {
+                String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
+                logger.info("Capability eth version: [{}]", versions);
+            }
+            if (rskSystemProperties.isBlocksEnabled()) {
+                setupRecorder(rskSystemProperties.blocksRecorder());
+                setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
+            }
 
-        if (!"".equals(rskSystemProperties.blocksLoader())) {
-            rskSystemProperties.setSyncEnabled(Boolean.FALSE);
-            rskSystemProperties.setDiscoveryEnabled(Boolean.FALSE);
-        }
+            if (!"".equals(rskSystemProperties.blocksLoader())) {
+                rskSystemProperties.setSyncEnabled(Boolean.FALSE);
+                rskSystemProperties.setDiscoveryEnabled(Boolean.FALSE);
+            }
 
-        Metrics.registerNodeID(rskSystemProperties.nodeId());
+            Metrics.registerNodeID(rskSystemProperties.nodeId());
 
-        if (rskSystemProperties.simulateTxs()) {
-            enableSimulateTxs();
-        }
+            if (rskSystemProperties.simulateTxs()) {
+                enableSimulateTxs();
+            }
 
-        if (rskSystemProperties.simulateTxsEx()) {
-            enableSimulateTxsEx();
-        }
+            if (rskSystemProperties.simulateTxsEx()) {
+                enableSimulateTxsEx();
+            }
 
-        if (rskSystemProperties.isRpcEnabled()) {
-            logger.info("RPC enabled");
-            startRPCServer();
-        }
-        else {
-            logger.info("RPC disabled");
-        }
+            if (rskSystemProperties.isRpcEnabled()) {
+                logger.info("RPC enabled");
+                startRPCServer();
+            } else {
+                logger.info("RPC disabled");
+            }
 
-        if (rskSystemProperties.isPeerDiscoveryEnabled()) {
-            udpServer.start();
-        }
+            if (rskSystemProperties.isPeerDiscoveryEnabled()) {
+                udpServer.start();
+            }
 
-        if (rskSystemProperties.isSyncEnabled()) {
-            syncPool.updateLowerUsefulDifficulty();
-            syncPool.start(peerClientFactory);
-            if (rskSystemProperties.waitForSync()) {
-                waitRskSyncDone();
+            if (rskSystemProperties.isSyncEnabled()) {
+                syncPool.updateLowerUsefulDifficulty();
+                syncPool.start(peerClientFactory);
+                if (rskSystemProperties.waitForSync()) {
+                    waitRskSyncDone();
+                }
+            }
+
+            if (rskSystemProperties.isMinerServerEnabled()) {
+                minerServer.start();
+
+                if (rskSystemProperties.isMinerClientEnabled()) {
+                    minerClient.mine();
+                }
+            }
+
+            if (rskSystemProperties.isPruneEnabled()) {
+                pruneService.start();
             }
         }
-
-        if (rskSystemProperties.isMinerServerEnabled()) {
-            minerServer.start();
-
-            if (rskSystemProperties.isMinerClientEnabled()) {
-                minerClient.mine();
-            }
-        }
-
-        if (rskSystemProperties.isPruneEnabled()) {
-            pruneService.start();
+        catch (Exception ex) {
+            logger.error("Exception {}", ex);
         }
     }
 
