@@ -84,6 +84,7 @@ public class Web3RskImplTest {
                 pm,
                 em,
                 tpm,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
                 null,

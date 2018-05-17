@@ -583,6 +583,7 @@ public class Web3ImplLogsTest {
                 personalModule,
                 ethModule,
                 txPoolModule,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 blockChain.getRepository(),
                 null,
