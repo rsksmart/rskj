@@ -56,7 +56,8 @@ public class PruneService {
 
     public void start() {
         this.stopped = false;
-        new Thread(this::run).run();
+        new Thread(this::run).start();
+        logger.info("launched");
     }
 
     public void run() {
@@ -131,7 +132,7 @@ public class PruneService {
         }
         finally {
             blockchain.resumeProcess();
-            
+
             logger.info("Resume blockchain process");
         }
     }

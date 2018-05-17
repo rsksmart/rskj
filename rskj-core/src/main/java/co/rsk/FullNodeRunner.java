@@ -185,6 +185,8 @@ public class FullNodeRunner implements NodeRunner {
         if (rskSystemProperties.isPruneEnabled()) {
             pruneService.start();
         }
+
+        logger.info("done");
     }
 
     private void startWeb3(RskSystemProperties rskSystemProperties) throws InterruptedException {
