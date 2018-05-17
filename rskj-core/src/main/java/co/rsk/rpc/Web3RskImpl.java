@@ -23,6 +23,7 @@ import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.*;
 import co.rsk.net.BlockProcessor;
+import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -68,6 +69,7 @@ public class Web3RskImpl extends Web3Impl {
                        EthModule ethModule,
                        TxPoolModule txPoolModule,
                        MnrModule mnrModule,
+                       DebugModule debugModule,
                        ChannelManager channelManager,
                        Repository repository,
                        PeerScoringManager peerScoringManager,
@@ -78,7 +80,11 @@ public class Web3RskImpl extends Web3Impl {
                        BlockProcessor nodeBlockProcessor,
                        HashRateCalculator hashRateCalculator,
                        ConfigCapabilities configCapabilities) {
-        super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer, personalModule, ethModule, txPoolModule, mnrModule, channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor, hashRateCalculator, configCapabilities);
+        super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
+              personalModule, ethModule, txPoolModule, mnrModule, debugModule,
+              channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor,
+              hashRateCalculator, configCapabilities);
+
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;
     }
@@ -98,10 +104,8 @@ public class Web3RskImpl extends Web3Impl {
     public void ext_dumpBlockchain(long numberOfBlocks, boolean includeUncles) {
         Block bestBlock = blockStore.getBestBlock();
         logger.info("Dumping blockchain starting on block number {}, to best block number {}", bestBlock.getNumber() - numberOfBlocks, bestBlock.getNumber());
-        PrintWriter writer = null;
-        try {
-            File graphFile = new File(System.getProperty("user.dir") + "/" + "rskblockchain.tgf");
-            writer = new PrintWriter(new FileWriter(graphFile));
+        File graphFile = new File(System.getProperty("user.dir") + "/" + "rskblockchain.tgf");
+        try (PrintWriter writer = new PrintWriter(new FileWriter(graphFile))) {
 
             List<Block> result = new LinkedList<>();
             long firstBlock = bestBlock.getNumber() - numberOfBlocks;
@@ -112,7 +116,8 @@ public class Web3RskImpl extends Web3Impl {
                 result.addAll(blockStore.getChainBlocksByNumber(i));
             }
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash().getBytes()) + " " + block.getNumber() + "-" + toSmallHash(block.getHash().getBytes()));
+                writer.println(toSmallHash(block.getHash().getBytes()) + " " + block.getNumber() + "-" + toSmallHash(
+                        block.getHash().getBytes()));
             }
             writer.println("#");
             for (Block block : result) {
@@ -125,13 +130,6 @@ public class Web3RskImpl extends Web3Impl {
             }
         } catch (IOException e) {
             logger.error("Could nos save node graph to file", e);
-        } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (Exception e) {
-                }
-            }
         }
     }
 

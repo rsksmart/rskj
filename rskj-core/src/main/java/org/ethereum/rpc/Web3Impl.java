@@ -29,6 +29,7 @@ import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -105,26 +106,29 @@ public class Web3Impl implements Web3 {
     private final EthModule ethModule;
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
+    private final DebugModule debugModule;
 
-    protected Web3Impl(Ethereum eth,
-                       Blockchain blockchain,
-                       TransactionPool transactionPool,
-                       BlockStore blockStore,
-                       ReceiptStore receiptStore,
-                       RskSystemProperties config,
-                       MinerClient minerClient,
-                       MinerServer minerServer,
-                       PersonalModule personalModule,
-                       EthModule ethModule,
-                       TxPoolModule txPoolModule,
-                       MnrModule mnrModule,
-                       ChannelManager channelManager,
-                       Repository repository,
-                       PeerScoringManager peerScoringManager,
-                       PeerServer peerServer,
-                       BlockProcessor nodeBlockProcessor,
-                       HashRateCalculator hashRateCalculator,
-                       ConfigCapabilities configCapabilities) {
+    protected Web3Impl(
+            Ethereum eth,
+            Blockchain blockchain,
+            TransactionPool transactionPool,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            RskSystemProperties config,
+            MinerClient minerClient,
+            MinerServer minerServer,
+            PersonalModule personalModule,
+            EthModule ethModule,
+            TxPoolModule txPoolModule,
+            MnrModule mnrModule,
+            DebugModule debugModule,
+            ChannelManager channelManager,
+            Repository repository,
+            PeerScoringManager peerScoringManager,
+            PeerServer peerServer,
+            BlockProcessor nodeBlockProcessor,
+            HashRateCalculator hashRateCalculator,
+            ConfigCapabilities configCapabilities) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -137,6 +141,7 @@ public class Web3Impl implements Web3 {
         this.ethModule = ethModule;
         this.txPoolModule = txPoolModule;
         this.mnrModule = mnrModule;
+        this.debugModule = debugModule;
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
@@ -159,14 +164,6 @@ public class Web3Impl implements Web3 {
     @Override
     public void stop() {
         hashRateCalculator.stop();
-    }
-
-    public static long JSonHexToLong(String x) throws Exception {
-        if (!x.startsWith("0x")) {
-            throw new Exception("Incorrect hex syntax");
-        }
-        x = x.substring(2);
-        return Long.parseLong(x, 16);
     }
 
     public int JSonHexToInt(String x) throws Exception {
@@ -1113,6 +1110,11 @@ public class Web3Impl implements Web3 {
     @Override
     public MnrModule getMnrModule() {
         return mnrModule;
+    }
+
+    @Override
+    public DebugModule getDebugModule() {
+        return debugModule;
     }
 
     @Override

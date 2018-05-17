@@ -25,6 +25,8 @@ import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.rpc.modules.debug.DebugModule;
+import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
@@ -74,6 +76,7 @@ public class Web3RskImplTest {
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         Web3RskImpl web3 = new Web3RskImpl(
                 rsk,
                 blockchain,
@@ -85,6 +88,7 @@ public class Web3RskImplTest {
                 em,
                 tpm,
                 null,
+                dm,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
                 null,

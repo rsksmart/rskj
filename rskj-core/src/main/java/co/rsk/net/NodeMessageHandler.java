@@ -200,6 +200,11 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     @Override
+    public long getMessageQueueSize() {
+        return this.queue.size();
+    }
+
+    @Override
     public void run() {
         while (!stopped) {
             try {

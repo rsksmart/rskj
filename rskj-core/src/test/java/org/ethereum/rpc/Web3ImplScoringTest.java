@@ -24,6 +24,8 @@ import co.rsk.core.WalletFactory;
 import co.rsk.net.NodeID;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
+import co.rsk.rpc.modules.debug.DebugModule;
+import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
@@ -356,6 +358,7 @@ public class Web3ImplScoringTest {
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(config, world.getBlockChain(), null, new ExecutionBlockRetriever(world.getBlockChain(), null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         return new Web3RskImpl(
                 rsk,
                 world.getBlockChain(),
@@ -367,6 +370,7 @@ public class Web3ImplScoringTest {
                 em,
                 tpm,
                 null,
+                dm,
                 Web3Mocks.getMockChannelManager(),
                 rsk.getRepository(),
                 peerScoringManager,
