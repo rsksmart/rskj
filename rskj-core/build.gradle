@@ -10,37 +10,10 @@ buildscript {
 
 plugins {
     id 'application'
-    id "org.sonarqube" version "2.6.2"
 }
 
 apply plugin: 'witness'
 apply plugin: 'maven'
-
-sonarqube {
-    properties {
-        property "sonar.projectName", "RskJ"
-        property "sonar.projectKey", "co.rsk:rskJ"
-        property "sonar.java.source", "1.8"
-
-        def libs = "build/libs/*.jar"
-        def bins = "build/classes/java/main"
-        property "sonar.sourceEncoding", "UTF8"
-        property "sonar.sources", "src/main/java,src/main/resources"
-        property "sonar.binaries", bins
-        property "sonar.libraries", libs
-        property "sonar.java.binaries", bins
-        property "sonar.java.libraries", libs
-
-        property "sonar.tests", "src/test/java,src/test/resources"
-        property "sonar.java.test.binaries", "build/classes/java/test"
-        property "sonar.java.test.libraries", libs
-
-        property "sonar.scm.provider", "git"
-
-        property "sonar.host.url", "$sonarHostUrl"
-        property "sonar.login", "$sonarLogin"
-    }
-}
 
 test {
     beforeTest { descriptor ->
