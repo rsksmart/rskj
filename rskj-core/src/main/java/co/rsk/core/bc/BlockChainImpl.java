@@ -94,10 +94,13 @@ public class BlockChainImpl implements Blockchain {
     private BlockRecorder blockRecorder;
     private boolean noValidation;
 
+    private TransactionPool transactionPool;
+
     public BlockChainImpl(RskSystemProperties config,
                           Repository repository,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
+                          TransactionPool transactionPool,
                           EthereumListener listener,
                           AdminInfo adminInfo,
                           BlockValidator blockValidator) {
@@ -109,6 +112,7 @@ public class BlockChainImpl implements Blockchain {
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
         this.blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
+        this.transactionPool = transactionPool;
     }
 
     @Override
@@ -285,6 +289,8 @@ public class BlockChainImpl implements Blockchain {
             switchToBlockChain(block, totalDifficulty);
             logger.trace("Start saveReceipts");
             saveReceipts(block, result);
+            logger.trace("Start processBest");
+            processBest(block);
             logger.trace("Start onBlock");
             onBlock(block, result);
             logger.trace("Start flushData");
@@ -324,6 +330,10 @@ public class BlockChainImpl implements Blockchain {
 
             return ImportResult.IMPORTED_NOT_BEST;
         }
+    }
+
+    private void processBest(final Block block) {
+        EventDispatchThread.invokeLater(() -> transactionPool.processBest(block));
     }
 
     @Override

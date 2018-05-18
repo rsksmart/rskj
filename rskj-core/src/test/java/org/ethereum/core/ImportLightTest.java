@@ -66,6 +66,7 @@ public class ImportLightTest {
                 config, repository,
                 blockStore,
                 receiptStore,
+                null,
                 listener,
                 new AdminInfo(),
                 new DummyBlockValidator()

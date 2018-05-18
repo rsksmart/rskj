@@ -126,7 +126,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
 
-        this.listener.addListener(new OnBlockListener());
+//        this.listener.addListener(new OnBlockListener());
     }
 
     public void stop() {

@@ -129,7 +129,7 @@ public class BlockChainBuilder {
             this.adminInfo = new AdminInfo();
 
 
-        BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, listener, this.adminInfo, blockValidator);
+        BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator);
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());

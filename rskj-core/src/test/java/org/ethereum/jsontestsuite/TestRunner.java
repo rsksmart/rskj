@@ -110,7 +110,7 @@ public class TestRunner {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, null, null, new DummyBlockValidator());
+        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore,null, null, null, new DummyBlockValidator());
 
         blockchain.setNoValidation(true);
 
