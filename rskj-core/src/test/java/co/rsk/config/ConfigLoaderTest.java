@@ -48,7 +48,7 @@ public class ConfigLoaderTest {
         assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("main"));
         assertThat(config.getBoolean(SystemProperties.PROPERTY_DB_RESET), is(false));
         assertThat(config.getString(SystemProperties.PROPERTY_RPC_CORS), is("*.rsk.co"));
-        assertThat(config.getBoolean(SystemProperties.PROPERTY_RPC_ENABLED), is(true));
+        assertThat(config.getBoolean(SystemProperties.PROPERTY_RPC_HTTP_ENABLED), is(false));
     }
 
     @Test
@@ -58,6 +58,7 @@ public class ConfigLoaderTest {
         Config config = loader.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("regtest"));
+        assertThat(config.getBoolean(SystemProperties.PROPERTY_RPC_HTTP_ENABLED), is(true));
     }
 
     @Test
@@ -86,6 +87,6 @@ public class ConfigLoaderTest {
         Config config = loader.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_RPC_CORS), is("myhostname"));
-        assertThat(config.getBoolean(SystemProperties.PROPERTY_RPC_ENABLED), is(true));
+        assertThat(config.getBoolean(SystemProperties.PROPERTY_RPC_HTTP_ENABLED), is(true));
     }
 }

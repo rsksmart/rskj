@@ -220,8 +220,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public int soLingerTime() {
-        return configFromFiles.hasPath("rpc.linger.time") ?
-                configFromFiles.getInt("rpc.linger.time") : -1;
+        return configFromFiles.getInt("rpc.providers.web.http.linger_time");
 
     }
 

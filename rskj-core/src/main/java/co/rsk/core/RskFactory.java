@@ -41,14 +41,15 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.netty.JsonRpcWeb3FilterHandler;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
 import co.rsk.rpc.netty.Web3HttpServer;
+import co.rsk.rpc.netty.Web3WebSocketServer;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
@@ -200,7 +201,7 @@ public class RskFactory {
 
     @Bean
     public JsonRpcWeb3FilterHandler getJsonRpcWeb3FilterHandler(RskSystemProperties rskSystemProperties) {
-        return new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains(), rskSystemProperties.rpcAddress(), rskSystemProperties.rpcHost());
+        return new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains(), rskSystemProperties.rpcHttpBindAddress(), rskSystemProperties.rpcHttpHost());
     }
 
     @Bean
@@ -209,12 +210,22 @@ public class RskFactory {
     }
 
     @Bean
+    public Web3WebSocketServer getWeb3WebSocketServer(RskSystemProperties rskSystemProperties,
+                                                      JsonRpcWeb3ServerHandler serverHandler) {
+        return new Web3WebSocketServer(
+            rskSystemProperties.rpcWebSocketBindAddress(),
+            rskSystemProperties.rpcWebSocketPort(),
+            serverHandler
+        );
+    }
+
+    @Bean
     public Web3HttpServer getWeb3HttpServer(RskSystemProperties rskSystemProperties,
                                             JsonRpcWeb3FilterHandler filterHandler,
                                             JsonRpcWeb3ServerHandler serverHandler) {
         return new Web3HttpServer(
-            rskSystemProperties.rpcAddress(),
-            rskSystemProperties.rpcPort(),
+            rskSystemProperties.rpcHttpBindAddress(),
+            rskSystemProperties.rpcHttpPort(),
             rskSystemProperties.soLingerTime(),
             true,
             new CorsConfiguration(rskSystemProperties.corsDomains()),
