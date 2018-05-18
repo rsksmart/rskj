@@ -82,7 +82,7 @@ public class PruneService {
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                logger.error("Interrupted {}", e.getMessage());
             }
         }
     }
