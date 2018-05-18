@@ -486,7 +486,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     {
         logger.trace("getFederationAddress");
 
-        return bridgeSupport.getFederationAddress().toString();
+        return bridgeSupport.getFederationAddress().toBase58();
     }
 
     public Integer getFederationSize(Object[] args)
@@ -535,7 +535,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return "";
         }
 
-        return address.toString();
+        return address.toBase58();
     }
 
     public Integer getRetiringFederationSize(Object[] args)
