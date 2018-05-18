@@ -14,6 +14,7 @@ plugins {
 
 apply plugin: 'witness'
 apply plugin: 'maven'
+apply plugin: 'jacoco'
 
 test {
     beforeTest { descriptor ->
@@ -26,6 +27,7 @@ test {
         events "failed"
         exceptionFormat "short"
     }
+    finalizedBy jacocoTestReport
 }
 
 tasks.withType(Javadoc) {
