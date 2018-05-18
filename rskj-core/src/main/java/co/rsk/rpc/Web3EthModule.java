@@ -24,6 +24,7 @@ import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 
+import java.math.BigInteger;
 import java.util.Map;
 
 public interface Web3EthModule {
@@ -65,7 +66,7 @@ public interface Web3EthModule {
 
     boolean eth_mining();
 
-    String eth_hashrate();
+    BigInteger eth_hashrate();
 
     String eth_gasPrice();
 
@@ -127,7 +128,7 @@ public interface Web3EthModule {
 
     Object[] eth_getLogs(Web3.FilterRequest fr) throws Exception;
 
-    String eth_netHashrate();
+    BigInteger eth_netHashrate();
 
     boolean eth_submitWork(String nonce, String header, String mince);
 
