@@ -23,6 +23,8 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 
+import java.io.InputStream;
+
 public class BridgeConstants {
     protected String btcParamsString;
 
@@ -31,7 +33,6 @@ public class BridgeConstants {
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
     protected int rsk2BtcMinimumAcceptableConfirmations;
-    protected int btcBroadcastingMinimumAcceptableBlocks;
 
     protected int updateBridgeExecutionPeriod;
 
@@ -52,6 +53,9 @@ public class BridgeConstants {
     protected AddressBasedAuthorizer feePerKbChangeAuthorizer;
 
     protected Coin genesisFeePerKb;
+
+    protected InputStream checkpoints;
+
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
@@ -100,4 +104,15 @@ public class BridgeConstants {
     public AddressBasedAuthorizer getFeePerKbChangeAuthorizer() { return feePerKbChangeAuthorizer; }
 
     public Coin getGenesisFeePerKb() { return genesisFeePerKb; }
+
+    public InputStream getCheckPoints() {
+        if(checkpoints == null) {
+            checkpoints = BridgeConstants.class.getResourceAsStream("/rskbitcoincheckpoints/" + this.getBtcParams().getId() + ".checkpoints");
+            if (checkpoints == null) {
+                // If we don't have a custom checkpoints file, try to use bitcoinj's default checkpoints for that network
+                checkpoints = BridgeConstants.class.getResourceAsStream("/" + this.getBtcParams().getId() + ".checkpoints");
+            }
+        }
+        return checkpoints;
+    }
 }
