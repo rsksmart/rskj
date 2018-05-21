@@ -77,8 +77,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.concurrent.Executors;
-
 @Configuration
 @ComponentScan("org.ethereum")
 public class RskFactory {
@@ -355,8 +353,7 @@ public class RskFactory {
 
     @Bean(name = "compositeEthereumListener")
     public CompositeEthereumListener getCompositeEthereumListener() {
-        // Using a single thread executor so we only execute one listener callback at a time, in a different thread.
-        return new CompositeEthereumListener(Executors.newSingleThreadExecutor());
+        return new CompositeEthereumListener();
     }
 
     @Bean

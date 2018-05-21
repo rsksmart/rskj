@@ -23,7 +23,7 @@ package org.ethereum.listener;
 public class TestCompositeEthereumListener extends CompositeEthereumListener {
 
     public TestCompositeEthereumListener() {
-        super(Runnable::run);
+        super();
     }
 
 }
