@@ -1044,7 +1044,7 @@ public class Program {
     public DataWord getBlockHash(long index) {
        long bn = this.getNumber().longValue();
         if ((index <  bn) && (index >= Math.max(0, bn - 256))) {
-            return new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData()));
+            return new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData())).clone();
         } else {
             return DataWord.ZERO.clone();
         }
