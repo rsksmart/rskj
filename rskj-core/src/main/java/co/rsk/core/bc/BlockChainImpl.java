@@ -83,6 +83,7 @@ public class BlockChainImpl implements Blockchain {
     private final Repository repository;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final TransactionPool transactionPool;
     private EthereumListener listener;
     private final AdminInfo adminInfo;
     private BlockValidator blockValidator;
@@ -98,6 +99,7 @@ public class BlockChainImpl implements Blockchain {
                           Repository repository,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
+                          TransactionPool transactionPool,
                           EthereumListener listener,
                           AdminInfo adminInfo,
                           BlockValidator blockValidator) {
@@ -109,6 +111,7 @@ public class BlockChainImpl implements Blockchain {
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
         this.blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
+        this.transactionPool = transactionPool;
     }
 
     @Override
