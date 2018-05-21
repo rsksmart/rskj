@@ -288,6 +288,8 @@ public class BlockChainImpl implements Blockchain {
             switchToBlockChain(block, totalDifficulty);
             logger.trace("Start saveReceipts");
             saveReceipts(block, result);
+            logger.trace("Start processBest");
+            processBest(block);
             logger.trace("Start onBlock");
             onBlock(block, result);
             logger.trace("Start flushData");
@@ -504,6 +506,10 @@ public class BlockChainImpl implements Blockchain {
         }
 
         receiptStore.saveMultiple(block.getHash().getBytes(), result.getTransactionReceipts());
+    }
+
+    private void processBest(final Block block) {
+        EventDispatchThread.invokeLater(() -> transactionPool.processBest(block));
     }
 
     private void onBlock(Block block, BlockResult result) {
