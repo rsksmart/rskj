@@ -21,14 +21,15 @@ package org.ethereum;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.vm.DataWord;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
-import org.spongycastle.util.BigIntegers;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -38,7 +39,6 @@ import java.util.Map;
 import java.util.Random;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.crypto.HashUtil.randomHash;
 import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 
 public final class TestUtils {
@@ -58,6 +58,10 @@ public final class TestUtils {
 
     public static RskAddress randomAddress() {
         return new RskAddress(randomBytes(20));
+    }
+
+    public static Keccak256 randomHash() {
+        return new Keccak256(randomBytes(32));
     }
 
     public static Map<Long, List<IndexedBlockStore.BlockInfo>> createIndexMap(DB db){
@@ -96,10 +100,10 @@ public final class TestUtils {
         for (int i = 0; i < length; ++i){
 
             byte[] difficutly = new BigInteger(8, new Random()).toByteArray();
-            byte[] newHash = randomHash();
+            byte[] newHash = HashUtil.randomHash();
 
             Block block = new Block(lastHash, newHash,  RskAddress.nullAddress().getBytes(), null, difficutly, lastIndex, new byte[] {0}, 0, 0, null, null,
-                    null, null, EMPTY_TRIE_HASH, randomHash(), null, null, null, Coin.ZERO);
+                    null, null, EMPTY_TRIE_HASH, HashUtil.randomHash(), null, null, null, Coin.ZERO);
 
             ++lastIndex;
             lastHash = block.getHash().getBytes();

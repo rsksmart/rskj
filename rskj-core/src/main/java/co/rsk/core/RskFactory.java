@@ -26,8 +26,6 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
-import co.rsk.net.handler.TxHandler;
-import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.Web3RskImpl;
@@ -145,11 +143,6 @@ public class RskFactory {
                                 RskSystemProperties config,
                                 NodeManager nodeManager) {
         return new SyncPool(ethereumListener, blockchain, config, nodeManager);
-    }
-
-    @Bean
-    public TxHandler getTxHandler(RskSystemProperties config, CompositeEthereumListener compositeEthereumListener, Repository repository, Blockchain blockchain) {
-        return new TxHandlerImpl(config, compositeEthereumListener, repository, blockchain);
     }
 
     @Bean
@@ -364,5 +357,13 @@ public class RskFactory {
     public CompositeEthereumListener getCompositeEthereumListener() {
         // Using a single thread executor so we only execute one listener callback at a time, in a different thread.
         return new CompositeEthereumListener(Executors.newSingleThreadExecutor());
+    }
+
+    @Bean
+    public TransactionGateway getTransactionGateway(
+            ChannelManager channelManager,
+            TransactionPool transactionPool,
+            CompositeEthereumListener emitter){
+        return new TransactionGateway(channelManager, transactionPool, emitter);
     }
 }
