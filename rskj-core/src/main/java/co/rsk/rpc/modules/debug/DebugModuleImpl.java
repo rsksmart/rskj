@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,22 +16,26 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net;
+package co.rsk.rpc.modules.debug;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+import co.rsk.net.MessageHandler;
+import org.ethereum.rpc.TypeConverter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import co.rsk.net.messages.Message;
+@Component
+public class DebugModuleImpl implements DebugModule {
 
-public interface MessageHandler {
-    void processMessage(MessageChannel sender, Message message);
+    private final MessageHandler messageHandler;
 
-    void postMessage(MessageChannel sender, Message message) throws InterruptedException;
+    @Autowired
+    public DebugModuleImpl(MessageHandler messageHandler) {
+        this.messageHandler = messageHandler;
+    }
 
-    void start();
-
-    void stop();
-
-    long getMessageQueueSize();
+    @Override
+    public String wireProtocolQueueSize() {
+        long n = messageHandler.getMessageQueueSize();
+        return TypeConverter.toJsonHex(n);
+    }
 }

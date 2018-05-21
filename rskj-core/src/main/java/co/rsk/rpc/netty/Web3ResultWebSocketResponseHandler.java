@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,23 +15,21 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package co.rsk.rpc.netty;
 
-package co.rsk.net;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+public class Web3ResultWebSocketResponseHandler extends SimpleChannelInboundHandler<Web3Result> {
 
-import co.rsk.net.messages.Message;
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, Web3Result msg) {
+        ctx.write(new TextWebSocketFrame(msg.getContent()));
+    }
 
-public interface MessageHandler {
-    void processMessage(MessageChannel sender, Message message);
-
-    void postMessage(MessageChannel sender, Message message) throws InterruptedException;
-
-    void start();
-
-    void stop();
-
-    long getMessageQueueSize();
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) {
+        ctx.flush();
+    }
 }

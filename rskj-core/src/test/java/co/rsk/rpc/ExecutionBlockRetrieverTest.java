@@ -22,6 +22,7 @@ import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.junit.Before;
 import org.junit.Test;
@@ -154,8 +155,57 @@ public class ExecutionBlockRetrieverTest {
         assertThat(retriever.getExecutionBlock("pending"), is(builtBlock2));
     }
 
-    @Test(expected = JsonRpcUnimplementedMethodException.class)
-    public void getOtherThanLatestThrows() {
+    @Test
+    public void getByNumberBlockExistsHex() {
+        Block myBlock = mock(Block.class);
+        when(blockchain.getBlockByNumber(123))
+                .thenReturn(myBlock);
+
+        assertThat(retriever.getExecutionBlock("0x7B"), is(myBlock));
+        assertThat(retriever.getExecutionBlock("0x7b"), is(myBlock));
+    }
+
+    @Test
+    public void getByNumberBlockExistsDec() {
+        Block myBlock = mock(Block.class);
+        when(blockchain.getBlockByNumber(123))
+                .thenReturn(myBlock);
+
+        assertThat(retriever.getExecutionBlock("123"), is(myBlock));
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void getByNumberInvalidBlockNumberHex() {
+        when(blockchain.getBlockByNumber(123))
+                .thenReturn(null);
+
+        retriever.getExecutionBlock("0x7B");
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void getByNumberInvalidBlockNumberDec() {
+        when(blockchain.getBlockByNumber(123))
+                .thenReturn(null);
+
+        retriever.getExecutionBlock("123");
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void getByNumberInvalidHex() {
+        retriever.getExecutionBlock("0xzz");
+
+        verify(blockchain, never()).getBlockByNumber(any(long.class));
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void getByNumberInvalidDec() {
+        retriever.getExecutionBlock("zz");
+
+        verify(blockchain, never()).getBlockByNumber(any(long.class));
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void getOtherThanPendingLatestOrNumberThrows() {
         retriever.getExecutionBlock("other");
     }
 }

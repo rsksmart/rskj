@@ -29,7 +29,9 @@ import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.InvalidInetAddressException;
@@ -103,25 +105,30 @@ public class Web3Impl implements Web3 {
     private final PersonalModule personalModule;
     private final EthModule ethModule;
     private final TxPoolModule txPoolModule;
+    private final MnrModule mnrModule;
+    private final DebugModule debugModule;
 
-    protected Web3Impl(Ethereum eth,
-                       Blockchain blockchain,
-                       TransactionPool transactionPool,
-                       BlockStore blockStore,
-                       ReceiptStore receiptStore,
-                       RskSystemProperties config,
-                       MinerClient minerClient,
-                       MinerServer minerServer,
-                       PersonalModule personalModule,
-                       EthModule ethModule,
-                       TxPoolModule txPoolModule,
-                       ChannelManager channelManager,
-                       Repository repository,
-                       PeerScoringManager peerScoringManager,
-                       PeerServer peerServer,
-                       BlockProcessor nodeBlockProcessor,
-                       HashRateCalculator hashRateCalculator,
-                       ConfigCapabilities configCapabilities) {
+    protected Web3Impl(
+            Ethereum eth,
+            Blockchain blockchain,
+            TransactionPool transactionPool,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            RskSystemProperties config,
+            MinerClient minerClient,
+            MinerServer minerServer,
+            PersonalModule personalModule,
+            EthModule ethModule,
+            TxPoolModule txPoolModule,
+            MnrModule mnrModule,
+            DebugModule debugModule,
+            ChannelManager channelManager,
+            Repository repository,
+            PeerScoringManager peerScoringManager,
+            PeerServer peerServer,
+            BlockProcessor nodeBlockProcessor,
+            HashRateCalculator hashRateCalculator,
+            ConfigCapabilities configCapabilities) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -133,6 +140,8 @@ public class Web3Impl implements Web3 {
         this.personalModule = personalModule;
         this.ethModule = ethModule;
         this.txPoolModule = txPoolModule;
+        this.mnrModule = mnrModule;
+        this.debugModule = debugModule;
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
@@ -155,14 +164,6 @@ public class Web3Impl implements Web3 {
     @Override
     public void stop() {
         hashRateCalculator.stop();
-    }
-
-    public static long JSonHexToLong(String x) throws Exception {
-        if (!x.startsWith("0x")) {
-            throw new Exception("Incorrect hex syntax");
-        }
-        x = x.substring(2);
-        return Long.parseLong(x, 16);
     }
 
     public int JSonHexToInt(String x) throws Exception {
@@ -363,11 +364,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_blockNumber() {
-        Block bestBlock;
-
-        synchronized (blockchain) {
-            bestBlock = blockchain.getBestBlock();
-        }
+        Block bestBlock = blockchain.getBestBlock();
 
         long b = 0;
         if (bestBlock != null) {
@@ -479,22 +476,20 @@ public class Web3Impl implements Web3 {
     }
 
     public static Block getBlockByNumberOrStr(String bnOrId, Blockchain blockchain) throws Exception {
-        synchronized (blockchain) {
-            Block b;
+        Block b;
 
-            if ("latest".equals(bnOrId)) {
-                b = blockchain.getBestBlock();
-            } else if ("earliest".equals(bnOrId)) {
-                b = blockchain.getBlockByNumber(0);
-            } else if ("pending".equals(bnOrId)) {
-                throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
-            } else {
-                long bn = JSonHexToLong(bnOrId);
-                b = blockchain.getBlockByNumber(bn);
-            }
-
-            return b;
+        if ("latest".equals(bnOrId)) {
+            b = blockchain.getBestBlock();
+        } else if ("earliest".equals(bnOrId)) {
+            b = blockchain.getBlockByNumber(0);
+        } else if ("pending".equals(bnOrId)) {
+            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
+        } else {
+            long bn = JSonHexToLong(bnOrId);
+            b = blockchain.getBlockByNumber(bn);
         }
+
+        return b;
     }
 
     @Override
@@ -1110,6 +1105,16 @@ public class Web3Impl implements Web3 {
     @Override
     public TxPoolModule getTxPoolModule() {
         return txPoolModule;
+    }
+
+    @Override
+    public MnrModule getMnrModule() {
+        return mnrModule;
+    }
+
+    @Override
+    public DebugModule getDebugModule() {
+        return debugModule;
     }
 
     @Override

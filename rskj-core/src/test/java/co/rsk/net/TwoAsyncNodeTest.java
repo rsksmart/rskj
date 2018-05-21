@@ -54,7 +54,7 @@ public class TwoAsyncNodeTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, null, new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, new DummyBlockValidationRule());
 
         return new SimpleAsyncNode(handler);
     }
@@ -73,7 +73,7 @@ public class TwoAsyncNodeTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, null, new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, new DummyBlockValidationRule());
 
         return new SimpleAsyncNode(handler);
     }

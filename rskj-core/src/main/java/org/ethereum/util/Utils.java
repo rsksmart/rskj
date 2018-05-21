@@ -230,4 +230,33 @@ public class Utils {
         validateArrayAllegedSize(data, from, size);
         return Arrays.copyOfRange(data, from, from + size);
     }
+
+    public static boolean isDecimalString(String s) {
+        return s.matches("^\\d+$");
+    }
+
+    public static boolean isHexadecimalString(String s) {
+        return s.matches("^0x[\\da-fA-F]+$");
+    }
+
+    public static long decimalStringToLong(String s) {
+        try {
+            return Long.parseLong(s, 10);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(String.format("Invalid decimal number: %s", s), e);
+        }
+    }
+
+    public static long hexadecimalStringToLong(String s) {
+        if (!s.startsWith("0x")) {
+            throw new IllegalArgumentException(String.format("Invalid hexadecimal number: %s", s));
+        }
+
+        try {
+            // Remove leading '0x' before parsing
+            return Long.parseLong(s.substring(2), 16);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(String.format("Invalid hexadecimal number: %s", s), e);
+        }
+    }
 }

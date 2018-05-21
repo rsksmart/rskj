@@ -117,7 +117,7 @@ public class SimpleAsyncNode extends SimpleNode {
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
         SimpleChannelManager channelManager = new SimpleChannelManager();
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config));
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, peerScoringManager, blockValidationRule);
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }
 

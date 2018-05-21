@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,25 +15,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package co.rsk.rpc.netty;
 
-package co.rsk.peg;
+import io.netty.buffer.ByteBuf;
 
-import java.util.List;
+public class Web3Result {
 
-/**
- * Implementors of this interface must be able to provide
- * federation instances.
- *
- * @author Ariel Mendelzon
- */
-public interface FederationProvider {
-    // The currently "active" federation
-    Federation getActiveFederation();
-    // The currently "retiring" federation
-    Federation getRetiringFederation();
+    private final ByteBuf content;
+    private final int code;
 
-    // The federations that are "live", that is, are still
-    // operational. This should be the active federation
-    // plus the retiring federation, if one exists
-    List<Federation> getLiveFederations();
+    public Web3Result(ByteBuf content, int code) {
+        this.content = content;
+        this.code = code;
+    }
+
+    public ByteBuf getContent() {
+        return content;
+    }
+
+    public int getCode() {
+        return code;
+    }
 }

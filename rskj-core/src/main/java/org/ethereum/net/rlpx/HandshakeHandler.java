@@ -338,7 +338,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
             if (cause instanceof IOException) {
                 loggerNet.info(String.format("Handshake failed: %s", ctx.channel().remoteAddress(), cause));
             } else {
-                loggerNet.error("Handshake failed: ", cause);
+                loggerNet.warn("Handshake failed: ", cause);
             }
         }
         ctx.close();

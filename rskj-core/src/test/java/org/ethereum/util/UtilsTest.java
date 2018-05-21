@@ -19,6 +19,8 @@
 
 package org.ethereum.util;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.junit.Assert;
 import org.junit.Test;
 
 import org.spongycastle.util.Arrays;
@@ -185,5 +187,101 @@ public class UtilsTest {
         }
         catch (IllegalArgumentException e){
         }
+    }
+
+    @Test
+    public void isHexadecimalString() {
+        String[] hexStrings = new String[] {
+                "0x1",
+                "0xaaa",
+                "0xAAA",
+                "0xAFe1",
+                "0x10",
+                "0xA12"
+        };
+        java.util.Arrays.stream(hexStrings).forEach(s -> Assert.assertTrue(s, Utils.isHexadecimalString(s)));
+
+        String[] nonHexStrings = new String[] {
+                "hellothisisnotahex",
+                "123",
+                "AAA",
+                "AFe1",
+                "0xab123z",
+                "0xnothing"
+        };
+        java.util.Arrays.stream(nonHexStrings).forEach(s -> Assert.assertFalse(s, Utils.isHexadecimalString(s)));
+    }
+
+    @Test
+    public void isDecimalString() {
+        String[] decStrings = new String[] {
+                "1",
+                "123",
+                "045670",
+                "220",
+                "0",
+                "01"
+        };
+        java.util.Arrays.stream(decStrings).forEach(s -> Assert.assertTrue(s, Utils.isDecimalString(s)));
+
+        String[] nonDecStrings = new String[] {
+                "hellothisisnotadec",
+                "123a",
+                "0b",
+                "b1",
+                "AAA",
+                "0xabcd",
+                "0x123"
+        };
+        java.util.Arrays.stream(nonDecStrings).forEach(s -> Assert.assertFalse(s, Utils.isDecimalString(s)));
+    }
+
+    @Test
+    public void decimalStringToLong() {
+        Object[] cases = new Object[] {
+                "1", 1L,
+                "123", 123L,
+                "045670", 45670L,
+                "220", 220L,
+                "0", 0L,
+                "01", 1L
+        };
+        for (int i = 0; i < cases.length/2; i++) {
+            String s = (String) cases[i*2];
+            long expected = (long) cases[i*2+1];
+            Assert.assertEquals(expected, Utils.decimalStringToLong(s));
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void decimalStringToLongFail() {
+        Utils.decimalStringToLong("zzz");
+    }
+
+    @Test
+    public void hexadecimalStringToLong() {
+        Object[] cases = new Object[] {
+                "0x1", 1L,
+                "0xaaa", 2730L,
+                "0xAAA", 2730L,
+                "0xAFe1", 45025L,
+                "0x10", 16L,
+                "0xA12", 2578L
+        };
+        for (int i = 0; i < cases.length/2; i++) {
+            String s = (String) cases[i*2];
+            long expected = (long) cases[i*2+1];
+            Assert.assertEquals(expected, Utils.hexadecimalStringToLong(s));
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void hexadecimalStringToLongFail() {
+        Utils.hexadecimalStringToLong("abcd");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void hexadecimalStringToLongFailBis() {
+        Utils.hexadecimalStringToLong("zzz");
     }
 }
