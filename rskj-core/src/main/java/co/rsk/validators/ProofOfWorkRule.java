@@ -118,7 +118,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         if (isFallbackMiningPossibleAndBlockSigned(header)) {
             boolean isValidFallbackSignature = validFallbackBlockSignature(constants, header, header.getBitcoinMergedMiningHeader());
             if (!isValidFallbackSignature) {
-                logger.warn("Fallback sign failed for header {}", header.getHash());
+                logger.warn("Fallback signature failed. Header {}", header.getShortHash());
             }
             return isValidFallbackSignature;
         }
@@ -127,18 +127,18 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
 
         if (bitcoinMergedMiningCoinbaseTransactionCompressed == null) {
-            logger.warn("Compressed coinbase transaction does not exist");
+            logger.warn("Compressed coinbase transaction does not exist. Header {}", header.getShortHash());
             return false;
         }
 
         if (header.getBitcoinMergedMiningHeader() == null) {
-            logger.warn("Bitcoin merged mining header does not exist");
+            logger.warn("Bitcoin merged mining header does not exist. Header {}", header.getShortHash());
             return false;
         }
 
         byte[] pmtSerialized = header.getBitcoinMergedMiningMerkleProof();
         if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
-            logger.warn("Partial merkle tree does not have the expected size");
+            logger.warn("Partial merkle tree does not have the expected size. Header {}", header.getShortHash());
             return false;
         }
 
