@@ -69,7 +69,7 @@ samples/tokenapp/node_modules/
 rskdump.json
 
 rskj-core/keyfiletest.txt
-rskj-core/java/nodeId.properties
+rskj-core/java/
 
 #GradleJARS
 rskj-core/libs/gradle-witness.jar
