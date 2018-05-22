@@ -30,7 +30,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -39,6 +38,7 @@ import java.util.List;
 public class SnapshotManagerTest {
 
     private BlockChainImpl blockchain;
+    private Repository repository;
     private TransactionPool transactionPool;
     private SnapshotManager manager;
 
@@ -46,6 +46,7 @@ public class SnapshotManagerTest {
     public void setUp() {
         RskTestFactory factory = new RskTestFactory();
         blockchain = factory.getBlockchain();
+        repository = factory.getRepository();
         transactionPool = factory.getTransactionPool();
         // don't call start to avoid creating threads
         transactionPool.processBest(blockchain.getBestBlock());
@@ -157,10 +158,8 @@ public class SnapshotManagerTest {
 
         Assert.assertNotNull(transactionPool);
 
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(createSampleTransaction());
-        txs.add(createSampleTransaction());
-        transactionPool.addTransactions(txs);
+        setUpSampleAccounts();
+        transactionPool.addTransaction(createSampleTransaction());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
 
@@ -193,11 +192,8 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(10, status.getBestBlockNumber());
 
-        Assert.assertNotNull(transactionPool);
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(createSampleTransaction());
-        txs.add(createSampleTransaction());
-        transactionPool.addTransactions(txs);
+        setUpSampleAccounts();
+        transactionPool.addTransaction(createSampleTransaction());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
 
@@ -229,6 +225,18 @@ public class SnapshotManagerTest {
             blockchain.tryToConnect(block);
     }
 
+    private void setUpSampleAccounts() {
+        Repository track = repository.startTracking();
+
+        for (String name : new String[]{"sender", "receiver"}) {
+            Account account = new AccountBuilder().name(name).build();
+            track.createAccount(account.getAddress());
+            track.addBalance(account.getAddress(), Coin.valueOf(5000000));
+        }
+
+        track.commit();
+    }
+
     private static Transaction createSampleTransaction() {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
@@ -236,6 +244,7 @@ public class SnapshotManagerTest {
         Transaction tx = new TransactionBuilder()
                 .sender(sender)
                 .receiver(receiver)
+                .gasPrice(BigInteger.valueOf(200))
                 .value(BigInteger.TEN)
                 .build();
 

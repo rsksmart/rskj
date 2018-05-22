@@ -47,6 +47,21 @@ public class TransactionFactoryHelper {
         return tx;
     }
 
+    public static Transaction createSampleTransaction(int from, int to, long value, int nonce, BigInteger gasLimit) {
+        Account sender = createAccount(from);
+        Account receiver = createAccount(to);
+
+        Transaction tx = new TransactionBuilder()
+                .sender(sender)
+                .receiver(receiver)
+                .nonce(nonce)
+                .value(BigInteger.valueOf(value))
+                .gasLimit(gasLimit)
+                .build();
+
+        return tx;
+    }
+
     public static Transaction createSampleTransactionWithData(int from, int nonce, String data) {
         Account sender = createAccount(from);
 

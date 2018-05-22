@@ -28,7 +28,6 @@ import org.ethereum.listener.TestCompositeEthereumListener;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.concurrent.Future;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -74,9 +73,8 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public Future<Transaction> submitTransaction(Transaction transaction) {
+    public void submitTransaction(Transaction transaction) {
         tx = transaction;
-        return null;
     }
 
     public Repository getRepository() {
