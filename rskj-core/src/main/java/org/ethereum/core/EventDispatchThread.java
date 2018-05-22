@@ -42,6 +42,10 @@ public class EventDispatchThread {
 
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    private EventDispatchThread() {
+        // utility class can't be instantiated
+    }
+
     public static void invokeLater(final Runnable r) {
         executor.submit(() -> {
             try {
