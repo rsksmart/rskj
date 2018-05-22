@@ -663,7 +663,7 @@ public class BlockExecutorTest {
         }
 
         @Override
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
+        public void onBlock(Block block, List<TransactionReceipt> receipts, ImportResult importResult) {
             latestBlock = block;
             latestReceipts = receipts;
         }

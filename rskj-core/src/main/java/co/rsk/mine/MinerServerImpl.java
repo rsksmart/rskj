@@ -114,6 +114,9 @@ public class MinerServerImpl implements MinerServer {
     private boolean fallbackMiningScheduled;
     private final RskSystemProperties config;
 
+    private byte[] privKey0;
+    private byte[] privKey1;
+
     @Autowired
     public MinerServerImpl(
             RskSystemProperties config,
@@ -285,9 +288,6 @@ public class MinerServerImpl implements MinerServer {
             return null;
         }
     }
-
-    static byte[] privKey0;
-    static byte[] privKey1;
 
     @Override
     public boolean generateFallbackBlock() {
@@ -746,7 +746,7 @@ public class MinerServerImpl implements MinerServer {
          * **/
         // This event executes in the thread context of the caller.
         // In case of private miner, it's the "Private Mining timer" task
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
+        public void onBlock(Block block, List<TransactionReceipt> receipts, ImportResult importResult) {
             if (isSyncing()) {
                 return;
             }

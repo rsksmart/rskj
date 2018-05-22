@@ -40,7 +40,7 @@ public class EthereumListenerAdapter implements EthereumListener {
     }
 
     @Override
-    public void onBlock(Block block, List<TransactionReceipt> receipts) {
+    public void onBlock(Block block, List<TransactionReceipt> receipts, ImportResult importResult) {
     }
 
     @Override
