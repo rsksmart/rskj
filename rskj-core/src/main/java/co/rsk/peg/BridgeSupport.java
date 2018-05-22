@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -1732,9 +1733,8 @@ public class BridgeSupport {
             return new StoredBlock(genesis, genesis.getWork(), 0);
         }
         CheckpointManager manager = new CheckpointManager(bridgeConstants.getBtcParams(), checkpoints);
-        long time = getActiveFederation().getCreationTime().toEpochMilli();
-        // Go back 1 week to match CheckpointManager.checkpoint() behaviour
-        time -= 86400 * 7;
+        // Get federation creation time and go back ONE week to match CheckpointManager.checkpoint() behaviour
+        long time = getActiveFederation().getCreationTime().minus(ChronoUnit.WEEKS.getDuration()).getEpochSecond();
         return manager.getCheckpointBefore(time);
     }
 

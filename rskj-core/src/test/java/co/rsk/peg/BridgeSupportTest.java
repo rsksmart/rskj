@@ -226,6 +226,40 @@ public class BridgeSupportTest {
         Assert.assertEquals(checkpoints.get(9).getHash(), locator.get(5));
     }
 
+    @Test
+    public void testGetBtcBlockchainBlockLocatorWithBtcCheckpointsFindingOneInTheMiddle() throws Exception {
+        NetworkParameters _networkParameters = btcParams;
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        List<BtcBlock> checkpoints = createBtcBlocks(_networkParameters, _networkParameters.getGenesisBlock(), 10);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null) {
+            @Override
+            InputStream getCheckPoints() {
+                return getCheckpoints(_networkParameters, checkpoints);
+            }
+        };
+        Assert.assertEquals(10, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
+        Assert.assertEquals(checkpoints.get(9), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
+
+        List<Sha256Hash> locator = bridgeSupport.getBtcBlockchainBlockLocator();
+        Assert.assertEquals(1, locator.size());
+        Assert.assertEquals(checkpoints.get(9).getHash(), locator.get(0));
+
+        List<BtcBlock> blocks = createBtcBlocks(_networkParameters, checkpoints.get(9), 10);
+        bridgeSupport.receiveHeaders(blocks.toArray(new BtcBlock[]{}));
+        locator = bridgeSupport.getBtcBlockchainBlockLocator();
+        Assert.assertEquals(6, locator.size());
+        Assert.assertEquals(blocks.get(9).getHash(), locator.get(0));
+        Assert.assertEquals(blocks.get(8).getHash(), locator.get(1));
+        Assert.assertEquals(blocks.get(7).getHash(), locator.get(2));
+        Assert.assertEquals(blocks.get(5).getHash(), locator.get(3));
+        Assert.assertEquals(blocks.get(1).getHash(), locator.get(4));
+        Assert.assertEquals(checkpoints.get(9).getHash(), locator.get(5));
+    }
+
     private List<BtcBlock> createBtcBlocks(NetworkParameters _networkParameters, BtcBlock parent, int numberOfBlocksToCreate) {
         List<BtcBlock> list = new ArrayList<>();
         for (int i = 0; i < numberOfBlocksToCreate; i++) {
