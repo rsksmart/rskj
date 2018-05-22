@@ -21,14 +21,13 @@ package co.rsk.core;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.rpc.*;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.rpc.CorsConfiguration;
-import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.mnr.MnrModule;
@@ -36,10 +35,7 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
-import co.rsk.rpc.netty.JsonRpcWeb3FilterHandler;
-import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
-import co.rsk.rpc.netty.Web3HttpServer;
-import co.rsk.rpc.netty.Web3WebSocketServer;
+import co.rsk.rpc.netty.*;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
@@ -52,6 +48,7 @@ import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
@@ -201,13 +198,24 @@ public class RskFactory {
     }
 
     @Bean
-    public Web3WebSocketServer getWeb3WebSocketServer(RskSystemProperties rskSystemProperties,
-                                                      JsonRpcWeb3ServerHandler serverHandler) {
+    public Web3WebSocketServer getWeb3WebSocketServer(
+            RskSystemProperties rskSystemProperties,
+            Ethereum ethereum,
+            JsonRpcWeb3ServerHandler serverHandler,
+            JsonRpcSerializer serializer) {
+        EthSubscriptionNotificationEmitter emitter = new EthSubscriptionNotificationEmitter(ethereum, serializer);
+        RskJsonRpcHandler jsonRpcHandler = new RskJsonRpcHandler(emitter, serializer);
         return new Web3WebSocketServer(
-            rskSystemProperties.rpcWebSocketBindAddress(),
-            rskSystemProperties.rpcWebSocketPort(),
-            serverHandler
+                rskSystemProperties.rpcWebSocketBindAddress(),
+                rskSystemProperties.rpcWebSocketPort(),
+                jsonRpcHandler,
+                serverHandler
         );
+    }
+
+    @Bean
+    public JsonRpcSerializer getJsonRpcSerializer() {
+        return new JacksonBasedRpcSerializer();
     }
 
     @Bean
