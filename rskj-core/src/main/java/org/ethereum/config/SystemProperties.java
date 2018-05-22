@@ -66,7 +66,6 @@ import java.util.stream.Collectors;
  * @since 22.05.2014
  */
 public abstract class SystemProperties {
-    private static final String DEFAULT_BIND_ADDRESS = "::";
     private static Logger logger = LoggerFactory.getLogger("general");
 
     public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
@@ -505,19 +504,11 @@ public abstract class SystemProperties {
     }
 
     public InetAddress getBindAddress() {
+        String host = configFromFiles.getString(PROPERTY_BIND_ADDRESS);
         try {
-            if (configFromFiles.hasPath(PROPERTY_BIND_ADDRESS)) {
-                String host = configFromFiles.getString(PROPERTY_BIND_ADDRESS);
-                return InetAddress.getByName(host);
-            }
+            return InetAddress.getByName(host);
         } catch (UnknownHostException e) {
-            logger.warn("Unable to parse bind address {}. Using DEFAULT instead", e);
-        }
-
-        try {
-            return InetAddress.getByName(DEFAULT_BIND_ADDRESS);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Unable to parse DEFAULT BIND ADDRESS", e);
+            throw new IllegalArgumentException(String.format("%s is not a valid %s property", host, PROPERTY_BIND_ADDRESS), e);
         }
     }
 
