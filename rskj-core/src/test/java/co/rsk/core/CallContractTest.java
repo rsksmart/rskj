@@ -70,6 +70,8 @@ public class CallContractTest {
 
             executor.init();
             executor.execute();
+            executor.go();
+            executor.finalization();
 
             return executor.getResult();
         } finally {

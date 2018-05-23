@@ -111,6 +111,8 @@ public class ContractRunner {
                                                                new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
         executor.init();
         executor.execute();
+        executor.go();
+        executor.finalization();
         track.commit();
         return executor;
     }
