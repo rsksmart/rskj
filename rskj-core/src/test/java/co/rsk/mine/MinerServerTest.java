@@ -38,6 +38,7 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RskTestFactory;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,6 +93,7 @@ public class MinerServerTest {
         Mockito.when(repository.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
         Mockito.when(repository.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
         Mockito.when(repository.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
+        Mockito.when(repository.getBalance(PrecompiledContracts.REMASC_ADDR)).thenReturn(Coin.valueOf(0L));
 
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));
 

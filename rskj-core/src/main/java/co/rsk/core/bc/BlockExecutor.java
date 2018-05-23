@@ -20,7 +20,6 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -45,7 +44,6 @@ import java.util.List;
  */
 public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final RskSystemProperties config;
     private final Repository repository;
@@ -228,8 +226,6 @@ public class BlockExecutor {
             executedTransactions.add(tx);
 
             txExecutor.execute();
-            txExecutor.go();
-            txExecutor.finalization();
 
             logger.trace("tx executed");
 

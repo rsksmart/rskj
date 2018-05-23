@@ -23,9 +23,9 @@ import co.rsk.config.VmConfig;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.EVM;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.After;
@@ -61,7 +61,7 @@ public class VMPerformanceTest {
     private ProgramInvokeMockImpl invoke;
     private Program program;
     ThreadMXBean thread;
-    VM vm;
+    EVM vm;
 
     final static int million = 1000*1000;
     final static int maxLoops = 1*million;
@@ -173,7 +173,7 @@ public class VMPerformanceTest {
 
         Boolean old = thread.isThreadCpuTimeEnabled();
         thread.setThreadCpuTimeEnabled(true);
-        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
+        vm = new EVM(config.getVmConfig(), new PrecompiledContracts(config));
         if (useProfiler)
             waitForProfiler();
 
@@ -482,7 +482,7 @@ public class VMPerformanceTest {
 } // contract
         */
 
-        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
+        vm = new EVM(config.getVmConfig(), new PrecompiledContracts(config));
         // Strip the first 16 bytes which are added by Solidity to store the contract.
         byte[] codePlusPrefix = Hex.decode(
                 //---------------------------------------------------------------------------------------------------------------------nn
@@ -568,7 +568,7 @@ public class VMPerformanceTest {
          }
          } // contract
          ********************************************************************************************/
-        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
+        vm = new EVM(config.getVmConfig(), new PrecompiledContracts(config));
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // To increase precesion of the measurement, the maximum k value was increased
         // until the contract took more than 30 seconds

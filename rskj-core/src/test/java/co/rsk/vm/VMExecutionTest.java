@@ -22,8 +22,8 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.EVM;
 import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
@@ -363,7 +363,7 @@ public class VMExecutionTest {
     }
 
     private Program executeCode(byte[] code, int nsteps) {
-        VM vm = new VM(vmConfig, precompiledContracts);
+        EVM vm = new EVM(vmConfig, precompiledContracts);
 
         Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, null);
 

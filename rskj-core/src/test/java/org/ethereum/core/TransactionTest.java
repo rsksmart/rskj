@@ -445,8 +445,6 @@ public class TransactionTest {
 
                     executor.init();
                     executor.execute();
-                    executor.go();
-                    executor.finalization();
 
                     track.rollback();
 
@@ -700,8 +698,6 @@ public class TransactionTest {
 
         executor.init();
         executor.execute();
-        executor.go();
-        executor.finalization();
 
         track.commit();
         return executor;
