@@ -458,12 +458,6 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         AccountState state = repository.getAccountState(tx.getSender());
-
-        if (state == null) {
-            // if the sender doesn't have an account yet, they could never pay for the transaction.
-            return false;
-        }
-
         return validator.isValid(tx, bestBlock, state);
     }
 
