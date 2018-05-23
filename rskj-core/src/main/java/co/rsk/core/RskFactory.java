@@ -26,12 +26,12 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
-import co.rsk.net.handler.TxHandler;
-import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.Web3RskImpl;
+import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.*;
+import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
@@ -39,14 +39,15 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.netty.JsonRpcWeb3FilterHandler;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
 import co.rsk.rpc.netty.Web3HttpServer;
+import co.rsk.rpc.netty.Web3WebSocketServer;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
@@ -145,20 +146,17 @@ public class RskFactory {
     }
 
     @Bean
-    public TxHandler getTxHandler(RskSystemProperties config, CompositeEthereumListener compositeEthereumListener, Repository repository, Blockchain blockchain) {
-        return new TxHandlerImpl(config, compositeEthereumListener, repository, blockchain);
-    }
-
-    @Bean
     public Web3 getWeb3(Rsk rsk,
                         Blockchain blockchain,
                         TransactionPool transactionPool,
                         RskSystemProperties config,
                         MinerClient minerClient,
                         MinerServer minerServer,
+                        MnrModule mnrModule,
                         PersonalModule personalModule,
                         EthModule ethModule,
                         TxPoolModule txPoolModule,
+                        DebugModule debugModule,
                         ChannelManager channelManager,
                         Repository repository,
                         PeerScoringManager peerScoringManager,
@@ -179,6 +177,8 @@ public class RskFactory {
                 personalModule,
                 ethModule,
                 txPoolModule,
+                mnrModule,
+                debugModule,
                 channelManager,
                 repository,
                 peerScoringManager,
@@ -194,7 +194,7 @@ public class RskFactory {
 
     @Bean
     public JsonRpcWeb3FilterHandler getJsonRpcWeb3FilterHandler(RskSystemProperties rskSystemProperties) {
-        return new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains(), rskSystemProperties.rpcAddress(), rskSystemProperties.rpcHost());
+        return new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains(), rskSystemProperties.rpcHttpBindAddress(), rskSystemProperties.rpcHttpHost());
     }
 
     @Bean
@@ -203,12 +203,22 @@ public class RskFactory {
     }
 
     @Bean
+    public Web3WebSocketServer getWeb3WebSocketServer(RskSystemProperties rskSystemProperties,
+                                                      JsonRpcWeb3ServerHandler serverHandler) {
+        return new Web3WebSocketServer(
+            rskSystemProperties.rpcWebSocketBindAddress(),
+            rskSystemProperties.rpcWebSocketPort(),
+            serverHandler
+        );
+    }
+
+    @Bean
     public Web3HttpServer getWeb3HttpServer(RskSystemProperties rskSystemProperties,
                                             JsonRpcWeb3FilterHandler filterHandler,
                                             JsonRpcWeb3ServerHandler serverHandler) {
         return new Web3HttpServer(
-            rskSystemProperties.rpcAddress(),
-            rskSystemProperties.rpcPort(),
+            rskSystemProperties.rpcHttpBindAddress(),
+            rskSystemProperties.rpcHttpPort(),
             rskSystemProperties.soLingerTime(),
             true,
             new CorsConfiguration(rskSystemProperties.corsDomains()),
@@ -347,5 +357,13 @@ public class RskFactory {
     public CompositeEthereumListener getCompositeEthereumListener() {
         // Using a single thread executor so we only execute one listener callback at a time, in a different thread.
         return new CompositeEthereumListener(Executors.newSingleThreadExecutor());
+    }
+
+    @Bean
+    public TransactionGateway getTransactionGateway(
+            ChannelManager channelManager,
+            TransactionPool transactionPool,
+            CompositeEthereumListener emitter){
+        return new TransactionGateway(channelManager, transactionPool, emitter);
     }
 }

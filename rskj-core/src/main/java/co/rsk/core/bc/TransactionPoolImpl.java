@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.handler.TxPendingValidator;
@@ -74,7 +75,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private Block bestBlock;
 
     private Repository poolRepository;
-    private final TxPendingValidator validator = new TxPendingValidator();
+    private final TxPendingValidator validator;
 
     public TransactionPoolImpl(BlockStore blockStore,
                                ReceiptStore receiptStore,
@@ -110,6 +111,7 @@ public class TransactionPoolImpl implements TransactionPool {
         this.outdatedTimeout = outdatedTimeout;
 
         this.poolRepository = repository.startTracking();
+        this.validator = new TxPendingValidator(config);
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
@@ -181,11 +183,6 @@ public class TransactionPoolImpl implements TransactionPool {
             }
         }
 
-        if (listener != null && !added.isEmpty()) {
-            listener.onPendingTransactionsReceived(added);
-            listener.onTransactionPoolChanged(TransactionPoolImpl.this);
-        }
-
         return added;
     }
 
@@ -232,6 +229,11 @@ public class TransactionPoolImpl implements TransactionPool {
         if (!txnonce.equals(this.getNextNonceByAccount(tx.getSender()))) {
             this.addQueuedTransaction(tx);
 
+            return false;
+        }
+
+        if (!senderCanPayPendingTransactionsAndNewTx(tx)) {
+            // discard this tx to prevent spam
             return false;
         }
 
@@ -453,7 +455,40 @@ public class TransactionPoolImpl implements TransactionPool {
             return true;
         }
 
-        return validator.isValid(tx, bestBlock.getGasLimitAsInteger());
+        AccountState state = repository.getAccountState(tx.getSender());
+
+        if (state == null) {
+            // if the sender doesn't have an account yet, they could never pay for the transaction.
+            return false;
+        }
+
+        return validator.isValid(tx, bestBlock, state);
+    }
+
+    /**
+     * @param newTx a transaction to be added to the pending list (nonce = last pending nonce + 1)
+     * @return whether the sender balance is enough to pay for all pending transactions + newTx
+     */
+    private boolean senderCanPayPendingTransactionsAndNewTx(Transaction newTx) {
+        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender());
+
+        Coin accumTxCost = Coin.ZERO;
+        for (Transaction t : transactions) {
+            accumTxCost = accumTxCost.add(getTxBaseCost(t));
+        }
+
+        Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
+        return costWithNewTx.compareTo(repository.getBalance(newTx.getSender())) <= 0;
+    }
+
+    private Coin getTxBaseCost(Transaction tx) {
+        Coin gasCost = tx.getValue();
+        if (bestBlock == null || tx.transactionCost(config, bestBlock) > 0) {
+            BigInteger gasLimit = new BigInteger(1, tx.getGasLimit());
+            gasCost = gasCost.add(tx.getGasPrice().multiply(gasLimit));
+        }
+
+        return gasCost;
     }
 
     public static class TransactionSortedSet extends TreeSet<Transaction> {

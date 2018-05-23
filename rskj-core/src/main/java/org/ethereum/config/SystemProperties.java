@@ -66,8 +66,6 @@ import java.util.stream.Collectors;
  * @since 22.05.2014
  */
 public abstract class SystemProperties {
-    private static final String DEFAULT_BIND_ADDRESS = "::";
-    private static final int DEFAULT_RPC_PORT = 4444;
     private static Logger logger = LoggerFactory.getLogger("general");
 
     public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
@@ -76,13 +74,17 @@ public abstract class SystemProperties {
     public static final String PROPERTY_PEER_ACTIVE = "peer.active";
     public static final String PROPERTY_DB_RESET = "database.reset";
     // TODO review rpc properties
-    public static final String PROPERTY_RPC_ENABLED = "rpc.enabled";
-    public static final String PROPERTY_RPC_PORT = "rpc.port";
-    public static final String PROPERTY_RPC_HOST = "rpc.host";
-    public static final String PROPERTY_RPC_CORS = "rpc.cors";
-    public static final String PROPERTY_RPC_ADDRESS = "rpc.address";
+    public static final String PROPERTY_RPC_CORS = "rpc.providers.web.cors";
+    public static final String PROPERTY_RPC_HTTP_ENABLED = "rpc.providers.web.http.enabled";
+    public static final String PROPERTY_RPC_HTTP_ADDRESS = "rpc.providers.web.http.bind_address";
+    public static final String PROPERTY_RPC_HTTP_HOSTS = "rpc.providers.web.http.hosts";
+    public static final String PROPERTY_RPC_HTTP_PORT = "rpc.providers.web.http.port";
+    private static final String PROPERTY_RPC_WEBSOCKET_ENABLED = "rpc.providers.web.ws.enabled";
+    private static final String PROPERTY_RPC_WEBSOCKET_ADDRESS = "rpc.providers.web.ws.bind_address";
+    private static final String PROPERTY_RPC_WEBSOCKET_PORT = "rpc.providers.web.ws.port";
+
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
-    public static final String PROPERTY_BIND_ADDRESS = "bind.address";
+    public static final String PROPERTY_BIND_ADDRESS = "bind_address";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
@@ -502,19 +504,11 @@ public abstract class SystemProperties {
     }
 
     public InetAddress getBindAddress() {
+        String host = configFromFiles.getString(PROPERTY_BIND_ADDRESS);
         try {
-            if (configFromFiles.hasPath(PROPERTY_BIND_ADDRESS)) {
-                String host = configFromFiles.getString(PROPERTY_BIND_ADDRESS);
-                return InetAddress.getByName(host);
-            }
+            return InetAddress.getByName(host);
         } catch (UnknownHostException e) {
-            logger.warn("Unable to parse bind address {}. Using DEFAULT instead", e);
-        }
-
-        try {
-            return InetAddress.getByName(DEFAULT_BIND_ADDRESS);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Unable to parse DEFAULT BIND ADDRESS", e);
+            throw new IllegalArgumentException(String.format("%s is not a valid %s property", host, PROPERTY_BIND_ADDRESS), e);
         }
     }
 
@@ -686,28 +680,38 @@ public abstract class SystemProperties {
         return configFromFiles.getString(PROPERTY_BC_CONFIG_NAME);
     }
 
-    public boolean isRpcEnabled() {
-        return configFromFiles.hasPath(PROPERTY_RPC_ENABLED) ?
-                configFromFiles.getBoolean(PROPERTY_RPC_ENABLED) : false;
+    public boolean isRpcHttpEnabled() {
+        return configFromFiles.getBoolean(PROPERTY_RPC_HTTP_ENABLED);
     }
 
-    public int rpcPort() {
-        return configFromFiles.hasPath(PROPERTY_RPC_PORT) ?
-                configFromFiles.getInt(PROPERTY_RPC_PORT) : DEFAULT_RPC_PORT;
+    public boolean isRpcWebSocketEnabled() {
+        return configFromFiles.getBoolean(PROPERTY_RPC_WEBSOCKET_ENABLED);
     }
 
-    public List<String> rpcHost() {
-        return !configFromFiles.hasPath(PROPERTY_RPC_HOST) ? new ArrayList<>() :
-                configFromFiles.getStringList(PROPERTY_RPC_HOST);
+    public int rpcHttpPort() {
+        return configFromFiles.getInt(PROPERTY_RPC_HTTP_PORT);
     }
 
-    public InetAddress rpcAddress() {
-        if (!configFromFiles.hasPath(PROPERTY_RPC_ADDRESS)) {
-            return InetAddress.getLoopbackAddress();
-        }
-        String host = configFromFiles.getString(PROPERTY_RPC_ADDRESS);
+    public int rpcWebSocketPort() {
+        return configFromFiles.getInt(PROPERTY_RPC_WEBSOCKET_PORT);
+    }
+
+    public InetAddress rpcHttpBindAddress() {
+        return getWebBindAddress(PROPERTY_RPC_HTTP_ADDRESS);
+    }
+
+    public InetAddress rpcWebSocketBindAddress() {
+        return getWebBindAddress(PROPERTY_RPC_WEBSOCKET_ADDRESS);
+    }
+
+    public List<String> rpcHttpHost() {
+        return configFromFiles.getStringList(PROPERTY_RPC_HTTP_HOSTS);
+    }
+
+    private InetAddress getWebBindAddress(String bindAddressConfigKey) {
+        String bindAddress = configFromFiles.getString(bindAddressConfigKey);
         try {
-            return InetAddress.getByName(host);
+            return InetAddress.getByName(bindAddress);
         } catch (UnknownHostException e) {
             logger.warn("Unable to bind to {}. Using loopback instead", e);
             return InetAddress.getLoopbackAddress();
@@ -715,8 +719,7 @@ public abstract class SystemProperties {
     }
 
     public String corsDomains() {
-        return configFromFiles.hasPath(PROPERTY_RPC_CORS) ?
-                configFromFiles.getString(PROPERTY_RPC_CORS) : null;
+        return configFromFiles.getString(PROPERTY_RPC_CORS);
     }
 
     protected long getLongProperty(String propertyName, long defaultValue) {

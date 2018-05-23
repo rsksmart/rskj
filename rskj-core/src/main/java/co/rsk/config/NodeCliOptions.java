@@ -31,7 +31,7 @@ public enum NodeCliOptions implements OptionalizableCliArg {
         @Override
         public Config withConfig(Config config, String configValue) {
             return config
-                    .withValue(SystemProperties.PROPERTY_RPC_ENABLED, ConfigValueFactory.fromAnyRef(true))
+                    .withValue(SystemProperties.PROPERTY_RPC_HTTP_ENABLED, ConfigValueFactory.fromAnyRef(true))
                     .withValue(SystemProperties.PROPERTY_RPC_CORS, ConfigValueFactory.fromAnyRef(configValue));
         }
     },

@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,22 +16,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net;
+package co.rsk.rpc;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+import co.rsk.rpc.modules.debug.DebugModule;
 
-import co.rsk.net.messages.Message;
+public interface Web3DebugModule {
 
-public interface MessageHandler {
-    void processMessage(MessageChannel sender, Message message);
+    default String debug_wireProtocolQueueSize() {
+        return getDebugModule().wireProtocolQueueSize();
+    }
 
-    void postMessage(MessageChannel sender, Message message) throws InterruptedException;
-
-    void start();
-
-    void stop();
-
-    long getMessageQueueSize();
+    DebugModule getDebugModule();
 }
+

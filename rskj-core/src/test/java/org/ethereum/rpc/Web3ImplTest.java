@@ -29,6 +29,8 @@ import co.rsk.net.BlockProcessor;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
+import co.rsk.rpc.modules.debug.DebugModule;
+import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleSolidityEnabled;
@@ -251,6 +253,7 @@ public class Web3ImplTest {
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         Web3 web3 = new Web3Impl(
                 ethMock,
                 blockchain,
@@ -263,6 +266,8 @@ public class Web3ImplTest {
                 personalModule,
                 null,
                 txPoolModule,
+                null,
+                debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
                 null,
@@ -956,6 +961,8 @@ public class Web3ImplTest {
                 personalModule,
                 null,
                 null,
+                null,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
                 null,
@@ -1259,6 +1266,7 @@ public class Web3ImplTest {
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -1271,6 +1279,8 @@ public class Web3ImplTest {
                 personalModule,
                 ethModule,
                 txPoolModule,
+                null,
+                debugModule,
                 channelManager,
                 Web3Mocks.getMockRepository(),
                 null,
@@ -1309,6 +1319,7 @@ public class Web3ImplTest {
         Mockito.when(executor.executeTransaction(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(res);
         EthModule ethModule = new EthModule(config, blockchain, executor, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, transactionPool));
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
+        DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -1321,6 +1332,8 @@ public class Web3ImplTest {
                 personalModule,
                 ethModule,
                 txPoolModule,
+                null,
+                debugModule,
                 channelManager,
                 Web3Mocks.getMockRepository(),
                 null,
@@ -1347,6 +1360,7 @@ public class Web3ImplTest {
         EthModule ethModule = new EthModule(config, null, null, new ExecutionBlockRetriever(null, null, null), new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null);
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         Web3Impl web3 = new Web3RskImpl(
                 eth,
                 null,
@@ -1357,6 +1371,8 @@ public class Web3ImplTest {
                 personalModule,
                 ethModule,
                 txPoolModule,
+                null,
+                debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
                 null,
@@ -1397,6 +1413,7 @@ public class Web3ImplTest {
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         EthModule ethModule = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         Web3Impl web3 = new Web3RskImpl(
                 eth,
                 blockchain,
@@ -1407,6 +1424,8 @@ public class Web3ImplTest {
                 new PersonalModuleWalletDisabled(),
                 ethModule,
                 txPoolModule,
+                null,
+                debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
                 null,

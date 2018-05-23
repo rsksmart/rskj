@@ -72,7 +72,9 @@ public class Web3HttpServer {
                         );
                     }
                     p.addLast(jsonRpcWeb3FilterHandler);
+                    p.addLast(new Web3HttpMethodFilterHandler());
                     p.addLast(jsonRpcWeb3ServerHandler);
+                    p.addLast(new Web3ResultHttpResponseHandler());
                 }
             });
         b.bind(bindAddress, port).sync();

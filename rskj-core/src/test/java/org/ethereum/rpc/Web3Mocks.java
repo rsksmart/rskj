@@ -21,6 +21,8 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
+import co.rsk.net.MessageHandler;
+import co.rsk.net.NodeMessageHandler;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
@@ -67,5 +69,9 @@ public class Web3Mocks {
 
     public static BlockStore getMockBlockStore() {
         return mock(BlockStore.class);
+    }
+
+    public static MessageHandler getMockMessageHandler() {
+        return mock(NodeMessageHandler.class);
     }
 }

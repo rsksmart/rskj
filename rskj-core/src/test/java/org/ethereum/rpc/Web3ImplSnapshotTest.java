@@ -25,6 +25,8 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.*;
+import co.rsk.rpc.modules.debug.DebugModule;
+import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
@@ -197,6 +199,7 @@ public class Web3ImplSnapshotTest {
         MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config);
         PersonalModule pm = new PersonalModuleWalletDisabled();
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
 
         ethereum.repository = factory.getRepository();
         ethereum.blockchain = blockchain;
@@ -213,6 +216,8 @@ public class Web3ImplSnapshotTest {
                 pm,
                 null,
                 tpm,
+                null,
+                dm,
                 Web3Mocks.getMockChannelManager(),
                 ethereum.repository,
                 null,

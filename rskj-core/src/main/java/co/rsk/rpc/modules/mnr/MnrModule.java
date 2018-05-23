@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,22 +16,29 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net;
+package co.rsk.rpc.modules.mnr;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+import co.rsk.mine.MinerWork;
+import co.rsk.mine.SubmittedBlockInfo;
 
-import co.rsk.net.messages.Message;
+public interface MnrModule {
 
-public interface MessageHandler {
-    void processMessage(MessageChannel sender, Message message);
+    MinerWork getWork();
 
-    void postMessage(MessageChannel sender, Message message) throws InterruptedException;
+    SubmittedBlockInfo submitBitcoinBlock(String bitcoinBlockHex);
 
-    void start();
+    SubmittedBlockInfo submitBitcoinBlockTransactions(
+            String blockHashHex,
+            String blockHeaderHex,
+            String coinbaseHex,
+            String txnHashesHex
+    );
 
-    void stop();
-
-    long getMessageQueueSize();
+    SubmittedBlockInfo submitBitcoinBlockPartialMerkle(
+            String blockHashHex,
+            String blockHeaderHex,
+            String coinbaseHex,
+            String merkleHashesHex,
+            String blockTxnCountHex
+    );
 }
