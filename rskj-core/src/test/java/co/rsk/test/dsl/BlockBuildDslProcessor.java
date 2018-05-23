@@ -37,12 +37,13 @@ public class BlockBuildDslProcessor {
     public BlockBuildDslProcessor(World world, String name) {
         this.world = world;
         this.name = name;
+
     }
 
     public void processCommands(DslParser parser) throws DslProcessorException {
         for (DslCommand cmd = parser.nextCommand(); cmd != null; cmd = parser.nextCommand()) {
             processCommand(cmd);
-            if (cmd.isCommand("build"))
+            if (cmd.isCommand("build") || cmd.isCommand("build_time"))
                 return;
         }
     }
@@ -52,6 +53,8 @@ public class BlockBuildDslProcessor {
             this.builder.parent(this.world.getBlockByName(cmd.getArgument(0)));
         else if (cmd.isCommand("build"))
             this.world.saveBlock(this.name, this.builder.build());
+        else if (cmd.isCommand("build_time"))
+            this.world.saveBlock(this.name, this.builder.buildWithTime(Long.parseLong(cmd.getArgument(0))));
         else if (cmd.isCommand("uncles")) {
             List<BlockHeader> uncles = new ArrayList<>();
 

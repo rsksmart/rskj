@@ -99,6 +99,9 @@ public class Transaction {
      * to the state or transaction list consumes some gas. */
     private byte[] gasLimit;
 
+    /*The amount of maximum gas used as storage income */
+    private byte[] rentGasLimit;
+
     /* An unlimited size byte array specifying
      * input [data] of the message call or
      * Initialization code for a new contract */
@@ -140,7 +143,22 @@ public class Transaction {
 
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
+        this.signature = ECDSASignature.fromComponents(r, s, v);
+    }
 
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,  byte[] maxRentGas) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
+        this.rentGasLimit = ByteUtil.cloneBytes(maxRentGas);
+    }
+
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte chainId, byte[] maxRentGas) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, chainId);
+        this.rentGasLimit = ByteUtil.cloneBytes(maxRentGas);
+    }
+
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v, byte[] maxRentGas) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
+        this.rentGasLimit = ByteUtil.cloneBytes(maxRentGas);
         this.signature = ECDSASignature.fromComponents(r, s, v);
     }
 
@@ -205,6 +223,10 @@ public class Transaction {
         return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
     }
 
+    public void setRentGasLimit(byte[] gasLimit){
+        this.rentGasLimit = gasLimit;
+    }
+
     public void verify() {
         rlpParse();
         validate();
@@ -261,8 +283,13 @@ public class Transaction {
             byte[] r = transaction.get(7).getRLPData();
             byte[] s = transaction.get(8).getRLPData();
             this.signature = ECDSASignature.fromComponents(r, s, getRealV(v));
+            if (transaction.size() > 9){
+                this.rentGasLimit = transaction.get(9).getRLPData();
+            }
+
         } else {
             logger.trace("RLP encoded tx is not signed!");
+
         }
         this.parsed = true;
         this.hash = getHash().getBytes();
@@ -328,6 +355,14 @@ public class Transaction {
         }
 
         return gasLimit;
+    }
+
+    public byte[] getRentGasLimit() {
+        if (!parsed) {
+            rlpParse();
+        }
+
+        return rentGasLimit;
     }
 
     public void setGasLimit(byte[] gasLimit) {
@@ -510,8 +545,16 @@ public class Transaction {
             v = RLP.encodeByte(chainId);
             r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
             s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-            rlpRaw = RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit, toEncodeReceiveAddress,
-                    toEncodeValue, toEncodeData, v, r, s);
+            byte[] toEncodeRentGasLimit;
+
+            if (rentGasLimit != null){
+                toEncodeRentGasLimit = RLP.encodeElement(this.rentGasLimit);
+                rlpRaw = RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit, toEncodeReceiveAddress,
+                        toEncodeValue, toEncodeData, v, r, s,toEncodeRentGasLimit );
+            } else {
+                rlpRaw = RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit, toEncodeReceiveAddress,
+                        toEncodeValue, toEncodeData, v, r, s);
+            }
         }
         return rlpRaw;
     }
@@ -555,9 +598,14 @@ public class Transaction {
             r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
             s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
         }
-
-        this.rlpEncoded = RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
-                toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
+        byte[] toEncodeRentGasLimit = RLP.encodeElement(this.rentGasLimit);
+        if (this.rentGasLimit != null){
+            this.rlpEncoded = RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
+                    toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s, toEncodeRentGasLimit);
+        } else {
+            this.rlpEncoded = RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
+                    toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
+        }
 
         Keccak256 hash = this.getHash();
         this.hash = hash == null ? null : hash.getBytes();
@@ -608,6 +656,19 @@ public class Transaction {
                 decodedData,
                 config.getBlockchainConfig().getCommonConstants().getChainId());
     }
+
+    public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData, BigInteger rentGasLimit) {
+        return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
+                BigIntegers.asUnsignedByteArray(gasPrice),
+                BigIntegers.asUnsignedByteArray(gasLimit),
+                to != null ? Hex.decode(to) : null,
+                BigIntegers.asUnsignedByteArray(amount),
+                decodedData,
+                config.getBlockchainConfig().getCommonConstants().getChainId(),
+                BigIntegers.asUnsignedByteArray(rentGasLimit));
+    }
+
+
 
     private byte[] nullToZeroArray(byte[] data) {
         return data == null ? ZERO_BYTE_ARRAY : data;

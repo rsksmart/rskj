@@ -74,8 +74,11 @@ public class ContractRunner {
     }
 
     public ProgramResult createAndRunContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {
+        // Create a first contract
         createContract(bytecode);
+        // Create a second contract, but not yet execute
         Transaction creationTx = contractCreateTx(bytecode);
+        // Execute the creation of the second contract
         executeTransaction(creationTx);
         return runContract(creationTx.getContractAddress().getBytes(), encodedCall, value);
     }

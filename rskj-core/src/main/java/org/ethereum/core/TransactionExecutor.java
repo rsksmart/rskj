@@ -31,6 +31,7 @@ import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.util.TimeUtils;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
@@ -42,8 +43,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.List;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.ArrayUtils.getLength;
@@ -74,9 +76,14 @@ public class TransactionExecutor {
     private final long gasUsedInTheBlock;
     private Coin paidFees;
     private boolean readyToExecute = false;
+    private boolean rollBack = false;
+    private boolean outOfRentGas = false;
+    private Set<RskAddress> retrievedContracts = new LinkedHashSet<>();
+    private Set<RskAddress> createdContracts = new LinkedHashSet<>();
 
     private final ProgramInvokeFactory programInvokeFactory;
     private final RskAddress coinbase;
+
 
     private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
@@ -86,6 +93,10 @@ public class TransactionExecutor {
 
     private VM vm;
     private Program program;
+
+    long storagePrice = 1;
+    long codePrice = 1;
+    long accountStatePrice = 1;
 
     PrecompiledContracts.PrecompiledContract precompiledContract;
 
@@ -134,6 +145,7 @@ public class TransactionExecutor {
         }
 
         BigInteger txGasLimit = new BigInteger(1, tx.getGasLimit());
+        BigInteger txRentGasLimit = tx.getRentGasLimit() != null ? new BigInteger(1, tx.getRentGasLimit()) : txGasLimit;
         BigInteger curBlockGasLimit = new BigInteger(1, executionBlock.getGasLimit());
 
         boolean cumulativeGasReached = txGasLimit.add(BigInteger.valueOf(gasUsedInTheBlock)).compareTo(curBlockGasLimit) > 0;
@@ -166,12 +178,14 @@ public class TransactionExecutor {
 
 
         Coin totalCost = Coin.ZERO;
-        if (basicTxCost > 0 ) {
+        if (basicTxCost > 0) {
             // Estimate transaction cost only if is not a free trx
             Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
             totalCost = tx.getValue().add(txGasCost);
         }
 
+        Coin txRentGasCost = tx.getGasPrice().multiply(txRentGasLimit);
+        totalCost = totalCost.add(tx.getValue().add(txRentGasCost));
         Coin senderBalance = track.getBalance(tx.getSender());
 
         if (!isCovers(senderBalance, totalCost)) {
@@ -201,8 +215,8 @@ public class TransactionExecutor {
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             panicProcessor.panic("invalidsignature",
-                                 String.format("Transaction %s signature not accepted: %s",
-                                               tx.getHash(), tx.getSignature()));
+                    String.format("Transaction %s signature not accepted: %s",
+                            tx.getHash(), tx.getSignature()));
             execError(String.format("Transaction signature not accepted: %s", tx.getSignature()));
 
             return false;
@@ -214,6 +228,8 @@ public class TransactionExecutor {
 
     public void execute() {
 
+        // If readyToExecute=false then there is no commit neither there is rollback because
+        // the cacheTrack was't even modified
         if (!readyToExecute) {
             return;
         }
@@ -227,14 +243,64 @@ public class TransactionExecutor {
             BigInteger txGasLimit = toBI(tx.getGasLimit());
             Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
             track.addBalance(tx.getSender(), txGasCost.negate());
+            BigInteger txRentGasLimit = tx.getRentGasLimit() != null ? toBI(tx.getRentGasLimit()) : txGasLimit;
+            Coin txRentGasCost = tx.getGasPrice().multiply(txRentGasLimit);
+            track.addBalance(tx.getSender(), txRentGasCost.negate());
 
-            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
+            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}], rentGasPrice: [{}], rentGasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit, tx.getRentGasLimit());
         }
 
         if (tx.isContractCreation()) {
             create();
         } else {
             call();
+        }
+    }
+
+    private void callToPrecompiledContract(RskAddress targetAddress) {
+        precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
+        long requiredGas = precompiledContract.getGasForData(tx.getData());
+        BigInteger txGasLimit = toBI(tx.getGasLimit());
+
+        if (!localCall && txGasLimit.compareTo(BigInteger.valueOf(requiredGas)) < 0) {
+            // no refund
+            // no endowment
+            execError(String.format("Out of Gas calling precompiled contract 0x%s, required: %d, left: %s ",
+                    targetAddress.toString(), (requiredGas + basicTxCost), mEndGas));
+            mEndGas = BigInteger.ZERO;
+            return;
+        } else {
+            long gasUsed = requiredGas + basicTxCost;
+            mEndGas = txGasLimit.subtract(BigInteger.valueOf(requiredGas + basicTxCost));
+
+            // FIXME: save return for vm trace
+            try {
+                byte[] out = precompiledContract.execute(tx.getData());
+                result.setHReturn(out);
+            } catch (RuntimeException e) {
+                result.setException(e);
+            }
+
+            result.spendGas(gasUsed);
+        }
+    }
+
+    private void prepareCallToNormalContract(RskAddress targetAddress) {
+
+        byte[] code = track.getCode(targetAddress);
+        retrievedContracts.add(targetAddress);
+        if (isEmpty(code)) {
+            mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
+            result.spendGas(basicTxCost);
+
+        } else {
+
+            ProgramInvoke programInvoke =
+                    programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
+
+            this.vm = new VM(vmConfig, precompiledContracts);
+            BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+            this.program = new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
         }
     }
 
@@ -253,46 +319,11 @@ public class TransactionExecutor {
         // But init() will detect this earlier
         precompiledContract = precompiledContracts.getContractForAddress(new DataWord(targetAddress.getBytes()));
 
-        if (precompiledContract != null) {
-            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
-            long requiredGas = precompiledContract.getGasForData(tx.getData());
-            BigInteger txGasLimit = toBI(tx.getGasLimit());
+        if (precompiledContract != null)
+           callToPrecompiledContract(targetAddress);
+         else
+            prepareCallToNormalContract(targetAddress);
 
-            if (!localCall && txGasLimit.compareTo(BigInteger.valueOf(requiredGas)) < 0) {
-                // no refund
-                // no endowment
-                execError(String.format("Out of Gas calling precompiled contract 0x%s, required: %d, left: %s ",
-                        targetAddress.toString(), (requiredGas + basicTxCost), mEndGas));
-                mEndGas = BigInteger.ZERO;
-                return;
-            } else {
-                long gasUsed = requiredGas + basicTxCost;
-                mEndGas = txGasLimit.subtract(BigInteger.valueOf(requiredGas + basicTxCost));
-
-                // FIXME: save return for vm trace
-                try {
-                    byte[] out = precompiledContract.execute(tx.getData());
-                    result.setHReturn(out);
-                } catch (RuntimeException e) {
-                    result.setException(e);
-                }
-
-                result.spendGas(gasUsed);
-            }
-        } else {
-            byte[] code = track.getCode(targetAddress);
-            if (isEmpty(code)) {
-                mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
-                result.spendGas(basicTxCost);
-            } else {
-                ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
-
-                this.vm = new VM(vmConfig, precompiledContracts);
-                BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
-                this.program = new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
-            }
-        }
 
         if (result.getException() == null) {
             Coin endowment = tx.getValue();
@@ -302,12 +333,12 @@ public class TransactionExecutor {
 
     private void create() {
         RskAddress newContractAddress = tx.getContractAddress();
+        createdContracts.add(newContractAddress);
         if (isEmpty(tx.getData())) {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
             cacheTrack.createAccount(newContractAddress);
         } else {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
-
             this.vm = new VM(vmConfig, precompiledContracts);
             BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
             this.program = new Program(vmConfig, precompiledContracts, configForBlock, tx.getData(), programInvoke, tx);
@@ -334,17 +365,7 @@ public class TransactionExecutor {
         executionError = err;
     }
 
-    public void go() {
-        if (!readyToExecute) {
-            return;
-        }
-
-        // TODO: transaction call for pre-compiled  contracts
-        if (vm == null) {
-            cacheTrack.commit();
-            return;
-        }
-
+    public void runProgram() {
         logger.trace("Go transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         try {
@@ -357,6 +378,8 @@ public class TransactionExecutor {
             }
 
             result = program.getResult();
+            retrievedContracts.addAll(result.getRetrievedContract());
+            createdContracts.addAll(result.getCreatedContract());
             mEndGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));
 
             if (tx.isContractCreation() && !result.isRevert()) {
@@ -386,26 +409,78 @@ public class TransactionExecutor {
 
             if (result.getException() != null || result.isRevert()) {
                 result.clearFieldsOnException();
-                cacheTrack.rollback();
+                rollBack = true;
 
                 if (result.getException() != null) {
                     throw result.getException();
                 } else {
                     execError("REVERT opcode executed");
                 }
-            } else {
-                cacheTrack.commit();
             }
 
         } catch (Throwable e) {
 
             // TODO: catch whatever they will throw on you !!!
 //            https://github.com/ethereum/cpp-ethereum/blob/develop/libethereum/Executive.cpp#L241
-            cacheTrack.rollback();
+            rollBack = true;
             mEndGas = BigInteger.ZERO;
             execError(e);
 
         }
+    }
+
+    public void payRent() {
+        if (precompiledContracts == null) {
+            return;
+        }
+
+        BigInteger rentGasLimit = tx.getRentGasLimit() != null ? toBI(tx.getRentGasLimit()) : toBI(tx.getGasLimit());
+        if (result != null) {
+            long partialRentGasUsed = 0;
+            for (RskAddress addressCreated : createdContracts) {
+                setCorrectTimes(addressCreated);
+            }
+
+            for (RskAddress retrievedContractAddress : retrievedContracts) {
+
+                setCorrectTimes(retrievedContractAddress);
+                partialRentGasUsed += rentGasCalculator(retrievedContractAddress);
+                if (rentGasLimit.subtract(toBI(partialRentGasUsed)).longValue() < 0) {
+                    outOfRentGas = true;
+                    break;
+                }
+            }
+
+            result.setRentGasUsed(partialRentGasUsed);
+
+            if (outOfRentGas) {
+                Program.OutOfGasException outOfRentGasException = new Program.OutOfGasException("OUT OF RENT GAS");
+                result.setException(outOfRentGasException);
+                execError(outOfRentGasException);
+                rollBack = true;
+            }
+        }
+    }
+
+    public void go() {
+        // If readyToExecute=false then there is no commit neither there is rollback because
+        // the cacheTrack was't even modified
+        if (!readyToExecute) {
+            return;
+        }
+
+        // If it´s an external transaction or pre-compiled call, then vm==null which means that
+        // we don´t need to run any program
+        if (vm != null) {
+            runProgram();
+        }
+
+        payRent();
+
+        if (rollBack)
+            cacheTrack.rollback();
+        else
+            cacheTrack.commit();
     }
 
     public TransactionReceipt getReceipt() {
@@ -416,7 +491,7 @@ public class TransactionExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
             receipt.setGasUsed(getGasUsed());
-            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
+            receipt.setStatus(executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS);
         }
         return receipt;
     }
@@ -434,24 +509,37 @@ public class TransactionExecutor {
 
         logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
-        cacheTrack.commit();
-
         // Should include only LogInfo's that was added during not rejected transactions
         List<LogInfo> notRejectedLogInfos = result.getLogInfoList().stream()
                 .filter(logInfo -> !logInfo.isRejected())
                 .collect(Collectors.toList());
 
+        BigInteger rentGasLimit = tx.getRentGasLimit() != null ? toBI(tx.getRentGasLimit()) : toBI(tx.getGasLimit());
+
+        long rentGasUsed = result.getRentGasUsed();
+
+        if (result.getException() != null || result.isRevert()) {
+            rentGasUsed /= 4;
+        }
+
+        BigInteger partialRentGasLeftover = rentGasLimit.subtract(toBI(rentGasUsed));
+        BigInteger rentGasLeftover = partialRentGasLeftover.longValue() < 0 ? BigInteger.ZERO : partialRentGasLeftover;
+
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
                 .gasLeftover(mEndGas)
+                .rentGasLeftover(rentGasLeftover)
                 .logs(notRejectedLogInfos)
                 .result(result.getHReturn());
 
         if (result != null) {
+
+
             // Accumulate refunds for suicides
-            result.addFutureRefund((long)result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
+            result.addFutureRefund((long) result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-            RskAddress addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
+
             mEndGas = mEndGas.add(BigInteger.valueOf(gasRefund));
+
 
             summaryBuilder
                     .gasUsed(toBI(result.getGasUsed()))
@@ -459,6 +547,7 @@ public class TransactionExecutor {
                     .deletedAccounts(result.getDeleteAccounts())
                     .internalTransactions(result.getInternalTransactions());
 
+            RskAddress addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
             ContractDetails cdetails = track.getContractDetails(addr);
 
             if (cdetails != null) {
@@ -466,8 +555,13 @@ public class TransactionExecutor {
             }
 
             if (result.getException() != null) {
-                summaryBuilder.markAsFailed();
+                if (outOfRentGas){
+                    summaryBuilder.markAsFailedRentGas();
+                } else {
+                    summaryBuilder.markAsFailed();
+                }
             }
+
         }
 
         logger.trace("Building transaction execution summary");
@@ -475,14 +569,19 @@ public class TransactionExecutor {
         TransactionExecutionSummary summary = summaryBuilder.build();
 
         // Refund for gas leftover
+        // This gives the wrong impression that the sender can be refunded more than it has spent on gas
+        // This is not true because the refund is limited to 50% of the spent gas.
+        // A better codification of the logic would be first to subtract the refundGas to the spentGas,
+        // and only then compute the monetary value.
         track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
         logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
+
 
         // Transfer fees to miner
         Coin summaryFee = summary.getFee();
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if(config.isRemascEnabled()) {
+        if (config.isRemascEnabled()) {
             logger.trace("Adding fee to remasc contract account");
             track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
         } else {
@@ -541,5 +640,56 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(mEndGas).longValue();
     }
 
-    public Coin getPaidFees() { return paidFees; }
+    public Coin getPaidFees() {
+        return paidFees;
+    }
+
+
+    public void setCorrectTimes (RskAddress address){
+        AccountState actualAccountState = cacheTrack.getAccountState(address);
+
+        long lastAccountModification = cacheTrack.getAccountState(address).getLastModificationDate();
+        if (lastAccountModification == 0) {
+            long actualBlockTimeStamp = this.executionBlock.getTimestamp();
+            Instant actualBlockInstant = Instant.ofEpochSecond(actualBlockTimeStamp);
+            Instant sixMonthsAfterBlockTime = actualBlockInstant.plusSeconds(TimeUtils.sixMonthInSeconds);
+            actualAccountState.setLastModificationDate(sixMonthsAfterBlockTime.getEpochSecond());
+        }
+    }
+
+    public long rentGasCalculator(RskAddress address) {
+
+        boolean accountStateModified = cacheTrack.getAccountState(address).isDirty();
+        boolean storageModified = cacheTrack.getContractDetails(address).isDirty();
+        boolean modified = accountStateModified || storageModified;
+
+        ContractDetails contractDetails = track.getContractDetails(address);
+        AccountState actualAccountState = track.getAccountState(address);
+        long actualBlockTimeStamp = this.executionBlock.getTimestamp();
+        long storageCost = 0;
+        long callRentGas = 0;
+        Instant actualBlockInstant = Instant.ofEpochSecond(actualBlockTimeStamp);
+        Instant actualAccountStateInstant = Instant.ofEpochSecond(actualAccountState.getLastModificationDate());
+        long deltaTime = Duration.between(actualAccountStateInstant, actualBlockInstant).getSeconds();
+
+
+        if (contractDetails != null) { //TODO Test replaceCodeTest2 have problems
+            storageCost += contractDetails.getStorageSize() * 32 * storagePrice;
+            storageCost += contractDetails.getCode().length * codePrice;
+            storageCost += 256 * accountStatePrice;
+            callRentGas = (storageCost * deltaTime ) / ((long) Math.pow(2, 21));
+            boolean excesiveStorageCost = (!modified) && (callRentGas >= 10000);
+            callRentGas += excesiveStorageCost? 3000 : 0;
+            if (((modified) && (callRentGas >= 1000)) ||
+                    excesiveStorageCost) {
+                if (deltaTime > 0) {
+                    AccountState currentActualAccountState = cacheTrack.getAccountState(address);
+                    currentActualAccountState.setLastModificationDate(actualBlockTimeStamp);
+                    return callRentGas;
+                }
+            }
+        }
+        return 0;
+    }
+
 }

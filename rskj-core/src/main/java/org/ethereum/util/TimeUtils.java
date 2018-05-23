@@ -25,6 +25,9 @@ package org.ethereum.util;
  */
 public class TimeUtils {
 
+    public static final long sixMonthInSeconds = 15638400;
+
+
     /**
      * Converts minutes to millis
      *

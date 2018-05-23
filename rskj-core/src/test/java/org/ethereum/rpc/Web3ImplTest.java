@@ -340,7 +340,7 @@ public class Web3ImplTest {
         World world = new World(receiptStore);
         Web3Impl web3 = createWeb3(world, receiptStore);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(20000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -401,7 +401,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world, receiptStore);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(20000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -486,7 +486,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(20000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -529,7 +529,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(20000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();

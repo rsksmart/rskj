@@ -107,4 +107,15 @@ public class BlockBuilder {
 
         return block;
     }
+
+    public Block buildWithTime(long aTimeInMonth) { //Just for testing
+        Block block = blockGenerator.createChildBlockWithTime(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit, aTimeInMonth);
+
+        if (blockChain != null) {
+            BlockExecutor executor = new BlockExecutor(new TestSystemProperties(), blockChain.getRepository(), null, blockChain.getBlockStore(), blockChain.getListener());
+            executor.executeAndFill(block, parent);
+        }
+
+        return block;
+    }
 }

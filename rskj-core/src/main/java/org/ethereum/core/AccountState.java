@@ -30,6 +30,7 @@ import java.math.BigInteger;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.util.ByteUtil.longToBytes;
 
 public class AccountState {
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
@@ -71,6 +72,10 @@ public class AccountState {
     private boolean dirty = false;
     private boolean deleted = false;
 
+    /* Cached the state last modification time */
+    private long lastModificationTime;
+
+
     public AccountState() {
         this(BigInteger.ZERO, Coin.ZERO);
     }
@@ -92,8 +97,11 @@ public class AccountState {
 
         if (items.size() > 4) {
             byte[] data = items.get(4).getRLPData();
-
             this.stateFlags = data == null ? 0 : BigIntegers.fromUnsignedByteArray(data).intValue();
+            if(items.size() > 5){
+                byte[] timeStamp = items.get(5).getRLPData();
+                this.lastModificationTime = BigIntegers.fromUnsignedByteArray(timeStamp).longValue();
+            }
         }
     }
 
@@ -103,6 +111,7 @@ public class AccountState {
 
     public void setStateFlags(int s) {
         stateFlags = s;
+        setDirty(true);
     }
 
     public BigInteger getNonce() {
@@ -112,6 +121,16 @@ public class AccountState {
     public void setNonce(BigInteger nonce) {
         rlpEncoded = null;
         this.nonce = nonce;
+    }
+
+    public void setLastModificationDate(long time){
+        rlpEncoded = null;
+        this.lastModificationTime = time;
+        setDirty(true);
+    }
+
+    public long getLastModificationDate(){
+        return lastModificationTime;
     }
 
     public byte[] getStateRoot() {
@@ -137,6 +156,7 @@ public class AccountState {
     public void setCodeHash(byte[] codeHash) {
         rlpEncoded = null;
         this.codeHash = codeHash;
+        setDirty(true);
     }
 
     public Coin getBalance() {
@@ -157,7 +177,7 @@ public class AccountState {
         if (!value.equals(Coin.ZERO)) {
             rlpEncoded = null;
         }
-        
+
         this.balance = balance.subtract(value);
         setDirty(true);
     }
@@ -168,13 +188,19 @@ public class AccountState {
             byte[] balance = RLP.encodeCoin(this.balance);
             byte[] stateRoot = RLP.encodeElement(this.stateRoot);
             byte[] codeHash = RLP.encodeElement(this.codeHash);
-            if (stateFlags != 0) {
+
+            byte[] lastTimeUsed = RLP.encodeElement(longToBytes(this.lastModificationTime));
+
+            if (this.lastModificationTime == 0){
+                if(stateFlags != 0){
+                    byte[] stateFlags = RLP.encodeInt(this.stateFlags);
+                    this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, stateFlags);
+                } else {
+                    this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash);
+                }
+            } else {
                 byte[] stateFlags = RLP.encodeInt(this.stateFlags);
-                this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, stateFlags);
-            } else
-                // do not serialize if zero to keep compatibility
-            {
-                this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash);
+                this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, stateFlags, lastTimeUsed);
             }
         }
         return rlpEncoded;
@@ -201,8 +227,9 @@ public class AccountState {
 
         accountState.setCodeHash(this.getCodeHash());
         accountState.setStateRoot(this.getStateRoot());
-        accountState.setDirty(false);
+        accountState.setLastModificationDate(this.lastModificationTime);
         accountState.setStateFlags(this.stateFlags);
+        accountState.setDirty(false); //This must be the last line.
         return accountState;
     }
 
@@ -211,7 +238,8 @@ public class AccountState {
                 "  Balance: " + getBalance().asBigInteger() + "\n" +
                 "  StateFlags: " + getStateFlags() + "\n" +
                 "  State Root: " + Hex.toHexString(this.getStateRoot()) + "\n" +
-                "  Code Hash: " + Hex.toHexString(this.getCodeHash());
+                "  Code Hash: " + Hex.toHexString(this.getCodeHash()) + "\n" +
+                "  Last time used: " + getLastModificationDate();
         return ret;
     }
 

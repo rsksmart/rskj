@@ -196,16 +196,26 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
     @Override
     public int getStorageSize() {
-        return (origContract == null)
-                ? storage.size()
-                : origContract.getStorageSize();
+        return getStorageKeys().size();
     }
 
     @Override
     public Set<DataWord> getStorageKeys() {
-        return (origContract == null)
-                ? storage.keySet()
-                : origContract.getStorageKeys();
+
+        Set<DataWord> mergedKeys = new HashSet<>();
+        Set<DataWord> myStorageKeys = storage.keySet();
+        mergedKeys.addAll(myStorageKeys);
+
+        if (origContract != null) {
+            Set<DataWord> parentStorageKeys = origContract.getStorageKeys();
+            mergedKeys.addAll(parentStorageKeys);
+
+        }
+        for (DataWord dw : myStorageKeys) {
+            if (storage.get(dw).equals(DataWord.ZERO))
+                mergedKeys.remove(dw);
+        }
+        return mergedKeys;
     }
 
     @Override

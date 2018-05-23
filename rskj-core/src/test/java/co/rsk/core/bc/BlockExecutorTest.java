@@ -131,14 +131,14 @@ public class BlockExecutorTest {
         AccountState accountState = repository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(50000), accountState.getBalance().asBigInteger());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(50000 - 21000 - 10), accountState.getBalance().asBigInteger());
     }
 
     @Test
@@ -147,7 +147,7 @@ public class BlockExecutorTest {
 
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, Coin.valueOf(60000));
+        Account account = createAccount("acctest1", track, Coin.valueOf(80000));
         Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
         track.commit();
@@ -202,14 +202,14 @@ public class BlockExecutorTest {
         AccountState accountState = repository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(80000), accountState.getBalance().asBigInteger());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(80000 - 42000 - 20), accountState.getBalance().asBigInteger());
     }
 
     @Test
@@ -237,7 +237,7 @@ public class BlockExecutorTest {
 
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, Coin.valueOf(30000));
+        Account account = createAccount("acctest1", track, Coin.valueOf(50000));
         Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
         Account account3 = createAccount("acctest3", track, Coin.ZERO);
 
@@ -383,7 +383,7 @@ public class BlockExecutorTest {
 
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, Coin.valueOf(30000));
+        Account account = createAccount("acctest1", track, Coin.valueOf(50000));
         Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
         track.commit();

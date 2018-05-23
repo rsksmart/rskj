@@ -42,6 +42,7 @@ import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -169,6 +170,34 @@ public class BlockGenerator {
                 parent.getGasLimit(),
                 parent.getGasUsed(),
                 parent.getTimestamp() + ++count,
+                EMPTY_BYTE_ARRAY,   // extraData
+                EMPTY_BYTE_ARRAY,   // mixHash
+                BigInteger.ZERO.toByteArray(),  // provisory nonce
+                EMPTY_TRIE_HASH,   // receipts root
+                BlockChainImpl.calcTxTrie(txs),  // transaction root
+                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
+                txs,       // transaction list
+                uncles,        // uncle list
+                null,
+                Coin.valueOf(fees)
+        );
+//        return createChildBlock(parent, 0);
+    }
+
+    public Block createChildBlockWithTimePassage(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty, long timeInMonth) {
+        List<Transaction> txs = new ArrayList<>();
+        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
+
+        return new Block(
+                parent.getHash().getBytes(), // parent hash
+                unclesListHash, // uncle hash
+                parent.getCoinbase().getBytes(),
+                ByteUtils.clone(new Bloom().getData()),
+                difficulty, // difficulty
+                parent.getNumber() + 1,
+                parent.getGasLimit(),
+                parent.getGasUsed(),
+                parent.getTimestamp() + timeInMonth,
                 EMPTY_BYTE_ARRAY,   // extraData
                 EMPTY_BYTE_ARRAY,   // mixHash
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
@@ -353,50 +382,52 @@ public class BlockGenerator {
         );
     }
 
-    public Block createFallbackMinedChildBlockWithTimeStamp(Block parent, byte[] difficulty, long timeStamp, boolean goodSig) {
-        List<Transaction> txs = new ArrayList<>();
-        Block block = new Block(
-                parent.getHash().getBytes(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
+    public Block createChildBlockWithTime(Block parent, List<Transaction> txs, List<BlockHeader> uncles, //JUST FOR TEST
+                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit, long timeInMonth) {
+
+        Instant timeAuxiliar = Instant.ofEpochSecond(parent.getTimestamp()).plusSeconds(timeInMonth*2628000L);
+
+        if (txs == null) {
+            txs = new ArrayList<>();
+        }
+
+        if (uncles == null) {
+            uncles = new ArrayList<>();
+        }
+
+        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
+
+        BlockHeader newHeader = new BlockHeader(parent.getHash().getBytes(),
+                unclesListHash,
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
-                difficulty, // difficulty
-                parent.getNumber() + 1,
-                parent.getGasLimit(),
-                parent.getGasUsed(),
-                timeStamp,
-                EMPTY_BYTE_ARRAY,   // extraData
-                EMPTY_BYTE_ARRAY,   // mixHash
-                BigInteger.ZERO.toByteArray(),  // provisory nonce
-                EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
-                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                null,        // uncle list
-                null,
-                Coin.ZERO
+                new byte[]{1},
+                parent.getNumber()+1,
+                gasLimit,
+                0,
+                parent.getTimestamp() + timeAuxiliar.getEpochSecond(),
+                new byte[]{},
+                new byte[]{},
+                new byte[]{},
+                new byte[]{},
+                (minGasPrice != null) ? minGasPrice.toByteArray() : null,
+                CollectionUtils.size(uncles)
         );
 
-        ECKey fallbackMiningKey0 = ECKey.fromPrivate(BigInteger.TEN);
-        ECKey fallbackMiningKey1 = ECKey.fromPrivate(BigInteger.TEN.add(BigInteger.ONE));
-
-        ECKey fallbackKey;
-
-        if (block.getNumber() % 2 == 0) {
-            fallbackKey = fallbackMiningKey0;
-        } else {
-            fallbackKey = fallbackMiningKey1;
+        if (difficulty == 0) {
+            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()));
+        }
+        else {
+            newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
-        byte[] signature = fallbackSign(block.getHashForMergedMining(), fallbackKey);
+        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
 
-        if (!goodSig) {
-            // just make it a little bad
-            signature[5] = (byte) (signature[5]+1);
-        }
+        newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
-        block.setBitcoinMergedMiningHeader(signature);
-        return block;
+        Block newBlock = new Block(newHeader, txs, uncles);
+
+        return newBlock;
     }
 
     byte[] fallbackSign(byte[] hash, ECKey privKey) {

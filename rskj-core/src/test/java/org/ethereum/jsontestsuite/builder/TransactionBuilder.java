@@ -29,6 +29,8 @@ public class TransactionBuilder {
     public static Transaction build(TransactionTck transactionTck) {
 
         Transaction transaction;
+        String rentGasLimit = transactionTck.getRentGasLimit();
+
         if (transactionTck.getSecretKey() != null){
 
             transaction = new Transaction(
@@ -51,8 +53,15 @@ public class TransactionBuilder {
                     parseData(transactionTck.getData()),
                     parseData(transactionTck.getR()),
                     parseData(transactionTck.getS()),
-                    parseByte(transactionTck.getV())
+                    parseByte(transactionTck.getV()),
+                    parseData(transactionTck.getRentGasLimit())
             );
+        }
+
+        if (rentGasLimit != null){
+            transaction.setRentGasLimit(parseVarData(rentGasLimit));
+        } else {
+            transaction.setRentGasLimit(parseVarData(transactionTck.getGasLimit()));
         }
 
         return transaction;

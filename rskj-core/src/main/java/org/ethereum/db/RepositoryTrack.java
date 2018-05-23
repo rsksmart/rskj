@@ -111,12 +111,19 @@ public class RepositoryTrack implements Repository {
         }
     }
 
+    public boolean isExistInCache(RskAddress addr) {
+
+        synchronized (repository) {
+            AccountState accountState = cacheAccounts.get(addr);
+            return(accountState != null);
+        }
+    }
+
     @Override
     public ContractDetails getContractDetails(RskAddress addr) {
 
         synchronized (repository) {
             ContractDetails contractDetails = cacheDetails.get(addr);
-
             if (contractDetails == null) {
                 repository.loadAccount(addr, cacheAccounts, cacheDetails);
                 contractDetails = cacheDetails.get(addr);
@@ -231,11 +238,21 @@ public class RepositoryTrack implements Repository {
 
     @Override
     public Coin addBalance(RskAddress addr, Coin value) {
+        // If value is zero, then the contract should not have its dirty flag set to true.
+        // This is important because the dirty flag affects consensus for storage rent.
 
         synchronized (repository) {
+
             AccountState accountState = getAccountState(addr);
             if (accountState == null) {
+                if (value.equals(Coin.ZERO)) {
+                    return Coin.ZERO;
+                }
                 accountState = createAccount(addr);
+            }
+
+            if (value.equals(Coin.ZERO)) {
+                return accountState.getBalance();
             }
 
             getContractDetails(addr).setDirty(true);

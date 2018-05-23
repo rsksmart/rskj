@@ -646,6 +646,7 @@ public class VM {
     protected void doBALANCE() {
         if (computeGas) {
             gasCost = GasCost.BALANCE;
+            gasCost = GasCost.BALANCE;
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -777,6 +778,10 @@ public class VM {
         } else {
             DataWord address = program.stackPop();
             length = program.getCodeAt(address).length;
+            RskAddress rskAddress = new RskAddress(address);
+            if (program.getStorage().isExist(rskAddress)){
+                program.addRetrievedContracts(address);
+            }
             program.disposeWord(address);
         }
         DataWord codeLength = new DataWord(length);
@@ -824,6 +829,10 @@ public class VM {
         if (op == OpCode.EXTCODECOPY) {
             DataWord address = program.stackPop();
             fullCode = program.getCodeAt(address);
+            RskAddress rskAddress = new RskAddress(address);
+            if (program.getStorage().isExist(rskAddress)){
+                program.addRetrievedContracts(address);
+            }
             program.disposeWord(address);
         }
 

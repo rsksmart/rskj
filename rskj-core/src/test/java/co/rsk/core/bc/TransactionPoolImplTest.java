@@ -526,8 +526,13 @@ public class TransactionPoolImplTest {
     
     @Test
     public void executeContractWithFakeBlock() {
-        Coin balance = Coin.valueOf(1000000);
+
+        Coin balance = Coin.valueOf(10000000);
         createTestAccounts(2, balance);
+     /* BlockChainImpl blockchain = createBlockchain();
+        Coin balance = Coin.valueOf(10000000);
+        TransactionPoolImpl transactionPool = createSampleNewTransactionPoolWithAccounts(2, balance, blockchain);
+        transactionPool.processBest(blockchain.getBestBlock()); */
         // "NUMBER PUSH1 0x00 SSTORE" compiled to bytecodes
         String code = "43600055";
         Transaction tx = createSampleTransactionWithData(1, 0, code);

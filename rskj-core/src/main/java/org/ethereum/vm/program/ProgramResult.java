@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -36,6 +37,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class ProgramResult {
 
     private long gasUsed;
+    private long rentGasUsed;
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private RuntimeException exception;
     private boolean revert;
@@ -56,14 +58,25 @@ public class ProgramResult {
      * but dummy recorded
      */
     private List<CallCreate> callCreateList;
+    /*
+     *  retrievedContracts is a set of contracts whose storages has been accesed or modified
+     */
+    private HashSet<RskAddress> retrievedContracts;
 
-    public void clearUsedGas() {
-        gasUsed = 0;
-    }
+    /*
+     *  createdContracts is a set of contracts whose modification time
+     */
+    private HashSet<RskAddress> createdContracts;
+
+
+    public void clearUsedGas() { gasUsed = 0; }
+
+    public void clearRentUsedGas(){ rentGasUsed = 0;}
 
     public void spendGas(long gas) {
         gasUsed += gas;
     }
+
 
     public void setRevert() {
         this.revert = true;
@@ -92,6 +105,15 @@ public class ProgramResult {
 
     public long getGasUsed() {
         return gasUsed;
+    }
+
+
+    public long getRentGasUsed() {
+        return rentGasUsed;
+    }
+
+    public void setRentGasUsed(long aRentGas){
+        rentGasUsed = aRentGas;
     }
 
     public void setException(RuntimeException exception) {
@@ -126,6 +148,28 @@ public class ProgramResult {
         if (!isEmpty(accounts)) {
             getDeleteAccounts().addAll(accounts);
         }
+    }
+
+    public void addRetrievedContracts(RskAddress address){
+        getRetrievedContract().add(address);
+    }
+
+    public Set<RskAddress> getRetrievedContract() {
+        if (retrievedContracts == null) {
+            retrievedContracts = new HashSet<>();
+        }
+        return retrievedContracts;
+    }
+
+    public void addCreatedContracts(RskAddress address){
+        getCreatedContract().add(address);
+    }
+
+    public Set<RskAddress> getCreatedContract() {
+        if (createdContracts == null) {
+            createdContracts = new HashSet<>();
+        }
+        return createdContracts;
     }
 
     public void clearFieldsOnException() {

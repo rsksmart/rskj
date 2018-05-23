@@ -28,9 +28,7 @@ import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ByteUtil;
@@ -180,6 +178,7 @@ public class Program {
     private final java.util.Stack<DataWord> dataWordPool;
 
     private static Boolean useDataWordPool = true;
+    private boolean accountStateChanged = false;
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
@@ -639,6 +638,7 @@ public class Program {
         } else {
             track.createAccount(newAddress);
         }
+        result.addCreatedContracts(newAddress);
 
         // [4] TRANSFER THE BALANCE
         track.addBalance(senderAddress, endowment.negate());
@@ -715,6 +715,7 @@ public class Program {
 
             // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
             stackPush(new DataWord(newAddressBytes));
+            accountStateChanged = true;
         }
 
         // 5. REFUND THE REMAIN GAS
@@ -806,7 +807,15 @@ public class Program {
         // FETCH THE SAVED STORAGE
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
         RskAddress senderAddress = new RskAddress(getOwnerAddress());
-        RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
+        RskAddress contextAddress;
+        if (msg.getType().isStateless()){
+            contextAddress = senderAddress;
+        } else {
+            contextAddress = codeAddress;
+            if (getStorage().isExist(codeAddress)) {
+                result.addRetrievedContracts(codeAddress);
+            }
+        }
 
         if (isLogEnabled) {
             logger.info(msg.getType().name() + " for existing contract: address: [{}], outDataOffs: [{}], outDataSize: [{}]  ",
@@ -842,6 +851,14 @@ public class Program {
 
         contextBalance = track.addBalance(contextAddress, endowment);
 
+
+        AccountState contextAccountState = track.getAccountState(contextAddress);
+
+         if (contextAccountState.getLastModificationDate()==0) {
+            contextAccountState.setLastModificationDate(getTimestamp().longValueSafe());
+        }
+
+
         // CREATE CALL INTERNAL TRANSACTION
         InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, programCode, "call");
 
@@ -863,6 +880,10 @@ public class Program {
         else {
             stackPushZero();
         }
+    }
+
+    public void addRetrievedContracts(DataWord address){
+        result.addRetrievedContracts(new RskAddress(address));
     }
 
     public boolean executeCode(
@@ -960,12 +981,18 @@ public class Program {
         setPC(startAddr);
         stackClear();
         clearUsedGas();
+        clearRentUsedGas();
         stopped=false;
     }
 
     public void clearUsedGas() {
         getResult().clearUsedGas();
     }
+
+    public void clearRentUsedGas() {
+        getResult().clearRentUsedGas();
+    }
+
 
     public void spendAllGas() {
         spendGas(getRemainingGas(), "Spending all remaining");
@@ -1012,7 +1039,7 @@ public class Program {
             keyWord = keyWord.clone();
             valWord = valWord.clone();
         }
-
+        accountStateChanged = true;
         getStorage().addStorageRow(new RskAddress(getOwnerAddress()), keyWord, valWord);
     }
 
@@ -1051,7 +1078,11 @@ public class Program {
     }
 
     public DataWord getBalance(DataWord address) {
-        Coin balance = getStorage().getBalance(new RskAddress(address));
+        RskAddress rskAddress = new RskAddress(address);
+        if (getStorage().isExist(rskAddress)) {
+            result.addRetrievedContracts(rskAddress);
+        }
+        Coin balance = getStorage().getBalance(rskAddress);
         return new DataWord(balance.getBytes());
     }
 

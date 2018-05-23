@@ -236,6 +236,8 @@ public interface Repository {
     void updateAccountState(RskAddress addr, AccountState accountState);
 
     default void transfer(RskAddress fromAddr, RskAddress toAddr, Coin value) {
+        if (value.equals(Coin.ZERO)) return;
+
         addBalance(fromAddr, value.negate());
         addBalance(toAddr, value);
     }

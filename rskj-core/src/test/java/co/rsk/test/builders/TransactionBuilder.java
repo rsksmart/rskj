@@ -37,6 +37,7 @@ public class TransactionBuilder {
     private BigInteger value = BigInteger.ZERO;
     private BigInteger gasPrice = BigInteger.ONE;
     private BigInteger gasLimit = BigInteger.valueOf(21000);
+    private BigInteger rentGasLimit;
     private BigInteger nonce = BigInteger.ZERO;
     private boolean immutable;
 
@@ -90,10 +91,20 @@ public class TransactionBuilder {
         return this;
     }
 
+    public TransactionBuilder rentGasLimit(BigInteger rentGasLimit) {
+        this.rentGasLimit = rentGasLimit;
+        return this;
+    }
+
     public Transaction build() {
-        Transaction tx = Transaction.create(
+
+        Transaction tx = rentGasLimit == null? Transaction.create(
                 new TestSystemProperties(), receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
-                value, nonce, gasPrice, gasLimit, data);
+                value, nonce, gasPrice, gasLimit, data)
+                :
+                Transaction.create(
+                        new TestSystemProperties(), receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
+                        value, nonce, gasPrice, gasLimit, data, rentGasLimit);
         tx.sign(sender.getEcKey().getPrivKeyBytes());
 
         if (this.immutable) {

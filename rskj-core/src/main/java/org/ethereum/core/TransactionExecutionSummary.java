@@ -42,7 +42,11 @@ public class TransactionExecutionSummary {
     private BigInteger gasLimit = BigInteger.ZERO;
     private BigInteger gasUsed = BigInteger.ZERO;
     private BigInteger gasLeftover = BigInteger.ZERO;
+    private BigInteger rentGasLeftover = BigInteger.ZERO;
+    private BigInteger rentGasLimit = BigInteger.ZERO;
+
     private BigInteger gasRefund = BigInteger.ZERO;
+
 
     private List<DataWord> deletedAccounts = emptyList();
     private List<InternalTransaction> internalTransactions = emptyList();
@@ -52,6 +56,7 @@ public class TransactionExecutionSummary {
     private List<LogInfo> logs;
 
     private boolean failed;
+    private boolean failedRentGas;
 
     public Transaction getTransaction() {
         return tx;
@@ -66,11 +71,14 @@ public class TransactionExecutionSummary {
     }
 
     public Coin getFee() {
-        if (failed) {
-            return calcCost(gasLimit);
+        if (failedRentGas) {
+            BigInteger rentGasUsed = rentGasLimit.subtract(rentGasLeftover);
+            return calcCost(rentGasUsed.add(gasLimit).subtract(gasLeftover));
+        } else if (failed) {
+            return calcCost(gasLimit.add(rentGasLimit).subtract(rentGasLeftover));
+        } else {
+            return calcCost(gasLimit.subtract(gasLeftover.add(gasRefund)).add(rentGasLimit).subtract(rentGasLeftover));
         }
-
-        return calcCost(gasLimit.subtract(gasLeftover.add(gasRefund)));
     }
 
     public Coin getRefund() {
@@ -83,10 +91,9 @@ public class TransactionExecutionSummary {
 
     public Coin getLeftover() {
         if (failed) {
-            return Coin.ZERO;
+            return calcCost(rentGasLeftover);
         }
-
-        return calcCost(gasLeftover);
+        return calcCost(gasLeftover.add(rentGasLeftover));
     }
 
     public Coin getGasPrice() {
@@ -151,6 +158,8 @@ public class TransactionExecutionSummary {
             summary = new TransactionExecutionSummary();
             summary.tx = transaction;
             summary.gasLimit = toBI(transaction.getGasLimit());
+            byte[] futureRentGas = transaction.getRentGasLimit();
+            summary.rentGasLimit = futureRentGas != null ? toBI(futureRentGas) : toBI(transaction.getGasLimit()) ;
             summary.gasPrice = transaction.getGasPrice();
             summary.value = transaction.getValue();
         }
@@ -169,6 +178,13 @@ public class TransactionExecutionSummary {
             summary.gasRefund = gasRefund;
             return this;
         }
+
+
+        public Builder rentGasLeftover(BigInteger rentGasLeftover){
+            summary.rentGasLeftover = rentGasLeftover;
+            return this;
+        }
+
 
         public Builder internalTransactions(List<InternalTransaction> internalTransactions) {
             summary.internalTransactions = unmodifiableList(internalTransactions);
@@ -190,6 +206,11 @@ public class TransactionExecutionSummary {
 
         public Builder markAsFailed() {
             summary.failed = true;
+            return this;
+        }
+
+        public Builder  markAsFailedRentGas() {
+            summary.failedRentGas = true;
             return this;
         }
 

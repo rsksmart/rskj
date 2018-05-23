@@ -35,10 +35,17 @@ public class TransactionTck {
     String v;
     String value;
     String secretKey;
+    String rentGasLimit;
 
 
     public TransactionTck() {
     }
+
+    public void setRentGasLimit(String rGasLimit) {
+        this.rentGasLimit = rGasLimit;
+    }
+
+    public String getRentGasLimit() { return rentGasLimit; }
 
     public String getData() {
         return data;
@@ -133,6 +140,7 @@ public class TransactionTck {
                 ", v='" + v + '\'' +
                 ", value='" + value + '\'' +
                 ", secretKey='" + secretKey + '\'' +
+                ", rentGasLimit='" + rentGasLimit + '\'' +
                 '}';
     }
 }
