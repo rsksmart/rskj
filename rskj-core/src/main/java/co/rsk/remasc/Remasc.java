@@ -98,7 +98,7 @@ public class Remasc {
 
         long blockNbr = executionBlock.getNumber();
         BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(blockNbr);
-        boolean isRskIp15BisEnabled = configForBlock.isRskIp15Bis();
+        boolean isRskIp15BisEnabled = configForBlock.isRcs230();
 
         if (!isRskIp15BisEnabled) {
             this.addNewSiblings();
