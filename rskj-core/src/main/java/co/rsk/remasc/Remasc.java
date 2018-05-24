@@ -25,6 +25,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
 import co.rsk.peg.BridgeSupport;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
@@ -99,7 +100,10 @@ public class Remasc {
         }
 
         long blockNbr = executionBlock.getNumber();
-        if (!config.getBlockchainConfig().getConfigForBlock(blockNbr).isRskIp15Bis()) {
+        BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(blockNbr);
+        boolean isRskIp15BisEnabled = configForBlock.isRskIp15Bis();
+
+        if (!isRskIp15BisEnabled) {
             this.addNewSiblings();
         }
 
@@ -145,6 +149,16 @@ public class Remasc {
 
         // Takes from rewardBalance this block's height reward.
         Coin syntheticReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
+        if (isRskIp15BisEnabled) {
+            BigInteger minimumPayableGas = configForBlock.getConstants().getMinimumPayableGas();
+            Coin minPayableFees = executionBlock.getMinimumGasPrice().multiply(minimumPayableGas);
+            if (syntheticReward.compareTo(minPayableFees) < 0) {
+                logger.debug("Synthetic Reward: {} is lower than minPayableFees: {} at block: {}",
+                             syntheticReward, minPayableFees, executionBlock.getShortHash());
+                return;
+            }
+        }
+
         rewardBalance = rewardBalance.subtract(syntheticReward);
         provider.setRewardBalance(rewardBalance);
 
@@ -213,7 +227,7 @@ public class Remasc {
             provider.setBrokenSelectionRule(Boolean.FALSE);
         }
 
-        if (!config.getBlockchainConfig().getConfigForBlock(blockNbr).isRskIp15Bis()) {
+        if (!isRskIp15BisEnabled) {
             this.removeUsedSiblings(processingBlockHeader);
         }
     }
