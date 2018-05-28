@@ -22,7 +22,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
@@ -34,7 +33,6 @@ import java.util.List;
 import java.util.OptionalInt;
 
 import static org.ethereum.util.ByteUtil.intToBytes;
-import static org.ethereum.util.ByteUtil.longToBytes;
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 /**
