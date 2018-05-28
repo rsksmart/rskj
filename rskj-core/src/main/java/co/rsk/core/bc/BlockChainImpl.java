@@ -411,8 +411,14 @@ public class BlockChainImpl implements Blockchain {
     public void removeBlocksByNumber(long number) {
         List<Block> blocks = this.getBlocksByNumber(number);
 
+        if (blocks == null)
+            return;
+
+        logger.info("Removing blocks height {}", number);
+
         for (Block block : blocks) {
-            blockStore.removeBlock(block);
+            if (block != null)
+                blockStore.removeBlock(block);
         }
     }
 

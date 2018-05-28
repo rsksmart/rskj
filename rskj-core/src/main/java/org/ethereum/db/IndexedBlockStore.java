@@ -78,6 +78,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
 
         binfos.removeAll(toremove);
+        this.index.put(block.getNumber(), binfos);
     }
 
     @Override

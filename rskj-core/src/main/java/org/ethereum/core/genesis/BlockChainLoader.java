@@ -129,6 +129,13 @@ public class BlockChainLoader {
 
             logger.info("Genesis block loaded");
         } else {
+            if (bestBlock.getNumber() > 1000) {
+                bestBlock = blockchain.getBlockByNumber(bestBlock.getNumber() - 1000);
+
+                for (long k = bestBlock.getNumber() + 1; k < bestBlock.getNumber() + 2000; k++)
+                    blockchain.removeBlocksByNumber(k);
+            }
+
             BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
 
             blockchain.setBestBlock(bestBlock);
