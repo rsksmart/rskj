@@ -226,6 +226,8 @@ public class BlockExecutor {
             executedTransactions.add(tx);
 
             txExecutor.execute();
+            txExecutor.go();
+            txExecutor.finalization();
 
             logger.trace("tx executed");
 

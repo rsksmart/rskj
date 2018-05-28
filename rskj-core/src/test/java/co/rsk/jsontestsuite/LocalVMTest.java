@@ -144,7 +144,7 @@ public class LocalVMTest {
         List<String> resources =
                 Arrays.asList(
                         //--TODO: These cases have been commented out after adding the remaining gas condition
-                        //--in doCall method in EVM.java. This will be addressed in next release.
+                        //--in doCall method in VM.java. This will be addressed in next release.
                         //"201503102037PYTHON",
                         //"201503102148PYTHON",
                         //"201503102300PYTHON",
