@@ -27,8 +27,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
+import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -49,6 +51,7 @@ public class UDPServerTest {
     private static final int PORT_1 = 40305;
     private static final int PORT_2 = 40306;
     private static final int PORT_3 = 40307;
+    private static final OptionalInt NETWORK_ID = OptionalInt.of(1);
 
     private static final long TIMEOUT = 30000;
     private static final long REFRESH = 60000;
@@ -76,9 +79,9 @@ public class UDPServerTest {
         NodeDistanceTable distanceTable2 = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node2);
         NodeDistanceTable distanceTable3 = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node3);
 
-        PeerExplorer peerExplorer1 = new PeerExplorer(node1BootNode, node1, distanceTable1, key1, TIMEOUT, REFRESH);
-        PeerExplorer peerExplorer2 = new PeerExplorer(node2BootNode, node2, distanceTable2, key2, TIMEOUT, REFRESH);
-        PeerExplorer peerExplorer3 = new PeerExplorer(node3BootNode, node3, distanceTable3, key3, TIMEOUT, REFRESH);
+        PeerExplorer peerExplorer1 = new PeerExplorer(node1BootNode, node1, distanceTable1, key1, TIMEOUT, REFRESH, NETWORK_ID);
+        PeerExplorer peerExplorer2 = new PeerExplorer(node2BootNode, node2, distanceTable2, key2, TIMEOUT, REFRESH, NETWORK_ID);
+        PeerExplorer peerExplorer3 = new PeerExplorer(node3BootNode, node3, distanceTable3, key3, TIMEOUT, REFRESH, NETWORK_ID);
 
         Assert.assertEquals(0, peerExplorer1.getNodes().size());
         Assert.assertEquals(0, peerExplorer2.getNodes().size());
