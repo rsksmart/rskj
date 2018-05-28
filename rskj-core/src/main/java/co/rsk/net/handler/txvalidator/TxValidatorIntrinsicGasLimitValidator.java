@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.*;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -38,7 +39,7 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
     }
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BlockHeader blockHeader = new BlockHeader(new byte[]{},
                 new byte[]{},
                 RskAddress.nullAddress().getBytes(),

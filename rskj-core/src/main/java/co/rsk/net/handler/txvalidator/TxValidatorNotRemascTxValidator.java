@@ -25,6 +25,7 @@ import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -36,7 +37,7 @@ public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
     private static final Logger logger = LoggerFactory.getLogger("txvalidator");
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (!(tx instanceof RemascTransaction)) {
             return true;
         }

@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.BigIntegers;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,11 +56,16 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(config));
     }
 
-    public boolean isValid(Transaction tx, Block executionBlock, AccountState state) {
+    public boolean isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
         long basicTxCost = tx.transactionCost(config, executionBlock);
+
+        if (state == null && basicTxCost != 0) {
+            logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender());
+            return false;
+        }
 
         for (TxValidatorStep step : validatorSteps) {
             if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0)) {

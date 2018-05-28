@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -32,7 +33,7 @@ import java.math.BigInteger;
 public class TxNotNullValidator implements  TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         return tx != null;
     }
 }
