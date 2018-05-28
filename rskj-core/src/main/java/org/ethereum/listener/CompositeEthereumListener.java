@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 /**
@@ -47,11 +46,6 @@ public class CompositeEthereumListener implements EthereumListener {
     // (the add and remove methods copy an internal array,
     // but the iterator directly use the internal array)
     private final List<EthereumListener> listeners = new CopyOnWriteArrayList<>();
-    private final Executor executor;
-
-    public CompositeEthereumListener(Executor executor) {
-        this.executor = executor;
-    }
 
     public void addListener(EthereumListener listener) {
         listeners.add(listener);
@@ -142,14 +136,12 @@ public class CompositeEthereumListener implements EthereumListener {
 
     private void scheduleListenerCallbacks(Consumer<EthereumListener> callback) {
         for (EthereumListener listener : listeners) {
-            executor.execute(() -> {
-                try {
-                    callback.accept(listener);
-                } catch (Exception e) {
-                    logger.error("Listener callback failed with exception", e);
-                    panicProcessor.panic("thread", String.format("Listener callback failed with exception %s", e.getMessage()));
-                }
-            });
+            try {
+                callback.accept(listener);
+            } catch (Throwable e) {
+                logger.error("Listener callback failed with exception", e);
+                panicProcessor.panic("thread", String.format("Listener callback failed with exception %s", e.getMessage()));
+            }
         }
     }
 }

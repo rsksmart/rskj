@@ -106,11 +106,15 @@ public class TestRunner {
         IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
+        CompositeEthereumListener listener = new TestCompositeEthereumListener();
+
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, null, null, new DummyBlockValidator());
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
+
+        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, null, null, new DummyBlockValidator());
 
         blockchain.setNoValidation(true);
 

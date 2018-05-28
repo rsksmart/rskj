@@ -100,7 +100,7 @@ public class StateTestRunner {
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
-        blockchain = new BlockChainImpl(config, repository, blockStore, null, null, null, null);
+        blockchain = new BlockChainImpl(config, repository, blockStore, null, null, null, null, null);
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);

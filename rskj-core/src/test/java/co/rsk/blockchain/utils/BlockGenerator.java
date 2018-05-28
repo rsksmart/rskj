@@ -464,7 +464,7 @@ public class BlockGenerator {
             Block newblock = createChildBlock(
                     parent, txs, uncles,
                     difficulty,
-                    null);
+                    BigInteger.valueOf(1));
 
             if (withMining) {
                 newblock = BlockMiner.mineBlock(newblock);

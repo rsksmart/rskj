@@ -63,7 +63,7 @@ public class BlockchainLoaderTest {
 
         Repository repository = new RepositoryImpl(systemProperties, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));;
 
-        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, ethereumListener, null, null);
+        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null, null);
 
         blockChainLoader.loadBlockchain();
 
