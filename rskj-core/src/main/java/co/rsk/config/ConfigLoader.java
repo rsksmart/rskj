@@ -112,6 +112,8 @@ public class ConfigLoader {
                 return ConfigFactory.load(REGTEST_RESOURCE_PATH);
             } else if (NodeCliFlags.NETWORK_DEVNET.getName().equals(network)) {
                 return ConfigFactory.load(DEVNET_RESOURCE_PATH);
+            } else if (NodeCliFlags.NETWORK_MAINNET.getName().equals(network)) {
+                return ConfigFactory.load(MAINNET_RESOURCE_PATH);
             } else {
                 String exceptionMessage = String.format(
                         "%s is not a valid network name (%s property)",
@@ -121,10 +123,9 @@ public class ConfigLoader {
                 logger.warn(exceptionMessage);
                 throw new IllegalArgumentException(exceptionMessage);
             }
-        } else {
-            logger.info("Network not set, using mainnet by default");
         }
 
+        logger.info("Network not set, using mainnet by default");
         return ConfigFactory.load(MAINNET_RESOURCE_PATH);
     }
 }
