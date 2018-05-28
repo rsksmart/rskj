@@ -30,6 +30,8 @@ public enum NodeCliFlags implements CliArg {
     DB_RESET("reset", SystemProperties.PROPERTY_DB_RESET, true),
     NETWORK_TESTNET("testnet", SystemProperties.PROPERTY_BC_CONFIG_NAME, "testnet"),
     NETWORK_REGTEST("regtest", SystemProperties.PROPERTY_BC_CONFIG_NAME, "regtest"),
+    NETWORK_DEVNET("devnet", SystemProperties.PROPERTY_BC_CONFIG_NAME, "devnet"),
+    NETWORK_MAINNET("main", SystemProperties.PROPERTY_BC_CONFIG_NAME, "main"),
     ;
 
     private final String flagName;

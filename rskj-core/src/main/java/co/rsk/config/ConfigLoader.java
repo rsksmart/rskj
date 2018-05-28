@@ -45,6 +45,7 @@ public class ConfigLoader {
     private static final String MAINNET_RESOURCE_PATH = "config/main";
     private static final String TESTNET_RESOURCE_PATH = "config/testnet";
     private static final String REGTEST_RESOURCE_PATH = "config/regtest";
+    private static final String DEVNET_RESOURCE_PATH = "config/devnet";
     private static final String YES = "yes";
     private static final String NO = "no";
 
@@ -109,13 +110,22 @@ public class ConfigLoader {
                 return ConfigFactory.load(TESTNET_RESOURCE_PATH);
             } else if (NodeCliFlags.NETWORK_REGTEST.getName().equals(network)) {
                 return ConfigFactory.load(REGTEST_RESOURCE_PATH);
+            } else if (NodeCliFlags.NETWORK_DEVNET.getName().equals(network)) {
+                return ConfigFactory.load(DEVNET_RESOURCE_PATH);
+            } else if (NodeCliFlags.NETWORK_MAINNET.getName().equals(network)) {
+                return ConfigFactory.load(MAINNET_RESOURCE_PATH);
             } else {
-                logger.warn("Invalid network '{}', using mainnet by default", network);
+                String exceptionMessage = String.format(
+                        "%s is not a valid network name (%s property)",
+                        network,
+                        SystemProperties.PROPERTY_BC_CONFIG_NAME
+                );
+                logger.warn(exceptionMessage);
+                throw new IllegalArgumentException(exceptionMessage);
             }
-        } else {
-            logger.info("Network not set, using mainnet by default");
         }
 
+        logger.info("Network not set, using mainnet by default");
         return ConfigFactory.load(MAINNET_RESOURCE_PATH);
     }
 }
