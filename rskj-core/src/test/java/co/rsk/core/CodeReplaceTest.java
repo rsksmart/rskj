@@ -154,6 +154,8 @@ public class CodeReplaceTest {
 
         executor.init();
         executor.execute();
+        executor.go();
+        executor.finalization();
 
         track.commit();
         return executor;

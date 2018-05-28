@@ -43,9 +43,9 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.EVM;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
@@ -106,11 +106,15 @@ public class TestRunner {
         IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
+        CompositeEthereumListener listener = new TestCompositeEthereumListener();
+
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, null, null, new DummyBlockValidator());
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
+
+        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, null, null, new DummyBlockValidator());
 
         blockchain.setNoValidation(true);
 
@@ -226,7 +230,7 @@ public class TestRunner {
 
             /* 3. Create Program - exec.code */
             /* 4. run VM */
-            EVM vm = new EVM(vmConfig, precompiledContracts);
+            VM vm = new VM(vmConfig, precompiledContracts);
             Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), exec.getCode(), programInvoke, null);
             boolean vmDidThrowAnEception = false;
             Exception e = null;

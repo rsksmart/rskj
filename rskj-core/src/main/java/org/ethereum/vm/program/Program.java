@@ -657,7 +657,7 @@ public class Program {
         ProgramResult programResult = ProgramResult.empty();
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
-            EVM vm = new EVM(config, precompiledContracts);
+            VM vm = new VM(config, precompiledContracts);
             Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
@@ -883,7 +883,7 @@ public class Program {
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(), byTestingSuite());
 
-        EVM vm = new EVM(config, precompiledContracts);
+        VM vm = new VM(config, precompiledContracts);
         Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
         vm.play(program);
         childResult  = program.getResult();

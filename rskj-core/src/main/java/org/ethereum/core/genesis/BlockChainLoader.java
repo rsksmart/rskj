@@ -54,6 +54,7 @@ public class BlockChainLoader {
     private final BlockStore blockStore;
     private final Repository repository;
     private final ReceiptStore receiptStore;
+    private final TransactionPool transactionPool;
     private final EthereumListener listener;
     private final AdminInfo adminInfo;
     private final BlockValidator blockValidator;
@@ -64,6 +65,7 @@ public class BlockChainLoader {
             org.ethereum.core.Repository repository,
             org.ethereum.db.BlockStore blockStore,
             ReceiptStore receiptStore,
+            TransactionPool transactionPool,
             EthereumListener listener,
             AdminInfo adminInfo,
             BlockValidator blockValidator) {
@@ -72,6 +74,7 @@ public class BlockChainLoader {
         this.blockStore = blockStore;
         this.repository = repository;
         this.receiptStore = receiptStore;
+        this.transactionPool = transactionPool;
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
@@ -83,6 +86,7 @@ public class BlockChainLoader {
                 repository,
                 blockStore,
                 receiptStore,
+                transactionPool,
                 listener,
                 adminInfo,
                 blockValidator

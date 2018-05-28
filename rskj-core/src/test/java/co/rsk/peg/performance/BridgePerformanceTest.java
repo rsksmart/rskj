@@ -59,7 +59,7 @@ public class BridgePerformanceTest {
 
     @BeforeClass
     public static void estimateReferenceCost() {
-        // Run EVM tests and average
+        // Run VM tests and average
         averageGasPerMicrosecond = new Mean();
         VMPerformanceTest.ResultLogger resultLogger = (String name, VMPerformanceTest.PerfRes result) -> {
             long gasPerMicrosecond = result.gas / result.deltaTime;

@@ -31,7 +31,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
@@ -127,8 +126,6 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
-
-        this.listener.addListener(new OnBlockListener());
     }
 
     public void stop() {
@@ -181,6 +178,13 @@ public class TransactionPoolImpl implements TransactionPool {
                     succesor = this.getQueuedSuccesor(found);
                 }
             }
+        }
+
+        if (listener != null && !added.isEmpty()) {
+            EventDispatchThread.invokeLater(() -> {
+                listener.onPendingTransactionsReceived(added);
+                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
+            });
         }
 
         return added;
@@ -242,8 +246,10 @@ public class TransactionPoolImpl implements TransactionPool {
         executeTransaction(tx);
 
         if (listener != null) {
-            listener.onPendingTransactionsReceived(Collections.singletonList(tx));
-            listener.onTransactionPoolChanged(TransactionPoolImpl.this);
+            EventDispatchThread.invokeLater(() -> {
+                listener.onPendingTransactionsReceived(Collections.singletonList(tx));
+                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
+            });
         }
 
         return true;
@@ -286,7 +292,7 @@ public class TransactionPoolImpl implements TransactionPool {
         bestBlock = block;
 
         if (listener != null) {
-            listener.onTransactionPoolChanged(TransactionPoolImpl.this);
+            EventDispatchThread.invokeLater(() -> listener.onTransactionPoolChanged(TransactionPoolImpl.this));
         }
     }
 
@@ -405,6 +411,8 @@ public class TransactionPoolImpl implements TransactionPool {
 
         executor.init();
         executor.execute();
+        executor.go();
+        executor.finalization();
     }
 
     private void addQueuedTransaction(Transaction tx) {
@@ -456,12 +464,6 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         AccountState state = repository.getAccountState(tx.getSender());
-
-        if (state == null) {
-            // if the sender doesn't have an account yet, they could never pay for the transaction.
-            return false;
-        }
-
         return validator.isValid(tx, bestBlock, state);
     }
 
@@ -503,13 +505,6 @@ public class TransactionPoolImpl implements TransactionPool {
                 }
                 return tx1.getHash().compareTo(tx2.getHash());
             });
-        }
-    }
-
-    private class OnBlockListener extends EthereumListenerAdapter {
-        @Override
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
-            processBest(block);
         }
     }
 }
