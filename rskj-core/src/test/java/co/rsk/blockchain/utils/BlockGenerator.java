@@ -124,7 +124,7 @@ public class BlockGenerator {
 
         for (byte[] key : alloc.keySet()) {
             AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(alloc.get(key)));
-            premine.put(new RskAddress(key), new InitialAddressState(acctState, null));
+            premine.put(new RskAddress(key), new InitialAddressState(acctState, null, new byte[0]));
         }
 
         return premine;

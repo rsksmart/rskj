@@ -79,7 +79,7 @@ public class BlockchainLoaderTest {
         Assert.assertEquals(BigInteger.valueOf(25), repository.getNonce(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
         Assert.assertEquals(DataWord.ONE, repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ZERO));
         Assert.assertEquals(new DataWord(3), repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ONE));
-        Assert.assertEquals(274, repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).getCode().length);
+        Assert.assertEquals(274, repository.getCode(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).length);
 
     }
 

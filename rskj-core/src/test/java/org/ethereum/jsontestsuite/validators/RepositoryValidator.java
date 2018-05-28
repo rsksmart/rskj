@@ -50,12 +50,14 @@ public class RepositoryValidator {
         for (RskAddress addr : currentKeys) {
             AccountState state = currentRepository.getAccountState(addr);
             ContractDetails details = currentRepository.getContractDetails(addr);
+            byte[] code = currentRepository.getCode(addr);
 
             AccountState postState = postRepository.getAccountState(addr);
             ContractDetails postDetails = postRepository.getContractDetails(addr);
+            byte[] postCode = postRepository.getCode(addr);
 
             List<String> accountResult =
-                AccountValidator.valid(addr, postState, postDetails, state, details);
+                AccountValidator.valid(addr, postState, postDetails, postCode, state, details, code);
 
             results.addAll(accountResult);
         }

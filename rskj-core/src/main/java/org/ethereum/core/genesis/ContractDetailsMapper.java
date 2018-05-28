@@ -41,9 +41,6 @@ public class ContractDetailsMapper {
 
         contractDetails = new ContractDetailsImpl(config);
 
-        if (contract.getCode()!=null) {
-            contractDetails.setCode(Hex.decode(contract.getCode()));
-        }
         for (String key : contract.getData().keySet()) {
             String value = contract.getData().get(key);
             contractDetails.putBytes(new DataWord(Hex.decode(key)), Hex.decode(value));

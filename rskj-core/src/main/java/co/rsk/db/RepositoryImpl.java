@@ -67,11 +67,11 @@ public class RepositoryImpl implements Repository {
     }
 
     public RepositoryImpl(RskSystemProperties config, TrieStore store) {
-        this(config, store, new HashMapDB());
+        this(config, store, new HashMapDB(), new HashMapDB());
     }
 
-    public RepositoryImpl(RskSystemProperties config, TrieStore store, KeyValueDataSource detailsDS) {
-        this(config, store, new DetailsDataStore(config, new DatabaseImpl(detailsDS)));
+    public RepositoryImpl(RskSystemProperties config, TrieStore store, KeyValueDataSource detailsDS, KeyValueDataSource codeDS) {
+        this(config, store, new DetailsDataStore(config, new DatabaseImpl(detailsDS), new DatabaseImpl(codeDS)));
     }
 
     private RepositoryImpl(RskSystemProperties config, TrieStore store, DetailsDataStore detailsDataStore) {
@@ -158,18 +158,16 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized void saveCode(RskAddress addr, byte[] code) {
+        Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(code));
         AccountState accountState = getAccountState(addr);
-        ContractDetails details = getContractDetails(addr);
 
         if (accountState == null) {
             accountState = createAccount(addr);
-            details = getContractDetails(addr);
         }
 
-        details.setCode(code);
-        accountState.setCodeHash(Keccak256Helper.keccak256(code));
+        accountState.setCodeHash(hash);
 
-        updateContractDetails(addr, details);
+        updateCode(hash, code);
         updateAccountState(addr, accountState);
     }
 
@@ -185,14 +183,18 @@ public class RepositoryImpl implements Repository {
             return EMPTY_BYTE_ARRAY;
         }
 
-        byte[] codeHash = account.getCodeHash();
+        Keccak256 codeHash = account.getCodeHash();
 
-        if (Arrays.equals(codeHash, EMPTY_DATA_HASH)) {
+        if (Arrays.equals(codeHash.getBytes(), EMPTY_DATA_HASH)) {
             return EMPTY_BYTE_ARRAY;
         }
 
-        ContractDetails details = getContractDetails(addr);
-        return (details == null) ? null : details.getCode();
+        return getCode(codeHash);
+    }
+
+    @Override
+    public synchronized byte[] getCode(Keccak256 hash) {
+        return detailsDataStore.getCode(hash);
     }
 
     @Override
@@ -321,7 +323,8 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized void updateBatch(Map<RskAddress, AccountState> stateCache,
-                                         Map<RskAddress, ContractDetails> detailsCache) {
+                                         Map<RskAddress, ContractDetails> detailsCache,
+                                         Map<Keccak256, byte[]> codeCache) {
         logger.debug("updatingBatch: detailsCache.size: {}", detailsCache.size());
 
         for (Map.Entry<RskAddress, AccountState> entry : stateCache.entrySet()) {
@@ -333,10 +336,7 @@ public class RepositoryImpl implements Repository {
             if (accountState.isDeleted()) {
                 delete(addr);
                 logger.debug("delete: [{}]", addr);
-            } else {
-                if (!contractDetails.isDirty()) {
-                    continue;
-                }
+            } else if (contractDetails.isDirty()){
 
                 ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) contractDetails;
 
@@ -351,12 +351,18 @@ public class RepositoryImpl implements Repository {
 
                 updateContractDetails(addr, contractDetails);
 
-                if (!Arrays.equals(accountState.getCodeHash(), EMPTY_TRIE_HASH)) {
+                if (!Arrays.equals(accountState.getCodeHash().getBytes(), EMPTY_TRIE_HASH)) {
                     accountState.setStateRoot(contractDetails.getStorageHash());
                 }
 
                 updateAccountState(addr, accountState);
+            } else if (accountState.isDirty()) {
+                updateAccountState(addr, accountState);
             }
+
+        }
+        for (Map.Entry<Keccak256, byte[]> entry : codeCache.entrySet()) {
+            updateCode(entry.getKey(), entry.getValue());
         }
 
         logger.debug("updated: detailsCache.size: {}", detailsCache.size());
@@ -412,6 +418,11 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         this.trie = this.trie.put(addr.getBytes(), accountState.getEncoded());
+    }
+
+    @Override
+    public synchronized void updateCode(Keccak256 hash, byte[] code) {
+        detailsDataStore.newCode(hash, code);
     }
 
     @Nonnull

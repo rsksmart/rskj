@@ -115,6 +115,7 @@ public class BlockChainLoader {
                 }
 
                 repository.updateAccountState(addr, accountState);
+                repository.updateCode(accountState.getCodeHash(), initialAddressState.getCode());
             }
 
             genesis.setStateRoot(repository.getRoot());

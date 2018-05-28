@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.Coin;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -63,7 +64,7 @@ public class AccountState {
      * after construction. All such code fragments are contained in
      * the state database under their corresponding hashes for later
      * retrieval */
-    private byte[] codeHash = EMPTY_DATA_HASH;
+    private Keccak256 codeHash = new Keccak256(EMPTY_DATA_HASH);
 
     /* Account state flags*/
     private int stateFlags;
@@ -88,7 +89,7 @@ public class AccountState {
                 : new BigInteger(1, items.get(0).getRLPData());
         this.balance = RLP.parseCoin(items.get(1).getRLPData());
         this.stateRoot = items.get(2).getRLPData();
-        this.codeHash = items.get(3).getRLPData();
+        this.codeHash = new Keccak256(items.get(3).getRLPData());
 
         if (items.size() > 4) {
             byte[] data = items.get(4).getRLPData();
@@ -130,11 +131,11 @@ public class AccountState {
         setDirty(true);
     }
 
-    public byte[] getCodeHash() {
+    public Keccak256 getCodeHash() {
         return codeHash;
     }
 
-    public void setCodeHash(byte[] codeHash) {
+    public void setCodeHash(Keccak256 codeHash) {
         rlpEncoded = null;
         this.codeHash = codeHash;
     }
@@ -167,7 +168,7 @@ public class AccountState {
             byte[] nonce = RLP.encodeBigInteger(this.nonce);
             byte[] balance = RLP.encodeCoin(this.balance);
             byte[] stateRoot = RLP.encodeElement(this.stateRoot);
-            byte[] codeHash = RLP.encodeElement(this.codeHash);
+            byte[] codeHash = RLP.encodeElement(this.codeHash.getBytes());
             if (stateFlags != 0) {
                 byte[] stateFlags = RLP.encodeInt(this.stateFlags);
                 this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, stateFlags);
@@ -211,7 +212,7 @@ public class AccountState {
                 "  Balance: " + getBalance().asBigInteger() + "\n" +
                 "  StateFlags: " + getStateFlags() + "\n" +
                 "  State Root: " + Hex.toHexString(this.getStateRoot()) + "\n" +
-                "  Code Hash: " + Hex.toHexString(this.getCodeHash());
+                "  Code Hash: " + this.getCodeHash().toHexString();
         return ret;
     }
 

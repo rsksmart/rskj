@@ -55,7 +55,6 @@ public class ContractDetailsImpl implements ContractDetails {
     private final RskSystemProperties config;
 
     private Trie trie;
-    private byte[] code;
     private byte[] address;
     private boolean dirty;
     private boolean deleted;
@@ -70,14 +69,13 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     public ContractDetailsImpl(RskSystemProperties config) {
-        this(config, null, new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), null);
+        this(config, null, new TrieImpl(new TrieStoreImpl(new HashMapDB()), true));
     }
 
-    public ContractDetailsImpl(RskSystemProperties config, byte[] address, Trie trie, byte[] code) {
+    public ContractDetailsImpl(RskSystemProperties config, byte[] address, Trie trie) {
         this.config = config;
         this.address = ByteUtils.clone(address);
         this.trie = trie;
-        this.code = ByteUtils.clone(code);
     }
 
     @Override
@@ -157,16 +155,6 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     @Override
-    public byte[] getCode() {
-        return ByteUtils.clone(this.code);
-    }
-
-    @Override
-    public void setCode(byte[] code) {
-        this.code = ByteUtils.clone(code);
-    }
-
-    @Override
     public synchronized byte[] getStorageHash() {
         checkDataSourceIsOpened();
 
@@ -184,8 +172,7 @@ public class ContractDetailsImpl implements ContractDetails {
         RLPItem rlpAddress = (RLPItem) rlpList.get(0);
         RLPItem rlpIsExternalStorage = (RLPItem) rlpList.get(1);
         RLPItem rlpStorage = (RLPItem) rlpList.get(2);
-        RLPElement rlpCode = rlpList.get(3);
-        RLPList rlpKeys = (RLPList) rlpList.get(4);
+        RLPList rlpKeys = (RLPList) rlpList.get(3);
 
         this.address = rlpAddress.getRLPData();
         this.externalStorage = rlpIsExternalStorage.getRLPData() != null;
@@ -197,8 +184,6 @@ public class ContractDetailsImpl implements ContractDetails {
         } else {
             this.trie = TrieImpl.deserialize(rlpStorage.getRLPData());
         }
-
-        this.code = (rlpCode.getRLPData() == null) ? EMPTY_BYTE_ARRAY : rlpCode.getRLPData();
 
         for (RLPElement key : rlpKeys) {
             addKey(key.getRLPData());
@@ -237,10 +222,9 @@ public class ContractDetailsImpl implements ContractDetails {
         // Serialize the full trie, or only the root hash if external storage is used
         byte[] rlpStorage = RLP.encodeElement(externalStorage ? this.trie.getHash().getBytes() : this.trie.serialize());
 
-        byte[] rlpCode = RLP.encodeElement(this.code);
         byte[] rlpKeys = RLP.encodeSet(this.keys);
 
-        return RLP.encodeList(rlpAddress, rlpIsExternalStorage, rlpStorage, rlpCode, rlpKeys);
+        return RLP.encodeList(rlpAddress, rlpIsExternalStorage, rlpStorage, rlpKeys);
     }
 
     @Override
@@ -367,7 +351,7 @@ public class ContractDetailsImpl implements ContractDetails {
 
         this.trie.save();
 
-        ContractDetailsImpl details = new ContractDetailsImpl(this.config, this.address, this.trie.getSnapshotTo(new Keccak256(hash)), this.code);
+        ContractDetailsImpl details = new ContractDetailsImpl(this.config, this.address, this.trie.getSnapshotTo(new Keccak256(hash)));
         details.keys = new HashSet<>();
         details.keys.addAll(this.keys);
         details.externalStorage = this.externalStorage;
@@ -380,11 +364,6 @@ public class ContractDetailsImpl implements ContractDetails {
         logger.trace("getting contract details snapshot hash {}, address {}, storage size {}, has external storage {}", details.getStorageHashAsString(), details.getAddressAsString(), details.getStorageSize(), details.hasExternalStorage());
 
         return details;
-    }
-
-    @Override
-    public boolean isNullObject() {
-        return (code==null || code.length==0) && keys.isEmpty();
     }
 
     public Trie getTrie() {

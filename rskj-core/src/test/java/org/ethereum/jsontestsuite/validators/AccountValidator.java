@@ -35,8 +35,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class AccountValidator {
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
-    public static List<String> valid(RskAddress addr, AccountState expectedState, ContractDetails expectedDetails,
-                                     AccountState currentState, ContractDetails currentDetails){
+    public static List<String> valid(RskAddress addr, AccountState expectedState, ContractDetails expectedDetails, byte[] expectedCode, AccountState currentState, ContractDetails currentDetails, byte[] currentCode){
 
         List<String> results = new ArrayList<>();
 
@@ -69,11 +68,11 @@ public class AccountValidator {
             results.add(formattedString);
         }
 
-        byte[] code = Arrays.equals(currentState.getCodeHash(), EMPTY_DATA_HASH) ?
-                new byte[0] : currentDetails.getCode();
-        if (!Arrays.equals(expectedDetails.getCode(), code)) {
+        byte[] code = Arrays.equals(currentState.getCodeHash().getBytes(), EMPTY_DATA_HASH) ?
+                new byte[0] : currentCode;
+        if (!Arrays.equals(expectedCode, code)) {
             String formattedString = String.format("Account: %s: has unexpected code, expected code: %s found code: %s",
-                    addr, Hex.toHexString(expectedDetails.getCode()), Hex.toHexString(currentDetails.getCode()));
+                    addr, Hex.toHexString(expectedCode), Hex.toHexString(currentCode));
             results.add(formattedString);
         }
 

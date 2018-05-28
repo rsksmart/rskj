@@ -45,15 +45,12 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
     ContractDetails origContract;
 
-    private byte[] code;
-
     private boolean dirty = false;
     private boolean deleted = false;
 
 
     public ContractDetailsCacheImpl(ContractDetails origContract) {
         this.origContract = origContract;
-        this.code = origContract != null ? origContract.getCode() : EMPTY_BYTE_ARRAY;
     }
 
     @Override
@@ -110,16 +107,6 @@ public class ContractDetailsCacheImpl implements ContractDetails {
         } else {
             return value;
         }
-    }
-
-    @Override
-    public byte[] getCode() {
-        return code;
-    }
-
-    @Override
-    public void setCode(byte[] code) {
-        this.code = code;
     }
 
     @Override
@@ -247,7 +234,6 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
         Object storageClone = ((HashMap<DataWord, DataWord>)storage).clone();
 
-        contractDetails.setCode(this.getCode());
         contractDetails.setStorage( (HashMap<DataWord, DataWord>) storageClone);
         //WARNING bytesStorage is not cloned. Is this a bug?
         return contractDetails;
@@ -255,11 +241,7 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
     @Override
     public String toString() {
-
-        String ret = "  Code: " + Hex.toHexString(code) + "\n";
-        ret += "  Storage: " + getStorage().toString();
-
-        return ret;
+        return "  Storage: " + getStorage().toString();
     }
 
     @Override
@@ -290,7 +272,6 @@ public class ContractDetailsCacheImpl implements ContractDetails {
             origContract.putBytes(key, newvalue);
         }
 
-        origContract.setCode(code);
         origContract.setDirty(this.dirty || origContract.isDirty());
     }
 
@@ -298,11 +279,6 @@ public class ContractDetailsCacheImpl implements ContractDetails {
     @Override
     public ContractDetails getSnapshotTo(byte[] hash) {
         throw new UnsupportedOperationException("No snapshot option during cache state");
-    }
-
-    @Override
-    public boolean isNullObject() {
-        return origContract.isNullObject() && (MapUtils.isEmpty(storage));
     }
 
     public ContractDetails getOriginalContractDetails() {

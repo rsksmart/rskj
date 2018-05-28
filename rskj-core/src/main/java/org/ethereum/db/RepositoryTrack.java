@@ -22,6 +22,7 @@ package org.ethereum.db;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -34,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,6 +55,7 @@ public class RepositoryTrack implements Repository {
 
     private final Map<RskAddress, AccountState> cacheAccounts = new HashMap<>();
     private final Map<RskAddress, ContractDetails> cacheDetails = new HashMap<>();
+    private final Map<Keccak256, byte[]> cacheCodes = new HashMap<>();
 
     private final RskSystemProperties config;
     private final DetailsDataStore dds;
@@ -62,7 +65,7 @@ public class RepositoryTrack implements Repository {
     public RepositoryTrack(RskSystemProperties config, Repository repository) {
         this.config = config;
         this.repository = repository;
-        dds = new DetailsDataStore(this.config, new DatabaseImpl(new HashMapDB()));
+        dds = new DetailsDataStore(this.config, new DatabaseImpl(new HashMapDB()), new DatabaseImpl(new HashMapDB()));
     }
 
     @Override
@@ -90,12 +93,17 @@ public class RepositoryTrack implements Repository {
             AccountState accountState = cacheAccounts.get(addr);
 
             if (accountState == null) {
-                repository.loadAccount(addr, cacheAccounts, cacheDetails);
+                loadAddress(addr);
 
                 accountState = cacheAccounts.get(addr);
+                cacheAccounts.put(addr, accountState);
             }
             return accountState;
         }
+    }
+
+    private void loadAddress(RskAddress addr) {
+        repository.loadAccount(addr, cacheAccounts, cacheDetails);
     }
 
     @Override
@@ -118,7 +126,7 @@ public class RepositoryTrack implements Repository {
             ContractDetails contractDetails = cacheDetails.get(addr);
 
             if (contractDetails == null) {
-                repository.loadAccount(addr, cacheAccounts, cacheDetails);
+                loadAddress(addr);
                 contractDetails = cacheDetails.get(addr);
             }
 
@@ -135,7 +143,7 @@ public class RepositoryTrack implements Repository {
             ContractDetails contractDetails = this.cacheDetails.get(addr);
 
             if (accountState == null) {
-                repository.loadAccount(addr, this.cacheAccounts, this.cacheDetails);
+                loadAddress(addr);
                 accountState = this.cacheAccounts.get(addr);
                 contractDetails = this.cacheDetails.get(addr);
             }
@@ -250,12 +258,13 @@ public class RepositoryTrack implements Repository {
 
     @Override
     public void saveCode(RskAddress addr, byte[] code) {
-        logger.trace("saving code addr: [{}], code: [{}]", addr,
+        Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(code));
+        logger.trace("saving code hash: [{}], code: [{}]", hash,
                 Hex.toHexString(code));
         synchronized (repository) {
-            getContractDetails(addr).setCode(code);
-            getContractDetails(addr).setDirty(true);
-            getAccountState(addr).setCodeHash(Keccak256Helper.keccak256(code));
+            getAccountState(addr).setCodeHash(hash);
+            getAccountState(addr).setDirty(true);
+            cacheCodes.put(hash, code);
         }
     }
 
@@ -267,13 +276,26 @@ public class RepositoryTrack implements Repository {
                 return EMPTY_BYTE_ARRAY;
             }
 
-            byte[] codeHash = getAccountState(addr).getCodeHash();
-            if (Arrays.equals(codeHash, EMPTY_DATA_HASH)) {
+            Keccak256 codeHash = getAccountState(addr).getCodeHash();
+            if (Arrays.equals(codeHash.getBytes(), EMPTY_DATA_HASH)) {
                 return EMPTY_BYTE_ARRAY;
             }
 
-            return getContractDetails(addr).getCode();
+            return getCode(codeHash);
         }
+    }
+
+    @Override
+    public byte[] getCode(Keccak256 hash) {
+        byte[] code = cacheCodes.get(hash);
+        if (code != null) {
+            return code;
+        }
+        code = repository.getCode(hash);
+        if (code != null) {
+            cacheCodes.put(hash, code);
+        }
+        return code;
     }
 
     @Override
@@ -347,9 +369,10 @@ public class RepositoryTrack implements Repository {
         synchronized (repository) {
             applyCacheDetailsChanges();
 
-            repository.updateBatch(cacheAccounts, cacheDetails);
+            repository.updateBatch(cacheAccounts, cacheDetails, cacheCodes);
             cacheAccounts.clear();
             cacheDetails.clear();
+            cacheCodes.clear();
             logger.debug("committed changes");
         }
     }
@@ -377,28 +400,29 @@ public class RepositoryTrack implements Repository {
         cacheDetails.clear();
     }
 
-    public void dumpChanges() {
-        HashMap<RskAddress, AccountState> accountStates = new HashMap<>();
-        HashMap<RskAddress, ContractDetails> contractDetails= new HashMap<>();
-        updateBatch(accountStates,contractDetails);
-
-        StringBuilder buf = new StringBuilder();
-        buf.append("accountStates:\n");
-        for (HashMap.Entry<RskAddress, AccountState> entry : accountStates.entrySet()) {
-            buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
-        }
-
-        buf.append("contractDetails:\n");
-        for (HashMap.Entry<RskAddress, ContractDetails> entry : contractDetails.entrySet()) {
-            buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
-        }
-
-        logger.debug(buf.toString());
-    }
+//    public void dumpChanges() {
+//        HashMap<RskAddress, AccountState> accountStates = new HashMap<>();
+//        HashMap<RskAddress, ContractDetails> contractDetails= new HashMap<>();
+//        updateBatch(accountStates,contractDetails);
+//
+//        StringBuilder buf = new StringBuilder();
+//        buf.append("accountStates:\n");
+//        for (HashMap.Entry<RskAddress, AccountState> entry : accountStates.entrySet()) {
+//            buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
+//        }
+//
+//        buf.append("contractDetails:\n");
+//        for (HashMap.Entry<RskAddress, ContractDetails> entry : contractDetails.entrySet()) {
+//            buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
+//        }
+//
+//        logger.debug(buf.toString());
+//    }
 
     @Override
     public void updateBatch(Map<RskAddress, AccountState> accountStates,
-                            Map<RskAddress, ContractDetails> contractDetails) {
+                            Map<RskAddress, ContractDetails> contractDetails,
+                            Map<Keccak256, byte[]> codeCache) {
 
         synchronized (repository) {
             for (Map.Entry<RskAddress, AccountState> entry : accountStates.entrySet()) {
@@ -414,6 +438,10 @@ public class RepositoryTrack implements Repository {
                 } else {
                     cacheDetails.put(entry.getKey(), contractDetailsCache);
                 }
+            }
+
+            for (Map.Entry<Keccak256, byte[]> entry : codeCache.entrySet()) {
+                cacheCodes.put(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -470,5 +498,10 @@ public class RepositoryTrack implements Repository {
             logger.trace("updateAccountState: [{}]", addr);
             cacheAccounts.put(addr, accountState);
         }
+    }
+
+    @Override
+    public void updateCode(Keccak256 hash, byte[] code) {
+        cacheCodes.put(hash, code);
     }
 }

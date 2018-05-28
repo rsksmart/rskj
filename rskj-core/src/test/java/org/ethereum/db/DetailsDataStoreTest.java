@@ -38,7 +38,8 @@ public class DetailsDataStoreTest {
     @Test
     public void test1(){
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        DatabaseImpl db2 = new DatabaseImpl(new HashMapDB());
+        DetailsDataStore dds = new DetailsDataStore(config, db, db2);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -47,7 +48,6 @@ public class DetailsDataStoreTest {
 
         ContractDetails contractDetails = new ContractDetailsImpl(config);
         contractDetails.setAddress(randomAddress().getBytes());
-        contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
 
         dds.update(c_key, contractDetails);
@@ -70,15 +70,14 @@ public class DetailsDataStoreTest {
     public void test2(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        DatabaseImpl db2 = new DatabaseImpl(new HashMapDB());
+        DetailsDataStore dds = new DetailsDataStore(config, db, db2);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
-        byte[] code = Hex.decode("60606060");
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
         ContractDetails contractDetails = new ContractDetailsImpl(config);
-        contractDetails.setCode(code);
         contractDetails.setAddress(randomAddress().getBytes());
         contractDetails.put(new DataWord(key), new DataWord(value));
 
@@ -106,7 +105,8 @@ public class DetailsDataStoreTest {
     public void test3(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        DatabaseImpl db2 = new DatabaseImpl(new HashMapDB());
+        DetailsDataStore dds = new DetailsDataStore(config, db, db2);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -114,7 +114,6 @@ public class DetailsDataStoreTest {
         byte[] value =  Hex.decode("aa");
 
         ContractDetails contractDetails = new ContractDetailsImpl(config);
-        contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
 
         dds.update(c_key, contractDetails);
@@ -144,7 +143,8 @@ public class DetailsDataStoreTest {
     public void test4() {
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        DatabaseImpl db2 = new DatabaseImpl(new HashMapDB());
+        DetailsDataStore dds = new DetailsDataStore(config, db, db2);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
 

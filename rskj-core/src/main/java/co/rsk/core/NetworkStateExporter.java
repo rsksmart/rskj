@@ -76,9 +76,13 @@ public class NetworkStateExporter {
         }
     }
 
-    private ObjectNode createContractNode(ContractDetails contractDetails, ObjectNode accountNode) {
+    private ObjectNode createContractNode(ContractDetails contractDetails, ObjectNode accountNode, byte[] code) {
         ObjectNode contractNode = accountNode.objectNode();
-        contractNode.put("code", Hex.toHexString(contractDetails.getCode()));
+        if (code != null) {
+            contractNode.put("code", Hex.toHexString(code));
+        } else {
+            contractNode.put("code", contractNode.objectNode());
+        }
         ObjectNode dataNode = contractNode.objectNode();
         for (DataWord key : contractDetails.getStorageKeys()) {
             byte[] value = contractDetails.getBytes(key);
@@ -96,8 +100,9 @@ public class NetworkStateExporter {
         BigInteger nonce = accountState.getNonce();
         accountNode.put("nonce", nonce.toString());
         ContractDetails contractDetails = frozenRepository.getContractDetails(addr);
-        if (!contractDetails.isNullObject() && !PrecompiledContracts.REMASC_ADDR.equals(addr)) {
-            accountNode.set("contract", createContractNode(contractDetails, accountNode));
+        byte[] code = frozenRepository.getCode(accountState.getCodeHash());
+        if (contractDetails != null && code != null && code.length > 0) {
+            accountNode.set("contract", createContractNode(contractDetails, accountNode, code));
         }
         return accountNode;
     }

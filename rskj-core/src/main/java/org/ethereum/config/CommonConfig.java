@@ -59,8 +59,9 @@ public class CommonConfig {
 
         KeyValueDataSource ds = makeDataSource(config, "state");
         KeyValueDataSource detailsDS = makeDataSource(config, "details");
+        KeyValueDataSource codeDS = makeDataSource(config, "code");
 
-        return new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS);
+        return new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS, codeDS);
     }
 
     private KeyValueDataSource makeDataSource(RskSystemProperties config, String name) {

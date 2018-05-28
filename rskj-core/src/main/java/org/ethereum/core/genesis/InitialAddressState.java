@@ -25,10 +25,12 @@ import org.ethereum.db.ContractDetails;
 public class InitialAddressState {
     private AccountState accountState;
     private ContractDetails contractDetails;
+    private byte[] code;
 
-    public InitialAddressState(AccountState accountState, ContractDetails contractDetails) {
+    public InitialAddressState(AccountState accountState, ContractDetails contractDetails, byte[] code) {
         this.accountState = accountState;
         this.contractDetails = contractDetails;
+        this.code = code;
     }
 
     public AccountState getAccountState() {
@@ -37,5 +39,9 @@ public class InitialAddressState {
 
     public ContractDetails getContractDetails() {
         return contractDetails;
+    }
+
+    public byte[] getCode() {
+        return code;
     }
 }

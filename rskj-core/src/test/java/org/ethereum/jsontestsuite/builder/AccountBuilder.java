@@ -21,6 +21,7 @@ package org.ethereum.jsontestsuite.builder;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
@@ -39,7 +40,7 @@ public class AccountBuilder {
     public static StateWrap build(AccountTck account) {
 
         ContractDetailsImpl details = new ContractDetailsImpl(new TestSystemProperties());
-        details.setCode(parseData(account.getCode()));
+        byte[] code = parseData(account.getCode());
         details.setStorage(convertStorage(account.getStorage()));
 
         AccountState state = new AccountState();
@@ -47,9 +48,9 @@ public class AccountBuilder {
         state.addToBalance(new Coin(unifiedNumericToBigInteger(account.getBalance())));
         state.setNonce(unifiedNumericToBigInteger(account.getNonce()));
         state.setStateRoot(details.getStorageHash());
-        state.setCodeHash(HashUtil.keccak256(details.getCode()));
+        state.setCodeHash(new Keccak256(HashUtil.keccak256(code)));
 
-        return new StateWrap(state, details);
+        return new StateWrap(state, details, code);
     }
 
 
@@ -74,8 +75,9 @@ public class AccountBuilder {
 
         AccountState accountState;
         ContractDetailsImpl contractDetails;
+        byte[] code;
 
-        public StateWrap(AccountState accountState, ContractDetailsImpl contractDetails) {
+        public StateWrap(AccountState accountState, ContractDetailsImpl contractDetails, byte[] code) {
             this.accountState = accountState;
             this.contractDetails = contractDetails;
         }
@@ -86,6 +88,10 @@ public class AccountBuilder {
 
         public ContractDetailsImpl getContractDetails() {
             return contractDetails;
+        }
+
+        public byte[] getCode() {
+            return code;
         }
     }
 }

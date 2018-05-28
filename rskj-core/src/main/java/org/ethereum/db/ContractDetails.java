@@ -37,10 +37,6 @@ public interface ContractDetails {
 
     byte[] getBytes(DataWord key);
 
-    byte[] getCode();
-
-    void setCode(byte[] code);
-
     byte[] getStorageHash();
 
     void decode(byte[] rlpCode);
@@ -76,6 +72,4 @@ public interface ContractDetails {
     void syncStorage();
 
     ContractDetails getSnapshotTo(byte[] hash);
-
-    boolean isNullObject();
 }

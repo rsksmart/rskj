@@ -22,6 +22,7 @@ package org.ethereum.core.genesis;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import com.fasterxml.jackson.databind.JavaType;
@@ -34,6 +35,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ContractDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -95,18 +97,20 @@ public class GenesisLoader {
                 AccountState acctState = new AccountState(nonce, balance);
                 ContractDetails contractDetails = null;
                 Contract contract = accountEntry.getValue().getContract();
+                byte[] code = new byte[0];
 
                 if (contract != null) {
                     contractDetails = detailsMapper.mapFromContract(contract);
 
-                    if (contractDetails.getCode() != null) {
-                        acctState.setCodeHash(Keccak256Helper.keccak256(contractDetails.getCode()));
+                    if (contract.getCode() != null) {
+                        code = Hex.decode(contract.getCode());
+                        acctState.setCodeHash(new Keccak256(Keccak256Helper.keccak256(code)));
                     }
 
                     acctState.setStateRoot(contractDetails.getStorageHash());
                 }
 
-                premine.put(new RskAddress(accountEntry.getKey()), new InitialAddressState(acctState, contractDetails));
+                premine.put(new RskAddress(accountEntry.getKey()), new InitialAddressState(acctState, contractDetails, code));
             }
         }
 

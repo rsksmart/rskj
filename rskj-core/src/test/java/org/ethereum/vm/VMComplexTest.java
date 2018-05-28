@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -90,7 +91,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        accountState.setCodeHash(new Keccak256(codeKey));
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -481,7 +482,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        accountState.setCodeHash(new Keccak256(codeKey));
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -541,7 +542,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        accountState.setCodeHash(new Keccak256(codeKey));
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -601,7 +602,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        accountState.setCodeHash(new Keccak256(codeKey));
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -661,7 +662,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        accountState.setCodeHash(new Keccak256(codeKey));
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);

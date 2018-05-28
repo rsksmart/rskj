@@ -21,6 +21,7 @@ package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.ContractDetailsImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,13 +43,16 @@ public class DetailsDataStore {
 
     private final Map<RskAddress, ContractDetails> cache = new ConcurrentHashMap<>();
     private final Set<RskAddress> removes = new HashSet<>();
+    private final Map<Keccak256, byte[]> codeCache = new ConcurrentHashMap<>();
 
     private final RskSystemProperties config;
     private final DatabaseImpl db;
+    private final DatabaseImpl codedb;
 
-    public DetailsDataStore(RskSystemProperties config, DatabaseImpl db) {
+    public DetailsDataStore(RskSystemProperties config, DatabaseImpl db, DatabaseImpl codedb) {
         this.config = config;
         this.db = db;
+        this.codedb = codedb;
     }
 
     public synchronized ContractDetails get(RskAddress addr) {
@@ -77,6 +81,18 @@ public class DetailsDataStore {
         return details;
     }
 
+    public byte[] getCode(Keccak256 hash) {
+        byte[] code = codeCache.get(hash);
+        if (code != null) {
+            return code;
+        }
+        code = codedb.get(hash.getBytes());
+        if (code != null) {
+            codeCache.put(hash, code);
+        }
+        return code;
+    }
+
     protected ContractDetails createContractDetails(byte[] data) {
         return new ContractDetailsImpl(config, data);
     }
@@ -92,8 +108,13 @@ public class DetailsDataStore {
         removes.add(addr);
     }
 
+    public synchronized void newCode(Keccak256 hash, byte[] code) {
+        codeCache.put(hash, code);
+    }
+
     public synchronized void flush() {
         long keys = cache.size();
+        keys += codeCache.size();
 
         long start = System.nanoTime();
         long totalSize = flushInternal();
@@ -101,13 +122,14 @@ public class DetailsDataStore {
 
         float flushSize = (float) totalSize / 1_048_576;
         float flushTime = (float) (finish - start) / 1_000_000;
-        gLogger.trace(format("Flush details in: %02.2f ms, %d keys, %02.2fMB", flushTime, keys, flushSize));
+        gLogger.trace(format("Flush details and code in: %02.2f ms, %d keys, %02.2fMB", flushTime, keys, flushSize));
     }
 
     private long flushInternal() {
         long totalSize = 0;
 
         Map<byte[], byte[]> batch = new HashMap<>();
+        Map<byte[], byte[]> codeBatch = new HashMap<>();
         for (Map.Entry<RskAddress, ContractDetails> entry : cache.entrySet()) {
             ContractDetails details = entry.getValue();
             details.syncStorage();
@@ -119,13 +141,19 @@ public class DetailsDataStore {
             totalSize += value.length;
         }
 
-        db.getDb().updateBatch(batch);
+        for (Map.Entry<Keccak256, byte[]> entry : codeCache.entrySet()) {
+            codeBatch.put(entry.getKey().getBytes(), entry.getValue());
+            totalSize += entry.getValue().length;
+        }
 
+        db.getDb().updateBatch(batch);
+        codedb.getDb().updateBatch(codeBatch);
         for (RskAddress key : removes) {
             db.delete(key.getBytes());
         }
 
         cache.clear();
+        codeCache.clear();
         removes.clear();
 
         return totalSize;

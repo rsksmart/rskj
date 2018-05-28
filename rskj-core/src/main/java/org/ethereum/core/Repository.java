@@ -22,6 +22,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;
@@ -92,11 +93,18 @@ public interface Repository extends AccountInformationProvider {
 
     /**
      * Store code associated with an account
+     *  @param code that will be associated with this account
      *
-     * @param addr for the account
-     * @param code that will be associated with this account
      */
     void saveCode(RskAddress addr, byte[] code);
+
+    /**
+     * Retrieve the code with the given hash
+     *
+     * @param hash of the account
+     * @return code in byte-array format
+     */
+    byte[] getCode(Keccak256 hash);
 
     /**
      * Put a value in storage of an account at a given key
@@ -186,7 +194,8 @@ public interface Repository extends AccountInformationProvider {
     void reset();
 
     void updateBatch(Map<RskAddress, AccountState> accountStates,
-                     Map<RskAddress, ContractDetails> contractDetailes);
+                     Map<RskAddress, ContractDetails> contractDetailes,
+                     Map<Keccak256, byte[]> codes);
 
 
     byte[] getRoot();
@@ -202,6 +211,8 @@ public interface Repository extends AccountInformationProvider {
     void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
 
     void updateAccountState(RskAddress addr, AccountState accountState);
+
+    void updateCode(Keccak256 hash, byte[] code);
 
     default void transfer(RskAddress fromAddr, RskAddress toAddr, Coin value) {
         addBalance(fromAddr, value.negate());

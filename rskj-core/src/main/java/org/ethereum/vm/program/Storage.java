@@ -21,6 +21,7 @@ package org.ethereum.vm.program;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -107,6 +108,11 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public byte[] getCode(RskAddress addr) {
         return repository.getCode(addr);
+    }
+
+    @Override
+    public byte[] getCode(Keccak256 hash) {
+        return repository.getCode(hash);
     }
 
     @Override
@@ -206,7 +212,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void updateBatch(Map<RskAddress, AccountState> accountStates, Map<RskAddress, ContractDetails> contractDetails) {
+    public void updateBatch(Map<RskAddress, AccountState> accountStates, Map<RskAddress, ContractDetails> contractDetails, Map<Keccak256, byte[]> code) {
         for (RskAddress addr : contractDetails.keySet()) {
             if (!canListenTrace(addr)) {
                 return;
@@ -221,7 +227,7 @@ public class Storage implements Repository, ProgramListenerAware {
                 }
             }
         }
-        repository.updateBatch(accountStates, contractDetails);
+        repository.updateBatch(accountStates, contractDetails, code);
     }
 
     @Override
@@ -254,5 +260,8 @@ public class Storage implements Repository, ProgramListenerAware {
         throw new UnsupportedOperationException();
     }
 
-
+    @Override
+    public void updateCode(Keccak256 hash, byte[] code) {
+        throw new UnsupportedOperationException();
+    }
 }
