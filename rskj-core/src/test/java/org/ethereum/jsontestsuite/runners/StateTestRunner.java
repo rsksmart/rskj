@@ -79,8 +79,6 @@ public class StateTestRunner {
         try{
             executor.init();
             executor.execute();
-            executor.go();
-            executor.finalization();
         } catch (StackOverflowError soe){
             logger.error(" !!! StackOverflowError: update your java run command with -Xss32M !!!");
             System.exit(-1);
