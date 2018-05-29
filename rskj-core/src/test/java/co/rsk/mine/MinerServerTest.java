@@ -25,14 +25,18 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.ContractDetailsImpl;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ContractDetails;
+import org.ethereum.db.ContractDetailsCacheImpl;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
@@ -52,6 +56,7 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
 
 /**
  * Created by adrian.eidelman on 3/16/2016.
@@ -78,7 +83,7 @@ public class MinerServerTest {
     public void buildBlockToMineCheckThatLastTransactionIsForREMASC() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Repository repository = Mockito.mock(Repository.class);
-        Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
+        Mockito.when(repository.getSnapshotTo(any())).thenReturn(repository);
         Mockito.when(repository.getRoot()).thenReturn(this.repository.getRoot());
         Mockito.when(repository.startTracking()).thenReturn(repository);
 
@@ -92,6 +97,10 @@ public class MinerServerTest {
         Mockito.when(repository.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
         Mockito.when(repository.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
         Mockito.when(repository.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
+        Mockito.when(repository.getAccountState(any(RskAddress.class))).thenReturn(new AccountState());
+        ContractDetails contractDetails = Mockito.mock(ContractDetailsImpl.class);
+        Mockito.when(contractDetails.getCode()).thenReturn(new byte[0]);
+        Mockito.when(repository.getContractDetails(any(RskAddress.class))).thenReturn(contractDetails);
 
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));
 
@@ -99,7 +108,7 @@ public class MinerServerTest {
         Mockito.when(localTransactionPool.getPendingTransactions()).thenReturn(txs);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServerImpl minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -135,10 +144,10 @@ public class MinerServerTest {
     @Test
     public void submitBitcoinBlockTwoTags() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        Mockito.when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -189,7 +198,7 @@ public class MinerServerTest {
 
         Assert.assertEquals("ERROR", result.getStatus());
 
-        Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+        Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -198,10 +207,10 @@ public class MinerServerTest {
     @Test
     public void submitBitcoinBlock() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        Mockito.when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -237,7 +246,7 @@ public class MinerServerTest {
             Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
             Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -246,10 +255,10 @@ public class MinerServerTest {
     @Test
     public void submitBitcoinBlockPartialMerkleWhenBlockIsEmpty() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        Mockito.when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -288,7 +297,7 @@ public class MinerServerTest {
             Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
             Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -297,10 +306,10 @@ public class MinerServerTest {
     @Test
     public void submitBitcoinBlockPartialMerkleWhenBlockHasTransactions() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        Mockito.when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -346,7 +355,7 @@ public class MinerServerTest {
             Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
             Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -355,10 +364,10 @@ public class MinerServerTest {
     @Test
     public void submitBitcoinBlockTransactionsWhenBlockIsEmpty() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        Mockito.when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -396,7 +405,7 @@ public class MinerServerTest {
             Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
             Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -405,10 +414,10 @@ public class MinerServerTest {
     @Test
     public void submitBitcoinBlockTransactionsWhenBlockHasTransactions() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        Mockito.when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -452,7 +461,7 @@ public class MinerServerTest {
             Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
             Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -463,7 +472,7 @@ public class MinerServerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -500,7 +509,7 @@ public class MinerServerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -537,7 +546,7 @@ public class MinerServerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -578,7 +587,7 @@ public class MinerServerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Mockito.when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,

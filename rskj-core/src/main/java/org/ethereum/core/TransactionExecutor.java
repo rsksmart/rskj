@@ -442,12 +442,13 @@ public class TransactionExecutor {
             }
 
             for (RskAddress retrievedContractAddress : retrievedContracts) {
-
-                setCorrectTimes(retrievedContractAddress);
-                partialRentGasUsed += rentGasCalculator(retrievedContractAddress);
-                if (rentGasLimit.subtract(toBI(partialRentGasUsed)).longValue() < 0) {
-                    outOfRentGas = true;
-                    break;
+                if (!createdContracts.contains(retrievedContractAddress)) {
+                    setCorrectTimes(retrievedContractAddress);
+                    partialRentGasUsed += rentGasCalculator(retrievedContractAddress);
+                    if (rentGasLimit.subtract(toBI(partialRentGasUsed)).longValue() < 0) {
+                        outOfRentGas = true;
+                        break;
+                    }
                 }
             }
 

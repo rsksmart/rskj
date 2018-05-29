@@ -156,5 +156,22 @@ public class StorageRentTest {
         processor.processCommands(parser);
     }
 
-
+    @Test
+    public void transferZeroValue() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/transferZeroValue.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
     }
+
+    @Test
+    public void transferZeroValueByContract() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/sendFromAContractZeroValue.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+    }
+
+
+
+}
