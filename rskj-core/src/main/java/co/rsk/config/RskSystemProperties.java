@@ -65,11 +65,6 @@ public class RskSystemProperties extends SystemProperties {
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
 
-    // Prune default values
-    private static final int PRUNE_BLOCKS_TO_COPY_DEFAULT = 5000;
-    private static final int PRUNE_BLOCKS_TO_WAIT_DEFAULT = 10000;
-    private static final int PRUNE_BLOCKS_TO_AVOID_FORKS_DEFAULT = 100;
-
     // Default maximum interval in seconds without receiving notifications. After this amount of time passes without notifications a
     // potential eclipse attack will be assumed by the nodes.
     private static final int DEFAULT_NOTIFICATIONS_MAX_SILENCE_TIME_SECS = 120;
@@ -84,6 +79,11 @@ public class RskSystemProperties extends SystemProperties {
     // Default index to get a confirmation from the confirmations list contained in the notification. This confirmation will be used by
     // the nodes to verify its best chain against the federation best chain.
     private static final int DEFAULT_NOTIFICATIONS_CONFIRMATION_INDEX = 0;
+    
+    // Prune default values
+    private static final int PRUNE_BLOCKS_TO_COPY_DEFAULT = 5000;
+    private static final int PRUNE_BLOCKS_TO_WAIT_DEFAULT = 10000;
+    private static final int PRUNE_BLOCKS_TO_AVOID_FORKS_DEFAULT = 100;
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -454,6 +454,8 @@ public class RskSystemProperties extends SystemProperties {
     public long peerDiscoveryCleanPeriod() {
         return PD_DEFAULT_CLEAN_PERIOD;
     }
+
+    // Properties for Federation Notification service
 
     // Properties for Federation Notification service
 
