@@ -27,6 +27,9 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
+import co.rsk.net.notifications.FederationNotification;
+import co.rsk.net.notifications.FederationNotificationProcessor;
+import co.rsk.net.notifications.NodeFederationNotificationProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.*;
@@ -109,6 +112,12 @@ public class RskFactory {
     }
 
     @Bean
+    public FederationNotificationProcessor getFederationNotificationProcessor(RskSystemProperties config,
+                                                                              BlockProcessor blockProcessor) {
+        return new NodeFederationNotificationProcessor(config, blockProcessor);
+    }
+
+    @Bean
     public SyncProcessor getSyncProcessor(RskSystemProperties config,
                                           Blockchain blockchain,
                                           BlockSyncService blockSyncService,
@@ -129,7 +138,7 @@ public class RskFactory {
                                                 BlockStore store,
                                                 BlockNodeInformation nodeInformation,
                                                 SyncConfiguration syncConfiguration) {
-            return new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        return new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
     }
 
     @Bean
@@ -160,6 +169,7 @@ public class RskFactory {
                         ReceiptStore receiptStore,
                         PeerServer peerServer,
                         BlockProcessor nodeBlockProcessor,
+                        FederationNotificationProcessor notificationProcessor,
                         HashRateCalculator hashRateCalculator,
                         ConfigCapabilities configCapabilities) {
         return new Web3RskImpl(
@@ -182,6 +192,7 @@ public class RskFactory {
                 receiptStore,
                 peerServer,
                 nodeBlockProcessor,
+                notificationProcessor,
                 hashRateCalculator,
                 configCapabilities
         );
@@ -223,13 +234,13 @@ public class RskFactory {
                                             JsonRpcWeb3FilterHandler filterHandler,
                                             JsonRpcWeb3ServerHandler serverHandler) {
         return new Web3HttpServer(
-            rskSystemProperties.rpcHttpBindAddress(),
-            rskSystemProperties.rpcHttpPort(),
-            rskSystemProperties.soLingerTime(),
-            true,
-            new CorsConfiguration(rskSystemProperties.corsDomains()),
-            filterHandler,
-            serverHandler
+                rskSystemProperties.rpcHttpBindAddress(),
+                rskSystemProperties.rpcHttpPort(),
+                rskSystemProperties.soLingerTime(),
+                true,
+                new CorsConfiguration(rskSystemProperties.corsDomains()),
+                filterHandler,
+                serverHandler
         );
     }
 
@@ -240,11 +251,11 @@ public class RskFactory {
 
     @Bean
     public TransactionPool getTransactionPool(org.ethereum.db.BlockStore blockStore,
-                                        ReceiptStore receiptStore,
-                                        org.ethereum.core.Repository repository,
-                                        RskSystemProperties config,
-                                        ProgramInvokeFactory programInvokeFactory,
-                                        CompositeEthereumListener listener) {
+                                              ReceiptStore receiptStore,
+                                              org.ethereum.core.Repository repository,
+                                              RskSystemProperties config,
+                                              ProgramInvokeFactory programInvokeFactory,
+                                              CompositeEthereumListener listener) {
         return new TransactionPoolImpl(
                 blockStore,
                 receiptStore,
@@ -289,7 +300,7 @@ public class RskFactory {
                                                                                   MessageHandler messageHandler,
                                                                                   Blockchain blockchain,
                                                                                   RskSystemProperties config,
-                                                                                  CompositeEthereumListener ethereumListener){
+                                                                                  CompositeEthereumListener ethereumListener) {
         return () -> new RskWireProtocol(config, peerScoringManager, messageHandler, blockchain, ethereumListener);
     }
 
@@ -355,7 +366,7 @@ public class RskFactory {
     }
 
     @Bean
-    public BlockStore getBlockStore(){
+    public BlockStore getBlockStore() {
         return new BlockStore();
     }
 
@@ -368,7 +379,7 @@ public class RskFactory {
     public TransactionGateway getTransactionGateway(
             ChannelManager channelManager,
             TransactionPool transactionPool,
-            CompositeEthereumListener emitter){
+            CompositeEthereumListener emitter) {
         return new TransactionGateway(channelManager, transactionPool, emitter);
     }
 }

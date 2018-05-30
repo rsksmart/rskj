@@ -21,7 +21,10 @@ package org.ethereum.config;
 
 import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
-import com.typesafe.config.*;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigRenderOptions;
 import org.ethereum.config.blockchain.DevNetConfig;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -36,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import javax.naming.ConfigurationException;
 import java.io.*;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -52,11 +56,11 @@ import java.util.stream.Collectors;
 
 /**
  * Utility class to retrieve property values from the rskj.conf files
- *
+ * <p>
  * The properties are taken from different sources and merged in the following order
  * (the config option from the next source overrides option from previous):
  * - resource rskj.conf : normally used as a reference config with default values
- *          and shouldn't be changed
+ * and shouldn't be changed
  * - system property : each config entry might be altered via -D VM option
  * - [user dir]/config/rskj.conf
  * - config specified with the -Drsk.conf.file=[file.conf] VM option
@@ -66,8 +70,6 @@ import java.util.stream.Collectors;
  * @since 22.05.2014
  */
 public abstract class SystemProperties {
-    private static Logger logger = LoggerFactory.getLogger("general");
-
     public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
     public static final String PROPERTY_DB_DIR = "database.dir";
     public static final String PROPERTY_PEER_PORT = "peer.port";
@@ -79,42 +81,27 @@ public abstract class SystemProperties {
     public static final String PROPERTY_RPC_HTTP_ADDRESS = "rpc.providers.web.http.bind_address";
     public static final String PROPERTY_RPC_HTTP_HOSTS = "rpc.providers.web.http.hosts";
     public static final String PROPERTY_RPC_HTTP_PORT = "rpc.providers.web.http.port";
+    public static final String PROPERTY_PUBLIC_IP = "public.ip";
+    public static final String PROPERTY_BIND_ADDRESS = "bind_address";
     private static final String PROPERTY_RPC_WEBSOCKET_ENABLED = "rpc.providers.web.ws.enabled";
     private static final String PROPERTY_RPC_WEBSOCKET_ADDRESS = "rpc.providers.web.ws.bind_address";
     private static final String PROPERTY_RPC_WEBSOCKET_PORT = "rpc.providers.web.ws.port";
-
-    public static final String PROPERTY_PUBLIC_IP = "public.ip";
-    public static final String PROPERTY_BIND_ADDRESS = "bind_address";
-
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
     private static final String DEFAULT_BLOCKS_LOADER = "";
-
-    /**
-     * Marks config accessor methods which need to be called (for value validation)
-     * upon config creation or modification
-     */
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    private @interface ValidateMe {}
-
+    private static Logger logger = LoggerFactory.getLogger("general");
     protected final Config configFromFiles;
-
     // mutable options for tests
     private String databaseDir = null;
     private String fallbackMiningKeysDir = null;
     private String projectVersion = null;
     private String projectVersionModifier = null;
-
     private String genesisInfo = null;
-
     private String publicIp = null;
-
     private Boolean syncEnabled = null;
     private Boolean discoveryEnabled = null;
-
     private BlockchainNetConfig blockchainConfig;
-    
+
     protected SystemProperties(ConfigLoader loader) {
         try {
             this.configFromFiles = loader.getConfig();
@@ -176,7 +163,7 @@ public abstract class SystemProperties {
         if (string.trim().isEmpty()) {
             return defaultValue;
         }
-        
+
         return (T) configFromFiles.getAnyRef(propName);
     }
 
@@ -191,7 +178,7 @@ public abstract class SystemProperties {
                 );
             }
             if (netName != null) {
-                switch(netName) {
+                switch (netName) {
                     case "main":
                         blockchainConfig = new MainNetConfig();
                         break;
@@ -220,11 +207,11 @@ public abstract class SystemProperties {
                     Class<? extends BlockchainNetConfig> aClass = (Class<? extends BlockchainNetConfig>) Class.forName(className);
                     blockchainConfig = aClass.newInstance();
                 } catch (ClassNotFoundException e) {
-                    throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' not found" , e);
+                    throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' not found", e);
                 } catch (ClassCastException e) {
-                    throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' is not instance of org.ethereum.config.BlockchainForkConfig" , e);
-                } catch (InstantiationException|IllegalAccessException e) {
-                    throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' couldn't be instantiated (check for default constructor and its accessibility)" , e);
+                    throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' is not instance of org.ethereum.config.BlockchainForkConfig", e);
+                } catch (InstantiationException | IllegalAccessException e) {
+                    throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' couldn't be instantiated (check for default constructor and its accessibility)", e);
                 }
             }
         }
@@ -353,8 +340,8 @@ public abstract class SystemProperties {
     public String fallbackMiningKeysDir() {
         try {
             return fallbackMiningKeysDir == null ? configFromFiles.getString("fallbackMining.keysDir") : fallbackMiningKeysDir;
-        } catch(ConfigException.Missing e) {
-            fallbackMiningKeysDir ="";
+        } catch (ConfigException.Missing e) {
+            fallbackMiningKeysDir = "";
             return fallbackMiningKeysDir;
         }
     }
@@ -385,7 +372,6 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("sync.version");
     }
 
-
     @ValidateMe
     public String projectVersion() {
         return projectVersion;
@@ -408,7 +394,7 @@ public abstract class SystemProperties {
 
     @ValidateMe
     public List<String> peerCapabilities() {
-        return configFromFiles.hasPath("peer.capabilities") ?  configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
+        return configFromFiles.hasPath("peer.capabilities") ? configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
     }
 
     @ValidateMe
@@ -476,7 +462,7 @@ public abstract class SystemProperties {
     }
 
     /**
-     *  Home NodeID calculated from 'peer.privateKey' property
+     * Home NodeID calculated from 'peer.privateKey' property
      */
     @ValidateMe
     public byte[] nodeId() {
@@ -522,7 +508,7 @@ public abstract class SystemProperties {
 
         if (configFromFiles.hasPath(PROPERTY_PUBLIC_IP)) {
             String externalIpFromConfig = configFromFiles.getString(PROPERTY_PUBLIC_IP).trim();
-            if (!externalIpFromConfig.isEmpty()){
+            if (!externalIpFromConfig.isEmpty()) {
                 try {
                     InetAddress address = tryParseIpOrThrow(externalIpFromConfig);
                     publicIp = address.getHostAddress();
@@ -541,7 +527,7 @@ public abstract class SystemProperties {
         return publicIp;
     }
 
-    private String getMyPublicIpFromRemoteService(){
+    private String getMyPublicIpFromRemoteService() {
         try {
             logger.info("Public IP wasn't set or resolved, using checkip.amazonaws.com to identify it...");
 
@@ -564,7 +550,7 @@ public abstract class SystemProperties {
         }
 
         String bindAddress = getBindAddress().toString();
-        if (getBindAddress().isAnyLocalAddress()){
+        if (getBindAddress().isAnyLocalAddress()) {
             throw new RuntimeException("Wildcard on bind address it's not allowed as fallback for public IP " + bindAddress);
         }
         publicIp = bindAddress;
@@ -606,7 +592,7 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("transaction.outdated.timeout");
     }
 
-    public void setGenesisInfo(String genesisInfo){
+    public void setGenesisInfo(String genesisInfo) {
         this.genesisInfo = genesisInfo;
     }
 
@@ -657,6 +643,19 @@ public abstract class SystemProperties {
         return configFromFiles.hasPath(path) ? configFromFiles.getLong(path) : val;
     }
 
+    protected int getUnsignedInt(String path, int val) throws ConfigurationException {
+        if (!configFromFiles.hasPath(path)) {
+            return val;
+        }
+
+        int configuredValue = configFromFiles.getInt(path);
+        if (configuredValue < 0) {
+            throw new ConfigurationException("Expected unsigned int for property " + path + " . Configured value is " + configuredValue);
+        }
+
+        return configuredValue;
+    }
+
     /*
      *
      * Testing
@@ -673,7 +672,7 @@ public abstract class SystemProperties {
     }
 
     public String customSolcPath() {
-        return configFromFiles.hasPath("solc.path") ? configFromFiles.getString("solc.path"): null;
+        return configFromFiles.hasPath("solc.path") ? configFromFiles.getString("solc.path") : null;
     }
 
     public String netName() {
@@ -725,6 +724,7 @@ public abstract class SystemProperties {
     protected long getLongProperty(String propertyName, long defaultValue) {
         return configFromFiles.hasPath(propertyName) ? configFromFiles.getLong(propertyName) : defaultValue;
     }
+
     protected boolean getBooleanProperty(String propertyName, boolean defaultValue) {
         return configFromFiles.hasPath(propertyName) ? configFromFiles.getBoolean(propertyName) : defaultValue;
     }
@@ -735,5 +735,14 @@ public abstract class SystemProperties {
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException("Invalid address: '" + ipToParse + "'", e);
         }
+    }
+
+    /**
+     * Marks config accessor methods which need to be called (for value validation)
+     * upon config creation or modification
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    private @interface ValidateMe {
     }
 }

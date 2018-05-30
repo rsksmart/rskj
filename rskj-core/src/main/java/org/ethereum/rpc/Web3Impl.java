@@ -29,6 +29,10 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.notifications.FederationNotificationProcessor;
+import co.rsk.net.notifications.NodeFederationNotificationProcessor;
+import co.rsk.net.notifications.PanicStatus;
+import co.rsk.net.notifications.alerts.FederationAlert;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
@@ -73,21 +77,11 @@ public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
     private final MinerManager minerManager = new MinerManager();
-
-    public org.ethereum.core.Repository repository;
-
-    public Ethereum eth;
-
     private final String baseClientVersion = "RskJ";
-
-    private long initialBlockNumber;
-
     private final MinerClient minerClient;
-    protected MinerServer minerServer;
     private final ChannelManager channelManager;
     private final PeerScoringManager peerScoringManager;
     private final PeerServer peerServer;
-
     private final Blockchain blockchain;
     private final ReceiptStore receiptStore;
     private final BlockProcessor nodeBlockProcessor;
@@ -96,15 +90,68 @@ public class Web3Impl implements Web3 {
     private final BlockStore blockStore;
     private final TransactionPool transactionPool;
     private final RskSystemProperties config;
-
     private final FilterManager filterManager;
     private final SnapshotManager snapshotManager;
-
     private final PersonalModule personalModule;
     private final EthModule ethModule;
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
     private final DebugModule debugModule;
+    private final FederationNotificationProcessor notificationProcessor;
+    public org.ethereum.core.Repository repository;
+    public Ethereum eth;
+    protected MinerServer minerServer;
+    private long initialBlockNumber;
+
+    protected Web3Impl(
+            Ethereum eth,
+            Blockchain blockchain,
+            TransactionPool transactionPool,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            RskSystemProperties config,
+            MinerClient minerClient,
+            MinerServer minerServer,
+            PersonalModule personalModule,
+            EthModule ethModule,
+            TxPoolModule txPoolModule,
+            MnrModule mnrModule,
+            DebugModule debugModule,
+            ChannelManager channelManager,
+            Repository repository,
+            PeerScoringManager peerScoringManager,
+            PeerServer peerServer,
+            BlockProcessor nodeBlockProcessor,
+            FederationNotificationProcessor notificationProcessor,
+            HashRateCalculator hashRateCalculator,
+            ConfigCapabilities configCapabilities) {
+        this.eth = eth;
+        this.blockchain = blockchain;
+        this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
+        this.repository = repository;
+        this.transactionPool = transactionPool;
+        this.minerClient = minerClient;
+        this.minerServer = minerServer;
+        this.personalModule = personalModule;
+        this.ethModule = ethModule;
+        this.txPoolModule = txPoolModule;
+        this.mnrModule = mnrModule;
+        this.debugModule = debugModule;
+        this.channelManager = channelManager;
+        this.peerScoringManager = peerScoringManager;
+        this.peerServer = peerServer;
+        this.nodeBlockProcessor = nodeBlockProcessor;
+        this.notificationProcessor = notificationProcessor;
+        this.hashRateCalculator = hashRateCalculator;
+        this.configCapabilities = configCapabilities;
+        this.config = config;
+        filterManager = new FilterManager(eth);
+        snapshotManager = new SnapshotManager(blockchain, transactionPool);
+        initialBlockNumber = this.blockchain.getBestBlock().getNumber();
+
+        personalModule.init(this.config);
+    }
 
     protected Web3Impl(
             Ethereum eth,
@@ -127,31 +174,26 @@ public class Web3Impl implements Web3 {
             BlockProcessor nodeBlockProcessor,
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities) {
-        this.eth = eth;
-        this.blockchain = blockchain;
-        this.blockStore = blockStore;
-        this.receiptStore = receiptStore;
-        this.repository = repository;
-        this.transactionPool = transactionPool;
-        this.minerClient = minerClient;
-        this.minerServer = minerServer;
-        this.personalModule = personalModule;
-        this.ethModule = ethModule;
-        this.txPoolModule = txPoolModule;
-        this.mnrModule = mnrModule;
-        this.debugModule = debugModule;
-        this.channelManager = channelManager;
-        this.peerScoringManager = peerScoringManager;
-        this.peerServer = peerServer;
-        this.nodeBlockProcessor = nodeBlockProcessor;
-        this.hashRateCalculator = hashRateCalculator;
-        this.configCapabilities = configCapabilities;
-        this.config = config;
-        filterManager = new FilterManager(eth);
-        snapshotManager = new SnapshotManager(blockchain, transactionPool);
-        initialBlockNumber = this.blockchain.getBestBlock().getNumber();
+        this(eth, blockchain, transactionPool, blockStore, receiptStore, config, minerClient, minerServer, personalModule, ethModule, txPoolModule,
+                mnrModule, debugModule, channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor,
+                new NodeFederationNotificationProcessor(config, nodeBlockProcessor), hashRateCalculator, configCapabilities);
+    }
 
-        personalModule.init(this.config);
+    public static Block getBlockByNumberOrStr(String bnOrId, Blockchain blockchain) throws Exception {
+        Block b;
+
+        if ("latest".equals(bnOrId)) {
+            b = blockchain.getBestBlock();
+        } else if ("earliest".equals(bnOrId)) {
+            b = blockchain.getBlockByNumber(0);
+        } else if ("pending".equals(bnOrId)) {
+            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
+        } else {
+            long bn = JSonHexToLong(bnOrId);
+            b = blockchain.getBlockByNumber(bn);
+        }
+
+        return b;
     }
 
     @Override
@@ -204,8 +246,7 @@ public class Web3Impl implements Web3 {
         try {
             byte netVersion = config.getBlockchainConfig().getCommonConstants().getChainId();
             return s = Byte.toString(netVersion);
-        }
-        finally {
+        } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("net_version(): {}", s);
             }
@@ -224,7 +265,6 @@ public class Web3Impl implements Web3 {
             }
         }
     }
-
 
     @Override
     public boolean net_listening() {
@@ -268,7 +308,7 @@ public class Web3Impl implements Web3 {
         long currentBlock = this.blockchain.getBestBlock().getNumber();
         long highestBlock = this.nodeBlockProcessor.getLastKnownBlockNumber();
 
-        if (highestBlock <= currentBlock){
+        if (highestBlock <= currentBlock) {
             return false;
         }
 
@@ -296,6 +336,20 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
+    public List<FederationAlert> eth_getFederationAlerts() {
+        return notificationProcessor.getFederationAlerts();
+    }
+
+    @Override
+    public PanicStatus eth_getPanicStatus() {
+        return notificationProcessor.getPanicStatus();
+    }
+
+    @Override
+    public long eth_getPanickingBlockNumber() {
+        return notificationProcessor.getPanicSinceBlockNumber();
+    }
 
     @Override
     public boolean eth_mining() {
@@ -463,23 +517,6 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    public static Block getBlockByNumberOrStr(String bnOrId, Blockchain blockchain) throws Exception {
-        Block b;
-
-        if ("latest".equals(bnOrId)) {
-            b = blockchain.getBestBlock();
-        } else if ("earliest".equals(bnOrId)) {
-            b = blockchain.getBlockByNumber(0);
-        } else if ("pending".equals(bnOrId)) {
-            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
-        } else {
-            long bn = JSonHexToLong(bnOrId);
-            b = blockchain.getBlockByNumber(bn);
-        }
-
-        return b;
-    }
-
     @Override
     public String eth_getBlockTransactionCountByNumber(String bnOrId) throws Exception {
         String s = null;
@@ -526,7 +563,7 @@ public class Web3Impl implements Web3 {
         try {
             Block block = getByJsonBlockId(blockId);
 
-            if(block == null) {
+            if (block == null) {
                 return null;
             }
 
@@ -579,7 +616,7 @@ public class Web3Impl implements Web3 {
     }
 
     public BlockResult getBlockResult(Block b, boolean fullTx) {
-        if (b==null) {
+        if (b == null) {
             return null;
         }
 
@@ -591,7 +628,7 @@ public class Web3Impl implements Web3 {
         br.number = isPending ? null : TypeConverter.toJsonHex(b.getNumber());
         br.hash = isPending ? null : b.getHashJsonString();
         br.parentHash = b.getParentHashJsonString();
-        br.sha3Uncles= TypeConverter.toJsonHex(b.getUnclesHash());
+        br.sha3Uncles = TypeConverter.toJsonHex(b.getUnclesHash());
         br.logsBloom = isPending ? null : TypeConverter.toJsonHex(b.getLogBloom());
         br.transactionsRoot = TypeConverter.toJsonHex(b.getTxTrieRoot());
         br.stateRoot = TypeConverter.toJsonHex(b.getStateRoot());
@@ -1185,7 +1222,7 @@ public class Web3Impl implements Web3 {
     /**
      * Adds an address or block to the list of banned addresses
      * It supports IPV4 and IPV6 addresses with an optional number of bits to ignore
-     *
+     * <p>
      * "192.168.51.1" is a valid address
      * "192.168.51.1/16" is a valid block
      *
@@ -1207,7 +1244,7 @@ public class Web3Impl implements Web3 {
     /**
      * Removes an address or block to the list of banned addresses
      * It supports IPV4 and IPV6 addresses with an optional number of bits to ignore
-     *
+     * <p>
      * "192.168.51.1" is a valid address
      * "192.168.51.1/16" is a valid block
      *
