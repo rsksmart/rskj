@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import javax.naming.ConfigurationException;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,13 +50,27 @@ import java.util.List;
  * Created by ajlopez on 3/3/2016.
  */
 public class RskSystemProperties extends SystemProperties {
-    private static final Logger logger = LoggerFactory.getLogger("config");
-
     public static final int PD_DEFAULT_REFRESH_PERIOD = 60000;
     public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
+    private static final Logger logger = LoggerFactory.getLogger("config");
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
+
+    // Default maximum interval in seconds without receiving notifications. After this amount of time passes without notifications a
+    // potential eclipse attack will be assumed by the nodes.
+    private static final int DEFAULT_NOTIFICATIONS_MAX_SILENCE_TIME_SECS = 120;
+
+    // Default time between notifications. If federation sends notifications faster than this value they will be discarded by the nodes
+    // to prevent flood attacks.
+    private static final int DEFAULT_NOTIFICATIONS_INTERVAL_IN_SECS = 60;
+
+    // Defines after how many seconds since its creation a notification expires. Nodes will discard expired notifications.
+    private static final int DEFAULT_NOTIFICATIONS_TIME_TO_LIVE_SECS = 6;
+
+    // Default index to get a confirmation from the confirmations list contained in the notification. This confirmation will be used by
+    // the nodes to verify its best chain against the federation best chain.
+    private static final int DEFAULT_NOTIFICATIONS_CONFIRMATION_INDEX = 0;
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -234,7 +249,7 @@ public class RskSystemProperties extends SystemProperties {
                 configFromFiles.getInt("rpc.accept.queue.size") : 0;
     }
 
-    public String multipleUsersAccountsFile()  {
+    public String multipleUsersAccountsFile() {
         return configFromFiles.hasPath("multipleUser.file.path") ? configFromFiles.getString("multipleUser.file.path") : "";
     }
 
@@ -262,7 +277,7 @@ public class RskSystemProperties extends SystemProperties {
         long period = configFromFiles.hasPath("peer.discovery.refresh.period") ?
                 configFromFiles.getLong("peer.discovery.refresh.period") : PD_DEFAULT_REFRESH_PERIOD;
 
-        return (period < PD_DEFAULT_REFRESH_PERIOD)? PD_DEFAULT_REFRESH_PERIOD : period;
+        return (period < PD_DEFAULT_REFRESH_PERIOD) ? PD_DEFAULT_REFRESH_PERIOD : period;
     }
 
     public List<ModuleDescription> getRpcModules() {
@@ -340,8 +355,7 @@ public class RskSystemProperties extends SystemProperties {
 
         try {
             messageRecorder = new WriterMessageRecorder(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fullFilename), StandardCharsets.UTF_8)), filter);
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             logger.error("Exception creating message recorder: ", ex);
         }
 
@@ -363,7 +377,7 @@ public class RskSystemProperties extends SystemProperties {
 
     /**
      * SYNC CONFIG PROPERTIES
-     * **/
+     **/
     public int getExpectedPeers() {
         return getInt("sync.expectedPeers", 5);
     }
@@ -399,5 +413,45 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         return vmConfig;
+    }
+
+    // Properties for Federation Notification service
+
+    public boolean federationNotificationsEnabled() {
+        return getBooleanProperty("notifications.enabled", true);
+    }
+
+    public int getFederationMaxSilenceTimeSecs() {
+        return getInt("notifications.maxSilenceTimeSecs", DEFAULT_NOTIFICATIONS_MAX_SILENCE_TIME_SECS);
+    }
+
+    public boolean shouldFederationNotificationsTriggerPanic() {
+        return getBooleanProperty("notifications.triggerPanic", true);
+    }
+
+    public int maxSecondsBetweenNotifications() {
+        return getInt("notifications.intervalSecs", DEFAULT_NOTIFICATIONS_INTERVAL_IN_SECS);
+    }
+
+    public int getFederationNotificationTTLSecs() {
+        return getInt("notifications.timeToLiveSecs", DEFAULT_NOTIFICATIONS_TIME_TO_LIVE_SECS);
+    }
+
+    public int getFederationConfirmationIndex() throws ConfigurationException {
+        return getUnsignedInt("notifications.confirmationIndex", DEFAULT_NOTIFICATIONS_CONFIRMATION_INDEX);
+    }
+
+    public List<Integer> getFederationConfirmationDepths() {
+        if (!configFromFiles.hasPath("notifications.confirmationDepths")) {
+            return Collections.emptyList();
+        }
+
+        List<Integer> depths = configFromFiles.getIntList("notifications.confirmationDepths");
+
+        return depths;
+    }
+
+    public boolean testFederationNotificationSourceEnabled() {
+        return getBooleanProperty("notifications.testFederationNotificationSourceEnabled", false);
     }
 }

@@ -18,6 +18,8 @@
 
 package co.rsk.rpc;
 
+import co.rsk.net.notifications.PanicStatus;
+import co.rsk.net.notifications.alerts.FederationAlert;
 import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.dto.CompilationResultDTO;
@@ -25,6 +27,7 @@ import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 public interface Web3EthModule {
@@ -133,4 +136,12 @@ public interface Web3EthModule {
     boolean eth_submitWork(String nonce, String header, String mince);
 
     boolean eth_submitHashrate(String hashrate, String id);
+
+    // Federation Notifications Web3 Support
+
+    List<FederationAlert> eth_getFederationAlerts();
+
+    PanicStatus eth_getPanicStatus();
+
+    long eth_getPanickingBlockNumber();
 }
