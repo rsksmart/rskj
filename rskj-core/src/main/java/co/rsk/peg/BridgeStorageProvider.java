@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.util.Benchmarker;
 import org.ethereum.core.Repository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
@@ -87,10 +88,12 @@ public class BridgeStorageProvider {
     private ABICallElection feePerKbElection;
 
     public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants) {
+        Benchmarker.get("rsk").start("bridgeStorageProvider::construct");
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
         this.btcContext = new Context(networkParameters);
+        Benchmarker.get("rsk").end("bridgeStorageProvider::construct");
     }
 
     public List<UTXO> getNewFederationBtcUTXOs() throws IOException {
