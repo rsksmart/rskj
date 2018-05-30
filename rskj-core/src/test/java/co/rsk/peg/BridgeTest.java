@@ -481,7 +481,7 @@ public class BridgeTest {
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(rskTx, null, track, null, null, null);
+        bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
 
         byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new byte[3], 1, new byte[30]);
