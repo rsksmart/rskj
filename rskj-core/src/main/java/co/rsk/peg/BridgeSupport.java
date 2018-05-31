@@ -24,7 +24,6 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
@@ -116,7 +115,7 @@ public class BridgeSupport {
             Repository repository,
             BridgeEventLogger eventLogger,
             RskAddress contractAddress,
-            Block rskExecutionBlock) throws IOException, BlockStoreException {
+            Block rskExecutionBlock) throws IOException {
         this(
                 config,
                 repository,
@@ -135,7 +134,7 @@ public class BridgeSupport {
             Repository repository,
             BridgeEventLogger eventLogger,
             BridgeStorageProvider provider,
-            Block rskExecutionBlock) throws IOException, BlockStoreException {
+            Block rskExecutionBlock) {
         this(
                 repository,
                 provider,
@@ -144,9 +143,8 @@ public class BridgeSupport {
                 config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                 eventLogger
         );
-        this.btcContext = new Context(this.bridgeConstants.getBtcParams());
-        this.btcBlockStore = buildRepositoryBlockStore();
-        this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+
+        this.btcContext = this.buildBtcContext();
     }
 
     // this constructor has all common parameters, mostly dependencies that aren't instantiated here
@@ -202,7 +200,7 @@ public class BridgeSupport {
      * Receives an array of serialized Bitcoin block headers and adds them to the internal BlockChain structure.
      * @param headers The bitcoin headers
      */
-    public void receiveHeaders(BtcBlock[] headers) {
+    public void receiveHeaders(BtcBlock[] headers) throws IOException {
         if (headers.length > 0) {
             logger.debug("Received {} headers. First {}, last {}.", headers.length, headers[0].getHash(), headers[headers.length - 1].getHash());
         } else {
@@ -210,6 +208,7 @@ public class BridgeSupport {
         }
 
         Context.propagate(btcContext);
+        this.ensureBtcBlockChain();
         for (int i = 0; i < headers.length; i++) {
             try {
                 btcBlockChain.add(headers[i]);
@@ -286,6 +285,7 @@ public class BridgeSupport {
      */
     public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized) throws IOException, BlockStoreException {
         Context.propagate(btcContext);
+
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
         // Check the tx was not already processed
         if (provider.getBtcTxHashesAlreadyProcessed().keySet().contains(btcTxHash)) {
@@ -318,7 +318,8 @@ public class BridgeSupport {
         }
 
         // Check there are at least N blocks on top of the supplied height
-        int confirmations = btcBlockChain.getBestChainHeight() - height + 1;
+        int btcBestChainHeight = getBtcBlockchainBestChainHeight();
+        int confirmations = btcBestChainHeight - height + 1;
         if (confirmations < bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()) {
             logger.warn(
                     "At least {} confirmations are required, but there are only {} confirmations",
@@ -335,6 +336,7 @@ public class BridgeSupport {
         }
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
+        // BTC blockstore is available since we've already queried the best chain height
         BtcBlock blockHeader = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height).getHeader();
         if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
             String panicMessage = String.format(
@@ -991,7 +993,7 @@ public class BridgeSupport {
      * Returns the bitcoin blockchain best chain height know by the bridge contract
      */
     public int getBtcBlockchainBestChainHeight() throws IOException {
-        return btcBlockChain.getChainHead().getHeight();
+        return getBtcBlockchainChainHead().getHeight();
     }
 
     /**
@@ -1002,7 +1004,7 @@ public class BridgeSupport {
         StoredBlock  initialBtcStoredBlock = this.getLowestBlock();
         final int maxHashesToInform = 100;
         List<Sha256Hash> blockLocator = new ArrayList<>();
-        StoredBlock cursor = btcBlockChain.getChainHead();
+        StoredBlock cursor = getBtcBlockchainChainHead();
         int bestBlockHeight = cursor.getHeight();
         blockLocator.add(cursor.getHeader().getHash());
         if (bestBlockHeight > initialBtcStoredBlock.getHeight()) {
@@ -1704,7 +1706,7 @@ public class BridgeSupport {
      * @param disableBlockDelayBI block since current BTC best chain height to disable lock whitelist
      * @return 1 if it was successful, -1 if a delay was already set, -2 if disableBlockDelay contains an invalid value
      */
-    public Integer setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI) {
+    public Integer setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI) throws IOException {
         if (!isLockWhitelistChangeAuthorized(tx)) {
             return LOCK_WHITELIST_GENERIC_ERROR_CODE;
         }
@@ -1714,12 +1716,24 @@ public class BridgeSupport {
             return -1;
         }
         int disableBlockDelay = disableBlockDelayBI.intValueExact();
-        int bestChainHeight = btcBlockChain.getBestChainHeight();
+        int bestChainHeight = getBtcBlockchainBestChainHeight();
         if (bestChainHeight < 0 || Integer.MAX_VALUE - disableBlockDelay < bestChainHeight) {
             return -2;
         }
         lockWhitelist.setDisableBlockHeight(bestChainHeight + disableBlockDelay);
         return 1;
+    }
+
+    private StoredBlock getBtcBlockchainChainHead() throws IOException {
+        // Gather the current btc chain's head
+        // IMPORTANT: we assume that getting the chain head from the btc blockstore
+        // is enough since we're not manipulating the blockchain here, just querying it.
+        try {
+            this.ensureBtcBlockStore();
+            return btcBlockStore.getChainHead();
+        } catch (BlockStoreException e) {
+            throw new IOException(e);
+        }
     }
 
     /**
@@ -1736,11 +1750,6 @@ public class BridgeSupport {
         // Go back 1 week to match CheckpointManager.checkpoint() behaviour
         time -= 86400 * 7;
         return manager.getCheckpointBefore(time);
-    }
-
-    @VisibleForTesting
-    BtcBlockStore getBtcBlockStore() {
-        return btcBlockStore;
     }
 
     private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet originWallet, Address destinationAddress) {
@@ -1777,6 +1786,34 @@ public class BridgeSupport {
                 throw new IllegalStateException("Retiring federation wallet cannot be emptied", e);
             } catch (UTXOProviderException e) {
                 throw new RuntimeException("Unexpected UTXO provider error", e);
+            }
+        }
+    }
+
+    private Context buildBtcContext() {
+        return new Context(this.bridgeConstants.getBtcParams());
+    }
+
+    // Make sure the local bitcoin blockchain is instantiated
+    private void ensureBtcBlockChain() throws IOException {
+        this.ensureBtcBlockStore();
+
+        if (this.btcBlockChain == null) {
+            try {
+                this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+            } catch (BlockStoreException e) {
+                throw new IOException(e);
+            }
+        }
+    }
+
+    // Make sure the local bitcoin blockstore is instantiated
+    private void ensureBtcBlockStore() throws IOException {
+        if (this.btcBlockStore == null) {
+            try {
+                this.btcBlockStore = this.buildRepositoryBlockStore();
+            } catch (BlockStoreException e) {
+                throw new IOException(e);
             }
         }
     }
