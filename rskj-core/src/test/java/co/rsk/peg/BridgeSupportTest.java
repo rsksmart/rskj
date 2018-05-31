@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
@@ -128,8 +129,9 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
-        Assert.assertEquals(0, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
-        Assert.assertEquals(_networkParameters.getGenesisBlock(), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
+        StoredBlock chainHead = getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead();
+        Assert.assertEquals(0, chainHead.getHeight());
+        Assert.assertEquals(_networkParameters.getGenesisBlock(), chainHead.getHeader());
     }
 
     @Test
@@ -144,7 +146,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
-        Assert.assertEquals(1229760, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
+        Assert.assertEquals(1229760, getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead().getHeight());
     }
 
     @Test
@@ -172,8 +174,9 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
-        Assert.assertEquals(0, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
-        Assert.assertEquals(_networkParameters.getGenesisBlock(), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
+        StoredBlock chainHead = getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead();
+        Assert.assertEquals(0, chainHead.getHeight());
+        Assert.assertEquals(_networkParameters.getGenesisBlock(), chainHead.getHeader());
 
         List<Sha256Hash> locator = bridgeSupport.getBtcBlockchainBlockLocator();
         Assert.assertEquals(1, locator.size());
@@ -207,8 +210,9 @@ public class BridgeSupportTest {
                 return getCheckpoints(_networkParameters, checkpoints);
             }
         };
-        Assert.assertEquals(10, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
-        Assert.assertEquals(checkpoints.get(9), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
+        StoredBlock chainHead = getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead();
+        Assert.assertEquals(10, chainHead.getHeight());
+        Assert.assertEquals(checkpoints.get(9), chainHead.getHeader());
 
         List<Sha256Hash> locator = bridgeSupport.getBtcBlockchainBlockLocator();
         Assert.assertEquals(1, locator.size());
@@ -3103,5 +3107,9 @@ public class BridgeSupportTest {
                 0,
                 false,
                 ScriptBuilder.createOutputScript(address));
+    }
+
+    private BtcBlockStore getBtcBlockStoreFromBridgeSupport(BridgeSupport bridgeSupport) {
+        return (BtcBlockStore) Whitebox.getInternalState(bridgeSupport, "btcBlockStore");
     }
 }

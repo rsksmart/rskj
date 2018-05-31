@@ -733,7 +733,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.removeLockWhitelistAddress(rskTx, addressBase58);
     }
 
-    public Integer setLockWhitelistDisableBlockDelay(Object[] args) {
+    public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException {
         logger.trace("setLockWhitelistDisableBlockDelay");
         BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
         return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);
