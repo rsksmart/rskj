@@ -128,7 +128,8 @@ public abstract class MyBtcAbstractBlockChain {
     private double falsePositiveTrend;
     private double previousFalsePositiveRate;
 
-    private final VersionTally versionTally;
+    private VersionTally versionTally;
+    private final Context context;
 
     /** See {@link #BtcAbstractBlockChain(Context, BtcBlockStore)} */
     public MyBtcAbstractBlockChain(NetworkParameters params,
@@ -145,9 +146,7 @@ public abstract class MyBtcAbstractBlockChain {
         chainHead = blockStore.getChainHead();
         log.info("chain head is at height {}:\n{}", chainHead.getHeight(), chainHead.getHeader());
         this.params = context.getParams();
-
-        this.versionTally = new VersionTally(context.getParams());
-        this.versionTally.initialize(blockStore, chainHead);
+        this.context = context;
     }
 
     /**
@@ -390,7 +389,7 @@ public abstract class MyBtcAbstractBlockChain {
             // stopping addition of new v2/3 blocks to the tip of the chain.
             if (block.getVersion() == BtcBlock.BLOCK_VERSION_BIP34
                     || block.getVersion() == BtcBlock.BLOCK_VERSION_BIP66) {
-                final Integer count = versionTally.getCountAtOrAbove(block.getVersion() + 1);
+                final Integer count = getVersionTally().getCountAtOrAbove(block.getVersion() + 1);
                 if (count != null
                         && count >= params.getMajorityRejectBlockOutdated()) {
                     throw new VerificationException.BlockVersionOutOfDate(block.getVersion());
@@ -400,7 +399,7 @@ public abstract class MyBtcAbstractBlockChain {
             // This block connects to the best known block, it is a normal continuation of the system.
             StoredBlock newStoredBlock = addToBlockStore(storedPrev,
                     block.cloneAsHeader());
-            versionTally.add(block.getVersion());
+            getVersionTally().add(block.getVersion());
             setChainHead(newStoredBlock);
             log.debug("Chain is now {} blocks high, running listeners", newStoredBlock.getHeight());
         } else {
@@ -704,7 +703,13 @@ public abstract class MyBtcAbstractBlockChain {
         previousFalsePositiveRate = 0;
     }
 
-    protected VersionTally getVersionTally() {
+    protected VersionTally getVersionTally() throws BlockStoreException {
+        if (versionTally != null)
+            return versionTally;
+
+        this.versionTally = new VersionTally(context.getParams());
+        this.versionTally.initialize(blockStore, chainHead);
+
         return versionTally;
     }
 }
