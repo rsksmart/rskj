@@ -32,6 +32,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.bitcoin.MyBtcBlockChain;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
@@ -84,7 +85,7 @@ public class BridgeSupport {
 
     private Context btcContext;
     private BtcBlockstoreWithCache btcBlockStore;
-    private BtcBlockChain btcBlockChain;
+    private MyBtcBlockChain btcBlockChain;
     private org.ethereum.core.Block rskExecutionBlock;
 
     // Used by unit tests
@@ -95,7 +96,7 @@ public class BridgeSupport {
             BridgeConstants bridgeConstants,
             BridgeStorageProvider provider,
             BtcBlockstoreWithCache btcBlockStore,
-            BtcBlockChain btcBlockChain,
+            MyBtcBlockChain btcBlockChain,
             Block executionBlock) {
         this(
                 repository,
@@ -146,7 +147,7 @@ public class BridgeSupport {
         );
         this.btcContext = new Context(this.bridgeConstants.getBtcParams());
         this.btcBlockStore = buildRepositoryBlockStore();
-        this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+        this.btcBlockChain = new MyBtcBlockChain(btcContext, btcBlockStore);
     }
 
     // this constructor has all common parameters, mostly dependencies that aren't instantiated here

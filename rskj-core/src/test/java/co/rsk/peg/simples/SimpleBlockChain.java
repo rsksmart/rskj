@@ -24,13 +24,14 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.peg.bitcoin.MyBtcBlockChain;
 
 import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 6/9/2016.
  */
-public class SimpleBlockChain extends BtcBlockChain {
+public class SimpleBlockChain extends MyBtcBlockChain {
     private BtcBlockStore blockStore;
     private StoredBlock block;
     private StoredBlock highBlock;
