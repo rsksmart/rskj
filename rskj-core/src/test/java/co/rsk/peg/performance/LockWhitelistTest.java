@@ -24,8 +24,9 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.LockWhitelist;
+import co.rsk.peg.Whitelist.LockWhitelist;
 import co.rsk.peg.RepositoryBlockStore;
+import co.rsk.peg.Whitelist.OneOffWhiteListEntry;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
@@ -140,7 +141,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
             for (int i = 0; i < size; i++) {
                 Address address = new BtcECKey().toAddress(networkParameters);
                 Coin value = Helper.randomCoin(Coin.COIN, 1, 30);
-                lockWhitelist.put(address, value);
+                lockWhitelist.put(address, new OneOffWhiteListEntry(address, value));
             }
         };
     }

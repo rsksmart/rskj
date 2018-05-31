@@ -765,7 +765,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return 0;
         }
 
-        return bridgeSupport.addLockWhitelistAddress(rskTx, addressBase58, maxTransferValue);
+        return bridgeSupport.addOneOffLockWhitelistAddress(rskTx, addressBase58, maxTransferValue);
     }
 
     public Integer removeLockWhitelistAddress(Object[] args)

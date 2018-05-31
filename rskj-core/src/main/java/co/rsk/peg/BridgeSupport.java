@@ -31,6 +31,9 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.Whitelist.LockWhitelist;
+import co.rsk.peg.Whitelist.LockWhitelistEntry;
+import co.rsk.peg.Whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
@@ -1611,7 +1614,18 @@ public class BridgeSupport {
      * in the whitelist, -2 if address is invalid
      * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
      */
-    public Integer addLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
+    public Integer addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
+        try {
+            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+            Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
+            return this.addLockWhitelistAddress(tx, new OneOffWhiteListEntry(address, maxTransferValueCoin));
+        } catch (AddressFormatException e) {
+            return -2;
+        }
+    }
+    }
+
+    public Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry entry) {
         if (!isLockWhitelistChangeAuthorized(tx)) {
             return LOCK_WHITELIST_GENERIC_ERROR_CODE;
         }
@@ -1619,12 +1633,10 @@ public class BridgeSupport {
         LockWhitelist whitelist = provider.getLockWhitelist();
 
         try {
-            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
-
-            if (whitelist.isWhitelisted(address)) {
+            if (whitelist.isWhitelisted(entry.Address())) {
                 return -1;
             }
-            whitelist.put(address, Coin.valueOf(maxTransferValue.longValueExact()));
+            whitelist.put(entry.Address(), entry);
             return 1;
         } catch (AddressFormatException e) {
             return -2;

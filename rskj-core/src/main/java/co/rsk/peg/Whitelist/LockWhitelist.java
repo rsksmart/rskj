@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.Whitelist;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
@@ -37,16 +37,16 @@ public class LockWhitelist {
     private static final Comparator<Address> LEXICOGRAPHICAL_COMPARATOR
         = Comparator.comparing(Address::getHash160, UnsignedBytes.lexicographicalComparator());
 
-    private SortedMap<Address, Coin> whitelistedAddresses;
+    private SortedMap<Address, LockWhitelistEntry> whitelistedAddresses;
     private int disableBlockHeight;
 
-    public LockWhitelist(Map<Address, Coin> whitelistedAddresses) {
+    public LockWhitelist(Map<Address, LockWhitelistEntry> whitelistedAddresses) {
         this(whitelistedAddresses, Integer.MAX_VALUE);
     }
 
-    public LockWhitelist(Map<Address, Coin> whitelistedAddresses, int disableBlockHeight) {
+    public LockWhitelist(Map<Address, LockWhitelistEntry> whitelistedAddresses, int disableBlockHeight) {
         // Save a copy so that this can't be modified from the outside
-        SortedMap<Address, Coin> sortedWhitelistedAddresses = new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
+        SortedMap<Address, LockWhitelistEntry> sortedWhitelistedAddresses = new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
         sortedWhitelistedAddresses.putAll(whitelistedAddresses);
         this.whitelistedAddresses = sortedWhitelistedAddresses;
         this.disableBlockHeight = disableBlockHeight;
@@ -77,15 +77,19 @@ public class LockWhitelist {
     }
 
     public Coin getMaxTransferValue(Address address) {
-        return whitelistedAddresses.get(address);
+        LockWhitelistEntry entry = whitelistedAddresses.get(address);
+        if (entry == null) {
+            return null;
+        }
+        return entry.MaxTransferValue();
     }
 
-    public boolean put(Address address, Coin maxTransferValue) {
+    public boolean put(Address address, LockWhitelistEntry entry) {
         if (whitelistedAddresses.containsKey(address)) {
             return false;
         }
 
-        whitelistedAddresses.put(address, maxTransferValue);
+        whitelistedAddresses.put(address, entry);
         return true;
     }
 

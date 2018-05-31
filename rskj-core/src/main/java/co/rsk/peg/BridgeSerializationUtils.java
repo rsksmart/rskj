@@ -21,6 +21,9 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.Whitelist.LockWhitelist;
+import co.rsk.peg.Whitelist.LockWhitelistEntry;
+import co.rsk.peg.Whitelist.OneOffWhiteListEntry;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
@@ -315,13 +318,14 @@ public class BridgeSerializationUtils {
             throw new RuntimeException("deserializeLockWhitelist: expected an even number of addresses, but odd given");
         }
 
-        Map<Address, Coin> whitelist = new HashMap<>(serializedAddressesSize / 2);
+        Map<Address, LockWhitelistEntry> whitelist = new HashMap<>(serializedAddressesSize / 2);
         for (int i = 0; i < serializedAddressesSize; i = i + 2) {
             byte[] hash160 = rlpList.get(i).getRLPData();
             byte[] maxValueData = rlpList.get(i + 1).getRLPData();
+            Address address = new Address(parameters, hash160);
             whitelist.put(
-                new Address(parameters, hash160),
-                Coin.valueOf(safeToBigInteger(maxValueData).longValueExact())
+                    address,
+                new OneOffWhiteListEntry(address, Coin.valueOf(safeToBigInteger(maxValueData).longValueExact()))
             );
         }
         int disableBlockHeight = safeToBigInteger(rlpList.get(serializedAddressesSize).getRLPData()).intValueExact();

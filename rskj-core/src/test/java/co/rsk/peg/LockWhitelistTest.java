@@ -22,6 +22,9 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.Whitelist.LockWhitelist;
+import co.rsk.peg.Whitelist.LockWhitelistEntry;
+import co.rsk.peg.Whitelist.OneOffWhiteListEntry;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +38,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
 public class LockWhitelistTest {
-    private Map<Address, Coin> addresses;
+    private Map<Address, LockWhitelistEntry> addresses;
     private LockWhitelist whitelist;
     private Address existingAddress;
 
@@ -51,7 +54,7 @@ public class LockWhitelistTest {
                 }
                 return address;
             })
-            .collect(Collectors.toMap(Function.identity(), i -> Coin.CENT));
+            .collect(Collectors.toMap(Function.identity(), i -> new OneOffWhiteListEntry(i, Coin.CENT)));
         whitelist = new LockWhitelist(addresses, 0);
     }
 
@@ -92,12 +95,12 @@ public class LockWhitelistTest {
         Assert.assertFalse(whitelist.isWhitelisted(randomAddress));
         Assert.assertFalse(whitelist.isWhitelisted(randomAddress.getHash160()));
 
-        Assert.assertTrue(whitelist.put(randomAddress, Coin.CENT));
+        Assert.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
 
         Assert.assertTrue(whitelist.isWhitelisted(randomAddress));
         Assert.assertTrue(whitelist.isWhitelisted(randomAddress.getHash160()));
 
-        Assert.assertFalse(whitelist.put(randomAddress, Coin.CENT));
+        Assert.assertFalse(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
     }
 
     @Test

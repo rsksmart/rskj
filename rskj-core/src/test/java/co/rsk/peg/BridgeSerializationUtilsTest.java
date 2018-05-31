@@ -20,6 +20,9 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.Whitelist.LockWhitelist;
+import co.rsk.peg.Whitelist.LockWhitelistEntry;
+import co.rsk.peg.Whitelist.OneOffWhiteListEntry;
 import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -513,7 +516,7 @@ public class BridgeSerializationUtilsTest {
         LockWhitelist lockWhitelist = new LockWhitelist(
             Arrays.stream(addressesBytes)
                 .map(bytes -> new Address(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), bytes))
-                .collect(Collectors.toMap(Function.identity(), k -> maxToTransfer)),
+                .collect(Collectors.toMap(Function.identity(), k -> new OneOffWhiteListEntry(k, maxToTransfer))),
                 0);
 
         byte[] result = BridgeSerializationUtils.serializeLockWhitelist(lockWhitelist);
@@ -565,8 +568,9 @@ public class BridgeSerializationUtilsTest {
     @Test
     public void serializeDeserializeLockWhitelist() {
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Map<Address, Coin> whitelist = new HashMap<>();
-        whitelist.put(BtcECKey.fromPrivate(BigInteger.valueOf(100L)).toAddress(btcParams), Coin.COIN);
+        Map<Address, LockWhitelistEntry> whitelist = new HashMap<>();
+        Address address = BtcECKey.fromPrivate(BigInteger.valueOf(100L)).toAddress(btcParams);
+        whitelist.put(address, new OneOffWhiteListEntry(address, Coin.COIN));
 
         LockWhitelist originalLockWhitelist = new LockWhitelist(whitelist, 0);
         LockWhitelist deserializedLockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(BridgeSerializationUtils.serializeLockWhitelist(originalLockWhitelist), btcParams);

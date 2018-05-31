@@ -26,6 +26,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.peg.Whitelist.LockWhitelist;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;

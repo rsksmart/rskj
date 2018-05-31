@@ -26,6 +26,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBlockStore;
+import co.rsk.peg.Whitelist.OneOffWhiteListEntry;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
@@ -117,7 +118,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             Coin changeAmount = fromAmount.subtract(lockAmount).subtract(Coin.MILLICOIN); // 1 millicoin fee simulation
 
             // Whitelisting sender
-            provider.getLockWhitelist().put(fromAddress, lockAmount);
+            provider.getLockWhitelist().put(fromAddress, new OneOffWhiteListEntry(fromAddress, lockAmount));
 
             // Input tx
             BtcTransaction inputTx = new BtcTransaction(networkParameters);
