@@ -19,8 +19,12 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.util.MaxSizeHashMap;
+import org.ethereum.db.ByteArrayWrapper;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +52,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+
+    private Map<ByteArrayWrapper, byte[]> cache = new MaxSizeHashMap<>(10);
 
     private final RskSystemProperties config;
     private String name;
@@ -162,6 +168,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 logger.trace("~> LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key));
             }
 
+            ByteArrayWrapper key2 = new ByteArrayWrapper(key);
+
+            if (cache.containsKey(key2))
+                return cache.get(key2);
+
             try {
                 byte[] ret = db.get(key);
                 if (logger.isTraceEnabled()) {
@@ -195,6 +206,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
         try {
             if (logger.isTraceEnabled()) {
                 logger.trace("~> LevelDbDataSource.put(): " + name + ", key: " + Hex.toHexString(key) + ", " + (value == null ? "null" : value.length));
+            }
+
+            if (value.length > 100000) {
+                cache.put(new ByteArrayWrapper(key), value);
+                return value;
             }
 
             db.put(key, value);
