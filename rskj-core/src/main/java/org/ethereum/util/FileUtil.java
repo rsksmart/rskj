@@ -23,25 +23,44 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static java.lang.System.getProperty;
 
 public class FileUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger("file");
+
+    private FileUtil() {
+
+    }
+
+    public static Path getDatabaseDirectoryPath(String databaseDirectory, String name) {
+        if (Paths.get(databaseDirectory).isAbsolute()) {
+            return Paths.get(databaseDirectory, name);
+        } else {
+            return Paths.get(getProperty("user.dir"), databaseDirectory, name);
+        }
+    }
+
+    public static boolean fileRename(String originalName, String newName) {
+        File file = new File(originalName);
+        return file.renameTo(new File(newName));
+    }
 
     public static boolean recursiveDelete(String fileName) {
         File file = new File(fileName);
         if (file.exists()) {
             //check if the file is a directory
-            if (file.isDirectory()) {
-                if ((file.list()).length > 0) {
-                    for(String s:file.list()){
-                        //call deletion of file individually
-                        recursiveDelete(fileName + System.getProperty("file.separator") + s);
-                    }
+            if (file.isDirectory() && (file.list()).length > 0) {
+                for(String s:file.list()){
+                    //call deletion of file individually
+                    recursiveDelete(fileName + System.getProperty("file.separator") + s);
                 }
             }
 
             if (!file.setWritable(true)) {
-                LOGGER.error(String.format("File %s is not writable",file));
+                LOGGER.error("File {} is not writable", file);
             }
 
             boolean result = file.delete();

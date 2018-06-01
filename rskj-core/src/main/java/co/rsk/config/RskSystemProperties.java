@@ -19,6 +19,7 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
+import co.rsk.db.PruneConfiguration;
 import co.rsk.net.eth.MessageFilter;
 import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.WriterMessageRecorder;
@@ -56,6 +57,11 @@ public class RskSystemProperties extends SystemProperties {
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
+
+    // Prune default values
+    private static final int PRUNE_BLOCKS_TO_COPY_DEFAULT = 5000;
+    private static final int PRUNE_BLOCKS_TO_WAIT_DEFAULT = 10000;
+    private static final int PRUNE_BLOCKS_TO_AVOID_FORKS_DEFAULT = 100;
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -399,5 +405,28 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         return vmConfig;
+    }
+
+    // New prune service properties
+
+    public boolean isPruneEnabled() {
+        return configFromFiles.hasPath("prune.enabled") ?
+                configFromFiles.getBoolean("prune.enabled") : false;
+    }
+
+    public int getPruneNoBlocksToCopy() {
+        return getInt("prune.blocks.toCopy", PRUNE_BLOCKS_TO_COPY_DEFAULT);
+    }
+
+    public int getPruneNoBlocksToWait() {
+        return getInt("prune.blocks.toWait", PRUNE_BLOCKS_TO_WAIT_DEFAULT);
+    }
+
+    public int getPruneNoBlocksToAvoidForks() {
+        return getInt("prune.blocks.toAvoidForks", PRUNE_BLOCKS_TO_AVOID_FORKS_DEFAULT);
+    }
+
+    public PruneConfiguration getPruneConfiguration() {
+        return new PruneConfiguration(this.getPruneNoBlocksToCopy(), this.getPruneNoBlocksToAvoidForks(), this.getPruneNoBlocksToWait());
     }
 }

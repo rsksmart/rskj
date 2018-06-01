@@ -22,6 +22,8 @@ import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.core.RskImpl;
+import co.rsk.db.PruneConfiguration;
+import co.rsk.db.PruneService;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.mine.TxBuilder;
@@ -37,6 +39,7 @@ import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +71,8 @@ public class FullNodeRunner implements NodeRunner {
     private final PeerServer peerServer;
     private final SyncPool.PeerClientFactory peerClientFactory;
     private final TransactionGateway transactionGateway;
+
+    private final PruneService pruneService;
 
     @Autowired
     public FullNodeRunner(
@@ -107,6 +112,9 @@ public class FullNodeRunner implements NodeRunner {
         this.peerServer = peerServer;
         this.peerClientFactory = peerClientFactory;
         this.transactionGateway = transactionGateway;
+
+        PruneConfiguration pruneConfiguration = rskSystemProperties.getPruneConfiguration();
+        this.pruneService = new PruneService(pruneConfiguration, rskSystemProperties, blockchain, PrecompiledContracts.REMASC_ADDR);
     }
 
     @Override
@@ -174,6 +182,11 @@ public class FullNodeRunner implements NodeRunner {
             }
         }
 
+        if (rskSystemProperties.isPruneEnabled()) {
+            pruneService.start();
+        }
+
+        logger.info("done");
     }
 
     private void startWeb3(RskSystemProperties rskSystemProperties) throws InterruptedException {
@@ -221,6 +234,11 @@ public class FullNodeRunner implements NodeRunner {
     @Override
     public void stop() {
         logger.info("Shutting down RSK node");
+
+        if (rskSystemProperties.isPruneEnabled()) {
+            pruneService.stop();
+        }
+
         syncPool.stop();
 
         boolean rpcHttpEnabled = rskSystemProperties.isRpcHttpEnabled();
