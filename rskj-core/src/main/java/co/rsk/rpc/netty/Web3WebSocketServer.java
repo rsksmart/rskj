@@ -36,16 +36,20 @@ public class Web3WebSocketServer {
 
     private final InetAddress host;
     private final int port;
+    private final RskJsonRpcHandler jsonRpcHandler;
     private final JsonRpcWeb3ServerHandler web3ServerHandler;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
     private @Nullable ChannelFuture webSocketChannel;
 
-    public Web3WebSocketServer(InetAddress host,
-                               int port,
-                               JsonRpcWeb3ServerHandler web3ServerHandler) {
+    public Web3WebSocketServer(
+            InetAddress host,
+            int port,
+            RskJsonRpcHandler jsonRpcHandler,
+            JsonRpcWeb3ServerHandler web3ServerHandler) {
         this.host = host;
         this.port = port;
+        this.jsonRpcHandler = jsonRpcHandler;
         this.web3ServerHandler = web3ServerHandler;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
@@ -62,6 +66,7 @@ public class Web3WebSocketServer {
                     p.addLast(new HttpServerCodec());
                     p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
                     p.addLast(new WebSocketServerProtocolHandler("/websocket"));
+                    p.addLast(jsonRpcHandler);
                     p.addLast(web3ServerHandler);
                     p.addLast(new Web3ResultWebSocketResponseHandler());
                 }
