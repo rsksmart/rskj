@@ -51,9 +51,10 @@ import java.util.List;
  * Created by ajlopez on 3/3/2016.
  */
 public class RskSystemProperties extends SystemProperties {
+    private static final Logger logger = LoggerFactory.getLogger("config");
+
     public static final int PD_DEFAULT_REFRESH_PERIOD = 60000;
     public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
-    private static final Logger logger = LoggerFactory.getLogger("config");
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
