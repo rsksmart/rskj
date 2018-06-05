@@ -272,7 +272,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    private BridgeSupport setup() throws Exception {
+    private BridgeSupport setup() {
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(this.bridgeConstants, this.logs);
         return new BridgeSupport(this.config, repository, eventLogger, contractAddress, rskExecutionBlock);
     }

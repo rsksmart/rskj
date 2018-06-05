@@ -115,7 +115,7 @@ public class BridgeSupport {
             Repository repository,
             BridgeEventLogger eventLogger,
             RskAddress contractAddress,
-            Block rskExecutionBlock) throws IOException {
+            Block rskExecutionBlock) {
         this(
                 config,
                 repository,
