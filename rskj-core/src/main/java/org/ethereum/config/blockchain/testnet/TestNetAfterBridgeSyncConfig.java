@@ -88,4 +88,6 @@ public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
 
         return super.calcDifficulty(curBlock, parent);
     }
+
+
 }

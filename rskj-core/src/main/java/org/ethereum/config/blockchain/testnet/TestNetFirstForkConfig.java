@@ -17,8 +17,11 @@ public class TestNetFirstForkConfig extends TestNetAfterBridgeSyncConfig {
         return true;
     }
 
-   @Override
+    @Override
     public boolean isRcs230() {
         return true;
     }
+
+    @Override
+    public boolean isRfs170() { return true; }
 }

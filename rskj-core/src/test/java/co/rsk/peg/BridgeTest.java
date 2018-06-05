@@ -27,6 +27,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.test.World;
@@ -36,6 +37,8 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.config.blockchain.testnet.TestNetAfterBridgeSyncConfig;
+import org.ethereum.config.blockchain.testnet.TestNetFirstForkConfig;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -1398,6 +1401,49 @@ public class BridgeTest {
         when(bridgeSupportMock.addOneOffLockWhitelistAddress(mockedTransaction, "i-am-an-address", BigInteger.valueOf(Coin.COIN.getValue()))).thenReturn(1234);
 
         Assert.assertEquals(1234, bridge.addLockWhitelistAddress(new Object[]{ "i-am-an-address", BigInteger.valueOf(Coin.COIN.getValue())}).intValue());
+    }
+
+    @Test
+    public void addUnlimitedLockWhitelistAddressBeforeRfs170Fork() {
+        config.setBlockchainConfig(new TestNetAfterBridgeSyncConfig());
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction mockedTransaction = mock(Transaction.class);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        try {
+            bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address"}));
+        }
+        catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("'ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS' is not enabled"));
+        }
+    }
+
+    @Test
+    public void addUnlimitedLockWhitelistAddressAfterRfs170Fork() {
+        config.setBlockchainConfig(new TestNetFirstForkConfig());
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction mockedTransaction = mock(Transaction.class);
+
+        // Just setting a random address as the sender
+        RskAddress sender = new RskAddress(fedECPrivateKey.getAddress());
+        when(mockedTransaction.getSender()).thenReturn(sender);
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        String address = "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN";
+
+        byte[] result = bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ address}));
+
+        // TODO: reenable the assert
+//        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE, result);
     }
 
     @Test

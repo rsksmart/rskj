@@ -152,6 +152,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // Adds the given address to the lock whitelist
     public static final CallTransaction.Function ADD_LOCK_WHITELIST_ADDRESS = BridgeMethods.ADD_LOCK_WHITELIST_ADDRESS.getFunction();
     // Adds the given address to the lock whitelist
+    public static final CallTransaction.Function ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS = BridgeMethods.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.getFunction();
+    // Adds the given address to the lock whitelist
     public static final CallTransaction.Function REMOVE_LOCK_WHITELIST_ADDRESS = BridgeMethods.REMOVE_LOCK_WHITELIST_ADDRESS.getFunction();
 
     public static final CallTransaction.Function SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY = BridgeMethods.SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY.getFunction();
@@ -771,6 +773,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return bridgeSupport.addOneOffLockWhitelistAddress(rskTx, addressBase58, maxTransferValue);
+    }
+
+    public Integer addUnlimitedLockWhitelistAddress(Object[] args)
+    {
+        logger.trace("addLockWhitelistAddress");
+
+        String addressBase58;
+        try {
+            addressBase58 = (String) args[0];
+        } catch (Exception e) {
+            logger.warn("Exception in addUnlimitedLockWhitelistAddress: {}", e.getMessage());
+            return 0;
+        }
+
+        return bridgeSupport.addUnlimitedLockWhitelistAddress(rskTx, addressBase58);
     }
 
     public Integer removeLockWhitelistAddress(Object[] args)

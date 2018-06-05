@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.Whitelist.LockWhitelist;
 import co.rsk.peg.Whitelist.LockWhitelistEntry;
 import co.rsk.peg.Whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.Whitelist.UnlimitedWhiteListEntry;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,7 +87,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void add() {
+    public void addOneOff() {
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
@@ -101,6 +102,60 @@ public class LockWhitelistTest {
         Assert.assertTrue(whitelist.isWhitelisted(randomAddress.getHash160()));
 
         Assert.assertFalse(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
+    }
+
+    @Test
+    public void addUnlimited() {
+        Address randomAddress = Address.fromBase58(
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
+        );
+
+        Assert.assertFalse(whitelist.isWhitelisted(randomAddress));
+        Assert.assertFalse(whitelist.isWhitelisted(randomAddress.getHash160()));
+
+        Assert.assertTrue(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
+
+        Assert.assertTrue(whitelist.isWhitelisted(randomAddress));
+        Assert.assertTrue(whitelist.isWhitelisted(randomAddress.getHash160()));
+
+        Assert.assertFalse(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
+    }
+
+    @Test
+    public void addOneOffAfterUnlimited() {
+        Address randomAddress = Address.fromBase58(
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
+        );
+
+        Assert.assertFalse(whitelist.isWhitelisted(randomAddress));
+        Assert.assertFalse(whitelist.isWhitelisted(randomAddress.getHash160()));
+
+        Assert.assertTrue(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
+
+        Assert.assertTrue(whitelist.isWhitelisted(randomAddress));
+        Assert.assertTrue(whitelist.isWhitelisted(randomAddress.getHash160()));
+
+        Assert.assertFalse(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
+    }
+
+    @Test
+    public void addUnlimitedAfterOneOff() {
+        Address randomAddress = Address.fromBase58(
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
+        );
+
+        Assert.assertFalse(whitelist.isWhitelisted(randomAddress));
+        Assert.assertFalse(whitelist.isWhitelisted(randomAddress.getHash160()));
+
+        Assert.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
+
+        Assert.assertTrue(whitelist.isWhitelisted(randomAddress));
+        Assert.assertTrue(whitelist.isWhitelisted(randomAddress.getHash160()));
+
+        Assert.assertFalse(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
     }
 
     @Test

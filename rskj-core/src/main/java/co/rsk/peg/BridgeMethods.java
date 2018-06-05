@@ -49,6 +49,16 @@ public enum BridgeMethods {
             25000L,
             (BridgeMethodExecutorTyped) Bridge::addLockWhitelistAddress
     ),
+    ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS(
+            CallTransaction.Function.fromSignature(
+                    "addUnlimitedLockWhitelistAddress",
+                    new String[]{"string"},
+                    new String[]{"int256"}
+            ),
+            25000L,
+            (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
+            (blockChainConfig) -> blockChainConfig.isRfs170()
+    ),
     ADD_SIGNATURE(
             CallTransaction.Function.fromSignature(
                     "addSignature",
