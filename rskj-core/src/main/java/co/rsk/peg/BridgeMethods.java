@@ -425,6 +425,7 @@ public enum BridgeMethods {
     public Boolean isEnabled(BlockchainConfig blockchainConfig) {
         return this._isEnabled.apply(blockchainConfig);
     }
+
     public long getCost() {
         return cost;
     }
