@@ -132,8 +132,9 @@ public class Remasc {
 
         byte[] processingBlockHash = processingBlockHeader.getHash().getBytes();
         int nfederators = federationProvider.getFederationSize();
-        Coin payToFederator = payToFederation.divide(BigInteger.valueOf(nfederators));
-        Coin restToLastFederator = payToFederation.subtract(payToFederator.multiply(BigInteger.valueOf(nfederators)));
+        Coin[] payAndRemainderToFederator = payToFederation.divideAndRemainder(BigInteger.valueOf(nfederators));
+        Coin payToFederator = payAndRemainderToFederator[0];
+        Coin restToLastFederator = payAndRemainderToFederator[1];
         Coin paidToFederation = Coin.ZERO;
 
         for (int k = 0; k < nfederators; k++) {
