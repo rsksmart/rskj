@@ -1415,9 +1415,9 @@ public class BridgeTest {
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         try {
-            bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address"}));
-        }
-        catch (Exception e) {
+            bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address" }));
+            Assert.fail();
+        } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("'ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS' is not enabled"));
         }
     }
@@ -1438,12 +1438,13 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        String address = "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN";
+        byte[] result = bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
+                new BtcECKey().toAddress(networkParameters).toBase58()
+        }));
 
-        byte[] result = bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ address}));
+        BigInteger decodedResult = (BigInteger) BridgeMethods.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.getFunction().decodeResult(result)[0];
 
-        // TODO: reenable the assert
-//        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE, result);
+        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), decodedResult.intValue());
     }
 
     @Test
