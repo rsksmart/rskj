@@ -186,16 +186,18 @@ public class Remasc {
     private void addNewSiblings() {
         // Add uncles of the execution block to the siblings map
         List<BlockHeader> uncles = executionBlock.getUncleList();
-        if (CollectionUtils.isNotEmpty(uncles)) {
-            for (BlockHeader uncleHeader : uncles) {
-                List<Sibling> siblings = provider.getSiblings().get(uncleHeader.getNumber());
-                if (siblings == null) {
-                    siblings = new ArrayList<>();
-                }
+        if (uncles == null) {
+            return;
+        }
 
-                siblings.add(new Sibling(uncleHeader, executionBlock.getHeader().getCoinbase(), executionBlock.getNumber()));
-                provider.getSiblings().put(uncleHeader.getNumber(), siblings);
+        for (BlockHeader uncleHeader : uncles) {
+            List<Sibling> siblings = provider.getSiblings().get(uncleHeader.getNumber());
+            if (siblings == null) {
+                siblings = new ArrayList<>();
             }
+
+            siblings.add(new Sibling(uncleHeader, executionBlock.getHeader().getCoinbase(), executionBlock.getNumber()));
+            provider.getSiblings().put(uncleHeader.getNumber(), siblings);
         }
     }
 
