@@ -312,7 +312,7 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("Start processBest");
             processBest(block);
             logger.trace("Start onBlock");
-            onBlock(block, result);
+            onBlock(block, result, true);
             logger.trace("Start flushData");
             flushData();
 
@@ -338,7 +338,7 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("Start saveReceipts");
             saveReceipts(block, result);
             logger.trace("Start onBlock");
-            onBlock(block, result);
+            onBlock(block, result, false);
             logger.trace("Start flushData");
             flushData();
 
@@ -540,10 +540,13 @@ public class BlockChainImpl implements Blockchain {
         EventDispatchThread.invokeLater(() -> transactionPool.processBest(block));
     }
 
-    private void onBlock(Block block, BlockResult result) {
+    private void onBlock(Block block, BlockResult result, boolean isBest) {
         if (result != null && listener != null) {
             listener.trace(String.format("Block chain size: [ %d ]", this.getSize()));
             listener.onBlock(block, result.getTransactionReceipts());
+            if (isBest) {
+                listener.onBestBlock(block, result.getTransactionReceipts());
+            }
         }
     }
 

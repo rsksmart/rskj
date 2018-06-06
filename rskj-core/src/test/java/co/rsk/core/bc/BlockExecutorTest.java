@@ -621,6 +621,8 @@ public class BlockExecutorTest {
     public static class SimpleEthereumListener extends TestCompositeEthereumListener {
         private Block latestBlock;
         private List<TransactionReceipt> latestReceipts;
+        private Block bestBlock;
+        private List<TransactionReceipt> bestReceipts;
         private String latestTransactionHash;
         private String latestTrace;
         private TransactionExecutionSummary latestSummary;
@@ -660,6 +662,20 @@ public class BlockExecutorTest {
         @Override
         public void onRecvMessage(Channel channel, Message message) {
 
+        }
+
+        @Override
+        public void onBestBlock(Block block, List<TransactionReceipt> receipts) {
+            bestBlock = block;
+            bestReceipts = receipts;
+        }
+
+        public Block getBestBlock() {
+            return bestBlock;
+        }
+
+        public List<TransactionReceipt> getBestReceipts() {
+            return bestReceipts;
         }
 
         @Override

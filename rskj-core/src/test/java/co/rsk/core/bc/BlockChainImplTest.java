@@ -82,6 +82,24 @@ public class BlockChainImplTest {
     }
 
     @Test
+    public void onBestBlockTest() {
+        BlockChainImpl blockChain = createBlockChain();
+        Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+        BlockExecutorTest.SimpleEthereumListener listener = ((BlockExecutorTest.SimpleEthereumListener) blockChain.getListener());
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis,0,2l);
+        Block block1b = blockGenerator.createChildBlock(genesis,0,1l);
+
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
+        Assert.assertEquals(block1.getHash(), listener.getBestBlock().getHash());
+        Assert.assertEquals(listener.getBestBlock().getHash(), listener.getLatestBlock().getHash());
+        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
+        Assert.assertNotEquals(listener.getBestBlock().getHash(), listener.getLatestBlock().getHash());
+        Assert.assertEquals(block1.getHash(), listener.getBestBlock().getHash());
+        Assert.assertEquals(block1b.getHash(), listener.getLatestBlock().getHash());
+    }
+    @Test
     public void addGenesisBlockUsingRepository() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
