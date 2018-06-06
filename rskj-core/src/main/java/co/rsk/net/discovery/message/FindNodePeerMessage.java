@@ -83,7 +83,7 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
 
         this.nodeId = nodeRlp.getRLPData();
 
-        this.setNetworkIdWithRLP(dataList.get(2));
+        this.setNetworkIdWithRLP(dataList.size()>2?dataList.get(2):null);
     }
 
 

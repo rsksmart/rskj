@@ -69,7 +69,7 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
 
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
 
-        this.setNetworkIdWithRLP(list.get(2));
+        this.setNetworkIdWithRLP(list.size()>2?list.get(2):null);
     }
 
     public static NeighborsPeerMessage create(List<Node> nodes, String check, ECKey privKey, OptionalInt networkId) {

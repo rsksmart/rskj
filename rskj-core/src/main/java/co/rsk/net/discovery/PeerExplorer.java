@@ -205,7 +205,10 @@ public class PeerExplorer {
 
         InetSocketAddress localAddress = this.localNode.getAddress();
         String id = UUID.randomUUID().toString();
-        nodeMessage = PingPeerMessage.create(localAddress.getAddress().getHostAddress(), localAddress.getPort(), id, this.key, this.networkId);
+        nodeMessage = PingPeerMessage.create(
+                localAddress.getAddress().getHostAddress(),
+                localAddress.getPort(),
+                id, this.key, this.networkId);
         udpChannel.write(new DiscoveryEvent(nodeMessage, nodeAddress));
 
         PeerDiscoveryRequest request = PeerDiscoveryRequestBuilder.builder().messageId(id)

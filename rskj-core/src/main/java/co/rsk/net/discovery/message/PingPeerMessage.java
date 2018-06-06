@@ -95,7 +95,7 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
 
         //Message from nodes that do not have this
-        this.setNetworkIdWithRLP(dataList.get(3));
+        this.setNetworkIdWithRLP(dataList.size()>3?dataList.get(3):null);
     }
 
     public String getMessageId() {

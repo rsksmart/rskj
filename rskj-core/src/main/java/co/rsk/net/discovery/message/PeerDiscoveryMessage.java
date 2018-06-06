@@ -18,7 +18,6 @@
 
 package co.rsk.net.discovery.message;
 
-import co.rsk.cli.OptionalizableArgument;
 import co.rsk.net.NodeID;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
