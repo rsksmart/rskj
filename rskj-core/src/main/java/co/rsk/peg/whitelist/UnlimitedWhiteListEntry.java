@@ -1,4 +1,4 @@
-package co.rsk.peg.Whitelist;
+package co.rsk.peg.whitelist;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;

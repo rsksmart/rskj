@@ -20,9 +20,9 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.Whitelist.LockWhitelist;
-import co.rsk.peg.Whitelist.LockWhitelistEntry;
-import co.rsk.peg.Whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.LockWhitelist;
+import co.rsk.peg.whitelist.LockWhitelistEntry;
+import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;

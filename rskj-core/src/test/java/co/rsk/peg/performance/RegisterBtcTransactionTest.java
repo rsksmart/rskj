@@ -26,7 +26,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBlockStore;
-import co.rsk.peg.Whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;

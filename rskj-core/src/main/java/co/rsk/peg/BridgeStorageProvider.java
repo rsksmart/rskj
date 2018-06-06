@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.Whitelist.LockWhitelist;
+import co.rsk.peg.whitelist.LockWhitelist;
 import org.ethereum.core.Repository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;

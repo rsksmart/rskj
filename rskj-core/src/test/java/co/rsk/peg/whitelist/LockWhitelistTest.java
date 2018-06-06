@@ -16,16 +16,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.whitelist;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.peg.Whitelist.LockWhitelist;
-import co.rsk.peg.Whitelist.LockWhitelistEntry;
-import co.rsk.peg.Whitelist.OneOffWhiteListEntry;
-import co.rsk.peg.Whitelist.UnlimitedWhiteListEntry;
+import co.rsk.peg.whitelist.LockWhitelist;
+import co.rsk.peg.whitelist.LockWhitelistEntry;
+import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
