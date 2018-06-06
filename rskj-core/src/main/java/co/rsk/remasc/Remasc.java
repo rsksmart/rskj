@@ -117,18 +117,18 @@ public class Remasc {
         }
 
         // Takes from rewardBalance this block's height reward.
-        Coin fullBlockReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
-        rewardBalance = rewardBalance.subtract(fullBlockReward);
+        Coin syntheticReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
+        rewardBalance = rewardBalance.subtract(syntheticReward);
         provider.setRewardBalance(rewardBalance);
 
         // Pay RSK labs cut
-        Coin payToRskLabs = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
+        Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
-        fullBlockReward = fullBlockReward.subtract(payToRskLabs);
+        syntheticReward = syntheticReward.subtract(payToRskLabs);
 
         RemascFederationProvider federationProvider = new RemascFederationProvider(config, repository, processingBlock);
 
-        Coin payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
+        Coin payToFederation = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
         byte[] processingBlockHash = processingBlockHeader.getHash().getBytes();
         int nfederators = federationProvider.getFederationSize();
@@ -148,24 +148,24 @@ public class Remasc {
             paidToFederation = paidToFederation.add(payToFederator);
         }
 
-        fullBlockReward = fullBlockReward.subtract(payToFederation);
+        syntheticReward = syntheticReward.subtract(payToFederation);
 
         List<Sibling> siblings = provider.getSiblings().get(processingBlockNumber);
 
         if (CollectionUtils.isNotEmpty(siblings)) {
             // Block has siblings, reward distribution is more complex
             boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
-            this.payWithSiblings(processingBlockHeader, fullBlockReward, siblings, previousBrokenSelectionRule);
+            this.payWithSiblings(processingBlockHeader, syntheticReward, siblings, previousBrokenSelectionRule);
             boolean brokenSelectionRule = SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
             provider.setBrokenSelectionRule(brokenSelectionRule);
         } else {
             if (provider.getBrokenSelectionRule()) {
                 // broken selection rule, apply punishment, ie burn part of the reward.
-                Coin punishment = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
-                fullBlockReward = fullBlockReward.subtract(punishment);
+                Coin punishment = syntheticReward.divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
+                syntheticReward = syntheticReward.subtract(punishment);
                 provider.setBurnedBalance(provider.getBurnedBalance().add(punishment));
             }
-            feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), fullBlockReward, processingBlockHeader.getCoinbase(), logs);
+            feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), syntheticReward, processingBlockHeader.getCoinbase(), logs);
             provider.setBrokenSelectionRule(Boolean.FALSE);
         }
 
