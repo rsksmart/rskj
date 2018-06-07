@@ -65,6 +65,11 @@ public class CompositeEthereumListener implements EthereumListener {
     }
 
     @Override
+    public void onBestBlock(Block block, List<TransactionReceipt> receipts) {
+        scheduleListenerCallbacks(listener -> listener.onBestBlock(block, receipts));
+    }
+
+    @Override
     public void onRecvMessage(Channel channel, Message message) {
         scheduleListenerCallbacks(listener -> listener.onRecvMessage(channel, message));
     }
