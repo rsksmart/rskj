@@ -758,9 +758,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return address;
     }
 
-    public Integer addLockWhitelistAddress(Object[] args)
+    public Integer addOneOffLockWhitelistAddress(Object[] args)
     {
-        logger.trace("addLockWhitelistAddress");
+        logger.trace("addOneOffLockWhitelistAddress");
 
         String addressBase58;
         BigInteger maxTransferValue;
@@ -768,7 +768,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             addressBase58 = (String) args[0];
             maxTransferValue = (BigInteger) args[1];
         } catch (Exception e) {
-            logger.warn("Exception in addLockWhitelistAddress: {}", e.getMessage());
+            logger.warn("Exception in addOneOffLockWhitelistAddress: {}", e.getMessage());
             return 0;
         }
 

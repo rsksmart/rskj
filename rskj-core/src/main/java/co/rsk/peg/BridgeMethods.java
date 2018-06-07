@@ -47,7 +47,18 @@ public enum BridgeMethods {
                     new String[]{"int256"}
             ),
             25000L,
-            (BridgeMethodExecutorTyped) Bridge::addLockWhitelistAddress
+            (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
+            (blockChainConfig) -> !blockChainConfig.isRfs170()
+    ),
+    ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS(
+            CallTransaction.Function.fromSignature(
+                    "addOneOffLockWhitelistAddress",
+                    new String[]{"string", "int256"},
+                    new String[]{"int256"}
+            ),
+            25000L, // TODO: estimate gas
+            (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
+            (blockChainConfig) -> blockChainConfig.isRfs170()
     ),
     ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -55,7 +66,7 @@ public enum BridgeMethods {
                     new String[]{"string"},
                     new String[]{"int256"}
             ),
-            25000L,
+            25000L, // TODO: estimate gas
             (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
             (blockChainConfig) -> blockChainConfig.isRfs170()
     ),

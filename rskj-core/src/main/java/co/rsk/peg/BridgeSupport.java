@@ -1634,7 +1634,7 @@ public class BridgeSupport {
         }
     }
 
-    public Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry entry) {
+    private Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry entry) {
         if (!isLockWhitelistChangeAuthorized(tx)) {
             return LOCK_WHITELIST_GENERIC_ERROR_CODE;
         }
