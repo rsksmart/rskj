@@ -311,8 +311,10 @@ public class BlockChainImpl implements Blockchain {
             saveReceipts(block, result);
             logger.trace("Start processBest");
             processBest(block);
-            logger.trace("Start onBlock");
+            logger.trace("Start onBestBlock");
             onBestBlock(block, result);
+            logger.trace("Start onBlock");
+            onBlock(block, result);
             logger.trace("Start flushData");
             flushData();
 
@@ -549,7 +551,6 @@ public class BlockChainImpl implements Blockchain {
 
     private void onBestBlock(Block block, BlockResult result) {
         if (result != null && listener != null){
-            onBlock(block, result);
             listener.onBestBlock(block, result.getTransactionReceipts());
         }
     }
