@@ -548,8 +548,8 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private void onBestBlock(Block block, BlockResult result) {
-        onBlock(block, result);
         if (result != null && listener != null){
+            onBlock(block, result);
             listener.onBestBlock(block, result.getTransactionReceipts());
         }
     }
