@@ -436,7 +436,8 @@ public class BridgeSupport {
                         sender,
                         co.rsk.core.Coin.fromBitcoin(totalAmount)
                 );
-                lockWhitelist.remove(senderBtcAddress);
+                // Consume this whitelisted address
+                lockWhitelist.consume(senderBtcAddress);
             }
         } else if (BridgeUtils.isReleaseTx(btcTx, federation, bridgeConstants)) {
             logger.debug("This is a release tx {}", btcTx);

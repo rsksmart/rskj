@@ -97,6 +97,22 @@ public class LockWhitelist {
         return whitelistedAddresses.remove(address) != null;
     }
 
+    /**
+     * Marks the whitelisted address as consumed. This will reduce the number of usages, and if it gets down to zero remaining usages it will remove the address
+     * @param address
+     */
+    public void consume(Address address) {
+        LockWhitelistEntry entry = whitelistedAddresses.get(address);
+        if (entry == null) {
+            return;
+        }
+        entry.consume();
+
+        if (!entry.canConsume()) {
+            this.remove(address);
+        }
+    }
+
     public int getDisableBlockHeight() {
         return disableBlockHeight;
     }
