@@ -76,6 +76,12 @@ public class LockWhitelist {
         return new ArrayList<>(whitelistedAddresses.keySet());
     }
 
+
+    public List<LockWhitelistEntry> getEntries() {
+        // Return a copy so that this can't be modified from the outside
+        return new ArrayList<>(whitelistedAddresses.values());
+    }
+
     public Coin getMaxTransferValue(Address address) {
         LockWhitelistEntry entry = whitelistedAddresses.get(address);
         if (entry == null) {

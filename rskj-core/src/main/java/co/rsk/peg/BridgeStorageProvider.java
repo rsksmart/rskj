@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.logging.Logger;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
@@ -50,7 +51,8 @@ public class BridgeStorageProvider {
     private static final DataWord OLD_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("oldFederation"));
     private static final DataWord PENDING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("pendingFederation"));
     private static final DataWord FEDERATION_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("federationElection"));
-    private static final DataWord LOCK_WHITELIST_KEY = new DataWord(TypeConverter.stringToByteArray("lockWhitelist"));
+    private static final DataWord LOCK_ONE_OFF_WHITELIST_KEY = new DataWord(TypeConverter.stringToByteArray("lockWhitelist"));
+    private static final DataWord LOCK_UNLIMITED_WHITELIST_KEY = new DataWord(TypeConverter.stringToByteArray("unlimitedLockWhitelist"));
     private static final DataWord FEE_PER_KB_KEY = new DataWord(TypeConverter.stringToByteArray("feePerKb"));
     private static final DataWord FEE_PER_KB_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("feePerKbElection"));
 
@@ -319,7 +321,9 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(LOCK_WHITELIST_KEY, lockWhitelist, BridgeSerializationUtils::serializeLockWhitelist);
+        safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, lockWhitelist, BridgeSerializationUtils::serializeOneOffLockWhitelist);
+
+        safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, lockWhitelist, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
     }
 
     public LockWhitelist getLockWhitelist() {
@@ -327,13 +331,17 @@ public class BridgeStorageProvider {
             return lockWhitelist;
         }
 
-        lockWhitelist = safeGetFromRepository(LOCK_WHITELIST_KEY,
-            data -> (data == null)?
-                new LockWhitelist(new HashMap<>()) :
-                BridgeSerializationUtils.deserializeLockWhitelist(data, btcContext.getParams())
-        );
+        byte[] oneOffWhitelistData = safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY, data -> data);
+        if (oneOffWhitelistData == null) {
+            lockWhitelist = new LockWhitelist(new HashMap<>());
+            return lockWhitelist;
+        }
+        byte[] unlimitedWhitelistData = safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY, data -> data);
+
+        lockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(oneOffWhitelistData, unlimitedWhitelistData, btcContext.getParams());
 
         return lockWhitelist;
+
     }
 
     public Coin getFeePerKb() {

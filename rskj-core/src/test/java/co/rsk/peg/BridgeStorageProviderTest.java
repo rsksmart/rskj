@@ -517,7 +517,7 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        PowerMockito.when(BridgeSerializationUtils.serializeLockWhitelist(any(LockWhitelist.class))).then((InvocationOnMock invocation) -> {
+        PowerMockito.when(BridgeSerializationUtils.serializeOneOffLockWhitelist(any(LockWhitelist.class))).then((InvocationOnMock invocation) -> {
             LockWhitelist whitelist = invocation.getArgumentAt(0, LockWhitelist.class);
             Assert.assertSame(whitelistMock, whitelist);
             serializeCalls.add(0);

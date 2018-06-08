@@ -519,7 +519,7 @@ public class BridgeSerializationUtilsTest {
                 .collect(Collectors.toMap(Function.identity(), k -> new OneOffWhiteListEntry(k, maxToTransfer))),
                 0);
 
-        byte[] result = BridgeSerializationUtils.serializeLockWhitelist(lockWhitelist);
+        byte[] result = BridgeSerializationUtils.serializeOneOffLockWhitelist(lockWhitelist);
         StringBuilder expectedBuilder = new StringBuilder();
         Arrays.stream(addressesBytes).sorted(UnsignedBytes.lexicographicalComparator()).forEach(bytes -> {
             expectedBuilder.append("dd");
@@ -573,7 +573,7 @@ public class BridgeSerializationUtilsTest {
         whitelist.put(address, new OneOffWhiteListEntry(address, Coin.COIN));
 
         LockWhitelist originalLockWhitelist = new LockWhitelist(whitelist, 0);
-        LockWhitelist deserializedLockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(BridgeSerializationUtils.serializeLockWhitelist(originalLockWhitelist), btcParams);
+        LockWhitelist deserializedLockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(BridgeSerializationUtils.serializeOneOffLockWhitelist(originalLockWhitelist), btcParams);
 
         List<Address> originalAddresses = originalLockWhitelist.getAddresses();
         List<Address> deserializedAddresses = deserializedLockWhitelist.getAddresses();
