@@ -7,6 +7,8 @@ public class OneOffWhiteListEntry implements LockWhitelistEntry {
     private final Address address;
     private final Coin maxTransferValue;
 
+    private boolean consumed = false;
+
     public OneOffWhiteListEntry(Address address, Coin maxTransferValue) {
         this.address = address;
         this.maxTransferValue = maxTransferValue;
@@ -15,10 +17,16 @@ public class OneOffWhiteListEntry implements LockWhitelistEntry {
     public Address Address() {
         return this.address;
     }
+
     public Coin MaxTransferValue() {
         return this.maxTransferValue;
     }
-    public Integer Usages() {
-        return 1;
+
+    public void consume() {
+        this.consumed = true;
+    }
+
+    public Boolean canConsume() {
+        return !this.consumed;
     }
 }

@@ -15,10 +15,15 @@ public class UnlimitedWhiteListEntry implements LockWhitelistEntry {
     public Address Address() {
         return this.address;
     }
+
     public Coin MaxTransferValue() {
         return this.maxTransferValue;
     }
-    public Integer Usages() {
-        return Integer.MAX_VALUE;
+
+    public void consume() {
+    }
+
+    public Boolean canConsume() {
+        return true;
     }
 }

@@ -30,5 +30,6 @@ import co.rsk.bitcoinj.core.Coin;
 public interface LockWhitelistEntry {
     Address Address();
     Coin MaxTransferValue();
-    Integer Usages();
+    Boolean canConsume();
+    void consume();
 }
