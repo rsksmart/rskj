@@ -240,9 +240,10 @@ public class RskForksBridgeTest {
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(1000000);
+        // This whitelist tx is considering that RFS-170 is true. If you configure it to be false change "ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS" to be "ADD_LOCK_WHITELIST_ADDRESS"
         Transaction rskTx = CallTransaction.createCallTransaction(config, nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
-                Bridge.ADD_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value) });
+                Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value) });
         rskTx.sign(whitelistManipulationKey.getPrivKeyBytes());
         return rskTx;
     }
