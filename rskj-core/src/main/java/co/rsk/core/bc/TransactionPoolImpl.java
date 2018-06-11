@@ -30,7 +30,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
@@ -64,7 +64,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private final Repository repository;
     private final ReceiptStore receiptStore;
     private final ProgramInvokeFactory programInvokeFactory;
-    private final CompositeEthereumListener listener;
+    private final EthereumListener listener;
     private final int outdatedThreshold;
     private final int outdatedTimeout;
 
@@ -78,7 +78,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     public TransactionPoolImpl(BlockStore blockStore,
                                ReceiptStore receiptStore,
-                               CompositeEthereumListener listener,
+                               EthereumListener listener,
                                ProgramInvokeFactory programInvokeFactory,
                                Repository repository,
                                RskSystemProperties config) {
@@ -97,7 +97,7 @@ public class TransactionPoolImpl implements TransactionPool {
                                BlockStore blockStore,
                                ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory,
-                               CompositeEthereumListener listener,
+                               EthereumListener listener,
                                int outdatedThreshold,
                                int outdatedTimeout) {
         this.config = config;
