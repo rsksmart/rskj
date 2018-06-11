@@ -259,9 +259,10 @@ public class PeerExplorer {
     }
 
     public void purgeRequests() {
-        List<PeerDiscoveryRequest> oldPingRequests = this.removeExpiredRequests(this.pendingPingRequests);
-        this.resendExpiredPing(oldPingRequests);
-        this.removeConnections(oldPingRequests.stream().
+        List<PeerDiscoveryRequest> oldPingRequests = removeExpiredRequests(this.pendingPingRequests);
+        removeExpiredChallenges(oldPingRequests);
+        resendExpiredPing(oldPingRequests);
+        removeConnections(oldPingRequests.stream().
                 filter(r -> r.getAttemptNumber() >= 3).collect(Collectors.toList()));
 
         removeExpiredRequests(this.pendingFindNodeRequests);
@@ -291,6 +292,10 @@ public class PeerExplorer {
         requests.forEach(r -> pendingRequests.remove(r.getMessageId()));
 
         return requests;
+    }
+
+    private void removeExpiredChallenges(List<PeerDiscoveryRequest> peerDiscoveryRequests) {
+        peerDiscoveryRequests.stream().forEach(r -> challengeManager.removeChallenge(r.getMessageId()));
     }
 
     private void resendExpiredPing(List<PeerDiscoveryRequest> peerDiscoveryRequests) {
