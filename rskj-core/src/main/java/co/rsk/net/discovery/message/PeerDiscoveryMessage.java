@@ -22,12 +22,16 @@ import co.rsk.net.NodeID;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLPElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
 import java.security.SignatureException;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.merge;
@@ -41,6 +45,7 @@ public abstract class PeerDiscoveryMessage {
     private byte[] signature;
     private byte[] type;
     private byte[] data;
+    private OptionalInt networkId;
 
     public PeerDiscoveryMessage() {}
 
@@ -51,6 +56,7 @@ public abstract class PeerDiscoveryMessage {
         this.data = data;
         this.wire = wire;
     }
+
     public PeerDiscoveryMessage encode(byte[] type, byte[] data, ECKey privKey) {
         /* [1] Calc sha3 - prepare for sig */
         byte[] payload = new byte[type.length + data.length];
@@ -108,6 +114,22 @@ public abstract class PeerDiscoveryMessage {
         }
 
         return outKey;
+    }
+
+    public OptionalInt getNetworkId() {
+        return this.networkId;
+    }
+
+    protected void setNetworkId(final OptionalInt networkId) {
+        this.networkId = networkId;
+    }
+
+    protected void setNetworkIdWithRLP(final RLPElement networkId) {
+        Integer setValue = null;
+        if (networkId != null) {
+            setValue = ByteUtil.byteArrayToInt(networkId.getRLPData());
+        }
+        this.setNetworkId(Optional.ofNullable(setValue).map(OptionalInt::of).orElseGet(OptionalInt::empty));
     }
 
     public NodeID getNodeId() {

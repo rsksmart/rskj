@@ -53,6 +53,7 @@ public class PeerExplorer {
     private final Map<String, PeerDiscoveryRequest> pendingFindNodeRequests = new ConcurrentHashMap<>();
 
     private final Map<NodeID, Node> establishedConnections = new ConcurrentHashMap<>();
+    private final OptionalInt networkId;
 
     private UDPChannel udpChannel;
 
@@ -70,12 +71,12 @@ public class PeerExplorer {
 
     private long requestTimeout;
 
-    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long refreshPeriod) {
+    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long refreshPeriod, OptionalInt networkId) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
         this.updateEntryLock = new ReentrantLock();
-
+        this.networkId = networkId;
         loadInitialBootNodes(initialBootNodes);
 
         this.cleaner = new PeerExplorerCleaner(this, refreshPeriod);
@@ -109,6 +110,12 @@ public class PeerExplorer {
 
     public void handleMessage(DiscoveryEvent event) {
         DiscoveryMessageType type = event.getMessage().getMessageType();
+        //If this is not from my network ignore it. But if the messages do not
+        //have a networkId in the message yet, then just let them through, for now.
+        if (event.getMessage().getNetworkId().isPresent() &&
+                event.getMessage().getNetworkId().getAsInt() != this.networkId.getAsInt()) {
+            return;
+        }
         if (type == DiscoveryMessageType.PING) {
             this.handlePingMessage(event.getAddressIp(), (PingPeerMessage) event.getMessage());
         }
@@ -196,7 +203,7 @@ public class PeerExplorer {
 
         InetSocketAddress localAddress = this.localNode.getAddress();
         String id = UUID.randomUUID().toString();
-        nodeMessage = PingPeerMessage.create(localAddress.getAddress().getHostAddress(), localAddress.getPort(), id, this.key);
+        nodeMessage = PingPeerMessage.create(localAddress.getAddress().getHostAddress(), localAddress.getPort(), id, this.key, this.networkId);
         udpChannel.write(new DiscoveryEvent(nodeMessage, nodeAddress));
 
         PeerDiscoveryRequest request = PeerDiscoveryRequestBuilder.builder().messageId(id)
@@ -229,7 +236,7 @@ public class PeerExplorer {
 
     public PongPeerMessage sendPong(String ip, PingPeerMessage message) {
         InetSocketAddress localAddress = this.localNode.getAddress();
-        PongPeerMessage pongPeerMessage = PongPeerMessage.create(localAddress.getHostName(), localAddress.getPort(), message.getMessageId(), this.key);
+        PongPeerMessage pongPeerMessage = PongPeerMessage.create(localAddress.getHostName(), localAddress.getPort(), message.getMessageId(), this.key, this.networkId);
         InetSocketAddress nodeAddress = new InetSocketAddress(ip, message.getPort());
         udpChannel.write(new DiscoveryEvent(pongPeerMessage, nodeAddress));
 
@@ -239,7 +246,7 @@ public class PeerExplorer {
     public FindNodePeerMessage sendFindNode(Node node) {
         InetSocketAddress nodeAddress = node.getAddress();
         String id = UUID.randomUUID().toString();
-        FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(this.key.getNodeId(), id, this.key);
+        FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(this.key.getNodeId(), id, this.key, this.networkId);
         udpChannel.write(new DiscoveryEvent(findNodePeerMessage, nodeAddress));
         PeerDiscoveryRequest request = PeerDiscoveryRequestBuilder.builder().messageId(id).relatedNode(node)
                 .message(findNodePeerMessage).address(nodeAddress).expectedResponse(DiscoveryMessageType.NEIGHBORS)
@@ -251,7 +258,7 @@ public class PeerExplorer {
 
     public NeighborsPeerMessage sendNeighbors(InetSocketAddress nodeAddress, List<Node> nodes, String id) {
         List<Node> nodesToSend = getRandomizeLimitedList(nodes, MAX_NODES_PER_MSG, 5);
-        NeighborsPeerMessage sendNodesMessage = NeighborsPeerMessage.create(nodesToSend, id, this.key);
+        NeighborsPeerMessage sendNodesMessage = NeighborsPeerMessage.create(nodesToSend, id, this.key, networkId);
         udpChannel.write(new DiscoveryEvent(sendNodesMessage, nodeAddress));
         logger.debug(" [{}] Neighbors Sent to ip:[{}] port:[{}]", nodesToSend.size(), nodeAddress.getAddress().getHostAddress(), nodeAddress.getPort());
 

@@ -30,6 +30,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
+
+import static org.ethereum.util.ByteUtil.intToBytes;
+import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 /**
  * Created by mario on 16/02/17.
@@ -62,9 +66,11 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
         RLPItem chk = (RLPItem) list.get(1);
 
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
+
+        this.setNetworkIdWithRLP(list.get(2));
     }
 
-    public static NeighborsPeerMessage create(List<Node> nodes, String check, ECKey privKey) {
+    public static NeighborsPeerMessage create(List<Node> nodes, String check, ECKey privKey, OptionalInt networkId) {
         byte[][] nodeRLPs = null;
 
         if (nodes != null) {
@@ -80,10 +86,19 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
         byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
 
         byte[] type = new byte[]{(byte) DiscoveryMessageType.NEIGHBORS.getTypeValue()};
-        byte[] data = RLP.encodeList(rlpListNodes, rlpCheck);
+        byte[] data;
+        if (networkId.isPresent()) {
+            byte[] tmpNetworkId = intToBytes(networkId.getAsInt());
+            byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
+            data = RLP.encodeList(rlpListNodes, rlpCheck, rlpNetworkId);
+        } else {
+            data = RLP.encodeList(rlpListNodes, rlpCheck);
+        }
+
 
         NeighborsPeerMessage neighborsMessage = new NeighborsPeerMessage();
         neighborsMessage.encode(type, data, privKey);
+        neighborsMessage.setNetworkId(networkId);
         neighborsMessage.nodes = nodes;
         neighborsMessage.messageId = check;
 
@@ -111,7 +126,8 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
     public String toString() {
         return new ToStringBuilder(this)
                 .append(this.nodes)
-                .append(this.messageId).toString();
+                .append(this.messageId)
+                .append(this.getNetworkId()).toString();
     }
 
 }
