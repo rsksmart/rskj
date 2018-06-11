@@ -30,11 +30,13 @@ public class PeerExplorerCleaner {
     private PeerExplorer peerExplorer;
     private ScheduledExecutorService updateTask;
     private long updatePeriod;
+    private long cleanPeriod;
     private boolean running = false;
 
-    public PeerExplorerCleaner(PeerExplorer peerExplorer, long updatePeriod) {
+    public PeerExplorerCleaner(PeerExplorer peerExplorer, long updatePeriod, long cleanPeriod) {
         this.peerExplorer = peerExplorer;
         this.updatePeriod = updatePeriod;
+        this.cleanPeriod = cleanPeriod;
 
         this.updateTask = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PeerExplorerCleaner"));
     }
@@ -47,7 +49,8 @@ public class PeerExplorerCleaner {
     }
 
     private void startUpdateTask() {
-        updateTask.scheduleAtFixedRate(() -> peerExplorer.cleanAndUpdate(), updatePeriod, updatePeriod, TimeUnit.MILLISECONDS);
+        updateTask.scheduleAtFixedRate(() -> peerExplorer.clean(), cleanPeriod, cleanPeriod, TimeUnit.MILLISECONDS);
+        updateTask.scheduleAtFixedRate(() -> peerExplorer.update(), updatePeriod, updatePeriod, TimeUnit.MILLISECONDS);
     }
 
 

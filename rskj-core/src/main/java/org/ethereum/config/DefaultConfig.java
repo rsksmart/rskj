@@ -210,6 +210,7 @@ public class DefaultConfig {
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
         long msgTimeOut = rskConfig.peerDiscoveryMessageTimeOut();
         long refreshPeriod = rskConfig.peerDiscoveryRefreshPeriod();
+        long cleanPeriod = rskConfig.peerDiscoveryCleanPeriod();
         List<String> initialBootNodes = rskConfig.peerDiscoveryIPList();
         List<Node> activePeers = rskConfig.peerActive();
         if(CollectionUtils.isNotEmpty(activePeers)) {
@@ -218,7 +219,7 @@ public class DefaultConfig {
                 initialBootNodes.add(address.getHostName() + ":" + address.getPort());
             }
         }
-        return new PeerExplorer(initialBootNodes, localNode, distanceTable, key, msgTimeOut, refreshPeriod);
+        return new PeerExplorer(initialBootNodes, localNode, distanceTable, key, msgTimeOut, refreshPeriod, cleanPeriod);
     }
 
     @Bean
