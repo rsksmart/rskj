@@ -25,6 +25,7 @@ import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.util.FileUtil;
@@ -57,7 +58,8 @@ public class CommonConfig {
             logger.info("Database reset done");
         }
 
-        KeyValueDataSource ds = makeDataSource(config, "state");
+        KeyValueDataSource ds = new HashMapDB();
+        // KeyValueDataSource ds = makeDataSource(config, "state");
         KeyValueDataSource detailsDS = makeDataSource(config, "details");
 
         return new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS);
