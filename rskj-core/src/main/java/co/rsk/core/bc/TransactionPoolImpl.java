@@ -73,7 +73,6 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private Block bestBlock;
 
-    private Repository poolRepository;
     private final TxPendingValidator validator;
 
     public TransactionPoolImpl(BlockStore blockStore,
@@ -109,7 +108,6 @@ public class TransactionPoolImpl implements TransactionPool {
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
 
-        this.poolRepository = repository.startTracking();
         this.validator = new TxPendingValidator(config);
 
         if (this.outdatedTimeout > 0) {
@@ -153,7 +151,13 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public synchronized Repository getRepository() { return this.poolRepository; }
+    public Repository getRepository() {
+        Repository pendingRepository = repository.startTracking();
+        TransactionPoolImpl.TransactionSortedSet sorted = new TransactionPoolImpl.TransactionSortedSet();
+        sorted.addAll(getPendingTransactions());
+        executeTransactions(pendingRepository, sorted);
+        return pendingRepository;
+    }
 
     @Override
     public synchronized List<Transaction> addTransactions(final List<Transaction> txs) {
@@ -243,8 +247,6 @@ public class TransactionPoolImpl implements TransactionPool {
 
         pendingTransactions.addTransaction(tx);
 
-        executeTransaction(tx);
-
         if (listener != null) {
             EventDispatchThread.invokeLater(() -> {
                 listener.onPendingTransactionsReceived(Collections.singletonList(tx));
@@ -288,7 +290,6 @@ public class TransactionPoolImpl implements TransactionPool {
 
         removeObsoleteTransactions(block.getNumber(), this.outdatedThreshold, this.outdatedTimeout);
 
-        updateState();
         bestBlock = block;
 
         if (listener != null) {
@@ -389,23 +390,17 @@ public class TransactionPoolImpl implements TransactionPool {
         return ret;
     }
 
-    public synchronized void updateState() {
-        logger.trace("update state");
-        poolRepository = repository.startTracking();
-
-        TransactionSortedSet sorted = new TransactionSortedSet();
-        sorted.addAll(pendingTransactions.getTransactions());
-
-        for (Transaction tx : sorted.toArray(new Transaction[0])) {
-            executeTransaction(tx);
+    private void executeTransactions(Repository currentRepository, SortedSet<Transaction> pendingTransactions) {
+        for (Transaction pendingTransaction : pendingTransactions) {
+            executeTransaction(currentRepository, pendingTransaction);
         }
     }
 
-    private void executeTransaction(Transaction tx) {
+    private void executeTransaction(Repository currentRepository, Transaction tx) {
         logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
 
         TransactionExecutor executor = new TransactionExecutor(
-                config, tx, 0, bestBlock.getCoinbase(), poolRepository,
+                config, tx, 0, bestBlock.getCoinbase(), currentRepository,
                 blockStore, receiptStore, programInvokeFactory, createFakePendingBlock(bestBlock)
         );
 

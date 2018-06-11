@@ -228,21 +228,6 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addAndExecuteTwoPendingTransaction() {
-        Coin balance = Coin.valueOf(1000000);
-        createTestAccounts(2, balance);
-        Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
-        Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
-        Account receiver = createAccount(2);
-
-        transactionPool.addTransaction(tx1);
-        transactionPool.addTransaction(tx2);
-
-        Repository repository = transactionPool.getRepository();
-        Assert.assertEquals(BigInteger.valueOf(1004000), repository.getBalance(receiver.getAddress()).asBigInteger());
-    }
-
-    @Test
     public void rejectTransactionPoolTransaction() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
@@ -493,8 +478,6 @@ public class TransactionPoolImplTest {
 
         transactionPool.addTransaction(tx1);
         transactionPool.addTransaction(tx2);
-
-        transactionPool.updateState();
 
         Repository repository = transactionPool.getRepository();
         Assert.assertEquals(BigInteger.valueOf(1004000), repository.getBalance(receiver.getAddress()).asBigInteger());
