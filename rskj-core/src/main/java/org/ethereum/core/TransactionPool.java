@@ -19,6 +19,8 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.bc.PendingState;
+
 import java.util.List;
 
 public interface TransactionPool {
@@ -69,7 +71,7 @@ public interface TransactionPool {
     List<Transaction> getQueuedTransactions();
 
     /**
-     * @return pending state repository
+     * @return pending state
      */
-    Repository getRepository();
+    PendingState getPendingState();
 }

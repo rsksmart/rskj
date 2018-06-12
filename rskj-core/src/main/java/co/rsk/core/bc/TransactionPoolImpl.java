@@ -151,12 +151,16 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public Repository getRepository() {
-        Repository pendingRepository = repository.startTracking();
-        TransactionPoolImpl.TransactionSortedSet sorted = new TransactionPoolImpl.TransactionSortedSet();
-        sorted.addAll(getPendingTransactions());
-        executeTransactions(pendingRepository, sorted);
-        return pendingRepository;
+    public PendingState getPendingState() {
+        removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
+        return new PendingState(
+            repository,
+            new TransactionSet(pendingTransactions),
+            (repository, tx) ->
+                new TransactionExecutor(
+                    config, tx, 0, bestBlock.getCoinbase(), repository,
+                    blockStore, receiptStore, programInvokeFactory, createFakePendingBlock(bestBlock))
+        );
     }
 
     @Override
@@ -233,8 +237,7 @@ public class TransactionPoolImpl implements TransactionPool {
         transactionTimes.put(hash, timestampSeconds);
 
         BigInteger txnonce = tx.getNonceAsInteger();
-
-        if (!txnonce.equals(this.getNextNonceByAccount(tx.getSender()))) {
+        if (!txnonce.equals(getPendingState().getNonce(tx.getSender()))) {
             this.addQueuedTransaction(tx);
 
             return false;
@@ -255,20 +258,6 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         return true;
-    }
-
-    private BigInteger getNextNonceByAccount(RskAddress account) {
-        BigInteger nextNonce = this.repository.getNonce(account);
-
-        for (Transaction tx : this.pendingTransactions.getTransactionsWithSender(account)) {
-            BigInteger txNonce = tx.getNonceAsInteger();
-
-            if (txNonce.compareTo(nextNonce) >= 0) {
-                nextNonce = txNonce.add(BigInteger.ONE);
-            }
-        }
-
-        return nextNonce;
     }
 
     @Override
@@ -377,9 +366,7 @@ public class TransactionPoolImpl implements TransactionPool {
     @Override
     public synchronized List<Transaction> getPendingTransactions() {
         removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
-        List<Transaction> ret = new ArrayList<>();
-        ret.addAll(pendingTransactions.getTransactions());
-        return ret;
+        return Collections.unmodifiableList(pendingTransactions.getTransactions());
     }
 
     @Override
@@ -388,26 +375,6 @@ public class TransactionPoolImpl implements TransactionPool {
         List<Transaction> ret = new ArrayList<>();
         ret.addAll(queuedTransactions.getTransactions());
         return ret;
-    }
-
-    private void executeTransactions(Repository currentRepository, SortedSet<Transaction> pendingTransactions) {
-        for (Transaction pendingTransaction : pendingTransactions) {
-            executeTransaction(currentRepository, pendingTransaction);
-        }
-    }
-
-    private void executeTransaction(Repository currentRepository, Transaction tx) {
-        logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
-
-        TransactionExecutor executor = new TransactionExecutor(
-                config, tx, 0, bestBlock.getCoinbase(), currentRepository,
-                blockStore, receiptStore, programInvokeFactory, createFakePendingBlock(bestBlock)
-        );
-
-        executor.init();
-        executor.execute();
-        executor.go();
-        executor.finalization();
     }
 
     private void addQueuedTransaction(Transaction tx) {
@@ -486,20 +453,5 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         return gasCost;
-    }
-
-    public static class TransactionSortedSet extends TreeSet<Transaction> {
-        private static final long serialVersionUID = -6064476246506094585L;
-
-        public TransactionSortedSet() {
-            super((tx1, tx2) -> {
-                long nonceDiff = ByteUtil.byteArrayToLong(tx1.getNonce()) -
-                        ByteUtil.byteArrayToLong(tx2.getNonce());
-                if (nonceDiff != 0) {
-                    return nonceDiff > 0 ? 1 : -1;
-                }
-                return tx1.getHash().compareTo(tx2.getHash());
-            });
-        }
     }
 }
