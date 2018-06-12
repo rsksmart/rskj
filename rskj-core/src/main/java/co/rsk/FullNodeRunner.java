@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class FullNodeRunner implements NodeRunner {
-    private static Logger logger = LoggerFactory.getLogger("fullnoderunner");
+    private static final Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
     private final Rsk rsk;
     private final UDPServer udpServer;
@@ -130,6 +130,7 @@ public class FullNodeRunner implements NodeRunner {
         BuildInfo.printInfo();
 
         transactionGateway.start();
+
         // this should be the genesis block at this point
         transactionPool.start(blockchain.getBestBlock());
         channelManager.start();

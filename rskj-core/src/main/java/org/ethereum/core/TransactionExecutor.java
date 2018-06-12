@@ -24,6 +24,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.util.Benchmarker;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
@@ -39,6 +40,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -239,6 +241,12 @@ public class TransactionExecutor {
     }
 
     private void call() {
+        byte[] txData = tx.getData();
+        String benchmarkData = String.format("%s::%s",
+                Hex.toHexString(tx.getReceiveAddress().getBytes()),
+                Hex.toHexString(txData != null ? txData : new byte[0])
+        );
+        Benchmarker.get("rsk").start("transactionExecutor::call", benchmarkData);
         if (!readyToExecute) {
             return;
         }
@@ -264,6 +272,7 @@ public class TransactionExecutor {
                 execError(String.format("Out of Gas calling precompiled contract 0x%s, required: %d, left: %s ",
                         targetAddress.toString(), (requiredGas + basicTxCost), mEndGas));
                 mEndGas = BigInteger.ZERO;
+                Benchmarker.get("rsk").end("transactionExecutor::call");
                 return;
             } else {
                 long gasUsed = requiredGas + basicTxCost;
@@ -298,6 +307,7 @@ public class TransactionExecutor {
             Coin endowment = tx.getValue();
             cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
         }
+        Benchmarker.get("rsk").end("transactionExecutor::call");
     }
 
     private void create() {

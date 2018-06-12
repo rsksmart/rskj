@@ -27,6 +27,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.util.Benchmarker;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
@@ -241,6 +242,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public byte[] execute(byte[] data) {
+        Benchmarker.get("rsk").start("bridge::execute");
         try
         {
             BridgeParsedData bridgeParsedData = parseData(data);
@@ -249,25 +251,35 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 return null;
             }
 
+            Benchmarker.get("rsk").start("bridge::bridgeSupportSetup");
             this.bridgeSupport = setup();
+            Benchmarker.get("rsk").end("bridge::bridgeSupportSetup");
 
             Optional<?> result;
             try {
                 // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
                 // If the user tries to call an non-existent function, parseData() will return null.
+                Benchmarker.get("rsk").start("bridge::execute", bridgeParsedData.bridgeMethod.getFunction().name);
                 result = bridgeParsedData.bridgeMethod.getExecutor().execute(this, bridgeParsedData.args);
+                Benchmarker.get("rsk").end("bridge::execute");
             } catch (BridgeIllegalArgumentException ex) {
                 logger.warn("Error executing: {}", bridgeParsedData.bridgeMethod, ex);
+                Benchmarker.get("rsk").end("bridge::execute");
                 return null;
             }
 
+            Benchmarker.get("rsk").start("bridge::teardown");
             teardown();
+            Benchmarker.get("rsk").end("bridge::teardown");
 
-            return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(null);
+            byte[] resultToReturn = result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(null);
+            Benchmarker.get("rsk").end("bridge::execute");
+            return resultToReturn;
         }
         catch(Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("bridgeexecute", ex.getMessage());
+            Benchmarker.get("rsk").end("bridge::execute");
             throw new RuntimeException(String.format("Exception executing bridge: %s", ex.getMessage()), ex);
         }
     }

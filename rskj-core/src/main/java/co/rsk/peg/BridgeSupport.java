@@ -35,6 +35,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
+import co.rsk.util.Benchmarker;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
@@ -144,9 +145,17 @@ public class BridgeSupport {
                 config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                 eventLogger
         );
+        Benchmarker.get("rsk").start("bridgeSupport::buildBtcContext");
         this.btcContext = new Context(this.bridgeConstants.getBtcParams());
+        Benchmarker.get("rsk").end("bridgeSupport::buildBtcContext");
+
+        Benchmarker.get("rsk").start("bridgeSupport::buildRepositoryBlockstore");
         this.btcBlockStore = buildRepositoryBlockStore();
+        Benchmarker.get("rsk").end("bridgeSupport::buildRepositoryBlockstore");
+
+        Benchmarker.get("rsk").start("bridgeSupport::buildBtcBlockchain");
         this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+        Benchmarker.get("rsk").end("bridgeSupport::buildBtcBlockchain");
     }
 
     // this constructor has all common parameters, mostly dependencies that aren't instantiated here
@@ -163,7 +172,10 @@ public class BridgeSupport {
         this.config = config;
         this.bridgeConstants = bridgeConstants;
         this.eventLogger = eventLogger;
+
+        Benchmarker.get("rsk").start("bridgeSupport::buildFederationSupport");
         this.federationSupport = new FederationSupport(provider, bridgeConstants, executionBlock);
+        Benchmarker.get("rsk").end("bridgeSupport::buildFederationSupport");
     }
 
     private RepositoryBlockStore buildRepositoryBlockStore() throws BlockStoreException, IOException {
