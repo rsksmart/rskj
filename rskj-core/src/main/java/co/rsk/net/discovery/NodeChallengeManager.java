@@ -19,6 +19,7 @@
 package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.message.PingPeerMessage;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.net.rlpx.Node;
 
 import java.util.Map;
@@ -40,5 +41,10 @@ public class NodeChallengeManager {
 
     public NodeChallenge removeChallenge(String challengeId) {
         return activeChallenges.remove(challengeId);
+    }
+
+    @VisibleForTesting
+    public int activeChallengesCount() {
+        return activeChallenges.size();
     }
 }
