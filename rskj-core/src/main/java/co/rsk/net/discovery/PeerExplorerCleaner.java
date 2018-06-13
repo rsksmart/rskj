@@ -37,7 +37,7 @@ public class PeerExplorerCleaner {
         this.peerExplorer = peerExplorer;
         this.updatePeriod = updatePeriod;
         this.cleanPeriod = cleanPeriod;
-
+        // it should stay on a single thread since there are two tasks that could interfere with each other running here
         this.updateTask = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PeerExplorerCleaner"));
     }
 

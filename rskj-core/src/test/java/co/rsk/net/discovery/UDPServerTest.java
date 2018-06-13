@@ -91,18 +91,24 @@ public class UDPServerTest {
 
         udpServer3.start();
         TimeUnit.SECONDS.sleep(2);
-        peerExplorer3.cleanAndUpdate();
+        peerExplorer3.update();
+        peerExplorer3.clean();
 
         udpServer2.start();
         TimeUnit.SECONDS.sleep(2);
-        peerExplorer2.cleanAndUpdate();
-        peerExplorer3.cleanAndUpdate();
+        peerExplorer2.update();
+        peerExplorer2.clean();
+        peerExplorer3.update();
+        peerExplorer3.clean();
 
         udpServer1.start();
         TimeUnit.SECONDS.sleep(2);
-        peerExplorer1.cleanAndUpdate();
-        peerExplorer2.cleanAndUpdate();
-        peerExplorer3.cleanAndUpdate();
+        peerExplorer1.update();
+        peerExplorer1.clean();
+        peerExplorer2.update();
+        peerExplorer2.clean();
+        peerExplorer3.update();
+        peerExplorer3.clean();
 
         TimeUnit.SECONDS.sleep(2);
 

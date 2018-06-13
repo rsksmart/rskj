@@ -270,12 +270,6 @@ public class PeerExplorer {
         removeExpiredRequests(this.pendingFindNodeRequests);
     }
 
-    @VisibleForTesting
-    public void cleanAndUpdate() {
-        this.update();
-        this.clean();
-    }
-
     public void clean() {
         this.purgeRequests();
     }
@@ -370,5 +364,10 @@ public class PeerExplorer {
         }
 
         return ret;
+    }
+
+    @VisibleForTesting
+    public NodeChallengeManager getChallengeManager() {
+        return challengeManager;
     }
 }
