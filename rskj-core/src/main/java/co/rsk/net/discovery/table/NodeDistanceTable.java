@@ -35,7 +35,7 @@ public class NodeDistanceTable {
 
     public NodeDistanceTable(int numberOfBuckets, int entriesPerBucket, Node localNode) {
         this.localNode = localNode;
-        this.distanceCalculator = new DistanceCalculator(KademliaOptions.BINS);
+        this.distanceCalculator = new DistanceCalculator(numberOfBuckets);
 
         for (int i = 0; i < numberOfBuckets; i++) {
             buckets.put(i, new Bucket(entriesPerBucket, i));

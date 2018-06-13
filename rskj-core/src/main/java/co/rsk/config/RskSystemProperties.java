@@ -52,7 +52,13 @@ import java.util.List;
 public class RskSystemProperties extends SystemProperties {
     private static final Logger logger = LoggerFactory.getLogger("config");
 
-    public static final int PD_DEFAULT_REFRESH_PERIOD = 60000;
+    /** while timeout period is lower than clean period it doesn't affect much since
+    requests will be checked after a clean period.
+     **/
+    private static final int PD_DEFAULT_CLEAN_PERIOD = 15000; //miliseconds
+    private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; //miliseconds
+    private static final int PD_DEFAULT_REFRESH_PERIOD = 60000; //miliseconds
+
     public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
@@ -261,7 +267,7 @@ public class RskSystemProperties extends SystemProperties {
 
     public long peerDiscoveryMessageTimeOut() {
         return configFromFiles.hasPath("peer.discovery.msg.timeout") ?
-                configFromFiles.getLong("peer.discovery.msg.timeout") : 30000;
+                configFromFiles.getLong("peer.discovery.msg.timeout") : PD_DEFAULT_TIMEOUT_MESSAGE;
     }
 
     public long peerDiscoveryRefreshPeriod() {
@@ -428,5 +434,9 @@ public class RskSystemProperties extends SystemProperties {
 
     public PruneConfiguration getPruneConfiguration() {
         return new PruneConfiguration(this.getPruneNoBlocksToCopy(), this.getPruneNoBlocksToAvoidForks(), this.getPruneNoBlocksToWait());
+    }
+
+    public long peerDiscoveryCleanPeriod() {
+        return PD_DEFAULT_CLEAN_PERIOD;
     }
 }

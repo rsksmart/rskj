@@ -48,7 +48,8 @@ public class NodeChallengeManagerTest {
     private static final int PORT_3 = 44037;
 
     private static final long TIMEOUT = 30000;
-    private static final long REFRESH = 60000;
+    private static final long UPDATE = 60000;
+    private static final long CLEAN = 60000;
 
 
     @Test
@@ -62,7 +63,7 @@ public class NodeChallengeManagerTest {
         Node node3 = new Node(key3.getNodeId(), HOST_3, PORT_3);
 
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node1);
-        PeerExplorer peerExplorer = new PeerExplorer(new ArrayList<>(), node1, distanceTable, new ECKey(), TIMEOUT, REFRESH);
+        PeerExplorer peerExplorer = new PeerExplorer(new ArrayList<>(), node1, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN);
         peerExplorer.setUDPChannel(Mockito.mock(UDPChannel.class));
 
         NodeChallengeManager manager = new NodeChallengeManager();
