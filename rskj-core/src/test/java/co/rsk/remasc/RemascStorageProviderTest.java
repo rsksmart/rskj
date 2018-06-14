@@ -33,6 +33,9 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.RegTestConfig;
+import org.ethereum.config.blockchain.mainnet.MainNetAfterBridgeSyncConfig;
+import org.ethereum.config.blockchain.mainnet.MainNetFirstForkConfig;
 import org.ethereum.config.blockchain.testnet.TestNetAfterBridgeSyncConfig;
 import org.ethereum.config.blockchain.testnet.TestNetFirstForkConfig;
 import org.ethereum.config.net.TestNetConfig;
@@ -370,6 +373,46 @@ public class RemascStorageProviderTest {
 
         testRunner.start();
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(testRunner.getBlockChain()), Coin.valueOf(0L), Coin.valueOf(0L), 0L);
+    }
+
+    @Test
+    public void hasSiblingsStoredBeforeRFS() throws IOException {
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = new MainNetAfterBridgeSyncConfig();
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        long minerFee = 21000;
+        long txValue = 10000;
+
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
+
+        List<SiblingElement> siblings = Lists.newArrayList(new SiblingElement(5, 6, minerFee), new SiblingElement(10, 11, minerFee));
+
+        RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)
+                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey);
+
+        testRunner.start();
+        Assert.assertFalse(this.getRemascStorageProvider(testRunner.getBlockChain()).getSiblings().isEmpty());
+    }
+
+    @Test
+    public void noSiblingsStoredAfterRFS() throws IOException {
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = new MainNetFirstForkConfig();
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        long minerFee = 21000;
+        long txValue = 10000;
+
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
+
+        List<SiblingElement> siblings = Lists.newArrayList(new SiblingElement(5, 6, minerFee), new SiblingElement(10, 11, minerFee));
+
+        RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)
+                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey);
+
+        testRunner.start();
+        Assert.assertTrue(this.getRemascStorageProvider(testRunner.getBlockChain()).getSiblings().isEmpty());
     }
 
     @Test

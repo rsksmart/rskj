@@ -209,6 +209,10 @@ public class Remasc {
 
         if (!isRskIp15BisEnabled) {
             this.removeUsedSiblings(processingBlockHeader);
+        } else {
+            if (!this.provider.getSiblings().isEmpty()) {
+                this.provider.getSiblings().clear();
+            }
         }
     }
 
