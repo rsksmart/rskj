@@ -272,7 +272,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    private BridgeSupport setup() throws Exception {
+    private BridgeSupport setup() {
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(this.bridgeConstants, this.logs);
         return new BridgeSupport(this.config, repository, eventLogger, contractAddress, rskExecutionBlock);
     }
@@ -733,7 +733,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.removeLockWhitelistAddress(rskTx, addressBase58);
     }
 
-    public Integer setLockWhitelistDisableBlockDelay(Object[] args) {
+    public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException {
         logger.trace("setLockWhitelistDisableBlockDelay");
         BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
         return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);

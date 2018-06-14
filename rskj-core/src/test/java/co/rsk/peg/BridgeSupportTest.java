@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
@@ -128,8 +129,13 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
-        Assert.assertEquals(0, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
-        Assert.assertEquals(_networkParameters.getGenesisBlock(), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
+
+        // Force instantiation of blockstore
+        bridgeSupport.getBtcBlockchainBestChainHeight();
+
+        StoredBlock chainHead = getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead();
+        Assert.assertEquals(0, chainHead.getHeight());
+        Assert.assertEquals(_networkParameters.getGenesisBlock(), chainHead.getHeader());
     }
 
     @Test
@@ -144,7 +150,11 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
-        Assert.assertEquals(1229760, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
+
+        // Force instantiation of blockstore
+        bridgeSupport.getBtcBlockchainBestChainHeight();
+
+        Assert.assertEquals(1229760, getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead().getHeight());
     }
 
     @Test
@@ -172,8 +182,13 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
-        Assert.assertEquals(0, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
-        Assert.assertEquals(_networkParameters.getGenesisBlock(), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
+
+        // Force instantiation of blockstore
+        bridgeSupport.getBtcBlockchainBestChainHeight();
+
+        StoredBlock chainHead = getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead();
+        Assert.assertEquals(0, chainHead.getHeight());
+        Assert.assertEquals(_networkParameters.getGenesisBlock(), chainHead.getHeader());
 
         List<Sha256Hash> locator = bridgeSupport.getBtcBlockchainBlockLocator();
         Assert.assertEquals(1, locator.size());
@@ -207,8 +222,13 @@ public class BridgeSupportTest {
                 return getCheckpoints(_networkParameters, checkpoints);
             }
         };
-        Assert.assertEquals(10, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
-        Assert.assertEquals(checkpoints.get(9), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
+
+        // Force instantiation of blockstore
+        bridgeSupport.getBtcBlockchainBestChainHeight();
+
+        StoredBlock chainHead = getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead();
+        Assert.assertEquals(10, chainHead.getHeight());
+        Assert.assertEquals(checkpoints.get(9), chainHead.getHeader());
 
         List<Sha256Hash> locator = bridgeSupport.getBtcBlockchainBlockLocator();
         Assert.assertEquals(1, locator.size());
@@ -1287,8 +1307,8 @@ public class BridgeSupportTest {
         doReturn(btcParams).when(bridgeConstants).getBtcParams();
         StoredBlock storedBlock = mock(StoredBlock.class);
         doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
-        BtcBlockChain btcBlockChain = mock(BtcBlockChain.class);
-        doReturn(storedBlock).when(btcBlockChain).getChainHead();
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
+        doReturn(storedBlock).when(btcBlockStore).getChainHead();
 
         BridgeSupport bridgeSupport = new BridgeSupport(
                 mock(TestSystemProperties.class),
@@ -1296,8 +1316,8 @@ public class BridgeSupportTest {
                 mock(BridgeEventLogger.class),
                 bridgeConstants,
                 mock(BridgeStorageProvider.class),
-                mock(BtcBlockstoreWithCache.class),
-                btcBlockChain,
+                btcBlockStore,
+                null,
                 null
         );
 
@@ -1395,13 +1415,11 @@ public class BridgeSupportTest {
         // Set scipt sign to tx input
         tx.getInput(0).setScriptSig(scriptSig);
 
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
-        BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain, executionBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1412,13 +1430,14 @@ public class BridgeSupportTest {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
-        btcBlockChain.add(block);
-        ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
+        // Simulate that the block is in there but that there is a chain of blocks on top of it,
+        // so that the blockchain can be iterated and the block found
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, 30);
+
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
         bridgeSupport.save();
-        ((SimpleBlockChain)btcBlockChain).useBlock();
 
         track.commit();
 
@@ -1487,15 +1506,12 @@ public class BridgeSupportTest {
         // Set scipt sign to tx input
         tx.getInput(0).setScriptSig(scriptSig);
 
-
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
-        BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         provider.setNewFederation(activeFederation);
         provider.setOldFederation(retiringFederation);
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain, executionBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
 
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -1506,13 +1522,14 @@ public class BridgeSupportTest {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
-        btcBlockChain.add(block);
-        ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
+        // Simulate that the block is in there but that there is a chain of blocks on top of it,
+        // so that the blockchain can be iterated and the block found
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, 30);
+
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
         bridgeSupport.save();
-        ((SimpleBlockChain)btcBlockChain).useBlock();
 
         track.commit();
 
@@ -1523,7 +1540,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerBtcTransactionLockTxWhitelisted() throws BlockStoreException, AddressFormatException, IOException {
+    public void registerBtcTransactionLockTxWhitelisted() throws Exception {
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         NetworkParameters parameters = bridgeConstants.getBtcParams();
 
@@ -1569,9 +1586,7 @@ public class BridgeSupportTest {
         BtcECKey srcKey3 = new BtcECKey();
         tx3.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey3));
 
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
-        BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         provider.setNewFederation(federation1);
@@ -1586,7 +1601,7 @@ public class BridgeSupportTest {
         whitelist.put(address2, Coin.COIN.multiply(10));
         whitelist.put(address3, Coin.COIN.multiply(2).add(Coin.COIN.multiply(3)));
 
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain, executionBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
 
@@ -1598,16 +1613,16 @@ public class BridgeSupportTest {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
-        btcBlockChain.add(block);
+        // Simulate that the block is in there but that there is a chain of blocks on top of it,
+        // so that the blockchain can be iterated and the block found
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, 30);
 
-        ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx2.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx3.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx2.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx3.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
         bridgeSupport.save();
-        ((SimpleBlockChain)btcBlockChain).useBlock();
 
         track.commit();
         Assert.assertThat(whitelist.isWhitelisted(address1), is(false));
@@ -1691,15 +1706,13 @@ public class BridgeSupportTest {
         BtcECKey srcKey3 = new BtcECKey();
         tx3.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey3));
 
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
-        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
-        BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         provider.setNewFederation(federation1);
         provider.setOldFederation(federation2);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, btcBlockChain, executionBlock);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
 
@@ -1711,20 +1724,20 @@ public class BridgeSupportTest {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
-        btcBlockChain.add(block);
+        // Simulate that the block is in there but that there is a chain of blocks on top of it,
+        // so that the blockchain can be iterated and the block found
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, 30);
 
         Transaction rskTx1 = getMockedRskTxWithHash("aa");
         Transaction rskTx2 = getMockedRskTxWithHash("bb");
         Transaction rskTx3 = getMockedRskTxWithHash("cc");
 
-        ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(rskTx1, tx1.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
-        bridgeSupport.registerBtcTransaction(rskTx2, tx2.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
-        bridgeSupport.registerBtcTransaction(rskTx3, tx3.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(rskTx1, tx1.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(rskTx2, tx2.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(rskTx3, tx3.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
         bridgeSupport.save();
-        ((SimpleBlockChain)btcBlockChain).useBlock();
 
         track.commit();
 
@@ -3103,5 +3116,44 @@ public class BridgeSupportTest {
                 0,
                 false,
                 ScriptBuilder.createOutputScript(address));
+    }
+
+    private BtcBlockStore getBtcBlockStoreFromBridgeSupport(BridgeSupport bridgeSupport) {
+        return (BtcBlockStore) Whitebox.getInternalState(bridgeSupport, "btcBlockStore");
+    }
+
+    private void mockChainOfStoredBlocks(BtcBlockstoreWithCache btcBlockStore, BtcBlock targetHeader, int headHeight, int targetHeight) throws BlockStoreException {
+        // Simulate that the block is in there by mocking the getter by height,
+        // and then simulate that the txs have enough confirmations by setting a high head.
+        // Finally, create a chain of mocks linked by the previous block hash, so that the
+        // BridgeUtils::getStoredBlockAtHeight function can find the block we're interested in
+        // by following that chain.
+        StoredBlock currentStored;
+        BtcBlock currentBlock;
+        Sha256Hash currentHash, prevHash = null;
+        for (int i = 0; i < headHeight - targetHeight; i++) {
+            // Mock current pointer's header
+            currentStored = mock(StoredBlock.class);
+            currentBlock = mock(BtcBlock.class);
+            when(currentStored.getHeader()).thenReturn(currentBlock);
+
+            // Is it the chain's head?
+            if (i == 0) {
+                when(btcBlockStore.getChainHead()).thenReturn(currentStored);
+                when(currentStored.getHeight()).thenReturn(headHeight);
+            }
+
+            // Mock current pointer's header hashes
+            currentHash = Sha256Hash.wrap(HashUtil.sha256(new byte[]{(byte)i}));
+            prevHash = Sha256Hash.wrap(HashUtil.sha256(new byte[]{(byte)(i+1)}));
+            when(currentBlock.getHash()).thenReturn(currentHash);
+            when(currentBlock.getPrevBlockHash()).thenReturn(prevHash);
+
+            // Mock store to return corresponding stored block for the given hash
+            when(btcBlockStore.getFromCache(currentHash)).thenReturn(currentStored);
+        }
+
+        // Last one should be the block we need
+        when(btcBlockStore.getFromCache(prevHash)).thenReturn(new StoredBlock(targetHeader, BigInteger.ONE, targetHeight));
     }
 }
