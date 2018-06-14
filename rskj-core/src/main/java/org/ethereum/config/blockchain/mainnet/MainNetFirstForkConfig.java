@@ -21,4 +21,9 @@ public class MainNetFirstForkConfig extends MainNetAfterBridgeSyncConfig {
     public boolean isRcs230() {
         return true;
     }
+
+    @Override
+    public boolean isRskIp15Bis() {
+        return true;
+    }
 }

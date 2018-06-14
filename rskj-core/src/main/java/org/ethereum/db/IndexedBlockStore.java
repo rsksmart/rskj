@@ -45,7 +45,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
-    private final BlockCache blockCache = new BlockCache(5000);
+    private final BlockCache blockCache = new BlockCache(50000);
 
     private final Map<Long, List<BlockInfo>> index;
     private final DB indexDB;
