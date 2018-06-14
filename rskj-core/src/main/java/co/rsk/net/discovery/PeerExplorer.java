@@ -24,6 +24,7 @@ import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
 import co.rsk.util.IpUtils;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.crypto.ECKey;
@@ -47,6 +48,7 @@ public class PeerExplorer {
     private static final int MAX_NODES_PER_MSG = 20;
     private static final int MAX_NODES_TO_ASK = 24;
     private static final int MAX_NODES_TO_CHECK = 16;
+    private static final int RETRIES_COUNT = 3;
 
     private final Set<InetSocketAddress> bootNodes = ConcurrentHashMap.newKeySet();
     private final Map<String, PeerDiscoveryRequest> pendingPingRequests = new ConcurrentHashMap<>();
@@ -70,7 +72,7 @@ public class PeerExplorer {
 
     private long requestTimeout;
 
-    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long refreshPeriod) {
+    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long updatePeriod, long cleanPeriod) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
@@ -78,7 +80,7 @@ public class PeerExplorer {
 
         loadInitialBootNodes(initialBootNodes);
 
-        this.cleaner = new PeerExplorerCleaner(this, refreshPeriod);
+        this.cleaner = new PeerExplorerCleaner(this, updatePeriod, cleanPeriod);
         this.challengeManager = new NodeChallengeManager();
         this.requestTimeout = reqTimeOut;
     }
@@ -259,20 +261,23 @@ public class PeerExplorer {
     }
 
     public void purgeRequests() {
-        List<PeerDiscoveryRequest> oldPingRequests = this.removeExpiredRequests(this.pendingPingRequests);
-        this.resendExpiredPing(oldPingRequests);
-        this.removeConnections(oldPingRequests.stream().
-                filter(r -> r.getAttemptNumber() >= 3).collect(Collectors.toList()));
+        List<PeerDiscoveryRequest> oldPingRequests = removeExpiredRequests(this.pendingPingRequests);
+        removeExpiredChallenges(oldPingRequests);
+        resendExpiredPing(oldPingRequests);
+        removeConnections(oldPingRequests.stream().
+                filter(r -> r.getAttemptNumber() >= RETRIES_COUNT).collect(Collectors.toList()));
 
         removeExpiredRequests(this.pendingFindNodeRequests);
     }
 
-    public void cleanAndUpdate() {
+    public void clean() {
+        this.purgeRequests();
+    }
+
+    public void update() {
         List<Node> closestNodes = this.distanceTable.getClosestNodes(this.localNode.getId());
         this.askForMoreNodes(closestNodes);
         this.checkPeersPulse(closestNodes);
-
-        this.purgeRequests();
     }
 
     private void checkPeersPulse(List<Node> closestNodes) {
@@ -293,8 +298,12 @@ public class PeerExplorer {
         return requests;
     }
 
+    private void removeExpiredChallenges(List<PeerDiscoveryRequest> peerDiscoveryRequests) {
+        peerDiscoveryRequests.stream().forEach(r -> challengeManager.removeChallenge(r.getMessageId()));
+    }
+
     private void resendExpiredPing(List<PeerDiscoveryRequest> peerDiscoveryRequests) {
-        peerDiscoveryRequests.stream().filter(r -> r.getAttemptNumber() < 3)
+        peerDiscoveryRequests.stream().filter(r -> r.getAttemptNumber() < RETRIES_COUNT)
                 .forEach(r -> sendPing(r.getAddress(), r.getAttemptNumber() + 1));
     }
 
@@ -355,5 +364,10 @@ public class PeerExplorer {
         }
 
         return ret;
+    }
+
+    @VisibleForTesting
+    public NodeChallengeManager getChallengeManager() {
+        return challengeManager;
     }
 }
