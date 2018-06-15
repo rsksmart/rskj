@@ -22,6 +22,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -996,6 +997,15 @@ public class TrieImpl implements Trie {
         }
 
         if (position >= length) {
+            if (this.value == null && value == null)
+                return this;
+
+            if (this.value != null && value != null && this.value.length == value.length) {
+                if (ByteUtil.fastEquals(this.value, value)) {
+                    return this;
+                }
+            }
+
             TrieImpl[] newNodes = cloneNodes(false);
             Keccak256[] newHashes = cloneHashes();
 
@@ -1024,9 +1034,12 @@ public class TrieImpl implements Trie {
             node = new TrieImpl(this.store, this.isSecure);
         }
 
-        node = node.put(key, length, position + 1, value);
+        TrieImpl newnode = node.put(key, length, position + 1, value);
 
-        newNodes[pos] = node;
+        if (newnode == node)
+            return this;
+
+        newNodes[pos] = newnode;
 
         if (newHashes != null) {
             newHashes[pos] = null;
