@@ -19,9 +19,9 @@
 
 package org.ethereum.util;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.BlockDifficulty;
 import co.rsk.util.ByteBufferUtil;
 import co.rsk.util.RLPElementType;
 import co.rsk.util.RLPElementView;
@@ -71,6 +71,16 @@ import static org.spongycastle.util.BigIntegers.asUnsignedByteArray;
  * @since 01.04.2014
  */
 public class RLP {
+    /**
+     * Used to encode boolean values
+     */
+    public static final byte[] TRUE = new byte[]{1};
+
+    /**
+     * Used to encode boolean values
+     */
+    public static final byte[] FALSE = new byte[]{0};
+
     /**
      * Allow for content up to size of 2^64 bytes *
      */
