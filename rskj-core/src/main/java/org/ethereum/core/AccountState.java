@@ -144,21 +144,23 @@ public class AccountState {
     }
 
     public Coin addToBalance(Coin value) {
-        if (!value.equals(Coin.ZERO)) {
-            rlpEncoded = null;
+        if (value.equals(Coin.ZERO)) {
+            return this.balance;
         }
 
         this.balance = balance.add(value);
+        this.rlpEncoded = null;
         setDirty(true);
         return this.balance;
     }
 
     public void subFromBalance(Coin value) {
-        if (!value.equals(Coin.ZERO)) {
-            rlpEncoded = null;
+        if (value.equals(Coin.ZERO)) {
+            return;
         }
         
         this.balance = balance.subtract(value);
+        this.rlpEncoded = null;
         setDirty(true);
     }
 
