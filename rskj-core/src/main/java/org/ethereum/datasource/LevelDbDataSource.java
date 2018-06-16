@@ -53,7 +53,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private Map<ByteArrayWrapper, byte[]> cache = new MaxSizeHashMap<>(10);
+    private Map<ByteArrayWrapper, byte[]> cache = new MaxSizeHashMap<>(1000);
 
     private final RskSystemProperties config;
     private String name;
@@ -213,6 +213,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 return value;
             }
 
+            cache.put(new ByteArrayWrapper(key), value);
             db.put(key, value);
             if (logger.isTraceEnabled()) {
                 logger.trace("<~ LevelDbDataSource.put(): " + name + ", key: " + Hex.toHexString(key) + ", " + (value == null ? "null" : value.length));
