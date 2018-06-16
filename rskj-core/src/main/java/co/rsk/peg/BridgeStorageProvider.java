@@ -56,7 +56,6 @@ public class BridgeStorageProvider {
     private final Repository repository;
     private final RskAddress contractAddress;
     private final NetworkParameters networkParameters;
-    private final Context btcContext;
 
     private Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed;
 
@@ -90,7 +89,6 @@ public class BridgeStorageProvider {
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
-        this.btcContext = new Context(networkParameters);
     }
 
     public List<UTXO> getNewFederationBtcUTXOs() throws IOException {
@@ -215,7 +213,7 @@ public class BridgeStorageProvider {
                 data ->
                         data == null
                         ? null
-                        : BridgeSerializationUtils.deserializeFederation(data, btcContext)
+                        : BridgeSerializationUtils.deserializeFederation(data, new Context(networkParameters))
         );
         return newFederation;
     }
@@ -244,7 +242,7 @@ public class BridgeStorageProvider {
         oldFederation = safeGetFromRepository(OLD_FEDERATION_KEY,
                 data -> data == null
                         ? null
-                        : BridgeSerializationUtils.deserializeFederation(data, btcContext)
+                        : BridgeSerializationUtils.deserializeFederation(data, new Context(networkParameters))
         );
         return oldFederation;
     }
@@ -329,7 +327,7 @@ public class BridgeStorageProvider {
         lockWhitelist = safeGetFromRepository(LOCK_WHITELIST_KEY,
             data -> (data == null)?
                 new LockWhitelist(new HashMap<>()) :
-                BridgeSerializationUtils.deserializeLockWhitelist(data, btcContext.getParams())
+                BridgeSerializationUtils.deserializeLockWhitelist(data, new Context(networkParameters).getParams())
         );
 
         return lockWhitelist;
