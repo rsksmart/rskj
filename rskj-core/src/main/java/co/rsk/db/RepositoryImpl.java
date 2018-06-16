@@ -326,6 +326,9 @@ public class RepositoryImpl implements Repository {
 
         for (Map.Entry<RskAddress, AccountState> entry : stateCache.entrySet()) {
             RskAddress addr = entry.getKey();
+
+            logger.debug("updatingBatch: address {}", addr);
+
             AccountState accountState = entry.getValue();
 
             ContractDetails contractDetails = detailsCache.get(addr);
@@ -333,10 +336,11 @@ public class RepositoryImpl implements Repository {
             if (accountState.isDeleted()) {
                 delete(addr);
                 logger.debug("delete: [{}]", addr);
-            } else {
-                if (!contractDetails.isDirty()) {
-                    continue;
-                }
+                continue;
+            }
+
+            if (contractDetails.isDirty()) {
+                logger.debug("updatingBatch: contract details {}", addr);
 
                 ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) contractDetails;
 
@@ -354,6 +358,10 @@ public class RepositoryImpl implements Repository {
                 if (!Arrays.equals(accountState.getCodeHash(), EMPTY_TRIE_HASH)) {
                     accountState.setStateRoot(contractDetails.getStorageHash());
                 }
+            }
+
+            if (accountState.isDirty()) {
+                logger.debug("updatingBatch: account state {}", addr);
 
                 updateAccountState(addr, accountState);
             }

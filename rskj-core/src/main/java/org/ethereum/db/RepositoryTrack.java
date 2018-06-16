@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -167,7 +166,7 @@ public class RepositoryTrack implements Repository {
                 accountState = createAccount(addr);
             }
 
-            getContractDetails(addr).setDirty(true);
+            //getContractDetails(addr).setDirty(true);
 
             BigInteger saveNonce = accountState.getNonce();
             accountState.incrementNonce();
@@ -204,7 +203,7 @@ public class RepositoryTrack implements Repository {
                 accountState = createAccount(addr);
             }
 
-            getContractDetails(addr).setDirty(true);
+            //getContractDetails(addr).setDirty(true);
 
             BigInteger saveNonce = accountState.getNonce();
             accountState.setNonce(bigInteger);
@@ -238,7 +237,7 @@ public class RepositoryTrack implements Repository {
                 accountState = createAccount(addr);
             }
 
-            getContractDetails(addr).setDirty(true);
+            //getContractDetails(addr).setDirty(true);
             Coin newBalance = accountState.addToBalance(value);
 
             logger.trace("adding to balance addr: [{}], balance: [{}], delta: [{}]", addr,
