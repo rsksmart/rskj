@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -920,6 +921,10 @@ public class TrieImpl implements Trie {
         }
 
         if (position >= length) {
+            if (Arrays.equals(this.value, value)) {
+                return this;
+            }
+
             TrieImpl[] newNodes = cloneNodes(false);
             Keccak256[] newHashes = cloneHashes();
 
@@ -948,9 +953,14 @@ public class TrieImpl implements Trie {
             node = new TrieImpl(this.store, this.isSecure);
         }
 
-        node = node.put(key, length, position + 1, value);
+        TrieImpl newNode = node.put(key, length, position + 1, value);
 
-        newNodes[pos] = node;
+        // reference equality
+        if (newNode == node) {
+            return this;
+        }
+
+        newNodes[pos] = newNode;
 
         if (newHashes != null) {
             newHashes[pos] = null;
