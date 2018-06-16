@@ -97,6 +97,10 @@ public class AccountState {
         }
     }
 
+    public boolean wasCreated() {
+        return this.rlpEncoded == null && this.nonce.equals(BigInteger.ZERO) && this.balance.equals(Coin.ZERO);
+    }
+
     public int getStateFlags() {
         return stateFlags;
     }
@@ -112,6 +116,7 @@ public class AccountState {
     public void setNonce(BigInteger nonce) {
         rlpEncoded = null;
         this.nonce = nonce;
+        setDirty(true);
     }
 
     public byte[] getStateRoot() {
@@ -145,6 +150,11 @@ public class AccountState {
 
     public Coin addToBalance(Coin value) {
         if (value.equals(Coin.ZERO)) {
+            // HACK to save new account REMASC on block 1
+            if (this.wasCreated()) {
+                this.setDirty(true);
+            }
+
             return this.balance;
         }
 
@@ -203,7 +213,7 @@ public class AccountState {
 
         accountState.setCodeHash(this.getCodeHash());
         accountState.setStateRoot(this.getStateRoot());
-        accountState.setDirty(false);
+        accountState.setDirty(this.dirty);
         accountState.setStateFlags(this.stateFlags);
         return accountState;
     }
