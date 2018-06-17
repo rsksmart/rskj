@@ -78,6 +78,8 @@ public class RepositoryBlockStore implements BtcBlockstoreWithCache {
 
     @Override
     public synchronized StoredBlock get(Sha256Hash hash) throws BlockStoreException {
+        return this.getFromCache(hash);
+        /*
         byte[] ba = repository.getStorageBytes(contractAddress, new DataWord(hash.toString()));
 
         if (ba==null) {
@@ -87,6 +89,7 @@ public class RepositoryBlockStore implements BtcBlockstoreWithCache {
         StoredBlock storedBlock = byteArrayToStoredBlock(ba);
         knownBlocks.put(hash, storedBlock);
         return storedBlock;
+        */
     }
 
     public synchronized StoredBlock getFromCache(Sha256Hash hash) throws BlockStoreException {
