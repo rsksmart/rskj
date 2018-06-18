@@ -109,6 +109,7 @@ public class BlockHeader {
 
     /* Indicates if this block header cannot be changed */
     private volatile boolean sealed;
+    private volatile Keccak256 hash;
 
     public BlockHeader(byte[] encoded, boolean sealed) {
         this((RLPList) RLP.decode2(encoded).get(0), sealed);
@@ -399,7 +400,17 @@ public class BlockHeader {
     }
 
     public Keccak256 getHash() {
-        return new Keccak256(HashUtil.keccak256(getEncoded()));
+        if (this.hash != null) {
+            return this.hash;
+        }
+
+        Keccak256 headerHash = new Keccak256(HashUtil.keccak256(getEncoded()));
+
+        if (!this.sealed) {
+            this.hash = headerHash;
+        }
+
+        return headerHash;
     }
 
     public byte[] getEncoded() {
