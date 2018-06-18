@@ -185,8 +185,12 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private ImportResult internalTryToConnect(Block block) {
-        if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
-                !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
+        logger.trace("get block hash");
+        byte[] hashBytes = block.getHash().getBytes();
+        logger.trace("got block hash");
+
+        if (blockStore.getBlockByHash(hashBytes) != null &&
+                !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(hashBytes))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                          block.getShortHash(),
                          block.getNumber());
