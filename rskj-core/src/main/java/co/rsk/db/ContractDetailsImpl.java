@@ -171,9 +171,14 @@ public class ContractDetailsImpl implements ContractDetails {
     public synchronized byte[] getStorageHash() {
         checkDataSourceIsOpened();
 
-        this.trie.save();
+        logger.trace("getting contract details trie hash address {}", this.getAddressAsString());
         byte[] trieHash = this.trie.getHash().getBytes();
         logger.trace("getting contract details trie hash {}, address {}", getHashAsString(trieHash), this.getAddressAsString());
+
+        logger.trace("saving contract details trie hash address {}", this.getAddressAsString());
+        this.trie.save();
+        logger.trace("saved contract details trie hash address {}", this.getAddressAsString());
+
         return trieHash;
     }
 
