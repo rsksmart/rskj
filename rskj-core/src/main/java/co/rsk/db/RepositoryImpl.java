@@ -375,13 +375,15 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized byte[] getRoot() {
-        if (this.trie.hasStore()) {
-            this.trie.save();
-        }
-
+        logger.trace("getting repository root hash");
         byte[] rootHash = this.trie.getHash().getBytes();
+        logger.trace("repository root hash {}", Hex.toHexString(rootHash));
 
-        logger.trace("getting repository root hash {}", Hex.toHexString(rootHash));
+        if (this.trie.hasStore()) {
+            logger.trace("saving repository trie");
+            this.trie.save();
+            logger.trace("repository trie saved");
+        }
 
         return rootHash;
     }
