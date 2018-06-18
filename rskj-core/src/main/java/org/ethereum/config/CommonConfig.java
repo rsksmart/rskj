@@ -58,8 +58,8 @@ public class CommonConfig {
             logger.info("Database reset done");
         }
 
-        KeyValueDataSource ds = new HashMapDB();
-        // KeyValueDataSource ds = makeDataSource(config, "state");
+        // KeyValueDataSource ds = new HashMapDB();
+        KeyValueDataSource ds = makeDataSource(config, "state");
         KeyValueDataSource detailsDS = makeDataSource(config, "details");
 
         return new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS);
