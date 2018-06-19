@@ -40,4 +40,7 @@ public class RegTestFirstForkConfig extends RegTestConfig {
     public boolean isRcs230() {
         return true;
     }
+
+    @Override
+    public boolean isRfs170() { return true; }
 }
