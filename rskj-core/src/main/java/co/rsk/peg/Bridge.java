@@ -242,6 +242,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 return null;
             }
         }
+
+        if (!bridgeParsedData.bridgeMethod.isEnabled(this.blockchainConfig)) {
+            String errorMessage = String.format("'%s' is not enabled to run",bridgeParsedData.bridgeMethod.name());
+            logger.warn(errorMessage);
+            return null;
+        }
+
         return bridgeParsedData;
     }
 
@@ -278,11 +285,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             Optional<?> result;
             try {
-                if (!bridgeParsedData.bridgeMethod.isEnabled(this.blockchainConfig)) {
-                    String errorMessage = String.format("'%s' is not enabled to run",bridgeParsedData.bridgeMethod.name());
-                    logger.warn(errorMessage);
-                    throw new RuntimeException(errorMessage);
-                }
                 // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
                 // If the user tries to call an non-existent function, parseData() will return null.
                 result = bridgeParsedData.bridgeMethod.getExecutor().execute(this, bridgeParsedData.args);
