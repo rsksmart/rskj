@@ -1,6 +1,7 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,23 +17,26 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package org.ethereum.config.net;
 
-import org.ethereum.config.blockchain.regtest.RegTestConfig;
-import org.ethereum.config.net.AbstractNetConfig;
+import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
+
 
 /**
- * Created by oscar on 30/03/2017.
+ * Created by Anton Nashatyrev on 25.02.2016.
  */
-class UnitTestBlockchainNetConfig extends AbstractNetConfig {
-    public UnitTestBlockchainNetConfig() {
-        add(0, new RegTestConfig());
-        add(10, new RegTestConfig() {
-            @Override
-            public boolean areBridgeTxsFree() {
-                return false;
-            }
-        });
+public class RegTestConfig extends AbstractNetConfig {
+    public RegTestConfig() {
+    }
+
+    /**
+     * By default RegTestConfig should activate every fork at height 0
+     * @return a config with all the available forks activated
+     */
+    public static RegTestConfig getDefaultRegTestConfig() {
+        RegTestConfig config = new RegTestConfig();
+
+        config.add(0, new RegTestFirstForkConfig());
+        return config;
     }
 }
-

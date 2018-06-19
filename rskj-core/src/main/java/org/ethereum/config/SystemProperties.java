@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.*;
 import org.ethereum.config.blockchain.DevNetConfig;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
-import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.crypto.ECKey;
@@ -205,7 +204,7 @@ public abstract class SystemProperties {
                         blockchainConfig = new DevNetConfig();
                         break;
                     case "regtest":
-                        blockchainConfig = new RegTestConfig();
+                        blockchainConfig = org.ethereum.config.net.RegTestConfig.getDefaultRegTestConfig();
                         break;
                     default:
                         throw new RuntimeException(String.format(

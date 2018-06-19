@@ -1,6 +1,7 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,23 +17,35 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package org.ethereum.config.blockchain.regtest;
 
-import org.ethereum.config.blockchain.regtest.RegTestConfig;
-import org.ethereum.config.net.AbstractNetConfig;
+public class RegTestFirstForkConfig extends RegTestConfig {
 
-/**
- * Created by oscar on 30/03/2017.
- */
-class UnitTestBlockchainNetConfig extends AbstractNetConfig {
-    public UnitTestBlockchainNetConfig() {
-        add(0, new RegTestConfig());
-        add(10, new RegTestConfig() {
-            @Override
-            public boolean areBridgeTxsFree() {
-                return false;
-            }
-        });
+    public RegTestFirstForkConfig() {
+    }
+
+    @Override
+    public boolean areBridgeTxsFree() {
+        return true;
+    }
+
+    @Override
+    public boolean isRfs50() {
+        return true;
+    }
+
+    @Override
+    public boolean isRfs55() {
+        return true;
+    }
+
+    @Override
+    public boolean isRfs94() {
+        return true;
+    }
+
+    @Override
+    public boolean isRcs230() {
+        return true;
     }
 }
-

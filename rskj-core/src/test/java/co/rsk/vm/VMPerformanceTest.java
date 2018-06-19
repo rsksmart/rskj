@@ -21,7 +21,7 @@ package co.rsk.vm;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.blockchain.RegTestConfig;
+import org.ethereum.config.blockchain.regtest.RegTestConfig;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.PrecompiledContracts;

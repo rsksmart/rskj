@@ -22,7 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.blockchain.DevNetConfig;
-import org.ethereum.config.blockchain.RegTestConfig;
+import org.ethereum.config.blockchain.regtest.RegTestConfig;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
