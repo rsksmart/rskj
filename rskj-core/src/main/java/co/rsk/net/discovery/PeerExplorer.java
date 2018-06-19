@@ -181,7 +181,7 @@ public class PeerExplorer {
             if (request != null && request.validateMessageResponse(message)) {
                 List<Node> nodes = (message.countNodes() > MAX_NODES_PER_MSG) ? message.getNodes().subList(0, MAX_NODES_PER_MSG -1) : message.getNodes();
                 nodes.stream().filter(n -> !StringUtils.equals(n.getHexId(), this.localNode.getHexId()))
-                        .forEach(node -> this.bootNodes.add(new InetSocketAddress(node.getAddress().getHostName(), node.getPort())));
+                        .forEach(node -> this.bootNodes.add(node.getAddress()));
                 this.startConversationWithNewNodes();
             }
             updateEntry(connectedNode);
