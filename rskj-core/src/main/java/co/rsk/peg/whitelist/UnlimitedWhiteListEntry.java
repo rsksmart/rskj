@@ -12,18 +12,19 @@ public class UnlimitedWhiteListEntry implements LockWhitelistEntry {
         this.maxTransferValue = Coin.valueOf(Integer.MAX_VALUE);
     }
 
-    public Address Address() {
+    public Address address() {
         return this.address;
     }
 
-    public Coin MaxTransferValue() {
+    public Coin maxTransferValue() {
         return this.maxTransferValue;
     }
 
     public void consume() {
+        // Unlimited whitelisting means that the entries are never fully consumed so nothing to do here
     }
 
     public Boolean canConsume() {
-        return true;
+        return Boolean.TRUE;
     }
 }

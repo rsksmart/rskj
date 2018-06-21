@@ -1622,6 +1622,7 @@ public class BridgeSupport {
             Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
             return this.addLockWhitelistAddress(tx, new OneOffWhiteListEntry(address, maxTransferValueCoin));
         } catch (AddressFormatException e) {
+            logger.warn("invalid address format: {}", e);
             return -2;
         }
     }
@@ -1631,6 +1632,7 @@ public class BridgeSupport {
             Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
             return this.addLockWhitelistAddress(tx, new UnlimitedWhiteListEntry(address));
         } catch (AddressFormatException e) {
+            logger.warn("invalid address format: {}", e);
             return -2;
         }
     }
@@ -1643,15 +1645,16 @@ public class BridgeSupport {
         LockWhitelist whitelist = provider.getLockWhitelist();
 
         try {
-            if (whitelist.isWhitelisted(entry.Address())) {
+            if (whitelist.isWhitelisted(entry.address())) {
                 return -1;
             }
-            whitelist.put(entry.Address(), entry);
+            whitelist.put(entry.address(), entry);
             return 1;
         } catch (AddressFormatException e) {
+            logger.warn("invalid address format: {}", e);
             return -2;
         } catch (Exception e) {
-            logger.error("Unexpected error in addLockWhitelistAddress: {}", e.getMessage());
+            logger.error("Unexpected error in addLockWhitelistAddress: {}", e);
             panicProcessor.panic("lock-whitelist", e.getMessage());
             return 0;
         }

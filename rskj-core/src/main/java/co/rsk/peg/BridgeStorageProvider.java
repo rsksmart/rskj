@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
-import java.util.logging.Logger;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.

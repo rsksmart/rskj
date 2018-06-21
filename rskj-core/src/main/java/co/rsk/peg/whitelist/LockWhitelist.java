@@ -64,7 +64,12 @@ public class LockWhitelist {
 
     public boolean isWhitelistedFor(Address address, Coin amount, int height) {
         Coin maxTransferValue = getMaxTransferValue(address);
-        return height > disableBlockHeight || (isWhitelisted(address) && maxTransferValue !=null && (amount.isLessThan(maxTransferValue) || amount.equals(maxTransferValue)));
+        if (height > disableBlockHeight) {
+            // Whitelist disabled
+            return true;
+        }
+
+        return (isWhitelisted(address) && (amount.isLessThan(maxTransferValue) || amount.equals(maxTransferValue)));
     }
 
     public Integer getSize() {
@@ -87,7 +92,7 @@ public class LockWhitelist {
         if (entry == null) {
             return null;
         }
-        return entry.MaxTransferValue();
+        return entry.maxTransferValue();
     }
 
     public boolean put(Address address, LockWhitelistEntry entry) {

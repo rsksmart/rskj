@@ -14,11 +14,11 @@ public class OneOffWhiteListEntry implements LockWhitelistEntry {
         this.maxTransferValue = maxTransferValue;
     }
 
-    public Address Address() {
+    public Address address() {
         return this.address;
     }
 
-    public Coin MaxTransferValue() {
+    public Coin maxTransferValue() {
         return this.maxTransferValue;
     }
 
