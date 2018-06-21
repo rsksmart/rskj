@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
