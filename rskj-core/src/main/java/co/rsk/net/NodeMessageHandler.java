@@ -23,6 +23,9 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
+import co.rsk.net.notifications.*;
+import co.rsk.net.notifications.utils.FederationNotificationSigner;
+import co.rsk.net.notifications.utils.NodeFederationNotificationSigner;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
@@ -40,6 +43,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.naming.ConfigurationException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,11 +52,10 @@ import java.util.stream.Collectors;
 
 @Component
 public class NodeMessageHandler implements MessageHandler, Runnable {
-    private static final Logger logger = LoggerFactory.getLogger("messagehandler");
-    private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
     public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     public static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
-
+    private static final Logger logger = LoggerFactory.getLogger("messagehandler");
+    private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
     private final RskSystemProperties config;
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
@@ -70,9 +73,13 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private volatile boolean stopped;
 
+    private FederationNotificationSource federationNotificationSource;
+    private FederationNotificationProcessor federationNotificationProcessor;
+
     @Autowired
     public NodeMessageHandler(RskSystemProperties config,
                               @Nonnull final BlockProcessor blockProcessor,
+                              @Nonnull final FederationNotificationProcessor federationNotificationProcessor,
                               final SyncProcessor syncProcessor,
                               @Nullable final ChannelManager channelManager,
                               @Nullable final TransactionGateway transactionGateway,
@@ -86,6 +93,27 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         this.blockValidationRule = blockValidationRule;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
+
+        // Processor for Federation notifications
+        this.federationNotificationProcessor = federationNotificationProcessor;
+
+        // If test Federation notifications enabled then instantiate a FederationNotificationSource. For testing purposes only
+        if (config.testFederationNotificationSourceEnabled()) {
+            FederationNotificationSigner signer = new NodeFederationNotificationSigner(config);
+            this.federationNotificationSource = new FederationNotificationSourceImpl(config, blockProcessor.getBlockchain(), channelManager, signer);
+            this.federationNotificationSource.start();
+        }
+    }
+
+    // For testing purposes only
+    public NodeMessageHandler(RskSystemProperties config,
+                              @Nonnull final BlockProcessor blockProcessor,
+                              final SyncProcessor syncProcessor,
+                              @Nullable final ChannelManager channelManager,
+                              @Nullable final TransactionGateway transactionGateway,
+                              @Nullable final PeerScoringManager peerScoringManager,
+                              @Nonnull BlockValidationRule blockValidationRule) {
+        this(config, blockProcessor, new NodeFederationNotificationProcessor(config, blockProcessor), syncProcessor, channelManager, transactionGateway, peerScoringManager, blockValidationRule);
     }
 
     /**
@@ -100,7 +128,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         MessageType mType = message.getMessageType();
 
-        if (mType == MessageType.GET_BLOCK_MESSAGE) {
+        if (mType == MessageType.FEDERATION_NOTIFICATION) {
+            this.processFederationNotification(sender, (FederationNotification) message);
+        } else if (mType == MessageType.GET_BLOCK_MESSAGE) {
             this.processGetBlockMessage(sender, (GetBlockMessage) message);
         } else if (mType == MessageType.BLOCK_MESSAGE) {
             this.processBlockMessage(sender, (BlockMessage) message);
@@ -128,7 +158,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             this.processSkeletonResponseMessage(sender, (SkeletonResponseMessage) message);
         } else if (mType == MessageType.NEW_BLOCK_HASH_MESSAGE) {
             this.processNewBlockHashMessage(sender, (NewBlockHashMessage) message);
-        } else if(!blockProcessor.hasBetterBlockToSync()) {
+        } else if (!blockProcessor.hasBetterBlockToSync()) {
             if (mType == MessageType.NEW_BLOCK_HASHES) {
                 this.processNewBlockHashesMessage(sender, (NewBlockHashesMessage) message);
             } else if (mType == MessageType.TRANSACTIONS) {
@@ -162,7 +192,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                 }
                 this.receivedMessages.add(encodedMessage);
             }
-            if (!this.queue.offer(new MessageTask(sender, message))){
+            if (!this.queue.offer(new MessageTask(sender, message))) {
                 logger.trace("Queue full, message not added to the queue");
             }
         } else {
@@ -214,8 +244,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                 }
 
                 updateTimedEvents();
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 logger.error("Error {}", ex);
             }
         }
@@ -226,7 +255,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Duration timeTick = Duration.ofMillis(now - lastTickSent);
         // TODO(lsebrie): handle timeouts properly
         lastTickSent = now;
-        if (queue.isEmpty()){
+        if (queue.isEmpty()) {
             this.syncProcessor.onTimePassed(timeTick);
         }
 
@@ -304,13 +333,13 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
         }
 
-        if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
+        if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())) {
             logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
             Metrics.processBlockMessage("blockIgnored", block, sender.getPeerNodeID());
             return;
         }
 
-        if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())){
+        if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())) {
             logger.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getShortHash());
             Metrics.processBlockMessage("blockIgnored", block, sender.getPeerNodeID());
             return;
@@ -321,6 +350,35 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         tryRelayBlock(sender, block, result);
         recordEvent(sender, EventType.VALID_BLOCK);
         Metrics.processBlockMessage("finish", block, sender.getPeerNodeID());
+
+        // If still synchronizing then return
+        if (blockProcessor.hasBetterBlockToSync()) {
+            return;
+        }
+
+        // If we are a valid source for federation notifications then generate one
+        if (federationNotificationSource != null) {
+            federationNotificationSource.generateNotification();
+        }
+
+        // Check if the Federation disappeared for a long time (Federation eclipsed).
+        federationNotificationProcessor.checkIfFederationWasEclipsed();
+    }
+
+    /**
+     * processFederationNotification processes a FederationNotification, generating
+     * the necessary alerts if needed.
+     *
+     * @param sender       the notification sender.
+     * @param notification the FederationNotification.
+     */
+    private void processFederationNotification(@Nonnull final MessageChannel sender,
+                                               @Nonnull final FederationNotification notification) {
+        try {
+            this.federationNotificationProcessor.processFederationNotification(this.channelManager.getActivePeers(), notification);
+        } catch (ConfigurationException e) {
+            logger.error("Bad Federation notifications configuration. Error was {}. No Federation notifications will be processed until the configuration is corrected", e);
+        }
     }
 
     private void tryRelayBlock(@Nonnull MessageChannel sender, Block block, BlockProcessResult result) {
