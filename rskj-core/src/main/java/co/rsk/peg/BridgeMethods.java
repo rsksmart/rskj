@@ -56,7 +56,7 @@ public enum BridgeMethods {
                     new String[]{"string", "int256"},
                     new String[]{"int256"}
             ),
-            25000L, // TODO: estimate gas
+            25000L, // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
             (blockChainConfig) -> blockChainConfig.isRfs170()
     ),
@@ -66,7 +66,7 @@ public enum BridgeMethods {
                     new String[]{"string"},
                     new String[]{"int256"}
             ),
-            25000L, // TODO: estimate gas
+            25000L, // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
             (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
             (blockChainConfig) -> blockChainConfig.isRfs170()
     ),
