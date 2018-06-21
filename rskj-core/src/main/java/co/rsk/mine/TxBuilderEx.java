@@ -128,12 +128,7 @@ public class TxBuilderEx {
                         SecureRandom r = new SecureRandom();
                         Thread.sleep(10000 + (long)r.nextInt(20000));
 
-                        Repository prepository = transactionPool.getRepository();
-                        AccountState accountState;
-
-                        accountState = prepository.getAccountState(targetAcc.getAddress());
-
-                        BigInteger accnonce = accountState.getNonce();
+                        BigInteger accnonce = transactionPool.getPendingState().getNonce(targetAcc.getAddress());
 
                         if (accnonce.compareTo(lastNonce) < 0) {
                             tx = createNewTransaction(targetAcc.getEcKey().getPrivKeyBytes(), target2Address, BigInteger.valueOf(accnonce.intValue() * 2 + 1), accnonce);

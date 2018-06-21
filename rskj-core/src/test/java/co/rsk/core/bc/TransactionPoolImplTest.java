@@ -62,14 +62,6 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void usingRepository() {
-        Repository repository = transactionPool.getRepository();
-
-        Assert.assertNotNull(repository);
-        Assert.assertTrue(repository instanceof RepositoryTrack);
-    }
-
-    @Test
     public void usingInit() {
         Assert.assertFalse(transactionPool.hasCleanerFuture());
         Assert.assertNotEquals(0, transactionPool.getOutdatedThreshold());
@@ -98,15 +90,15 @@ public class TransactionPoolImplTest {
     public void usingAccountsWithInitialBalance() {
         createTestAccounts(2, Coin.valueOf(10L));
 
-        Repository repository = transactionPool.getRepository();
+        PendingState pendingState = transactionPool.getPendingState();
 
-        Assert.assertNotNull(repository);
+        Assert.assertNotNull(pendingState);
 
         Account account1 = createAccount(1);
         Account account2 = createAccount(2);
 
-        Assert.assertEquals(BigInteger.TEN, repository.getBalance(account1.getAddress()).asBigInteger());
-        Assert.assertEquals(BigInteger.TEN, repository.getBalance(account2.getAddress()).asBigInteger());
+        Assert.assertEquals(BigInteger.TEN, pendingState.getBalance(account1.getAddress()).asBigInteger());
+        Assert.assertEquals(BigInteger.TEN, pendingState.getBalance(account2.getAddress()).asBigInteger());
     }
 
     @Test
@@ -223,23 +215,8 @@ public class TransactionPoolImplTest {
 
         transactionPool.addTransaction(tx);
 
-        Repository repository = transactionPool.getRepository();
-        Assert.assertEquals(BigInteger.valueOf(1001000), repository.getBalance(receiver.getAddress()).asBigInteger());
-    }
-
-    @Test
-    public void addAndExecuteTwoPendingTransaction() {
-        Coin balance = Coin.valueOf(1000000);
-        createTestAccounts(2, balance);
-        Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
-        Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
-        Account receiver = createAccount(2);
-
-        transactionPool.addTransaction(tx1);
-        transactionPool.addTransaction(tx2);
-
-        Repository repository = transactionPool.getRepository();
-        Assert.assertEquals(BigInteger.valueOf(1004000), repository.getBalance(receiver.getAddress()).asBigInteger());
+        PendingState pendingState = transactionPool.getPendingState();
+        Assert.assertEquals(BigInteger.valueOf(1001000), pendingState.getBalance(receiver.getAddress()).asBigInteger());
     }
 
     @Test
@@ -251,8 +228,8 @@ public class TransactionPoolImplTest {
 
         transactionPool.addTransaction(tx);
 
-        Repository repository = transactionPool.getRepository();
-        Assert.assertEquals(BigInteger.valueOf(1000000), repository.getBalance(receiver.getAddress()).asBigInteger());
+        PendingState pendingState = transactionPool.getPendingState();
+        Assert.assertEquals(BigInteger.valueOf(1000000), pendingState.getBalance(receiver.getAddress()).asBigInteger());
     }
 
     @Test
@@ -494,10 +471,8 @@ public class TransactionPoolImplTest {
         transactionPool.addTransaction(tx1);
         transactionPool.addTransaction(tx2);
 
-        transactionPool.updateState();
-
-        Repository repository = transactionPool.getRepository();
-        Assert.assertEquals(BigInteger.valueOf(1004000), repository.getBalance(receiver.getAddress()).asBigInteger());
+        PendingState pendingState = transactionPool.getPendingState();
+        Assert.assertEquals(BigInteger.valueOf(1004000), pendingState.getBalance(receiver.getAddress()).asBigInteger());
     }
 
     @Test
@@ -536,7 +511,7 @@ public class TransactionPoolImplTest {
 
         Assert.assertNotNull(tx.getContractAddress().getBytes());
         // Stored value at 0 position should be 1, one more than the blockChain best block
-        Assert.assertEquals(DataWord.ONE, transactionPool.getRepository().getStorageValue(tx.getContractAddress(), DataWord.ZERO));
+        Assert.assertEquals(DataWord.ONE, transactionPool.getPendingState().getStorageValue(tx.getContractAddress(), DataWord.ZERO));
     }
 
     private void createTestAccounts(int naccounts, Coin balance) {

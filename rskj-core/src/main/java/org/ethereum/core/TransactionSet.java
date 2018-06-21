@@ -21,17 +21,25 @@ package org.ethereum.core;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
-/**
- * Created by ajlopez on 28/02/2018.
- */
 public class TransactionSet {
-    private final Map<Keccak256, Transaction> transactionsByHash = new HashMap<>();
-    private final Map<RskAddress, List<Transaction>> transactionsByAddress = new HashMap<>();
+    private final Map<Keccak256, Transaction> transactionsByHash;
+    private final Map<RskAddress, List<Transaction>> transactionsByAddress;
+
+    public TransactionSet() {
+        this(new HashMap<>(), new HashMap<>());
+    }
+
+    public TransactionSet(TransactionSet transactionSet) {
+        this(new HashMap<>(transactionSet.transactionsByHash), new HashMap<>(transactionSet.transactionsByAddress));
+    }
+
+    public TransactionSet(Map<Keccak256, Transaction> transactionsByHash, Map<RskAddress, List<Transaction>> transactionsByAddress) {
+        this.transactionsByHash = transactionsByHash;
+        this.transactionsByAddress = transactionsByAddress;
+    }
 
     public void addTransaction(Transaction transaction) {
         Keccak256 txhash = transaction.getHash();
@@ -80,9 +88,8 @@ public class TransactionSet {
     }
 
     public List<Transaction> getTransactions() {
-        List<Transaction> ret = new ArrayList<>();
-        ret.addAll(this.transactionsByHash.values());
-        return ret;
+        return transactionsByHash.values().stream()
+                .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     public List<Transaction> getTransactionsWithSender(RskAddress senderAddress) {

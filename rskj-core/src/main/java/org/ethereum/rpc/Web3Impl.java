@@ -22,6 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.SnapshotManager;
+import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
@@ -370,14 +371,14 @@ public class Web3Impl implements Web3 {
         *  String "latest"  - for the latest mined block
         *  String "pending"  - for the pending state/transactions
         */
-        Repository repository = getRepoByJsonBlockId(block);
+        AccountInformationProvider accountInformationProvider = getAccountInformationProvider(block);
 
-        if (repository == null) {
+        if (accountInformationProvider == null) {
             throw new NullPointerException();
         }
 
         RskAddress addr = new RskAddress(address);
-        BigInteger balance = repository.getBalance(addr).asBigInteger();
+        BigInteger balance = accountInformationProvider.getBalance(addr).asBigInteger();
 
         return toJsonHex(balance);
     }
@@ -396,13 +397,13 @@ public class Web3Impl implements Web3 {
 
         try {
             RskAddress addr = new RskAddress(address);
-            Repository repository = getRepoByJsonBlockId(blockId);
+            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
 
-            if(repository == null) {
+            if(accountInformationProvider == null) {
                 return null;
             }
 
-            DataWord storageValue = repository.
+            DataWord storageValue = accountInformationProvider.
                     getStorageValue(addr, new DataWord(stringHexToByteArray(storageIdx)));
             if (storageValue != null) {
                 return s = TypeConverter.toJsonHex(storageValue.getData());
@@ -422,10 +423,10 @@ public class Web3Impl implements Web3 {
         try {
             RskAddress addr = new RskAddress(address);
 
-            Repository repository = getRepoByJsonBlockId(blockId);
+            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
 
-            if (repository != null) {
-                BigInteger nonce = repository.getNonce(addr);
+            if (accountInformationProvider != null) {
+                BigInteger nonce = accountInformationProvider.getNonce(addr);
                 return s = TypeConverter.toJsonHex(nonce);
             } else {
                 return null;
@@ -531,10 +532,10 @@ public class Web3Impl implements Web3 {
 
             RskAddress addr = new RskAddress(address);
 
-            Repository repository = getRepoByJsonBlockId(blockId);
+            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
 
-            if(repository != null) {
-                byte[] code = repository.getCode(addr);
+            if(accountInformationProvider != null) {
+                byte[] code = accountInformationProvider.getCode(addr);
                 s = TypeConverter.toJsonHex(code);
             }
 
@@ -1031,9 +1032,9 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    private Repository getRepoByJsonBlockId(String id) {
+    private AccountInformationProvider getAccountInformationProvider(String id) {
         if ("pending".equalsIgnoreCase(id)) {
-            return transactionPool.getRepository();
+            return transactionPool.getPendingState();
         } else {
             Block block = getByJsonBlockId(id);
             if (block != null) {

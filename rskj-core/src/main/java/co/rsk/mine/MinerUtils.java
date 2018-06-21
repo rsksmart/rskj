@@ -22,8 +22,8 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.Coin;
-import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.TransactionPool;
@@ -39,10 +39,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.stream.Collectors;
 
-/**
- * Created by oscar on 26/09/2016.
- */
 public class MinerUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("minerserver");
@@ -136,13 +134,9 @@ public class MinerUtils {
 
     public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool) {
         //TODO: optimize this by considering GasPrice (order by GasPrice/Nonce)
-        TransactionPoolImpl.TransactionSortedSet ret = new TransactionPoolImpl.TransactionSortedSet();
-
-        List<org.ethereum.core.Transaction> pendingTransactions = new LinkedList<>(transactionPool.getPendingTransactions());
-
-        ret.addAll(pendingTransactions);
-
-        return new LinkedList<>(ret);
+        return transactionPool.getPendingTransactions().stream()
+                .sorted(PendingState.TRANSACTION_COMPARATOR)
+                .collect(Collectors.toCollection(LinkedList::new));
     }
 
     public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, Coin minGasPrice) {

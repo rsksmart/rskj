@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,25 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.facade;
+package org.ethereum.core;
 
-import org.ethereum.core.Transaction;
+public interface TransactionExecutorFactory {
 
-import java.util.List;
-
-/**
- * @author Mikhail Kalinin
- * @since 28.09.2015
- */
-public interface TransactionPool {
-
-    /**
-     * @return pending state repository
-     */
-    org.ethereum.core.Repository getRepository();
-
-    /**
-     * @return list of pending transactions
-     */
-    List<Transaction> getPendingTransactions();
+    TransactionExecutor newInstance(Repository repository, Transaction tx);
 }
