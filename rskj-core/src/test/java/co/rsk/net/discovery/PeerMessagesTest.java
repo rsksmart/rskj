@@ -129,9 +129,7 @@ public class PeerMessagesTest {
     private FindNodePeerMessage testAndCreateFindNodePeerMessage(byte[] nodeId, String check, ECKey key, Integer networkId) {
         OptionalInt actualNetworkId = getNetworkId(networkId);
         FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(nodeId, check, key, actualNetworkId);
-        Assert.assertTrue(ByteUtil.fastEquals(nodeId,findNodePeerMessage.getNodeId().getID()));
         Assert.assertEquals(check, findNodePeerMessage.getMessageId());
-        Assert.assertEquals(key, findNodePeerMessage.getKey());
         Assert.assertEquals(actualNetworkId.isPresent(), findNodePeerMessage.getNetworkId().isPresent());
         if (actualNetworkId.isPresent()) {
             Assert.assertEquals(actualNetworkId.getAsInt(), findNodePeerMessage.getNetworkId().getAsInt());
