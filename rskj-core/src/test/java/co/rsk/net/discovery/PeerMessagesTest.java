@@ -4,6 +4,7 @@ import co.rsk.net.discovery.message.FindNodePeerMessage;
 import co.rsk.net.discovery.message.PingPeerMessage;
 import co.rsk.net.discovery.message.PongPeerMessage;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -57,7 +58,7 @@ public class PeerMessagesTest {
     @Test
     public void testCreatePongMessage() {
         testAndCreatePong(null);
-        testAndCreatePing(new Random().nextInt());
+        testAndCreatePong(new Random().nextInt());
     }
 
     @Test
@@ -125,12 +126,53 @@ public class PeerMessagesTest {
         Assert.assertEquals(expectedPong.getPort(), pong.getPort());
     }
 
-//    @Test
-//    public void testFindNodePeerMessage() {
-//        FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create();
-////        public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, OptionalInt networkId) {
-//
-//        }
+    private FindNodePeerMessage testAndCreateFindNodePeerMessage(byte[] nodeId, String check, ECKey key, Integer networkId) {
+        OptionalInt actualNetworkId = getNetworkId(networkId);
+        FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(nodeId, check, key, actualNetworkId);
+        Assert.assertTrue(ByteUtil.fastEquals(nodeId,findNodePeerMessage.getNodeId().getID()));
+        Assert.assertEquals(check, findNodePeerMessage.getMessageId());
+        Assert.assertEquals(key, findNodePeerMessage.getKey());
+        Assert.assertEquals(actualNetworkId.isPresent(), findNodePeerMessage.getNetworkId().isPresent());
+        if (actualNetworkId.isPresent()) {
+            Assert.assertEquals(actualNetworkId.getAsInt(), findNodePeerMessage.getNetworkId().getAsInt());
+        }
+        return findNodePeerMessage;
+    }
+
+    private FindNodePeerMessage testAndcreateFindNodePeerMessage(Integer networkId) {
+        byte[] nodeId = new byte[10];
+        new Random().nextBytes(nodeId);
+        return testAndCreateFindNodePeerMessage(nodeId,
+                UUID.randomUUID().toString(), key,1);
+    }
+
+    @Test
+    public void testCreateFindNodePeerMessage() {
+        testAndcreateFindNodePeerMessage(null);
+        testAndcreateFindNodePeerMessage(new Random().nextInt());
+    }
+
+    @Test
+    public void testParseFindNodePeerMessage() {
+        byte[] nodeId = {1, 2, 3, 4};
+        //create == parse
+        FindNodePeerMessage findNodePeerMessageExpected =
+                FindNodePeerMessage.create(nodeId,
+                        UUID.randomUUID().toString(),
+                        key, getNetworkId(1));
+        FindNodePeerMessage findNodePeerMessage = new FindNodePeerMessage(
+                findNodePeerMessageExpected.getPacket(),
+                findNodePeerMessageExpected.getMdc(),
+                findNodePeerMessageExpected.getSignature(),
+                findNodePeerMessageExpected.getType(),
+                findNodePeerMessageExpected.getData());
+        Assert.assertEquals(findNodePeerMessageExpected.getNetworkId(), findNodePeerMessage.getNetworkId());
+        Assert.assertEquals(findNodePeerMessageExpected.getMessageId(), findNodePeerMessage.getMessageId());
+        Assert.assertEquals(findNodePeerMessageExpected.getNodeId(), findNodePeerMessage.getNodeId());
+        Assert.assertEquals(findNodePeerMessageExpected.getMdc(), findNodePeerMessage.getMdc());
+        Assert.assertEquals(findNodePeerMessageExpected.getSignature(), findNodePeerMessage.getSignature());
+        Assert.assertEquals(findNodePeerMessageExpected.getMessageId(), findNodePeerMessage.getMessageId());
+    }
 
     private OptionalInt getNetworkId(Integer networkId) {
         return Optional.ofNullable(networkId).map(OptionalInt::of).orElseGet(OptionalInt::empty);
