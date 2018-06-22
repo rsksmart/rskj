@@ -54,7 +54,6 @@ import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalInt;
 
 import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 
