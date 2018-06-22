@@ -5,13 +5,13 @@ import co.rsk.bitcoinj.core.Coin;
 
 public class OneOffWhiteListEntry implements LockWhitelistEntry {
     private final Address address;
-    private final Coin maxTransferValue;
+    private final Coin maxTransferValueField;
 
     private boolean consumed = false;
 
     public OneOffWhiteListEntry(Address address, Coin maxTransferValue) {
         this.address = address;
-        this.maxTransferValue = maxTransferValue;
+        this.maxTransferValueField = maxTransferValue;
     }
 
     public Address address() {
@@ -19,7 +19,7 @@ public class OneOffWhiteListEntry implements LockWhitelistEntry {
     }
 
     public Coin maxTransferValue() {
-        return this.maxTransferValue;
+        return this.maxTransferValueField;
     }
 
     public void consume() {
@@ -31,6 +31,6 @@ public class OneOffWhiteListEntry implements LockWhitelistEntry {
     }
 
     public Boolean canLock(Coin value) {
-        return !this.consumed && (this.maxTransferValue.isLessThan(value) || this.maxTransferValue.equals(value));
+        return !this.consumed && (this.maxTransferValueField.isLessThan(value) || this.maxTransferValueField.equals(value));
     }
 }
