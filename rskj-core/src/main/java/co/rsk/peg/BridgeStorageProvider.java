@@ -59,6 +59,7 @@ public class BridgeStorageProvider {
     private final RskAddress contractAddress;
     private final NetworkParameters networkParameters;
     private final Context btcContext;
+    private final BridgeStorageConfiguration bridgeStorageConfiguration;
 
     private Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed;
 
@@ -88,11 +89,12 @@ public class BridgeStorageProvider {
     private Coin feePerKb;
     private ABICallElection feePerKbElection;
 
-    public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants) {
+    public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, BridgeStorageConfiguration bridgeStorageConfiguration) {
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
         this.btcContext = new Context(networkParameters);
+        this.bridgeStorageConfiguration = bridgeStorageConfiguration;
     }
 
     public List<UTXO> getNewFederationBtcUTXOs() throws IOException {
@@ -322,7 +324,9 @@ public class BridgeStorageProvider {
 
         safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, lockWhitelist, BridgeSerializationUtils::serializeOneOffLockWhitelist);
 
-        safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, lockWhitelist, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
+        if (this.bridgeStorageConfiguration.isUnlimitedWhitelistEnabled()) {
+            safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, lockWhitelist, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
+        }
     }
 
     public LockWhitelist getLockWhitelist() {
@@ -335,7 +339,11 @@ public class BridgeStorageProvider {
             lockWhitelist = new LockWhitelist(new HashMap<>());
             return lockWhitelist;
         }
-        byte[] unlimitedWhitelistData = safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY, data -> data);
+        byte[] unlimitedWhitelistData = null;
+
+        if (this.bridgeStorageConfiguration.isUnlimitedWhitelistEnabled()) {
+            unlimitedWhitelistData = safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY, data -> data);
+        }
 
         lockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(oneOffWhitelistData, unlimitedWhitelistData, btcContext.getParams());
 

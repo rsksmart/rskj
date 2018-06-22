@@ -127,7 +127,8 @@ public class BridgeSupport {
                 new BridgeStorageProvider(
                         repository,
                         contractAddress,
-                        config.getBlockchainConfig().getCommonConstants().getBridgeConstants()
+                        config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                        BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(rskExecutionBlock.getNumber()))
                 ),
                 rskExecutionBlock
         );
