@@ -26,7 +26,11 @@ public class OneOffWhiteListEntry implements LockWhitelistEntry {
         this.consumed = true;
     }
 
-    public Boolean canConsume() {
-        return !this.consumed;
+    public Boolean isConsumed() {
+        return this.consumed;
+    }
+
+    public Boolean canLock(Coin value) {
+        return !this.consumed && (this.maxTransferValue.isLessThan(value) || this.maxTransferValue.equals(value));
     }
 }

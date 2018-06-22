@@ -63,13 +63,13 @@ public class LockWhitelist {
     }
 
     public boolean isWhitelistedFor(Address address, Coin amount, int height) {
-        Coin maxTransferValue = getMaxTransferValue(address);
         if (height > disableBlockHeight) {
             // Whitelist disabled
             return true;
         }
 
-        return (isWhitelisted(address) && (amount.isLessThan(maxTransferValue) || amount.equals(maxTransferValue)));
+        LockWhitelistEntry entry = this.whitelistedAddresses.get(address);
+        return (entry != null && entry.canLock(amount));
     }
 
     public Integer getSize() {
@@ -81,18 +81,13 @@ public class LockWhitelist {
         return new ArrayList<>(whitelistedAddresses.keySet());
     }
 
-
     public List<LockWhitelistEntry> getEntries() {
         // Return a copy so that this can't be modified from the outside
         return new ArrayList<>(whitelistedAddresses.values());
     }
 
-    public Coin getMaxTransferValue(Address address) {
-        LockWhitelistEntry entry = whitelistedAddresses.get(address);
-        if (entry == null) {
-            return null;
-        }
-        return entry.maxTransferValue();
+    public LockWhitelistEntry getEntry(Address address) {
+        return this.whitelistedAddresses.get(address);
     }
 
     public boolean put(Address address, LockWhitelistEntry entry) {
@@ -119,7 +114,7 @@ public class LockWhitelist {
         }
         entry.consume();
 
-        if (!entry.canConsume()) {
+        if (entry.isConsumed()) {
             this.remove(address);
         }
     }

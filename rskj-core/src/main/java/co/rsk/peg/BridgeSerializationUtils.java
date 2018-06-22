@@ -302,9 +302,9 @@ public class BridgeSerializationUtils {
         int serializationSize = whitelistEntries.size() * 2 + 1;
         byte[][] serializedLockWhitelist = new byte[serializationSize][];
         for (int i = 0; i < whitelistEntries.size(); i++) {
-            Address address = whitelistEntries.get(i).address();
-            serializedLockWhitelist[2 * i] = RLP.encodeElement(address.getHash160());
-            serializedLockWhitelist[2 * i + 1] = RLP.encodeBigInteger(BigInteger.valueOf(whitelist.getMaxTransferValue(address).longValue()));
+            OneOffWhiteListEntry entry = (OneOffWhiteListEntry)whitelistEntries.get(i);
+            serializedLockWhitelist[2 * i] = RLP.encodeElement(entry.address().getHash160());
+            serializedLockWhitelist[2 * i + 1] = RLP.encodeBigInteger(BigInteger.valueOf(entry.maxTransferValue().longValue()));
         }
         serializedLockWhitelist[serializationSize - 1] = RLP.encodeBigInteger(BigInteger.valueOf(whitelist.getDisableBlockHeight()));
         return RLP.encodeList(serializedLockWhitelist);

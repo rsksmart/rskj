@@ -5,26 +5,24 @@ import co.rsk.bitcoinj.core.Coin;
 
 public class UnlimitedWhiteListEntry implements LockWhitelistEntry {
     private final Address address;
-    private final Coin maxTransferValue;
 
     public UnlimitedWhiteListEntry(Address address) {
         this.address = address;
-        this.maxTransferValue = Coin.valueOf(Integer.MAX_VALUE);
     }
 
     public Address address() {
         return this.address;
     }
 
-    public Coin maxTransferValue() {
-        return this.maxTransferValue;
-    }
-
     public void consume() {
         // Unlimited whitelisting means that the entries are never fully consumed so nothing to do here
     }
 
-    public Boolean canConsume() {
+    public Boolean isConsumed() {
+        return Boolean.FALSE;
+    }
+
+    public Boolean canLock(Coin value) {
         return Boolean.TRUE;
     }
 }

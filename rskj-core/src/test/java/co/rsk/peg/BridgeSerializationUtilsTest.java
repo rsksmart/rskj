@@ -559,7 +559,7 @@ public class BridgeSerializationUtilsTest {
 
         Assert.assertThat(deserializedLockWhitelist.getSize(), is(addressesBytes.length));
         Assert.assertThat(deserializedLockWhitelist.getAddresses().stream().map(Address::getHash160).collect(Collectors.toList()), containsInAnyOrder(addressesBytes));
-        Set<Coin> deserializedCoins = deserializedLockWhitelist.getAddresses().stream().map(deserializedLockWhitelist::getMaxTransferValue).collect(Collectors.toSet());
+        Set<Coin> deserializedCoins = deserializedLockWhitelist.getEntries().stream().map(entry -> ((OneOffWhiteListEntry)entry).maxTransferValue()).collect(Collectors.toSet());
         Assert.assertThat(deserializedCoins, hasSize(1));
         Assert.assertThat(deserializedCoins, hasItem(Coin.MILLICOIN));
         Assert.assertThat(deserializedLockWhitelist.getDisableBlockHeight(), is(42));
@@ -580,7 +580,9 @@ public class BridgeSerializationUtilsTest {
         Assert.assertThat(originalAddresses, hasSize(1));
         Assert.assertThat(deserializedAddresses, hasSize(1));
         Assert.assertThat(originalAddresses, is(deserializedAddresses));
-        Assert.assertThat(originalLockWhitelist.getMaxTransferValue(originalAddresses.get(0)), is(deserializedLockWhitelist.getMaxTransferValue(deserializedAddresses.get(0))));
+        Assert.assertThat(
+                ((OneOffWhiteListEntry)originalLockWhitelist.getEntry(originalAddresses.get(0))).maxTransferValue(),
+                is(((OneOffWhiteListEntry)deserializedLockWhitelist.getEntry(deserializedAddresses.get(0))).maxTransferValue()));
     }
 
     @Test
