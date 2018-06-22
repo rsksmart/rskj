@@ -43,7 +43,7 @@ public class RemascFederationProvider {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(processingBlock.getNumber()))
+                BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(processingBlock != null ? processingBlock.getNumber() : 0))
         );
         this.federationSupport = new FederationSupport(
                 bridgeStorageProvider,
