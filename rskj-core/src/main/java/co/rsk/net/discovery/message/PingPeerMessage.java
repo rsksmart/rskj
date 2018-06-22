@@ -48,7 +48,7 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
 
     private PingPeerMessage() {}
 
-    public static PingPeerMessage create(String host, int port, String check, ECKey privKey, OptionalInt networkId) {
+    public static PingPeerMessage create(String host, int port, String check, ECKey privKey, Integer networkId) {
         /* RLP Encode data */
         byte[] rlpIp = RLP.encodeElement(host.getBytes(StandardCharsets.UTF_8));
 
@@ -63,18 +63,14 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
         byte[] rlpToList = RLP.encodeList(rlpIpTo, rlpPortTo, rlpPortTo);
         byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
         byte[] data;
-        if (networkId.isPresent()) {
-            byte[] tmpNetworkId = intToBytes(networkId.getAsInt());
-            byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
+        byte[] tmpNetworkId = intToBytes(networkId);
+        byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
             data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkID);
-        } else {
-            data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck);
-        }
 
         PingPeerMessage message = new PingPeerMessage();
         message.encode(type, data, privKey);
 
-        message.setNetworkId(networkId);
+        message.setNetworkId(OptionalInt.of(networkId));
         message.messageId = check;
         message.host = host;
         message.port = port;

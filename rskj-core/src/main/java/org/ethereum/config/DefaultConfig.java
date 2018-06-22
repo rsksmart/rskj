@@ -207,7 +207,7 @@ public class DefaultConfig {
     @Bean
     public PeerExplorer peerExplorer(RskSystemProperties rskConfig) {
         ECKey key = rskConfig.getMyKey();
-        OptionalInt networkId = OptionalInt.of(rskConfig.networkId());
+        Integer networkId = rskConfig.networkId();
         Node localNode = new Node(key.getNodeId(), rskConfig.getPublicIp(), rskConfig.getPeerPort());
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
         long msgTimeOut = rskConfig.peerDiscoveryMessageTimeOut();

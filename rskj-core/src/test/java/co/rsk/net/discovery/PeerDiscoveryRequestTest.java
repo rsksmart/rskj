@@ -35,7 +35,7 @@ import java.util.UUID;
  */
 public class PeerDiscoveryRequestTest {
 
-    public static final OptionalInt NETWORK_ID = OptionalInt.of(1);
+    public static final int NETWORK_ID = 1;
 
     @Test
     public void create() {

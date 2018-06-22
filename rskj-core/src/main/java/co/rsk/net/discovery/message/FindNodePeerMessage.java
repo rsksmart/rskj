@@ -46,7 +46,7 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     private FindNodePeerMessage() {
     }
 
-    public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, OptionalInt networkId) {
+    public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, Integer networkId) {
 
         /* RLP Encode data */
         byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
@@ -55,19 +55,15 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
         byte[] type = new byte[]{(byte) DiscoveryMessageType.FIND_NODE.getTypeValue()};
 
         byte[] data;
-        if (networkId.isPresent()) {
-            byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(intToBytes(networkId.getAsInt())));
-            data = RLP.encodeList(rlpNodeId, rlpCheck, rlpNetworkId);
-        } else {
-            data = RLP.encodeList(rlpNodeId, rlpCheck);
-        }
+        byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(intToBytes(networkId)));
+        data = RLP.encodeList(rlpNodeId, rlpCheck, rlpNetworkId);
 
         FindNodePeerMessage message = new FindNodePeerMessage();
         message.encode(type, data, privKey);
 
         message.messageId = check;
         message.nodeId = nodeId;
-        message.setNetworkId(networkId);
+        message.setNetworkId(OptionalInt.of(networkId));
 
         return message;
     }

@@ -70,7 +70,7 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
         this.setNetworkIdWithRLP(list.size()>2?list.get(2):null);
     }
 
-    public static NeighborsPeerMessage create(List<Node> nodes, String check, ECKey privKey, OptionalInt networkId) {
+    public static NeighborsPeerMessage create(List<Node> nodes, String check, ECKey privKey, Integer networkId) {
         byte[][] nodeRLPs = null;
 
         if (nodes != null) {
@@ -87,18 +87,13 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
 
         byte[] type = new byte[]{(byte) DiscoveryMessageType.NEIGHBORS.getTypeValue()};
         byte[] data;
-        if (networkId.isPresent()) {
-            byte[] tmpNetworkId = intToBytes(networkId.getAsInt());
-            byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
-            data = RLP.encodeList(rlpListNodes, rlpCheck, rlpNetworkId);
-        } else {
-            data = RLP.encodeList(rlpListNodes, rlpCheck);
-        }
-
+        byte[] tmpNetworkId = intToBytes(networkId);
+        byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
+        data = RLP.encodeList(rlpListNodes, rlpCheck, rlpNetworkId);
 
         NeighborsPeerMessage neighborsMessage = new NeighborsPeerMessage();
         neighborsMessage.encode(type, data, privKey);
-        neighborsMessage.setNetworkId(networkId);
+        neighborsMessage.setNetworkId(OptionalInt.of(networkId));
         neighborsMessage.nodes = nodes;
         neighborsMessage.messageId = check;
 

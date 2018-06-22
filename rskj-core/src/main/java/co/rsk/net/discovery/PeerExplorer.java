@@ -55,7 +55,7 @@ public class PeerExplorer {
     private final Map<String, PeerDiscoveryRequest> pendingFindNodeRequests = new ConcurrentHashMap<>();
 
     private final Map<NodeID, Node> establishedConnections = new ConcurrentHashMap<>();
-    private final OptionalInt networkId;
+    private final Integer networkId;
 
     private UDPChannel udpChannel;
 
@@ -73,7 +73,7 @@ public class PeerExplorer {
 
     private long requestTimeout;
 
-    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long updatePeriod, long cleanPeriod, OptionalInt networkId) {
+    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
@@ -115,7 +115,7 @@ public class PeerExplorer {
         //If this is not from my network ignore it. But if the messages do not
         //have a networkId in the message yet, then just let them through, for now.
         if (event.getMessage().getNetworkId().isPresent() &&
-                event.getMessage().getNetworkId().getAsInt() != this.networkId.getAsInt()) {
+                event.getMessage().getNetworkId().getAsInt() != this.networkId) {
             return;
         }
         if (type == DiscoveryMessageType.PING) {

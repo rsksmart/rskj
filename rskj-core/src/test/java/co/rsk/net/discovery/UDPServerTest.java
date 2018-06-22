@@ -50,7 +50,7 @@ public class UDPServerTest {
     private static final int PORT_1 = 40305;
     private static final int PORT_2 = 40306;
     private static final int PORT_3 = 40307;
-    private static final OptionalInt NETWORK_ID = OptionalInt.of(1);
+    private static final int NETWORK_ID = 1;
 
     private static final long TIMEOUT = 30000;
     private static final long UPDATE = 60000;

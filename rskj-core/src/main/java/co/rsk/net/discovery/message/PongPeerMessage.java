@@ -49,7 +49,7 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
     private PongPeerMessage() {
     }
 
-    public static PongPeerMessage create(String host, int port, String check, ECKey privKey, OptionalInt networkId) {
+    public static PongPeerMessage create(String host, int port, String check, ECKey privKey, Integer networkId) {
         /* RLP Encode data */
         byte[] rlpIp = RLP.encodeElement(host.getBytes(StandardCharsets.UTF_8));
 
@@ -66,18 +66,15 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         byte[] rlpFromList = RLP.encodeList(rlpIp, rlpPort, rlpPort);
         byte[] rlpToList = RLP.encodeList(rlpIpTo, rlpPortTo, rlpPortTo);
         byte[] data;
-        if (networkId.isPresent()) {
-            byte[] tmpNetworkId = intToBytes(networkId.getAsInt());
-            byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
-            data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkID);
-        } else {
-            data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck);
-        }
+
+        byte[] tmpNetworkId = intToBytes(networkId);
+        byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
+        data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkID);
 
         PongPeerMessage message = new PongPeerMessage();
         message.encode(type, data, privKey);
 
-        message.setNetworkId(networkId);
+        message.setNetworkId(OptionalInt.of(networkId));
         message.messageId = check;
         message.host = host;
         message.port = port;

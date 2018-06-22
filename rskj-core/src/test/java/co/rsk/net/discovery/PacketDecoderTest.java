@@ -39,7 +39,7 @@ import java.util.UUID;
  */
 public class PacketDecoderTest {
 
-    private static final OptionalInt NETWORK_ID = OptionalInt.of(1);
+    private static final int NETWORK_ID = 1;
     private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
 
     @Test
