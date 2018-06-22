@@ -54,7 +54,6 @@ import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalInt;
 
 import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
@@ -208,7 +207,7 @@ public class DefaultConfig {
     @Bean
     public PeerExplorer peerExplorer(RskSystemProperties rskConfig) {
         ECKey key = rskConfig.getMyKey();
-        OptionalInt networkId = Optional.ofNullable(rskConfig.networkId()).map(OptionalInt::of).orElseGet(OptionalInt::empty);
+        OptionalInt networkId = OptionalInt.of(rskConfig.networkId());
         Node localNode = new Node(key.getNodeId(), rskConfig.getPublicIp(), rskConfig.getPeerPort());
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
         long msgTimeOut = rskConfig.peerDiscoveryMessageTimeOut();
