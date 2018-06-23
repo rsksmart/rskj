@@ -20,13 +20,15 @@ package co.rsk.net.discovery.message;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
+import org.ethereum.util.*;
 import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.OptionalInt;
+
+import static org.ethereum.util.ByteUtil.intToBytes;
+import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 /**
  * Created by mario on 16/02/17.
@@ -44,20 +46,24 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     private FindNodePeerMessage() {
     }
 
-    public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey) {
+    public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, Integer networkId) {
 
         /* RLP Encode data */
         byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
         byte[] rlpNodeId = RLP.encodeElement(nodeId);
 
         byte[] type = new byte[]{(byte) DiscoveryMessageType.FIND_NODE.getTypeValue()};
-        byte[] data = RLP.encodeList(rlpNodeId, rlpCheck);
+
+        byte[] data;
+        byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(intToBytes(networkId)));
+        data = RLP.encodeList(rlpNodeId, rlpCheck, rlpNetworkId);
 
         FindNodePeerMessage message = new FindNodePeerMessage();
         message.encode(type, data, privKey);
 
         message.messageId = check;
         message.nodeId = nodeId;
+        message.setNetworkId(OptionalInt.of(networkId));
 
         return message;
     }
@@ -72,6 +78,8 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
         RLPItem nodeRlp = (RLPItem) dataList.get(0);
 
         this.nodeId = nodeRlp.getRLPData();
+
+        this.setNetworkIdWithRLP(dataList.size()>2?dataList.get(2):null);
     }
 
 
@@ -88,6 +96,7 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     public String toString() {
         return new ToStringBuilder(this)
                 .append(Hex.toHexString(this.nodeId))
+                .append(this.getNetworkId())
                 .append(this.messageId).toString();
     }
 

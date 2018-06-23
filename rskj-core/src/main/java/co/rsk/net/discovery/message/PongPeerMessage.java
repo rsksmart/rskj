@@ -27,7 +27,9 @@ import org.ethereum.util.RLPList;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.OptionalInt;
 
+import static org.ethereum.util.ByteUtil.intToBytes;
 import static org.ethereum.util.ByteUtil.longToBytes;
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
@@ -47,7 +49,7 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
     private PongPeerMessage() {
     }
 
-    public static PongPeerMessage create(String host, int port, String check, ECKey privKey) {
+    public static PongPeerMessage create(String host, int port, String check, ECKey privKey, Integer networkId) {
         /* RLP Encode data */
         byte[] rlpIp = RLP.encodeElement(host.getBytes(StandardCharsets.UTF_8));
 
@@ -63,11 +65,16 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         byte[] type = new byte[]{(byte) DiscoveryMessageType.PONG.getTypeValue()};
         byte[] rlpFromList = RLP.encodeList(rlpIp, rlpPort, rlpPort);
         byte[] rlpToList = RLP.encodeList(rlpIpTo, rlpPortTo, rlpPortTo);
-        byte[] data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck);
+        byte[] data;
+
+        byte[] tmpNetworkId = intToBytes(networkId);
+        byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
+        data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkID);
 
         PongPeerMessage message = new PongPeerMessage();
         message.encode(type, data, privKey);
 
+        message.setNetworkId(OptionalInt.of(networkId));
         message.messageId = check;
         message.host = host;
         message.port = port;
@@ -95,6 +102,9 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         RLPItem chk = (RLPItem) dataList.get(2);
 
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
+
+        //Message from nodes that do not have this
+        this.setNetworkIdWithRLP(dataList.size()>3?dataList.get(3):null);
     }
 
     public String getMessageId() {

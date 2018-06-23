@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
+import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
@@ -34,12 +35,14 @@ import java.util.UUID;
  */
 public class PeerDiscoveryRequestTest {
 
+    public static final int NETWORK_ID = 1;
+
     @Test
     public void create() {
         ECKey key = new ECKey();
         String check = UUID.randomUUID().toString();
-        PingPeerMessage pingPeerMessage = PingPeerMessage.create("localhost", 80, check, key);
-        PongPeerMessage pongPeerMessage = PongPeerMessage.create("localhost", 80, check, key);
+        PingPeerMessage pingPeerMessage = PingPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
+        PongPeerMessage pongPeerMessage = PongPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
         InetSocketAddress address = new InetSocketAddress("localhost", 8080);
 
         PeerDiscoveryRequest request = PeerDiscoveryRequestBuilder.builder().messageId(check)
