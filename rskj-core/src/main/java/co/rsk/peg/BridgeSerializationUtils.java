@@ -330,6 +330,9 @@ public class BridgeSerializationUtils {
     }
 
     public static Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializeOneOffLockWhitelistAndDisableBlockHeight(byte[] data, NetworkParameters parameters) {
+        if (data == null || data.length == 0) {
+            return null;
+        }
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
         int serializedAddressesSize = rlpList.size() - 1;
 

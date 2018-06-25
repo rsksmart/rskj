@@ -570,6 +570,26 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
+    public void deserializeOneOffLockWhitelistAndDisableBlockHeight_null() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2(InnerListMode.NONE);
+
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
+                null,
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        Assert.assertNull(deserializedLockWhitelist);
+
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist2 = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
+                new byte[]{},
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        Assert.assertNull(deserializedLockWhitelist2);
+    }
+
+    @Test
     public void serializeDeserializeOneOffLockWhitelistAndDisableBlockHeight() {
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         Map<Address, LockWhitelistEntry> whitelist = new HashMap<>();
