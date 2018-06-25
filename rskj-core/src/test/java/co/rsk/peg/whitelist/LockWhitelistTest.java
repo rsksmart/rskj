@@ -188,6 +188,87 @@ public class LockWhitelistTest {
         assertExistance(randomAddress, true);
     }
 
+    @Test
+    public void canLockOneOff() {
+
+        Address randomAddress = Address.fromBase58(
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
+        );
+
+        assertExistance(randomAddress, false);
+
+        Assert.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.COIN)));
+
+        assertExistance(randomAddress, true);
+
+        Assert.assertTrue(whitelist.getEntry(randomAddress).canLock(Coin.COIN));
+    }
+
+    @Test
+    public void cantLockOneOffMoreThanMaxValue() {
+
+        Address randomAddress = Address.fromBase58(
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
+        );
+
+        assertExistance(randomAddress, false);
+
+        Assert.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
+
+        assertExistance(randomAddress, true);
+
+        Assert.assertFalse(whitelist.getEntry(randomAddress).canLock(Coin.COIN));
+    }
+
+    @Test
+    public void cantLockOneOffAfterConsume() {
+
+        Address randomAddress = Address.fromBase58(
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
+        );
+
+        OneOffWhiteListEntry entry = new OneOffWhiteListEntry(randomAddress, Coin.COIN);
+
+        Assert.assertTrue(entry.canLock(Coin.COIN));
+
+        entry.consume();
+
+        Assert.assertFalse(entry.canLock(Coin.COIN));
+    }
+
+    @Test
+    public void canLockUnlimited() {
+
+        Address randomAddress = Address.fromBase58(
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
+        );
+
+        UnlimitedWhiteListEntry entry = new UnlimitedWhiteListEntry(randomAddress);
+
+        Assert.assertTrue(entry.canLock(Coin.COIN));
+    }
+
+    @Test
+    public void canLockUnlimitedAfterConsume() {
+
+        Address randomAddress = Address.fromBase58(
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
+        );
+
+        UnlimitedWhiteListEntry entry = new UnlimitedWhiteListEntry(randomAddress);
+
+        Assert.assertTrue(entry.canLock(Coin.COIN));
+
+        entry.consume();
+
+        Assert.assertTrue(entry.canLock(Coin.COIN));
+    }
+
     private void assertExistance(Address address, boolean exists) {
         Assert.assertEquals(exists, whitelist.isWhitelisted(address));
         Assert.assertEquals(exists, whitelist.isWhitelisted(address.getHash160()));
