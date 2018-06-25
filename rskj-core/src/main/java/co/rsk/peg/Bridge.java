@@ -780,7 +780,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public Integer addUnlimitedLockWhitelistAddress(Object[] args)
     {
-        logger.trace("addLockWhitelistAddress");
+        logger.trace("addUnlimitedLockWhitelistAddress");
 
         String addressBase58;
         try {

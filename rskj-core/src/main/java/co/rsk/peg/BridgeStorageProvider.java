@@ -368,7 +368,9 @@ public class BridgeStorageProvider {
                     data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, btcContext.getParams())));
         }
 
-        return new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());
+        lockWhitelist = new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());
+
+        return lockWhitelist;
 
     }
 
