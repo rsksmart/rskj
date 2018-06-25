@@ -24,6 +24,7 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.primitives.UnsignedBytes;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
@@ -519,7 +520,10 @@ public class BridgeSerializationUtilsTest {
                 .collect(Collectors.toMap(Function.identity(), k -> new OneOffWhiteListEntry(k, maxToTransfer))),
                 0);
 
-        byte[] result = BridgeSerializationUtils.serializeOneOffLockWhitelist(lockWhitelist);
+        byte[] result = BridgeSerializationUtils.serializeOneOffLockWhitelist(Pair.of(
+                lockWhitelist.getEntries().stream().filter(e -> e.getClass() == OneOffWhiteListEntry.class).map(e -> (OneOffWhiteListEntry)e).collect(Collectors.toList()),
+                lockWhitelist.getDisableBlockHeight()
+        ));
         StringBuilder expectedBuilder = new StringBuilder();
         Arrays.stream(addressesBytes).sorted(UnsignedBytes.lexicographicalComparator()).forEach(bytes -> {
             expectedBuilder.append("dd");
@@ -533,7 +537,7 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void deserializeLockWhitelist() throws Exception {
+    public void deserializeOneOffLockWhitelistAndDisableBlockHeight() throws Exception {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.NONE);
 
@@ -552,37 +556,41 @@ public class BridgeSerializationUtilsTest {
         sampleBuilder.append("002a");
         byte[] sample = Hex.decode(sampleBuilder.toString());
 
-        LockWhitelist deserializedLockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
                 sample,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        Assert.assertThat(deserializedLockWhitelist.getSize(), is(addressesBytes.length));
-        Assert.assertThat(deserializedLockWhitelist.getAddresses().stream().map(Address::getHash160).collect(Collectors.toList()), containsInAnyOrder(addressesBytes));
-        Set<Coin> deserializedCoins = deserializedLockWhitelist.getEntries().stream().map(entry -> ((OneOffWhiteListEntry)entry).maxTransferValue()).collect(Collectors.toSet());
+        Assert.assertThat(deserializedLockWhitelist.getLeft().size(), is(addressesBytes.length));
+        Assert.assertThat(deserializedLockWhitelist.getLeft().keySet().stream().map(Address::getHash160).collect(Collectors.toList()), containsInAnyOrder(addressesBytes));
+        Set<Coin> deserializedCoins = deserializedLockWhitelist.getLeft().values().stream().map(entry -> ((OneOffWhiteListEntry)entry).maxTransferValue()).collect(Collectors.toSet());
         Assert.assertThat(deserializedCoins, hasSize(1));
         Assert.assertThat(deserializedCoins, hasItem(Coin.MILLICOIN));
-        Assert.assertThat(deserializedLockWhitelist.getDisableBlockHeight(), is(42));
+        Assert.assertThat(deserializedLockWhitelist.getRight(), is(42));
     }
 
     @Test
-    public void serializeDeserializeLockWhitelist() {
+    public void serializeDeserializeOneOffLockWhitelistAndDisableBlockHeight() {
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         Map<Address, LockWhitelistEntry> whitelist = new HashMap<>();
         Address address = BtcECKey.fromPrivate(BigInteger.valueOf(100L)).toAddress(btcParams);
         whitelist.put(address, new OneOffWhiteListEntry(address, Coin.COIN));
 
         LockWhitelist originalLockWhitelist = new LockWhitelist(whitelist, 0);
-        LockWhitelist deserializedLockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(BridgeSerializationUtils.serializeOneOffLockWhitelist(originalLockWhitelist), btcParams);
+        byte[] serializedLockWhitelist = BridgeSerializationUtils.serializeOneOffLockWhitelist(Pair.of(
+                originalLockWhitelist.getEntries().stream().filter(e -> e.getClass() == OneOffWhiteListEntry.class).map(e -> (OneOffWhiteListEntry)e).collect(Collectors.toList()),
+                originalLockWhitelist.getDisableBlockHeight()
+        ));
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(serializedLockWhitelist, btcParams);
 
         List<Address> originalAddresses = originalLockWhitelist.getAddresses();
-        List<Address> deserializedAddresses = deserializedLockWhitelist.getAddresses();
+        List<Address> deserializedAddresses = new ArrayList(deserializedLockWhitelist.getLeft().keySet());
         Assert.assertThat(originalAddresses, hasSize(1));
         Assert.assertThat(deserializedAddresses, hasSize(1));
         Assert.assertThat(originalAddresses, is(deserializedAddresses));
         Assert.assertThat(
                 ((OneOffWhiteListEntry)originalLockWhitelist.getEntry(originalAddresses.get(0))).maxTransferValue(),
-                is(((OneOffWhiteListEntry)deserializedLockWhitelist.getEntry(deserializedAddresses.get(0))).maxTransferValue()));
+                is(((OneOffWhiteListEntry)deserializedLockWhitelist.getLeft().get(deserializedAddresses.get(0))).maxTransferValue()));
     }
 
     @Test

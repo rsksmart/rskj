@@ -23,6 +23,10 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.whitelist.LockWhitelist;
+import co.rsk.peg.whitelist.LockWhitelistEntry;
+import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Repository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
@@ -32,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.stream.Collectors;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
@@ -322,10 +327,22 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, lockWhitelist, BridgeSerializationUtils::serializeOneOffLockWhitelist);
+        List<LockWhitelistEntry> entries = lockWhitelist.getEntries();
+
+        List<OneOffWhiteListEntry> oneOffEntries = entries
+                .stream()
+                .filter(e -> e.getClass() == OneOffWhiteListEntry.class)
+                .map(e -> (OneOffWhiteListEntry)e)
+                .collect(Collectors.toList());
+        safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight()), BridgeSerializationUtils::serializeOneOffLockWhitelist);
 
         if (this.bridgeStorageConfiguration.isUnlimitedWhitelistEnabled()) {
-            safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, lockWhitelist, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
+            List<UnlimitedWhiteListEntry> unlimitedEntries = entries
+                    .stream()
+                    .filter(e -> e.getClass() == UnlimitedWhiteListEntry.class)
+                    .map(e -> (UnlimitedWhiteListEntry)e)
+                    .collect(Collectors.toList());
+            safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
         }
     }
 
@@ -334,20 +351,24 @@ public class BridgeStorageProvider {
             return lockWhitelist;
         }
 
-        byte[] oneOffWhitelistData = safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY, data -> data);
-        if (oneOffWhitelistData == null) {
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData =
+                safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY,
+                        data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, btcContext.getParams()));
+        if (oneOffWhitelistAndDisableBlockHeightData == null) {
             lockWhitelist = new LockWhitelist(new HashMap<>());
             return lockWhitelist;
         }
-        byte[] unlimitedWhitelistData = null;
+
+        Map<Address, LockWhitelistEntry> whitelistedAddresses = new HashMap<>();
+
+        whitelistedAddresses.putAll(oneOffWhitelistAndDisableBlockHeightData.getLeft());
 
         if (this.bridgeStorageConfiguration.isUnlimitedWhitelistEnabled()) {
-            unlimitedWhitelistData = safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY, data -> data);
+            whitelistedAddresses.putAll(safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY,
+                    data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, btcContext.getParams())));
         }
 
-        lockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(oneOffWhitelistData, unlimitedWhitelistData, btcContext.getParams());
-
-        return lockWhitelist;
+        return new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());
 
     }
 

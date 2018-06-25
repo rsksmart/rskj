@@ -27,6 +27,10 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.whitelist.LockWhitelist;
+import co.rsk.peg.whitelist.LockWhitelistEntry;
+import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -46,6 +50,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -450,7 +455,11 @@ public class BridgeStorageProviderTest {
     @Test
     public void getLockWhitelist_nonNullBytes() {
         List<Integer> calls = new ArrayList<>();
-        LockWhitelist whitelistMock = mock(LockWhitelist.class);
+        LockWhitelist whitelistMock = new LockWhitelist(new HashMap<>());
+        LockWhitelistEntry oneOffEntry = new OneOffWhiteListEntry(getBtcAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), Coin.COIN);
+        LockWhitelistEntry unlimitedEntry = new UnlimitedWhiteListEntry(getBtcAddress("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"));
+        whitelistMock.put(oneOffEntry.address(), oneOffEntry);
+        whitelistMock.put(unlimitedEntry.address(), unlimitedEntry);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
         // Overriding BridgeStorageConfiguration to make sure it serializes the unlimited whitelist data
@@ -481,21 +490,34 @@ public class BridgeStorageProviderTest {
                     return new byte[]{(byte)0xbb};
                 });
         PowerMockito
-            .when(BridgeSerializationUtils.deserializeLockWhitelist(any(byte[].class), any(byte[].class), any(NetworkParameters.class)))
+            .when(BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(any(byte[].class), any(NetworkParameters.class)))
             .then((InvocationOnMock invocation) -> {
                 calls.add(0);
                 byte[] data = invocation.getArgumentAt(0, byte[].class);
-                byte[] unlimitedData = invocation.getArgumentAt(1, byte[].class);
-                NetworkParameters parameters = invocation.getArgumentAt(2, NetworkParameters.class);
+                NetworkParameters parameters = invocation.getArgumentAt(1, NetworkParameters.class);
                 Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), parameters);
                 // Make sure we're deserializing what just came from the repo with the correct AddressBasedAuthorizer
                 Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
-                Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xbb}, unlimitedData));
-                return whitelistMock;
+                HashMap<Address, LockWhitelistEntry> map = new HashMap<>();
+                map.put(oneOffEntry.address(), oneOffEntry);
+                return Pair.of(map, 0);
         });
+        PowerMockito
+                .when(BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(any(byte[].class), any(NetworkParameters.class)))
+                .then((InvocationOnMock invocation) -> {
+                    calls.add(0);
+                    byte[] unlimitedData = invocation.getArgumentAt(0, byte[].class);
+                    NetworkParameters parameters = invocation.getArgumentAt(1, NetworkParameters.class);
+                    Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), parameters);
+                    // Make sure we're deserializing what just came from the repo with the correct AddressBasedAuthorizer
+                    Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xbb}, unlimitedData));
+                    HashMap<Address, LockWhitelistEntry> map = new HashMap<>();
+                    map.put(unlimitedEntry.address(), unlimitedEntry);
+                    return map;
+                });
 
-        Assert.assertSame(whitelistMock, storageProvider.getLockWhitelist());
-        Assert.assertEquals(3, calls.size()); // 1 for each call to deserializeFederation & getStorageBytes (we call getStorageBytes twice)
+        Assert.assertEquals(whitelistMock.getEntries(), storageProvider.getLockWhitelist().getEntries());
+        Assert.assertEquals(4, calls.size()); // 1 for each call to deserializeFederation & getStorageBytes (we call getStorageBytes twice)
     }
 
     @Test
@@ -503,7 +525,8 @@ public class BridgeStorageProviderTest {
         List<Integer> calls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(500)));
         Context contextMock = mock(Context.class);
         when(contextMock.getParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
@@ -519,16 +542,23 @@ public class BridgeStorageProviderTest {
                 return null;
             });
         PowerMockito
-            .when(BridgeSerializationUtils.deserializeLockWhitelist(any(byte[].class), any(NetworkParameters.class)))
+            .when(BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(any(byte[].class), any(NetworkParameters.class)))
             .then((InvocationOnMock invocation) -> {
                 calls.add(0);
                 return null;
             });
+        PowerMockito
+                .when(BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(any(byte[].class), any(NetworkParameters.class)))
+                .then((InvocationOnMock invocation) -> {
+                    calls.add(0); // THIS ONE WON'T BE CALLED BECAUSE ONEOFF IS EMPTY
+                    Assert.fail("As we don't have data for one-off, we shouldn't have called deserialize unlimited");
+                    return null;
+                });
 
         LockWhitelist result = storageProvider.getLockWhitelist();
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.getSize().intValue());
-        Assert.assertEquals(1, calls.size()); // 1 for each call to deserializeFederation & getStorageBytes
+        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederation & getStorageBytes
     }
 
     @Test
@@ -544,10 +574,12 @@ public class BridgeStorageProviderTest {
 
         // Mock the One-Off serialization
         PowerMockito
-            .when(BridgeSerializationUtils.serializeOneOffLockWhitelist(any(LockWhitelist.class)))
+            .when(BridgeSerializationUtils.serializeOneOffLockWhitelist(any(Pair.class)))
             .then((InvocationOnMock invocation) -> {
-                LockWhitelist whitelist = invocation.getArgumentAt(0, LockWhitelist.class);
-                Assert.assertSame(whitelistMock, whitelist);
+                Pair<List<OneOffWhiteListEntry>, Integer> data = invocation.getArgumentAt(0, Pair.class);
+                List<OneOffWhiteListEntry> mockedData = whitelistMock.getEntries().stream().filter(e -> e.getClass() == OneOffWhiteListEntry.class).map(e -> (OneOffWhiteListEntry)e).collect(Collectors.toList());
+                Assert.assertEquals(mockedData, data.getLeft());
+                Assert.assertSame(whitelistMock.getDisableBlockHeight(), data.getRight());
                 serializeCalls.add(0);
                 return Hex.decode("ccdd");
             });
@@ -568,10 +600,11 @@ public class BridgeStorageProviderTest {
 
         // Mock the Unlimited serialization
         PowerMockito
-            .when(BridgeSerializationUtils.serializeUnlimitedLockWhitelist(any(LockWhitelist.class)))
+            .when(BridgeSerializationUtils.serializeUnlimitedLockWhitelist(any(List.class)))
             .then((InvocationOnMock invocation) -> {
-                LockWhitelist whitelist = invocation.getArgumentAt(0, LockWhitelist.class);
-                Assert.assertSame(whitelistMock, whitelist);
+                List<UnlimitedWhiteListEntry> unlimitedWhiteListEntries = invocation.getArgumentAt(0, List.class);
+                List<UnlimitedWhiteListEntry> mockedData = whitelistMock.getEntries().stream().filter(e -> e.getClass() == UnlimitedWhiteListEntry.class).map(e -> (UnlimitedWhiteListEntry)e).collect(Collectors.toList());
+                Assert.assertEquals(mockedData, unlimitedWhiteListEntries);
                 serializeCalls.add(0);
                 return Hex.decode("bbcc");
             });
@@ -738,6 +771,10 @@ public class BridgeStorageProviderTest {
         RskAddress mock = PowerMockito.mock(RskAddress.class);
         when(mock.getBytes()).thenReturn(Hex.decode(addr));
         return mock;
+    }
+
+    private Address getBtcAddress(String addr) {
+        return new Address(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams(), Hex.decode(addr));
     }
 
 }
