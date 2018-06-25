@@ -371,7 +371,6 @@ public class BridgeStorageProvider {
         lockWhitelist = new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());
 
         return lockWhitelist;
-
     }
 
     public Coin getFeePerKb() {

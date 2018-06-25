@@ -51,6 +51,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -631,6 +632,41 @@ public class BridgeStorageProviderTest {
         storageProvider.saveLockWhitelist();
         Assert.assertEquals(2, storageBytesCalls.size());
         Assert.assertEquals(2, serializeCalls.size());
+    }
+
+    @Test
+    public void saveLockWhiteListAfterGetWithData() {
+        AtomicReference<Boolean> storageCalled = new AtomicReference<>();
+        storageCalled.set(Boolean.FALSE);
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        OneOffWhiteListEntry oneOffEntry = new OneOffWhiteListEntry(getBtcAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), Coin.COIN);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(500)));
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
+                .then((InvocationOnMock invocation) -> new byte[]{(byte)0xaa});
+
+        PowerMockito
+                .when(BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(any(byte[].class), any(NetworkParameters.class)))
+                .then((InvocationOnMock invocation) -> {
+                    HashMap<Address, LockWhitelistEntry> map = new HashMap<>();
+                    map.put(oneOffEntry.address(), oneOffEntry);
+                    return Pair.of(map, 0);
+                });
+
+        Mockito
+                .doAnswer((InvocationOnMock invocation) -> {
+                    storageCalled.set(Boolean.TRUE);
+                    return null;
+                })
+                .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8))), any(byte[].class));
+
+        Assert.assertTrue(storageProvider.getLockWhitelist().getSize() > 0);
+
+        storageProvider.saveLockWhitelist();
+
+        Assert.assertTrue(storageCalled.get());
     }
 
     @Test
