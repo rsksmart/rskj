@@ -20,6 +20,7 @@ package co.rsk.net.notifications.alerts;
 
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.notifications.PanicStatus;
 import org.ethereum.util.ByteUtil;
 
 public class ForkAttackAlert extends FederationAlert {
@@ -66,5 +67,16 @@ public class ForkAttackAlert extends FederationAlert {
 
     public boolean isFederatedNode() {
         return isFederatedNode;
+    }
+
+    @Override
+    public PanicStatus getAssociatedPanicStatus(long forBlockNumber) {
+        return isFederatedNode ? PanicStatus.FederationBlockchainForkedPanic(forBlockNumber)
+                : PanicStatus.NodeBlockchainForkedPanic(forBlockNumber);
+    }
+
+    @Override
+    public String getDescription() {
+        return "Fork detected";
     }
 }

@@ -18,6 +18,10 @@
 
 package co.rsk.net.notifications.alerts;
 
+import co.rsk.net.notifications.PanicStatus;
+
 public abstract class FederationAlert {
     public abstract FederationAlert copy();
+    public abstract PanicStatus getAssociatedPanicStatus(long forBlockNumber);
+    public abstract String getDescription();
 }

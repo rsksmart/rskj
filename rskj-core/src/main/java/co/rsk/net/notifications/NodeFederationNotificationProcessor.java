@@ -48,7 +48,6 @@ import javax.naming.ConfigurationException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /***
  * Process {@link FederationNotification} notifications
@@ -81,16 +80,18 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
     private RskSystemProperties config;
     private BlockProcessor blockProcessor;
     private PanicStatus panicStatus;
+    private FederationState federationState;
 
     private NotificationBuffer<FederationNotification> receivedFederationNotifications = new NotificationBuffer<>(
             MAX_NUMBER_OF_NOTIFICATIONS_CACHED);
     private volatile Instant lastNotificationReceivedTime = Instant.now();
 
-    public NodeFederationNotificationProcessor(RskSystemProperties config, BlockProcessor blockProcessor) {
+    public NodeFederationNotificationProcessor(RskSystemProperties config, BlockProcessor blockProcessor, FederationState federationState) {
         this.config = config;
         this.blockProcessor = blockProcessor;
         this.federationAlerts = new ArrayList<>();
         this.panicStatus = PanicStatus.NoPanic(0);
+        this.federationState = federationState;
     }
 
     /**
@@ -164,17 +165,13 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         if (config.federationNotificationsEnabled() && duration != null && duration.getSeconds() > maxSilenceSecs) {
 
             FederationAlert alert = new FederationEclipsedAlert(duration.getSeconds());
-            addFederationAlert(alert);
+            federationState.updateState(getBestBlockNumber(), Optional.empty(), Optional.of(alert));
 
             if (config.shouldFederationNotificationsTriggerPanic()) {
                 setPanicStatus(PanicStatus.FederationEclipsedPanic(getBestBlockNumber()));
                 logger.warn(
                         "Federation alert generated. Panic status is {}. No Federation Notifications received for {} seconds",
                         getPanicStatus(), duration.getSeconds());
-            }
-        } else {
-            if (config.shouldFederationNotificationsTriggerPanic()) {
-                setPanicStatus(PanicStatus.NoPanic(getBestBlockNumber()));
             }
         }
     }
@@ -210,14 +207,7 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
 
     @Override
     public boolean inPanicState() {
-        return !getPanicStatus().isNoPanic();
-    }
-
-    private void addFederationAlert(FederationAlert alert) {
-        if (federationAlerts.size() > MAX_FEDERATION_ALERTS) {
-            federationAlerts.remove(0);
-        }
-        federationAlerts.add(alert);
+        return !getPanicStatus().isPanic();
     }
 
     /***
@@ -230,48 +220,35 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
      * @throws ConfigurationException
      */
     private void generateAlertIfNeeded(FederationNotification notification) throws ConfigurationException {
+        // Ignore notifications while syncing blocks
+        // TODO: figure out where to put this. Maybe better @ message processor level?
         if (this.blockProcessor.hasBetterBlockToSync()) {
             return;
         }
 
+        Optional<FederationAlert> alert = Optional.empty();
+
         int federationConfirmationIndex = this.config.getFederationConfirmationIndex();
         Confirmation c = notification.getConfirmation(federationConfirmationIndex);
+        long bestBlockNumber = getBestBlockNumber();
 
+        // TODO: consider the case in which a notification could potentially imply
+        // TODO: two different alerts being generated.
         if (notification.isFederationFrozen()) {
-            FederationAlert alert = new FederationFrozenAlert(notification.getSource(), c.getBlockHash(), c.getBlockNumber());
-            addFederationAlert(alert);
+            alert = Optional.of(new FederationFrozenAlert(notification.getSource(), c.getBlockHash(), c.getBlockNumber()));
+        } else {
+            Block block = blockProcessor.getBlockchain().getBlockByNumber(c.getBlockNumber());
 
-            long panicSinceBlock = getBestBlockNumber();
-            setPanicStatus(PanicStatus.FederationFrozenPanic(panicSinceBlock));
+            if (block == null || !block.getHash().equals(c.getBlockHash())) {
+                Keccak256 blockHash = block == null ? null : block.getHash();
+                boolean isFederatedNode = isFederationMember();
 
-            logger.warn("Federation alert generated. Panic status is {}", getPanicStatus());
-
-            return;
+                alert = Optional.of(new ForkAttackAlert(notification.getSource(), c.getBlockHash(), c.getBlockNumber(),
+                        blockHash, bestBlockNumber, isFederatedNode));
+            }
         }
 
-        Block block = blockProcessor.getBlockchain().getBlockByNumber(c.getBlockNumber());
-
-        if (block == null || !block.getHash().equals(c.getBlockHash())) {
-            Keccak256 blockHash = block == null ? null : block.getHash();
-
-            boolean isFederatedNode = isFederationMember();
-            FederationAlert alert = new ForkAttackAlert(notification.getSource(), c.getBlockHash(), c.getBlockNumber(),
-                    blockHash, getBestBlockNumber(), isFederatedNode);
-            addFederationAlert(alert);
-
-            long panicSinceBlock = getBestBlockNumber();
-            setPanicStatus(isFederatedNode ? PanicStatus.FederationBlockchainForkedPanic(panicSinceBlock)
-                    : PanicStatus.NodeBlockchainForkedPanic(panicSinceBlock));
-
-            logger.warn("Federation alert generated. Panic status is {}", getPanicStatus());
-
-            return;
-        }
-
-        if (inPanicState()) {
-            logger.info("Cleaning panic status {}", getPanicStatus());
-            setPanicStatus(PanicStatus.NoPanic(getBestBlockNumber()));
-        }
+        federationState.updateState(bestBlockNumber, Optional.of(notification), alert);
     }
 
     private boolean isFederationMember() {

@@ -20,6 +20,7 @@ package co.rsk.net.notifications.alerts;
 
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.notifications.PanicStatus;
 import org.ethereum.util.ByteUtil;
 
 public class FederationFrozenAlert extends FederationAlert {
@@ -48,5 +49,15 @@ public class FederationFrozenAlert extends FederationAlert {
 
     public long getConfirmationBlockNumber() {
         return confirmationBlockNumber;
+    }
+
+    @Override
+    public PanicStatus getAssociatedPanicStatus(long forBlockNumber) {
+        return PanicStatus.FederationFrozenPanic(forBlockNumber);
+    }
+
+    @Override
+    public String getDescription() {
+        return "Federation reported being frozen";
     }
 }

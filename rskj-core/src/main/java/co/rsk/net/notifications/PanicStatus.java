@@ -37,8 +37,8 @@ public class PanicStatus {
         return sinceBlockNumber;
     }
 
-    public boolean isNoPanic() {
-        return reason.equals(PanicStatusReason.NONE);
+    public boolean isPanic() {
+        return !reason.equals(PanicStatusReason.NONE);
     }
 
     @Override

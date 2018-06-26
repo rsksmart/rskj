@@ -31,10 +31,9 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class FederationNotification extends Message {
-
-
     private RskAddress source;
     private Instant timeToLive;
     private Instant timestamp;
@@ -134,6 +133,10 @@ public class FederationNotification extends Message {
 
     public ECDSASignature getSignature() {
         return signature;
+    }
+
+    public Optional<FederationMember> getFederationMember() {
+        return null; // TODO: implement this
     }
 
     public void setSignature(ECDSASignature signature) {
