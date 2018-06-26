@@ -26,7 +26,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.math.ec.ECPoint;
 
 import javax.annotation.Nullable;
@@ -269,17 +269,17 @@ public class EncryptionHandshake {
         secrets.mac = Keccak256Helper.keccak256(agreedSecret, aesSecret);
         secrets.token = Keccak256Helper.keccak256(sharedSecret);
 
-        SHA3Digest mac1 = new SHA3Digest(MAC_SIZE);
+        KeccakDigest mac1 = new KeccakDigest(MAC_SIZE);
         mac1.update(xor(secrets.mac, responderNonce), 0, secrets.mac.length);
         byte[] buf = new byte[32];
-        new SHA3Digest(mac1).doFinal(buf, 0);
+        new KeccakDigest(mac1).doFinal(buf, 0);
         mac1.update(initiatePacket, 0, initiatePacket.length);
-        new SHA3Digest(mac1).doFinal(buf, 0);
-        SHA3Digest mac2 = new SHA3Digest(MAC_SIZE);
+        new KeccakDigest(mac1).doFinal(buf, 0);
+        KeccakDigest mac2 = new KeccakDigest(MAC_SIZE);
         mac2.update(xor(secrets.mac, initiatorNonce), 0, secrets.mac.length);
-        new SHA3Digest(mac2).doFinal(buf, 0);
+        new KeccakDigest(mac2).doFinal(buf, 0);
         mac2.update(responsePacket, 0, responsePacket.length);
-        new SHA3Digest(mac2).doFinal(buf, 0);
+        new KeccakDigest(mac2).doFinal(buf, 0);
         if (isInitiator) {
             secrets.egressMac = mac1;
             secrets.ingressMac = mac2;
@@ -358,8 +358,8 @@ public class EncryptionHandshake {
         byte[] aes;
         byte[] mac;
         byte[] token;
-        SHA3Digest egressMac;
-        SHA3Digest ingressMac;
+        KeccakDigest egressMac;
+        KeccakDigest ingressMac;
 
         public byte[] getAes() {
             return aes;
@@ -373,11 +373,11 @@ public class EncryptionHandshake {
             return token;
         }
 
-        public SHA3Digest getIngressMac() {
+        public KeccakDigest getIngressMac() {
             return ingressMac;
         }
 
-        public SHA3Digest getEgressMac() {
+        public KeccakDigest getEgressMac() {
             return egressMac;
         }
     }
