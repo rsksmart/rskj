@@ -26,7 +26,7 @@ import org.ethereum.config.blockchain.GenesisConfig;
 
 import java.math.BigInteger;
 
-public class RegTestConfig extends GenesisConfig {
+public class RegTestGenesisConfig extends GenesisConfig {
 
     public static class RegTestConstants extends GenesisConstants {
 
@@ -62,7 +62,7 @@ public class RegTestConfig extends GenesisConfig {
         }
     }
 
-    public RegTestConfig() {
+    public RegTestGenesisConfig() {
         super(new RegTestConstants());
     }
 

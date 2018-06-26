@@ -19,7 +19,7 @@
 
 package org.ethereum.config.blockchain.regtest;
 
-public class RegTestFirstForkConfig extends RegTestConfig {
+public class RegTestFirstForkConfig extends RegTestGenesisConfig {
 
     @Override
     public boolean isRfs50() {

@@ -44,7 +44,8 @@ import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.blockchain.regtest.RegTestConfig;
+import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -120,7 +121,7 @@ public class BridgeSupportTest {
     @Before
     public void setUpOnEachTest(){
         config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestGenesisConfig());
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcParams = bridgeConstants.getBtcParams();
         bridgeStorageConfigurationAtHeightZero = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(0));
@@ -2992,7 +2993,7 @@ public class BridgeSupportTest {
     @Test
     public void getBtcBlockchainBlockHashAtDepth() throws Exception {
         BlockchainNetConfig blockchainNetConfigOriginal = config.getBlockchainConfig();
-        config.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestFirstForkConfig());
         NetworkParameters networkParameters = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
         Repository repository = new RepositoryImpl(config);
@@ -3001,7 +3002,7 @@ public class BridgeSupportTest {
         Context btcContext = new Context(bridgeConstants.getBtcParams());
         BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), BridgeRegTestConstants.getInstance(), provider, btcBlockStore, btcBlockChain, null);
         StoredBlock chainHead = getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead();
         Assert.assertEquals(0, chainHead.getHeight());

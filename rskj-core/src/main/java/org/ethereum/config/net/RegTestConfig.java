@@ -21,6 +21,7 @@ package org.ethereum.config.net;
 
 import org.ethereum.config.blockchain.HardForkActivationConfig;
 import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 
 
 /**
@@ -46,7 +47,7 @@ public class RegTestConfig extends AbstractNetConfig {
         RegTestConfig customConfig = new RegTestConfig();
         if (hardForkActivationConfig.getFirstForkActivationHeight() != 0) {
             // Only add genesis config if the fork configs are set
-            customConfig.add(0, new org.ethereum.config.blockchain.regtest.RegTestConfig());
+            customConfig.add(0, new org.ethereum.config.blockchain.regtest.RegTestGenesisConfig());
         }
         customConfig.add(hardForkActivationConfig.getFirstForkActivationHeight(), new RegTestFirstForkConfig());
         return customConfig;

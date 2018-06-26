@@ -35,7 +35,7 @@ import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.config.blockchain.regtest.RegTestConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.Channel;
@@ -67,7 +67,7 @@ public class NodeMessageHandlerTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestGenesisConfig());
     }
 
     @Test

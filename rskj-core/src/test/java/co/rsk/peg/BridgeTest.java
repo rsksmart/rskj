@@ -32,8 +32,9 @@ import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.blockchain.regtest.RegTestConfig;
 import org.ethereum.config.blockchain.GenesisConfig;
+import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
@@ -91,7 +92,7 @@ public class BridgeTest {
 
     @BeforeClass
     public static void setUpBeforeClass() {
-        config.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestGenesisConfig());
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         networkParameters = bridgeConstants.getBtcParams();
         BtcECKey fedBTCPrivateKey = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0);
@@ -100,7 +101,7 @@ public class BridgeTest {
 
     @Before
     public void resetConfigToRegTest() {
-        config.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestGenesisConfig());
     }
 
     @Test
@@ -312,22 +313,12 @@ public class BridgeTest {
 
     @Test
     public void executeGetStateForDebuggingInBamboo() {
-        executeBridgeMethod(new RegTestConfig() {
-            @Override
-            public boolean isRfs94() {
-                return false;
-            }
-        }, Bridge.GET_STATE_FOR_DEBUGGING);
+        executeBridgeMethod(new RegTestGenesisConfig(), Bridge.GET_STATE_FOR_DEBUGGING);
     }
 
     @Test(expected = RuntimeException.class)
     public void executeGetStateForDebuggingAfterBamboo() {
-        executeBridgeMethod(new RegTestConfig() {
-            @Override
-            public boolean isRfs94() {
-                return true;
-            }
-        }, Bridge.GET_STATE_FOR_DEBUGGING);
+        executeBridgeMethod(new RegTestFirstForkConfig(), Bridge.GET_STATE_FOR_DEBUGGING);
     }
 
     private void executeBridgeMethod(BlockchainNetConfig blockchainConfig, CallTransaction.Function bridgeMethod) {
