@@ -33,6 +33,7 @@ import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
@@ -55,7 +56,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

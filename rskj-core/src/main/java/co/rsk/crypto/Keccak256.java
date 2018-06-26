@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.Utils;
 import com.google.common.primitives.Ints;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.Serializable;
 import java.util.Arrays;

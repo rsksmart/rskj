@@ -20,11 +20,11 @@
 package org.ethereum.net.rlpx;
 
 import org.ethereum.crypto.ECKey;
-import org.spongycastle.math.ec.ECPoint;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.encoders.Hex;
 
 import static org.ethereum.util.ByteUtil.merge;
-import static org.spongycastle.util.BigIntegers.asUnsignedByteArray;
+import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
 
 /**
  * Authentication initiation message, to be wrapped inside

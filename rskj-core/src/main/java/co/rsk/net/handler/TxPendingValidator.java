@@ -24,7 +24,7 @@ import co.rsk.net.handler.txvalidator.*;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.BigIntegers;
+import org.bouncycastle.util.BigIntegers;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;

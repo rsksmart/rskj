@@ -26,7 +26,7 @@ import co.rsk.test.World;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
-import org.spongycastle.util.BigIntegers;
+import org.bouncycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.List;

@@ -32,7 +32,7 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
 import java.util.concurrent.ExecutorService;

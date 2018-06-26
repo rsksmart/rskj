@@ -21,7 +21,7 @@ package co.rsk.net.discovery.message;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.*;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;

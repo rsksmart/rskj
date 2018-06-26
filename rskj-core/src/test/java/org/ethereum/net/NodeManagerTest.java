@@ -20,6 +20,7 @@
 package org.ethereum.net;
 
 import co.rsk.net.discovery.PeerExplorer;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
@@ -27,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.*;
 

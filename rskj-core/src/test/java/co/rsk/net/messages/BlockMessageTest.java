@@ -21,7 +21,7 @@ package co.rsk.net.messages;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Created by ajlopez on 5/10/2016.

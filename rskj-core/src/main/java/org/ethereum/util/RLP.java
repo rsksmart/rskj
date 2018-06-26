@@ -27,7 +27,7 @@ import co.rsk.util.RLPElementType;
 import co.rsk.util.RLPElementView;
 import co.rsk.util.RLPException;
 import org.ethereum.db.ByteArrayWrapper;
-import org.spongycastle.util.BigIntegers;
+import org.bouncycastle.util.BigIntegers;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -38,8 +38,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.ethereum.util.ByteUtil.*;
-import static org.spongycastle.util.Arrays.concatenate;
-import static org.spongycastle.util.BigIntegers.asUnsignedByteArray;
+import static org.bouncycastle.util.Arrays.concatenate;
+import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
 
 /**
  * Recursive Length Prefix (RLP) encoding.

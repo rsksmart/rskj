@@ -30,7 +30,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;

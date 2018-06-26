@@ -20,7 +20,7 @@
 package org.ethereum.jsontestsuite;
 
 import org.ethereum.util.ByteUtil;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 

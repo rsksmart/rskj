@@ -60,7 +60,6 @@ tasks.withType(AbstractArchiveTask) {
 ext {
     slf4jVersion = '1.7.25'
     leveldbVersion = '0.9'
-    scastleVersion = '1.52.0.0'
     springVersion = '4.2.9.RELEASE'
     junitVersion = '4.12'
     mockitoVersion = '1.10.19'
@@ -72,9 +71,9 @@ ext {
 }
 
 dependencies {
+    compile "com.madgag.spongycastle:core:1.52.0.0"
     compile "io.netty:netty-codec-http:$nettyVersion"
-    compile "com.madgag.spongycastle:core:${scastleVersion}" // for SHA3 and SECP256K1
-    compile "com.madgag.spongycastle:prov:${scastleVersion}" // for SHA3 and SECP256K1
+    compile "org.bouncycastle:bclcrypto-jdk15on:1.59"
     compile "org.iq80.leveldb:leveldb:${leveldbVersion}"
     compile "org.fusesource.leveldbjni:leveldbjni:1.8"
     compile "org.ethereum:leveldbjni-all:1.18.3"
@@ -130,7 +129,6 @@ dependencyVerification {
         'com.h2database:h2:b1cf34c64871014aa73580281cc464dfa72450d8860cc0752fc175e87edd6544',
         'com.lambdaworks:scrypt:9a82d218099fb14c10c0e86e7eefeebd8c104de920acdc47b8b4b7a686fb73b4',
         'com.madgag.spongycastle:core:07a401edbe26e1028e2324754557b741cc57306008df7b71a9e12ec32d65be8f',
-        'com.madgag.spongycastle:prov:becbb70797b0103517693d2a97ce93174cc4d1f732897ed965a24e32dd99503e',
         'com.squareup.okhttp:okhttp:b4c943138fcef2bcc9d2006b2250c4aabbedeafc5947ed7c0af7fd103ceb2707',
         'com.squareup.okio:okio:114bdc1f47338a68bcbc95abf2f5cdc72beeec91812f2fcd7b521c1937876266',
         'com.typesafe:config:b5f1d6071f1548d05be82f59f9039c7d37a1787bd8e3c677e31ee275af4a4621',
@@ -147,6 +145,7 @@ dependencyVerification {
         'org.apache.commons:commons-collections4:b1fe8b5968b57d8465425357ed2d9dc695504518bed2df5b565c4b8e68c1c8a5',
         'org.apache.commons:commons-lang3:8ac96fc686512d777fca85e144f196cd7cfe0c0aec23127229497d1a38ff651c',
         'org.awaitility:awaitility:a02982e89585a52c1c84296a895bfeb86ea250cca1a53bcfc8a14092fffa87c4',
+        'org.bouncycastle:bclcrypto-jdk15on:7d03ba37df4d0ddc4ea40d56554324c6f18062a930edadb0a1b3acbbbea28efc',
         'org.ethereum:leveldbjni-all:18da00444c77080d4422b16c9d4750c4addabda350b702b4a6d628b86658e585',
         'org.fusesource.hawtjni:hawtjni-runtime:74fe9764e1fb1ef20b159dbca2d29abd6de292082ce3fcf538f81ac912390416',
         'org.fusesource.leveldbjni:leveldbjni:05fe3a006d030aaf8d1e43f6c640a85f9f6b967c4499ce1ad5055ac236c3b944',

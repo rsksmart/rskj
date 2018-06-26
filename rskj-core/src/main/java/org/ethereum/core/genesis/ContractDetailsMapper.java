@@ -23,7 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Created by mario on 13/01/17.

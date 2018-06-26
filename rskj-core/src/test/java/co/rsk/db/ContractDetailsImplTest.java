@@ -28,7 +28,7 @@ import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.*;
 

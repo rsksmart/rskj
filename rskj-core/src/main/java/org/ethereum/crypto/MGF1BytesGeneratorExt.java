@@ -19,11 +19,11 @@
 
 package org.ethereum.crypto;
 
-import org.spongycastle.crypto.DataLengthException;
-import org.spongycastle.crypto.DerivationFunction;
-import org.spongycastle.crypto.DerivationParameters;
-import org.spongycastle.crypto.Digest;
-import org.spongycastle.crypto.params.MGFParameters;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.DerivationFunction;
+import org.bouncycastle.crypto.DerivationParameters;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.params.MGFParameters;
 
 /**
  * This class is borrowed from spongycastle project

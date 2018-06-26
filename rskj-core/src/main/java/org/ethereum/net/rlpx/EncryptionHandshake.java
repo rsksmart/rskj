@@ -25,9 +25,9 @@ import org.ethereum.crypto.ECIESCoder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
-import org.spongycastle.crypto.InvalidCipherTextException;
-import org.spongycastle.crypto.digests.SHA3Digest;
-import org.spongycastle.math.ec.ECPoint;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.math.ec.ECPoint;
 
 import javax.annotation.Nullable;
 import java.io.IOException;

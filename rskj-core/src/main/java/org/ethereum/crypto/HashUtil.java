@@ -22,9 +22,9 @@ package org.ethereum.crypto;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
-import org.spongycastle.crypto.Digest;
-import org.spongycastle.crypto.digests.RIPEMD160Digest;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;

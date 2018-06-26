@@ -24,11 +24,13 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import org.ethereum.util.RLP;
 import org.spongycastle.crypto.StreamCipher;
-import org.spongycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.spongycastle.crypto.engines.AESFastEngine;
 import org.spongycastle.crypto.modes.SICBlockCipher;
 import org.spongycastle.crypto.params.KeyParameter;
 import org.spongycastle.crypto.params.ParametersWithIV;
+
+// TODO FIND INCOMPATIBILITIES
 
 import java.io.*;
 import java.util.ArrayList;

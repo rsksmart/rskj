@@ -20,8 +20,8 @@
 package org.ethereum.net.rlpx;
 
 import org.ethereum.crypto.ECKey;
-import org.spongycastle.math.ec.ECPoint;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Authentication response message, to be wrapped inside

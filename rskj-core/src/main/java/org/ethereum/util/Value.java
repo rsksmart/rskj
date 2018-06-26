@@ -20,7 +20,7 @@
 package org.ethereum.util;
 
 import org.ethereum.crypto.HashUtil;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
