@@ -24,7 +24,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
@@ -37,7 +36,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Implements the actual Remasc distribution logic
@@ -82,6 +83,7 @@ public class Remasc {
         return new RemascState(this.provider.getRewardBalance(), this.provider.getBurnedBalance(), this.provider.getSiblings(), this.provider.getBrokenSelectionRule());
     }
 
+
     /**
      * Implements the actual Remasc distribution logic
      */
@@ -92,17 +94,38 @@ public class Remasc {
             // 2) invocation to remasc from another contract (ie call opcode)
             throw new RemascInvalidInvocationException("Invoked Remasc outside last tx of the block");
         }
+
+        // This is not necessary but maintained for consensus reasons before we do a network upgrade
         this.addNewSiblings();
 
         long blockNbr = executionBlock.getNumber();
-
         long processingBlockNumber = blockNbr - remascConstants.getMaturity();
         if (processingBlockNumber < 1 ) {
             logger.debug("First block has not reached maturity yet, current block is {}", blockNbr);
             return;
         }
 
-        Block processingBlock = blockStore.getBlockByHashAndDepth(executionBlock.getParentHash().getBytes(), remascConstants.getMaturity() - 1);
+        int uncleGenerationLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        List<Block> descendantsBlocks = new ArrayList<>(uncleGenerationLimit);
+
+        // this search can be optimized if have certainty that the execution block is not in a fork
+        // larger than depth
+        Block currentBlock = blockStore.getBlockByHashAndDepth(
+                executionBlock.getParentHash().getBytes(),
+                remascConstants.getMaturity() - 1 - uncleGenerationLimit
+        );
+        descendantsBlocks.add(currentBlock);
+
+        for (int i = 0; i < uncleGenerationLimit - 1; i++) {
+            currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
+            descendantsBlocks.add(currentBlock);
+        }
+
+        // descendants are reversed because the original order to pay siblings is defined in the way
+        // blocks are ordered in the blockchain (the same as were stored in remasc contract)
+        Collections.reverse(descendantsBlocks);
+
+        Block processingBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
         BlockHeader processingBlockHeader = processingBlock.getHeader();
 
         // Adds current block fees to accumulated rewardBalance
@@ -117,23 +140,24 @@ public class Remasc {
         }
 
         // Takes from rewardBalance this block's height reward.
-        Coin fullBlockReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
-        rewardBalance = rewardBalance.subtract(fullBlockReward);
+        Coin syntheticReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
+        rewardBalance = rewardBalance.subtract(syntheticReward);
         provider.setRewardBalance(rewardBalance);
 
         // Pay RSK labs cut
-        Coin payToRskLabs = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
+        Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
-        fullBlockReward = fullBlockReward.subtract(payToRskLabs);
+        syntheticReward = syntheticReward.subtract(payToRskLabs);
 
         RemascFederationProvider federationProvider = new RemascFederationProvider(config, repository, processingBlock);
 
-        Coin payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
+        Coin payToFederation = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
         byte[] processingBlockHash = processingBlockHeader.getHash().getBytes();
         int nfederators = federationProvider.getFederationSize();
-        Coin payToFederator = payToFederation.divide(BigInteger.valueOf(nfederators));
-        Coin restToLastFederator = payToFederation.subtract(payToFederator.multiply(BigInteger.valueOf(nfederators)));
+        Coin[] payAndRemainderToFederator = payToFederation.divideAndRemainder(BigInteger.valueOf(nfederators));
+        Coin payToFederator = payAndRemainderToFederator[0];
+        Coin restToLastFederator = payAndRemainderToFederator[1];
         Coin paidToFederation = Coin.ZERO;
 
         for (int k = 0; k < nfederators; k++) {
@@ -148,29 +172,30 @@ public class Remasc {
             paidToFederation = paidToFederation.add(payToFederator);
         }
 
-        fullBlockReward = fullBlockReward.subtract(payToFederation);
+        syntheticReward = syntheticReward.subtract(payToFederation);
 
-        List<Sibling> siblings = provider.getSiblings().get(processingBlockNumber);
-
-        if (CollectionUtils.isNotEmpty(siblings)) {
+        List<Sibling> siblings = getSiblingsToReward(descendantsBlocks, processingBlockNumber);
+        if (!siblings.isEmpty()) {
             // Block has siblings, reward distribution is more complex
             boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
-            this.payWithSiblings(processingBlockHeader, fullBlockReward, siblings, previousBrokenSelectionRule);
+            this.payWithSiblings(processingBlockHeader, syntheticReward, siblings, previousBrokenSelectionRule);
             boolean brokenSelectionRule = SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
             provider.setBrokenSelectionRule(brokenSelectionRule);
         } else {
             if (provider.getBrokenSelectionRule()) {
                 // broken selection rule, apply punishment, ie burn part of the reward.
-                Coin punishment = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
-                fullBlockReward = fullBlockReward.subtract(punishment);
+                Coin punishment = syntheticReward.divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
+                syntheticReward = syntheticReward.subtract(punishment);
                 provider.setBurnedBalance(provider.getBurnedBalance().add(punishment));
             }
-            feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), fullBlockReward, processingBlockHeader.getCoinbase(), logs);
+            feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), syntheticReward, processingBlockHeader.getCoinbase(), logs);
             provider.setBrokenSelectionRule(Boolean.FALSE);
         }
 
+        // This is not necessary but maintained for consensus reasons before we do a network upgrade
         this.removeUsedSiblings(processingBlockHeader);
     }
+
 
     /**
      * Remove siblings just processed if any
@@ -185,17 +210,35 @@ public class Remasc {
     private void addNewSiblings() {
         // Add uncles of the execution block to the siblings map
         List<BlockHeader> uncles = executionBlock.getUncleList();
-        if (CollectionUtils.isNotEmpty(uncles)) {
-            for (BlockHeader uncleHeader : uncles) {
-                List<Sibling> siblings = provider.getSiblings().get(uncleHeader.getNumber());
-                if (siblings == null) {
-                    siblings = new ArrayList<>();
-                }
-
-                siblings.add(new Sibling(uncleHeader, executionBlock.getHeader().getCoinbase(), executionBlock.getNumber()));
-                provider.getSiblings().put(uncleHeader.getNumber(), siblings);
-            }
+        if (uncles == null) {
+            return;
         }
+
+        for (BlockHeader uncleHeader : uncles) {
+            List<Sibling> siblings = provider.getSiblings().get(uncleHeader.getNumber());
+            if (siblings == null) {
+                siblings = new ArrayList<>();
+            }
+
+            siblings.add(new Sibling(uncleHeader, executionBlock.getHeader().getCoinbase(), executionBlock.getNumber()));
+            provider.getSiblings().put(uncleHeader.getNumber(), siblings);
+        }
+    }
+
+    /**
+     * Descendants included on the same chain as the processing block could include siblings
+     * that should be rewarded when fees on this block are paid
+     * @param descendants blocks in the same blockchain that may include rewarded siblings
+     * @param blockNumber number of the block is looked for siblings
+     * @return
+     */
+    private List<Sibling> getSiblingsToReward(List<Block> descendants, long blockNumber) {
+        return descendants.stream()
+                .flatMap(block -> block.getUncleList().stream()
+                        .filter(header -> header.getNumber() == blockNumber)
+                        .map(header -> new Sibling(header, block.getCoinbase(), block.getNumber()))
+                )
+                .collect(Collectors.toList());
     }
 
     /**
