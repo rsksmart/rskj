@@ -25,6 +25,9 @@ import co.rsk.net.BlockProcessor;
 import co.rsk.net.notifications.NotificationTestsUtils.FederationMember;
 import co.rsk.net.notifications.alerts.FederationFrozenAlert;
 import co.rsk.net.notifications.alerts.ForkAttackAlert;
+import co.rsk.net.notifications.processing.FederationNotificationProcessingResult;
+import co.rsk.net.notifications.processing.FederationNotificationProcessor;
+import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
@@ -486,7 +489,7 @@ public class NodeFederationNotificationProcessorTest {
 
         // Check if an eclipse attack is in progress (should not change
         // FederationNotificationProcessor panic status)
-        notificationProcessor.checkIfFederationWasEclipsed();
+        notificationProcessor.checkIfNodeWasEclipsed();
         assertFalse(notificationProcessor.inPanicState());
 
         // Wait to prevent triggering the FederationNotificationProcessor's
@@ -495,7 +498,7 @@ public class NodeFederationNotificationProcessorTest {
 
         // Check if an eclipse attack is in progress (should change
         // FederationNotificationProcessor panic status to UNDER_ECLIPSE_ATTACK)
-        notificationProcessor.checkIfFederationWasEclipsed();
+        notificationProcessor.checkIfNodeWasEclipsed();
         assertEquals(PanicStatusReason.FEDERATION_ECLIPSED, notificationProcessor.getPanicStatus().getReason());
         assertEquals(BEST_BLOCK, notificationProcessor.getPanicSinceBlockNumber());
     }

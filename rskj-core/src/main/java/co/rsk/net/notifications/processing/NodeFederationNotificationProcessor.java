@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net.notifications;
+package co.rsk.net.notifications.processing;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.BridgeConstants;
@@ -26,10 +26,15 @@ import co.rsk.db.RepositoryImpl;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.eth.RskMessage;
 import co.rsk.net.messages.Message;
+import co.rsk.net.notifications.Confirmation;
+import co.rsk.net.notifications.FederationNotification;
+import co.rsk.net.notifications.FederationState;
 import co.rsk.net.notifications.alerts.FederationAlert;
-import co.rsk.net.notifications.alerts.FederationEclipsedAlert;
 import co.rsk.net.notifications.alerts.FederationFrozenAlert;
 import co.rsk.net.notifications.alerts.ForkAttackAlert;
+import co.rsk.net.notifications.alerts.NodeEclipsedAlert;
+import co.rsk.net.notifications.processing.FederationNotificationProcessingResult;
+import co.rsk.net.notifications.processing.FederationNotificationProcessor;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationSupport;
@@ -59,7 +64,7 @@ import java.util.*;
  * - Potential eclipse attack: the node running this instance of the
  * NodeFederationNotificationProcessor was isolated from the Federation. It could
  * be due to an attack or it could mean the federation nodes are offline. @see
- * {@link co.rsk.net.notifications.alerts.FederationEclipsedAlert}
+ * {@link NodeEclipsedAlert}
  *
  * - Fork attack: a node running this instance of the
  * NodeFederationNotificationProcessor detects that its best chain diverges from
@@ -72,25 +77,20 @@ import java.util.*;
  */
 public class NodeFederationNotificationProcessor implements FederationNotificationProcessor {
     private static final int MAX_NUMBER_OF_NOTIFICATIONS_CACHED = 5000;
-    private static final int MAX_FEDERATION_ALERTS = 100;
     private static final int MAX_NOTIFICATION_SIZE_IN_BYTES_FOR_FULL_BROADCAST = 500;
 
-    private static final Logger logger = LoggerFactory.getLogger("FederationNotificationProcessor");
-    private final List<FederationAlert> federationAlerts;
+    private static final Logger logger = LoggerFactory.getLogger("NodeFederationNotificationProcessor");
+
     private RskSystemProperties config;
     private BlockProcessor blockProcessor;
-    private PanicStatus panicStatus;
     private FederationState federationState;
 
     private NotificationBuffer<FederationNotification> receivedFederationNotifications = new NotificationBuffer<>(
             MAX_NUMBER_OF_NOTIFICATIONS_CACHED);
-    private volatile Instant lastNotificationReceivedTime = Instant.now();
 
     public NodeFederationNotificationProcessor(RskSystemProperties config, BlockProcessor blockProcessor, FederationState federationState) {
         this.config = config;
         this.blockProcessor = blockProcessor;
-        this.federationAlerts = new ArrayList<>();
-        this.panicStatus = PanicStatus.NoPanic(0);
         this.federationState = federationState;
     }
 
@@ -105,11 +105,11 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
     public FederationNotificationProcessingResult processFederationNotification(
             @Nonnull final Collection<Channel> activePeers, @Nonnull final FederationNotification notification)
             throws ConfigurationException {
-        long timeBetweenNotifications = Duration.between(lastNotificationReceivedTime, Instant.now()).getSeconds();
+        final Instant now = Instant.now();
 
         // Avoid flood attacks
-        if (lastNotificationReceivedTime != null
-                && timeBetweenNotifications < config.maxSecondsBetweenNotifications()) {
+        long timeBetweenNotifications = Duration.between(federationState.getLastNotificationReceivedTime(), now).getSeconds();
+        if (timeBetweenNotifications < config.maxSecondsBetweenNotifications()) {
             logger.warn("Federation notification received too fast. Skipping it to avoid flood attacks.");
             return FederationNotificationProcessingResult.NOTIFICATION_RECEIVED_TOO_FAST;
         }
@@ -142,72 +142,25 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         // Propagate federation notification to peers
         broadcastFederationNotification(activePeers, notification);
 
-        // Update timestamp of last notification received to later check if
-        // communications with federation are still alive
-        this.lastNotificationReceivedTime = Instant.now();
-
         logger.debug("Federation notification processed successfully.");
         return FederationNotificationProcessingResult.NOTIFICATION_PROCESSED_SUCCESSFULLY;
     }
 
     /**
      * Checks the time of the last FederationNotification received does not exceed a
-     * configurable delta. If so, a FederationEclipsedAlert is generated and the panic
-     * status of the processor is set to FEDERATION_ECLIPSED. This alert indicates that
-     * that either the node was isolated from the federation by an attacker or the
-     * federation nodes are offline.
+     * configurable delta. If so, a NodeEclipsedAlert is generated and processed accordingly.
+     * This alert indicates that either the node was isolated from the federation
+     * by an attacker or the federation nodes are offline.
      */
     @Override
-    public void checkIfFederationWasEclipsed() {
+    public void checkIfNodeWasEclipsed() {
         // Maybe someone is eclipsing the Federation for this node or the federation nodes are offline.
-        Duration duration = Duration.between(lastNotificationReceivedTime, Instant.now());
+        Duration duration = Duration.between(federationState.getLastNotificationReceivedTime(), Instant.now());
         int maxSilenceSecs = config.getFederationMaxSilenceTimeSecs();
-        if (config.federationNotificationsEnabled() && duration != null && duration.getSeconds() > maxSilenceSecs) {
-
-            FederationAlert alert = new FederationEclipsedAlert(duration.getSeconds());
-            federationState.updateState(getBestBlockNumber(), Optional.empty(), Optional.of(alert));
-
-            if (config.shouldFederationNotificationsTriggerPanic()) {
-                setPanicStatus(PanicStatus.FederationEclipsedPanic(getBestBlockNumber()));
-                logger.warn(
-                        "Federation alert generated. Panic status is {}. No Federation Notifications received for {} seconds",
-                        getPanicStatus(), duration.getSeconds());
-            }
+        if (config.federationNotificationsEnabled() && duration.getSeconds() > maxSilenceSecs) {
+            FederationAlert alert = new NodeEclipsedAlert(duration.getSeconds());
+            federationState.processAlerts(getBestBlockNumber(), Arrays.asList(alert));
         }
-    }
-
-    /***
-     * Returns an immutable list with the latest FederationAlerts
-     */
-    @Override
-    public List<FederationAlert> getFederationAlerts() {
-        return Collections.unmodifiableList(federationAlerts);
-    }
-
-    /***
-     * Returns the current panic status
-     */
-    @Override
-    public PanicStatus getPanicStatus() {
-        return panicStatus;
-    }
-
-    private void setPanicStatus(PanicStatus panicStatus) {
-        this.panicStatus = panicStatus;
-    }
-
-    /***
-     * Returns the block number corresponding to the moment when the panic status
-     * (if any) started. If no panic status is set this method returns -1
-     */
-    @Override
-    public long getPanicSinceBlockNumber() {
-        return getPanicStatus().getSinceBlockNumber();
-    }
-
-    @Override
-    public boolean inPanicState() {
-        return !getPanicStatus().isPanic();
     }
 
     /***
@@ -226,29 +179,36 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
             return;
         }
 
-        Optional<FederationAlert> alert = Optional.empty();
+        List<FederationAlert> alerts = new ArrayList<>();
 
+        // Get the confirmation we wish to compare from the notification
         int federationConfirmationIndex = this.config.getFederationConfirmationIndex();
-        Confirmation c = notification.getConfirmation(federationConfirmationIndex);
-        long bestBlockNumber = getBestBlockNumber();
+        Confirmation confirmation = notification.getConfirmation(federationConfirmationIndex);
 
-        // TODO: consider the case in which a notification could potentially imply
-        // TODO: two different alerts being generated.
+        // Is the federation frozen?
+        // TODO: 51% algorithm
         if (notification.isFederationFrozen()) {
-            alert = Optional.of(new FederationFrozenAlert(notification.getSource(), c.getBlockHash(), c.getBlockNumber()));
-        } else {
-            Block block = blockProcessor.getBlockchain().getBlockByNumber(c.getBlockNumber());
-
-            if (block == null || !block.getHash().equals(c.getBlockHash())) {
-                Keccak256 blockHash = block == null ? null : block.getHash();
-                boolean isFederatedNode = isFederationMember();
-
-                alert = Optional.of(new ForkAttackAlert(notification.getSource(), c.getBlockHash(), c.getBlockNumber(),
-                        blockHash, bestBlockNumber, isFederatedNode));
-            }
+            alerts.add(new FederationFrozenAlert(notification.getSource(), confirmation.getBlockHash(), confirmation.getBlockNumber()));
         }
 
-        federationState.updateState(bestBlockNumber, Optional.of(notification), alert);
+        // Get the corresponding block from the local blockchain to compare and
+        // see if we are under a fork attack
+        long bestBlockNumber = getBestBlockNumber();
+        Block block = blockProcessor.getBlockchain().getBlockByNumber(confirmation.getBlockNumber());
+
+        // Are we under a fork attack?
+        // TODO: 51% algorithm
+        if (block == null || !block.getHash().equals(confirmation.getBlockHash())) {
+            Keccak256 blockHash = block == null ? null : block.getHash();
+            boolean isFederatedNode = isFederationMember();
+
+            alerts.add(new ForkAttackAlert(notification.getSource(), confirmation.getBlockHash(),
+                    confirmation.getBlockNumber(), blockHash, bestBlockNumber, isFederatedNode));
+        }
+
+        // Update the state
+        federationState.processNotification(notification);
+        federationState.processAlerts(bestBlockNumber, alerts);
     }
 
     private boolean isFederationMember() {

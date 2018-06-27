@@ -18,7 +18,7 @@
 
 package co.rsk.rpc;
 
-import co.rsk.net.notifications.PanicStatus;
+import co.rsk.net.notifications.panics.PanicFlag;
 import co.rsk.net.notifications.alerts.FederationAlert;
 import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.rpc.Web3;
@@ -141,7 +141,7 @@ public interface Web3EthModule {
 
     List<FederationAlert> eth_getFederationAlerts();
 
-    PanicStatus eth_getPanicStatus();
+    PanicFlag eth_getPanicStatus();
 
     long eth_getPanickingBlockNumber();
 }

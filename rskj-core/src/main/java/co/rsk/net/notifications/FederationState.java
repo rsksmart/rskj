@@ -18,24 +18,12 @@
 
 package co.rsk.net.notifications;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Keccak256;
-import co.rsk.db.RepositoryImpl;
-import co.rsk.net.eth.RskMessage;
-import co.rsk.net.messages.Message;
 import co.rsk.net.notifications.alerts.FederationAlert;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.Federation;
-import co.rsk.peg.FederationSupport;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.net.eth.message.EthMessage;
-import org.ethereum.net.server.Channel;
-import org.ethereum.vm.PrecompiledContracts;
+import co.rsk.net.notifications.panics.PanicFlag;
+import co.rsk.net.notifications.panics.PanicStatus;
+import co.rsk.net.notifications.processing.FederationNotificationProcessor;
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,51 +55,75 @@ public class FederationState {
     private static final Logger logger = LoggerFactory.getLogger("FederationState");
 
     private PanicStatus panicStatus;
-    private final List<FederationAlert> federationAlerts;
+    private final Queue<FederationAlert> alerts;
     private final Map<FederationMember, FederationNotification> latestFederationNotifications;
-    private volatile Optional<Instant> lastNotificationReceivedTime;
+    private volatile Instant lastNotificationReceivedTime;
 
     private RskSystemProperties config;
 
     public FederationState(RskSystemProperties config) {
         this.config = config;
-        this.federationAlerts = new ArrayList<>();
+        this.alerts = new CircularFifoQueue<>(MAX_FEDERATION_ALERTS);
         this.latestFederationNotifications = new HashMap<>();
-        this.panicStatus = PanicStatus.NoPanic(0);
-        this.lastNotificationReceivedTime = Optional.empty();
+        this.panicStatus = new PanicStatus();
+
+        // Assume we received a notification some time ago for simplicity's sake
+        this.lastNotificationReceivedTime = Instant.now().minusSeconds(config.maxSecondsBetweenNotifications() * 2);
     }
 
-    // TODO: alert should be several alerts
-    public void updateState(long blockNumber, Optional<FederationNotification> notification, Optional<FederationAlert> alert) {
-        // Update latest notification for the corresponding federation member
-        if (notification.isPresent()) {
-            latestFederationNotifications.put(notification.get().getFederationMember().get(), notification.get());
-        }
+    /**
+     * Updates the current state wrt the latest notification received.
+     *
+     * @param notification The notification received.
+     */
+    public void processNotification(FederationNotification notification) {
+        latestFederationNotifications.put(notification.getFederationMember().get(), notification);
 
         // Update timestamp of last notification received to later check if
         // communications with federation are still alive
-        this.lastNotificationReceivedTime = Optional.of(Instant.now());
+        lastNotificationReceivedTime = Instant.now();
 
-        // Add the alert (if given) and trigger the corresponding panic state
-        if (alert.isPresent()) {
-            addFederationAlert(alert.get());
-
-            logger.info("Federation alert generated. Panic status is {}. {}", getPanicStatus(), alert.get().getDescription());
-
-            if (config.shouldFederationNotificationsTriggerPanic()) {
-                this.panicStatus = alert.get().getAssociatedPanicStatus(blockNumber);
-            }
-        } else if (config.shouldFederationNotificationsTriggerPanic()) {
-            logger.info("Cleaning panic status {}", getPanicStatus());
-            this.panicStatus = PanicStatus.NoPanic(blockNumber);
+        // Panic processing
+        if (config.shouldFederationNotificationsTriggerPanic()) {
+            // Receiving a notification triggers clearing the NODE_ECLIPSED flag
+            panicStatus.unset(PanicFlag.of(PanicFlag.Reason.NODE_ECLIPSED));
         }
+    }
+
+    /**
+     * Updates the current state of the federation wrt the latest alerts generated at a given block number.
+     * This includes updating the corresponding panic flags.
+     *
+     * @param receivedBlockNumber The block number at which the alerts were generated.
+     * @param triggeredAlerts The alerts triggered.
+     */
+    public void processAlerts(long receivedBlockNumber, List<FederationAlert> triggeredAlerts) {
+        // Add the alerts
+        alerts.addAll(triggeredAlerts);
+
+        // Panic processing
+        if (config.shouldFederationNotificationsTriggerPanic()) {
+            // Unless stated in an alert, panic flags FEDERATION_FORKED, NODE_FORKED and FEDERATION_FROZEN
+            // should be off
+            panicStatus.unset(PanicFlag.of(PanicFlag.Reason.FEDERATION_FORKED));
+            panicStatus.unset(PanicFlag.of(PanicFlag.Reason.NODE_FORKED));
+            panicStatus.unset(PanicFlag.of(PanicFlag.Reason.FEDERATION_FROZEN));
+
+            // Process alerts to set panic flags
+            triggeredAlerts.forEach(alert -> {
+                panicStatus.set(alert.getAssociatedPanicFlag(receivedBlockNumber));
+            });
+        }
+
+        // Log
+        logger.info("Federation alerts generated ({}). Panic status is now {}", triggeredAlerts.size(), getPanicStatus());
     }
 
     /***
      * Returns an immutable list with the latest FederationAlerts
      */
-    public List<FederationAlert> getFederationAlerts() {
-        return Collections.unmodifiableList(federationAlerts);
+    public List<FederationAlert> getAlerts() {
+        return Collections.unmodifiableList(new ArrayList(alerts));
     }
 
     /***
@@ -121,18 +133,10 @@ public class FederationState {
         return panicStatus;
     }
 
-    /***
-     * Tells whether we are currently in panic state
+    /**
+     * Returns the last time at which a notification was received
      */
-    public boolean inPanic() {
-        return getPanicStatus().isPanic();
-    }
-
-
-    private void addFederationAlert(FederationAlert alert) {
-        if (federationAlerts.size() > MAX_FEDERATION_ALERTS) {
-            federationAlerts.remove(0);
-        }
-        federationAlerts.add(alert);
+    public Instant getLastNotificationReceivedTime() {
+        return lastNotificationReceivedTime;
     }
 }

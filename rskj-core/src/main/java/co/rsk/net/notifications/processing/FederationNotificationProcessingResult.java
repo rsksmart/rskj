@@ -16,20 +16,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net.notifications;
+package co.rsk.net.notifications.processing;
+
+import co.rsk.net.notifications.FederationNotification;
+import co.rsk.net.notifications.processing.FederationNotificationProcessor;
 
 /***
- * An Enum representing the possible panic states resulting from processing
- * {@link FederationNotification} instances.
+ * An Enum representing the possible results obtained from the
+ * {@link FederationNotificationProcessor} when
+ * processing {@link FederationNotification} instances.
  *
  * @author Diego Masini
  * @author Jose Orlicki
  *
  */
-public enum PanicStatusReason {
-    NONE,
-    FEDERATION_FORKED,
-    NODE_FORKED,
-    FEDERATION_ECLIPSED,
-    FEDERATION_FROZEN,
+public enum FederationNotificationProcessingResult {
+    NOTIFICATION_PROCESSED_SUCCESSFULLY,
+    NOTIFICATION_RECEIVED_TOO_FAST,
+    NOTIFICATION_EXPIRED,
+    NOTIFICATION_ALREADY_PROCESSED,
+    NOTIFICATION_SIGNATURE_DOES_NOT_VERIFY
 }

@@ -24,6 +24,8 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.notifications.*;
+import co.rsk.net.notifications.processing.FederationNotificationProcessor;
+import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import co.rsk.net.notifications.utils.FederationNotificationSigner;
 import co.rsk.net.notifications.utils.NodeFederationNotificationSigner;
 import co.rsk.scoring.EventType;
@@ -362,7 +364,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
 
         // Check if the Federation disappeared for a long time (Federation eclipsed).
-        federationNotificationProcessor.checkIfFederationWasEclipsed();
+        federationNotificationProcessor.checkIfNodeWasEclipsed();
     }
 
     /**

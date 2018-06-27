@@ -16,21 +16,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net.notifications;
+package co.rsk.net.notifications.processing;
 
-/***
- * An Enum representing the possible results obtained from the
- * {@link co.rsk.net.notifications.FederationNotificationProcessor} when
- * processing {@link FederationNotification} instances.
- *
- * @author Diego Masini
- * @author Jose Orlicki
- *
- */
-public enum FederationNotificationProcessingResult {
-    NOTIFICATION_PROCESSED_SUCCESSFULLY,
-    NOTIFICATION_RECEIVED_TOO_FAST,
-    NOTIFICATION_EXPIRED,
-    NOTIFICATION_ALREADY_PROCESSED,
-    NOTIFICATION_SIGNATURE_DOES_NOT_VERIFY
+import co.rsk.net.notifications.FederationNotification;
+import org.ethereum.net.server.Channel;
+
+import javax.naming.ConfigurationException;
+import java.util.Collection;
+
+public interface FederationNotificationProcessor {
+    FederationNotificationProcessingResult processFederationNotification(Collection<Channel> activePeers, FederationNotification notification) throws ConfigurationException;
+
+    // TODO: find a better name for this
+    // TODO: maybe something like "tick" to indicate this is a recurringly called method?
+    void checkIfNodeWasEclipsed();
 }

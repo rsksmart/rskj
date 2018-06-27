@@ -29,9 +29,9 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
-import co.rsk.net.notifications.FederationNotificationProcessor;
-import co.rsk.net.notifications.NodeFederationNotificationProcessor;
-import co.rsk.net.notifications.PanicStatus;
+import co.rsk.net.notifications.processing.FederationNotificationProcessor;
+import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
+import co.rsk.net.notifications.panics.PanicFlag;
 import co.rsk.net.notifications.alerts.FederationAlert;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -342,7 +342,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public PanicStatus eth_getPanicStatus() {
+    public PanicFlag eth_getPanicStatus() {
         return notificationProcessor.getPanicStatus();
     }
 

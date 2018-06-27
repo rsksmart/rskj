@@ -18,17 +18,17 @@
 
 package co.rsk.net.notifications.alerts;
 
-import co.rsk.net.notifications.PanicStatus;
+import co.rsk.net.notifications.panics.PanicFlag;
 
-public class FederationEclipsedAlert extends FederationAlert {
+public class NodeEclipsedAlert extends FederationAlert {
     private long timeWithoutFederationNotifications;
 
-    public FederationEclipsedAlert(long timeWithoutFederationNotifications) {
+    public NodeEclipsedAlert(long timeWithoutFederationNotifications) {
         this.timeWithoutFederationNotifications = timeWithoutFederationNotifications;
     }
 
     public FederationAlert copy() {
-        return new FederationEclipsedAlert(timeWithoutFederationNotifications);
+        return new NodeEclipsedAlert(timeWithoutFederationNotifications);
     }
 
     public long getTimeWithoutFederationNotifications() {
@@ -36,12 +36,7 @@ public class FederationEclipsedAlert extends FederationAlert {
     }
 
     @Override
-    public PanicStatus getAssociatedPanicStatus(long forBlockNumber) {
-        return PanicStatus.FederationEclipsedPanic(forBlockNumber);
-    }
-
-    @Override
-    public String getDescription() {
-        return String.format("No Federation Notifications received for %d seconds", timeWithoutFederationNotifications);
+    public PanicFlag getAssociatedPanicFlag(long forBlockNumber) {
+        return PanicFlag.FederationEclipsed(forBlockNumber);
     }
 }

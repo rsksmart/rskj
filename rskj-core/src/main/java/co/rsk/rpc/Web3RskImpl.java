@@ -20,13 +20,11 @@ package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
-import co.rsk.core.RskImpl;
-import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.*;
 import co.rsk.net.BlockProcessor;
-import co.rsk.net.notifications.FederationNotificationProcessor;
-import co.rsk.net.notifications.NodeFederationNotificationProcessor;
+import co.rsk.net.notifications.processing.FederationNotificationProcessor;
+import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
