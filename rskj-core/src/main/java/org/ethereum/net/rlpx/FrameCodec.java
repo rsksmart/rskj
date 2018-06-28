@@ -22,15 +22,13 @@ package org.ethereum.net.rlpx;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
+import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.KeccakDigest;
+import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.ethereum.util.RLP;
-import org.spongycastle.crypto.StreamCipher;
-import org.spongycastle.crypto.engines.AESFastEngine;
-import org.spongycastle.crypto.modes.SICBlockCipher;
-import org.spongycastle.crypto.params.KeyParameter;
-import org.spongycastle.crypto.params.ParametersWithIV;
-
-// TODO FIND INCOMPATIBILITIES
 
 import java.io.*;
 import java.util.ArrayList;
@@ -55,11 +53,12 @@ public class FrameCodec {
 
     public FrameCodec(EncryptionHandshake.Secrets secrets) {
         this.mac = secrets.mac;
-        int blockSize = secrets.aes.length * 8;
-        enc = new SICBlockCipher(new AESFastEngine());
-        enc.init(true, new ParametersWithIV(new KeyParameter(secrets.aes), new byte[blockSize / 8]));
-        dec = new SICBlockCipher(new AESFastEngine());
-        dec.init(false, new ParametersWithIV(new KeyParameter(secrets.aes), new byte[blockSize / 8]));
+        AESFastEngine encCipher = new AESFastEngine();
+        enc = new SICBlockCipher(encCipher);
+        enc.init(true, new ParametersWithIV(new KeyParameter(secrets.aes), new byte[encCipher.getBlockSize()]));
+        AESFastEngine decCipher = new AESFastEngine();
+        dec = new SICBlockCipher(decCipher);
+        dec.init(false, new ParametersWithIV(new KeyParameter(secrets.aes), new byte[decCipher.getBlockSize()]));
         egressMac = secrets.egressMac;
         ingressMac = secrets.ingressMac;
     }
