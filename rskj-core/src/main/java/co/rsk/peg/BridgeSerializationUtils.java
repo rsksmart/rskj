@@ -353,14 +353,14 @@ public class BridgeSerializationUtils {
     }
 
     public static Map<Address, UnlimitedWhiteListEntry> deserializeUnlimitedLockWhitelistEntries(byte[] data, NetworkParameters parameters) {
-        Map<Address, UnlimitedWhiteListEntry> entries = new HashMap<>();
-
         if (data == null) {
-            return entries;
+            return new HashMap<>();
         }
 
         RLPList unlimitedWhitelistEntriesRlpList = (RLPList)RLP.decode2(data).get(0);
         int unlimitedWhitelistEntriesSerializedAddressesSize = unlimitedWhitelistEntriesRlpList.size();
+
+        Map<Address, UnlimitedWhiteListEntry> entries = new HashMap<>(unlimitedWhitelistEntriesSerializedAddressesSize);
 
         for (int j = 0; j < unlimitedWhitelistEntriesSerializedAddressesSize; j++) {
             byte[] hash160 = unlimitedWhitelistEntriesRlpList.get(j).getRLPData();

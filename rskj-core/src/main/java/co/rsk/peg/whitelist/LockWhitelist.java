@@ -85,7 +85,7 @@ public class LockWhitelist {
     public <T extends LockWhitelistEntry> List<T> getEntries(Class<T> type) {
         return whitelistedAddresses.values().stream()
                 .filter(e -> e.getClass() == type)
-                .map(e -> type.cast(e))
+                .map(type::cast)
                 .collect(Collectors.toList());
     }
 
