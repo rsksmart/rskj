@@ -29,7 +29,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.*;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
@@ -138,14 +138,14 @@ public class ECIESTest {
     }
 
     private static EthereumIESEngine makeIESEngine(boolean isEncrypt, ECPoint pub, BigInteger prv, byte[] IV) {
-        AESFastEngine aesFastEngine = new AESFastEngine();
+        AESEngine aesEngine = new AESEngine();
 
         EthereumIESEngine iesEngine = new EthereumIESEngine(
                 new ECDHBasicAgreement(),
                 new ConcatKDFBytesGenerator(new SHA256Digest()),
                 new HMac(new SHA256Digest()),
                 new SHA256Digest(),
-                new BufferedBlockCipher(new SICBlockCipher(aesFastEngine)));
+                new BufferedBlockCipher(new SICBlockCipher(aesEngine)));
 
 
         byte[]         d = new byte[] {};

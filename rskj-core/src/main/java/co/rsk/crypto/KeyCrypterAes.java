@@ -37,7 +37,7 @@
 package co.rsk.crypto;
 
 import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -77,7 +77,7 @@ public class KeyCrypterAes implements KeyCrypter {
             ParametersWithIV keyWithIv = new ParametersWithIV(key, iv);
 
             // Encrypt using AES.
-            BufferedBlockCipher cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESFastEngine()));
+            BufferedBlockCipher cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
             cipher.init(true, keyWithIv);
             byte[] encryptedBytes = new byte[cipher.getOutputSize(plainBytes.length)];
             final int length1 = cipher.processBytes(plainBytes, 0, plainBytes.length, encryptedBytes, 0);
@@ -106,7 +106,7 @@ public class KeyCrypterAes implements KeyCrypter {
             ParametersWithIV keyWithIv = new ParametersWithIV(new KeyParameter(key.getKey()), dataToDecrypt.initialisationVector);
 
             // Decrypt the message.
-            BufferedBlockCipher cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESFastEngine()));
+            BufferedBlockCipher cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
             cipher.init(false, keyWithIv);
 
             byte[] cipherBytes = dataToDecrypt.encryptedBytes;

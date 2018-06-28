@@ -24,7 +24,7 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import org.bouncycastle.crypto.StreamCipher;
 import org.bouncycastle.crypto.digests.KeccakDigest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -53,19 +53,19 @@ public class FrameCodec {
 
     public FrameCodec(EncryptionHandshake.Secrets secrets) {
         this.mac = secrets.mac;
-        AESFastEngine encCipher = new AESFastEngine();
+        AESEngine encCipher = new AESEngine();
         enc = new SICBlockCipher(encCipher);
         enc.init(true, new ParametersWithIV(new KeyParameter(secrets.aes), new byte[encCipher.getBlockSize()]));
-        AESFastEngine decCipher = new AESFastEngine();
+        AESEngine decCipher = new AESEngine();
         dec = new SICBlockCipher(decCipher);
         dec.init(false, new ParametersWithIV(new KeyParameter(secrets.aes), new byte[decCipher.getBlockSize()]));
         egressMac = secrets.egressMac;
         ingressMac = secrets.ingressMac;
     }
 
-    private AESFastEngine makeMacCipher() {
+    private AESEngine makeMacCipher() {
         // Stateless AES encryption
-        AESFastEngine macc = new AESFastEngine();
+        AESEngine macc = new AESEngine();
         macc.init(true, new KeyParameter(mac));
         return macc;
     }

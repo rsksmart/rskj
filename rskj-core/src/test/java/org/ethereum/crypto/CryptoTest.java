@@ -31,7 +31,7 @@ import org.bouncycastle.crypto.KeyEncoder;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.engines.AESFastEngine;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.IESEngine;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
@@ -153,7 +153,7 @@ public class CryptoTest {
         KeyParameter key = new KeyParameter(keyBytes);
         ParametersWithIV params = new ParametersWithIV(key, new byte[16]);
 
-        AESFastEngine engine = new AESFastEngine();
+        AESEngine engine = new AESEngine();
         SICBlockCipher ctrEngine = new SICBlockCipher(engine);
 
         ctrEngine.init(true, params);
@@ -175,7 +175,7 @@ public class CryptoTest {
     @Test  // big packet encryption
     public void test12() throws Throwable {
 
-        AESFastEngine engine = new AESFastEngine();
+        AESEngine engine = new AESEngine();
         SICBlockCipher ctrEngine = new SICBlockCipher(engine);
 
         byte[] keyBytes = Hex.decode("a4627abc2a3c25315bff732cb22bc128f203912dd2a840f31e66efb27a47d2b1");
@@ -239,13 +239,13 @@ public class CryptoTest {
     @Test  // ECIES_AES128_SHA256 + No Ephemeral Key + IV(all zeroes)
     public void test14() throws Throwable{
 
-        AESFastEngine aesFastEngine = new AESFastEngine();
+        AESEngine aesEngine = new AESEngine();
 
         IESEngine iesEngine = new IESEngine(
                 new ECDHBasicAgreement(),
                 new KDF2BytesGenerator(new SHA256Digest()),
                 new HMac(new SHA256Digest()),
-                new BufferedBlockCipher(new SICBlockCipher(aesFastEngine)));
+                new BufferedBlockCipher(new SICBlockCipher(aesEngine)));
 
 
         byte[]         d = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -285,7 +285,7 @@ public class CryptoTest {
                 new ECDHBasicAgreement(),
                 new KDF2BytesGenerator (new SHA256Digest()),
                 new HMac(new SHA256Digest()),
-                new BufferedBlockCipher(new SICBlockCipher(aesFastEngine)));
+                new BufferedBlockCipher(new SICBlockCipher(aesEngine)));
 
         decryptorIES_Engine.init(false, p2.getPrivate(), p1.getPublic(), parametersWithIV);
 
@@ -309,13 +309,13 @@ public class CryptoTest {
         AsymmetricCipherKeyPair myKey = new AsymmetricCipherKeyPair(ecPubKey, ecPrivKey);
 
 
-        AESFastEngine aesFastEngine = new AESFastEngine();
+        AESEngine aesEngine = new AESEngine();
 
         IESEngine iesEngine = new IESEngine(
                 new ECDHBasicAgreement(),
                 new KDF2BytesGenerator(new SHA256Digest()),
                 new HMac(new SHA256Digest()),
-                new BufferedBlockCipher(new SICBlockCipher(aesFastEngine)));
+                new BufferedBlockCipher(new SICBlockCipher(aesEngine)));
 
 
         byte[]         d = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -359,7 +359,7 @@ public class CryptoTest {
                 new ECDHBasicAgreement(),
                 new KDF2BytesGenerator (new SHA256Digest()),
                 new HMac(new SHA256Digest()),
-                new BufferedBlockCipher(new SICBlockCipher(aesFastEngine)));
+                new BufferedBlockCipher(new SICBlockCipher(aesEngine)));
 
         decryptorIES_Engine.init(myKey.getPrivate(), parametersWithIV, new ECIESPublicKeyParser(ECKey.CURVE));
 
