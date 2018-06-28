@@ -352,8 +352,8 @@ public class BridgeSerializationUtils {
         return Pair.of(entries, disableBlockHeight);
     }
 
-    public static HashMap<Address, UnlimitedWhiteListEntry> deserializeUnlimitedLockWhitelistEntries(byte[] data, NetworkParameters parameters) {
-        HashMap<Address, UnlimitedWhiteListEntry> entries = new HashMap<>();
+    public static Map<Address, UnlimitedWhiteListEntry> deserializeUnlimitedLockWhitelistEntries(byte[] data, NetworkParameters parameters) {
+        Map<Address, UnlimitedWhiteListEntry> entries = new HashMap<>();
 
         if (data == null) {
             return entries;

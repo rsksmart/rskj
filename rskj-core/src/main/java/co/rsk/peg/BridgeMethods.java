@@ -422,7 +422,7 @@ public enum BridgeMethods {
                         ));
     private final CallTransaction.Function function;
     private final long cost;
-    private final Function<BlockchainConfig, Boolean> isEnabledField;
+    private final Function<BlockchainConfig, Boolean> isEnabledFunction;
     private final BridgeMethodExecutor executor;
 
     BridgeMethods(CallTransaction.Function function, long cost, BridgeMethodExecutor executor) {
@@ -433,7 +433,7 @@ public enum BridgeMethods {
         this.function = function;
         this.cost = cost;
         this.executor = executor;
-        this.isEnabledField = isEnabled;
+        this.isEnabledFunction = isEnabled;
     }
 
     public static Optional<BridgeMethods> findBySignature(byte[] encoding) {
@@ -444,7 +444,7 @@ public enum BridgeMethods {
         return function;
     }
     public Boolean isEnabled(BlockchainConfig blockchainConfig) {
-        return this.isEnabledField.apply(blockchainConfig);
+        return this.isEnabledFunction.apply(blockchainConfig);
     }
 
     public long getCost() {

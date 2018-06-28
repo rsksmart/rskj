@@ -578,8 +578,7 @@ public class BridgeStorageProviderTest {
             .when(BridgeSerializationUtils.serializeOneOffLockWhitelist(any(Pair.class)))
             .then((InvocationOnMock invocation) -> {
                 Pair<List<OneOffWhiteListEntry>, Integer> data = invocation.getArgumentAt(0, Pair.class);
-                List<OneOffWhiteListEntry> mockedData = whitelistMock.getEntries().stream().filter(e -> e.getClass() == OneOffWhiteListEntry.class).map(e -> (OneOffWhiteListEntry)e).collect(Collectors.toList());
-                Assert.assertEquals(mockedData, data.getLeft());
+                Assert.assertEquals(whitelistMock.getEntries(OneOffWhiteListEntry.class), data.getLeft());
                 Assert.assertSame(whitelistMock.getDisableBlockHeight(), data.getRight());
                 serializeCalls.add(0);
                 return Hex.decode("ccdd");
@@ -604,8 +603,7 @@ public class BridgeStorageProviderTest {
             .when(BridgeSerializationUtils.serializeUnlimitedLockWhitelist(any(List.class)))
             .then((InvocationOnMock invocation) -> {
                 List<UnlimitedWhiteListEntry> unlimitedWhiteListEntries = invocation.getArgumentAt(0, List.class);
-                List<UnlimitedWhiteListEntry> mockedData = whitelistMock.getEntries().stream().filter(e -> e.getClass() == UnlimitedWhiteListEntry.class).map(e -> (UnlimitedWhiteListEntry)e).collect(Collectors.toList());
-                Assert.assertEquals(mockedData, unlimitedWhiteListEntries);
+                Assert.assertEquals(whitelistMock.getEntries(UnlimitedWhiteListEntry.class), unlimitedWhiteListEntries);
                 serializeCalls.add(0);
                 return Hex.decode("bbcc");
             });

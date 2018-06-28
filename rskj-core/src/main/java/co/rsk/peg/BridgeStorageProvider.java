@@ -327,21 +327,11 @@ public class BridgeStorageProvider {
             return;
         }
 
-        List<LockWhitelistEntry> entries = lockWhitelist.getEntries();
-
-        List<OneOffWhiteListEntry> oneOffEntries = entries
-                .stream()
-                .filter(e -> e.getClass() == OneOffWhiteListEntry.class)
-                .map(e -> (OneOffWhiteListEntry)e)
-                .collect(Collectors.toList());
+        List<OneOffWhiteListEntry> oneOffEntries = lockWhitelist.getEntries(OneOffWhiteListEntry.class);
         safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight()), BridgeSerializationUtils::serializeOneOffLockWhitelist);
 
-        if (this.bridgeStorageConfiguration.isUnlimitedWhitelistEnabled()) {
-            List<UnlimitedWhiteListEntry> unlimitedEntries = entries
-                    .stream()
-                    .filter(e -> e.getClass() == UnlimitedWhiteListEntry.class)
-                    .map(e -> (UnlimitedWhiteListEntry)e)
-                    .collect(Collectors.toList());
+        if (this.bridgeStorageConfiguration.getUnlimitedWhitelistEnabled()) {
+            List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getEntries(UnlimitedWhiteListEntry.class);
             safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
         }
     }
@@ -363,7 +353,7 @@ public class BridgeStorageProvider {
 
         whitelistedAddresses.putAll(oneOffWhitelistAndDisableBlockHeightData.getLeft());
 
-        if (this.bridgeStorageConfiguration.isUnlimitedWhitelistEnabled()) {
+        if (this.bridgeStorageConfiguration.getUnlimitedWhitelistEnabled()) {
             whitelistedAddresses.putAll(safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY,
                     data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, btcContext.getParams())));
         }

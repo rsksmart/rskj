@@ -3,17 +3,23 @@ package co.rsk.peg;
 import org.ethereum.config.BlockchainConfig;
 
 public class BridgeStorageConfiguration {
-    private final Boolean isUnlimitedWhitelistEnabled;
+    private Boolean isUnlimitedWhitelistEnabled;
 
-    public BridgeStorageConfiguration(Boolean isUnlimitedWhitelistEnabled) {
-        this.isUnlimitedWhitelistEnabled = isUnlimitedWhitelistEnabled;
+    public BridgeStorageConfiguration() {
+        this.isUnlimitedWhitelistEnabled = Boolean.FALSE;
     }
 
-    public Boolean isUnlimitedWhitelistEnabled() {
-        return this.isUnlimitedWhitelistEnabled;
+    public void setIsUnlimitedWhitelistEnabled(Boolean value) {
+        this.isUnlimitedWhitelistEnabled = value;
+    }
+
+    public Boolean getUnlimitedWhitelistEnabled() {
+        return isUnlimitedWhitelistEnabled;
     }
 
     public static BridgeStorageConfiguration fromBlockchainConfig(BlockchainConfig config) {
-        return new BridgeStorageConfiguration(config.isRfs170());
+        BridgeStorageConfiguration bridgeStorageConfiguration = new BridgeStorageConfiguration();
+        bridgeStorageConfiguration.setIsUnlimitedWhitelistEnabled(config.isRfs170());
+        return bridgeStorageConfiguration;
     }
 }

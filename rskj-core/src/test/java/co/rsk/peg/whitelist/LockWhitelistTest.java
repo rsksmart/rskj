@@ -202,7 +202,7 @@ public class LockWhitelistTest {
 
         assertExistance(randomAddress, true);
 
-        Assert.assertTrue(whitelist.getEntry(randomAddress).canLock(Coin.COIN));
+        Assert.assertTrue(whitelist.get(randomAddress).canLock(Coin.COIN));
     }
 
     @Test
@@ -219,7 +219,7 @@ public class LockWhitelistTest {
 
         assertExistance(randomAddress, true);
 
-        Assert.assertFalse(whitelist.getEntry(randomAddress).canLock(Coin.COIN));
+        Assert.assertFalse(whitelist.get(randomAddress).canLock(Coin.COIN));
     }
 
     @Test

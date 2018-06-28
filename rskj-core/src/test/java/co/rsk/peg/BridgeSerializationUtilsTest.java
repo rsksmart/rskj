@@ -521,7 +521,7 @@ public class BridgeSerializationUtilsTest {
                 0);
 
         byte[] result = BridgeSerializationUtils.serializeOneOffLockWhitelist(Pair.of(
-                lockWhitelist.getEntries().stream().filter(e -> e.getClass() == OneOffWhiteListEntry.class).map(e -> (OneOffWhiteListEntry)e).collect(Collectors.toList()),
+                lockWhitelist.getEntries(OneOffWhiteListEntry.class),
                 lockWhitelist.getDisableBlockHeight()
         ));
         StringBuilder expectedBuilder = new StringBuilder();
@@ -598,7 +598,7 @@ public class BridgeSerializationUtilsTest {
 
         LockWhitelist originalLockWhitelist = new LockWhitelist(whitelist, 0);
         byte[] serializedLockWhitelist = BridgeSerializationUtils.serializeOneOffLockWhitelist(Pair.of(
-                originalLockWhitelist.getEntries().stream().filter(e -> e.getClass() == OneOffWhiteListEntry.class).map(e -> (OneOffWhiteListEntry)e).collect(Collectors.toList()),
+                originalLockWhitelist.getEntries(OneOffWhiteListEntry.class),
                 originalLockWhitelist.getDisableBlockHeight()
         ));
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(serializedLockWhitelist, btcParams);
@@ -609,8 +609,8 @@ public class BridgeSerializationUtilsTest {
         Assert.assertThat(deserializedAddresses, hasSize(1));
         Assert.assertThat(originalAddresses, is(deserializedAddresses));
         Assert.assertThat(
-                ((OneOffWhiteListEntry)originalLockWhitelist.getEntry(originalAddresses.get(0))).maxTransferValue(),
-                is(((OneOffWhiteListEntry)deserializedLockWhitelist.getLeft().get(deserializedAddresses.get(0))).maxTransferValue()));
+                ((OneOffWhiteListEntry)originalLockWhitelist.get(originalAddresses.get(0))).maxTransferValue(),
+                is((deserializedLockWhitelist.getLeft().get(deserializedAddresses.get(0))).maxTransferValue()));
     }
 
     @Test

@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.Coin;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents a lock whitelist
@@ -81,12 +82,19 @@ public class LockWhitelist {
         return new ArrayList<>(whitelistedAddresses.keySet());
     }
 
+    public <T extends LockWhitelistEntry> List<T> getEntries(Class<T> type) {
+        return whitelistedAddresses.values().stream()
+                .filter(e -> e.getClass() == type)
+                .map(e -> type.cast(e))
+                .collect(Collectors.toList());
+    }
+
     public List<LockWhitelistEntry> getEntries() {
         // Return a copy so that this can't be modified from the outside
         return new ArrayList<>(whitelistedAddresses.values());
     }
 
-    public LockWhitelistEntry getEntry(Address address) {
+    public LockWhitelistEntry get(Address address) {
         return this.whitelistedAddresses.get(address);
     }
 
