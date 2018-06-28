@@ -43,4 +43,7 @@ public class DevNetFirstForkConfig extends DevNetGenesisConfig {
     public boolean isRcs230() {
         return true;
     }
+
+    @Override
+    public boolean isRfs170() { return true; }
 }
