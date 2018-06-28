@@ -22,10 +22,11 @@ package org.ethereum.config;
 import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.*;
-import org.ethereum.config.blockchain.DevNetConfig;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.config.net.TestNetConfig;
+import org.ethereum.config.net.RegTestConfig;
+import org.ethereum.config.net.DevNetConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.net.p2p.P2pHandler;
@@ -201,10 +202,10 @@ public abstract class SystemProperties {
                         blockchainConfig = new TestNetConfig();
                         break;
                     case "devnet":
-                        blockchainConfig = new DevNetConfig();
+                        blockchainConfig = DevNetConfig.getDefaultDevNetConfig();
                         break;
                     case "regtest":
-                        blockchainConfig = org.ethereum.config.net.RegTestConfig.getDefaultRegTestConfig();
+                        blockchainConfig = RegTestConfig.getDefaultRegTestConfig();
                         break;
                     default:
                         throw new RuntimeException(String.format(
