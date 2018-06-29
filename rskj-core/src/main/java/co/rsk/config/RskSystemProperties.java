@@ -457,8 +457,6 @@ public class RskSystemProperties extends SystemProperties {
 
     // Properties for Federation Notification service
 
-    // Properties for Federation Notification service
-
     public boolean federationNotificationsEnabled() {
         return getBooleanProperty("notifications.enabled", true);
     }

@@ -29,6 +29,7 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.notifications.FederationState;
 import co.rsk.net.notifications.processing.FederationNotificationProcessor;
 import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import co.rsk.net.notifications.panics.PanicFlag;
@@ -97,13 +98,13 @@ public class Web3Impl implements Web3 {
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
     private final DebugModule debugModule;
-    private final FederationNotificationProcessor notificationProcessor;
+    private final FederationState federationState;
     public org.ethereum.core.Repository repository;
     public Ethereum eth;
     protected MinerServer minerServer;
     private long initialBlockNumber;
 
-    protected Web3Impl(
+    public Web3Impl(
             Ethereum eth,
             Blockchain blockchain,
             TransactionPool transactionPool,
@@ -122,7 +123,7 @@ public class Web3Impl implements Web3 {
             PeerScoringManager peerScoringManager,
             PeerServer peerServer,
             BlockProcessor nodeBlockProcessor,
-            FederationNotificationProcessor notificationProcessor,
+            FederationState federationState,
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities) {
         this.eth = eth;
@@ -142,7 +143,7 @@ public class Web3Impl implements Web3 {
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
         this.nodeBlockProcessor = nodeBlockProcessor;
-        this.notificationProcessor = notificationProcessor;
+        this.federationState = federationState;
         this.hashRateCalculator = hashRateCalculator;
         this.configCapabilities = configCapabilities;
         this.config = config;
@@ -151,32 +152,6 @@ public class Web3Impl implements Web3 {
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
         personalModule.init(this.config);
-    }
-
-    protected Web3Impl(
-            Ethereum eth,
-            Blockchain blockchain,
-            TransactionPool transactionPool,
-            BlockStore blockStore,
-            ReceiptStore receiptStore,
-            RskSystemProperties config,
-            MinerClient minerClient,
-            MinerServer minerServer,
-            PersonalModule personalModule,
-            EthModule ethModule,
-            TxPoolModule txPoolModule,
-            MnrModule mnrModule,
-            DebugModule debugModule,
-            ChannelManager channelManager,
-            Repository repository,
-            PeerScoringManager peerScoringManager,
-            PeerServer peerServer,
-            BlockProcessor nodeBlockProcessor,
-            HashRateCalculator hashRateCalculator,
-            ConfigCapabilities configCapabilities) {
-        this(eth, blockchain, transactionPool, blockStore, receiptStore, config, minerClient, minerServer, personalModule, ethModule, txPoolModule,
-                mnrModule, debugModule, channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor,
-                new NodeFederationNotificationProcessor(config, nodeBlockProcessor), hashRateCalculator, configCapabilities);
     }
 
     public static Block getBlockByNumberOrStr(String bnOrId, Blockchain blockchain) throws Exception {
@@ -338,18 +313,18 @@ public class Web3Impl implements Web3 {
 
     @Override
     public List<FederationAlert> eth_getFederationAlerts() {
-        return notificationProcessor.getFederationAlerts();
+        return federationState.getAlerts();
     }
 
-    @Override
-    public PanicFlag eth_getPanicStatus() {
-        return notificationProcessor.getPanicStatus();
-    }
-
-    @Override
-    public long eth_getPanickingBlockNumber() {
-        return notificationProcessor.getPanicSinceBlockNumber();
-    }
+//    @Override
+//    public PanicFlag eth_getPanicStatus() {
+//        return notificationProcessor.getPanicStatus();
+//    }
+//
+//    @Override
+//    public long eth_getPanickingBlockNumber() {
+//        return notificationProcessor.getPanicSinceBlockNumber();
+//    }
 
     @Override
     public boolean eth_mining() {

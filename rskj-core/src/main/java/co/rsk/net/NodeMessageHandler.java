@@ -107,17 +107,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
     }
 
-    // For testing purposes only
-    public NodeMessageHandler(RskSystemProperties config,
-                              @Nonnull final BlockProcessor blockProcessor,
-                              final SyncProcessor syncProcessor,
-                              @Nullable final ChannelManager channelManager,
-                              @Nullable final TransactionGateway transactionGateway,
-                              @Nullable final PeerScoringManager peerScoringManager,
-                              @Nonnull BlockValidationRule blockValidationRule) {
-        this(config, blockProcessor, new NodeFederationNotificationProcessor(config, blockProcessor), syncProcessor, channelManager, transactionGateway, peerScoringManager, blockValidationRule);
-    }
-
     /**
      * processMessage processes a RSK Message, doing the appropriate action based on the message type.
      *

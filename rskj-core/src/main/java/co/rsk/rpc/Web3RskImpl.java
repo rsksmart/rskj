@@ -23,6 +23,7 @@ import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.*;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.notifications.FederationState;
 import co.rsk.net.notifications.processing.FederationNotificationProcessor;
 import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -80,43 +81,16 @@ public class Web3RskImpl extends Web3Impl {
                        ReceiptStore receiptStore,
                        PeerServer peerServer,
                        BlockProcessor nodeBlockProcessor,
-                       FederationNotificationProcessor notificationProcessor,
+                       FederationState federationState,
                        HashRateCalculator hashRateCalculator,
                        ConfigCapabilities configCapabilities) {
         super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
               personalModule, ethModule, txPoolModule, mnrModule, debugModule,
-              channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor, notificationProcessor,
-              hashRateCalculator, configCapabilities);
+              channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor,
+              federationState, hashRateCalculator, configCapabilities);
 
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;
-    }
-
-    // For testing purposes only
-    public Web3RskImpl(Ethereum eth,
-                       Blockchain blockchain,
-                       TransactionPool transactionPool,
-                       RskSystemProperties properties,
-                       MinerClient minerClient,
-                       MinerServer minerServer,
-                       PersonalModule personalModule,
-                       EthModule ethModule,
-                       TxPoolModule txPoolModule,
-                       MnrModule mnrModule,
-                       DebugModule debugModule,
-                       ChannelManager channelManager,
-                       Repository repository,
-                       PeerScoringManager peerScoringManager,
-                       NetworkStateExporter networkStateExporter,
-                       BlockStore blockStore,
-                       ReceiptStore receiptStore,
-                       PeerServer peerServer,
-                       BlockProcessor nodeBlockProcessor,
-                       HashRateCalculator hashRateCalculator,
-                       ConfigCapabilities configCapabilities) {
-        this(eth, blockchain, transactionPool, properties, minerClient, minerServer, personalModule, ethModule, txPoolModule, mnrModule, debugModule,
-                channelManager, repository, peerScoringManager, networkStateExporter, blockStore, receiptStore, peerServer, nodeBlockProcessor,
-                new NodeFederationNotificationProcessor(properties, nodeBlockProcessor), hashRateCalculator, configCapabilities);
     }
 
     public void ext_dumpState() {

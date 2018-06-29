@@ -22,6 +22,9 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
+import co.rsk.net.notifications.FederationState;
+import co.rsk.net.notifications.processing.FederationNotificationProcessor;
+import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
@@ -117,7 +120,8 @@ public class SimpleAsyncNode extends SimpleNode {
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
         SimpleChannelManager channelManager = new SimpleChannelManager();
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config));
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
+        FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, processor, new FederationState(config));
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, federationNotificationProcessor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }
 

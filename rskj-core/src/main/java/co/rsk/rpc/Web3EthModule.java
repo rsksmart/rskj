@@ -141,7 +141,7 @@ public interface Web3EthModule {
 
     List<FederationAlert> eth_getFederationAlerts();
 
-    PanicFlag eth_getPanicStatus();
-
-    long eth_getPanickingBlockNumber();
+//    PanicFlag eth_getPanicStatus();
+//
+//    long eth_getPanickingBlockNumber();
 }

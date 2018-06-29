@@ -26,6 +26,7 @@ import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockStore;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.notifications.FederationState;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;

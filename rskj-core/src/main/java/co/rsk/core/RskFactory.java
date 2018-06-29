@@ -21,6 +21,7 @@ package co.rsk.core;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.net.notifications.FederationState;
 import co.rsk.rpc.*;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
@@ -113,9 +114,15 @@ public class RskFactory {
     }
 
     @Bean
+    public FederationState getFederationState(RskSystemProperties config) {
+        return new FederationState(config);
+    }
+
+    @Bean
     public FederationNotificationProcessor getFederationNotificationProcessor(RskSystemProperties config,
-                                                                              BlockProcessor blockProcessor) {
-        return new NodeFederationNotificationProcessor(config, blockProcessor);
+                                                                              BlockProcessor blockProcessor,
+                                                                              FederationState federationState) {
+        return new NodeFederationNotificationProcessor(config, blockProcessor, federationState);
     }
 
     @Bean
@@ -170,7 +177,7 @@ public class RskFactory {
                         ReceiptStore receiptStore,
                         PeerServer peerServer,
                         BlockProcessor nodeBlockProcessor,
-                        FederationNotificationProcessor notificationProcessor,
+                        FederationState federationState,
                         HashRateCalculator hashRateCalculator,
                         ConfigCapabilities configCapabilities) {
         return new Web3RskImpl(
@@ -193,7 +200,7 @@ public class RskFactory {
                 receiptStore,
                 peerServer,
                 nodeBlockProcessor,
-                notificationProcessor,
+                federationState,
                 hashRateCalculator,
                 configCapabilities
         );

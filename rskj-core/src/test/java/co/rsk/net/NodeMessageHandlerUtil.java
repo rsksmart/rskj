@@ -2,6 +2,9 @@ package co.rsk.net;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.net.notifications.FederationState;
+import co.rsk.net.notifications.processing.FederationNotificationProcessor;
+import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
@@ -33,8 +36,9 @@ public class NodeMessageHandlerUtil {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, new DummyBlockValidationRule(), DIFFICULTY_CALCULATOR);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, processor, new FederationState(config));
 
-        return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule);
+        return new NodeMessageHandler(config, processor, federationNotificationProcessor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule);
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor() {
@@ -68,6 +72,8 @@ public class NodeMessageHandlerUtil {
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, DIFFICULTY_CALCULATOR);
-        return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, blockValidationRule);
+        FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, processor, new FederationState(config));
+
+        return new NodeMessageHandler(config, processor, federationNotificationProcessor, syncProcessor, channelManager, null, null, blockValidationRule);
     }
 }
