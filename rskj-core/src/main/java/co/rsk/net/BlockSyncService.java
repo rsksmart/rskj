@@ -121,6 +121,14 @@ public class BlockSyncService {
                 Duration.between(start, Instant.now()));
     }
 
+    public void processSibling(Block block, MessageChannel sender){
+        tryReleaseStore(getBestBlockNumber());
+        trySaveStore(block);
+        if (sender != null){
+            nodeInformation.addBlockToNode(block.getHash(), sender.getPeerNodeID());
+        }
+    }
+
     private void tryReleaseStore(long bestBlockNumber) {
         if ((++processedBlocksCounter % PROCESSED_BLOCKS_TO_CHECK_STORE) == 0) {
             long minimal = store.minimalHeight();

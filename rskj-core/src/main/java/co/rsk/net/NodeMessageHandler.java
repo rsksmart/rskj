@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.bc.SelectionRule;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
@@ -239,7 +240,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private synchronized void sendStatusToAll() {
-        BlockChainStatus blockChainStatus = this.blockProcessor.getBlockchain().getStatus();
+        BlockChainStatus blockChainStatus = getBlockChainStatus();
         Block block = blockChainStatus.getBestBlock();
         BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
@@ -298,12 +299,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         Metrics.processBlockMessage("start", block, sender.getPeerNodeID());
 
-        if (!isValidBlock(block)) {
-            logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
-            recordEvent(sender, EventType.INVALID_BLOCK);
-            return;
-        }
-
         if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
             logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
             Metrics.processBlockMessage("blockIgnored", block, sender.getPeerNodeID());
@@ -316,21 +311,41 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
         }
 
-        BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
-        Metrics.processBlockMessage("blockProcessed", block, sender.getPeerNodeID());
-        tryRelayBlock(sender, block, result);
-        recordEvent(sender, EventType.VALID_BLOCK);
+        BlockChainStatus blockChainStatus = getBlockChainStatus();
+        Block bestBlock = blockChainStatus.getBestBlock();
+
+        BlockDifficulty totalDifficulty = this.blockProcessor.getTotalDifficultyFor(block);
+        // It is the new best block
+        if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, blockChainStatus.getTotalDifficulty(), block, bestBlock)) {
+            BlockProcessResult result = this.blockProcessor.processBlock(block, sender);
+            if (result.isInvalidBlock()) {
+                logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
+                recordEvent(sender, EventType.INVALID_BLOCK);
+                return;
+            }
+            Metrics.processBlockMessage("blockProcessed", block, sender.getPeerNodeID());
+            recordEvent(sender, EventType.VALID_BLOCK);
+            tryRelayBlock(sender, block, result);
+        } else {
+            this.blockProcessor.processSibling(sender, block);
+            tryRelayBlock(sender, block, null);
+        }
+
         Metrics.processBlockMessage("finish", block, sender.getPeerNodeID());
     }
 
-    private void tryRelayBlock(@Nonnull MessageChannel sender, Block block, BlockProcessResult result) {
+    private BlockChainStatus getBlockChainStatus() {
+        return this.blockProcessor.getBlockchain().getStatus();
+    }
+
+    private void tryRelayBlock(MessageChannel sender, Block block, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
-        if (result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
+        if (!this.blockProcessor.hasBetterBlockToSync() && (result == null || !result.isInvalidBlock())) {
             relayBlock(sender, block);
         }
     }
 
-    private void relayBlock(@Nonnull MessageChannel sender, Block block) {
+    private void relayBlock(MessageChannel sender, Block block) {
         byte[] blockHash = block.getHash().getBytes();
         final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
         final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(blockHash);

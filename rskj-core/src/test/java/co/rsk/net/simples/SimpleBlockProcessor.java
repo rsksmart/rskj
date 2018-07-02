@@ -18,6 +18,7 @@
 
 package co.rsk.net.simples;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockProcessResult;
@@ -29,11 +30,14 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 
+import java.math.BigInteger;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 5/11/2016.
@@ -45,9 +49,17 @@ public class SimpleBlockProcessor implements BlockProcessor {
     private byte[] hash;
     private int count;
     private long blockGap = 1000000;
+    private Blockchain blockchain;
+
+    public SimpleBlockProcessor(Blockchain blockchain){
+        this.blockchain = blockchain;
+    }
+
+    public SimpleBlockProcessor(){
+    }
 
     @Override
-    public BlockProcessResult processBlock(MessageChannel sender, Block block) {
+    public BlockProcessResult processBlock(Block block, MessageChannel sender) {
         Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
         this.blocks.add(block);
         connectionsResult.put(block.getHash(), ImportResult.IMPORTED_BEST);
@@ -91,12 +103,12 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     @Override
     public BlockNodeInformation getNodeInformation() {
-        return null;
+        return mock(BlockNodeInformation.class);
     }
 
     @Override
     public Blockchain getBlockchain() {
-        return null;
+        return blockchain;
     }
 
     public List<Block> getBlocks() {
@@ -113,11 +125,6 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processBlockHeaders(MessageChannel sender, List<BlockHeader> blockHeaders) {
-
-    }
-
-    @Override
     public void processSkeletonRequest(final MessageChannel sender, long requestId, final long startNumber) {
 
     }
@@ -125,6 +132,16 @@ public class SimpleBlockProcessor implements BlockProcessor {
     @Override
     public boolean canBeIgnoredForUnclesRewards(long blockNumber) {
         return false;
+    }
+
+    @Override
+    public BlockDifficulty getTotalDifficultyFor(Block block) {
+        return new BlockDifficulty(BigInteger.ONE);
+    }
+
+    @Override
+    public void processSibling(MessageChannel sender, Block block) {
+
     }
 
     @Override

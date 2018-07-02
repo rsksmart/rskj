@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleBlockProcessor;
@@ -74,8 +75,11 @@ public class NodeMessageHandlerTest {
     public void processBlockMessageUsingProcessor() throws UnknownHostException {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
-        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        Blockchain blockchain = new BlockChainBuilder().build();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor(blockchain);
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, mock(SyncProcessor.class),
+            mock(ChannelManager.class), null, scoring,
+          new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -168,8 +172,10 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void postBlockMessageUsingProcessor() throws InterruptedException, UnknownHostException {
-        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
+        Blockchain blockchain = new BlockChainBuilder().build();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor(blockchain);
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, mock(SyncProcessor.class),
+              mock(ChannelManager.class), null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
@@ -216,11 +222,16 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processMissingPoWBlockMessageUsingProcessor() throws UnknownHostException {
+    public void processMissingPoWBlockMessageUsingProcessor() {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
-        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, new DummyBlockValidationRule());
+        Blockchain blockchain = new BlockChainBuilder().build();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor(blockchain);
+
+        NodeMessageHandler processor = spy(new NodeMessageHandler(config, sbp,
+              mock(SyncProcessor.class),
+              mock(ChannelManager.class),
+null, scoring, new DummyBlockValidationRule()));
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block = blockGenerator.getGenesisBlock();
 

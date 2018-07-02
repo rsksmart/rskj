@@ -18,6 +18,8 @@
 
 package co.rsk.net;
 
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SyncConfiguration;
@@ -296,6 +298,21 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public boolean canBeIgnoredForUnclesRewards(long blockNumber) {
         return blockSyncService.canBeIgnoredForUnclesRewards(blockNumber);
+    }
+
+    @Override
+    public BlockDifficulty getTotalDifficultyFor(Block block) {
+        BlockChainStatus status = blockchain.getStatus();
+        Block bestBlock = status.getBestBlock();
+        BlockDifficulty parentDifficulty = bestBlock.isParentOf(block) ? status.getTotalDifficulty() :
+                blockchain.getBlockStore().getTotalDifficultyForHash(block.getParentHash().getBytes());
+
+        return parentDifficulty.add(block.getCumulativeDifficulty());
+    }
+
+    @Override
+    public void processSibling(MessageChannel sender, Block block) {
+        blockSyncService.processSibling(block, sender);
     }
 
     /**

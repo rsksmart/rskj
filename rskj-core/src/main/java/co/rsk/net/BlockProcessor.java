@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -66,4 +67,8 @@ public interface BlockProcessor {
     void processSkeletonRequest(MessageChannel sender, long requestId, long startNumber);
 
     boolean canBeIgnoredForUnclesRewards(long blockNumber);
+
+    BlockDifficulty getTotalDifficultyFor(Block block);
+
+    void processSibling(MessageChannel sender, Block block);
 }
