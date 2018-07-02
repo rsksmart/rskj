@@ -254,7 +254,6 @@ public class BlockChainImpl implements Blockchain {
         }
 
         BlockResult result = null;
-
         if (parent != null) {
             long saveTime = System.nanoTime();
             logger.trace("execute start");
@@ -289,7 +288,7 @@ public class BlockChainImpl implements Blockchain {
         logger.trace("TD: updated to {}", totalDifficulty);
 
         // It is the new best block
-        if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, status.getTotalDifficulty(),block, bestBlock)) {
+        if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, status.getTotalDifficulty(), block, bestBlock)) {
             if (hasBestBlock && !isChildOfBestBlock) {
                 logger.trace("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
@@ -321,9 +320,8 @@ public class BlockChainImpl implements Blockchain {
             }
 
             return ImportResult.IMPORTED_BEST;
-        }
-        // It is not the new best block
-        else {
+
+        } else { // It is not the new best block
             if (hasBestBlock && !isChildOfBestBlock) {
                 logger.trace("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),

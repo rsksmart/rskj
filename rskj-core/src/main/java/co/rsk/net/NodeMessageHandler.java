@@ -26,7 +26,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
-import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
@@ -63,28 +62,24 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
 
-    private BlockValidationRule blockValidationRule;
-
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
-    private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<Keccak256>());
-    private long cleanMsgTimestamp = 0;
+    private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
+    private long cleanMsgTimestamp;
 
     private volatile boolean stopped;
 
     @Autowired
     public NodeMessageHandler(RskSystemProperties config,
-                              @Nonnull final BlockProcessor blockProcessor,
-                              final SyncProcessor syncProcessor,
-                              @Nullable final ChannelManager channelManager,
-                              @Nullable final TransactionGateway transactionGateway,
-                              @Nullable final PeerScoringManager peerScoringManager,
-                              @Nonnull BlockValidationRule blockValidationRule) {
+                              BlockProcessor blockProcessor,
+                              SyncProcessor syncProcessor,
+                              @Nullable ChannelManager channelManager,
+                              @Nullable TransactionGateway transactionGateway,
+                              @Nullable PeerScoringManager peerScoringManager) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
         this.transactionGateway = transactionGateway;
-        this.blockValidationRule = blockValidationRule;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
     }
@@ -247,30 +242,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), totalDifficulty);
         logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
         this.channelManager.broadcastStatus(status);
-    }
-
-    public synchronized Block getBestBlock() {
-        return this.blockProcessor.getBlockchain().getBestBlock();
-    }
-
-    public synchronized BlockDifficulty getTotalDifficulty() {
-        return this.blockProcessor.getBlockchain().getTotalDifficulty();
-    }
-
-    /**
-     * isValidBlock validates if the given block meets the minimum criteria to be processed:
-     * The PoW should be valid and the block can't be too far in the future.
-     *
-     * @param block the block to check
-     * @return true if the block is valid, false otherwise.
-     */
-    private boolean isValidBlock(@Nonnull final Block block) {
-        try {
-            return blockValidationRule.isValid(block);
-        } catch (Exception e) {
-            logger.error("Failed to validate PoW from block {}: {}", block.getShortHash(), e);
-            return false;
-        }
     }
 
     /**

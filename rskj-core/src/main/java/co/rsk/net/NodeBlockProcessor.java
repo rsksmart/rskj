@@ -33,7 +33,6 @@ import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -116,26 +115,6 @@ public class NodeBlockProcessor implements BlockProcessor {
                             nodeInformation.addBlockToNode(b, sender.getPeerNodeID());
                         }
                 );
-    }
-
-
-    @Override
-    public void processBlockHeaders(@Nonnull final MessageChannel sender, @Nonnull final List<BlockHeader> blockHeaders) {
-        blockHeaders.stream()
-                .filter(h -> !hasHeader(h.getHash()))
-                // sort block headers in ascending order, so we can process them in that order.
-                .sorted(Comparator.comparingLong(BlockHeader::getNumber))
-                .forEach(h -> processBlockHeader(sender, h));
-    }
-
-    private boolean hasHeader(Keccak256 hash) {
-        return hasBlock(hash.getBytes()) || store.hasHeader(hash);
-    }
-
-    private void processBlockHeader(@Nonnull final MessageChannel sender, @Nonnull final BlockHeader header) {
-        sender.sendMessage(new GetBlockMessage(header.getHash().getBytes()));
-
-        this.store.saveHeader(header);
     }
 
     /**
@@ -388,12 +367,12 @@ public class NodeBlockProcessor implements BlockProcessor {
      * processBlock processes a block and tries to add it to the blockchain.
      * It will also add all pending blocks (that depend on this block) into the blockchain.
      *
-     * @param sender the message sender. If more data is needed, NodeProcessor might send a message to the sender
-     *               requesting that data (for example, a missing parent block).
      * @param block  the block to process.
+     * @param sender the message sender. If more data is needed, NodeProcessor might send a message to the sender
+ *               requesting that data (for example, a missing parent block).
      */
     @Override
-    public BlockProcessResult processBlock(@Nullable final MessageChannel sender, @Nonnull final Block block) {
+    public BlockProcessResult processBlock(Block block, MessageChannel sender) {
         return blockSyncService.processBlock(block, sender, false);
     }
 
