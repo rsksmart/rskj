@@ -29,6 +29,7 @@ import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
+import co.rsk.rpc.modules.notifications.NotificationsModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
@@ -73,6 +74,7 @@ public class Web3RskImpl extends Web3Impl {
                        TxPoolModule txPoolModule,
                        MnrModule mnrModule,
                        DebugModule debugModule,
+                       NotificationsModule notificationsModule,
                        ChannelManager channelManager,
                        Repository repository,
                        PeerScoringManager peerScoringManager,
@@ -85,7 +87,7 @@ public class Web3RskImpl extends Web3Impl {
                        HashRateCalculator hashRateCalculator,
                        ConfigCapabilities configCapabilities) {
         super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
-              personalModule, ethModule, txPoolModule, mnrModule, debugModule,
+              personalModule, ethModule, txPoolModule, mnrModule, debugModule, notificationsModule,
               channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor,
               federationState, hashRateCalculator, configCapabilities);
 

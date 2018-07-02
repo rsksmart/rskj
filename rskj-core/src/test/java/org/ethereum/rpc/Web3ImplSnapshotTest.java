@@ -25,8 +25,11 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.*;
+import co.rsk.net.notifications.FederationState;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
+import co.rsk.rpc.modules.notifications.NotificationsModule;
+import co.rsk.rpc.modules.notifications.NotificationsModuleImpl;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
@@ -218,6 +221,7 @@ public class Web3ImplSnapshotTest {
                 tpm,
                 null,
                 dm,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 ethereum.repository,
                 null,

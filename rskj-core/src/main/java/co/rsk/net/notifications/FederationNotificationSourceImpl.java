@@ -35,7 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  */
 
-@Component
+//@Component
 public class FederationNotificationSourceImpl implements FederationNotificationSource {
     private static final Logger logger = LoggerFactory.getLogger("FederationNotificationSource");
 

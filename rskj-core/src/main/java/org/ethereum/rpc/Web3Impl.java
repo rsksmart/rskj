@@ -38,6 +38,7 @@ import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
+import co.rsk.rpc.modules.notifications.NotificationsModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.InvalidInetAddressException;
@@ -98,6 +99,7 @@ public class Web3Impl implements Web3 {
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
     private final DebugModule debugModule;
+    private final NotificationsModule notificationsModule;
     private final FederationState federationState;
     public org.ethereum.core.Repository repository;
     public Ethereum eth;
@@ -118,6 +120,7 @@ public class Web3Impl implements Web3 {
             TxPoolModule txPoolModule,
             MnrModule mnrModule,
             DebugModule debugModule,
+            NotificationsModule notificationsModule,
             ChannelManager channelManager,
             Repository repository,
             PeerScoringManager peerScoringManager,
@@ -139,6 +142,7 @@ public class Web3Impl implements Web3 {
         this.txPoolModule = txPoolModule;
         this.mnrModule = mnrModule;
         this.debugModule = debugModule;
+        this.notificationsModule = notificationsModule;
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
@@ -1115,6 +1119,11 @@ public class Web3Impl implements Web3 {
     @Override
     public DebugModule getDebugModule() {
         return debugModule;
+    }
+
+    @Override
+    public NotificationsModule getNotificationsModule() {
+        return notificationsModule;
     }
 
     @Override

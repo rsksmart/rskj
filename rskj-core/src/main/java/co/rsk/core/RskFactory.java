@@ -36,6 +36,7 @@ import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.mnr.MnrModule;
+import co.rsk.rpc.modules.notifications.NotificationsModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
@@ -169,6 +170,7 @@ public class RskFactory {
                         EthModule ethModule,
                         TxPoolModule txPoolModule,
                         DebugModule debugModule,
+                        NotificationsModule notificationsModule,
                         ChannelManager channelManager,
                         Repository repository,
                         PeerScoringManager peerScoringManager,
@@ -192,6 +194,7 @@ public class RskFactory {
                 txPoolModule,
                 mnrModule,
                 debugModule,
+                notificationsModule,
                 channelManager,
                 repository,
                 peerScoringManager,

@@ -99,12 +99,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         // Processor for Federation notifications
         this.federationNotificationProcessor = federationNotificationProcessor;
 
-        // If test Federation notifications enabled then instantiate a FederationNotificationSource. For testing purposes only
-        if (config.testFederationNotificationSourceEnabled()) {
-            FederationNotificationSigner signer = new NodeFederationNotificationSigner(config);
-            this.federationNotificationSource = new FederationNotificationSourceImpl(config, blockProcessor.getBlockchain(), channelManager, signer);
-            this.federationNotificationSource.start();
-        }
+//        // If test Federation notifications enabled then instantiate a FederationNotificationSource. For testing purposes only
+//        if (config.testFederationNotificationSourceEnabled()) {
+//            FederationNotificationSigner signer = new NodeFederationNotificationSigner(config);
+//            this.federationNotificationSource = new FederationNotificationSourceImpl(config, blockProcessor.getBlockchain(), channelManager, signer);
+//            this.federationNotificationSource.start();
+//        }
     }
 
     /**

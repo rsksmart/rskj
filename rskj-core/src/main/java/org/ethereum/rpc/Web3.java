@@ -18,16 +18,13 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.rpc.Web3DebugModule;
-import co.rsk.rpc.Web3EthModule;
-import co.rsk.rpc.Web3MnrModule;
-import co.rsk.rpc.Web3TxPoolModule;
+import co.rsk.rpc.*;
 import co.rsk.scoring.PeerScoringInformation;
 
 import java.util.Arrays;
 import java.util.Map;
 
-public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3MnrModule, Web3DebugModule {
+public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3MnrModule, Web3DebugModule, Web3NotificationsModule {
     class SyncingResult {
         public String startingBlock;
         public String currentBlock;
