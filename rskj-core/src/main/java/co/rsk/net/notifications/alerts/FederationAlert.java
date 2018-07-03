@@ -19,8 +19,12 @@
 package co.rsk.net.notifications.alerts;
 
 import co.rsk.net.notifications.panics.PanicFlag;
+import co.rsk.rpc.modules.notifications.NotificationsModule;
+
+import java.util.function.Function;
 
 public abstract class FederationAlert {
     public abstract FederationAlert copy();
     public abstract PanicFlag getAssociatedPanicFlag(long forBlockNumber);
+    public abstract Function<FederationAlert, NotificationsModule.FederationAlert> getConverterForNotificationsModule();
 }

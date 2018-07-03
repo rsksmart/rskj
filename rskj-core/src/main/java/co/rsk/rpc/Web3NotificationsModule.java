@@ -25,6 +25,8 @@ import java.util.List;
 public interface Web3NotificationsModule {
     default List<NotificationsModule.PanicFlag> notifications_getPanicStatus() { return getNotificationsModule().getPanicStatus(); }
 
+    default List<NotificationsModule.FederationAlert> notifications_getAlerts() { return getNotificationsModule().getAlerts(); }
+
     NotificationsModule getNotificationsModule();
 }
 

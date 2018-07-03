@@ -21,7 +21,10 @@ package co.rsk.net.notifications.alerts;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.notifications.panics.PanicFlag;
+import co.rsk.rpc.modules.notifications.NotificationsModule;
 import org.ethereum.util.ByteUtil;
+
+import java.util.function.Function;
 
 public class FederationFrozenAlert extends FederationAlert {
     private RskAddress source;
@@ -54,5 +57,10 @@ public class FederationFrozenAlert extends FederationAlert {
     @Override
     public PanicFlag getAssociatedPanicFlag(long forBlockNumber) {
         return PanicFlag.FederationFrozen(forBlockNumber);
+    }
+
+    @Override
+    public Function<FederationAlert, NotificationsModule.FederationAlert> getConverterForNotificationsModule() {
+        return NotificationsModule.FederationFrozenAlert.convert;
     }
 }

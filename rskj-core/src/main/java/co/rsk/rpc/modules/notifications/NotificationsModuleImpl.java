@@ -19,9 +19,11 @@
 package co.rsk.rpc.modules.notifications;
 
 import co.rsk.net.notifications.FederationState;
+import co.rsk.net.notifications.alerts.FederationAlert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,6 +42,13 @@ public class NotificationsModuleImpl implements NotificationsModule {
         return federationState.getPanicStatus().getFlags().stream()
                 .sorted(Comparator.comparing(f -> Long.valueOf(f.getSinceBlockNumber())))
                 .map(flag -> PanicFlag.fromPanicStatusFlag(flag))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<FederationAlert> getAlerts() {
+        return federationState.getAlerts().stream()
+                .map(a -> FederationAlert.fromFederationAlert(a))
                 .collect(Collectors.toList());
     }
 }
