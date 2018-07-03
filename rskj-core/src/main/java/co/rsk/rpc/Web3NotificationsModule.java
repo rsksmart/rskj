@@ -20,8 +20,10 @@ package co.rsk.rpc;
 
 import co.rsk.rpc.modules.notifications.NotificationsModule;
 
+import java.util.List;
+
 public interface Web3NotificationsModule {
-    default String notifications_sayHello() { return getNotificationsModule().sayHello(); }
+    default List<NotificationsModule.PanicFlag> notifications_getPanicStatus() { return getNotificationsModule().getPanicStatus(); }
 
     NotificationsModule getNotificationsModule();
 }

@@ -40,7 +40,7 @@ import java.util.*;
  * received from each of the federation members.
  *
  * This is the single source-of-truth wrt the node's state in this regard, and
- * its updated upon processing of notifications by the
+ * it's updated upon processing of notifications by the
  * {@link FederationNotificationProcessor}, and queried when needed by other
  * components of the system.
  *

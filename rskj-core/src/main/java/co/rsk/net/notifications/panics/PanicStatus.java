@@ -30,6 +30,11 @@ public class PanicStatus {
         flags.clear();
     }
 
+    public Set<PanicFlag> getFlags() {
+        // Return a copy
+        return new HashSet<>(flags);
+    }
+
     public boolean has(PanicFlag.Reason reason) {
         return flags.contains(PanicFlag.of(reason));
     }

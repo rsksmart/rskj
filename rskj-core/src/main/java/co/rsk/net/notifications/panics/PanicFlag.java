@@ -13,19 +13,30 @@ import co.rsk.net.notifications.FederationNotification;
  */
 public class PanicFlag {
     public enum Reason {
-        FEDERATION_FORKED("Federation forked"),
-        NODE_FORKED("Node forked"),
-        NODE_ECLIPSED("Node eclipsed"),
-        FEDERATION_FROZEN("Federation frozen");
+        FEDERATION_FORKED("federation_forked", "Federation forked"),
+        NODE_FORKED("node_forked", "Node forked"),
+        NODE_ECLIPSED("node_eclipsed", "Node eclipsed"),
+        FEDERATION_FROZEN("federation_frozen", "Federation frozen");
 
+        String code;
         String description;
-        Reason(String description) {
+
+        Reason(String code, String description) {
+            this.code = code;
             this.description = description;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public String getDescription() {
+            return description;
         }
 
         @Override
         public String toString() {
-            return description;
+            return String.format("%s <%s>", code, description);
         }
     }
 

@@ -18,6 +18,24 @@
 
 package co.rsk.rpc.modules.notifications;
 
+import java.util.List;
+
 public interface NotificationsModule {
-    String sayHello();
+    class PanicFlag {
+        public String code;
+        public String description;
+        public long sinceBlockNumber;
+
+        public PanicFlag(String code, String description, long sinceBlockNumber) {
+            this.code = code;
+            this.description = description;
+            this.sinceBlockNumber = sinceBlockNumber;
+        }
+
+        public static PanicFlag fromPanicStatusFlag(co.rsk.net.notifications.panics.PanicFlag flag) {
+            return new PanicFlag(flag.getReason().getCode(), flag.getReason().getDescription(), flag.getSinceBlockNumber());
+        }
+    }
+
+    List<PanicFlag> getPanicStatus();
 }
