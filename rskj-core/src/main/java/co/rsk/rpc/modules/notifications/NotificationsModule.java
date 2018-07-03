@@ -120,4 +120,6 @@ public interface NotificationsModule {
     List<PanicFlag> getPanicStatus();
 
     List<FederationAlert> getAlerts();
+
+    long getLastNotificationReceivedTime();
 }

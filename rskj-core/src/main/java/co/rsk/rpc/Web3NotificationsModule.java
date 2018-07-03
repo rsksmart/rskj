@@ -27,6 +27,8 @@ public interface Web3NotificationsModule {
 
     default List<NotificationsModule.FederationAlert> notifications_getAlerts() { return getNotificationsModule().getAlerts(); }
 
+    default long notifications_getLastNotificationReceivedTime() { return getNotificationsModule().getLastNotificationReceivedTime(); }
+
     NotificationsModule getNotificationsModule();
 }
 

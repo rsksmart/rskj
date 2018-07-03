@@ -51,4 +51,9 @@ public class NotificationsModuleImpl implements NotificationsModule {
                 .map(a -> FederationAlert.fromFederationAlert(a))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public long getLastNotificationReceivedTime() {
+        return federationState.getLastNotificationReceivedTime().toEpochMilli();
+    }
 }
