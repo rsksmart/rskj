@@ -2732,7 +2732,7 @@ public class BridgeSupportTest {
         List<LockWhitelistEntry> entries = Arrays.stream(new Integer[]{2,3,4,5}).map(i ->
             new UnlimitedWhiteListEntry(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash()))
         ).collect(Collectors.toList());
-        when(mockedWhitelist.getEntries()).thenReturn(entries);
+        when(mockedWhitelist.getAll()).thenReturn(entries);
         for (int i = 0; i < 4; i++) {
             when(mockedWhitelist.get(entries.get(i).address())).thenReturn(entries.get(i));
         }

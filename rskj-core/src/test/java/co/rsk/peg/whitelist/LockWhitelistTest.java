@@ -269,6 +269,23 @@ public class LockWhitelistTest {
         Assert.assertTrue(entry.canLock(Coin.COIN));
     }
 
+    @Test
+    public void getAllByType() {
+        Assert.assertArrayEquals(
+                addresses.values().stream().filter(e -> e.getClass() == OneOffWhiteListEntry.class).map(e-> e.address()).sorted().toArray(),
+                whitelist.getAll(OneOffWhiteListEntry.class).stream().map(e-> e.address()).toArray()
+        );
+        Assert.assertArrayEquals(
+                addresses.values().stream().filter(e -> e.getClass() == UnlimitedWhiteListEntry.class).map(e-> e.address()).sorted().toArray(),
+                whitelist.getAll(UnlimitedWhiteListEntry.class).stream().map(e-> e.address()).toArray()
+        );
+    }
+
+    @Test
+    public void getAll() {
+        Assert.assertEquals(addresses.size(), whitelist.getAll().size());
+    }
+
     private void assertExistance(Address address, boolean exists) {
         Assert.assertEquals(exists, whitelist.isWhitelisted(address));
         Assert.assertEquals(exists, whitelist.isWhitelisted(address.getHash160()));

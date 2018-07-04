@@ -1600,7 +1600,7 @@ public class BridgeSupport {
      * @return the base58-encoded address stored at the given index, or null if index is out of bounds
      */
     public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
-        List<LockWhitelistEntry> entries = provider.getLockWhitelist().getEntries();
+        List<LockWhitelistEntry> entries = provider.getLockWhitelist().getAll();
 
         if (index < 0 || index >= entries.size()) {
             return null;

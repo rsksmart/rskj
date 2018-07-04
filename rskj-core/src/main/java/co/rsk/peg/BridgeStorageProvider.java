@@ -326,11 +326,11 @@ public class BridgeStorageProvider {
             return;
         }
 
-        List<OneOffWhiteListEntry> oneOffEntries = lockWhitelist.getEntries(OneOffWhiteListEntry.class);
+        List<OneOffWhiteListEntry> oneOffEntries = lockWhitelist.getAll(OneOffWhiteListEntry.class);
         safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight()), BridgeSerializationUtils::serializeOneOffLockWhitelist);
 
         if (this.bridgeStorageConfiguration.getUnlimitedWhitelistEnabled()) {
-            List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getEntries(UnlimitedWhiteListEntry.class);
+            List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getAll(UnlimitedWhiteListEntry.class);
             safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
         }
     }

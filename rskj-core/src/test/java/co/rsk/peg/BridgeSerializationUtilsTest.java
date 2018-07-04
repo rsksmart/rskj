@@ -521,7 +521,7 @@ public class BridgeSerializationUtilsTest {
                 0);
 
         byte[] result = BridgeSerializationUtils.serializeOneOffLockWhitelist(Pair.of(
-                lockWhitelist.getEntries(OneOffWhiteListEntry.class),
+                lockWhitelist.getAll(OneOffWhiteListEntry.class),
                 lockWhitelist.getDisableBlockHeight()
         ));
         StringBuilder expectedBuilder = new StringBuilder();
@@ -598,7 +598,7 @@ public class BridgeSerializationUtilsTest {
 
         LockWhitelist originalLockWhitelist = new LockWhitelist(whitelist, 0);
         byte[] serializedLockWhitelist = BridgeSerializationUtils.serializeOneOffLockWhitelist(Pair.of(
-                originalLockWhitelist.getEntries(OneOffWhiteListEntry.class),
+                originalLockWhitelist.getAll(OneOffWhiteListEntry.class),
                 originalLockWhitelist.getDisableBlockHeight()
         ));
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(serializedLockWhitelist, btcParams);

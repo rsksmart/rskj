@@ -50,7 +50,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -517,7 +516,7 @@ public class BridgeStorageProviderTest {
                     return map;
                 });
 
-        Assert.assertEquals(whitelistMock.getEntries(), storageProvider.getLockWhitelist().getEntries());
+        Assert.assertEquals(whitelistMock.getAll(), storageProvider.getLockWhitelist().getAll());
         Assert.assertEquals(4, calls.size()); // 1 for each call to deserializeFederation & getStorageBytes (we call getStorageBytes twice)
     }
 
@@ -578,7 +577,7 @@ public class BridgeStorageProviderTest {
             .when(BridgeSerializationUtils.serializeOneOffLockWhitelist(any(Pair.class)))
             .then((InvocationOnMock invocation) -> {
                 Pair<List<OneOffWhiteListEntry>, Integer> data = invocation.getArgumentAt(0, Pair.class);
-                Assert.assertEquals(whitelistMock.getEntries(OneOffWhiteListEntry.class), data.getLeft());
+                Assert.assertEquals(whitelistMock.getAll(OneOffWhiteListEntry.class), data.getLeft());
                 Assert.assertSame(whitelistMock.getDisableBlockHeight(), data.getRight());
                 serializeCalls.add(0);
                 return Hex.decode("ccdd");
@@ -603,7 +602,7 @@ public class BridgeStorageProviderTest {
             .when(BridgeSerializationUtils.serializeUnlimitedLockWhitelist(any(List.class)))
             .then((InvocationOnMock invocation) -> {
                 List<UnlimitedWhiteListEntry> unlimitedWhiteListEntries = invocation.getArgumentAt(0, List.class);
-                Assert.assertEquals(whitelistMock.getEntries(UnlimitedWhiteListEntry.class), unlimitedWhiteListEntries);
+                Assert.assertEquals(whitelistMock.getAll(UnlimitedWhiteListEntry.class), unlimitedWhiteListEntries);
                 serializeCalls.add(0);
                 return Hex.decode("bbcc");
             });

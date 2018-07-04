@@ -82,14 +82,14 @@ public class LockWhitelist {
         return new ArrayList<>(whitelistedAddresses.keySet());
     }
 
-    public <T extends LockWhitelistEntry> List<T> getEntries(Class<T> type) {
+    public <T extends LockWhitelistEntry> List<T> getAll(Class<T> type) {
         return whitelistedAddresses.values().stream()
                 .filter(e -> e.getClass() == type)
                 .map(type::cast)
                 .collect(Collectors.toList());
     }
 
-    public List<LockWhitelistEntry> getEntries() {
+    public List<LockWhitelistEntry> getAll() {
         // Return a copy so that this can't be modified from the outside
         return new ArrayList<>(whitelistedAddresses.values());
     }
