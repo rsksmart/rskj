@@ -39,6 +39,14 @@ public class PanicStatus {
         return flags.contains(PanicFlag.of(reason));
     }
 
+    public PanicFlag get(PanicFlag.Reason reason) {
+        if (!has(reason)) {
+            throw new IllegalArgumentException(String.format("No panic flag of reason %s set", reason));
+        }
+
+        return flags.stream().filter(f -> f.getReason().equals(reason)).findFirst().get();
+    }
+
     public boolean inPanic() {
         return !flags.isEmpty();
     }

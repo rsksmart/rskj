@@ -40,7 +40,7 @@ public class NodeEclipsedAlert extends FederationAlert {
 
     @Override
     public PanicFlag getAssociatedPanicFlag(long forBlockNumber) {
-        return PanicFlag.FederationEclipsed(forBlockNumber);
+        return PanicFlag.NodeEclipsed(forBlockNumber);
     }
 
     @Override

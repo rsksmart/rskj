@@ -119,24 +119,21 @@ public class FederationState {
         logger.info("Federation alerts generated ({}). Panic status is now {}", triggeredAlerts.size(), getPanicStatus());
     }
 
-    /***
-     * Returns an immutable list with the latest FederationAlerts
-     */
     public List<FederationAlert> getAlerts() {
+        // Return a copy
         return Collections.unmodifiableList(new ArrayList(alerts));
     }
 
-    /***
-     * Returns the current panic status
-     */
     public PanicStatus getPanicStatus() {
         return panicStatus;
     }
 
-    /**
-     * Returns the last time at which a notification was received
-     */
     public Instant getLastNotificationReceivedTime() {
         return lastNotificationReceivedTime;
+    }
+
+    public Map<FederationMember, FederationNotification> getLatestFederationNotifications() {
+        // Return a copy
+        return new HashMap<>(latestFederationNotifications);
     }
 }

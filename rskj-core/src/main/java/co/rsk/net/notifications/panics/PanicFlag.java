@@ -48,7 +48,7 @@ public class PanicFlag {
         this.sinceBlockNumber = sinceBlockNumber;
     }
 
-    public static PanicFlag FederationEclipsed(long sinceBlockNumber) {
+    public static PanicFlag NodeEclipsed(long sinceBlockNumber) {
         return new PanicFlag(Reason.NODE_ECLIPSED, sinceBlockNumber);
     }
 
