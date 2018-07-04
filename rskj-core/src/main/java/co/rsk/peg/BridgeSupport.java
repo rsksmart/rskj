@@ -1599,14 +1599,29 @@ public class BridgeSupport {
      * @param index the index at which to get the address
      * @return the base58-encoded address stored at the given index, or null if index is out of bounds
      */
-    public String getLockWhitelistAddress(int index) {
-        List<Address> addresses = provider.getLockWhitelist().getAddresses();
+    public LockWhitelistEntry getLockWhitelistEntryByIndex(int index) {
+        List<LockWhitelistEntry> entries = provider.getLockWhitelist().getEntries();
 
-        if (index < 0 || index >= addresses.size()) {
+        if (index < 0 || index >= entries.size()) {
             return null;
         }
 
-        return addresses.get(index).toBase58();
+        return entries.get(index);
+    }
+
+    /**
+     *
+     * @param addressBase58
+     * @return
+     */
+    public LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58) {
+        try {
+            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+            return provider.getLockWhitelist().get(address);
+        } catch (AddressFormatException e) {
+            logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
+            return null;
+        }
     }
 
     /**

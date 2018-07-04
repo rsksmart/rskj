@@ -216,6 +216,16 @@ public enum BridgeMethods {
             16000L,
             (BridgeMethodExecutorTyped) Bridge::getLockWhitelistAddress
     ),
+    GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS(
+            CallTransaction.Function.fromSignature(
+                    "getLockWhitelistEntryByAddress",
+                    new String[]{"string"},
+                    new String[]{"int256"}
+            ),
+            16000L,
+            (BridgeMethodExecutorTyped) Bridge::getLockWhitelistEntryByAddress,
+            blockchainConfig -> blockchainConfig.isRfs170()
+    ),
     GET_LOCK_WHITELIST_SIZE(
             CallTransaction.Function.fromSignature(
                     "getLockWhitelistSize",

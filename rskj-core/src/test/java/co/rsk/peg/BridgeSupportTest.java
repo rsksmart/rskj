@@ -35,12 +35,14 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.whitelist.LockWhitelist;
+import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.peg.simples.SimpleWallet;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
+import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
 import org.ethereum.config.BlockchainNetConfig;
@@ -2727,18 +2729,23 @@ public class BridgeSupportTest {
         NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.getSize()).thenReturn(4);
-        List<Address> addresses = Arrays.stream(new Integer[]{2,3,4,5}).map(i ->
-            new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash())
+        List<LockWhitelistEntry> entries = Arrays.stream(new Integer[]{2,3,4,5}).map(i ->
+            new UnlimitedWhiteListEntry(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash()))
         ).collect(Collectors.toList());
-        when(mockedWhitelist.getAddresses()).thenReturn(addresses);
+        when(mockedWhitelist.getEntries()).thenReturn(entries);
+        for (int i = 0; i < 4; i++) {
+            when(mockedWhitelist.get(entries.get(i).address())).thenReturn(entries.get(i));
+        }
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
         Assert.assertEquals(4, bridgeSupport.getLockWhitelistSize().intValue());
-        Assert.assertNull(bridgeSupport.getLockWhitelistAddress(-1));
-        Assert.assertNull(bridgeSupport.getLockWhitelistAddress(4));
-        Assert.assertNull(bridgeSupport.getLockWhitelistAddress(5));
+        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(-1));
+        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(4));
+        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(5));
+        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByAddress(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(-1)).getPubKeyHash()).toBase58()));
         for (int i = 0; i < 4; i++) {
-            Assert.assertEquals(addresses.get(i).toBase58(), bridgeSupport.getLockWhitelistAddress(i));
+            Assert.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByIndex(i));
+            Assert.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByAddress(entries.get(i).address().toBase58()));
         }
     }
 

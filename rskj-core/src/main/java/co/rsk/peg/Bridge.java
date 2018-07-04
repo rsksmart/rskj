@@ -27,6 +27,8 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.whitelist.LockWhitelistEntry;
+import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
@@ -148,6 +150,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_LOCK_WHITELIST_SIZE = BridgeMethods.GET_LOCK_WHITELIST_SIZE.getFunction();
     // Returns the lock whitelist address stored at the specified index
     public static final CallTransaction.Function GET_LOCK_WHITELIST_ADDRESS = BridgeMethods.GET_LOCK_WHITELIST_ADDRESS.getFunction();
+    // Returns the lock whitelist entry stored at the specified address
+    public static final CallTransaction.Function GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS = BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.getFunction();
     // Adds the given address to the lock whitelist
     public static final CallTransaction.Function ADD_LOCK_WHITELIST_ADDRESS = BridgeMethods.ADD_LOCK_WHITELIST_ADDRESS.getFunction();
     // Adds the given address to the lock whitelist in "one-off" mode
@@ -751,14 +755,36 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getLockWhitelistAddress");
 
         int index = ((BigInteger) args[0]).intValue();
-        String address = bridgeSupport.getLockWhitelistAddress(index);
+        LockWhitelistEntry entry = bridgeSupport.getLockWhitelistEntryByIndex(index);
 
-        if (address == null) {
+        if (entry == null) {
             // Empty string is returned when address is not found
             return "";
         }
 
-        return address;
+        return entry.address().toBase58();
+    }
+
+    public long getLockWhitelistEntryByAddress(Object[] args)
+    {
+        logger.trace("getLockWhitelistEntryByAddress");
+
+        String addressBase58;
+        try {
+            addressBase58 = (String) args[0];
+        } catch (Exception e) {
+            logger.warn("Exception in getLockWhitelistEntryByAddress: {}", e);
+            return -1;
+        }
+
+        LockWhitelistEntry entry = bridgeSupport.getLockWhitelistEntryByAddress(addressBase58);
+
+        if (entry == null) {
+            // Empty string is returned when address is not found
+            return -1;
+        }
+
+        return entry.getClass() == OneOffWhiteListEntry.class ? ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() : 0;
     }
 
     public Integer addOneOffLockWhitelistAddress(Object[] args)
