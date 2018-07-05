@@ -997,9 +997,18 @@ public class BridgeSupport {
     }
 
     /**
-     * Returns an array of block hashes known by the bridge contract. Federators can use this to find what is the latest block in the mainchain the bridge has.
+     * Returns the bitcoin blockchain initial stored block height
+     */
+    public int getBtcBlockchainInitialBlockHeight() throws IOException {
+        return getLowestBlock().getHeight();
+    }
+
+    /**
+     * Returns an array of block hashes known by the bridge contract.
+     * Federators can use this to find what is the latest block in the mainchain the bridge has.
      * @return a List of bitcoin block hashes
      */
+    @Deprecated
     public List<Sha256Hash> getBtcBlockchainBlockLocator() throws IOException {
         StoredBlock  initialBtcStoredBlock = this.getLowestBlock();
         final int maxHashesToInform = 100;
@@ -1032,6 +1041,27 @@ public class BridgeSupport {
             }
         }
         return blockLocator;
+    }
+
+    public Sha256Hash getBtcBlockchainBlockHashAtDepth(int depth) throws BlockStoreException, IOException {
+        Context.propagate(btcContext);
+        this.ensureBtcBlockChain();
+        
+        StoredBlock head = btcBlockChain.getChainHead();
+
+        int maxDepth = head.getHeight() - getLowestBlock().getHeight();
+
+        if (depth < 0 || depth > maxDepth) {
+            throw new IndexOutOfBoundsException(String.format("Depth must be between 0 and %d", maxDepth));
+        }
+
+        int currentDepth = 0;
+        StoredBlock current = head;
+        while (currentDepth < depth) {
+            current = current.getPrev(btcBlockStore);
+            currentDepth++;
+        }
+        return current.getHeader().getHash();
     }
 
     private StoredBlock getPrevBlockAtHeight(StoredBlock cursor, int height) throws BlockStoreException {
