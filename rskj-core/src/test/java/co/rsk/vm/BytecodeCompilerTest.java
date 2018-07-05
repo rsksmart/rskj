@@ -28,148 +28,95 @@ import java.util.Arrays;
  */
 public class BytecodeCompilerTest {
     @Test
-    public void compileSimplePushWithHexadecimal() {
+    public void compileSimpleOpcode() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { 0x60, 0x43 }, compiler.compile("PUSH1 0x43"));
+        byte[] result = compiler.compile("ADD");
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.length);
+        Assert.assertEquals(1, result[0]);
     }
 
     @Test
-    public void compileAdd() {
+    public void compileSimpleOpcodeWithSpaces() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { 0x01 }, compiler.compile("ADD"));
+        byte[] result = compiler.compile(" ADD ");
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.length);
+        Assert.assertEquals(1, result[0]);
     }
 
     @Test
-    public void compileMul() {
+    public void compileTwoOpcodes() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { 0x02 }, compiler.compile("MUL"));
+        byte[] result = compiler.compile("ADD SUB");
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(2, result.length);
+        Assert.assertEquals(1, result[0]);
+        Assert.assertEquals(3, result[1]);
     }
 
     @Test
-    public void compileSub() {
+    public void compileFourOpcodes() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { 0x03 }, compiler.compile("SUB"));
+        byte[] result = compiler.compile("ADD MUL SUB DIV");
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(1, result[0]);
+        Assert.assertEquals(2, result[1]);
+        Assert.assertEquals(3, result[2]);
+        Assert.assertEquals(4, result[3]);
     }
 
     @Test
-    public void compileDiv() {
+    public void compileHexadecimalValueOneByte() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { 0x04 }, compiler.compile("DIV"));
+        byte[] result = compiler.compile("0x01");
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.length);
+        Assert.assertEquals(1, result[0]);
     }
 
     @Test
-    public void compileSDiv() {
+    public void compileHexadecimalValueTwoByte() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { 0x05 }, compiler.compile("SDIV"));
+        byte[] result = compiler.compile("0x0102");
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(2, result.length);
+        Assert.assertEquals(1, result[0]);
+        Assert.assertEquals(2, result[1]);
     }
 
     @Test
-    public void compileMod() {
+    public void compileSimpleOpcodeInLowerCase() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { 0x06 }, compiler.compile("MOD"));
+        byte[] result = compiler.compile("add");
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.length);
+        Assert.assertEquals(1, result[0]);
     }
 
     @Test
-    public void compileSMod() {
+    public void compileSimpleOpcodeInMixedCase() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { 0x07 }, compiler.compile("SMOD"));
-    }
+        byte[] result = compiler.compile("Add");
 
-    @Test
-    public void compileDups() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        Assert.assertArrayEquals(new byte[] { (byte)0x80, (byte)0x81, (byte)0x82, (byte)0x83, (byte)0x84, (byte)0x85, (byte)0x86, (byte)0x87, (byte)0x88, (byte)0x89, (byte)0x8a, (byte)0x8b, (byte)0x8c, (byte)0x8d, (byte)0x8e, (byte)0x8f }, compiler.compile("DUP1 DUP2 DUP3 DUP4 DUP5 DUP6 DUP7 DUP8 DUP9 DUP10 DUP11 DUP12 DUP13 DUP14 DUP15 DUP16"));
-    }
-
-    @Test
-    public void compileJumpDest() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        Assert.assertArrayEquals(new byte[] { (byte)0x5b }, compiler.compile("JUMPDEST"));
-    }
-
-    @Test
-    public void compileJump() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        Assert.assertArrayEquals(new byte[] { (byte)0x56 }, compiler.compile("JUMP"));
-    }
-
-    @Test
-    public void compileJumpI() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        Assert.assertArrayEquals(new byte[] { (byte)0x57 }, compiler.compile("JUMPI"));
-    }
-
-    @Test
-    public void compileSimplePushWithHexadecimalUpperX() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        Assert.assertArrayEquals(new byte[] { 0x60, 0X43 }, compiler.compile("PUSH1 0x43"));
-    }
-
-    @Test
-    public void compilePush2() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        Assert.assertArrayEquals(new byte[] { 0x61, 0x01, 0x02 }, compiler.compile("PUSH2 0x01 0x02"));
-    }
-
-    @Test
-    public void compilePushes() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        for (int k = 1; k <= 32; k++) {
-            byte[] bytecodes = new byte[k + 1];
-            bytecodes[0] = (byte)(0x60 + k - 1);
-
-            for (int j = 1; j <= k; j++)
-                bytecodes[j] = (byte)j;
-
-            String code = "PUSH" + k;
-
-            for (int j = 1; j <= k; j++)
-                code += " " + j;
-
-            Assert.assertArrayEquals(bytecodes, compiler.compile(code));
-        }
-    }
-
-    @Test
-    public void compileDupNWithValue() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        Assert.assertArrayEquals(new byte[] { (byte)0xa8, 0x00 }, compiler.compile("DUPN 0x00"));
-    }
-
-    @Test
-    public void compileSwapNWithValue() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        Assert.assertArrayEquals(new byte[] { (byte)0xa9, 0x01 }, compiler.compile("SWAPN 0x01"));
-    }
-
-    @Test
-    public void compileTxIndex() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        Assert.assertArrayEquals(new byte[] { (byte)0xaa }, compiler.compile("TXINDEX"));
-    }
-
-    @Test
-    public void compileSimplePushWithDecimal() {
-        BytecodeCompiler compiler = new BytecodeCompiler();
-
-        Assert.assertArrayEquals(new byte[] { 0x60, 0x20 }, compiler.compile("PUSH1 32"));
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.length);
+        Assert.assertEquals(1, result[0]);
     }
 }

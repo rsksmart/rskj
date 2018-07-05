@@ -43,8 +43,9 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     private Repository repository;
     private RskAddress ownerAddress = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
-    private final RskAddress contractAddress = new RskAddress("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
+    private final RskAddress defaultContractAddress = new RskAddress("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
 
+    private RskAddress contractAddress;
     // default for most tests. This can be overwritten by the test
     private long gasLimit = 1000000;
 
@@ -53,23 +54,34 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         this.msgData = msgDataRaw;
     }
 
-    public ProgramInvokeMockImpl() {
+    public ProgramInvokeMockImpl(String contractCode, RskAddress contractAddress) {
+        this(Hex.decode(contractCode), contractAddress);
+    }
+
+    public ProgramInvokeMockImpl(byte[] contractCode, RskAddress contractAddress) {
         this.repository = new RepositoryImplForTesting();
 
         this.repository.createAccount(ownerAddress);
+        //Defaults to defaultContractAddress constant defined in this mock
+        this.contractAddress = contractAddress!=null?contractAddress:this.defaultContractAddress;
+        this.repository.createAccount(this.contractAddress);
+        this.repository.saveCode(this.contractAddress, contractCode);
+        this.txindex = DataWord.ZERO;
+    }
 
-        this.repository.createAccount(contractAddress);
-        this.repository.saveCode(contractAddress,
-                Hex.decode("385E60076000396000605f556014600054601e60"
-                        + "205463abcddcba6040545b51602001600a525451"
-                        + "6040016014525451606001601e52545160800160"
-                        + "28525460a052546016604860003960166000f260"
-                        + "00603f556103e75660005460005360200235"));
+    public ProgramInvokeMockImpl() {
+        this("385E60076000396000605f556014600054601e60"
+                + "205463abcddcba6040545b51602001600a525451"
+                + "6040016014525451606001601e52545160800160"
+                + "28525460a052546016604860003960166000f260"
+                + "00603f556103e75660005460005360200235", null);
+    }
+
+    public RskAddress getContractAddress() {
+        return this.contractAddress;
     }
 
     public ProgramInvokeMockImpl(boolean defaults) {
-
-
     }
 
     /*           ADDRESS op         */
@@ -228,6 +240,11 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     @Override
     public boolean byTransaction() {
         return true;
+    }
+
+    @Override
+    public boolean isStaticCall() {
+        return false;
     }
 
     @Override
