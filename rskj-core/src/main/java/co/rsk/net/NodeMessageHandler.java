@@ -282,12 +282,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
         }
 
-        BlockChainStatus blockChainStatus = getBlockChainStatus();
-        Block bestBlock = blockChainStatus.getBestBlock();
-
-        BlockDifficulty totalDifficulty = this.blockProcessor.getTotalDifficultyFor(block);
-        // It is the new best block
-        if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, blockChainStatus.getTotalDifficulty(), block, bestBlock)) {
+        if (isBestBlock(block) ) { // It is the new best block
             BlockProcessResult result = this.blockProcessor.processBlock(block, sender);
             if (result.isInvalidBlock()) {
                 logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
@@ -303,6 +298,15 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
 
         Metrics.processBlockMessage("finish", block, sender.getPeerNodeID());
+    }
+
+    @VisibleForTesting
+    public boolean isBestBlock(Block block) {
+        BlockChainStatus blockChainStatus = getBlockChainStatus();
+        Block bestBlock = blockChainStatus.getBestBlock();
+        BlockDifficulty totalDifficulty = blockProcessor.getTotalDifficultyFor(block);
+        BlockDifficulty currentDifficulty = blockChainStatus.getTotalDifficulty();
+        return SelectionRule.shouldWeAddThisBlock(totalDifficulty, currentDifficulty, block, bestBlock);
     }
 
     private BlockChainStatus getBlockChainStatus() {

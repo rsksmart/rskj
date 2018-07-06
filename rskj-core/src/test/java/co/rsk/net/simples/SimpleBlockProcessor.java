@@ -20,10 +20,7 @@ package co.rsk.net.simples;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.BlockNodeInformation;
-import co.rsk.net.BlockProcessResult;
-import co.rsk.net.BlockProcessor;
-import co.rsk.net.MessageChannel;
+import co.rsk.net.*;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -44,7 +41,8 @@ import static org.mockito.Mockito.mock;
  */
 public class SimpleBlockProcessor implements BlockProcessor {
     public long lastKnownBlockNumber = 0;
-    private List<Block> blocks = new ArrayList<Block>();
+    private List<Block> blocks = new ArrayList<>();
+    private List<Block> siblings = new ArrayList<>();
     private long requestId;
     private byte[] hash;
     private int count;
@@ -141,7 +139,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     @Override
     public void processSibling(MessageChannel sender, Block block) {
-
+        this.siblings.add(block);
     }
 
     @Override
@@ -165,4 +163,8 @@ public class SimpleBlockProcessor implements BlockProcessor {
     public long getRequestId() { return this.requestId; }
 
     public byte[] getHash() { return this.hash; }
+
+    public List<Block> getSiblings() {
+        return siblings;
+    }
 }

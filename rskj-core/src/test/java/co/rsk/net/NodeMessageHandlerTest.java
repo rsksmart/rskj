@@ -106,6 +106,49 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
+    public void processSibling() {
+        SimpleMessageChannel sender = new SimpleMessageChannel();
+        PeerScoringManager scoring = createPeerScoringManager();
+        Blockchain blockchain = new BlockChainBuilder().build();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor(blockchain);
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, mock(SyncProcessor.class),
+                                                              mock(ChannelManager.class), null, scoring);
+        Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
+        Message message = new BlockMessage(block);
+
+        processor.processMessage(sender, message);
+
+        Assert.assertNotNull(sbp.getBlocks());
+        Assert.assertEquals(1, sbp.getBlocks().size());
+        Assert.assertSame(block, sbp.getBlocks().get(0));
+
+        Assert.assertFalse(scoring.isEmpty());
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertFalse(pscoring.isEmpty());
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
+
+        Block sibling = BlockChainBuilder.ofSize(1, true).getBestBlock();
+        message = new BlockMessage(sibling);
+        NodeMessageHandler spied = spy(processor);
+        when(spied.isBestBlock(any())).thenReturn(false);
+        spied.processMessage(sender, message);
+
+        Assert.assertEquals(1, sbp.getBlocks().size());
+        Assert.assertEquals(1, sbp.getSiblings().size());
+        Assert.assertSame(block, sbp.getBlocks().get(0));
+        Assert.assertSame(sibling, sbp.getSiblings().get(0));
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertFalse(pscoring.isEmpty());
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
+    }
+
+    @Test
     public void skipProcessGenesisBlock() throws UnknownHostException {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();

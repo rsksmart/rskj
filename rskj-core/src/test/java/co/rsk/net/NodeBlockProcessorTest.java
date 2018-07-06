@@ -66,6 +66,28 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
+    public void processSibling() {
+        final BlockStore store = new BlockStore();
+        final MessageChannel sender = new SimpleMessageChannel();
+
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        final Block sibling = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        TestSystemProperties config = new TestSystemProperties();
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+
+        processor.processSibling(sender, sibling);
+        Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(sibling.getHash().getBytes()).size() == 1);
+
+        Assert.assertTrue(store.hasBlock(sibling));
+        Assert.assertEquals(1, store.size());
+    }
+
+    @Test
     public void processBlockWithTooMuchHeight() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final MessageChannel sender = new SimpleMessageChannel();
