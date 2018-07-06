@@ -12,13 +12,14 @@ import java.util.stream.Collectors;
  *
  */
 public class PanicStatus {
-    final Set<PanicFlag> flags;
+    private final Set<PanicFlag> flags;
 
     public PanicStatus() {
         flags = new HashSet<>();
     }
 
     public void set(PanicFlag flag) {
+        flags.remove(flag);
         flags.add(flag);
     }
 
