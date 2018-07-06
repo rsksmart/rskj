@@ -91,10 +91,10 @@ public class BridgeSupport {
 
     private final FederationSupport federationSupport;
 
-    private Context btcContext;
+    private final Context btcContext;
     private BtcBlockstoreWithCache btcBlockStore;
     private BtcBlockChain btcBlockChain;
-    private org.ethereum.core.Block rskExecutionBlock;
+    private final org.ethereum.core.Block rskExecutionBlock;
 
     // Used by unit tests
     public BridgeSupport(
@@ -112,11 +112,11 @@ public class BridgeSupport {
                 executionBlock,
                 config,
                 bridgeConstants,
-                eventLogger
+                eventLogger,
+                new Context(bridgeConstants.getBtcParams()),
+                btcBlockStore,
+                btcBlockChain
         );
-        this.btcContext = new Context(this.bridgeConstants.getBtcParams());
-        this.btcBlockStore = btcBlockStore;
-        this.btcBlockChain = btcBlockChain;
     }
 
     // Used by bridge
@@ -127,16 +127,20 @@ public class BridgeSupport {
             RskAddress contractAddress,
             Block rskExecutionBlock) {
         this(
-                config,
                 repository,
-                eventLogger,
                 new BridgeStorageProvider(
                         repository,
                         contractAddress,
                         config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                         BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(rskExecutionBlock.getNumber()))
                 ),
-                rskExecutionBlock
+                rskExecutionBlock,
+                config,
+                config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                eventLogger,
+                new Context(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams()),
+                null,
+                null
         );
     }
 
@@ -152,27 +156,58 @@ public class BridgeSupport {
                 rskExecutionBlock,
                 config,
                 config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
-                eventLogger
+                eventLogger,
+                new Context(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams()),
+                null,
+                null
         );
-
-        this.btcContext = this.buildBtcContext();
     }
 
-    // this constructor has all common parameters, mostly dependencies that aren't instantiated here
     private BridgeSupport(
             Repository repository,
             BridgeStorageProvider provider,
             Block executionBlock,
             RskSystemProperties config,
             BridgeConstants bridgeConstants,
-            BridgeEventLogger eventLogger) {
+            BridgeEventLogger eventLogger,
+            Context btcContext,
+            BtcBlockstoreWithCache btcBlockStore,
+            BtcBlockChain btcBlockChain) {
+        this(
+                repository,
+                provider,
+                executionBlock,
+                config,
+                bridgeConstants,
+                eventLogger,
+                btcContext,
+                new FederationSupport(provider, bridgeConstants, executionBlock),
+                btcBlockStore,
+                btcBlockChain
+        );
+    }
+
+    public BridgeSupport(
+            Repository repository,
+            BridgeStorageProvider provider,
+            Block executionBlock,
+            RskSystemProperties config,
+            BridgeConstants bridgeConstants,
+            BridgeEventLogger eventLogger,
+            Context btcContext,
+            FederationSupport federationSupport,
+            BtcBlockstoreWithCache btcBlockStore,
+            BtcBlockChain btcBlockChain) {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
         this.config = config;
         this.bridgeConstants = bridgeConstants;
         this.eventLogger = eventLogger;
-        this.federationSupport = new FederationSupport(provider, bridgeConstants, executionBlock);
+        this.btcContext = btcContext;
+        this.federationSupport = federationSupport;
+        this.btcBlockStore = btcBlockStore;
+        this.btcBlockChain = btcBlockChain;
     }
 
     private RepositoryBlockStore buildRepositoryBlockStore() throws BlockStoreException, IOException {
@@ -1863,10 +1898,6 @@ public class BridgeSupport {
                 throw new RuntimeException("Unexpected UTXO provider error", e);
             }
         }
-    }
-
-    private Context buildBtcContext() {
-        return new Context(this.bridgeConstants.getBtcParams());
     }
 
     // Make sure the local bitcoin blockchain is instantiated
