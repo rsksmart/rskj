@@ -23,6 +23,8 @@ import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.*;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
+import org.ethereum.config.blockchain.HardForkActivationConfig;
+import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.config.net.RegTestConfig;
@@ -69,6 +71,8 @@ public abstract class SystemProperties {
     private static Logger logger = LoggerFactory.getLogger("general");
 
     public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
+    // TODO: define a proper name for this config setting
+    public static final String PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME = "blockchain.config.hardforkActivationHeights";
     public static final String PROPERTY_DB_DIR = "database.dir";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_PEER_ACTIVE = "peer.active";
@@ -182,51 +186,53 @@ public abstract class SystemProperties {
 
     @ValidateMe
     public BlockchainNetConfig getBlockchainConfig() {
-        if (blockchainConfig == null) {
-            String netName = netName();
-            if (netName != null && configFromFiles.hasPath("blockchain.config.class")) {
-                throw new RuntimeException(String.format(
-                        "Only one of two options should be defined: '%s' and 'blockchain.config.class'",
-                        PROPERTY_BC_CONFIG_NAME)
-                );
+        if (blockchainConfig != null) {
+            return blockchainConfig;
+        }
+        String netName = netName();
+        if (netName != null && configFromFiles.hasPath("blockchain.config.class")) {
+            throw new RuntimeException(String.format(
+                    "Only one of two options should be defined: '%s' and 'blockchain.config.class'",
+                    PROPERTY_BC_CONFIG_NAME)
+            );
+        }
+        if (netName != null) {
+            switch(netName) {
+                case "main":
+                    blockchainConfig = new MainNetConfig();
+                    break;
+                case "fallbackmain":
+                    blockchainConfig = new FallbackMainNetConfig();
+                    break;
+                case "testnet":
+                    blockchainConfig = new TestNetConfig();
+                    break;
+                case "devnet":
+                    blockchainConfig = DevNetConfig.getFromConfig(getHardForkActivationConfig());
+                    break;
+                case "regtest":
+                    blockchainConfig = RegTestConfig.getFromConfig(getHardForkActivationConfig());
+                    break;
+                default:
+                    throw new RuntimeException(String.format(
+                            "Unknown value for '%s': '%s'",
+                            PROPERTY_BC_CONFIG_NAME,
+                            netName)
+                    );
             }
-            if (netName != null) {
-                switch(netName) {
-                    case "main":
-                        blockchainConfig = new MainNetConfig();
-                        break;
-                    case "fallbackmain":
-                        blockchainConfig = new FallbackMainNetConfig();
-                        break;
-                    case "testnet":
-                        blockchainConfig = new TestNetConfig();
-                        break;
-                    case "devnet":
-                        blockchainConfig = DevNetConfig.getDefaultDevNetConfig();
-                        break;
-                    case "regtest":
-                        blockchainConfig = RegTestConfig.getDefaultRegTestConfig();
-                        break;
-                    default:
-                        throw new RuntimeException(String.format(
-                                "Unknown value for '%s': '%s'",
-                                PROPERTY_BC_CONFIG_NAME,
-                                netName)
-                        );
-                }
-            } else {
-                String className = configFromFiles.getString("blockchain.config.class");
-                try {
-                    Class<? extends BlockchainNetConfig> aClass = (Class<? extends BlockchainNetConfig>) Class.forName(className);
-                    blockchainConfig = aClass.newInstance();
-                } catch (ClassNotFoundException e) {
-                    throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' not found" , e);
-                } catch (ClassCastException e) {
-                    throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' is not instance of org.ethereum.config.BlockchainForkConfig" , e);
-                } catch (InstantiationException|IllegalAccessException e) {
-                    throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' couldn't be instantiated (check for default constructor and its accessibility)" , e);
-                }
-            }
+            return blockchainConfig;
+        }
+
+        String className = configFromFiles.getString("blockchain.config.class");
+        try {
+            Class<? extends BlockchainNetConfig> aClass = (Class<? extends BlockchainNetConfig>) Class.forName(className);
+            blockchainConfig = aClass.newInstance();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' not found" , e);
+        } catch (ClassCastException e) {
+            throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' is not instance of org.ethereum.config.BlockchainForkConfig" , e);
+        } catch (InstantiationException|IllegalAccessException e) {
+            throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' couldn't be instantiated (check for default constructor and its accessibility)" , e);
         }
         return blockchainConfig;
     }
@@ -735,5 +741,12 @@ public abstract class SystemProperties {
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException("Invalid address: '" + ipToParse + "'", e);
         }
+    }
+
+    private HardForkActivationConfig getHardForkActivationConfig() {
+        if (!this.getConfig().hasPath(PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME)) {
+            return null;
+        }
+        return new HardForkActivationConfig(this.getConfig().getObject(PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME).toConfig());
     }
 }

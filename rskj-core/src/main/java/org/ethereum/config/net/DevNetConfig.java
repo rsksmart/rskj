@@ -19,6 +19,7 @@
 
 package org.ethereum.config.net;
 
+import org.ethereum.config.blockchain.HardForkActivationConfig;
 import org.ethereum.config.blockchain.devnet.DevNetFirstForkConfig;
 import org.ethereum.config.blockchain.devnet.DevNetGenesisConfig;
 
@@ -39,5 +40,18 @@ public class DevNetConfig extends AbstractNetConfig {
 
         config.add(0, new DevNetFirstForkConfig());
         return config;
+    }
+
+    public static DevNetConfig getFromConfig(HardForkActivationConfig config) {
+        if (config == null) {
+            return getDefaultDevNetConfig();
+        }
+        DevNetConfig customConfig = new DevNetConfig();
+        if (config.getFirstForkActivationHeight() != 0) {
+            // Only add genesis config if the fork configs are set
+            customConfig.add(0, new DevNetGenesisConfig());
+        }
+        customConfig.add(config.getFirstForkActivationHeight(), new DevNetFirstForkConfig());
+        return customConfig;
     }
 }
