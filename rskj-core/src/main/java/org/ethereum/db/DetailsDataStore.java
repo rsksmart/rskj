@@ -52,6 +52,7 @@ public class DetailsDataStore {
     private final DatabaseImpl codedb;
 
     private final static byte[] DB_VERSION = "bamboo_version".getBytes();
+    private final static byte[] DB_V_KEY = "VERSION".getBytes();
     private boolean versionSet = false;
 
     public DetailsDataStore(RskSystemProperties config, DatabaseImpl db, DatabaseImpl codedb) {
@@ -122,7 +123,7 @@ public class DetailsDataStore {
         keys += codeCache.size();
 
         if (!versionSet) {
-            db.put("VERSION".getBytes(), DB_VERSION);
+            db.put(DB_V_KEY, DB_VERSION);
             versionSet = true;
         }
 
@@ -180,7 +181,7 @@ public class DetailsDataStore {
     }
 
     public void checkAndMigrateDB() throws IOException {
-        byte[] version = db.get("VERSION".getBytes());
+        byte[] version = db.get(DB_V_KEY);
         if (version != null && Arrays.equals(version, DB_VERSION)) {
             return;
         }

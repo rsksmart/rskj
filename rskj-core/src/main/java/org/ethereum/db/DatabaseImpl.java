@@ -98,6 +98,7 @@ public class DatabaseImpl implements Database {
     public <T> List<T> dumpKeys(Function<byte[], T> mapper) {
         return keyValueDataSource.keys()
                 .stream()
+                .filter(k -> k.length == 20)
                 .map(mapper)
                 .collect(Collectors.toList());
     }
