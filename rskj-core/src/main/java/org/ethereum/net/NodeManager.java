@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * The central class for Peer Discovery machinery.
@@ -115,10 +116,12 @@ public class NodeManager {
 
     private void purgeNodeHandlers() {
         if (nodeHandlerMap.size() > NODES_TRIM_THRESHOLD) {
-            List<NodeHandler> sorted = new ArrayList<>(nodeHandlerMap.values());
-            Collections.sort(sorted, (o1, o2) -> Integer.compare(o1.getNodeStatistics().getReputation(), o2.getNodeStatistics().getReputation()));
+            List<NodeHandler> sorted = nodeHandlerMap.values()
+                    .stream()
+                    .sorted(Comparator.comparingInt(o -> o.getNodeStatistics().getReputation()))
+                    .collect(Collectors.toList());
             for (NodeHandler handler : sorted) {
-                nodeHandlerMap.remove(handler.getNode().getHexId());
+                nodeHandlerMap.values().remove(handler);
                 if (nodeHandlerMap.size() <= MAX_NODES) {
                     break;
                 }
