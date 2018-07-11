@@ -400,7 +400,7 @@ public class BridgeSupport {
 
         boolean locked = true;
 
-        Federation federation = getActiveFederation();
+        Federation activeFederation = getActiveFederation();
         // Specific code for lock/release/none txs
         if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
@@ -481,7 +481,7 @@ public class BridgeSupport {
                 // Consume this whitelisted address
                 lockWhitelist.consume(senderBtcAddress);
             }
-        } else if (BridgeUtils.isReleaseTx(btcTx, federation)) {
+        } else if (BridgeUtils.isReleaseTx(btcTx, activeFederation)) {
             logger.debug("This is a release tx {}", btcTx);
             // do-nothing
             // We could call removeUsedUTXOs(btcTx) here, but we decided to not do that.
@@ -493,7 +493,7 @@ public class BridgeSupport {
             // When is not guaranteed to be called in the chronological order, so a Federator can inform
             // b) In prod: Federator created a tx manually or the federation was compromised and some utxos were spent. Better not try to spend them.
             // Open problem: For performance removeUsedUTXOs() just removes 1 utxo
-        } else if (BridgeUtils.isMigrationTx(btcTx, getActiveFederation(), getRetiringFederation(), btcContext, bridgeConstants)) {
+        } else if (BridgeUtils.isMigrationTx(btcTx, activeFederation, getRetiringFederation(), btcContext, bridgeConstants)) {
             logger.debug("This is a migration tx {}", btcTx);
         } else {
             logger.warn("This is not a lock, a release nor a migration tx {}", btcTx);
