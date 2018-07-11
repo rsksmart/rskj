@@ -126,12 +126,10 @@ public class NodeManagerTest {
         Random random = new Random();
         Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
         NodeManager nodeManager = new NodeManager(peerExplorer, config);
-        Set<String> keys = new HashSet<>();
         for (int i = 0; i <= NodeManager.NODES_TRIM_THRESHOLD+1;i++) {
             byte[] nodeId = new byte[32];
             random.nextBytes(nodeId);
             Node node = new Node(nodeId, "127.0.0.1", 8080);
-            keys.add(node.getHexId());
             nodeManager.getNodeStatistics(node);
         }
         Map<String, NodeHandler> nodeHandlerMap = Whitebox.getInternalState(nodeManager, "nodeHandlerMap");
