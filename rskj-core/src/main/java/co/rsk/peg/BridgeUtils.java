@@ -33,10 +33,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author Oscar Guindzberg
@@ -190,17 +187,17 @@ public class BridgeUtils {
         return isLockTx(tx, Arrays.asList(federation), btcContext, bridgeConstants);
     }
 
-    public static boolean isReleaseTx(BtcTransaction tx, Federation federation) {
-        int i = 0;
-        for (TransactionInput transactionInput : tx.getInputs()) {
-            try {
-                transactionInput.getScriptSig().correctlySpends(tx, i, federation.getP2SHScript(), Script.ALL_VERIFY_FLAGS);
-                // There is an input spending from the federation address, this is a release tx
+    private static boolean isReleaseTx(BtcTransaction tx, Federation federation) {
+        return isReleaseTx(tx, Collections.singletonList(federation));
+    }
+
+    public static boolean isReleaseTx(BtcTransaction tx, List<Federation> federations) {
+        int inputsSize = tx.getInputs().size();
+        for (int i = 0; i < inputsSize; i++) {
+            final int inputIndex = i;
+            if (federations.stream().map(Federation::getP2SHScript).anyMatch(federationPayScript -> scriptCorrectlySpendsTx(tx, inputIndex, federationPayScript))) {
                 return true;
-            } catch (ScriptException se) {
-                // do-nothing, input does not spends from the federation address
             }
-            i++;
         }
         return false;
     }

@@ -416,15 +416,49 @@ public class BridgeUtilsTest {
         TransactionInput releaseInput1 = new TransactionInput(params, releaseTx1, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
         releaseTx1.addInput(releaseInput1);
         signWithNecessaryKeys(federation, federationPrivateKeys, releaseInput1, releaseTx1, bridgeConstants);
-        assertThat(BridgeUtils.isReleaseTx(releaseTx1, federation), is(true));
-
+        assertThat(BridgeUtils.isReleaseTx(releaseTx1, Collections.singletonList(federation)), is(true));
 
         BtcTransaction releaseTx2 = new BtcTransaction(params);
         releaseTx2.addOutput(Coin.COIN, randomAddress);
         TransactionInput releaseInput2 = new TransactionInput(params, releaseTx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
         releaseTx2.addInput(releaseInput2);
         signWithNKeys(federation, federationPrivateKeys, releaseInput2, releaseTx2, bridgeConstants, 1);
-        assertThat(BridgeUtils.isReleaseTx(releaseTx2, federation), is(false));
+        assertThat(BridgeUtils.isReleaseTx(releaseTx2, Collections.singletonList(federation)), is(false));
+    }
+
+    @Test
+    public void testChangeBetweenFederations() {
+        NetworkParameters params = RegTestParams.get();
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        Context btcContext = new Context(params);
+
+        List<BtcECKey> federation1Keys = Stream.of("fa01", "fa02")
+                .map(Hex::decode)
+                .map(BtcECKey::fromPrivate)
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .collect(Collectors.toList());
+        Federation federation1 = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), 0L, params);
+
+        List<BtcECKey> federation2Keys = Stream.of("fb01", "fb02", "fb03")
+                .map(Hex::decode)
+                .map(BtcECKey::fromPrivate)
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .collect(Collectors.toList());
+        Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, params);
+
+        Address federation2Address = federation2.getAddress();
+
+        List<Federation> federations = Arrays.asList(federation1, federation2);
+
+        BtcTransaction releaseWithChange = new BtcTransaction(params);
+        releaseWithChange.addOutput(Coin.COIN, randomAddress);
+        releaseWithChange.addOutput(Coin.COIN, federation2Address);
+        TransactionInput releaseFromFederation2 = new TransactionInput(params, releaseWithChange, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
+        releaseWithChange.addInput(releaseFromFederation2);
+        signWithNecessaryKeys(federation2, federation2Keys, releaseFromFederation2, releaseWithChange, bridgeConstants);
+        assertThat(BridgeUtils.isLockTx(releaseWithChange, federations, btcContext, bridgeConstants), is(false));
+        assertThat(BridgeUtils.isReleaseTx(releaseWithChange, federations), is(true));
     }
 
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {
