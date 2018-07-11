@@ -82,18 +82,18 @@ public class BridgeUtilsTest {
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         Federation federation = bridgeConstants.getGenesisFederation();
         Wallet wallet = new BridgeBtcWallet(btcContext, Arrays.asList(federation));
-        wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
-        Address address = federation.getAddress();
+        Address federationAddress = federation.getAddress();
+        wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
 
         // Tx sending less than 1 btc to the federation, not a lock tx
         BtcTransaction tx = new BtcTransaction(params);
-        tx.addOutput(Coin.CENT, address);
+        tx.addOutput(Coin.CENT, federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(BridgeUtils.isLockTx(tx, federation, btcContext, bridgeConstants));
 
         // Tx sending 1 btc to the federation, but also spending from the federation addres, the typical release tx, not a lock tx.
         BtcTransaction tx2 = new BtcTransaction(params);
-        tx2.addOutput(Coin.COIN, address);
+        tx2.addOutput(Coin.COIN, federationAddress);
         TransactionInput txIn = new TransactionInput(params, tx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
         signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), bridgeConstants.getFederatorPrivateKeys(), txIn, tx2, bridgeConstants);
@@ -101,13 +101,13 @@ public class BridgeUtilsTest {
 
         // Tx sending 1 btc to the federation, is a lock tx
         BtcTransaction tx3 = new BtcTransaction(params);
-        tx3.addOutput(Coin.COIN, address);
+        tx3.addOutput(Coin.COIN, federationAddress);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isLockTx(tx3, federation, btcContext, bridgeConstants));
 
         // Tx sending 50 btc to the federation, is a lock tx
         BtcTransaction tx4 = new BtcTransaction(params);
-        tx4.addOutput(Coin.FIFTY_COINS, address);
+        tx4.addOutput(Coin.FIFTY_COINS, federationAddress);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isLockTx(tx4, federation, btcContext, bridgeConstants));
     }
