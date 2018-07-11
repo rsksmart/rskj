@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -46,7 +45,7 @@ import java.util.stream.Collectors;
 public class NodeManager {
     private static final Logger logger = LoggerFactory.getLogger("discover");
 
-    private static final int MAX_NODES = 2000;
+    private static final long MAX_NODES = 2000;
     protected static final int NODES_TRIM_THRESHOLD = 3000;
 
 
@@ -58,19 +57,14 @@ public class NodeManager {
 
     private Map<String, NodeHandler> nodeHandlerMap = new ConcurrentHashMap<>();
     private Set<NodeHandler> initialNodes = new HashSet<>();
-    private Node homeNode;
 
     private boolean discoveryEnabled;
-
-    private boolean inited = false;
 
     @Autowired
     public NodeManager(PeerExplorer peerExplorer, SystemProperties config) {
         this.peerExplorer = peerExplorer;
         this.config = config;
         discoveryEnabled = config.isPeerDiscoveryEnabled();
-
-        homeNode = new Node(config.nodeId(), config.getPublicIp(), config.getPeerPort());
 
         for (Node node : config.peerActive()) {
             NodeHandler handler = new NodeHandler(node, this);
