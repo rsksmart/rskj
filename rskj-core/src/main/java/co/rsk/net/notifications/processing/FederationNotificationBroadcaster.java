@@ -24,17 +24,6 @@ import org.ethereum.net.server.Channel;
 import javax.naming.ConfigurationException;
 import java.util.Collection;
 
-/**
- * Implementors of this interface must provide a service
- * that both runs in the background to e.g. periodically
- * update state wrt to timed events; and that can also
- * process a federation notification on demand for e.g.
- * when a new notification arrives.
- */
-public interface FederationNotificationProcessor {
-    void start();
-    void stop();
-    boolean isRunning();
-
-    FederationNotificationProcessingResult process(FederationNotification notification) throws ConfigurationException;
+public interface FederationNotificationBroadcaster {
+    void broadcast(Collection<Channel> activePeers, FederationNotification notification);
 }

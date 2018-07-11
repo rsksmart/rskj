@@ -24,7 +24,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.net.BlockProcessor;
-import co.rsk.net.eth.RskMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.notifications.Confirmation;
 import co.rsk.net.notifications.FederationNotification;
@@ -33,8 +32,6 @@ import co.rsk.net.notifications.alerts.FederationAlert;
 import co.rsk.net.notifications.alerts.FederationFrozenAlert;
 import co.rsk.net.notifications.alerts.ForkAttackAlert;
 import co.rsk.net.notifications.alerts.NodeEclipsedAlert;
-import co.rsk.net.notifications.processing.FederationNotificationProcessingResult;
-import co.rsk.net.notifications.processing.FederationNotificationProcessor;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationSupport;
@@ -42,8 +39,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.net.eth.message.EthMessage;
-import org.ethereum.net.server.Channel;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +48,9 @@ import javax.naming.ConfigurationException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /***
  * Process {@link FederationNotification} notifications
@@ -73,11 +71,12 @@ import java.util.*;
  *
  * @author Diego Masini
  * @author Jose Orlicki
+ * @author Ariel Mendelzon
  *
  */
 public class NodeFederationNotificationProcessor implements FederationNotificationProcessor {
     private static final int MAX_NUMBER_OF_NOTIFICATIONS_CACHED = 5000;
-    private static final int MAX_NOTIFICATION_SIZE_IN_BYTES_FOR_FULL_BROADCAST = 500;
+    private static final int DEFAULT_CHECK_INTERVAL_SECONDS = 10000;
 
     private static final Logger logger = LoggerFactory.getLogger("NodeFederationNotificationProcessor");
 
@@ -85,26 +84,70 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
     private BlockProcessor blockProcessor;
     private FederationState federationState;
 
+    private ScheduledExecutorService checkTask;
+    private boolean running;
+
     private NotificationBuffer<FederationNotification> receivedFederationNotifications = new NotificationBuffer<>(
             MAX_NUMBER_OF_NOTIFICATIONS_CACHED);
+
+    private long checkIntervalInSeconds = DEFAULT_CHECK_INTERVAL_SECONDS;
 
     public NodeFederationNotificationProcessor(RskSystemProperties config, BlockProcessor blockProcessor, FederationState federationState) {
         this.config = config;
         this.blockProcessor = blockProcessor;
         this.federationState = federationState;
+        this.checkTask = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "NodeFederationNotificationProcessor"));
+        this.running = false;
+    }
+
+    @Override
+    public void start() {
+        if (this.running) {
+            throw new IllegalStateException("Unable to start: already running");
+        }
+
+        this.checkTask.scheduleAtFixedRate(this.checkTaskRunnable, 0, this.getCheckIntervalInSeconds(), TimeUnit.SECONDS);
+
+        this.running = true;
+    }
+
+    private final Runnable checkTaskRunnable = () -> {
+        this.checkIfNodeWasEclipsed();
+    };
+
+    @Override
+    public void stop() {
+        if (!this.running) {
+            throw new IllegalStateException("Unable to stop: not running");
+        }
+
+        if (!this.checkTask.isShutdown()) {
+            this.checkTask.shutdownNow();
+        }
+        this.running = false;
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
     }
 
     /**
-     * Validates the received FederationNotification, if valid forwards the
-     * notification to the activePeers collection and generates ForkAttackAlerts if
-     * a fork attack is detected.
+     * Validates the received FederationNotification, if valid checks
+     * for any alerts that need to be triggered as a consequence of
+     * the notification itself and forwards those to the federation
+     * state for bookkeeping and panic management.
      *
      * @throws ConfigurationException
      */
     @Override
-    public FederationNotificationProcessingResult processFederationNotification(
-            @Nonnull final Collection<Channel> activePeers, @Nonnull final FederationNotification notification)
+    public FederationNotificationProcessingResult process(@Nonnull final FederationNotification notification)
             throws ConfigurationException {
+        // Do not process anything if the service is not running
+        if (!this.isRunning()) {
+            return FederationNotificationProcessingResult.PROCESSOR_NOT_RUNNING;
+        }
+
         final Instant now = Instant.now();
 
         // Avoid flood attacks
@@ -139,9 +182,6 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         // chain to generate alerts (if needed)
         this.generateAlertIfNeeded(notification);
 
-        // Propagate federation notification to peers
-        broadcastFederationNotification(activePeers, notification);
-
         logger.debug("Federation notification processed successfully.");
         return FederationNotificationProcessingResult.NOTIFICATION_PROCESSED_SUCCESSFULLY;
     }
@@ -152,8 +192,7 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
      * This alert indicates that either the node was isolated from the federation
      * by an attacker or the federation nodes are offline.
      */
-    @Override
-    public void checkIfNodeWasEclipsed() {
+    private void checkIfNodeWasEclipsed() {
         // Maybe someone is eclipsing the Federation for this node or the federation nodes are offline.
         Duration duration = Duration.between(federationState.getLastNotificationReceivedTime(), Instant.now());
         int maxSilenceSecs = config.getFederationMaxSilenceTimeSecs();
@@ -242,37 +281,6 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         return false;
     }
 
-    private void broadcastFederationNotification(Collection<Channel> activePeers, FederationNotification notification) {
-        final EthMessage ethMessage = new RskMessage(config, notification);
-        synchronized (activePeers) {
-            if (activePeers.isEmpty()) {
-                return;
-            }
-
-            int notificationSize = notification.getEncodedMessage().length;
-
-            if (notificationSize > MAX_NOTIFICATION_SIZE_IN_BYTES_FOR_FULL_BROADCAST) {
-                partialBroadcast(activePeers, ethMessage);
-            } else {
-                fullBroadcast(activePeers, ethMessage);
-            }
-        }
-    }
-
-    private void partialBroadcast(Collection<Channel> activePeers, EthMessage message) {
-        int peerCount = activePeers.size();
-        int numberOfPeersToSendNotificationTo = Math.min(10,
-                Math.min(Math.max(3, (int) Math.sqrt(peerCount)), peerCount));
-
-        List<Channel> peers = new ArrayList<>(activePeers);
-        Collections.shuffle(peers);
-        activePeers.stream().limit(numberOfPeersToSendNotificationTo).forEach(c -> c.sendMessage(message));
-    }
-
-    private void fullBroadcast(Collection<Channel> activePeers, EthMessage message) {
-        activePeers.stream().forEach(c -> c.sendMessage(message));
-    }
-
     private Block getBestBlock() {
         Blockchain blockchain = blockProcessor.getBlockchain();
         if (blockchain == null) {
@@ -289,6 +297,14 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         }
 
         return block.getNumber();
+    }
+
+    public long getCheckIntervalInSeconds() {
+        return this.checkIntervalInSeconds;
+    }
+
+    public void setCheckIntervalInSeconds(long checkIntervalInSeconds) {
+        this.checkIntervalInSeconds = checkIntervalInSeconds;
     }
 
     /***

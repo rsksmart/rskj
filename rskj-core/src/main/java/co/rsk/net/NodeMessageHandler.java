@@ -24,10 +24,9 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.notifications.*;
+import co.rsk.net.notifications.processing.FederationNotificationBroadcaster;
+import co.rsk.net.notifications.processing.FederationNotificationProcessingResult;
 import co.rsk.net.notifications.processing.FederationNotificationProcessor;
-import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
-import co.rsk.net.notifications.utils.FederationNotificationSigner;
-import co.rsk.net.notifications.utils.NodeFederationNotificationSigner;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
@@ -77,11 +76,13 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private FederationNotificationSource federationNotificationSource;
     private FederationNotificationProcessor federationNotificationProcessor;
+    private FederationNotificationBroadcaster federationNotificationBroadcaster;
 
     @Autowired
     public NodeMessageHandler(RskSystemProperties config,
                               @Nonnull final BlockProcessor blockProcessor,
                               @Nonnull final FederationNotificationProcessor federationNotificationProcessor,
+                              @Nonnull final FederationNotificationBroadcaster federationNotificationBroadcaster,
                               final SyncProcessor syncProcessor,
                               @Nullable final ChannelManager channelManager,
                               @Nullable final TransactionGateway transactionGateway,
@@ -96,8 +97,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
 
-        // Processor for Federation notifications
+        // Processor and broadcaster for federation notifications
         this.federationNotificationProcessor = federationNotificationProcessor;
+        this.federationNotificationBroadcaster = federationNotificationBroadcaster;
 
 //        // If test Federation notifications enabled then instantiate a FederationNotificationSource. For testing purposes only
 //        if (config.testFederationNotificationSourceEnabled()) {
@@ -351,13 +353,10 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         if (federationNotificationSource != null) {
             federationNotificationSource.generateNotification();
         }
-
-        // Check if the Federation disappeared for a long time (Federation eclipsed).
-        federationNotificationProcessor.checkIfNodeWasEclipsed();
     }
 
     /**
-     * processFederationNotification processes a FederationNotification, generating
+     * process processes a FederationNotification, generating
      * the necessary alerts if needed.
      *
      * @param sender       the notification sender.
@@ -366,7 +365,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private void processFederationNotification(@Nonnull final MessageChannel sender,
                                                @Nonnull final FederationNotification notification) {
         try {
-            this.federationNotificationProcessor.processFederationNotification(this.channelManager.getActivePeers(), notification);
+            FederationNotificationProcessingResult processingResult = this.federationNotificationProcessor.process(notification);
+
+            // Try and broadcast the notification only if processing was successful
+            if (processingResult == FederationNotificationProcessingResult.NOTIFICATION_PROCESSED_SUCCESSFULLY) {
+                this.federationNotificationBroadcaster.broadcast(this.channelManager.getActivePeers(), notification);
+            }
         } catch (ConfigurationException e) {
             logger.error("Bad Federation notifications configuration. Error was {}. No Federation notifications will be processed until the configuration is corrected", e);
         }

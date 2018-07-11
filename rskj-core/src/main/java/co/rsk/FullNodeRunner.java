@@ -30,6 +30,7 @@ import co.rsk.mine.TxBuilder;
 import co.rsk.mine.TxBuilderEx;
 import co.rsk.net.*;
 import co.rsk.net.discovery.UDPServer;
+import co.rsk.net.notifications.processing.FederationNotificationProcessor;
 import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.rpc.netty.Web3WebSocketServer;
 import org.ethereum.core.*;
@@ -71,6 +72,7 @@ public class FullNodeRunner implements NodeRunner {
     private final PeerServer peerServer;
     private final SyncPool.PeerClientFactory peerClientFactory;
     private final TransactionGateway transactionGateway;
+    private final FederationNotificationProcessor federationNotificationProcessor;
 
     private final PruneService pruneService;
 
@@ -93,7 +95,8 @@ public class FullNodeRunner implements NodeRunner {
             TransactionPool transactionPool,
             PeerServer peerServer,
             SyncPool.PeerClientFactory peerClientFactory,
-            TransactionGateway transactionGateway) {
+            TransactionGateway transactionGateway,
+            FederationNotificationProcessor federationNotificationProcessor) {
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
@@ -112,6 +115,7 @@ public class FullNodeRunner implements NodeRunner {
         this.peerServer = peerServer;
         this.peerClientFactory = peerClientFactory;
         this.transactionGateway = transactionGateway;
+        this.federationNotificationProcessor = federationNotificationProcessor;
 
         PruneConfiguration pruneConfiguration = rskSystemProperties.getPruneConfiguration();
         this.pruneService = new PruneService(pruneConfiguration, rskSystemProperties, blockchain, PrecompiledContracts.REMASC_ADDR);
@@ -135,6 +139,9 @@ public class FullNodeRunner implements NodeRunner {
         channelManager.start();
         messageHandler.start();
         peerServer.start();
+
+        // Start processing federation notifications
+        federationNotificationProcessor.start();
 
         if (logger.isInfoEnabled()) {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
@@ -265,6 +272,9 @@ public class FullNodeRunner implements NodeRunner {
                 minerClient.stop();
             }
         }
+
+        // Stop processing federation notifications
+        federationNotificationProcessor.stop();
 
         peerServer.stop();
         messageHandler.stop();

@@ -23,7 +23,9 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.notifications.FederationState;
+import co.rsk.net.notifications.processing.FederationNotificationBroadcaster;
 import co.rsk.net.notifications.processing.FederationNotificationProcessor;
+import co.rsk.net.notifications.processing.NodeFederationNotificationBroadcaster;
 import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
@@ -121,7 +123,8 @@ public class SimpleAsyncNode extends SimpleNode {
         SimpleChannelManager channelManager = new SimpleChannelManager();
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config));
         FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, processor, new FederationState(config));
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, federationNotificationProcessor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
+        FederationNotificationBroadcaster federationNotificationBroadcaster = new NodeFederationNotificationBroadcaster(config);
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, federationNotificationProcessor, federationNotificationBroadcaster, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }
 

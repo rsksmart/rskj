@@ -60,6 +60,7 @@ public class TwoNodeTest {
                 null,
                 null,
                 null,
+                null,
                 new DummyBlockValidationRule());
 
         return new SimpleNode(handler);

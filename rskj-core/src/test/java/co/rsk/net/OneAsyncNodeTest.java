@@ -23,7 +23,9 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.notifications.FederationState;
+import co.rsk.net.notifications.processing.FederationNotificationBroadcaster;
 import co.rsk.net.notifications.processing.FederationNotificationProcessor;
+import co.rsk.net.notifications.processing.NodeFederationNotificationBroadcaster;
 import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.SyncConfiguration;
@@ -56,7 +58,8 @@ public class OneAsyncNodeTest {
         SimpleChannelManager channelManager = new SimpleChannelManager();
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager, syncConfiguration, new DummyBlockValidationRule(), new DifficultyCalculator(config));
         FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, processor, new FederationState(config));
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, federationNotificationProcessor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
+        FederationNotificationBroadcaster federationNotificationBroadcaster = new NodeFederationNotificationBroadcaster(config);
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, federationNotificationProcessor, federationNotificationBroadcaster, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
 
         return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }

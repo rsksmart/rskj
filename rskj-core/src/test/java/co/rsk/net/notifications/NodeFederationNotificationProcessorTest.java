@@ -103,7 +103,7 @@ public class NodeFederationNotificationProcessorTest {
 //        // Process the notification.
 //        FederationNotificationProcessingResult result = null;
 //        try {
-//            result = notificationProcessor.processFederationNotification(NotificationTestsUtils.getActivePeers(10),
+//            result = notificationProcessor.process(NotificationTestsUtils.getActivePeers(10),
 //                    notification);
 //        } catch (ConfigurationException e) {
 //            fail();
@@ -148,7 +148,7 @@ public class NodeFederationNotificationProcessorTest {
 //        // Process the notification.
 //        FederationNotificationProcessingResult result = null;
 //        try {
-//            result = notificationProcessor.processFederationNotification(NotificationTestsUtils.getActivePeers(10),
+//            result = notificationProcessor.process(NotificationTestsUtils.getActivePeers(10),
 //                    notification);
 //        } catch (ConfigurationException e) {
 //            fail();
@@ -209,7 +209,7 @@ public class NodeFederationNotificationProcessorTest {
 //        // Process first notification
 //        FederationNotificationProcessingResult result1 = null;
 //        try {
-//            result1 = notificationProcessor.processFederationNotification(NotificationTestsUtils.getActivePeers(10),
+//            result1 = notificationProcessor.process(NotificationTestsUtils.getActivePeers(10),
 //                    notification1);
 //        } catch (ConfigurationException e) {
 //            fail();
@@ -225,7 +225,7 @@ public class NodeFederationNotificationProcessorTest {
 //        // Process second notification
 //        FederationNotificationProcessingResult result2 = null;
 //        try {
-//            result2 = notificationProcessor.processFederationNotification(NotificationTestsUtils.getActivePeers(10),
+//            result2 = notificationProcessor.process(NotificationTestsUtils.getActivePeers(10),
 //                    notification2);
 //        } catch (ConfigurationException e) {
 //            fail();
@@ -271,7 +271,7 @@ public class NodeFederationNotificationProcessorTest {
 //        // Process the notification.
 //        FederationNotificationProcessingResult result = null;
 //        try {
-//            result = notificationProcessor.processFederationNotification(NotificationTestsUtils.getActivePeers(10),
+//            result = notificationProcessor.process(NotificationTestsUtils.getActivePeers(10),
 //                    notification);
 //        } catch (ConfigurationException e) {
 //            fail();
@@ -316,7 +316,7 @@ public class NodeFederationNotificationProcessorTest {
 //        // Process the notification.
 //        FederationNotificationProcessingResult result1 = null;
 //        try {
-//            result1 = notificationProcessor.processFederationNotification(NotificationTestsUtils.getActivePeers(10),
+//            result1 = notificationProcessor.process(NotificationTestsUtils.getActivePeers(10),
 //                    notification);
 //        } catch (ConfigurationException e1) {
 //            fail();
@@ -336,7 +336,7 @@ public class NodeFederationNotificationProcessorTest {
 //        // Attempt to process the same notification again.
 //        FederationNotificationProcessingResult result2 = null;
 //        try {
-//            result2 = notificationProcessor.processFederationNotification(NotificationTestsUtils.getActivePeers(10),
+//            result2 = notificationProcessor.process(NotificationTestsUtils.getActivePeers(10),
 //                    notification);
 //        } catch (ConfigurationException e) {
 //            fail();
@@ -382,7 +382,7 @@ public class NodeFederationNotificationProcessorTest {
 //        // Process the notification.
 //        FederationNotificationProcessingResult result = null;
 //        try {
-//            result = notificationProcessor.processFederationNotification(NotificationTestsUtils.getActivePeers(10),
+//            result = notificationProcessor.process(NotificationTestsUtils.getActivePeers(10),
 //                    notification);
 //        } catch (ConfigurationException e) {
 //            fail();
@@ -427,7 +427,7 @@ public class NodeFederationNotificationProcessorTest {
 //        // Process the notification.
 //        FederationNotificationProcessingResult result = null;
 //        try {
-//            result = notificationProcessor.processFederationNotification(NotificationTestsUtils.getActivePeers(10),
+//            result = notificationProcessor.process(NotificationTestsUtils.getActivePeers(10),
 //                    notification);
 //        } catch (ConfigurationException e) {
 //            fail();
@@ -481,7 +481,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Process the notification.
 //        try {
-//            notificationProcessor.processFederationNotification(NotificationTestsUtils.getActivePeers(10),
+//            notificationProcessor.process(NotificationTestsUtils.getActivePeers(10),
 //                    notification);
 //        } catch (ConfigurationException e) {
 //            fail();
