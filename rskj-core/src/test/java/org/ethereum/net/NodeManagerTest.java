@@ -26,12 +26,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.powermock.reflect.Whitebox;
 import org.spongycastle.util.encoders.Hex;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by mario on 20/02/17.
@@ -69,7 +67,7 @@ public class NodeManagerTest {
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
         Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(false);
 
-        nodeManager.init();
+        nodeManager = new NodeManager(peerExplorer, config);
 
         Set<String> nodesInUse = new HashSet<>();
 
@@ -94,7 +92,7 @@ public class NodeManagerTest {
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
         Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
 
-        nodeManager.init();
+        nodeManager = new NodeManager(peerExplorer, config);
 
         Set<String> nodesInUse = new HashSet<>();
 
@@ -116,13 +114,30 @@ public class NodeManagerTest {
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
         Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
 
-        nodeManager.init();
+        nodeManager = new NodeManager(peerExplorer, config);
 
         Set<String> nodesInUse = new HashSet<>();
 
         List<NodeHandler> availableNodes = nodeManager.getNodes(nodesInUse);
 
         Assert.assertEquals(2, availableNodes.size());
+    }
+
+    @Test
+    public void purgeNodesTest() {
+        Random random = new Random();
+        Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
+        nodeManager = new NodeManager(peerExplorer, config);
+        Set<String> keys = new HashSet<>();
+        for (int i = 0; i <= NodeManager.NODES_TRIM_THRESHOLD+1;i++) {
+            byte[] nodeId = new byte[32];
+            random.nextBytes(nodeId);
+            Node node = new Node(nodeId, "127.0.0.1", 8080);
+            keys.add(node.getHexId());
+            nodeManager.getNodeStatistics(node);
+        }
+        Map<String, NodeHandler> nodeHandlerMap = (Map<String, NodeHandler>) Whitebox.getInternalState(nodeManager, "nodeHandlerMap");
+        Assert.assertTrue(nodeHandlerMap.size() <= NodeManager.NODES_TRIM_THRESHOLD);
     }
 
 }
