@@ -70,4 +70,24 @@ public class RegTestConfig extends GenesisConfig {
     public boolean areBridgeTxsFree() {
         return true;
     }
+
+    @Override
+    public boolean isRfs50() {
+        return true;
+    }
+
+    @Override
+    public boolean isRfs55() {
+        return true;
+    }
+
+    @Override
+    public boolean isRfs94() {
+        return true;
+    }
+
+    @Override
+    public boolean isRcs230() {
+        return true;
+    }
 }
