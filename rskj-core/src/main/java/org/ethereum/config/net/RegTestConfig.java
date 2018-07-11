@@ -39,16 +39,16 @@ public class RegTestConfig extends AbstractNetConfig {
         return config;
     }
 
-    public static RegTestConfig getFromConfig(HardForkActivationConfig config) {
-        if (config == null) {
+    public static RegTestConfig getFromConfig(HardForkActivationConfig hardForkActivationConfig) {
+        if (hardForkActivationConfig == null) {
             return getDefaultRegTestConfig();
         }
         RegTestConfig customConfig = new RegTestConfig();
-        if (config.getFirstForkActivationHeight() != 0) {
+        if (hardForkActivationConfig.getFirstForkActivationHeight() != 0) {
             // Only add genesis config if the fork configs are set
             customConfig.add(0, new org.ethereum.config.blockchain.regtest.RegTestConfig());
         }
-        customConfig.add(config.getFirstForkActivationHeight(), new RegTestFirstForkConfig());
+        customConfig.add(hardForkActivationConfig.getFirstForkActivationHeight(), new RegTestFirstForkConfig());
         return customConfig;
     }
 }

@@ -22,11 +22,6 @@ package org.ethereum.config.blockchain.regtest;
 public class RegTestFirstForkConfig extends RegTestConfig {
 
     @Override
-    public boolean areBridgeTxsFree() {
-        return true;
-    }
-
-    @Override
     public boolean isRfs50() {
         return true;
     }

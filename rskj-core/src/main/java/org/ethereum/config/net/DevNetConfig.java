@@ -40,16 +40,16 @@ public class DevNetConfig extends AbstractNetConfig {
         return config;
     }
 
-    public static DevNetConfig getFromConfig(HardForkActivationConfig config) {
-        if (config == null) {
+    public static DevNetConfig getFromConfig(HardForkActivationConfig hardForkActivationConfig) {
+        if (hardForkActivationConfig == null) {
             return getDefaultDevNetConfig();
         }
         DevNetConfig customConfig = new DevNetConfig();
-        if (config.getFirstForkActivationHeight() != 0) {
+        if (hardForkActivationConfig.getFirstForkActivationHeight() != 0) {
             // Only add genesis config if the fork configs are set
             customConfig.add(0, new DevNetGenesisConfig());
         }
-        customConfig.add(config.getFirstForkActivationHeight(), new DevNetFirstForkConfig());
+        customConfig.add(hardForkActivationConfig.getFirstForkActivationHeight(), new DevNetFirstForkConfig());
         return customConfig;
     }
 }
