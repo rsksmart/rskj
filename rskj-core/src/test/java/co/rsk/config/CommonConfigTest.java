@@ -27,6 +27,7 @@ import org.ethereum.validator.ParentBlockHeaderValidator;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -37,7 +38,7 @@ public class CommonConfigTest {
     private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
-    public void createRepositoryUsingNewRepository() {
+    public void createRepositoryUsingNewRepository() throws IOException {
         CommonConfig config = new CommonConfig();
 
         Repository repository = config.repository(this.config);

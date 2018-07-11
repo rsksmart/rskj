@@ -428,4 +428,22 @@ public class ContractDetailsImpl implements ContractDetails {
 
         return Hex.toHexString(hash);
     }
+
+    public static ContractDetailsImpl fromOldData(RskSystemProperties config, byte[] data) {
+        ArrayList<RLPElement> rlpData = RLP.decode2(data);
+        RLPList rlpList = (RLPList) rlpData.get(0);
+
+        RLPItem rlpAddress = (RLPItem) rlpList.get(0);
+        RLPItem rlpIsExternalStorage = (RLPItem) rlpList.get(1);
+        RLPItem rlpStorage = (RLPItem) rlpList.get(2);
+        RLPList rlpKeys = (RLPList) rlpList.get(4);
+
+        byte[] newData = RLP.encodeList(rlpAddress.getRLPData(), rlpIsExternalStorage.getRLPData(), rlpStorage.getRLPData(), rlpKeys.getRLPData());
+
+        return new ContractDetailsImpl(config, newData);
+    }
+
+    public static byte[] extractCode(byte[] data) {
+        return RLP.decode2(data).get(3).getRLPData();
+    }
 }

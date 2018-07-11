@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -429,5 +430,11 @@ public class RepositoryImpl implements Repository {
     private synchronized AccountState getAccountStateOrCreateNew(RskAddress addr) {
         AccountState account = getAccountState(addr);
         return (account == null) ? createAccount(addr) : account;
+    }
+
+    // This moves `code` that appears in the account state to code database
+    // It should be called only once and it belongs to an update on the client
+    public void migrateCode() throws IOException {
+        detailsDataStore.checkAndMigrateDB();
     }
 }

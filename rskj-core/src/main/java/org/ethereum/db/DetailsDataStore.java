@@ -23,16 +23,18 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.ContractDetailsImpl;
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.LevelDbDataSource;
+import org.iq80.leveldb.DBIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
+import static org.iq80.leveldb.impl.Iq80DBFactory.asString;
 
 /**
  * A store for contract details.
@@ -48,6 +50,9 @@ public class DetailsDataStore {
     private final RskSystemProperties config;
     private final DatabaseImpl db;
     private final DatabaseImpl codedb;
+
+    private final static byte[] DB_VERSION = "bamboo_version".getBytes();
+    private boolean versionSet = false;
 
     public DetailsDataStore(RskSystemProperties config, DatabaseImpl db, DatabaseImpl codedb) {
         this.config = config;
@@ -116,6 +121,11 @@ public class DetailsDataStore {
         long keys = cache.size();
         keys += codeCache.size();
 
+        if (!versionSet) {
+            db.put("VERSION".getBytes(), DB_VERSION);
+            versionSet = true;
+        }
+
         long start = System.nanoTime();
         long totalSize = flushInternal();
         long finish = System.nanoTime();
@@ -123,6 +133,7 @@ public class DetailsDataStore {
         float flushSize = (float) totalSize / 1_048_576;
         float flushTime = (float) (finish - start) / 1_000_000;
         gLogger.trace(format("Flush details and code in: %02.2f ms, %d keys, %02.2fMB", flushTime, keys, flushSize));
+
     }
 
     private long flushInternal() {
@@ -168,4 +179,39 @@ public class DetailsDataStore {
         return keys;
     }
 
+    public void checkAndMigrateDB() throws IOException {
+        byte[] version = db.get("VERSION".getBytes());
+        if (version != null && Arrays.equals(version, DB_VERSION)) {
+            return;
+        }
+
+        DBIterator iterator = ((LevelDbDataSource)db.getDb()).getLevelDb().iterator();
+        try {
+            for(iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
+                byte[] key = iterator.peekNext().getKey();
+                byte[] value = iterator.peekNext().getValue();
+
+                byte[] code = extractCode(value);
+                ContractDetailsImpl details = createFromOldData(value);
+
+                update(new RskAddress(key), details);
+                // Hash was saved on another db
+                // I wanted to avoid calculating this hash here, but ideally this code will be deleted soon
+                Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(code));
+                newCode(hash, code);
+            }
+        } finally {
+            // Make sure you close the iterator to avoid resource leaks.
+            iterator.close();
+        }
+    }
+
+    protected byte[] extractCode(byte[] data) {
+        return ContractDetailsImpl.extractCode(data);
+
+    }
+
+    protected ContractDetailsImpl createFromOldData(byte[] data) {
+        return ContractDetailsImpl.fromOldData(config, data);
+    }
 }

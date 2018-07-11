@@ -318,4 +318,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
             resetDbLock.writeLock().unlock();
         }
     }
+
+    public DB getLevelDb() {
+        return db;
+    }
 }

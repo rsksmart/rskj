@@ -35,6 +35,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,18 +52,32 @@ public class CommonConfig {
     private static final Logger logger = LoggerFactory.getLogger("general");
 
     @Bean
-    public Repository repository(RskSystemProperties config) {
+    public Repository repository(RskSystemProperties config) throws IOException {
         String databaseDir = config.databaseDir();
         if (config.databaseReset()){
             FileUtil.recursiveDelete(databaseDir);
             logger.info("Database reset done");
         }
 
+        // The code used to be associated to an account and it belonged to the account state
+        // We need to move it into its own database
+        // For this we copy all the code that appears on every account state into the right entry on the code database
+        // It is mandatory for a "state" database to exist and not a "code" one
+        // The db abstraction will need to check if this migration is actually needed, we just assumed that it is here
+        boolean shouldMigrateCode = new File(databaseDir + "/state").exists() && !new File(databaseDir + "/code").exists();
+
         KeyValueDataSource ds = makeDataSource(config, "state");
         KeyValueDataSource detailsDS = makeDataSource(config, "details");
         KeyValueDataSource codeDS = makeDataSource(config, "code");
 
-        return new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS, codeDS);
+        final RepositoryImpl repository = new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS, codeDS);
+
+        if (shouldMigrateCode) {
+            repository.migrateCode();
+        }
+
+
+        return repository;
     }
 
     private KeyValueDataSource makeDataSource(RskSystemProperties config, String name) {
