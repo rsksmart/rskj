@@ -85,9 +85,10 @@ public class BridgeUtilsTest {
         Address federationAddress = federation.getAddress();
         wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
 
-        // Tx sending less than 1 btc to the federation, not a lock tx
+        // Tx sending less than the minimum allowed, not a lock tx
+        Coin minimumLockValue = bridgeConstants.getMinimumLockTxValue();
         BtcTransaction tx = new BtcTransaction(params);
-        tx.addOutput(Coin.CENT, federationAddress);
+        tx.addOutput(minimumLockValue.subtract(Coin.CENT), federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(BridgeUtils.isLockTx(tx, federation, btcContext, bridgeConstants));
 
