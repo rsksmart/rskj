@@ -19,17 +19,10 @@
 
 package org.ethereum.config.blockchain.devnet;
 
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeDevNetConstants;
-import org.ethereum.config.blockchain.testnet.TestNetAfterBridgeSyncConfig;
-
 /**
  * Created by Oscar Guindzberg on 25.10.2016.
  */
 public class DevNetFirstForkConfig extends DevNetGenesisConfig {
-
-    public DevNetFirstForkConfig() {
-    }
 
     @Override
     public boolean isRfs50() {

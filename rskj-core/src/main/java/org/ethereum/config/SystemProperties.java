@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.*;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.config.blockchain.HardForkActivationConfig;
-import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.config.net.RegTestConfig;

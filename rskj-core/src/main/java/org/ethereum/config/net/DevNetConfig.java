@@ -28,8 +28,6 @@ import org.ethereum.config.blockchain.devnet.DevNetGenesisConfig;
  * Created by Anton Nashatyrev on 25.02.2016.
  */
 public class DevNetConfig extends AbstractNetConfig {
-    public DevNetConfig() {
-    }
 
     /**
      * By default DevNetConfig should activate every fork at height 0

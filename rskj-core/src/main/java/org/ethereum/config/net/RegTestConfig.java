@@ -27,8 +27,6 @@ import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
  * Created by Anton Nashatyrev on 25.02.2016.
  */
 public class RegTestConfig extends AbstractNetConfig {
-    public RegTestConfig() {
-    }
 
     /**
      * By default RegTestConfig should activate every fork at height 0
