@@ -190,7 +190,7 @@ public class BridgeUtils {
         return isLockTx(tx, Arrays.asList(federation), btcContext, bridgeConstants);
     }
 
-    public static boolean isReleaseTx(BtcTransaction tx, Federation federation, BridgeConstants bridgeConstants) {
+    public static boolean isReleaseTx(BtcTransaction tx, Federation federation) {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
@@ -209,7 +209,7 @@ public class BridgeUtils {
         if (retiringFederation == null) {
             return false;
         }
-        boolean moveFromRetiring = isReleaseTx(btcTx, retiringFederation, bridgeConstants);
+        boolean moveFromRetiring = isReleaseTx(btcTx, retiringFederation);
         boolean moveToActive = isLockTx(btcTx, activeFederation, btcContext, bridgeConstants);
 
         return moveFromRetiring && moveToActive;

@@ -481,7 +481,7 @@ public class BridgeSupport {
                 // Consume this whitelisted address
                 lockWhitelist.consume(senderBtcAddress);
             }
-        } else if (BridgeUtils.isReleaseTx(btcTx, federation, bridgeConstants)) {
+        } else if (BridgeUtils.isReleaseTx(btcTx, federation)) {
             logger.debug("This is a release tx {}", btcTx);
             // do-nothing
             // We could call removeUsedUTXOs(btcTx) here, but we decided to not do that.
