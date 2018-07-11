@@ -116,16 +116,15 @@ public class NodeManager {
 
     private void purgeNodeHandlers() {
         if (nodeHandlerMap.size() > NODES_TRIM_THRESHOLD) {
-            List<NodeHandler> sorted = nodeHandlerMap.values()
-                    .stream()
+            //I create a stream
+            List<NodeHandler> toRemove = nodeHandlerMap.values().stream()
+                    //sort by reputation
                     .sorted(Comparator.comparingInt(o -> o.getNodeStatistics().getReputation()))
+                    //and just keep the ones that exceeds the MAX_NODES
+                    .limit(nodeHandlerMap.size() - MAX_NODES)
                     .collect(Collectors.toList());
-            for (NodeHandler handler : sorted) {
-                nodeHandlerMap.values().remove(handler);
-                if (nodeHandlerMap.size() <= MAX_NODES) {
-                    break;
-                }
-            }
+            //Remove them
+            nodeHandlerMap.values().removeAll(toRemove);
         }
     }
 
