@@ -672,7 +672,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             publicKeyBytes = (byte[]) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in addFederatorPublicKey: {}", e);
+            logger.warn("Exception in addFederatorPublicKey", e);
             return -10;
         }
 
@@ -690,7 +690,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             hash = (byte[]) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in commitFederation: {}", e);
+            logger.warn("Exception in commitFederation", e);
             return -10;
         }
 
@@ -776,7 +776,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in getLockWhitelistEntryByAddress: {}", e);
+            logger.warn("Exception in getLockWhitelistEntryByAddress", e);
             return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
         }
 
@@ -802,7 +802,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             addressBase58 = (String) args[0];
             maxTransferValue = (BigInteger) args[1];
         } catch (Exception e) {
-            logger.warn("Exception in addOneOffLockWhitelistAddress: {}", e);
+            logger.warn("Exception in addOneOffLockWhitelistAddress", e);
             return 0;
         }
 
@@ -817,7 +817,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in addUnlimitedLockWhitelistAddress: {}", e);
+            logger.warn("Exception in addUnlimitedLockWhitelistAddress", e);
             return 0;
         }
 
@@ -832,7 +832,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
-            logger.warn("Exception in removeLockWhitelistAddress: {}", e);
+            logger.warn("Exception in removeLockWhitelistAddress", e);
             return 0;
         }
 
@@ -853,7 +853,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             feePerKb = Coin.valueOf(((BigInteger) args[0]).longValueExact());
         } catch (Exception e) {
-            logger.warn("Exception in voteFeePerKbChange: {}", e);
+            logger.warn("Exception in voteFeePerKbChange", e);
             return -10;
         }
 

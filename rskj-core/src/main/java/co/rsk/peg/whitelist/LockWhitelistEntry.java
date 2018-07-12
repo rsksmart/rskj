@@ -29,7 +29,7 @@ import co.rsk.bitcoinj.core.Coin;
  */
 public interface LockWhitelistEntry {
     Address address();
-    Boolean canLock(Coin value);
-    Boolean isConsumed();
+    boolean canLock(Coin value);
+    boolean isConsumed();
     void consume();
 }

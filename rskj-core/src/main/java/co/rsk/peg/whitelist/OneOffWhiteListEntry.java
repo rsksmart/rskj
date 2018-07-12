@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2018 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.peg.whitelist;
 
 import co.rsk.bitcoinj.core.Address;
@@ -26,11 +43,11 @@ public class OneOffWhiteListEntry implements LockWhitelistEntry {
         this.consumed = true;
     }
 
-    public Boolean isConsumed() {
+    public boolean isConsumed() {
         return this.consumed;
     }
 
-    public Boolean canLock(Coin value) {
+    public boolean canLock(Coin value) {
         return !this.consumed && (this.maxTransferValueField.compareTo(value) >= 0);
     }
 }

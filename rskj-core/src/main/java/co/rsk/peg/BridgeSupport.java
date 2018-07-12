@@ -75,7 +75,7 @@ public class BridgeSupport {
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format: {}";
+    private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
 
     private final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(
             "create",
