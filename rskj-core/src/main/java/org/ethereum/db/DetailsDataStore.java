@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.iq80.leveldb.impl.Iq80DBFactory.asString;
 
 /**
@@ -181,6 +182,7 @@ public class DetailsDataStore {
     }
 
     public void checkAndMigrateDB() throws IOException {
+        gLogger.info("Checking if we need to migrate code to new database");
         byte[] version = db.get(DB_V_KEY);
         if (version != null && Arrays.equals(version, DB_VERSION)) {
             return;
@@ -188,11 +190,17 @@ public class DetailsDataStore {
 
         DBIterator iterator = ((LevelDbDataSource)db.getDb()).getLevelDb().iterator();
         try {
+            int count = 0;
             for(iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
+                gLogger.trace("Migrating entry number {}", count++);
                 byte[] key = iterator.peekNext().getKey();
+                if (key.length != 20) {
+                    continue;
+                }
                 byte[] value = iterator.peekNext().getValue();
 
                 byte[] code = extractCode(value);
+                code = code != null ? code : EMPTY_BYTE_ARRAY;
                 ContractDetailsImpl details = createFromOldData(value);
 
                 update(new RskAddress(key), details);

@@ -41,7 +41,6 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 import static org.ethereum.datasource.DataSourcePool.levelDbByName;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.util.ByteUtil.wrap;
 
@@ -172,7 +171,13 @@ public class ContractDetailsImpl implements ContractDetails {
         RLPItem rlpAddress = (RLPItem) rlpList.get(0);
         RLPItem rlpIsExternalStorage = (RLPItem) rlpList.get(1);
         RLPItem rlpStorage = (RLPItem) rlpList.get(2);
-        RLPList rlpKeys = (RLPList) rlpList.get(3);
+        RLPElement obj = rlpList.get(3);
+        RLPList rlpKeys;
+        if (obj instanceof RLPList) {
+            rlpKeys = (RLPList) obj;
+        } else {
+            rlpKeys = (RLPList) rlpList.get(4);
+        }
 
         this.address = rlpAddress.getRLPData();
         this.externalStorage = rlpIsExternalStorage.getRLPData() != null;
@@ -430,6 +435,7 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     public static ContractDetailsImpl fromOldData(RskSystemProperties config, byte[] data) {
+        ContractDetailsImpl details = new ContractDetailsImpl(config);
         ArrayList<RLPElement> rlpData = RLP.decode2(data);
         RLPList rlpList = (RLPList) rlpData.get(0);
 
@@ -438,12 +444,25 @@ public class ContractDetailsImpl implements ContractDetails {
         RLPItem rlpStorage = (RLPItem) rlpList.get(2);
         RLPList rlpKeys = (RLPList) rlpList.get(4);
 
-        byte[] newData = RLP.encodeList(rlpAddress.getRLPData(), rlpIsExternalStorage.getRLPData(), rlpStorage.getRLPData(), rlpKeys.getRLPData());
+        details.address = rlpAddress.getRLPData();
+        details.externalStorage = rlpIsExternalStorage.getRLPData() != null;
+        details.originalExternalStorage = details.externalStorage;
 
-        return new ContractDetailsImpl(config, newData);
+        if (details.externalStorage) {
+            Keccak256 snapshotHash = new Keccak256(rlpStorage.getRLPData());
+            details.trie = new TrieImpl(new TrieStoreImpl(levelDbByName(config, details.getDataSourceName())), true).getSnapshotTo(snapshotHash);
+        } else {
+            details.trie = TrieImpl.deserialize(rlpStorage.getRLPData());
+        }
+
+        for (RLPElement key : rlpKeys) {
+            details.addKey(key.getRLPData());
+        }
+
+        return details;
     }
 
     public static byte[] extractCode(byte[] data) {
-        return RLP.decode2(data).get(3).getRLPData();
+        return ((RLPList) RLP.decode2(data).get(0)).get(3).getRLPData();
     }
 }
