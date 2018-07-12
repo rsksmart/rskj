@@ -67,7 +67,7 @@ public class Constants {
 
     private int newBlockMaxSecondsInTheFuture = 540;
 
-    private final BigInteger minimumPayableGas = BigInteger.valueOf(75000);
+    private final BigInteger minimumPayableGas = BigInteger.valueOf(21000);
 
     private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
 

@@ -70,5 +70,4 @@ public class RegTestGenesisConfig extends GenesisConfig {
     public boolean areBridgeTxsFree() {
         return true;
     }
-
 }

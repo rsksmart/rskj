@@ -33,7 +33,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.RegTestConfig;
+
 import org.ethereum.config.blockchain.mainnet.MainNetAfterBridgeSyncConfig;
 import org.ethereum.config.blockchain.mainnet.MainNetFirstForkConfig;
 import org.ethereum.config.blockchain.testnet.TestNetAfterBridgeSyncConfig;

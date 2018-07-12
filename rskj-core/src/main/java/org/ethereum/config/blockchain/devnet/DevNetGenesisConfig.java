@@ -71,7 +71,7 @@ public class DevNetGenesisConfig extends TestNetAfterBridgeSyncConfig {
     }
 
     @Override
-    public boolean isRskIp15Bis() {
+    public boolean isRskIp85() {
         return true;
     }
 }
