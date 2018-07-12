@@ -765,7 +765,7 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, (Block) null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, mock(Block.class));
 
         bridgeSupport.addSignature(federation.getPublicKeys().get(0), null, PegTestUtils.createHash().getBytes());
         bridgeSupport.save();
@@ -782,7 +782,7 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, (Block) null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, mock(Block.class));
 
         bridgeSupport.addSignature(new BtcECKey(), null, PegTestUtils.createHash().getBytes());
         bridgeSupport.save();
@@ -844,7 +844,7 @@ public class BridgeSupportTest {
         // Setup BridgeSupport
         List<LogInfo> eventLogs = new ArrayList<>();
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, contractAddress, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, contractAddress, mock(Block.class));
 
         // Create signed hash of Btc tx
         Script inputScript = btcTx.getInputs().get(0).getScriptSig();
@@ -934,7 +934,7 @@ public class BridgeSupportTest {
         track = repository.startTracking();
         List<LogInfo> logs = new ArrayList<>();
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, contractAddress, (Block) null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, contractAddress, mock(Block.class));
 
         // Generate valid signatures for inputs
         List<byte[]> derEncodedSigsFirstFed = new ArrayList<>();
@@ -1038,7 +1038,7 @@ public class BridgeSupportTest {
         track = repository.startTracking();
         List<LogInfo> logs = new ArrayList<>();
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, contractAddress, (Block) null);
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, contractAddress, mock(Block.class));
 
         Script inputScript = t.getInputs().get(0).getScriptSig();
         List<ScriptChunk> chunks = inputScript.getChunks();
