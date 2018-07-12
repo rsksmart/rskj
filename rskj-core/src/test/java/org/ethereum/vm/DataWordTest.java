@@ -326,6 +326,14 @@ public class DataWordTest {
         x.signExtend(k); // should throw an exception
     }
 
+    @Test
+    public void testFromString() {
+        // I'm using a 32 bytes string to avoid the preceding blanks
+        DataWord parsed = DataWord.fromString("01234567890123456789012345678901");
+
+        assertEquals(new String(parsed.getData()),"01234567890123456789012345678901");
+    }
+
     public static BigInteger pow(BigInteger x, BigInteger y) {
         if (y.compareTo(BigInteger.ZERO) < 0)
             throw new IllegalArgumentException();

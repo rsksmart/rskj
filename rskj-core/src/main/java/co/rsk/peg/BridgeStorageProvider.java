@@ -44,20 +44,20 @@ import java.util.SortedMap;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = new DataWord(TypeConverter.stringToByteArray("newFederationBtcUTXOs"));
-    private static final DataWord OLD_FEDERATION_BTC_UTXOS_KEY = new DataWord(TypeConverter.stringToByteArray("oldFederationBtcUTXOs"));
-    private static final DataWord BTC_TX_HASHES_ALREADY_PROCESSED_KEY = new DataWord(TypeConverter.stringToByteArray("btcTxHashesAP"));
-    private static final DataWord RELEASE_REQUEST_QUEUE = new DataWord(TypeConverter.stringToByteArray("releaseRequestQueue"));
-    private static final DataWord RELEASE_TX_SET = new DataWord(TypeConverter.stringToByteArray("releaseTransactionSet"));
-    private static final DataWord RSK_TXS_WAITING_FOR_SIGNATURES_KEY = new DataWord(TypeConverter.stringToByteArray("rskTxsWaitingFS"));
-    private static final DataWord NEW_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("newFederation"));
-    private static final DataWord OLD_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("oldFederation"));
-    private static final DataWord PENDING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("pendingFederation"));
-    private static final DataWord FEDERATION_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("federationElection"));
-    private static final DataWord LOCK_ONE_OFF_WHITELIST_KEY = new DataWord(TypeConverter.stringToByteArray("lockWhitelist"));
-    private static final DataWord LOCK_UNLIMITED_WHITELIST_KEY = new DataWord(TypeConverter.stringToByteArray("unlimitedLockWhitelist"));
-    private static final DataWord FEE_PER_KB_KEY = new DataWord(TypeConverter.stringToByteArray("feePerKb"));
-    private static final DataWord FEE_PER_KB_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("feePerKbElection"));
+    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("newFederationBtcUTXOs");
+    private static final DataWord OLD_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("oldFederationBtcUTXOs");
+    private static final DataWord BTC_TX_HASHES_ALREADY_PROCESSED_KEY = DataWord.fromString("btcTxHashesAP");
+    private static final DataWord RELEASE_REQUEST_QUEUE = DataWord.fromString("releaseRequestQueue");
+    private static final DataWord RELEASE_TX_SET = DataWord.fromString("releaseTransactionSet");
+    private static final DataWord RSK_TXS_WAITING_FOR_SIGNATURES_KEY = DataWord.fromString("rskTxsWaitingFS");
+    private static final DataWord NEW_FEDERATION_KEY = DataWord.fromString("newFederation");
+    private static final DataWord OLD_FEDERATION_KEY = DataWord.fromString("oldFederation");
+    private static final DataWord PENDING_FEDERATION_KEY = DataWord.fromString("pendingFederation");
+    private static final DataWord FEDERATION_ELECTION_KEY = DataWord.fromString("federationElection");
+    private static final DataWord LOCK_ONE_OFF_WHITELIST_KEY = DataWord.fromString("lockWhitelist");
+    private static final DataWord LOCK_UNLIMITED_WHITELIST_KEY = DataWord.fromString("unlimitedLockWhitelist");
+    private static final DataWord FEE_PER_KB_KEY = DataWord.fromString("feePerKb");
+    private static final DataWord FEE_PER_KB_ELECTION_KEY = DataWord.fromString("feePerKbElection");
 
     private final Repository repository;
     private final RskAddress contractAddress;

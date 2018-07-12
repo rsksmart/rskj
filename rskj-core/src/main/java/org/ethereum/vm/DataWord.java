@@ -31,6 +31,8 @@ import org.spongycastle.util.encoders.Hex;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
+import static org.ethereum.rpc.TypeConverter.stringToByteArray;
+
 /**
  * DataWord is the 32-byte array representation of a 256-bit number
  * Calculations can be done on this word with other DataWords
@@ -594,6 +596,15 @@ public final class DataWord implements Comparable<DataWord> {
 
     public boolean isHex(String hex) {
         return Hex.toHexString(data).equals(hex);
+    }
+
+    /**
+     * Will create a DataWord from the string value, but first will encode it using {@link org.ethereum.rpc.TypeConverter#stringToByteArray(String)}
+     * @param value any string value with less than 32 bytes
+     * @return a valid DataWord with the encoded string as the data, if the data has less than 32 bytes it will precede it with zeros
+     */
+    public static DataWord fromString(String value) {
+        return new DataWord(org.ethereum.rpc.TypeConverter.stringToByteArray(value));
     }
 
 }
