@@ -28,7 +28,6 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Repository;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
 
 import java.io.IOException;

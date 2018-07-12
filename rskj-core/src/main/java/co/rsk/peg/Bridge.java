@@ -251,7 +251,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         if (!bridgeParsedData.bridgeMethod.isEnabled(this.blockchainConfig)) {
-            logger.warn(String.format("'%s' is not enabled to run",bridgeParsedData.bridgeMethod.name()));
+            logger.warn("'{}' is not enabled to run",bridgeParsedData.bridgeMethod.name());
             return null;
         }
 
