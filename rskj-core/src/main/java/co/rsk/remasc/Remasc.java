@@ -18,7 +18,6 @@
 
 package co.rsk.remasc;
 
-import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
@@ -34,11 +33,8 @@ import org.ethereum.vm.LogInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -88,7 +84,7 @@ public class Remasc {
     /**
      * Implements the actual Remasc distribution logic
      */
-    void processMinersFees() throws IOException, BlockStoreException {
+    void processMinersFees() {
         if (!(executionTx instanceof RemascTransaction)) {
             //Detect
             // 1) tx to remasc that is not the latest tx in a block
@@ -102,6 +98,10 @@ public class Remasc {
 
         if (!isRskIp85Enabled) {
             this.addNewSiblings();
+        } else {
+            if (!this.provider.getSiblings().isEmpty()) {
+                this.provider.getSiblings().clear();
+            }
         }
 
         long processingBlockNumber = blockNbr - remascConstants.getMaturity();
@@ -111,7 +111,7 @@ public class Remasc {
         }
 
         int uncleGenerationLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
-        List<Block> descendantsBlocks = new ArrayList<>(uncleGenerationLimit);
+        Deque<Block> descendantsBlocks = new LinkedList<>();
 
         // this search can be optimized if have certainty that the execution block is not in a fork
         // larger than depth
@@ -119,16 +119,14 @@ public class Remasc {
                 executionBlock.getParentHash().getBytes(),
                 remascConstants.getMaturity() - 1 - uncleGenerationLimit
         );
-        descendantsBlocks.add(currentBlock);
+        descendantsBlocks.push(currentBlock);
 
+        // descendants are stored in reverse order because the original order to pay siblings is defined in the way
+        // blocks are ordered in the blockchain (the same as were stored in remasc contract)
         for (int i = 0; i < uncleGenerationLimit - 1; i++) {
             currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
-            descendantsBlocks.add(currentBlock);
+            descendantsBlocks.push(currentBlock);
         }
-
-        // descendants are reversed because the original order to pay siblings is defined in the way
-        // blocks are ordered in the blockchain (the same as were stored in remasc contract)
-        Collections.reverse(descendantsBlocks);
 
         Block processingBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
         BlockHeader processingBlockHeader = processingBlock.getHeader();
@@ -209,10 +207,6 @@ public class Remasc {
 
         if (!isRskIp85Enabled) {
             this.removeUsedSiblings(processingBlockHeader);
-        } else {
-            if (!this.provider.getSiblings().isEmpty()) {
-                this.provider.getSiblings().clear();
-            }
         }
     }
 
@@ -252,7 +246,7 @@ public class Remasc {
      * @param blockNumber number of the block is looked for siblings
      * @return
      */
-    private List<Sibling> getSiblingsToReward(List<Block> descendants, long blockNumber) {
+    private List<Sibling> getSiblingsToReward(Deque<Block> descendants, long blockNumber) {
         return descendants.stream()
                 .flatMap(block -> block.getUncleList().stream()
                         .filter(header -> header.getNumber() == blockNumber)
