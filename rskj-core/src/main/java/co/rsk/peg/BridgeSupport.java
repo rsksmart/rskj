@@ -66,6 +66,10 @@ public class BridgeSupport {
 
     public static final Integer FEDERATION_CHANGE_GENERIC_ERROR_CODE = -10;
     public static final Integer LOCK_WHITELIST_GENERIC_ERROR_CODE = -10;
+    public static final Integer LOCK_WHITELIST_INVALID_FORMAT_ERROR_CODE = -2;
+    public static final Integer LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE = -1;
+    public static final Integer LOCK_WHITELIST_UNKNOWN_ERROR_CODE = 0;
+    public static final Integer LOCK_WHITELIST_SUCCESS_CODE = 1;
     public static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = -10;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
@@ -1616,7 +1620,7 @@ public class BridgeSupport {
      */
     public LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58) {
         try {
-            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+            Address address = getParsedAddress(addressBase58);
             return provider.getLockWhitelist().get(address);
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
@@ -1636,22 +1640,22 @@ public class BridgeSupport {
      */
     public Integer addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
         try {
-            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+            Address address = getParsedAddress(addressBase58);
             Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
             return this.addLockWhitelistAddress(tx, new OneOffWhiteListEntry(address, maxTransferValueCoin));
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return -2;
+            return LOCK_WHITELIST_INVALID_FORMAT_ERROR_CODE;
         }
     }
 
     public Integer addUnlimitedLockWhitelistAddress(Transaction tx, String addressBase58) {
         try {
-            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+            Address address = getParsedAddress(addressBase58);
             return this.addLockWhitelistAddress(tx, new UnlimitedWhiteListEntry(address));
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return -2;
+            return LOCK_WHITELIST_INVALID_FORMAT_ERROR_CODE;
         }
     }
 
@@ -1664,14 +1668,14 @@ public class BridgeSupport {
 
         try {
             if (whitelist.isWhitelisted(entry.address())) {
-                return -1;
+                return LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE;
             }
             whitelist.put(entry.address(), entry);
-            return 1;
+            return LOCK_WHITELIST_SUCCESS_CODE;
         } catch (Exception e) {
             logger.error("Unexpected error in addLockWhitelistAddress: {}", e);
             panicProcessor.panic("lock-whitelist", e.getMessage());
-            return 0;
+            return LOCK_WHITELIST_UNKNOWN_ERROR_CODE;
         }
     }
 
@@ -1698,7 +1702,7 @@ public class BridgeSupport {
         LockWhitelist whitelist = provider.getLockWhitelist();
 
         try {
-            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+            Address address = getParsedAddress(addressBase58);
 
             if (!whitelist.remove(address)) {
                 return -1;
@@ -1886,6 +1890,10 @@ public class BridgeSupport {
                 throw new IOException(e);
             }
         }
+    }
+
+    private Address getParsedAddress(String base58Address) throws AddressFormatException {
+        return Address.fromBase58(btcContext.getParams(), base58Address);
     }
 }
 
