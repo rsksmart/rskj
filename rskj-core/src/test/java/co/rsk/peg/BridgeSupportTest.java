@@ -46,7 +46,7 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
+import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
@@ -3000,7 +3000,7 @@ public class BridgeSupportTest {
     @Test
     public void getBtcBlockchainBlockHashAtDepth() throws Exception {
         BlockchainNetConfig blockchainNetConfigOriginal = config.getBlockchainConfig();
-        config.setBlockchainConfig(new RegTestFirstForkConfig());
+        config.setBlockchainConfig(new RegTestOrchidConfig());
         NetworkParameters networkParameters = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
         Repository repository = new RepositoryImpl(config);

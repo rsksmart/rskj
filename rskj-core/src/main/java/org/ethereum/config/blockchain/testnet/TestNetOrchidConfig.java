@@ -1,7 +1,6 @@
-package org.ethereum.config.blockchain.mainnet;
+package org.ethereum.config.blockchain.testnet;
 
-// TODO: find a proper name for the "FirstFork"
-public class MainNetFirstForkConfig extends MainNetAfterBridgeSyncConfig {
+public class TestNetOrchidConfig extends TestNetAfterBridgeSyncConfig {
     @Override
     public boolean isRfs50() {
         return true;

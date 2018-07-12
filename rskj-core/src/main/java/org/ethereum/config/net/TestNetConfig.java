@@ -22,7 +22,7 @@ package org.ethereum.config.net;
 
 import org.ethereum.config.blockchain.testnet.TestNetAfterBridgeSyncConfig;
 import org.ethereum.config.blockchain.testnet.TestNetBeforeBridgeSyncConfig;
-import org.ethereum.config.blockchain.testnet.TestNetFirstForkConfig;
+import org.ethereum.config.blockchain.testnet.TestNetOrchidConfig;
 
 public class TestNetConfig extends AbstractNetConfig {
     public static final TestNetConfig INSTANCE = new TestNetConfig();
@@ -33,6 +33,6 @@ public class TestNetConfig extends AbstractNetConfig {
         // On blockchain launch blocks will be faster until difficulty is adjusted to available hashing power.
         add(129600, new TestNetAfterBridgeSyncConfig());
         // TODO: establish when to apply this fork. 500_000 is just a made up figure.
-        add(500_000, new TestNetFirstForkConfig());
+        add(500_000, new TestNetOrchidConfig());
     }
 }
