@@ -92,7 +92,7 @@ public class NodeFederationNotificationSourceTest {
                 assertEquals(MessageType.FEDERATION_NOTIFICATION, notification.getMessageType());
                 assertEquals(federationMember.getAddress(), notification.getSource());
                 assertTrue(notification.verifySignature(publicKey));
-                assertFalse(notification.isExpired());
+                assertFalse(notification.isCurrent());
                 assertTrue(notification.hasConfirmations());
                 assertEquals(BEST_BLOCK - FIRST_CONFIRMATION_DEPTH, notification.getConfirmation(0).getBlockNumber());
                 assertEquals(NotificationTestsUtils.hash(BEST_BLOCK - FIRST_CONFIRMATION_DEPTH),
@@ -179,7 +179,7 @@ public class NodeFederationNotificationSourceTest {
                 assertEquals(MessageType.FEDERATION_NOTIFICATION, notification.getMessageType());
                 assertEquals(federationMember.getAddress(), notification.getSource());
                 assertTrue(notification.verifySignature(publicKey));
-                assertFalse(notification.isExpired());
+                assertFalse(notification.isCurrent());
                 assertTrue(notification.hasConfirmations());
 
                 // Notification only has 2 confirmations, indexes 0 and 1, trying to access a
@@ -223,7 +223,7 @@ public class NodeFederationNotificationSourceTest {
                 assertEquals(MessageType.FEDERATION_NOTIFICATION, notification.getMessageType());
                 assertEquals(federationMember.getAddress(), notification.getSource());
                 assertTrue(notification.verifySignature(publicKey));
-                assertFalse(notification.isExpired());
+                assertFalse(notification.isCurrent());
 
                 // Notification generated from the forked blockchain will not have confirmations
                 // due to

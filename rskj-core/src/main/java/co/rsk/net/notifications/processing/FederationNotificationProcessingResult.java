@@ -33,7 +33,7 @@ import co.rsk.net.notifications.processing.FederationNotificationProcessor;
 public enum FederationNotificationProcessingResult {
     NOTIFICATION_PROCESSED_SUCCESSFULLY,
     NOTIFICATION_RECEIVED_TOO_FAST,
-    NOTIFICATION_EXPIRED,
+    NOTIFICATION_INVALID_IN_TIME,
     NOTIFICATION_ALREADY_PROCESSED,
     NOTIFICATION_SIGNATURE_DOES_NOT_VERIFY,
     PROCESSOR_NOT_RUNNING

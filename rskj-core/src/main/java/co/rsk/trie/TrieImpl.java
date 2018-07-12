@@ -272,7 +272,7 @@ public class TrieImpl implements Trie {
     }
 
     /**
-     * getHash calculates and/or returns the hash associated with this node content
+     * getHashForSignature calculates and/or returns the hash associated with this node content
      *
      * the internal variable hash could contains the cached hash.
      *
@@ -681,7 +681,7 @@ public class TrieImpl implements Trie {
     }
 
     /**
-     * getHash get hash associated to subnode at positin n. If the hash is known
+     * getHashForSignature get hash associated to subnode at positin n. If the hash is known
      * because it is in the internal hash cache, no access to subnode is needed.
      *
      * @param n     subnode position

@@ -56,7 +56,7 @@ public class FederationState {
 
     private PanicStatus panicStatus;
     private final Queue<FederationAlert> alerts;
-    private final Map<FederationMember, FederationNotification> latestFederationNotifications;
+    private final Map<FederationNotificationSender, FederationNotification> latestFederationNotifications;
     private volatile Instant lastNotificationReceivedTime;
 
     private RskSystemProperties config;
@@ -132,7 +132,7 @@ public class FederationState {
         return lastNotificationReceivedTime;
     }
 
-    public Map<FederationMember, FederationNotification> getLatestFederationNotifications() {
+    public Map<FederationNotificationSender, FederationNotification> getLatestFederationNotifications() {
         // Return a copy
         return new HashMap<>(latestFederationNotifications);
     }

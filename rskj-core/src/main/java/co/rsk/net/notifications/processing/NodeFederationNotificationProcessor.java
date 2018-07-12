@@ -124,6 +124,7 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         if (!this.checkTask.isShutdown()) {
             this.checkTask.shutdownNow();
         }
+
         this.running = false;
     }
 
@@ -158,9 +159,9 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         }
 
         // Reject expired notifications
-        if (notification.isExpired()) {
-            logger.warn("Federation notification has expired.");
-            return FederationNotificationProcessingResult.NOTIFICATION_EXPIRED;
+        if (!notification.isCurrent()) {
+            logger.warn("Federation notification has either expired or was emitted in the future.");
+            return FederationNotificationProcessingResult.NOTIFICATION_INVALID_IN_TIME;
         }
 
         // Reject already received notifications

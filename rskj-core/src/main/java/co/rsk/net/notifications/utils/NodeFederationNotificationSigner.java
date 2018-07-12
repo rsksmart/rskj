@@ -22,7 +22,7 @@ public class NodeFederationNotificationSigner implements FederationNotificationS
         }
 
         ECKey ecKey = account.getEcKey();
-        byte[] hash = notification.getHash();
+        byte[] hash = notification.getHashForSignature();
         notification.setSignature(ecKey.sign(hash));
     }
 }

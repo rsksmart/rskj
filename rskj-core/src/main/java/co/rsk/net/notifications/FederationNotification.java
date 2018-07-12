@@ -18,7 +18,6 @@
 
 package co.rsk.net.notifications;
 
-import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
@@ -27,36 +26,31 @@ import org.ethereum.crypto.ECKey.ECDSASignature;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 
-import java.nio.ByteBuffer;
+import java.math.BigInteger;
+import java.security.SignatureException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class FederationNotification extends Message {
-    private RskAddress source;
-    private Instant timeToLive;
-    private Instant timestamp;
-    private boolean frozen;
     private ECDSASignature signature;
+
+    private FederationNotificationSender sender;
+
+    private Instant timestamp;
+    private Instant expiration;
+
+    private boolean frozen;
+
     private List<Confirmation> confirmations;
 
-    public FederationNotification(RskAddress source, Instant timeToLive, Instant timestamp, boolean frozen, ECDSASignature signature) {
-        this(source, timeToLive, timestamp, frozen);
-        this.signature = signature;
-    }
-
-    public FederationNotification(RskAddress source, Instant timeToLive, Instant timestamp, boolean frozen) {
-        this(source, timeToLive, timestamp);
-        this.frozen = frozen;
-    }
-
-    public FederationNotification(RskAddress source, Instant timeToLive, Instant timestamp) {
-        this.source = source;
-        this.timeToLive = timeToLive;
+    public FederationNotification(Instant timestamp, Instant expiration, boolean frozen, ECDSASignature signature) {
         this.timestamp = timestamp;
+        this.expiration = expiration;
+        this.frozen = frozen;
+        this.signature = signature;
         this.confirmations = new ArrayList<>();
-        this.frozen = false;
+        this.sender = null;
     }
 
     public void addConfirmation(long blockNumber, Keccak256 blockHash) {
@@ -71,46 +65,47 @@ public class FederationNotification extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        byte[] source = RLP.encodeRskAddress(this.source);
-        byte[] timeToLive = RLP.encodeElement(longToBytes(this.timeToLive.toEpochMilli()));
-        byte[] timestamp = RLP.encodeElement(longToBytes(this.timeToLive.toEpochMilli()));
-        byte[] frozen = RLP.encodeElement(this.frozen ? RLP.TRUE : RLP.FALSE);
-        byte[] r = RLP.encodeBigInteger(this.signature.r);
-        byte[] s = RLP.encodeBigInteger(this.signature.s);
-        byte[] v = RLP.encodeElement(new byte[]{this.signature.v});
+        return encode(true);
+    }
+
+    private byte[] encode(boolean includeSignature) {
+        int elementCount = 4 + (includeSignature ? 1 : 0);
+        byte[][] elements = new byte[elementCount][];
+
+        elements[0] = RLP.encodeBigInteger(BigInteger.valueOf(timestamp.toEpochMilli()));
+        elements[1] = RLP.encodeBigInteger(BigInteger.valueOf(expiration.toEpochMilli()));
+        elements[2] = RLP.encodeElement(frozen ? RLP.TRUE : RLP.FALSE);
 
         byte[][] encodedConfirmations = new byte[confirmations.size()][];
         for (int i = 0; i < confirmations.size(); i++) {
             encodedConfirmations[i] = confirmations.get(i).getEncoded();
         }
+        elements[3] = RLP.encodeList(encodedConfirmations);
 
-        return RLP.encodeList(source, timeToLive, timestamp, frozen, r, s, v, RLP.encodeList(encodedConfirmations));
-    }
-
-    public byte[] getHash() {
-        byte[] source = RLP.encodeRskAddress(this.source);
-        byte[] timeToLive = RLP.encodeElement(longToBytes(this.timeToLive.toEpochMilli()));
-        byte[] timestamp = RLP.encodeElement(longToBytes(this.timeToLive.toEpochMilli()));
-
-        byte[][] encodedConfirmations = new byte[confirmations.size()][];
-        for (int i = 0; i < confirmations.size(); i++) {
-            encodedConfirmations[i] = confirmations.get(i).getEncoded();
+        if (includeSignature) {
+            byte[] r = RLP.encodeBigInteger(signature.r);
+            byte[] s = RLP.encodeBigInteger(signature.s);
+            byte[] v = RLP.encodeElement(new byte[]{signature.v});
+            elements[4] = RLP.encodeList(r, s, v);
         }
 
-        byte[] data = RLP.encodeList(source, timeToLive, timestamp, RLP.encodeList(encodedConfirmations));
-        return HashUtil.keccak256(data);
+        return RLP.encodeList(elements);
     }
 
-    public RskAddress getSource() {
-        return source;
-    }
-
-    public boolean isExpired() {
-        return this.timeToLive.compareTo(Instant.now()) <= 0;
+    public byte[] getHashForSignature() {
+        return HashUtil.keccak256(encode(false));
     }
 
     public Instant getTimestamp() {
-        return this.timestamp;
+        return timestamp;
+    }
+
+    public Instant getExpiration() {
+        return expiration;
+    }
+
+    public int getConfirmationCount() {
+        return confirmations.size();
     }
 
     public Confirmation getConfirmation(int index) {
@@ -135,24 +130,48 @@ public class FederationNotification extends Message {
         return signature;
     }
 
-    public Optional<FederationMember> getFederationMember() {
-        return null; // TODO: implement this
-    }
-
     public void setSignature(ECDSASignature signature) {
         this.signature = signature;
+        // Signature implies the sender, which is cached upon calculation
+        this.sender = null;
     }
 
-    public boolean verifySignature(ECKey publicKey) {
+    public FederationNotificationSender getSender() {
+        if (sender != null) {
+            return sender;
+        }
+
+        if (signature == null) {
+            throw new IllegalStateException("Can't extract sender from the FederationNotification: no signature given");
+        }
+
+        // Try and extract the public key from the signature
+        try {
+            ECKey publicKey = ECKey.signatureToKey(getHashForSignature(), getSignature().toBase64());
+
+            sender = new FederationNotificationSender(publicKey);
+
+            return sender;
+        } catch (SignatureException e) {
+            throw new IllegalStateException("Couldn't extract sender from the FederationNotification", e);
+        }
+    }
+
+    public boolean isCurrent() {
+        Instant now = Instant.now();
+
+        return timestamp.compareTo(now) <= 0 && expiration.compareTo(now) >= 0;
+    }
+
+    public boolean isAuthentic() {
+        if (signature == null) {
+            return false;
+        }
+
+        ECKey publicKey = getSender().getPublicKey();
         ECDSASignature signature = getSignature();
-        byte[] hash = getHash();
+        byte[] hash = getHashForSignature();
 
         return publicKey.verify(hash, signature);
-    }
-
-    private byte[] longToBytes(long x) {
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-        buffer.putLong(x);
-        return buffer.array();
     }
 }

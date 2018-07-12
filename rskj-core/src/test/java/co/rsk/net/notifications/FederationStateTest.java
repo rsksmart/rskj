@@ -48,7 +48,7 @@ public class FederationStateTest {
         when(config.shouldFederationNotificationsTriggerPanic()).thenReturn(true);
 
         FederationNotification notification = mock(FederationNotification.class);
-        FederationMember member = mock(FederationMember.class);
+        FederationNotificationSender member = mock(FederationNotificationSender.class);
         when(notification.getFederationMember()).thenReturn(Optional.of(member));
 
         // Set a panic which is intended to be cleared
@@ -69,7 +69,7 @@ public class FederationStateTest {
         when(config.shouldFederationNotificationsTriggerPanic()).thenReturn(false);
 
         FederationNotification notification = mock(FederationNotification.class);
-        FederationMember member = mock(FederationMember.class);
+        FederationNotificationSender member = mock(FederationNotificationSender.class);
         when(notification.getFederationMember()).thenReturn(Optional.of(member));
 
         // Set a panic which is intended to stay there

@@ -280,7 +280,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
 
-//        Status status = new Status(block.getNumber(), block.getHash());
+//        Status status = new Status(block.getNumber(), block.getHashForSignature());
 //        processor.processStatus(new SimpleNodeChannel(null, null), status);
 
         Assert.assertTrue(processor.hasBetterBlockToSync());
@@ -300,7 +300,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
 
-//        Status status = new Status(block.getNumber(), block.getHash());
+//        Status status = new Status(block.getNumber(), block.getHashForSignature());
 //        processor.processStatus(new SimpleNodeChannel(null, null), status);
 
         Assert.assertTrue(processor.hasBetterBlockToSync());
@@ -313,7 +313,7 @@ public class NodeBlockProcessorTest {
         Assert.assertFalse(processor.hasBetterBlockToSync());
 
         Block block2 = new BlockGenerator().createBlock(60, 0);
-//        Status status2 = new Status(block2.getNumber(), block2.getHash());
+//        Status status2 = new Status(block2.getNumber(), block2.getHashForSignature());
 //        processor.processStatus(new SimpleNodeChannel(null, null), status2);
 
         Assert.assertTrue(processor.hasBetterBlockToSync());
@@ -472,7 +472,7 @@ public class NodeBlockProcessorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block genesis = blockGenerator.getGenesisBlock();
         final Block block = blockGenerator.createChildBlock(genesis);
-//        final Status status = new Status(block.getNumber(), block.getHash());
+//        final Status status = new Status(block.getNumber(), block.getHashForSignature());
 
 //        processor.processStatus(sender, status);
         Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size() == 1);
@@ -506,7 +506,7 @@ public class NodeBlockProcessorTest {
         final Block block = blockGenerator.createChildBlock(genesis);
 
         store.saveBlock(block);
-//        final Status status = new Status(block.getNumber(), block.getHash());
+//        final Status status = new Status(block.getNumber(), block.getHashForSignature());
 
 //        processor.processStatus(sender, status);
         Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size() == 1);
@@ -528,7 +528,7 @@ public class NodeBlockProcessorTest {
         final Block block = blockchain.getBestBlock();
         final Keccak256 blockHash = block.getHash();
 
-//        final Status status = new Status(block.getNumber(), block.getHash());
+//        final Status status = new Status(block.getNumber(), block.getHashForSignature());
 
 //        processor.processStatus(sender, status);
         Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size() == 1);
@@ -554,7 +554,7 @@ public class NodeBlockProcessorTest {
         final Keccak256 blockHash = block.getHash();
 
         store.saveBlock(block);
-//        final Status status = new Status(block.getNumber(), block.getHash());
+//        final Status status = new Status(block.getNumber(), block.getHashForSignature());
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 

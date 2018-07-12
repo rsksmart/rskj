@@ -79,7 +79,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Get a member of the federation that will act as the source of the
 //        // notification.
-//        FederationMember federationMember = NotificationTestsUtils.getFederationMember();
+//        FederationNotificationSender federationMember = NotificationTestsUtils.getFederationMember();
 //
 //        // Build FederationNotification with two confirmation, one for block 10 and
 //        // another for block 100.
@@ -89,7 +89,7 @@ public class NodeFederationNotificationProcessorTest {
 //        notification.addConfirmation(100l, NotificationTestsUtils.hash(100l));
 //
 //        // Sign the notification
-//        byte[] hash = notification.getHash();
+//        byte[] hash = notification.getHashForSignature();
 //        notification.setSignature(federationMember.getKey().sign(hash));
 //
 //        // Create the FederationNotificationProcessor test instance.
@@ -124,7 +124,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Get a member of the federation that will act as the source of the
 //        // notification.
-//        FederationMember federationMember = NotificationTestsUtils.getFederationMember();
+//        FederationNotificationSender federationMember = NotificationTestsUtils.getFederationMember();
 //
 //        // Build FederationNotification with two confirmation, one for block 10 and
 //        // another for block 100.
@@ -134,7 +134,7 @@ public class NodeFederationNotificationProcessorTest {
 //        notification.addConfirmation(100l, NotificationTestsUtils.hash(100l));
 //
 //        // Sign the notification
-//        byte[] hash = notification.getHash();
+//        byte[] hash = notification.getHashForSignature();
 //        notification.setSignature(federationMember.getKey().sign(hash));
 //
 //        // Create the FederationNotificationProcessor test instance.
@@ -176,7 +176,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Get a member of the federation that will act as the source of the
 //        // notification.
-//        FederationMember federationMember = NotificationTestsUtils.getFederationMember();
+//        FederationNotificationSender federationMember = NotificationTestsUtils.getFederationMember();
 //
 //        // Build two federation notifications.
 //        FederationNotification notification1 = new FederationNotification(federationMember.getAddress(),
@@ -185,7 +185,7 @@ public class NodeFederationNotificationProcessorTest {
 //        notification1.addConfirmation(100l, NotificationTestsUtils.hash(100l));
 //
 //        // Sign the notification
-//        byte[] hash1 = notification1.getHash();
+//        byte[] hash1 = notification1.getHashForSignature();
 //        notification1.setSignature(federationMember.getKey().sign(hash1));
 //
 //        // Build two federation notifications.
@@ -195,7 +195,7 @@ public class NodeFederationNotificationProcessorTest {
 //        notification2.addConfirmation(200l, NotificationTestsUtils.hash(200l));
 //
 //        // Sign the notification
-//        byte[] hash2 = notification2.getHash();
+//        byte[] hash2 = notification2.getHashForSignature();
 //        notification2.setSignature(federationMember.getKey().sign(hash2));
 //
 //        // Create the FederationNotificationProcessor test instance.
@@ -247,7 +247,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Get a member of the federation that will act as the source of the
 //        // notification.
-//        FederationMember federationMember = NotificationTestsUtils.getFederationMember();
+//        FederationNotificationSender federationMember = NotificationTestsUtils.getFederationMember();
 //
 //        // Build FederationNotification with a TTL in the past and two confirmation, one
 //        // for block 10 and another for block 100.
@@ -257,7 +257,7 @@ public class NodeFederationNotificationProcessorTest {
 //        notification.addConfirmation(100l, NotificationTestsUtils.hash(100l));
 //
 //        // Sign the notification
-//        byte[] hash = notification.getHash();
+//        byte[] hash = notification.getHashForSignature();
 //        notification.setSignature(federationMember.getKey().sign(hash));
 //
 //        // Create the FederationNotificationProcessor test instance.
@@ -279,7 +279,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Notification processing should have stopped since notification already
 //        // expired. No alerts or panic status should have been triggered.
-//        assertEquals(FederationNotificationProcessingResult.NOTIFICATION_EXPIRED, result);
+//        assertEquals(FederationNotificationProcessingResult.NOTIFICATION_INVALID_IN_TIME, result);
 //        assertFalse(notificationProcessor.inPanicState());
 //        assertEquals(0, notificationProcessor.getPanicSinceBlockNumber());
 //        assertEquals(0, notificationProcessor.getFederationAlerts().size());
@@ -292,7 +292,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Get a member of the federation that will act as the source of the
 //        // notification.
-//        FederationMember federationMember = NotificationTestsUtils.getFederationMember();
+//        FederationNotificationSender federationMember = NotificationTestsUtils.getFederationMember();
 //
 //        // Build FederationNotification with a TTL in the past and two confirmation, one
 //        // for block 10 and another for block 100.
@@ -302,7 +302,7 @@ public class NodeFederationNotificationProcessorTest {
 //        notification.addConfirmation(100l, NotificationTestsUtils.hash(100l));
 //
 //        // Sign the notification
-//        byte[] hash = notification.getHash();
+//        byte[] hash = notification.getHashForSignature();
 //        notification.setSignature(federationMember.getKey().sign(hash));
 //
 //        // Create the FederationNotificationProcessor test instance.
@@ -357,7 +357,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Get a member of the federation that will act as the source of the
 //        // notification.
-//        FederationMember federationMember = NotificationTestsUtils.getFederationMember();
+//        FederationNotificationSender federationMember = NotificationTestsUtils.getFederationMember();
 //
 //        // Build FederationNotification with a TTL in the past and two confirmation, one
 //        // for block 10 and another for block 100.
@@ -368,7 +368,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Sign the notification with a bogus key
 //        ECKey bogusKey = ECKey.fromPrivate(HashUtil.keccak256("bogusKey".getBytes(StandardCharsets.UTF_8)));
-//        byte[] hash = notification.getHash();
+//        byte[] hash = notification.getHashForSignature();
 //        notification.setSignature(bogusKey.sign(hash));
 //
 //        // Create the FederationNotificationProcessor test instance.
@@ -403,7 +403,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Get a member of the federation that will act as the source of the
 //        // notification.
-//        FederationMember federationMember = NotificationTestsUtils.getFederationMember();
+//        FederationNotificationSender federationMember = NotificationTestsUtils.getFederationMember();
 //
 //        // Build FederationNotification with two confirmation, one for block 10 and
 //        // another for block 100.
@@ -413,7 +413,7 @@ public class NodeFederationNotificationProcessorTest {
 //        notification.addConfirmation(100l, NotificationTestsUtils.hash(100l));
 //
 //        // Sign the notification
-//        byte[] hash = notification.getHash();
+//        byte[] hash = notification.getHashForSignature();
 //        notification.setSignature(federationMember.getKey().sign(hash));
 //
 //        // Create the FederationNotificationProcessor test instance.
@@ -457,7 +457,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        // Get a member of the federation that will act as the source of the
 //        // notifications.
-//        FederationMember federationMember = NotificationTestsUtils.getFederationMember();
+//        FederationNotificationSender federationMember = NotificationTestsUtils.getFederationMember();
 //
 //        // Build FederationNotification with two confirmation, one for block 10 and
 //        // another for block 100.
@@ -467,7 +467,7 @@ public class NodeFederationNotificationProcessorTest {
 //        notification.addConfirmation(100l, NotificationTestsUtils.hash(100l));
 //
 //        // Sign the notification
-//        byte[] hash = notification.getHash();
+//        byte[] hash = notification.getHashForSignature();
 //        notification.setSignature(federationMember.getKey().sign(hash));
 //
 //        // Create the FederationNotificationProcessor test instance and process the
