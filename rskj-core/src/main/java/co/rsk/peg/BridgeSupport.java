@@ -66,7 +66,7 @@ public class BridgeSupport {
 
     public static final Integer FEDERATION_CHANGE_GENERIC_ERROR_CODE = -10;
     public static final Integer LOCK_WHITELIST_GENERIC_ERROR_CODE = -10;
-    public static final Integer LOCK_WHITELIST_INVALID_FORMAT_ERROR_CODE = -2;
+    public static final Integer LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
     public static final Integer LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE = -1;
     public static final Integer LOCK_WHITELIST_UNKNOWN_ERROR_CODE = 0;
     public static final Integer LOCK_WHITELIST_SUCCESS_CODE = 1;
@@ -1645,7 +1645,7 @@ public class BridgeSupport {
             return this.addLockWhitelistAddress(tx, new OneOffWhiteListEntry(address, maxTransferValueCoin));
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return LOCK_WHITELIST_INVALID_FORMAT_ERROR_CODE;
+            return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
         }
     }
 
@@ -1655,7 +1655,7 @@ public class BridgeSupport {
             return this.addLockWhitelistAddress(tx, new UnlimitedWhiteListEntry(address));
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return LOCK_WHITELIST_INVALID_FORMAT_ERROR_CODE;
+            return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
         }
     }
 

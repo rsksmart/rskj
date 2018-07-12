@@ -169,8 +169,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function VOTE_FEE_PER_KB = BridgeMethods.VOTE_FEE_PER_KB.getFunction();
 
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
-    public static final int LOCK_WHITELIST_NOT_FOUND_CODE = -1;
-    public static final int LOCK_WHITELIST_INVALID_FORMAT_ERROR_CODE = -2;
+    public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
+    public static final int LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
 
     // Log topics used by Bridge Contract
     public static final DataWord RELEASE_BTC_TOPIC = new DataWord("release_btc_topic".getBytes(StandardCharsets.UTF_8));
@@ -777,14 +777,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             addressBase58 = (String) args[0];
         } catch (Exception e) {
             logger.warn("Exception in getLockWhitelistEntryByAddress: {}", e);
-            return LOCK_WHITELIST_INVALID_FORMAT_ERROR_CODE;
+            return LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE;
         }
 
         LockWhitelistEntry entry = bridgeSupport.getLockWhitelistEntryByAddress(addressBase58);
 
         if (entry == null) {
             // Empty string is returned when address is not found
-            return LOCK_WHITELIST_NOT_FOUND_CODE;
+            return LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE;
         }
 
         return entry.getClass() == OneOffWhiteListEntry.class ?
