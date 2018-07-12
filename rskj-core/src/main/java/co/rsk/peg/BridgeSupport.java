@@ -1668,9 +1668,6 @@ public class BridgeSupport {
             }
             whitelist.put(entry.address(), entry);
             return 1;
-        } catch (AddressFormatException e) {
-            logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
-            return -2;
         } catch (Exception e) {
             logger.error("Unexpected error in addLockWhitelistAddress: {}", e);
             panicProcessor.panic("lock-whitelist", e.getMessage());

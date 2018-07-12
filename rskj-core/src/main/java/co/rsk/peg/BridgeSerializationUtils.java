@@ -344,9 +344,9 @@ public class BridgeSerializationUtils {
         HashMap<Address, OneOffWhiteListEntry> entries = new HashMap<>(serializedAddressesSize / 2);
         for (int i = 0; i < serializedAddressesSize; i = i + 2) {
             byte[] hash160 = rlpList.get(i).getRLPData();
-            byte[] maxValueData = rlpList.get(i + 1).getRLPData();
+            byte[] maxTransferValueData = rlpList.get(i + 1).getRLPData();
             Address address = new Address(parameters, hash160);
-            entries.put(address, new OneOffWhiteListEntry(address, Coin.valueOf(safeToBigInteger(maxValueData).longValueExact())));
+            entries.put(address, new OneOffWhiteListEntry(address, Coin.valueOf(safeToBigInteger(maxTransferValueData).longValueExact())));
         }
         int disableBlockHeight = safeToBigInteger(rlpList.get(serializedAddressesSize).getRLPData()).intValueExact();
         return Pair.of(entries, disableBlockHeight);

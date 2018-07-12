@@ -247,8 +247,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         if (!bridgeParsedData.bridgeMethod.isEnabled(this.blockchainConfig)) {
-            String errorMessage = String.format("'%s' is not enabled to run",bridgeParsedData.bridgeMethod.name());
-            logger.warn(errorMessage);
+            logger.warn(String.format("'%s' is not enabled to run",bridgeParsedData.bridgeMethod.name()));
             return null;
         }
 
@@ -784,7 +783,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return -1;
         }
 
-        return entry.getClass() == OneOffWhiteListEntry.class ? ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() : 0;
+        return entry.getClass() == OneOffWhiteListEntry.class ?
+                ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() :
+                0;
     }
 
     public Integer addOneOffLockWhitelistAddress(Object[] args)

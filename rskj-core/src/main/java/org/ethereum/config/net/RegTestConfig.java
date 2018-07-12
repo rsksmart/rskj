@@ -21,7 +21,6 @@ package org.ethereum.config.net;
 
 import org.ethereum.config.blockchain.HardForkActivationConfig;
 import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
-import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 
 
 /**
