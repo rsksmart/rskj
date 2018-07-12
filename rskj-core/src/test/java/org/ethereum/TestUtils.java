@@ -99,10 +99,10 @@ public final class TestUtils {
 
         for (int i = 0; i < length; ++i){
 
-            byte[] difficutly = new BigInteger(8, new Random()).toByteArray();
+            byte[] difficulty = new BigInteger(8, new Random()).toByteArray();
             byte[] newHash = HashUtil.randomHash();
 
-            Block block = new Block(lastHash, newHash,  RskAddress.nullAddress().getBytes(), null, difficutly, lastIndex, new byte[] {0}, 0, 0, null, null,
+            Block block = new Block(lastHash, newHash,  RskAddress.nullAddress().getBytes(), null, difficulty, lastIndex, new byte[] {0}, 0, 0, null, null,
                     null, null, EMPTY_TRIE_HASH, HashUtil.randomHash(), null, null, null, Coin.ZERO);
 
             ++lastIndex;
