@@ -36,10 +36,10 @@ public class UnlimitedWhiteListEntry implements LockWhitelistEntry {
     }
 
     public boolean isConsumed() {
-        return Boolean.FALSE;
+        return false;
     }
 
     public boolean canLock(Coin value) {
-        return Boolean.TRUE;
+        return true;
     }
 }

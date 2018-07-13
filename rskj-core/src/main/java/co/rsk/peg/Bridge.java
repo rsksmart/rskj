@@ -481,6 +481,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    /**
+     * @deprecated
+     * @param args
+     * @return
+     */
     @Deprecated
     public Object[] getBtcBlockchainBlockLocator(Object[] args)
     {
