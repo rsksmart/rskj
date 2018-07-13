@@ -56,7 +56,6 @@ public class FederationState {
 
     private PanicStatus panicStatus;
     private final Queue<FederationAlert> alerts;
-    private final Map<FederationNotificationSender, FederationNotification> latestFederationNotifications;
     private volatile Instant lastNotificationReceivedTime;
 
     private RskSystemProperties config;
@@ -64,7 +63,6 @@ public class FederationState {
     public FederationState(RskSystemProperties config) {
         this.config = config;
         this.alerts = new CircularFifoQueue<>(MAX_FEDERATION_ALERTS);
-        this.latestFederationNotifications = new HashMap<>();
         this.panicStatus = new PanicStatus();
 
         // Assume we received a notification some time ago for simplicity's sake
@@ -77,8 +75,6 @@ public class FederationState {
      * @param notification The notification received.
      */
     public void processNotification(FederationNotification notification) {
-        latestFederationNotifications.put(notification.getSender(), notification);
-
         // Update timestamp of last notification received to later check if
         // communications with federation are still alive
         lastNotificationReceivedTime = Instant.now();
@@ -130,10 +126,5 @@ public class FederationState {
 
     public Instant getLastNotificationReceivedTime() {
         return lastNotificationReceivedTime;
-    }
-
-    public Map<FederationNotificationSender, FederationNotification> getLatestFederationNotifications() {
-        // Return a copy
-        return new HashMap<>(latestFederationNotifications);
     }
 }

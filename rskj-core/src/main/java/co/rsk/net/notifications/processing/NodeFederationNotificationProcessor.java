@@ -18,14 +18,15 @@
 
 package co.rsk.net.notifications.processing;
 
-import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.net.messages.Message;
 import co.rsk.net.notifications.Confirmation;
 import co.rsk.net.notifications.FederationNotification;
+import co.rsk.net.notifications.FederationNotificationSender;
 import co.rsk.net.notifications.FederationState;
 import co.rsk.net.notifications.alerts.FederationAlert;
 import co.rsk.net.notifications.alerts.FederationFrozenAlert;
@@ -81,21 +82,25 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
     private RskSystemProperties config;
     private Blockchain blockchain;
     private FederationState federationState;
+    private MockAuthenticator authenticator;
 
     private ScheduledExecutorService checkTask;
     private boolean running;
 
     private NotificationBuffer<FederationNotification> receivedFederationNotifications = new NotificationBuffer<>(
             MAX_NUMBER_OF_NOTIFICATIONS_CACHED);
+    private final Map<FederationNotificationSender, FederationNotification> latestFederationNotifications;
 
     private long checkIntervalInSeconds = DEFAULT_CHECK_INTERVAL_SECONDS;
 
-    public NodeFederationNotificationProcessor(RskSystemProperties config, Blockchain blockchain, FederationState federationState) {
+    public NodeFederationNotificationProcessor(RskSystemProperties config, Blockchain blockchain, FederationState federationState, MockAuthenticator authenticator) {
         this.config = config;
         this.blockchain = blockchain;
         this.federationState = federationState;
+        this.authenticator = authenticator;
         this.checkTask = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "NodeFederationNotificationProcessor"));
         this.running = false;
+        this.latestFederationNotifications = new HashMap<>();
     }
 
     public long getCheckIntervalInSeconds() {
@@ -164,7 +169,7 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
             return FederationNotificationProcessingResult.NOTIFICATION_RECEIVED_TOO_FAST;
         }
 
-        // Reject expired notifications
+        // Reject non-current notifications
         if (!notification.isCurrent()) {
             logger.warn("Federation notification has either expired or was emitted in the future.");
             return FederationNotificationProcessingResult.NOTIFICATION_INVALID_IN_TIME;
@@ -182,12 +187,13 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
             return FederationNotificationProcessingResult.NOTIFICATION_SIGNATURE_DOES_NOT_VERIFY;
         }
 
-        // Cache notification to keep track of already received notifications
-        this.receivedFederationNotifications.addNotification(notification);
+        // Keep track of already received notifications
+        receivedFederationNotifications.addNotification(notification);
+        latestFederationNotifications.put(notification.getSender(), notification);
 
         // Compare confirmations contained in the notification with local best
         // chain to generate alerts (if needed)
-        this.generateAlertIfNeeded(notification);
+        generateAlerts(notification);
 
         logger.debug("Federation notification processed successfully.");
         return FederationNotificationProcessingResult.NOTIFICATION_PROCESSED_SUCCESSFULLY;
@@ -210,24 +216,28 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
     }
 
     /***
-     * checks if a Fork attack is in progress, if so generates a ForkAttackAlert and
-     * changes the processor's panic status to the corresponding FEDERATION_FORKED
-     * (if the node is a federation member) or NODE_FORKED (if the node is not a
-     * federation member)
+     * Checks if a Fork attack is in progress, if so generates a ForkAttackAlert and
+     * also checks whether the federation is frozen, if so generates a FederationFrozenAlert.
      *
-     * @param notification
      * @throws ConfigurationException
      */
-    private void generateAlertIfNeeded(FederationNotification notification) throws ConfigurationException {
+    private void generateAlerts() throws ConfigurationException {
         List<FederationAlert> alerts = new ArrayList<>();
 
         // Get the confirmation we wish to compare from the notification
-        int federationConfirmationIndex = this.config.getFederationConfirmationIndex();
-        Confirmation confirmation = notification.getConfirmation(federationConfirmationIndex);
+//        int federationConfirmationIndex = this.config.getFederationConfirmationIndex();
+//        Confirmation confirmation = notification.getConfirmation(federationConfirmationIndex);
 
-        // Is the federation frozen?
-        // TODO: 51% algorithm
-        if (notification.isFederationFrozen()) {
+        // Is the federation frozen? Need more than half of the
+        // notifiers to say so to trigger the corresponding alert
+        // IMPORTANT: assume that no notification from a given federate
+        // implies that member is frozen.
+        int frozenFederatesCount = Long.valueOf(latestFederationNotifications.values().stream()
+                .filter(n -> n.isFederationFrozen()).count()).intValue();
+        frozenFederatesCount += authenticator.getNotifierCount() - latestFederationNotifications.size(); // Normally ZERO
+
+        if (frozenFederatesCount > authenticator.getNotifierCount() / 2) {
+            // TODO: figure out what information goes with the federation frozen alert
             alerts.add(new FederationFrozenAlert(notification.getSender(), confirmation.getBlockHash(), confirmation.getBlockNumber()));
         }
 
@@ -262,16 +272,16 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
     }
 
     private boolean verifyFederationNotificationSignature(FederationNotification notification) {
-        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
-        BridgeStorageProvider provider = new BridgeStorageProvider(new RepositoryImpl(config),
-                PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
-        FederationSupport federationSupport = new FederationSupport(provider, bridgeConstants, blockchain.getBestBlock());
-
-        Federation federation = federationSupport.getActiveFederation();
-        List<BtcECKey> federationKeys = federation.getPublicKeys();
-
-        // Check if the notification signature can be verified by one of the federation
-        // members public keys
+//        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+//        BridgeStorageProvider provider = new BridgeStorageProvider(new RepositoryImpl(config),
+//                PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
+//        FederationSupport federationSupport = new FederationSupport(provider, bridgeConstants, blockchain.getBestBlock());
+//
+//        Federation federation = federationSupport.getActiveFederation();
+//        List<BtcECKey> federationKeys = federation.getPublicKeys();
+//
+//        // Check if the notification signature can be verified by one of the federation
+//        // members public keys
 //        for (BtcECKey btcECKey : federationKeys) {
 //            ECKey publicKey = ECKey.fromPublicOnly(btcECKey.getPubKey());
 //            if (notification.verifySignature(publicKey)) {
@@ -279,7 +289,8 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
 //            }
 //        }
 
-        return false;
+        // TODO: implement this when implementing authentication
+        return true;
     }
 
     /***
@@ -312,6 +323,13 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
 
         public void addNotification(T notification) {
             notifications.add(new Keccak256(HashUtil.keccak256(notification.getEncoded())));
+        }
+    }
+
+    // TODO: replace this with actual authenticator
+    private class MockAuthenticator {
+        public int getNotifierCount() {
+            return BridgeRegTestConstants.getInstance().getGenesisFederation().getSize();
         }
     }
 }
