@@ -20,22 +20,24 @@ package co.rsk.net.notifications.alerts;
 
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.notifications.FederationNotificationSender;
 import co.rsk.net.notifications.panics.PanicFlag;
 import co.rsk.rpc.modules.notifications.NotificationsModule;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 
 import java.util.function.Function;
 
 public class ForkAttackAlert extends FederationAlert {
-    private RskAddress source;
+    private FederationNotificationSender sender;
     private Keccak256 confirmationBlockHash;
     private Keccak256 inBestChainBlockHash;
     private long confirmationBlockNumber;
     private long bestBlockNumber;
     private boolean isFederatedNode;
 
-    public ForkAttackAlert(RskAddress source, Keccak256 confirmationBlockHash, long confirmationBlockNumber, Keccak256 inBestChainBlockHash, long bestBlockNumber, boolean isFederatedNode) {
-        this.source = source;
+    public ForkAttackAlert(FederationNotificationSender sender, Keccak256 confirmationBlockHash, long confirmationBlockNumber, Keccak256 inBestChainBlockHash, long bestBlockNumber, boolean isFederatedNode) {
+        this.sender = sender;
         this.confirmationBlockHash = confirmationBlockHash;
         this.confirmationBlockNumber = confirmationBlockNumber;
         this.inBestChainBlockHash = inBestChainBlockHash;
@@ -44,12 +46,12 @@ public class ForkAttackAlert extends FederationAlert {
     }
 
     public FederationAlert copy() {
-        RskAddress sourceCopy = new RskAddress(ByteUtil.cloneBytes(source.getBytes()));
-        return new ForkAttackAlert(sourceCopy, confirmationBlockHash.copy(), confirmationBlockNumber, inBestChainBlockHash.copy(), bestBlockNumber, isFederatedNode);
+        FederationNotificationSender senderCopy = new FederationNotificationSender(ECKey.fromPublicOnly(sender.getPublicKey().getPubKeyPoint()));
+        return new ForkAttackAlert(senderCopy, confirmationBlockHash.copy(), confirmationBlockNumber, inBestChainBlockHash.copy(), bestBlockNumber, isFederatedNode);
     }
 
-    public RskAddress getSource() {
-        return source;
+    public FederationNotificationSender getSender() {
+        return sender;
     }
 
     public Keccak256 getConfirmationBlockHash() {

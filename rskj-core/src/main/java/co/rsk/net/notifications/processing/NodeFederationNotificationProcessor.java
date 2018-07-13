@@ -23,7 +23,6 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.net.BlockProcessor;
 import co.rsk.net.messages.Message;
 import co.rsk.net.notifications.Confirmation;
 import co.rsk.net.notifications.FederationNotification;
@@ -37,7 +36,6 @@ import co.rsk.peg.Federation;
 import co.rsk.peg.FederationSupport;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -81,7 +79,7 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
     private static final Logger logger = LoggerFactory.getLogger("NodeFederationNotificationProcessor");
 
     private RskSystemProperties config;
-    private BlockProcessor blockProcessor;
+    private Blockchain blockchain;
     private FederationState federationState;
 
     private ScheduledExecutorService checkTask;
@@ -92,12 +90,20 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
 
     private long checkIntervalInSeconds = DEFAULT_CHECK_INTERVAL_SECONDS;
 
-    public NodeFederationNotificationProcessor(RskSystemProperties config, BlockProcessor blockProcessor, FederationState federationState) {
+    public NodeFederationNotificationProcessor(RskSystemProperties config, Blockchain blockchain, FederationState federationState) {
         this.config = config;
-        this.blockProcessor = blockProcessor;
+        this.blockchain = blockchain;
         this.federationState = federationState;
         this.checkTask = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "NodeFederationNotificationProcessor"));
         this.running = false;
+    }
+
+    public long getCheckIntervalInSeconds() {
+        return this.checkIntervalInSeconds;
+    }
+
+    public void setCheckIntervalInSeconds(long checkIntervalInSeconds) {
+        this.checkIntervalInSeconds = checkIntervalInSeconds;
     }
 
     @Override
@@ -199,7 +205,7 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         int maxSilenceSecs = config.getFederationMaxSilenceTimeSecs();
         if (config.federationNotificationsEnabled() && duration.getSeconds() > maxSilenceSecs) {
             FederationAlert alert = new NodeEclipsedAlert(duration.getSeconds());
-            federationState.processAlerts(getBestBlockNumber(), Arrays.asList(alert));
+            federationState.processAlerts(blockchain.getBestBlock().getNumber(), Arrays.asList(alert));
         }
     }
 
@@ -213,12 +219,6 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
      * @throws ConfigurationException
      */
     private void generateAlertIfNeeded(FederationNotification notification) throws ConfigurationException {
-        // Ignore notifications while syncing blocks
-        // TODO: figure out where to put this. Maybe better @ message processor level?
-        if (this.blockProcessor.hasBetterBlockToSync()) {
-            return;
-        }
-
         List<FederationAlert> alerts = new ArrayList<>();
 
         // Get the confirmation we wish to compare from the notification
@@ -228,13 +228,13 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         // Is the federation frozen?
         // TODO: 51% algorithm
         if (notification.isFederationFrozen()) {
-            alerts.add(new FederationFrozenAlert(notification.getSource(), confirmation.getBlockHash(), confirmation.getBlockNumber()));
+            alerts.add(new FederationFrozenAlert(notification.getSender(), confirmation.getBlockHash(), confirmation.getBlockNumber()));
         }
 
         // Get the corresponding block from the local blockchain to compare and
         // see if we are under a fork attack
-        long bestBlockNumber = getBestBlockNumber();
-        Block block = blockProcessor.getBlockchain().getBlockByNumber(confirmation.getBlockNumber());
+        long bestBlockNumber = blockchain.getBestBlock().getNumber();
+        Block block = blockchain.getBlockByNumber(confirmation.getBlockNumber());
 
         // Are we under a fork attack?
         // TODO: 51% algorithm
@@ -242,7 +242,7 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
             Keccak256 blockHash = block == null ? null : block.getHash();
             boolean isFederatedNode = isFederationMember();
 
-            alerts.add(new ForkAttackAlert(notification.getSource(), confirmation.getBlockHash(),
+            alerts.add(new ForkAttackAlert(notification.getSender(), confirmation.getBlockHash(),
                     confirmation.getBlockNumber(), blockHash, bestBlockNumber, isFederatedNode));
         }
 
@@ -255,7 +255,7 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         BridgeStorageProvider provider = new BridgeStorageProvider(new RepositoryImpl(config),
                 PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
-        FederationSupport federationSupport = new FederationSupport(provider, bridgeConstants, getBestBlock());
+        FederationSupport federationSupport = new FederationSupport(provider, bridgeConstants, blockchain.getBestBlock());
 
         Federation federation = federationSupport.getActiveFederation();
         return federation.hasMemberWithRskAddress(config.coinbaseAddress().getBytes());
@@ -265,47 +265,21 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         BridgeStorageProvider provider = new BridgeStorageProvider(new RepositoryImpl(config),
                 PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
-        FederationSupport federationSupport = new FederationSupport(provider, bridgeConstants, getBestBlock());
+        FederationSupport federationSupport = new FederationSupport(provider, bridgeConstants, blockchain.getBestBlock());
 
         Federation federation = federationSupport.getActiveFederation();
         List<BtcECKey> federationKeys = federation.getPublicKeys();
 
         // Check if the notification signature can be verified by one of the federation
         // members public keys
-        for (BtcECKey btcECKey : federationKeys) {
-            ECKey publicKey = ECKey.fromPublicOnly(btcECKey.getPubKey());
-            if (notification.verifySignature(publicKey)) {
-                return true;
-            }
-        }
+//        for (BtcECKey btcECKey : federationKeys) {
+//            ECKey publicKey = ECKey.fromPublicOnly(btcECKey.getPubKey());
+//            if (notification.verifySignature(publicKey)) {
+//                return true;
+//            }
+//        }
 
         return false;
-    }
-
-    private Block getBestBlock() {
-        Blockchain blockchain = blockProcessor.getBlockchain();
-        if (blockchain == null) {
-            return null;
-        }
-
-        return blockchain.getBestBlock();
-    }
-
-    private long getBestBlockNumber() {
-        Block block = getBestBlock();
-        if (block == null) {
-            return -1;
-        }
-
-        return block.getNumber();
-    }
-
-    public long getCheckIntervalInSeconds() {
-        return this.checkIntervalInSeconds;
-    }
-
-    public void setCheckIntervalInSeconds(long checkIntervalInSeconds) {
-        this.checkIntervalInSeconds = checkIntervalInSeconds;
     }
 
     /***

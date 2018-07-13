@@ -60,7 +60,7 @@ public interface NotificationsModule {
         public static final Function<co.rsk.net.notifications.alerts.FederationAlert, FederationAlert> convert = a -> {
             co.rsk.net.notifications.alerts.FederationFrozenAlert ffa = (co.rsk.net.notifications.alerts.FederationFrozenAlert) a;
             return new FederationFrozenAlert(
-                    Hex.toHexString(ffa.getSource().getBytes()),
+                    Hex.toHexString(ffa.getSender().getBytes()),
                     Hex.toHexString(ffa.getConfirmationBlockHash().getBytes()),
                     ffa.getConfirmationBlockNumber());
         };
@@ -84,7 +84,7 @@ public interface NotificationsModule {
         public static final Function<co.rsk.net.notifications.alerts.FederationAlert, FederationAlert> convert = a -> {
             co.rsk.net.notifications.alerts.ForkAttackAlert faa = (co.rsk.net.notifications.alerts.ForkAttackAlert) a;
             return new ForkAttackAlert(
-                    Hex.toHexString(faa.getSource().getBytes()),
+                    Hex.toHexString(faa.getSender().getBytes()),
                     Hex.toHexString(faa.getConfirmationBlockHash().getBytes()),
                     faa.getConfirmationBlockNumber(),
                     Hex.toHexString(faa.getInBestChainBlockHash().getBytes()),

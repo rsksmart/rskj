@@ -87,11 +87,10 @@ public class NodeFederationNotificationSourceTest {
                 RskMessage message = (RskMessage) args[0];
 
                 FederationNotification notification = (FederationNotification) message.getMessage();
-                ECKey publicKey = ECKey.fromPublicOnly(federationMember.getKey().getPubKey());
 
                 assertEquals(MessageType.FEDERATION_NOTIFICATION, notification.getMessageType());
-                assertEquals(federationMember.getAddress(), notification.getSource());
-                assertTrue(notification.verifySignature(publicKey));
+                assertEquals(federationMember.getAddress(), notification.getSender());
+                assertTrue(notification.isAuthentic());
                 assertFalse(notification.isCurrent());
                 assertTrue(notification.hasConfirmations());
                 assertEquals(BEST_BLOCK - FIRST_CONFIRMATION_DEPTH, notification.getConfirmation(0).getBlockNumber());
@@ -174,11 +173,10 @@ public class NodeFederationNotificationSourceTest {
                 RskMessage message = (RskMessage) args[0];
 
                 FederationNotification notification = (FederationNotification) message.getMessage();
-                ECKey publicKey = ECKey.fromPublicOnly(federationMember.getKey().getPubKey());
 
                 assertEquals(MessageType.FEDERATION_NOTIFICATION, notification.getMessageType());
-                assertEquals(federationMember.getAddress(), notification.getSource());
-                assertTrue(notification.verifySignature(publicKey));
+                assertEquals(federationMember.getAddress(), notification.getSender());
+                assertTrue(notification.isAuthentic());
                 assertFalse(notification.isCurrent());
                 assertTrue(notification.hasConfirmations());
 
@@ -221,8 +219,8 @@ public class NodeFederationNotificationSourceTest {
                 ECKey publicKey = ECKey.fromPublicOnly(federationMember.getKey().getPubKey());
 
                 assertEquals(MessageType.FEDERATION_NOTIFICATION, notification.getMessageType());
-                assertEquals(federationMember.getAddress(), notification.getSource());
-                assertTrue(notification.verifySignature(publicKey));
+                assertEquals(federationMember.getAddress(), notification.getSender());
+                assertTrue(notification.isAuthentic());
                 assertFalse(notification.isCurrent());
 
                 // Notification generated from the forked blockchain will not have confirmations

@@ -49,7 +49,7 @@ public class FederationStateTest {
 
         FederationNotification notification = mock(FederationNotification.class);
         FederationNotificationSender member = mock(FederationNotificationSender.class);
-        when(notification.getFederationMember()).thenReturn(Optional.of(member));
+        when(notification.getSender()).thenReturn(member);
 
         // Set a panic which is intended to be cleared
         federationState.getPanicStatus().set(PanicFlag.NodeEclipsed(123));
@@ -70,7 +70,7 @@ public class FederationStateTest {
 
         FederationNotification notification = mock(FederationNotification.class);
         FederationNotificationSender member = mock(FederationNotificationSender.class);
-        when(notification.getFederationMember()).thenReturn(Optional.of(member));
+        when(notification.getSender()).thenReturn(member);
 
         // Set a panic which is intended to stay there
         federationState.getPanicStatus().set(PanicFlag.NodeEclipsed(123));

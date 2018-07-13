@@ -22,6 +22,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.net.notifications.FederationState;
+import co.rsk.net.notifications.processing.FederationNotificationBroadcaster;
+import co.rsk.net.notifications.processing.NodeFederationNotificationBroadcaster;
 import co.rsk.rpc.*;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
@@ -121,9 +123,14 @@ public class RskFactory {
 
     @Bean
     public FederationNotificationProcessor getFederationNotificationProcessor(RskSystemProperties config,
-                                                                              BlockProcessor blockProcessor,
+                                                                              Blockchain blockchain,
                                                                               FederationState federationState) {
-        return new NodeFederationNotificationProcessor(config, blockProcessor, federationState);
+        return new NodeFederationNotificationProcessor(config, blockchain, federationState);
+    }
+
+    @Bean
+    public FederationNotificationBroadcaster getFederationNotificationBroadcaster(RskSystemProperties config) {
+        return new NodeFederationNotificationBroadcaster(config);
     }
 
     @Bean

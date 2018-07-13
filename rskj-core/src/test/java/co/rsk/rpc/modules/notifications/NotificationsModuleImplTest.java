@@ -21,6 +21,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.MessageHandler;
+import co.rsk.net.notifications.FederationNotificationSender;
 import co.rsk.net.notifications.FederationState;
 import co.rsk.net.notifications.alerts.FederationAlert;
 import co.rsk.net.notifications.alerts.FederationFrozenAlert;
@@ -34,6 +35,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.internal.util.reflection.Whitebox;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -87,10 +89,10 @@ public class NotificationsModuleImplTest {
     public void getAlerts() {
         Queue<FederationAlert> alerts = (Queue<FederationAlert>) Whitebox.getInternalState(federationState, "alerts");
         alerts.add(new FederationFrozenAlert(
-                new RskAddress("0000000000000000000000000000000000000001"),
+                getSenderMock("0000000000000000000000000000000000000001"),
                 new Keccak256("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc"), 123));
         alerts.add(new ForkAttackAlert(
-                new RskAddress("0000000000000000000000000000000000000002"),
+                getSenderMock("0000000000000000000000000000000000000002"),
                 new Keccak256("5cef9acdc362bba00ddbbd524e1e490902c6ff0bd9754b5caf60c6e27c51c3f2"), 456,
                 new Keccak256("df1cf7182920d5a7b6c9a9c4c846b672d9dbd47692c2bf79807606c5f26202e0"),
                 511, true));
@@ -127,5 +129,11 @@ public class NotificationsModuleImplTest {
         long result = notificationsModule.getLastNotificationReceivedTime();
 
         Assert.assertEquals(5_000_000, result);
+    }
+
+    private FederationNotificationSender getSenderMock(String bytesAsHex) {
+        FederationNotificationSender result = mock(FederationNotificationSender.class);
+        when(result.getBytes()).thenReturn(Hex.decode("0000000000000000000000000000000000000001"));
+        return result;
     }
 }

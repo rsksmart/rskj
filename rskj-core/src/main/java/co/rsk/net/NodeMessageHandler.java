@@ -364,6 +364,11 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
      */
     private void processFederationNotification(@Nonnull final MessageChannel sender,
                                                @Nonnull final FederationNotification notification) {
+        // Ignore notifications while syncing blocks
+        if (blockProcessor.hasBetterBlockToSync()) {
+            return;
+        }
+
         try {
             FederationNotificationProcessingResult processingResult = this.federationNotificationProcessor.process(notification);
 

@@ -20,30 +20,32 @@ package co.rsk.net.notifications.alerts;
 
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.notifications.FederationNotificationSender;
 import co.rsk.net.notifications.panics.PanicFlag;
 import co.rsk.rpc.modules.notifications.NotificationsModule;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 
 import java.util.function.Function;
 
 public class FederationFrozenAlert extends FederationAlert {
-    private RskAddress source;
+    private FederationNotificationSender sender;
     private Keccak256 confirmationBlockHash;
     private long confirmationBlockNumber;
 
-    public FederationFrozenAlert(RskAddress source, Keccak256 confirmationBlockHash, long confirmationBlockNumber) {
-        this.source = source;
+    public FederationFrozenAlert(FederationNotificationSender sender, Keccak256 confirmationBlockHash, long confirmationBlockNumber) {
+        this.sender = sender;
         this.confirmationBlockHash = confirmationBlockHash;
         this.confirmationBlockNumber = confirmationBlockNumber;
     }
 
     public FederationAlert copy() {
-        RskAddress sourceCopy = new RskAddress(ByteUtil.cloneBytes(source.getBytes()));
-        return new FederationFrozenAlert(sourceCopy, confirmationBlockHash.copy(), confirmationBlockNumber);
+        FederationNotificationSender senderCopy = new FederationNotificationSender(ECKey.fromPublicOnly(sender.getPublicKey().getPubKeyPoint()));
+        return new FederationFrozenAlert(senderCopy, confirmationBlockHash.copy(), confirmationBlockNumber);
     }
 
-    public RskAddress getSource() {
-        return source;
+    public FederationNotificationSender getSender() {
+        return sender;
     }
 
     public Keccak256 getConfirmationBlockHash() {

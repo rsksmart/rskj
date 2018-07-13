@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.Status;
 import co.rsk.net.notifications.FederationNotification;
+import co.rsk.net.notifications.FederationNotificationSender;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -260,7 +261,6 @@ public enum MessageType {
                 return null;
             }
 
-            RskAddress source = new RskAddress(list.get(0).getRLPData());
             Instant timeToLive = Instant.ofEpochMilli(bytesToLong(list.get(1).getRLPData()));
             Instant timestamp = Instant.ofEpochMilli(bytesToLong(list.get(2).getRLPData()));
             boolean frozen = Arrays.equals(list.get(3).getRLPData(), RLP.TRUE);
@@ -268,7 +268,7 @@ public enum MessageType {
             byte[] s = list.get(5).getRLPData();
             byte v = list.get(6).getRLPData()[0];
 
-            FederationNotification notification = new FederationNotification(source, timeToLive, timestamp,
+            FederationNotification notification = new FederationNotification(timeToLive, timestamp,
                     frozen, ECKey.ECDSASignature.fromComponents(r, s, v));
 
             byte[] encodedConfirmations = list.get(7).getRLPData();

@@ -164,7 +164,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        FederationFrozenAlert alert = (FederationFrozenAlert) notificationProcessor.getFederationAlerts().get(0);
 //
-//        assertEquals(federationMember.getAddress(), alert.getSource());
+//        assertEquals(federationMember.getAddress(), alert.getSender());
 //        assertEquals(NotificationTestsUtils.hash(100l), alert.getConfirmationBlockHash());
 //        assertEquals(100l, alert.getConfirmationBlockNumber());
 //    }
@@ -444,7 +444,7 @@ public class NodeFederationNotificationProcessorTest {
 //
 //        assertFalse(alert.isFederatedNode());
 //        assertEquals(BEST_BLOCK, alert.getBestBlockNumber());
-//        assertEquals(federationMember.getAddress(), alert.getSource());
+//        assertEquals(federationMember.getAddress(), alert.getSender());
 //        assertEquals(NotificationTestsUtils.hash(100l), alert.getConfirmationBlockHash());
 //        assertEquals(null, alert.getInBestChainBlockHash());
 //        assertEquals(100l, alert.getConfirmationBlockNumber());

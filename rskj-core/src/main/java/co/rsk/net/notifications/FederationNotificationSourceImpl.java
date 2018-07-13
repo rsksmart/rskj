@@ -88,8 +88,9 @@ public class FederationNotificationSourceImpl implements FederationNotificationS
     private FederationNotification buildNotification(boolean frozen) {
         Instant timeToLive = Instant.now().plus(config.getFederationNotificationTTLSecs(), ChronoUnit.SECONDS);
 
-        FederationNotification notification = new FederationNotification(config.coinbaseAddress(), timeToLive,
-                Instant.now(), frozen);
+        // TODO: fix this
+        FederationNotification notification = new FederationNotification(timeToLive,
+                Instant.now(), frozen, null);
 
         long bestBlockNumber = getBestBlock().getNumber();
 

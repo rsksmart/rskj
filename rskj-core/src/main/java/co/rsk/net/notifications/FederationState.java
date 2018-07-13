@@ -77,7 +77,7 @@ public class FederationState {
      * @param notification The notification received.
      */
     public void processNotification(FederationNotification notification) {
-        latestFederationNotifications.put(notification.getFederationMember().get(), notification);
+        latestFederationNotifications.put(notification.getSender(), notification);
 
         // Update timestamp of last notification received to later check if
         // communications with federation are still alive

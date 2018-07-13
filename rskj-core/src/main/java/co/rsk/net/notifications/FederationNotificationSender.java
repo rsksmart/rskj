@@ -19,6 +19,10 @@ public class FederationNotificationSender {
         return publicKey;
     }
 
+    public byte[] getBytes() {
+        return publicKey.getPubKey(true );
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || this.getClass() != o.getClass()) {

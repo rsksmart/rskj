@@ -57,7 +57,7 @@ public class OneAsyncNodeTest {
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         SimpleChannelManager channelManager = new SimpleChannelManager();
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager, syncConfiguration, new DummyBlockValidationRule(), new DifficultyCalculator(config));
-        FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, processor, new FederationState(config));
+        FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, blockchain, new FederationState(config));
         FederationNotificationBroadcaster federationNotificationBroadcaster = new NodeFederationNotificationBroadcaster(config);
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, federationNotificationProcessor, federationNotificationBroadcaster, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
 
