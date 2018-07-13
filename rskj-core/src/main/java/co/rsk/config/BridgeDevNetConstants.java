@@ -38,12 +38,14 @@ public class BridgeDevNetConstants extends BridgeConstants {
     BridgeDevNetConstants() {
         btcParamsString = NetworkParameters.ID_TESTNET;
 
-        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0234ab441aa5edb1c7341315e21408c3947cce345156c465b3336e8c6a5552f35f"));
-        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03301f6c4422aa96d85f52a93612a0c6eeea3d04cfa32f97a7a764c67e062e992a"));
-        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02d33a1f8f5cfa2f7be71b0002710f4c8f3ea44fef40056be7b89ed3ca0eb3431c"));
+        //BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0234ab441aa5edb1c7341315e21408c3947cce345156c465b3336e8c6a5552f35f"));
+        //BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03301f6c4422aa96d85f52a93612a0c6eeea3d04cfa32f97a7a764c67e062e992a"));
+        //BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02d33a1f8f5cfa2f7be71b0002710f4c8f3ea44fef40056be7b89ed3ca0eb3431c"));
+        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03019a43d8a829b3287baf1fea4ae86138691d14a4deddd07e6f3fe8507cda8743"));
+        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("029c76c70309b6324e1c9f7d2db9aff4456000b016ce5d8ac3e0d05bf0137b9ca5"));
 
         List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
-                federator0PublicKey, federator1PublicKey, federator2PublicKey
+                federator0PublicKey, federator1PublicKey
         );
         
         // Currently set to:
@@ -87,8 +89,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         // Key generated with GenNodeKey using generator 'auth-lock-whitelist'
         List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
-//                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
-                "0447b4aba974c61c6c4045893267346730ec965b308e7ca04a899cf06a901face3106e1eef1bdad04928cd8263522eda4872d20d3fe1ef5e551785c4a482656a6e"
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+//                "0447b4aba974c61c6c4045893267346730ec965b308e7ca04a899cf06a901face3106e1eef1bdad04928cd8263522eda4872d20d3fe1ef5e551785c4a482656a6e"
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
