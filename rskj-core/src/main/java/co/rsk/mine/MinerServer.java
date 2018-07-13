@@ -73,5 +73,7 @@ public interface MinerServer {
 
     long increaseTime(long seconds);
 
+    void resetTime();
+
     Optional<Block> getLatestBlock();
 }

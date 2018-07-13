@@ -207,6 +207,10 @@ public class BlockToMineBuilder {
         return Long.max(ret, minimumAcceptableTime);
     }
 
+    public void resetTime() {
+        timeAdjustment = 0;
+    }
+
     // Note that this needs to be refactored.
     public long increaseTime(long seconds) {
         if (seconds <= 0) {

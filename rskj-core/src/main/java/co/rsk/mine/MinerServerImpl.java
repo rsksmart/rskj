@@ -736,6 +736,11 @@ public class MinerServerImpl implements MinerServer {
         return builder.increaseTime(seconds);
     }
 
+    @Override
+    public void resetTime() {
+        builder.resetTime();
+    }
+
     class NewBlockListener extends EthereumListenerAdapter {
 
         @Override

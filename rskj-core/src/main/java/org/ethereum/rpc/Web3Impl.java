@@ -1131,6 +1131,8 @@ public class Web3Impl implements Web3 {
     @Override
     public void evm_reset() {
         snapshotManager.resetSnapshots();
+        minerServer.resetTime();
+
         if (logger.isDebugEnabled()) {
             logger.debug("evm_reset()");
         }

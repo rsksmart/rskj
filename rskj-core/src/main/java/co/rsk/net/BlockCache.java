@@ -41,7 +41,9 @@ public class BlockCache {
     }
 
     public void removeBlock(Block block) {
-        linkedHashMap.remove(block.getHash());
+        if (block != null) {
+            linkedHashMap.remove(block.getHash());
+        }
     }
 
     public void addBlock(Block block) {

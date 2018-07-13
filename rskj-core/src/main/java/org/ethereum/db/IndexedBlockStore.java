@@ -59,6 +59,10 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public synchronized void removeBlock(Block block) {
+        if (block == null) {
+            return;
+        }
+
         this.blockCache.removeBlock(block);
 
         this.blocks.delete(block.getHash().getBytes());
