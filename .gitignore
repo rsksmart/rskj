@@ -56,9 +56,6 @@ config/checkstyle/reports/
 
 # PMD
 config/pmd/reports/
-
-blocksminer1.txt
-
 blocksminer1.txt
 
 # Test File
