@@ -93,16 +93,13 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
             return pd;
         }
 
-        int calcDur =(1+uncleCount)*duration;
+        int calcDur = (1 + uncleCount) * duration;
         int sign = 0;
-        if (calcDur>delta) {
-            sign =1;
-        }
-        if (calcDur<delta) {
-            sign =-1;
-        }
-
-        if (sign==0) {
+        if (calcDur > delta) {
+            sign = 1;
+        }else if (calcDur < delta) { 
+            sign = -1;
+        }else{//(calcDur == delta), then (sign==0) 
             return pd;
         }
 
