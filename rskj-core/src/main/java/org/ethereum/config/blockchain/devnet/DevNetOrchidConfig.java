@@ -17,9 +17,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.config.blockchain.regtest;
+package org.ethereum.config.blockchain.devnet;
 
-public class RegTestFirstForkConfig extends RegTestGenesisConfig {
+/**
+ * Created by Oscar Guindzberg on 25.10.2016.
+ */
+public class DevNetOrchidConfig extends DevNetGenesisConfig {
 
     @Override
     public boolean isRfs50() {

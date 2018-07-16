@@ -35,7 +35,7 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.GenesisConfig;
-import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
+import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -320,7 +320,7 @@ public class BridgeTest {
 
     @Test(expected = RuntimeException.class)
     public void executeGetStateForDebuggingAfterBamboo() {
-        executeBridgeMethod(new RegTestFirstForkConfig(), Bridge.GET_STATE_FOR_DEBUGGING);
+        executeBridgeMethod(new RegTestOrchidConfig(), Bridge.GET_STATE_FOR_DEBUGGING);
     }
 
     private void executeBridgeMethod(BlockchainNetConfig blockchainConfig, CallTransaction.Function bridgeMethod) {

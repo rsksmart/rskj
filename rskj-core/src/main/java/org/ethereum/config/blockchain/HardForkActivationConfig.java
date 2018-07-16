@@ -20,18 +20,17 @@ package org.ethereum.config.blockchain;
 import com.typesafe.config.Config;
 
 public class HardForkActivationConfig {
-    private final int firstFork;
+    private final int orchidActivationHeight;
 
-    // TODO: define a proper name for this config setting
-    private static final String PROPERTY_FIRST_FORK_NAME = "firstFork";
+    private static final String PROPERTY_ORCHID_NAME = "orchidActivationHeight";
 
     public HardForkActivationConfig(Config config) {
-        // If I don't have any config for firstFork I will set it to 0
-        this.firstFork = config.hasPath(PROPERTY_FIRST_FORK_NAME) ? config.getInt(PROPERTY_FIRST_FORK_NAME) : 0;
+        // If I don't have any config for orchidActivationHeight I will set it to 0
+        this.orchidActivationHeight = config.hasPath(PROPERTY_ORCHID_NAME) ? config.getInt(PROPERTY_ORCHID_NAME) : 0;
     }
 
-    public int getFirstForkActivationHeight() {
-        return firstFork;
+    public int getOrchidActivationHeight() {
+        return orchidActivationHeight;
     }
 
 }
