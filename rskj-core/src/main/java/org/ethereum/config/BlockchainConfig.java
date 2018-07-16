@@ -41,13 +41,13 @@ public interface BlockchainConfig {
 
     boolean areBridgeTxsFree();
 
-    boolean isRfs50();
+    boolean isRskip90();
 
-    boolean isRfs55();
+    boolean isRskip89();
 
-    boolean isRfs94();
+    boolean isRskip88();
 
     boolean isRcs230();
 
-    boolean isRfs170();
+    boolean isRskip87();
 }

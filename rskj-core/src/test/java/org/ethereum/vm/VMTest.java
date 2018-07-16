@@ -2989,8 +2989,8 @@ public class VMTest {
     private BlockchainConfig getBlockchainConfig() {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRcs230()).thenReturn(true);
-        when(blockchainConfig.isRfs50()).thenReturn(true);
-        when(blockchainConfig.isRfs55()).thenReturn(true);
+        when(blockchainConfig.isRskip90()).thenReturn(true);
+        when(blockchainConfig.isRskip89()).thenReturn(true);
         return blockchainConfig;
     }
 

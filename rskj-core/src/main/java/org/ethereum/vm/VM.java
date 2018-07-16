@@ -777,7 +777,7 @@ public class VM {
         } else {
             DataWord address = program.stackPop();
             codeLength = new DataWord(program.getCodeAt(address).length);
-            if (program.getBlockchainConfig().isRfs50()) {
+            if (program.getBlockchainConfig().isRskip90()) {
                 PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(address);
                 if (precompiledContract != null) {
                     codeLength = new DataWord(BigIntegers.asUnsignedByteArray(DataWord.MAX_VALUE));
