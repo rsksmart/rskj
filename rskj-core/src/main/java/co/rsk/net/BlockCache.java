@@ -20,41 +20,30 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Block;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * Created by ajlopez on 17/06/2017.
  */
 public class BlockCache {
-    private final LinkedHashMap<Keccak256, Block> linkedHashMap;
+    private final Map<Keccak256, Block> blockMap;
 
     public BlockCache(int cacheSize) {
-        this.linkedHashMap = new LinkedHashMap<Keccak256, Block>(cacheSize, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<Keccak256, Block> eldest) {
-                return size() > cacheSize;
-            }
-        };
+        this.blockMap = new MaxSizeHashMap<>(cacheSize, true);
     }
 
     public void removeBlock(Block block) {
-        linkedHashMap.remove(block.getHash());
+        blockMap.remove(block.getHash());
     }
 
     public void addBlock(Block block) {
-        linkedHashMap.put(block.getHash(), block);
+        blockMap.put(block.getHash(), block);
     }
 
     public Block getBlockByHash(byte[] hash) {
-        Keccak256 key = new Keccak256(hash);
-
-        return linkedHashMap.get(key);
-    }
-
-    public Block put(Keccak256 key, Block block) {
-        return linkedHashMap.put(key, block);
+        return blockMap.get(new Keccak256(hash));
     }
 }
