@@ -95,17 +95,27 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
 
     @Override
     public int compareTo(Keccak256 o) {
+        // Adapted from http://cvsweb.openbsd.org/cgi-bin/cvsweb/~checkout~/src/lib/libc/string/timingsafe_memcmp.c?rev=1.2
+        final int done = 0;
+        final int res = 0;
         for (int i = 32 - 1; i >= 0; i--) {
             final int thisByte = this.bytes[i] & 0xff;
             final int otherByte = o.bytes[i] & 0xff;
-            if (thisByte > otherByte) {
-                return 1;
-            }
+            // lt is -1 if thisByte < otherByte; else 0.
+            final int lt = (thisByte - otherByte) >> 8;
 
-            if (thisByte < otherByte) {
-                return -1;
-            }
+            // gt is -1 if thisByte > otherByte; else 0.
+            final int gt = (otherByte - thisByte) >> 8;
+
+            // cmp is 1 if thisByte > otherByte; -1 if thisByte < otherByte; else 0.
+            final int cmp = lt - gt;
+
+            // set res = cmp if !done.
+            res |= cmp & ~done;
+
+            // set done if thisByte != otherByte.
+            done |= lt | gt;
         }
-        return 0;
+        return res;
     }
 }
