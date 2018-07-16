@@ -1016,7 +1016,7 @@ public class BridgeSupport {
     }
 
     /**
-     * @deprecated 
+     * @deprecated
      * Returns an array of block hashes known by the bridge contract.
      * Federators can use this to find what is the latest block in the mainchain the bridge has.
      * @return a List of bitcoin block hashes
