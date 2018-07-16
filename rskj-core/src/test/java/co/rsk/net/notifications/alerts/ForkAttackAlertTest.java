@@ -18,59 +18,42 @@
 
 package co.rsk.net.notifications.alerts;
 
-import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.notifications.FederationNotificationSender;
 import co.rsk.net.notifications.panics.PanicFlag;
+import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
+import java.time.Instant;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ForkAttackAlertTest {
-    private FederationNotificationSender senderMock;
+    private Block mockBlock;
     private ForkAttackAlert alert;
 
     @Before
     public void setup() {
-        senderMock = mock(FederationNotificationSender.class);
-        when(senderMock.getBytes()).thenReturn(Hex.decode("0000000000000000000000000000000000000001"));
+        mockBlock = mock(Block.class);
+        when(mockBlock.getHash()).thenReturn(new Keccak256("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc"));
+        when(mockBlock.getNumber()).thenReturn(444L);
 
         alert = new ForkAttackAlert(
-                senderMock,
-                new Keccak256("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc"),
-                123,
-                new Keccak256("5cef9acdc362bba00ddbbd524e1e490902c6ff0bd9754b5caf60c6e27c51c3f2"),
-                456, true);
+                Instant.ofEpochMilli(55_123_456L),
+                mockBlock,
+                true);
     }
 
     @Test
     public void getters() {
-        Assert.assertEquals("0000000000000000000000000000000000000001", Hex.toHexString(alert.getSender().getBytes()));
-        Assert.assertEquals("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc", Hex.toHexString(alert.getConfirmationBlockHash().getBytes()));
-        Assert.assertEquals(123, alert.getConfirmationBlockNumber());
-        Assert.assertEquals("5cef9acdc362bba00ddbbd524e1e490902c6ff0bd9754b5caf60c6e27c51c3f2", Hex.toHexString(alert.getInBestChainBlockHash().getBytes()));
-        Assert.assertEquals(456, alert.getBestBlockNumber());
+        Assert.assertEquals(Instant.ofEpochMilli(55_123_456L), alert.getCreated());
+        Assert.assertEquals("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc", Hex.toHexString(alert.getBestBlockHash().getBytes()));
+        Assert.assertEquals(444L, alert.getBestBlockNumber());
         Assert.assertEquals(true, alert.isFederatedNode());
-    }
-
-    @Test
-    public void copy() {
-        FederationAlert copy = alert.copy();
-
-        Assert.assertEquals(ForkAttackAlert.class, copy.getClass());
-
-        ForkAttackAlert castedCopy = (ForkAttackAlert) copy;
-
-        Assert.assertEquals("0000000000000000000000000000000000000001", Hex.toHexString(castedCopy.getSender().getBytes()));
-        Assert.assertEquals("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc", Hex.toHexString(castedCopy.getConfirmationBlockHash().getBytes()));
-        Assert.assertEquals(123, castedCopy.getConfirmationBlockNumber());
-        Assert.assertEquals("5cef9acdc362bba00ddbbd524e1e490902c6ff0bd9754b5caf60c6e27c51c3f2", Hex.toHexString(castedCopy.getInBestChainBlockHash().getBytes()));
-        Assert.assertEquals(456, castedCopy.getBestBlockNumber());
-        Assert.assertEquals(true, castedCopy.isFederatedNode());
     }
 
     @Test
@@ -80,11 +63,9 @@ public class ForkAttackAlertTest {
         Assert.assertEquals(100, flag.getSinceBlockNumber());
 
         alert = new ForkAttackAlert(
-                senderMock,
-                new Keccak256("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc"),
-                123,
-                new Keccak256("5cef9acdc362bba00ddbbd524e1e490902c6ff0bd9754b5caf60c6e27c51c3f2"),
-                456, false);
+                Instant.ofEpochMilli(5678L),
+                mockBlock,
+                false);
 
         flag = alert.getAssociatedPanicFlag(200);
         Assert.assertEquals(PanicFlag.Reason.NODE_FORKED, flag.getReason());

@@ -125,7 +125,7 @@ public class RskFactory {
     public FederationNotificationProcessor getFederationNotificationProcessor(RskSystemProperties config,
                                                                               Blockchain blockchain,
                                                                               FederationState federationState) {
-        return new NodeFederationNotificationProcessor(config, blockchain, federationState);
+        return new NodeFederationNotificationProcessor(config, blockchain, federationState, new NodeFederationNotificationProcessor.MockAuthenticator());
     }
 
     @Bean

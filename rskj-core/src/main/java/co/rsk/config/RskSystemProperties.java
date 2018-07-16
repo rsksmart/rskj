@@ -78,7 +78,7 @@ public class RskSystemProperties extends SystemProperties {
 
     // Default index to get a confirmation from the confirmations list contained in the notification. This confirmation will be used by
     // the nodes to verify its best chain against the federation best chain.
-    private static final int DEFAULT_NOTIFICATIONS_CONFIRMATION_INDEX = 0;
+    private static final int DEFAULT_NOTIFICATIONS_CONFIRMATION_DEPTH = 0;
     
     // Prune default values
     private static final int PRUNE_BLOCKS_TO_COPY_DEFAULT = 5000;
@@ -477,8 +477,8 @@ public class RskSystemProperties extends SystemProperties {
         return getInt("notifications.timeToLiveSecs", DEFAULT_NOTIFICATIONS_TIME_TO_LIVE_SECS);
     }
 
-    public int getFederationConfirmationIndex() throws ConfigurationException {
-        return getUnsignedInt("notifications.confirmationIndex", DEFAULT_NOTIFICATIONS_CONFIRMATION_INDEX);
+    public int getFederationConfirmationDepth() throws ConfigurationException {
+        return getUnsignedInt("notifications.confirmationDepth", DEFAULT_NOTIFICATIONS_CONFIRMATION_DEPTH);
     }
 
     public List<Integer> getFederationConfirmationDepths() {

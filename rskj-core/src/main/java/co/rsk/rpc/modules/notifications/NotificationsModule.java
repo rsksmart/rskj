@@ -20,8 +20,10 @@ package co.rsk.rpc.modules.notifications;
 
 import org.spongycastle.util.encoders.Hex;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public interface NotificationsModule {
     class PanicFlag {
@@ -42,77 +44,66 @@ public interface NotificationsModule {
 
     abstract class FederationAlert {
         public final String code;
+        public final long created;
 
         public static FederationAlert fromFederationAlert(co.rsk.net.notifications.alerts.FederationAlert alert) {
             return alert.getConverterForNotificationsModule().apply(alert);
         }
 
-        public FederationAlert(String code) {
+        public FederationAlert(String code, long created) {
             this.code = code;
+            this.created = created;
         }
     }
 
     class FederationFrozenAlert extends FederationAlert {
-        public String source;
-        public String confirmationBlockHash;
-        public long confirmationBlockNumber;
+        public final List<String> frozenMembers;
 
         public static final Function<co.rsk.net.notifications.alerts.FederationAlert, FederationAlert> convert = a -> {
             co.rsk.net.notifications.alerts.FederationFrozenAlert ffa = (co.rsk.net.notifications.alerts.FederationFrozenAlert) a;
             return new FederationFrozenAlert(
-                    Hex.toHexString(ffa.getSender().getBytes()),
-                    Hex.toHexString(ffa.getConfirmationBlockHash().getBytes()),
-                    ffa.getConfirmationBlockNumber());
+                    ffa.getCreated().toEpochMilli(),
+                    ffa.getFrozenMembers().stream().map(m -> Hex.toHexString(m.getBytes())).collect(Collectors.toList()));
         };
 
-        public FederationFrozenAlert(String source, String confirmationBlockHash, long confirmationBlockNumber) {
-            super("federation_frozen");
-            this.source = source;
-            this.confirmationBlockHash = confirmationBlockHash;
-            this.confirmationBlockNumber = confirmationBlockNumber;
+        public FederationFrozenAlert(long created, List<String> frozenMembers) {
+            super("federation_frozen", created);
+            this.frozenMembers = frozenMembers;
         }
     }
 
     class ForkAttackAlert extends FederationAlert {
-        public String source;
-        public String confirmationBlockHash;
-        public String inBestChainBlockHash;
-        public long confirmationBlockNumber;
-        public long bestBlockNumber;
-        public boolean isFederatedNode;
+        public final String bestBlockHash;
+        public final long bestBlockNumber;
+        public final boolean isFederatedNode;
 
         public static final Function<co.rsk.net.notifications.alerts.FederationAlert, FederationAlert> convert = a -> {
             co.rsk.net.notifications.alerts.ForkAttackAlert faa = (co.rsk.net.notifications.alerts.ForkAttackAlert) a;
             return new ForkAttackAlert(
-                    Hex.toHexString(faa.getSender().getBytes()),
-                    Hex.toHexString(faa.getConfirmationBlockHash().getBytes()),
-                    faa.getConfirmationBlockNumber(),
-                    Hex.toHexString(faa.getInBestChainBlockHash().getBytes()),
+                    faa.getCreated().toEpochMilli(),
+                    Hex.toHexString(faa.getBestBlockHash().getBytes()),
                     faa.getBestBlockNumber(),
                     faa.isFederatedNode());
         };
 
-        public ForkAttackAlert(String source, String confirmationBlockHash, long confirmationBlockNumber, String inBestChainBlockHash, long bestBlockNumber, boolean isFederatedNode) {
-            super("fork_attack");
-            this.source = source;
-            this.confirmationBlockHash = confirmationBlockHash;
-            this.confirmationBlockNumber = confirmationBlockNumber;
-            this.inBestChainBlockHash = inBestChainBlockHash;
+        public ForkAttackAlert(long created, String bestBlockHash, long bestBlockNumber, boolean isFederatedNode) {
+            super("fork_attack", created);
+            this.bestBlockHash = bestBlockHash;
             this.bestBlockNumber = bestBlockNumber;
             this.isFederatedNode = isFederatedNode;
         }
     }
 
     class NodeEclipsedAlert extends FederationAlert {
-        public long timeWithoutFederationNotifications;
+        public final long timeWithoutFederationNotifications;
 
         public static final Function<co.rsk.net.notifications.alerts.FederationAlert, FederationAlert> convert = a -> {
             co.rsk.net.notifications.alerts.NodeEclipsedAlert nea = (co.rsk.net.notifications.alerts.NodeEclipsedAlert) a;
-            return new NodeEclipsedAlert(nea.getTimeWithoutFederationNotifications());
+            return new NodeEclipsedAlert(nea.getCreated().toEpochMilli(), nea.getTimeWithoutFederationNotifications());
         };
 
-        public NodeEclipsedAlert(long timeWithoutFederationNotifications) {
-            super("node_eclipsed");
+        public NodeEclipsedAlert(long created, long timeWithoutFederationNotifications) {
+            super("node_eclipsed", created);
             this.timeWithoutFederationNotifications = timeWithoutFederationNotifications;
         }
     }

@@ -21,26 +21,10 @@ package co.rsk.net.notifications;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.net.BlockProcessor;
-import co.rsk.net.notifications.NotificationTestsUtils.FederationMember;
-import co.rsk.net.notifications.alerts.FederationFrozenAlert;
-import co.rsk.net.notifications.alerts.ForkAttackAlert;
-import co.rsk.net.notifications.processing.FederationNotificationProcessingResult;
-import co.rsk.net.notifications.processing.FederationNotificationProcessor;
-import co.rsk.net.notifications.processing.NodeFederationNotificationProcessor;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.junit.BeforeClass;
-import org.junit.Test;
 
-import javax.naming.ConfigurationException;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -67,7 +51,7 @@ public class NodeFederationNotificationProcessorTest {
         when(config.getFederationMaxSilenceTimeSecs()).thenReturn(1);
         when(config.federationNotificationsEnabled()).thenReturn(true);
         when(config.shouldFederationNotificationsTriggerPanic()).thenReturn(true);
-        when(config.getFederationConfirmationIndex()).thenReturn(1);
+        when(config.getFederationConfirmationDepth()).thenReturn(1);
         when(config.getBlockchainConfig()).thenReturn(blockchainNetConfig);
         when(config.coinbaseAddress()).thenReturn(RskAddress.nullAddress());
     }
@@ -446,7 +430,7 @@ public class NodeFederationNotificationProcessorTest {
 //        assertEquals(BEST_BLOCK, alert.getBestBlockNumber());
 //        assertEquals(federationMember.getAddress(), alert.getSender());
 //        assertEquals(NotificationTestsUtils.hash(100l), alert.getConfirmationBlockHash());
-//        assertEquals(null, alert.getInBestChainBlockHash());
+//        assertEquals(null, alert.getBestBlockHash());
 //        assertEquals(100l, alert.getConfirmationBlockNumber());
 //    }
 //

@@ -30,7 +30,9 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 public class FederationNotification extends Message {
     private ECDSASignature signature;
@@ -116,6 +118,21 @@ public class FederationNotification extends Message {
         // Return a copy to prevent modifications from the outside of the FederationNotification confirmations.
         Confirmation c = confirmations.get(index);
         return c.copy();
+    }
+
+    /**
+     * Given a height, returns the confirmation within the notification's confirmations
+     * with the lowest height such that its height is greater or equal than
+     * the given height.
+     *
+     * @param height
+     * @return The confirmation, if any, empty otherwise
+     */
+    public Optional<Confirmation> getConfirmationWithHeightAtLeast(long height) {
+        return confirmations.stream()
+                .filter(c -> c.getBlockNumber() >= height)
+                .sorted(Comparator.comparing(Confirmation::getBlockNumber).reversed())
+                .findFirst();
     }
 
     public boolean hasConfirmations() {

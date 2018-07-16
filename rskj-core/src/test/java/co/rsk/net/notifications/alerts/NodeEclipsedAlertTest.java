@@ -23,28 +23,20 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Instant;
+
 public class NodeEclipsedAlertTest {
     private NodeEclipsedAlert alert;
 
     @Before
     public void setup() {
-        alert = new NodeEclipsedAlert(1_000_000);
+        alert = new NodeEclipsedAlert(Instant.ofEpochMilli(123_456L), 1_000_000);
     }
 
     @Test
     public void getters() {
+        Assert.assertEquals(Instant.ofEpochMilli(123_456L), alert.getCreated());
         Assert.assertEquals(1_000_000, alert.getTimeWithoutFederationNotifications());
-    }
-
-    @Test
-    public void copy() {
-        FederationAlert copy = alert.copy();
-
-        Assert.assertEquals(NodeEclipsedAlert.class, copy.getClass());
-
-        NodeEclipsedAlert castedCopy = (NodeEclipsedAlert) copy;
-
-        Assert.assertEquals(1_000_000, castedCopy.getTimeWithoutFederationNotifications());
     }
 
     @Test

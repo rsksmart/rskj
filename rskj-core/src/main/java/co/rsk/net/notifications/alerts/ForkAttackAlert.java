@@ -18,52 +18,28 @@
 
 package co.rsk.net.notifications.alerts;
 
-import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.notifications.FederationNotificationSender;
 import co.rsk.net.notifications.panics.PanicFlag;
 import co.rsk.rpc.modules.notifications.NotificationsModule;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
+import org.ethereum.core.Block;
 
+import java.time.Instant;
 import java.util.function.Function;
 
 public class ForkAttackAlert extends FederationAlert {
-    private FederationNotificationSender sender;
-    private Keccak256 confirmationBlockHash;
-    private Keccak256 inBestChainBlockHash;
-    private long confirmationBlockNumber;
+    private Keccak256 bestBlockHash;
     private long bestBlockNumber;
     private boolean isFederatedNode;
 
-    public ForkAttackAlert(FederationNotificationSender sender, Keccak256 confirmationBlockHash, long confirmationBlockNumber, Keccak256 inBestChainBlockHash, long bestBlockNumber, boolean isFederatedNode) {
-        this.sender = sender;
-        this.confirmationBlockHash = confirmationBlockHash;
-        this.confirmationBlockNumber = confirmationBlockNumber;
-        this.inBestChainBlockHash = inBestChainBlockHash;
-        this.bestBlockNumber = bestBlockNumber;
+    public ForkAttackAlert(Instant created, Block bestBlock, boolean isFederatedNode) {
+        super(created);
+        this.bestBlockHash = bestBlock.getHash();
+        this.bestBlockNumber = bestBlock.getNumber();
         this.isFederatedNode = isFederatedNode;
     }
 
-    public FederationAlert copy() {
-        FederationNotificationSender senderCopy = new FederationNotificationSender(ECKey.fromPublicOnly(sender.getPublicKey().getPubKeyPoint()));
-        return new ForkAttackAlert(senderCopy, confirmationBlockHash.copy(), confirmationBlockNumber, inBestChainBlockHash.copy(), bestBlockNumber, isFederatedNode);
-    }
-
-    public FederationNotificationSender getSender() {
-        return sender;
-    }
-
-    public Keccak256 getConfirmationBlockHash() {
-        return confirmationBlockHash;
-    }
-
-    public Keccak256 getInBestChainBlockHash() {
-        return inBestChainBlockHash;
-    }
-
-    public long getConfirmationBlockNumber() {
-        return confirmationBlockNumber;
+    public Keccak256 getBestBlockHash() {
+        return bestBlockHash;
     }
 
     public long getBestBlockNumber() {

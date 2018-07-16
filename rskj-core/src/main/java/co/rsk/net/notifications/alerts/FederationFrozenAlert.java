@@ -26,34 +26,20 @@ import co.rsk.rpc.modules.notifications.NotificationsModule;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.function.Function;
 
 public class FederationFrozenAlert extends FederationAlert {
-    private FederationNotificationSender sender;
-    private Keccak256 confirmationBlockHash;
-    private long confirmationBlockNumber;
+    private List<FederationNotificationSender> frozenMembers;
 
-    public FederationFrozenAlert(FederationNotificationSender sender, Keccak256 confirmationBlockHash, long confirmationBlockNumber) {
-        this.sender = sender;
-        this.confirmationBlockHash = confirmationBlockHash;
-        this.confirmationBlockNumber = confirmationBlockNumber;
+    public FederationFrozenAlert(Instant created, List<FederationNotificationSender> frozenMembers) {
+        super(created);
+        this.frozenMembers = frozenMembers;
     }
 
-    public FederationAlert copy() {
-        FederationNotificationSender senderCopy = new FederationNotificationSender(ECKey.fromPublicOnly(sender.getPublicKey().getPubKeyPoint()));
-        return new FederationFrozenAlert(senderCopy, confirmationBlockHash.copy(), confirmationBlockNumber);
-    }
-
-    public FederationNotificationSender getSender() {
-        return sender;
-    }
-
-    public Keccak256 getConfirmationBlockHash() {
-        return confirmationBlockHash;
-    }
-
-    public long getConfirmationBlockNumber() {
-        return confirmationBlockNumber;
+    public List<FederationNotificationSender> getFrozenMembers() {
+        return frozenMembers;
     }
 
     @Override

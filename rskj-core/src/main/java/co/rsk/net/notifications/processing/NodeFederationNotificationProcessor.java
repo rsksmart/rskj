@@ -50,6 +50,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /***
  * Process {@link FederationNotification} notifications
@@ -117,14 +118,10 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
             throw new IllegalStateException("Unable to start: already running");
         }
 
-        this.checkTask.scheduleAtFixedRate(this.checkTaskRunnable, 0, this.getCheckIntervalInSeconds(), TimeUnit.SECONDS);
+        this.checkTask.scheduleAtFixedRate(() -> this.checkIfNodeWasEclipsed(), 0, this.getCheckIntervalInSeconds(), TimeUnit.SECONDS);
 
         this.running = true;
     }
-
-    private final Runnable checkTaskRunnable = () -> {
-        this.checkIfNodeWasEclipsed();
-    };
 
     @Override
     public void stop() {
@@ -191,9 +188,12 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         receivedFederationNotifications.addNotification(notification);
         latestFederationNotifications.put(notification.getSender(), notification);
 
+        // Update the state
+        federationState.processNotification(notification);
+
         // Compare confirmations contained in the notification with local best
         // chain to generate alerts (if needed)
-        generateAlerts(notification);
+        generateAlerts();
 
         logger.debug("Federation notification processed successfully.");
         return FederationNotificationProcessingResult.NOTIFICATION_PROCESSED_SUCCESSFULLY;
@@ -210,7 +210,7 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         Duration duration = Duration.between(federationState.getLastNotificationReceivedTime(), Instant.now());
         int maxSilenceSecs = config.getFederationMaxSilenceTimeSecs();
         if (config.federationNotificationsEnabled() && duration.getSeconds() > maxSilenceSecs) {
-            FederationAlert alert = new NodeEclipsedAlert(duration.getSeconds());
+            FederationAlert alert = new NodeEclipsedAlert(Instant.now(), duration.getSeconds());
             federationState.processAlerts(blockchain.getBestBlock().getNumber(), Arrays.asList(alert));
         }
     }
@@ -224,9 +224,12 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
     private void generateAlerts() throws ConfigurationException {
         List<FederationAlert> alerts = new ArrayList<>();
 
-        // Get the confirmation we wish to compare from the notification
-//        int federationConfirmationIndex = this.config.getFederationConfirmationIndex();
-//        Confirmation confirmation = notification.getConfirmation(federationConfirmationIndex);
+        // Compute the number of missing notifications
+        // for the 51% algorithms' sake
+        int missingNotificationsCount = authenticator.getNotifierCount() - latestFederationNotifications.size(); // Normally ZERO
+
+        // Get the current best block
+        Block bestBlock = blockchain.getBestBlock();
 
         // Is the federation frozen? Need more than half of the
         // notifiers to say so to trigger the corresponding alert
@@ -234,34 +237,58 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
         // implies that member is frozen.
         int frozenFederatesCount = Long.valueOf(latestFederationNotifications.values().stream()
                 .filter(n -> n.isFederationFrozen()).count()).intValue();
-        frozenFederatesCount += authenticator.getNotifierCount() - latestFederationNotifications.size(); // Normally ZERO
+        frozenFederatesCount += missingNotificationsCount;
 
         if (frozenFederatesCount > authenticator.getNotifierCount() / 2) {
-            // TODO: figure out what information goes with the federation frozen alert
-            alerts.add(new FederationFrozenAlert(notification.getSender(), confirmation.getBlockHash(), confirmation.getBlockNumber()));
+            alerts.add(new FederationFrozenAlert(Instant.now(), latestFederationNotifications.values().stream()
+                    .filter(n -> n.isFederationFrozen()).map(n -> n.getSender()).collect(Collectors.toList())));
         }
 
-        // Get the corresponding block from the local blockchain to compare and
-        // see if we are under a fork attack
-        long bestBlockNumber = blockchain.getBestBlock().getNumber();
-        Block block = blockchain.getBlockByNumber(confirmation.getBlockNumber());
+        // Are we under a fork attack? Given the local setting indicating
+        // which level of confidence we need wrt federate's blockchains (federationConfirmationIndex)
+        // check whether at least 51% of the most recent notifications we have from
+        // the federate nodes match (at least) that index -- a higher match
+        // implies the lower index also matches.
 
-        // Are we under a fork attack?
-        // TODO: 51% algorithm
-        if (block == null || !block.getHash().equals(confirmation.getBlockHash())) {
-            Keccak256 blockHash = block == null ? null : block.getHash();
-            boolean isFederatedNode = isFederationMember();
+        // Get the confirmation depth
+        int federationConfirmationDepth = this.config.getFederationConfirmationDepth();
 
-            alerts.add(new ForkAttackAlert(notification.getSender(), confirmation.getBlockHash(),
-                    confirmation.getBlockNumber(), blockHash, bestBlockNumber, isFederatedNode));
+        // Convert it to specific heights within the local blockchain
+        long federationConfirmationHeight = bestBlock.getNumber() - federationConfirmationDepth;
+
+        // Count the number of notifications within the latest received
+        // that represent a fork wrt the local blockchain
+        // IMPORTANT: assume that no notification from a given federate
+        // implies that we are forked wrt that member.
+        int forkCount = Long.valueOf(latestFederationNotifications.values().stream()
+                .filter(n -> {
+                    Optional<Confirmation> confirmation = n.getConfirmationWithHeightAtLeast(federationConfirmationHeight);
+
+                    // If no confirmations are found at the desired depth
+                    // then this notification counts towards a fork alert
+                    if (!confirmation.isPresent()) {
+                        return true;
+                    }
+
+                    // Get the block at the confirmation's height in the local blockchain
+                    Block block = blockchain.getBlockByNumber(confirmation.get().getBlockNumber());
+
+                    // If hashes at the same height don't match, then we're looking at a fork
+                    // wrt the notification at the configured depth
+                    return !block.getHash().equals(confirmation.get().getBlockHash());
+                }).count()).intValue();
+        forkCount += missingNotificationsCount;
+
+        if (forkCount > authenticator.getNotifierCount() / 2) {
+            alerts.add(new ForkAttackAlert(Instant.now(), bestBlock, isFederationMember()));
         }
 
         // Update the state
-        federationState.processNotification(notification);
-        federationState.processAlerts(bestBlockNumber, alerts);
+        federationState.processAlerts(bestBlock.getNumber(), alerts);
     }
 
     private boolean isFederationMember() {
+        // TODO: fix this by comparing to the currently active federation
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         BridgeStorageProvider provider = new BridgeStorageProvider(new RepositoryImpl(config),
                 PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
@@ -327,7 +354,7 @@ public class NodeFederationNotificationProcessor implements FederationNotificati
     }
 
     // TODO: replace this with actual authenticator
-    private class MockAuthenticator {
+    public static class MockAuthenticator {
         public int getNotifierCount() {
             return BridgeRegTestConstants.getInstance().getGenesisFederation().getSize();
         }

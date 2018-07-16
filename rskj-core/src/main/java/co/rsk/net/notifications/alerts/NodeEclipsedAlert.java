@@ -21,17 +21,15 @@ package co.rsk.net.notifications.alerts;
 import co.rsk.net.notifications.panics.PanicFlag;
 import co.rsk.rpc.modules.notifications.NotificationsModule;
 
+import java.time.Instant;
 import java.util.function.Function;
 
 public class NodeEclipsedAlert extends FederationAlert {
     private long timeWithoutFederationNotifications;
 
-    public NodeEclipsedAlert(long timeWithoutFederationNotifications) {
+    public NodeEclipsedAlert(Instant created, long timeWithoutFederationNotifications) {
+        super(created);
         this.timeWithoutFederationNotifications = timeWithoutFederationNotifications;
-    }
-
-    public FederationAlert copy() {
-        return new NodeEclipsedAlert(timeWithoutFederationNotifications);
     }
 
     public long getTimeWithoutFederationNotifications() {

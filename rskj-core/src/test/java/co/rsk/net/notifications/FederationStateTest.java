@@ -55,9 +55,7 @@ public class FederationStateTest {
         federationState.getPanicStatus().set(PanicFlag.NodeEclipsed(123));
         Assert.assertTrue(federationState.getPanicStatus().has(PanicFlag.Reason.NODE_ECLIPSED));
 
-        Assert.assertEquals(0, federationState.getLatestFederationNotifications().size());
         federationState.processNotification(notification);
-        Assert.assertEquals(1, federationState.getLatestFederationNotifications().size());
         long difference = Instant.now().toEpochMilli() - federationState.getLastNotificationReceivedTime().toEpochMilli();
         Assert.assertTrue(difference < 100);
         // Panic is cleared
@@ -76,9 +74,7 @@ public class FederationStateTest {
         federationState.getPanicStatus().set(PanicFlag.NodeEclipsed(123));
         Assert.assertTrue(federationState.getPanicStatus().has(PanicFlag.Reason.NODE_ECLIPSED));
 
-        Assert.assertEquals(0, federationState.getLatestFederationNotifications().size());
         federationState.processNotification(notification);
-        Assert.assertEquals(1, federationState.getLatestFederationNotifications().size());
         long difference = Instant.now().toEpochMilli() - federationState.getLastNotificationReceivedTime().toEpochMilli();
         Assert.assertTrue(difference < 100);
         // Panic is not cleared

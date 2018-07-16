@@ -70,7 +70,7 @@ public class NodeFederationNotificationSourceTest {
         when(config.shouldFederationNotificationsTriggerPanic()).thenReturn(true);
         when(config.getFederationConfirmationDepths())
                 .thenReturn(Arrays.asList(FIRST_CONFIRMATION_DEPTH, SECOND_CONFIRMATION_DEPTH));
-        when(config.getFederationConfirmationIndex()).thenReturn(1);
+        when(config.getFederationConfirmationDepth()).thenReturn(1);
         when(config.getBlockchainConfig()).thenReturn(blockchainNetConfig);
         when(config.localCoinbaseAccount()).thenReturn(new Account(federationMember.getKey()));
         when(config.coinbaseAddress()).thenReturn(federationMember.getAddress());

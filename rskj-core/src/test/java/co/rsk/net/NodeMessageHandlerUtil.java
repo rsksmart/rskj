@@ -38,7 +38,7 @@ public class NodeMessageHandlerUtil {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, new DummyBlockValidationRule(), DIFFICULTY_CALCULATOR);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, blockchain, new FederationState(config));
+        FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, blockchain, new FederationState(config), null);
         FederationNotificationBroadcaster federationNotificationBroadcaster = new NodeFederationNotificationBroadcaster(config);
 
         return new NodeMessageHandler(config, processor, federationNotificationProcessor, federationNotificationBroadcaster, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule);
@@ -75,7 +75,7 @@ public class NodeMessageHandlerUtil {
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, DIFFICULTY_CALCULATOR);
-        FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, blockchain, new FederationState(config));
+        FederationNotificationProcessor federationNotificationProcessor = new NodeFederationNotificationProcessor(config, blockchain, new FederationState(config), null);
         FederationNotificationBroadcaster federationNotificationBroadcaster = new NodeFederationNotificationBroadcaster(config);
 
         return new NodeMessageHandler(config, processor, federationNotificationProcessor, federationNotificationBroadcaster, syncProcessor, channelManager, null, null, blockValidationRule);

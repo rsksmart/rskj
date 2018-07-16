@@ -18,51 +18,36 @@
 
 package co.rsk.net.notifications.alerts;
 
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.net.notifications.FederationNotificationSender;
 import co.rsk.net.notifications.panics.PanicFlag;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+
+import java.time.Instant;
+import java.util.Arrays;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class FederationFrozenAlertTest {
-    private FederationNotificationSender senderMock;
+    private FederationNotificationSender s1, s2;
     private FederationFrozenAlert alert;
 
     @Before
     public void setup() {
-        senderMock = mock(FederationNotificationSender.class);
-        when(senderMock.getBytes()).thenReturn(Hex.decode("0000000000000000000000000000000000000001"));
-
+        s1 = mock(FederationNotificationSender.class);
+        s2 = mock(FederationNotificationSender.class);
         alert = new FederationFrozenAlert(
-                senderMock,
-                new Keccak256("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc"),
-                123);
+                Instant.ofEpochMilli(111_222L),
+                Arrays.asList(s1, s2));
     }
 
     @Test
     public void getters() {
-        Assert.assertEquals("0000000000000000000000000000000000000001", Hex.toHexString(alert.getSender().getBytes()));
-        Assert.assertEquals("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc", Hex.toHexString(alert.getConfirmationBlockHash().getBytes()));
-        Assert.assertEquals(123, alert.getConfirmationBlockNumber());
-    }
-
-    @Test
-    public void copy() {
-        FederationAlert copy = alert.copy();
-
-        Assert.assertEquals(FederationFrozenAlert.class, copy.getClass());
-
-        FederationFrozenAlert castedCopy = (FederationFrozenAlert) copy;
-
-        Assert.assertEquals("0000000000000000000000000000000000000001", Hex.toHexString(castedCopy.getSender().getBytes()));
-        Assert.assertEquals("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc", Hex.toHexString(castedCopy.getConfirmationBlockHash().getBytes()));
-        Assert.assertEquals(123, castedCopy.getConfirmationBlockNumber());
+        Assert.assertEquals(Instant.ofEpochMilli(111_222L), alert.getCreated());
+        Assert.assertEquals(2, alert.getFrozenMembers().size());
+        Assert.assertEquals(s1, alert.getFrozenMembers().get(0));
+        Assert.assertEquals(s2, alert.getFrozenMembers().get(1));
     }
 
     @Test

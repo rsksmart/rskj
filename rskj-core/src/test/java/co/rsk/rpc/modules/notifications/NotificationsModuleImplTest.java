@@ -29,6 +29,8 @@ import co.rsk.net.notifications.alerts.ForkAttackAlert;
 import co.rsk.net.notifications.alerts.NodeEclipsedAlert;
 import co.rsk.net.notifications.panics.PanicFlag;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
+import org.ethereum.core.Block;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Mocks;
 import org.junit.Assert;
@@ -38,7 +40,9 @@ import org.mockito.internal.util.reflection.Whitebox;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 
@@ -89,35 +93,39 @@ public class NotificationsModuleImplTest {
     public void getAlerts() {
         Queue<FederationAlert> alerts = (Queue<FederationAlert>) Whitebox.getInternalState(federationState, "alerts");
         alerts.add(new FederationFrozenAlert(
-                getSenderMock("0000000000000000000000000000000000000001"),
-                new Keccak256("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc"), 123));
+                Instant.ofEpochMilli(444_555L),
+                Arrays.asList(new FederationNotificationSender(ECKey.fromPrivate(BigInteger.valueOf(10L))),
+                        new FederationNotificationSender(ECKey.fromPrivate(BigInteger.valueOf(20L))),
+                        new FederationNotificationSender(ECKey.fromPrivate(BigInteger.valueOf(30L))))));
+        Block bestBlockMock = mock(Block.class);
+        when(bestBlockMock.getHash()).thenReturn(new Keccak256("332bc0a14d12eff7fcf6a3e63ca6a043d6ae4ecf721af0cf48d2be013b86ef72"));
+        when(bestBlockMock.getNumber()).thenReturn(789L);
         alerts.add(new ForkAttackAlert(
-                getSenderMock("0000000000000000000000000000000000000002"),
-                new Keccak256("5cef9acdc362bba00ddbbd524e1e490902c6ff0bd9754b5caf60c6e27c51c3f2"), 456,
-                new Keccak256("df1cf7182920d5a7b6c9a9c4c846b672d9dbd47692c2bf79807606c5f26202e0"),
-                511, true));
-        alerts.add(new NodeEclipsedAlert(4567));
+                Instant.ofEpochMilli(666_777L),
+                bestBlockMock,
+                true));
+        alerts.add(new NodeEclipsedAlert(Instant.ofEpochMilli(888_999L), 4567));
 
         List<NotificationsModule.FederationAlert> result = notificationsModule.getAlerts();
 
         Assert.assertEquals(3, result.size());
 
         Assert.assertEquals("federation_frozen", result.get(0).code);
+        Assert.assertEquals(444_555L, result.get(0).created);
         NotificationsModule.FederationFrozenAlert a0 = (NotificationsModule.FederationFrozenAlert) result.get(0);
-        Assert.assertEquals("0000000000000000000000000000000000000001", a0.source);
-        Assert.assertEquals("602fc8caaccb7ba8d9f151d51d380574d591496f6031c052ad6be999170da1fc", a0.confirmationBlockHash);
-        Assert.assertEquals(123, a0.confirmationBlockNumber);
+        Assert.assertEquals(3, a0.frozenMembers.size());
+        Assert.assertEquals(Hex.toHexString(ECKey.fromPrivate(BigInteger.valueOf(10L)).getPubKey(true)), a0.frozenMembers.get(0));
+        Assert.assertEquals(Hex.toHexString(ECKey.fromPrivate(BigInteger.valueOf(20L)).getPubKey(true)), a0.frozenMembers.get(1));
+        Assert.assertEquals(Hex.toHexString(ECKey.fromPrivate(BigInteger.valueOf(30L)).getPubKey(true)), a0.frozenMembers.get(2));
 
         Assert.assertEquals("fork_attack", result.get(1).code);
+        Assert.assertEquals(666_777L, result.get(1).created);
         NotificationsModule.ForkAttackAlert a1 = (NotificationsModule.ForkAttackAlert) result.get(1);
-        Assert.assertEquals("0000000000000000000000000000000000000002", a1.source);
-        Assert.assertEquals("5cef9acdc362bba00ddbbd524e1e490902c6ff0bd9754b5caf60c6e27c51c3f2", a1.confirmationBlockHash);
-        Assert.assertEquals(456, a1.confirmationBlockNumber);
-        Assert.assertEquals("df1cf7182920d5a7b6c9a9c4c846b672d9dbd47692c2bf79807606c5f26202e0", a1.inBestChainBlockHash);
-        Assert.assertEquals(511, a1.bestBlockNumber);
-        Assert.assertEquals(true, a1.isFederatedNode);
+        Assert.assertEquals("332bc0a14d12eff7fcf6a3e63ca6a043d6ae4ecf721af0cf48d2be013b86ef72", a1.bestBlockHash);
+        Assert.assertEquals(789L, a1.bestBlockNumber);
 
         Assert.assertEquals("node_eclipsed", result.get(2).code);
+        Assert.assertEquals(888_999L, result.get(2).created);
         NotificationsModule.NodeEclipsedAlert a2 = (NotificationsModule.NodeEclipsedAlert) result.get(2);
         Assert.assertEquals(4567, a2.timeWithoutFederationNotifications);
     }
@@ -129,11 +137,5 @@ public class NotificationsModuleImplTest {
         long result = notificationsModule.getLastNotificationReceivedTime();
 
         Assert.assertEquals(5_000_000, result);
-    }
-
-    private FederationNotificationSender getSenderMock(String bytesAsHex) {
-        FederationNotificationSender result = mock(FederationNotificationSender.class);
-        when(result.getBytes()).thenReturn(Hex.decode("0000000000000000000000000000000000000001"));
-        return result;
     }
 }

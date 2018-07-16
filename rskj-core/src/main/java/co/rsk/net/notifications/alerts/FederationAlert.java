@@ -21,10 +21,20 @@ package co.rsk.net.notifications.alerts;
 import co.rsk.net.notifications.panics.PanicFlag;
 import co.rsk.rpc.modules.notifications.NotificationsModule;
 
+import java.time.Instant;
 import java.util.function.Function;
 
 public abstract class FederationAlert {
-    public abstract FederationAlert copy();
+    private Instant created;
+
     public abstract PanicFlag getAssociatedPanicFlag(long forBlockNumber);
     public abstract Function<FederationAlert, NotificationsModule.FederationAlert> getConverterForNotificationsModule();
+
+    public FederationAlert(Instant created) {
+        this.created = created;
+    }
+
+    public Instant getCreated() {
+        return created;
+    }
 }
