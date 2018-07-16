@@ -199,7 +199,7 @@ public class Web3ImplSnapshotTest {
         MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config);
         PersonalModule pm = new PersonalModuleWalletDisabled();
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
+        DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler(), null);
 
         ethereum.repository = factory.getRepository();
         ethereum.blockchain = blockchain;

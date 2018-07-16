@@ -18,8 +18,15 @@
 
 package co.rsk.rpc.modules.debug;
 
+import org.ethereum.core.Blockchain;
+import org.slf4j.Logger;
+
 public interface DebugModule {
 
     String wireProtocolQueueSize();
+
+    Blockchain getBlockchain();
+
+    Logger getLogger();
 
 }

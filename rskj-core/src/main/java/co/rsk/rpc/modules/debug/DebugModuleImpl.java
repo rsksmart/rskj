@@ -19,23 +19,39 @@
 package co.rsk.rpc.modules.debug;
 
 import co.rsk.net.MessageHandler;
+import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.TypeConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class DebugModuleImpl implements DebugModule {
 
+    private static final Logger logger = LoggerFactory.getLogger("web3");
     private final MessageHandler messageHandler;
+    private final Blockchain blockchain;
 
     @Autowired
-    public DebugModuleImpl(MessageHandler messageHandler) {
+    public DebugModuleImpl(MessageHandler messageHandler, Blockchain blockchain) {
         this.messageHandler = messageHandler;
+        this.blockchain = blockchain;
     }
 
     @Override
     public String wireProtocolQueueSize() {
         long n = messageHandler.getMessageQueueSize();
         return TypeConverter.toJsonHex(n);
+    }
+
+    @Override
+    public Blockchain getBlockchain() {
+        return blockchain;
+    }
+
+    @Override
+    public Logger getLogger() {
+        return logger;
     }
 }

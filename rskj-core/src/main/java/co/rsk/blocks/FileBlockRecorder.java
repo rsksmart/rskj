@@ -26,6 +26,8 @@ import org.spongycastle.util.encoders.Hex;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -44,7 +46,11 @@ public class FileBlockRecorder implements BlockRecorder, AutoCloseable {
             this.writer = new BufferedWriter(this.fwriter);
         }
         catch (IOException ex) {
-            logger.error("Exception creating file block recorder: ", ex);
+            String directory =  System.getProperty("user.dir");
+            logger.error("Exception creating file block recorder user.dir " + directory + " filename " + filename + " ", ex);
+            Path currentRelativePath = Paths.get("");
+            String s = currentRelativePath.toAbsolutePath().toString();
+            logger.error("Path: " + currentRelativePath, (Exception)null);
         }
     }
 
