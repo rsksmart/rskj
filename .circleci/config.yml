@@ -14,6 +14,10 @@ jobs:
       - run: gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
       - run: curl -OJL https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_VERSION-linux.zip
       - run: unzip sonar-scanner-cli-$SONAR_VERSION-linux.zip
+      - run: if ! env | grep ^KECCAK256_ORIG= &>/dev/null; then echo "KECCAK256_ORIG not present in environment:"; env; echo "Setting default 0x0000000000000000000000000000000000000000000000000000000000000001"; export KECCAK256_ORIG="0000000000000000000000000000000000000000000000000000000000000001"; fi
+      - run: if ! env | grep ^KECCAK256_EQ= &>/dev/null; then echo "KECCAK256_EQ not present in environment:"; env; echo "Setting default 0x0000000000000000000000000000000000000000000000000000000000000001"; export KECCAK256_EQ="0000000000000000000000000000000000000000000000000000000000000001"; fi
+      - run: if ! env | grep ^KECCAK256_LT= &>/dev/null; then echo "KECCAK256_LT not present in environment:"; env; echo "Setting default 0x0000000000000000000000000000000000000000000000000000000000000000"; export KECCAK256_LT="0000000000000000000000000000000000000000000000000000000000000000"; fi
+      - run: if ! env | grep ^KECCAK256_GT= &>/dev/null; then echo "KECCAK256_GT not present in environment:"; env; echo "Setting default 0x0000000000000000000000000000000000000000000000000000000000000002"; export KECCAK256_GT="0000000000000000000000000000000000000000000000000000000000000002"; fi
       - run: ./configure.sh
       - run: ./gradlew --no-daemon dependencies
       - run: ./gradlew --no-daemon --stacktrace build
