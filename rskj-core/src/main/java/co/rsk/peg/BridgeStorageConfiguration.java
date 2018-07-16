@@ -31,7 +31,6 @@ public class BridgeStorageConfiguration {
     }
 
     public static BridgeStorageConfiguration fromBlockchainConfig(BlockchainConfig config) {
-        BridgeStorageConfiguration bridgeStorageConfiguration = new BridgeStorageConfiguration(config.isRfs170());
-        return bridgeStorageConfiguration;
+        return new BridgeStorageConfiguration(config.isRfs170());
     }
 }
