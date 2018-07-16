@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import org.ethereum.config.blockchain.regtest.RegTestConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.config.net.AbstractNetConfig;
 
 /**
@@ -26,8 +26,8 @@ import org.ethereum.config.net.AbstractNetConfig;
  */
 class UnitTestBlockchainNetConfig extends AbstractNetConfig {
     public UnitTestBlockchainNetConfig() {
-        add(0, new RegTestConfig());
-        add(10, new RegTestConfig() {
+        add(0, new RegTestGenesisConfig());
+        add(10, new RegTestGenesisConfig() {
             @Override
             public boolean areBridgeTxsFree() {
                 return false;

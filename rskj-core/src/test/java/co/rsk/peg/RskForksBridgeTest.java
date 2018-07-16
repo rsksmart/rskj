@@ -30,7 +30,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
-import org.ethereum.config.blockchain.regtest.RegTestConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
@@ -58,7 +58,7 @@ public class RskForksBridgeTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestGenesisConfig());
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         BtcECKey fedBTCPrivateKey = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0);
         fedECPrivateKey = ECKey.fromPrivate(fedBTCPrivateKey.getPrivKey());
@@ -242,7 +242,7 @@ public class RskForksBridgeTest {
         BigInteger gasLimit = BigInteger.valueOf(1000000);
         Transaction rskTx = CallTransaction.createCallTransaction(config, nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
-                Bridge.ADD_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value) });
+                Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value) });
         rskTx.sign(whitelistManipulationKey.getPrivKeyBytes());
         return rskTx;
     }
@@ -340,12 +340,7 @@ public class RskForksBridgeTest {
 
     private BridgeState callGetStateForDebuggingTx() throws IOException, ClassNotFoundException {
         TestSystemProperties beforeBambooProperties = new TestSystemProperties();
-        beforeBambooProperties.setBlockchainConfig(new RegTestConfig() {
-            @Override
-            public boolean isRfs94() {
-                return false;
-            }
-        });
+        beforeBambooProperties.setBlockchainConfig(new RegTestGenesisConfig());
         Transaction rskTx = CallTransaction.createRawTransaction(beforeBambooProperties, 0,
                 Long.MAX_VALUE,
                 Long.MAX_VALUE,

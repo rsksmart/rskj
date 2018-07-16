@@ -30,7 +30,7 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
 import org.ethereum.TestUtils;
-import org.ethereum.config.blockchain.regtest.RegTestConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
@@ -70,7 +70,7 @@ public class RemascProcessMinerFeesTest {
     @BeforeClass
     public static void setUpBeforeClass() {
         config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestGenesisConfig());
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 
         accountsAddressesUpToD = new LinkedList<>();
@@ -188,7 +188,7 @@ public class RemascProcessMinerFeesTest {
         assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
         assertEquals(0, remascStorageProvider.getSiblings().size());
 
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
 
     @Test
@@ -259,7 +259,7 @@ public class RemascProcessMinerFeesTest {
         assertEquals(Coin.valueOf(1), remascStorageProvider.getBurnedBalance());
         assertEquals(0, remascStorageProvider.getSiblings().size());
 
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
 
     @Test
@@ -350,7 +350,7 @@ public class RemascProcessMinerFeesTest {
         // TODO review one unit burned?
         this.validateAccountsCurrentBalanceIsCorrect(repository, cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, otherAccountsBalanceOnHeightFour);
 
-        this.validateFederatorsBalanceIsCorrect(repository, federationReward);
+        this.validateFederatorsBalanceIsCorrect(repository, federationReward, blockToPayFeesOnHeightFour);
 
         // validate that REMASC's state is correct
         long blockRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
@@ -399,7 +399,7 @@ public class RemascProcessMinerFeesTest {
         expectedBurnedBalance = Coin.valueOf((2 * punishmentFee) + siblingPunishmentLvlFour);
         // TODO review value + 1
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, expectedBurnedBalance.add(Coin.valueOf(1)), 0L);
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2, blockToPayFeesOnHeightFive);
     }
 
     @Test
@@ -455,7 +455,7 @@ public class RemascProcessMinerFeesTest {
         blockRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
         Coin expectedRewardBalance = Coin.valueOf(minerFee - blockRewardOnHeightFour);
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, Coin.ZERO, 1L);
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, blockToPayFeesOnHeightFour);
     }
 
 
@@ -528,7 +528,7 @@ public class RemascProcessMinerFeesTest {
         long minerRewardOnHeightFive = blockRewardOnHeightFive / 2;
         List<Long> otherAccountsBalanceOnHeightFive = new ArrayList<>(Arrays.asList(minerRewardOnHeightFive, minerRewardOnHeightFive, publisherReward, null));
 
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, blockToPayFeesOnHeightFive);
 
         // TODO review value + 1
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, this.getAccountsWithExpectedBalance(otherAccountsBalanceOnHeightFive));
@@ -564,7 +564,7 @@ public class RemascProcessMinerFeesTest {
 
         // TODO review + 1
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, this.getAccountsWithExpectedBalance(otherAccountsBalanceOnHeightSix));
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2, blockToPayFeesOnHeightSix);
         // TODO review + 1
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.valueOf(rewardBalance), Coin.valueOf(burnedBalance + 1), 0L);
     }
@@ -630,7 +630,7 @@ public class RemascProcessMinerFeesTest {
 
         Coin expectedRewardBalance = Coin.valueOf(minerFee - originalBlockReward);
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, Coin.ZERO, 0L);
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
 
     @Test
@@ -718,7 +718,7 @@ public class RemascProcessMinerFeesTest {
 
         Coin expectedRewardBalance = Coin.valueOf(minerFee - originalBlockReward);
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, Coin.ZERO, 0L);
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
 
     @Test
@@ -907,8 +907,8 @@ public class RemascProcessMinerFeesTest {
         return accountsWithExpectedBalance;
     }
 
-    private void validateFederatorsBalanceIsCorrect(Repository repository, long federationReward) {
-        RemascFederationProvider provider = new RemascFederationProvider(config, repository, null);
+    private void validateFederatorsBalanceIsCorrect(Repository repository, long federationReward, Block executionBlock) {
+        RemascFederationProvider provider = new RemascFederationProvider(config, repository, executionBlock);
 
         int nfederators = provider.getFederationSize();
 

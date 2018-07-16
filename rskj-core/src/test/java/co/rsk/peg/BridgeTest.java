@@ -27,11 +27,16 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
+import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.blockchain.regtest.RegTestConfig;
+import org.ethereum.config.blockchain.GenesisConfig;
+import org.ethereum.config.blockchain.regtest.RegTestFirstForkConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
@@ -39,6 +44,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -88,11 +94,16 @@ public class BridgeTest {
 
     @BeforeClass
     public static void setUpBeforeClass() {
-        config.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestGenesisConfig());
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         networkParameters = bridgeConstants.getBtcParams();
         BtcECKey fedBTCPrivateKey = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0);
         fedECPrivateKey = ECKey.fromPrivate(fedBTCPrivateKey.getPrivKey());
+    }
+
+    @Before
+    public void resetConfigToRegTest() {
+        config.setBlockchainConfig(new RegTestGenesisConfig());
     }
 
     @Test
@@ -102,7 +113,8 @@ public class BridgeTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(0));
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtThisHeight);
 
         provider0.getReleaseTransactionSet().add(tx1, 1L);
         provider0.save();
@@ -133,7 +145,8 @@ public class BridgeTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(0));
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtThisHeight);
 
         provider0.getReleaseTransactionSet().add(tx1, 1L);
         provider0.getReleaseTransactionSet().add(tx2, 2L);
@@ -155,7 +168,8 @@ public class BridgeTest {
 
         track.commit();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        // reusing same storage configuration as the height doesn't affect storage configurations for releases.
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtThisHeight);
 
         Assert.assertEquals(3, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
@@ -170,7 +184,8 @@ public class BridgeTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(0));
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtThisHeight);
 
         provider0.getReleaseTransactionSet().add(tx1, 1L);
         provider0.getReleaseTransactionSet().add(tx2, 2L);
@@ -198,7 +213,8 @@ public class BridgeTest {
 
         track.commit();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        // reusing same storage configuration as the height doesn't affect storage configurations for releases.
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtThisHeight);
 
         Assert.assertEquals(2, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(1, provider.getRskTxsWaitingForSignatures().size());
@@ -299,22 +315,12 @@ public class BridgeTest {
 
     @Test
     public void executeGetStateForDebuggingInBamboo() {
-        executeBridgeMethod(new RegTestConfig() {
-            @Override
-            public boolean isRfs94() {
-                return false;
-            }
-        }, Bridge.GET_STATE_FOR_DEBUGGING);
+        executeBridgeMethod(new RegTestGenesisConfig(), Bridge.GET_STATE_FOR_DEBUGGING);
     }
 
     @Test(expected = RuntimeException.class)
     public void executeGetStateForDebuggingAfterBamboo() {
-        executeBridgeMethod(new RegTestConfig() {
-            @Override
-            public boolean isRfs94() {
-                return true;
-            }
-        }, Bridge.GET_STATE_FOR_DEBUGGING);
+        executeBridgeMethod(new RegTestFirstForkConfig(), Bridge.GET_STATE_FOR_DEBUGGING);
     }
 
     private void executeBridgeMethod(BlockchainNetConfig blockchainConfig, CallTransaction.Function bridgeMethod) {
@@ -481,7 +487,7 @@ public class BridgeTest {
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(rskTx, null, track, null, null, null);
+        bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
 
         byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new byte[3], 1, new byte[30]);
@@ -1380,24 +1386,216 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        OneOffWhiteListEntry mockedEntry10 = new OneOffWhiteListEntry(new BtcECKey().toAddress(networkParameters), Coin.COIN);
+        OneOffWhiteListEntry mockedEntry20 = new OneOffWhiteListEntry(new BtcECKey().toAddress(networkParameters), Coin.COIN);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getLockWhitelistAddress(any(int.class))).then((InvocationOnMock invocation) ->
-                BigInteger.valueOf(invocation.getArgumentAt(0, int.class)).toString());
+        when(bridgeSupportMock.getLockWhitelistEntryByIndex(10)).then((InvocationOnMock invocation) -> mockedEntry10);
+        when(bridgeSupportMock.getLockWhitelistEntryByIndex(20)).then((InvocationOnMock invocation) -> mockedEntry20);
 
-        Assert.assertEquals("10", bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(10)}));
-        Assert.assertEquals("20", bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(20)}));
+        Assert.assertEquals(mockedEntry10.address().toBase58(), bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(10)}));
+        Assert.assertEquals(mockedEntry20.address().toBase58(), bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(20)}));
     }
 
     @Test
-    public void addLockWhitelistAddress() throws IOException {
+    public void getLockWhitelistEntryByAddressBeforeRfs170Fork() throws IOException {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRfs170()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        Address address = new BtcECKey().toAddress(networkParameters);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
         Transaction mockedTransaction = mock(Transaction.class);
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+        // I still mock the data to make sure that the null is because of the method deactivation and not lack of data
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getLockWhitelistEntryByAddress(any(String.class))).then((InvocationOnMock invocation) ->
+                new UnlimitedWhiteListEntry(address)
+        );
+
+        Assert.assertNull(bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toBase58() })));
+    }
+
+    @Test
+    public void getLockWhitelistEntryByAddressAfterRfs170Fork() throws IOException, Exception {
+        byte[] result;
+        Transaction mockedTransaction;
+
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRfs170()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Address mockedAddressForUnlimited = new BtcECKey().toAddress(networkParameters);
+        Address mockedAddressForOneOff = new BtcECKey().toAddress(networkParameters);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getLockWhitelistEntryByAddress(mockedAddressForUnlimited.toBase58()))
+                .then((InvocationOnMock invocation) -> new UnlimitedWhiteListEntry(mockedAddressForUnlimited));
+        when(bridgeSupportMock.getLockWhitelistEntryByAddress(mockedAddressForOneOff.toBase58()))
+                .then((InvocationOnMock invocation) -> new OneOffWhiteListEntry(mockedAddressForOneOff, Coin.COIN));
+
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
+        PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
+
+        mockedTransaction = mock(Transaction.class);
+        spiedBridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        // Get the unlimited whitelist address
+        result = spiedBridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ mockedAddressForUnlimited.toBase58() }));
+        BigInteger decodedResult = (BigInteger) BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.getFunction().decodeResult(result)[0];
+
+        Assert.assertEquals(0, decodedResult.longValue());
+
+        // Get the one-off whitelist address
+        result = spiedBridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ mockedAddressForOneOff.toBase58() }));
+        decodedResult = (BigInteger) BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.getFunction().decodeResult(result)[0];
+
+        Assert.assertEquals(Coin.COIN.value, decodedResult.longValue());
+
+        // Try fetch an unexisting address
+        result = spiedBridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ (new BtcECKey().toAddress(networkParameters)).toBase58() }));
+        decodedResult = (BigInteger) BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.getFunction().decodeResult(result)[0];
+
+        Assert.assertEquals(-1, decodedResult.longValue());
+    }
+
+    @Test
+    public void addLockWhitelistAddressBeforeRfs170Fork() throws IOException {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRfs170()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction mockedTransaction = mock(Transaction.class);
+        // Just setting a random address as the sender
+        RskAddress sender = new RskAddress(fedECPrivateKey.getAddress());
+        when(mockedTransaction.getSender()).thenReturn(sender);
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        byte[] result = bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
+                new BtcECKey().toAddress(networkParameters).toBase58(),
+                BigInteger.valueOf(Coin.COIN.getValue())
+        }));
+
+        BigInteger decodedResult = (BigInteger) BridgeMethods.ADD_LOCK_WHITELIST_ADDRESS.getFunction().decodeResult(result)[0];
+
+        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), decodedResult.intValue());
+    }
+
+    @Test
+    public void addLockWhitelistAddressAfterRfs170Fork() throws IOException {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRfs170()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction mockedTransaction = mock(Transaction.class);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        Assert.assertNull(bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) })));
+    }
+
+    @Test
+    public void addOneOffLockWhitelistAddressBeforeRfs170Fork() throws IOException {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRfs170()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction mockedTransaction = mock(Transaction.class);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        Assert.assertNull(bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) })));
+    }
+
+    @Test
+    public void addOneOffLockWhitelistAddressAfterRfs170Fork() throws IOException {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRfs170()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction mockedTransaction = mock(Transaction.class);
+        // Just setting a random address as the sender
+        RskAddress sender = new RskAddress(fedECPrivateKey.getAddress());
+        when(mockedTransaction.getSender()).thenReturn(sender);
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        byte[] result = bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
+                new BtcECKey().toAddress(networkParameters).toBase58(),
+                BigInteger.valueOf(Coin.COIN.getValue())
+        }));
+
+        BigInteger decodedResult = (BigInteger) BridgeMethods.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.getFunction().decodeResult(result)[0];
+
+        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), decodedResult.intValue());
+    }
+
+    @Test
+    public void addUnlimitedLockWhitelistAddressBeforeRfs170Fork() {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRfs170()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction mockedTransaction = mock(Transaction.class);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        Assert.assertNull(bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address" })));
+    }
+
+    @Test
+    public void addUnlimitedLockWhitelistAddressAfterRfs170Fork() {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRfs170()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction mockedTransaction = mock(Transaction.class);
+        // Just setting a random address as the sender
+        RskAddress sender = new RskAddress(fedECPrivateKey.getAddress());
+        when(mockedTransaction.getSender()).thenReturn(sender);
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        byte[] result = bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
+                new BtcECKey().toAddress(networkParameters).toBase58()
+        }));
+
+        BigInteger decodedResult = (BigInteger) BridgeMethods.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.getFunction().decodeResult(result)[0];
         bridge.init(mockedTransaction, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.addLockWhitelistAddress(mockedTransaction, "i-am-an-address", BigInteger.valueOf(Coin.COIN.getValue()))).thenReturn(1234);
+        when(bridgeSupportMock.addOneOffLockWhitelistAddress(mockedTransaction, "i-am-an-address", BigInteger.valueOf(Coin.COIN.getValue()))).thenReturn(1234);
 
-        Assert.assertEquals(1234, bridge.addLockWhitelistAddress(new Object[]{ "i-am-an-address", BigInteger.valueOf(Coin.COIN.getValue())}).intValue());
+        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), decodedResult.intValue());
     }
 
     @Test

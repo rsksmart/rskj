@@ -21,7 +21,7 @@ package co.rsk.net.handler.txvalidator;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import org.spongycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.regtest.RegTestConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -39,7 +39,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
     @Before
     public void setUp() {
         config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestGenesisConfig());
     }
 
     @Test

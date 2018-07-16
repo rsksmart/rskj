@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,37 +16,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.config;
+package co.rsk.peg.whitelist;
 
-import co.rsk.core.BlockDifficulty;
-import org.ethereum.core.BlockHeader;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.Coin;
 
 /**
- * Describes constants and algorithms used for a specific blockchain at specific stage
+ * Represents a lock whitelist
+ * entry for a LockWhiteList.
  *
- * Created by Anton Nashatyrev on 25.02.2016.
+ * @author Jose Dahlquist
  */
-public interface BlockchainConfig {
-
-    /**
-     * Get blockchain constants
-     */
-    Constants getConstants();
-
-    /**
-     * Calculates the difficulty for the block depending on the parent
-     */
-    BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent);
-
-    boolean areBridgeTxsFree();
-
-    boolean isRfs50();
-
-    boolean isRfs55();
-
-    boolean isRfs94();
-
-    boolean isRcs230();
-
-    boolean isRfs170();
+public interface LockWhitelistEntry {
+    Address address();
+    boolean canLock(Coin value);
+    boolean isConsumed();
+    void consume();
 }

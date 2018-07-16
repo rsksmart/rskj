@@ -15,23 +15,31 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.ethereum.config.blockchain;
+package co.rsk.peg.whitelist;
 
-import com.typesafe.config.Config;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.Coin;
 
-public class HardForkActivationConfig {
-    private final int firstFork;
+public class UnlimitedWhiteListEntry implements LockWhitelistEntry {
+    private final Address address;
 
-    // TODO: define a proper name for this config setting
-    private static final String PROPERTY_FIRST_FORK_NAME = "firstFork";
-
-    public HardForkActivationConfig(Config config) {
-        // If I don't have any config for firstFork I will set it to 0
-        this.firstFork = config.hasPath(PROPERTY_FIRST_FORK_NAME) ? config.getInt(PROPERTY_FIRST_FORK_NAME) : 0;
+    public UnlimitedWhiteListEntry(Address address) {
+        this.address = address;
     }
 
-    public int getFirstForkActivationHeight() {
-        return firstFork;
+    public Address address() {
+        return this.address;
     }
 
+    public void consume() {
+        // Unlimited whitelisting means that the entries are never fully consumed so nothing to do here
+    }
+
+    public boolean isConsumed() {
+        return false;
+    }
+
+    public boolean canLock(Coin value) {
+        return true;
+    }
 }

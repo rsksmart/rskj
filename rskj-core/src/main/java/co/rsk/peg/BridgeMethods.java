@@ -47,7 +47,28 @@ public enum BridgeMethods {
                     new String[]{"int256"}
             ),
             25000L,
-            (BridgeMethodExecutorTyped) Bridge::addLockWhitelistAddress
+            (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
+            blockChainConfig -> !blockChainConfig.isRfs170()
+    ),
+    ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS(
+            CallTransaction.Function.fromSignature(
+                    "addOneOffLockWhitelistAddress",
+                    new String[]{"string", "int256"},
+                    new String[]{"int256"}
+            ),
+            25000L, // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
+            (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
+            blockChainConfig -> blockChainConfig.isRfs170()
+    ),
+    ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS(
+            CallTransaction.Function.fromSignature(
+                    "addUnlimitedLockWhitelistAddress",
+                    new String[]{"string"},
+                    new String[]{"int256"}
+            ),
+            25000L, // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
+            (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
+            blockChainConfig -> blockChainConfig.isRfs170()
     ),
     ADD_SIGNATURE(
             CallTransaction.Function.fromSignature(
@@ -194,6 +215,16 @@ public enum BridgeMethods {
             ),
             16000L,
             (BridgeMethodExecutorTyped) Bridge::getLockWhitelistAddress
+    ),
+    GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS(
+            CallTransaction.Function.fromSignature(
+                    "getLockWhitelistEntryByAddress",
+                    new String[]{"string"},
+                    new String[]{"int256"}
+            ),
+            16000L,
+            (BridgeMethodExecutorTyped) Bridge::getLockWhitelistEntryByAddress,
+            blockchainConfig -> blockchainConfig.isRfs170()
     ),
     GET_LOCK_WHITELIST_SIZE(
             CallTransaction.Function.fromSignature(
@@ -401,18 +432,18 @@ public enum BridgeMethods {
                         ));
     private final CallTransaction.Function function;
     private final long cost;
-    private final Function<BlockchainConfig, Boolean> _isEnabled;
+    private final Function<BlockchainConfig, Boolean> isEnabledFunction;
     private final BridgeMethodExecutor executor;
 
     BridgeMethods(CallTransaction.Function function, long cost, BridgeMethodExecutor executor) {
-        this(function, cost, executor, (blockchainConfig) -> true);
+        this(function, cost, executor, blockchainConfig -> Boolean.TRUE);
     }
 
     BridgeMethods(CallTransaction.Function function, long cost, BridgeMethodExecutor executor, Function<BlockchainConfig, Boolean> isEnabled) {
         this.function = function;
         this.cost = cost;
         this.executor = executor;
-        this._isEnabled = isEnabled;
+        this.isEnabledFunction = isEnabled;
     }
 
     public static Optional<BridgeMethods> findBySignature(byte[] encoding) {
@@ -423,8 +454,9 @@ public enum BridgeMethods {
         return function;
     }
     public Boolean isEnabled(BlockchainConfig blockchainConfig) {
-        return this._isEnabled.apply(blockchainConfig);
+        return this.isEnabledFunction.apply(blockchainConfig);
     }
+
     public long getCost() {
         return cost;
     }

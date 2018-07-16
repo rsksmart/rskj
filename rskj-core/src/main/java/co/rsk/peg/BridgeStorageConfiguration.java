@@ -15,23 +15,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.ethereum.config.blockchain;
+package co.rsk.peg;
 
-import com.typesafe.config.Config;
+import org.ethereum.config.BlockchainConfig;
 
-public class HardForkActivationConfig {
-    private final int firstFork;
+public class BridgeStorageConfiguration {
+    private final boolean isUnlimitedWhitelistEnabled;
 
-    // TODO: define a proper name for this config setting
-    private static final String PROPERTY_FIRST_FORK_NAME = "firstFork";
-
-    public HardForkActivationConfig(Config config) {
-        // If I don't have any config for firstFork I will set it to 0
-        this.firstFork = config.hasPath(PROPERTY_FIRST_FORK_NAME) ? config.getInt(PROPERTY_FIRST_FORK_NAME) : 0;
+    public BridgeStorageConfiguration(boolean isUnlimitedWhitelistEnabled) {
+        this.isUnlimitedWhitelistEnabled = isUnlimitedWhitelistEnabled;
     }
 
-    public int getFirstForkActivationHeight() {
-        return firstFork;
+    public boolean getUnlimitedWhitelistEnabled() {
+        return isUnlimitedWhitelistEnabled;
     }
 
+    public static BridgeStorageConfiguration fromBlockchainConfig(BlockchainConfig config) {
+        return new BridgeStorageConfiguration(config.isRfs170());
+    }
 }
