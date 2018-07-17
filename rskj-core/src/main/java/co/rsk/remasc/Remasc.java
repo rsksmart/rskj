@@ -142,6 +142,11 @@ public class Remasc {
             return;
         }
 
+        List<Sibling> siblings = getSiblingsToReward(descendantsBlocks, processingBlockNumber);
+        boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
+        boolean brokenSelectionRule = SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
+        provider.setBrokenSelectionRule(!siblings.isEmpty() && brokenSelectionRule);
+
         // Takes from rewardBalance this block's height reward.
         Coin syntheticReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
         if (isRskIp85Enabled) {
@@ -187,22 +192,17 @@ public class Remasc {
 
         syntheticReward = syntheticReward.subtract(payToFederation);
 
-        List<Sibling> siblings = getSiblingsToReward(descendantsBlocks, processingBlockNumber);
         if (!siblings.isEmpty()) {
             // Block has siblings, reward distribution is more complex
-            boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
             this.payWithSiblings(processingBlockHeader, syntheticReward, siblings, previousBrokenSelectionRule);
-            boolean brokenSelectionRule = SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
-            provider.setBrokenSelectionRule(brokenSelectionRule);
         } else {
-            if (provider.getBrokenSelectionRule()) {
+            if (previousBrokenSelectionRule) {
                 // broken selection rule, apply punishment, ie burn part of the reward.
                 Coin punishment = syntheticReward.divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
                 syntheticReward = syntheticReward.subtract(punishment);
                 provider.setBurnedBalance(provider.getBurnedBalance().add(punishment));
             }
             feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), syntheticReward, processingBlockHeader.getCoinbase(), logs);
-            provider.setBrokenSelectionRule(Boolean.FALSE);
         }
 
         if (!isRskIp85Enabled) {
