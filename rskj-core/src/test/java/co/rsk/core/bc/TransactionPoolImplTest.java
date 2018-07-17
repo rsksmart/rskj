@@ -26,7 +26,6 @@ import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.db.RepositoryTrack;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
