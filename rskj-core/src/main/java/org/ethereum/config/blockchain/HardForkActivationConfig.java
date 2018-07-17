@@ -22,7 +22,7 @@ import com.typesafe.config.Config;
 public class HardForkActivationConfig {
     private final int orchidActivationHeight;
 
-    private static final String PROPERTY_ORCHID_NAME = "orchidActivationHeight";
+    private static final String PROPERTY_ORCHID_NAME = "orchid";
 
     public HardForkActivationConfig(Config config) {
         // If I don't have any config for orchidActivationHeight I will set it to 0
