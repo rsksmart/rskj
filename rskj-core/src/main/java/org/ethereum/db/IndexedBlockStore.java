@@ -22,6 +22,8 @@ package org.ethereum.db;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockCache;
+import co.rsk.remasc.Sibling;
+import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -36,6 +38,7 @@ import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.crypto.HashUtil.shortHash;
@@ -45,7 +48,8 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
-    private final BlockCache blockCache = new BlockCache(50000);
+    private final BlockCache blockCache;
+    private final MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache;
 
     private final Map<Long, List<BlockInfo>> index;
     private final DB indexDB;
@@ -55,6 +59,10 @@ public class IndexedBlockStore extends AbstractBlockstore {
         this.index = index;
         this.blocks = blocks;
         this.indexDB  = indexDB;
+        //TODO(lsebrie): move these maps creation outside blockstore,
+        // remascCache should be an external component and not be inside blockstore
+        this.blockCache = new BlockCache(4000);
+        this.remascCache = new MaxSizeHashMap<>(50000, true);
     }
 
     @Override
@@ -159,6 +167,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
         index.put(block.getNumber(), blockInfos);
         blockCache.addBlock(block);
+        remascCache.put(block.getHash(), getSiblingsFromBlock(block));
     }
 
     @Override
@@ -216,7 +225,22 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         block = new Block(blockRlp);
         blockCache.addBlock(block);
+        remascCache.put(block.getHash(), getSiblingsFromBlock(block));
         return block;
+    }
+
+    public synchronized Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
+        Map<Long, List<Sibling>> siblings = this.remascCache.get(hash);
+
+        if (siblings != null) {
+            return siblings;
+        }
+
+        siblings = getSiblingsFromBlock(getBlockByHash(hash.getBytes()));
+        if (remascCache.get(hash) == null){
+            remascCache.put(hash, siblings);
+        }
+        return siblings;
     }
 
     @Override
@@ -519,6 +543,25 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
 
         return result;
+    }
+
+    /**
+     * When a block is processed on remasc the contract needs to calculate all siblings that
+     * that should be rewarded when fees on this block are paid
+     * @param block the block is looked for siblings
+     * @return
+     */
+    private Map<Long, List<Sibling>> getSiblingsFromBlock(Block block) {
+        return block.getUncleList().stream()
+                .collect(
+                    Collectors.groupingBy(
+                        BlockHeader::getNumber,
+                        Collectors.mapping(
+                                header -> new Sibling(header, block.getCoinbase(), block.getNumber()),
+                                Collectors.toList()
+                        )
+                    )
+                );
     }
 
 }

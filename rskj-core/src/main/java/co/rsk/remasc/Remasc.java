@@ -111,7 +111,7 @@ public class Remasc {
         }
 
         int uncleGenerationLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
-        Deque<Block> descendantsBlocks = new LinkedList<>();
+        Deque<Map<Long, List<Sibling>>> descendantsBlocks = new LinkedList<>();
 
         // this search can be optimized if have certainty that the execution block is not in a fork
         // larger than depth
@@ -119,13 +119,13 @@ public class Remasc {
                 executionBlock.getParentHash().getBytes(),
                 remascConstants.getMaturity() - 1 - uncleGenerationLimit
         );
-        descendantsBlocks.push(currentBlock);
+        descendantsBlocks.push(blockStore.getSiblingsFromBlockByHash(currentBlock.getHash()));
 
         // descendants are stored in reverse order because the original order to pay siblings is defined in the way
         // blocks are ordered in the blockchain (the same as were stored in remasc contract)
         for (int i = 0; i < uncleGenerationLimit - 1; i++) {
             currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
-            descendantsBlocks.push(currentBlock);
+            descendantsBlocks.push(blockStore.getSiblingsFromBlockByHash(currentBlock.getHash()));
         }
 
         Block processingBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
@@ -246,12 +246,9 @@ public class Remasc {
      * @param blockNumber number of the block is looked for siblings
      * @return
      */
-    private List<Sibling> getSiblingsToReward(Deque<Block> descendants, long blockNumber) {
+    private List<Sibling> getSiblingsToReward(Deque<Map<Long, List<Sibling>>> descendants, long blockNumber) {
         return descendants.stream()
-                .flatMap(block -> block.getUncleList().stream()
-                        .filter(header -> header.getNumber() == blockNumber)
-                        .map(header -> new Sibling(header, block.getCoinbase(), block.getNumber()))
-                )
+                .flatMap(map -> map.getOrDefault(blockNumber, Collections.emptyList()).stream())
                 .collect(Collectors.toList());
     }
 
