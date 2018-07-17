@@ -61,14 +61,14 @@ public class IndexedBlockStore extends AbstractBlockstore {
         this.indexDB  = indexDB;
         //TODO(lsebrie): move these maps creation outside blockstore,
         // remascCache should be an external component and not be inside blockstore
-        this.blockCache = new BlockCache(4000);
+        this.blockCache = new BlockCache(5000);
         this.remascCache = new MaxSizeHashMap<>(50000, true);
     }
 
     @Override
     public synchronized void removeBlock(Block block) {
         this.blockCache.removeBlock(block);
-
+        this.remascCache.remove(block.getHash());
         this.blocks.delete(block.getHash().getBytes());
 
         List<BlockInfo> binfos = this.index.get(block.getNumber());
