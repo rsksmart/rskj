@@ -2,17 +2,17 @@ package org.ethereum.config.blockchain.testnet;
 
 public class TestNetOrchidConfig extends TestNetAfterBridgeSyncConfig {
     @Override
-    public boolean isRfs50() {
+    public boolean isRskip90() {
         return true;
     }
 
     @Override
-    public boolean isRfs55() {
+    public boolean isRskip89() {
         return true;
     }
 
     @Override
-    public boolean isRfs94() {
+    public boolean isRskip88() {
         return true;
     }
 
@@ -22,5 +22,5 @@ public class TestNetOrchidConfig extends TestNetAfterBridgeSyncConfig {
     }
 
     @Override
-    public boolean isRfs170() { return true; }
+    public boolean isRskip87() { return true; }
 }

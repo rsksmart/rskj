@@ -131,17 +131,17 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
     }
 
     @Override
-    public boolean isRfs50() {
+    public boolean isRskip90() {
         return false;
     }
 
     @Override
-    public boolean isRfs55() {
+    public boolean isRskip89() {
         return false;
     }
 
     @Override
-    public boolean isRfs94() {
+    public boolean isRskip88() {
         return false;
     }
 
@@ -149,5 +149,5 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
     public boolean isRcs230() { return false; }
 
     @Override
-    public boolean isRfs170() { return false; }
+    public boolean isRskip87() { return false; }
 }

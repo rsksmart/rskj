@@ -1591,7 +1591,7 @@ public class Program {
 
             byte[] out = contract.execute(data);
 
-            if (getBlockchainConfig().isRfs50()) {
+            if (getBlockchainConfig().isRskip90()) {
                 this.returnDataBuffer = out;
             }
 
