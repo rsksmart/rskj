@@ -82,18 +82,19 @@ public class BridgeUtilsTest {
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         Federation federation = bridgeConstants.getGenesisFederation();
         Wallet wallet = new BridgeBtcWallet(btcContext, Arrays.asList(federation));
-        wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
-        Address address = federation.getAddress();
+        Address federationAddress = federation.getAddress();
+        wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
 
-        // Tx sending less than 1 btc to the federation, not a lock tx
+        // Tx sending less than the minimum allowed, not a lock tx
+        Coin minimumLockValue = bridgeConstants.getMinimumLockTxValue();
         BtcTransaction tx = new BtcTransaction(params);
-        tx.addOutput(Coin.CENT, address);
+        tx.addOutput(minimumLockValue.subtract(Coin.CENT), federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertFalse(BridgeUtils.isLockTx(tx, federation, btcContext, bridgeConstants));
 
         // Tx sending 1 btc to the federation, but also spending from the federation addres, the typical release tx, not a lock tx.
         BtcTransaction tx2 = new BtcTransaction(params);
-        tx2.addOutput(Coin.COIN, address);
+        tx2.addOutput(Coin.COIN, federationAddress);
         TransactionInput txIn = new TransactionInput(params, tx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
         signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), bridgeConstants.getFederatorPrivateKeys(), txIn, tx2, bridgeConstants);
@@ -101,13 +102,13 @@ public class BridgeUtilsTest {
 
         // Tx sending 1 btc to the federation, is a lock tx
         BtcTransaction tx3 = new BtcTransaction(params);
-        tx3.addOutput(Coin.COIN, address);
+        tx3.addOutput(Coin.COIN, federationAddress);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isLockTx(tx3, federation, btcContext, bridgeConstants));
 
         // Tx sending 50 btc to the federation, is a lock tx
         BtcTransaction tx4 = new BtcTransaction(params);
-        tx4.addOutput(Coin.FIFTY_COINS, address);
+        tx4.addOutput(Coin.FIFTY_COINS, federationAddress);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isLockTx(tx4, federation, btcContext, bridgeConstants));
     }
@@ -304,17 +305,22 @@ public class BridgeUtilsTest {
     }
 
     private void signWithNecessaryKeys(Federation federation, List<BtcECKey> privateKeys, TransactionInput txIn, BtcTransaction tx, BridgeRegTestConstants bridgeConstants) {
+        signWithNKeys(federation, privateKeys, txIn, tx, bridgeConstants, federation.getNumberOfSignaturesRequired());
+    }
+
+    private void signWithNKeys(Federation federation, List<BtcECKey> privateKeys, TransactionInput txIn, BtcTransaction tx, BridgeRegTestConstants bridgeConstants, int numberOfSignatures) {
         Script redeemScript = PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation(federation);
         Script inputScript = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
         txIn.setScriptSig(inputScript);
 
         Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
 
-        for (int i = 0; i < federation.getNumberOfSignaturesRequired(); i++) {
+        for (int i = 0; i < numberOfSignatures; i++) {
             inputScript = signWithOneKey(federation, privateKeys, inputScript, sighash, i, bridgeConstants);
         }
         txIn.setScriptSig(inputScript);
     }
+
 
     private Script signWithOneKey(Federation federation, List<BtcECKey> privateKeys, Script inputScript, Sha256Hash sighash, int federatorIndex, BridgeRegTestConstants bridgeConstants) {
         BtcECKey federatorPrivKey = privateKeys.get(federatorIndex);
@@ -395,6 +401,64 @@ public class BridgeUtilsTest {
         UTXOProvider utxoProvider = wallet.getUTXOProvider();
         Assert.assertEquals(RskUTXOProvider.class, utxoProvider.getClass());
         Assert.assertEquals(mockedUtxos, utxoProvider.getOpenTransactionOutputs(Collections.emptyList()));
+    }
+
+    @Test
+    public void testIsRelease() {
+        NetworkParameters params = RegTestParams.get();
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Federation federation = bridgeConstants.getGenesisFederation();
+        List<BtcECKey> federationPrivateKeys = bridgeConstants.getFederatorPrivateKeys();
+        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+
+        BtcTransaction releaseTx1 = new BtcTransaction(params);
+        releaseTx1.addOutput(Coin.COIN, randomAddress);
+        TransactionInput releaseInput1 = new TransactionInput(params, releaseTx1, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
+        releaseTx1.addInput(releaseInput1);
+        signWithNecessaryKeys(federation, federationPrivateKeys, releaseInput1, releaseTx1, bridgeConstants);
+        assertThat(BridgeUtils.isReleaseTx(releaseTx1, Collections.singletonList(federation)), is(true));
+
+        BtcTransaction releaseTx2 = new BtcTransaction(params);
+        releaseTx2.addOutput(Coin.COIN, randomAddress);
+        TransactionInput releaseInput2 = new TransactionInput(params, releaseTx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
+        releaseTx2.addInput(releaseInput2);
+        signWithNKeys(federation, federationPrivateKeys, releaseInput2, releaseTx2, bridgeConstants, 1);
+        assertThat(BridgeUtils.isReleaseTx(releaseTx2, Collections.singletonList(federation)), is(false));
+    }
+
+    @Test
+    public void testChangeBetweenFederations() {
+        NetworkParameters params = RegTestParams.get();
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        Context btcContext = new Context(params);
+
+        List<BtcECKey> federation1Keys = Stream.of("fa01", "fa02")
+                .map(Hex::decode)
+                .map(BtcECKey::fromPrivate)
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .collect(Collectors.toList());
+        Federation federation1 = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), 0L, params);
+
+        List<BtcECKey> federation2Keys = Stream.of("fb01", "fb02", "fb03")
+                .map(Hex::decode)
+                .map(BtcECKey::fromPrivate)
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .collect(Collectors.toList());
+        Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, params);
+
+        Address federation2Address = federation2.getAddress();
+
+        List<Federation> federations = Arrays.asList(federation1, federation2);
+
+        BtcTransaction releaseWithChange = new BtcTransaction(params);
+        releaseWithChange.addOutput(Coin.COIN, randomAddress);
+        releaseWithChange.addOutput(Coin.COIN, federation2Address);
+        TransactionInput releaseFromFederation2 = new TransactionInput(params, releaseWithChange, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
+        releaseWithChange.addInput(releaseFromFederation2);
+        signWithNecessaryKeys(federation2, federation2Keys, releaseFromFederation2, releaseWithChange, bridgeConstants);
+        assertThat(BridgeUtils.isLockTx(releaseWithChange, federations, btcContext, bridgeConstants), is(false));
+        assertThat(BridgeUtils.isReleaseTx(releaseWithChange, federations), is(true));
     }
 
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {
