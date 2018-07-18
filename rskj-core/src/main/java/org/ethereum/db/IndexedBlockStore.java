@@ -212,6 +212,18 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public synchronized Block getBlockByHash(byte[] hash) {
+
+        Block block = getBlock(hash);
+        if (block == null) {
+            return null;
+        }
+
+        blockCache.addBlock(block);
+        remascCache.put(block.getHash(), getSiblingsFromBlock(block));
+        return block;
+    }
+
+    private synchronized Block getBlock(byte[] hash) {
         Block block = this.blockCache.getBlockByHash(hash);
 
         if (block != null) {
@@ -223,24 +235,11 @@ public class IndexedBlockStore extends AbstractBlockstore {
             return null;
         }
 
-        block = new Block(blockRlp);
-        blockCache.addBlock(block);
-        remascCache.put(block.getHash(), getSiblingsFromBlock(block));
-        return block;
+        return new Block(blockRlp);
     }
 
     public synchronized Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
-        Map<Long, List<Sibling>> siblings = this.remascCache.get(hash);
-
-        if (siblings != null) {
-            return siblings;
-        }
-
-        siblings = getSiblingsFromBlock(getBlockByHash(hash.getBytes()));
-        if (remascCache.get(hash) == null){
-            remascCache.put(hash, siblings);
-        }
-        return siblings;
+        return this.remascCache.computeIfAbsent(hash, key -> getSiblingsFromBlock(getBlock(key.getBytes())));
     }
 
     @Override
