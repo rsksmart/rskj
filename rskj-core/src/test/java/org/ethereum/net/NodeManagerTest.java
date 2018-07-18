@@ -26,12 +26,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.powermock.reflect.Whitebox;
 import org.spongycastle.util.encoders.Hex;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by mario on 20/02/17.
@@ -42,7 +40,6 @@ public class NodeManagerTest {
     private static final String NODE_ID_2 = "3c7931f323989425a1e56164043af0dff567f33df8c67d4c6918647535f88798d54bc864b936d8c77d4096e8b8485b6061b0d0d2b708cd9154e6dcf981533261";
     private static final String NODE_ID_3 = "e229918d45c131e130c91c4ea51c97ab4f66cfbd0437b35c92392b5c2b3d44b28ea15b84a262459437c955f6cc7f10ad1290132d3fc866bfaf4115eac0e8e860";
 
-    private NodeManager nodeManager;
     private PeerExplorer peerExplorer;
     private SystemProperties config;
 
@@ -50,7 +47,6 @@ public class NodeManagerTest {
     public void initMocks(){
         peerExplorer = Mockito.mock(PeerExplorer.class);
         config = Mockito.mock(SystemProperties.class);
-        nodeManager = new NodeManager(peerExplorer, config);
 
         Mockito.when(config.nodeId()).thenReturn(Hex.decode(NODE_ID_1));
         Mockito.when(config.getPublicIp()).thenReturn("127.0.0.1");
@@ -69,7 +65,7 @@ public class NodeManagerTest {
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
         Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(false);
 
-        nodeManager.init();
+        NodeManager nodeManager = new NodeManager(peerExplorer, config);
 
         Set<String> nodesInUse = new HashSet<>();
 
@@ -94,7 +90,7 @@ public class NodeManagerTest {
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
         Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
 
-        nodeManager.init();
+        NodeManager nodeManager = new NodeManager(peerExplorer, config);
 
         Set<String> nodesInUse = new HashSet<>();
 
@@ -116,13 +112,30 @@ public class NodeManagerTest {
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
         Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
 
-        nodeManager.init();
+        NodeManager nodeManager = new NodeManager(peerExplorer, config);
 
         Set<String> nodesInUse = new HashSet<>();
 
         List<NodeHandler> availableNodes = nodeManager.getNodes(nodesInUse);
 
         Assert.assertEquals(2, availableNodes.size());
+    }
+
+    @Test
+    public void purgeNodesTest() {
+        Random random = new Random();
+        Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
+        NodeManager nodeManager = new NodeManager(peerExplorer, config);
+        Set<String> keys = new HashSet<>();
+        for (int i = 0; i <= NodeManager.NODES_TRIM_THRESHOLD+1;i++) {
+            byte[] nodeId = new byte[32];
+            random.nextBytes(nodeId);
+            Node node = new Node(nodeId, "127.0.0.1", 8080);
+            keys.add(node.getHexId());
+            nodeManager.getNodeStatistics(node);
+        }
+        Map<String, NodeHandler> nodeHandlerMap = Whitebox.getInternalState(nodeManager, "nodeHandlerMap");
+        Assert.assertTrue(nodeHandlerMap.size() <= NodeManager.NODES_TRIM_THRESHOLD);
     }
 
 }
