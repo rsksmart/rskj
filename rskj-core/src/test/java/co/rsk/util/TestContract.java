@@ -498,11 +498,11 @@ public class TestContract {
         return new TestContract(bytecode, "", functions);
     }
 
-    public ProgramResult executeFunction(String functionName, BigInteger value, Object... args) {
+    public ProgramResult executeFunction(String functionName, BigInteger value, boolean localCall, Object... args) {
         byte[] bytecode = Hex.decode(this.bytecode);
         byte[] encodedCall = this.functions.get(functionName).encode(args);
 
-        return new ContractRunner().createAndRunContract(bytecode, encodedCall, value);
+        return new ContractRunner().createAndRunContract(bytecode, encodedCall, value, localCall);
     }
 
     public ProgramResult createContract() {
