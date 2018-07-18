@@ -46,7 +46,7 @@ public class NodeManager {
     private static final Logger logger = LoggerFactory.getLogger("discover");
 
     private static final long MAX_NODES = 2000;
-    protected static final int NODES_TRIM_THRESHOLD = 3000;
+    protected static final long NODES_TRIM_THRESHOLD = MAX_NODES + 1000;
 
 
     // to avoid checking for null
