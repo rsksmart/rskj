@@ -958,6 +958,50 @@ public class BridgeTest {
         }
     }
 
+    @Test
+    public void getBtcBlockchainBlockLocatorBeforeRskip89Fork() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        String hashedString = "0000000000000000000000000000000000000000000000000000000000000001";
+
+        Sha256Hash hash = Sha256Hash.wrap(hashedString);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getBtcBlockchainBlockLocator())
+                .then((InvocationOnMock invocation) -> Arrays.asList(hash));
+
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
+        PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
+
+        spiedBridge.init(mock(Transaction.class), getGenesisBlock(), track, null, null, null);
+
+        byte[] result = spiedBridge.execute(Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.encode(new Object[]{ }));
+        Object[] decodedResult = (Object[]) BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.getFunction().decodeResult(result)[0];
+
+        Assert.assertEquals(1, decodedResult.length);
+        Assert.assertEquals(hashedString, decodedResult[0]);
+    }
+
+    @Test
+    public void getBtcBlockchainBlockLocatorAfterRskip89Fork() {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip89()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+
+        bridge.init(mock(Transaction.class), getGenesisBlock(), track, null, null, null);
+
+        Assert.assertNull(bridge.execute(Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.encode(new Object[]{ })));
+    }
+
     private BtcTransaction createTransaction() {
         return new SimpleBtcTransaction(networkParameters, PegTestUtils.createHash());
     }
