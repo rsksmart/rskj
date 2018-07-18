@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -820,82 +821,6 @@ public class TrieImpl implements Trie {
         }
     }
 
-    public static TrieImpl deserializeTrie(byte[] bytes) {
-        return deserializeTrie(bytes, 0, bytes.length);
-    }
-
-    private static TrieImpl deserializeTrie(byte[] bytes, int offset, int length) {
-        ByteArrayInputStream bstream = new ByteArrayInputStream(bytes, offset, length);
-        DataInputStream dstream = new DataInputStream(bstream);
-
-        return getNewTrie(bytes, offset, dstream);
-    }
-
-    private static TrieImpl getNewTrie(byte[] bytes, int offset, DataInputStream dstream) {
-        try {
-            dstream.readShort();    // serialization version
-            int nsubnodes = dstream.readShort();    // number of subnodes
-            int messageLength = dstream.readInt();  // trie message length
-
-            int messageOffset = offset + SERIALIZATION_HEADER_LENGTH;
-
-            TrieImpl trie = fromMessage(bytes, messageOffset, messageLength, null);
-
-            if (trie == null) {
-                throw new NullPointerException();
-            }
-
-            if (nsubnodes > 0) {
-                deserializeSubnodes(bytes, messageLength, messageOffset, trie);
-            }
-
-            return trie;
-        }
-        catch (IOException ex) {
-            logger.error(ERROR_CREATING_TRIE, ex);
-            panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE +": " + ex.getMessage());
-            throw new TrieSerializationException(ERROR_CREATING_TRIE, ex);
-        }
-    }
-
-    private static void deserializeSubnodes(byte[] bytes, int messageLength, int messageOffset, TrieImpl trie) {
-        int subnodeOffset = messageOffset + messageLength;
-
-        if (trie.nodes == null) {
-            trie.nodes = new TrieImpl[ARITY];
-        }
-
-        for (int k = 0; k < ARITY; k++) {
-            if (trie.hashes[k] == null) {
-                continue;
-            }
-
-            int subnodeLength = getSerializedNodeLength(bytes, subnodeOffset);
-
-            trie.nodes[k] = deserializeTrie(bytes, subnodeOffset, subnodeLength);
-
-            subnodeOffset += subnodeLength;
-        }
-    }
-
-    private static int getSerializedNodeLength(byte[] bytes, int offset) {
-        ByteArrayInputStream bstream = new ByteArrayInputStream(bytes, offset, SERIALIZATION_HEADER_LENGTH);
-        DataInputStream dstream = new DataInputStream(bstream);
-
-        try {
-            dstream.readShort();    // serialization version
-            dstream.readShort();    // number of subnodes
-            dstream.readInt();      // trie message length
-            int totalLength = dstream.readInt();    // total message length, without this header
-
-            return SERIALIZATION_HEADER_LENGTH + totalLength;
-        } catch (IOException ex) {
-            logger.error(ERROR_CREATING_TRIE, ex);
-            panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE +": " + ex.getMessage());
-            throw new TrieSerializationException(ERROR_CREATING_TRIE, ex);
-        }
-    }
-
     /**
      * getNode gets the subnode at position n
      *
@@ -996,6 +921,10 @@ public class TrieImpl implements Trie {
         }
 
         if (position >= length) {
+            if (Arrays.equals(this.value, value)) {
+                return this;
+            }
+
             TrieImpl[] newNodes = cloneNodes(false);
             Keccak256[] newHashes = cloneHashes();
 
@@ -1024,9 +953,14 @@ public class TrieImpl implements Trie {
             node = new TrieImpl(this.store, this.isSecure);
         }
 
-        node = node.put(key, length, position + 1, value);
+        TrieImpl newNode = node.put(key, length, position + 1, value);
 
-        newNodes[pos] = node;
+        // reference equality
+        if (newNode == node) {
+            return this;
+        }
+
+        newNodes[pos] = newNode;
 
         if (newHashes != null) {
             newHashes[pos] = null;
