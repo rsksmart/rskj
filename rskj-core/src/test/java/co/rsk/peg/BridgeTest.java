@@ -1767,7 +1767,30 @@ public class BridgeTest {
     }
 
     @Test
+    public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx_beforeOrchid() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip99()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getFederationAddress()).thenReturn(new BtcECKey().toAddress(networkParameters));
+        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+
+        Transaction tx = mock(Transaction.class);
+        when(tx.isLocalCallTransaction()).thenReturn(false);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(tx, getGenesisBlock(), null, null, null, null);
+
+        byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
+        bridge.execute(data);
+    }
+
+    @Test
     public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip99()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
 
@@ -1848,7 +1871,48 @@ public class BridgeTest {
     }
 
     @Test
-    public void testCallFromContract() {
+    public void testCallFromContract_beforeOrchid() {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip99()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+        EVMAssembler assembler = new EVMAssembler();
+        ProgramInvoke invoke = new ProgramInvokeMockImpl();
+
+        // Save code on the sender's address so that the bridge
+        // thinks its being called by a contract
+        byte[] callerCode = assembler.assemble("0xaabb 0xccdd 0xeeff");
+        invoke.getRepository().saveCode(new RskAddress(invoke.getOwnerAddress().getLast20Bytes()), callerCode);
+
+        VM vm = new VM(config.getVmConfig(), precompiledContracts);
+
+        // Encode a call to the bridge's getMinimumLockTxValue function
+        // That means first pushing the corresponding encoded ABI storage to memory (MSTORE)
+        // and then doing a DELEGATECALL to the corresponding address with the correct parameters
+        String bridgeFunctionHex = Hex.toHexString(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode());
+        bridgeFunctionHex = String.format("0x%s%s", bridgeFunctionHex, String.join("", Collections.nCopies(32 * 2 - bridgeFunctionHex.length(), "0")));
+        String asm = String.format("%s 0x00 MSTORE 0x20 0x30 0x20 0x00 0x0000000000000000000000000000000001000006 0x6000 DELEGATECALL", bridgeFunctionHex);
+        int numOps = asm.split(" ").length;
+        byte[] code = assembler.assemble(asm);
+
+        // Mock a transaction, all we really need is a hash
+        Transaction tx = mock(Transaction.class);
+        when(tx.getHash()).thenReturn(new Keccak256("001122334455667788990011223344556677889900112233445566778899aabb"));
+
+        // Run the program on the VM
+        Program program = new Program(config.getVmConfig(), precompiledContracts, mock(BlockchainConfig.class), code, invoke, tx);
+        for (int i = 0; i < numOps; i++) {
+            vm.step(program);
+        }
+    }
+
+    @Test
+    public void testCallFromContract_afterOrchid() {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip99()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
         EVMAssembler assembler = new EVMAssembler();
         ProgramInvoke invoke = new ProgramInvokeMockImpl();
