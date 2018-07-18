@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -61,6 +62,7 @@ import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
+import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -1549,6 +1551,89 @@ public class BridgeSupportTest {
         List<Coin> activeFederationBtcCoins = activeFederationBtcUTXOs.stream().map(UTXO::getValue).collect(Collectors.toList());
         assertThat(activeFederationBtcUTXOs, hasSize(1));
         assertThat(activeFederationBtcCoins, hasItem(Coin.COIN));
+    }
+
+    @Test
+    public void registerBtcTransactionWithCrossFederationsChange() throws Exception {
+        NetworkParameters params = RegTestParams.get();
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        Context btcContext = new Context(params);
+
+        List<BtcECKey> activeFederationKeys = Stream.of("fa01", "fa02")
+                .map(Hex::decode)
+                .map(BtcECKey::fromPrivate)
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .collect(Collectors.toList());
+        Federation activeFederation = new Federation(activeFederationKeys, Instant.ofEpochMilli(1000L), 0L, params);
+
+        List<BtcECKey> retiringFederationKeys = Stream.of("fb01", "fb02", "fb03")
+                .map(Hex::decode)
+                .map(BtcECKey::fromPrivate)
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .collect(Collectors.toList());
+        Federation retiringFederation = new Federation(retiringFederationKeys, Instant.ofEpochMilli(2000L), 0L, params);
+
+        BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class, Mockito.RETURNS_DEEP_STUBS);
+        when(mockBridgeStorageProvider.getBtcTxHashesAlreadyProcessed().keySet().contains(any(Sha256Hash.class))).thenReturn(false);
+
+        List<UTXO> retiringFederationUtxos = new ArrayList<>();
+        FederationSupport mockFederationSupport = mock(FederationSupport.class);
+        doReturn(activeFederation).when(mockFederationSupport).getActiveFederation();
+        doReturn(retiringFederation).when(mockFederationSupport).getRetiringFederation();
+        doReturn(retiringFederationUtxos).when(mockFederationSupport).getRetiringFederationBtcUTXOs();
+
+        BtcBlockstoreWithCache mockBtcBlockStore = mock(BtcBlockstoreWithCache.class, Mockito.RETURNS_DEEP_STUBS);
+        when(mockBtcBlockStore.getChainHead().getHeight()).thenReturn(14);
+
+        Coin changeValue = Coin.COIN.plus(Coin.COIN);
+        Address retiringFederationAddress = retiringFederation.getAddress();
+        BtcTransaction releaseWithChangeTx = new BtcTransaction(params);
+        releaseWithChangeTx.addOutput(Coin.COIN, randomAddress);
+        releaseWithChangeTx.addOutput(changeValue, retiringFederationAddress);
+        TransactionInput retiringFederationInput = new TransactionInput(params, releaseWithChangeTx, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
+        releaseWithChangeTx.addInput(retiringFederationInput);
+
+        PartialMerkleTree partialMerkleTree = PartialMerkleTree.buildFromLeaves(params, new byte[]{(byte) 0xff}, Collections.singletonList(releaseWithChangeTx.getHash()));
+
+        BtcBlock mockBtcBlock = mock(BtcBlock.class, Mockito.RETURNS_DEEP_STUBS);
+        when(mockBtcBlock.getMerkleRoot()).thenReturn(partialMerkleTree.getTxnHashAndMerkleRoot(new LinkedList<>()));
+
+        StoredBlock mockStoredBlock = mock(StoredBlock.class);
+        when(mockStoredBlock.getHeader()).thenReturn(mockBtcBlock);
+
+        PowerMockito.spy(BridgeUtils.class);
+        PowerMockito.doReturn(mockStoredBlock).when(BridgeUtils.class, "getStoredBlockAtHeight", any(BtcBlockstoreWithCache.class), anyInt());
+        PowerMockito.doReturn(false).when(BridgeUtils.class, "isLockTx", any(BtcTransaction.class), anyListOf(Federation.class), any(Context.class), any(BridgeConstants.class));
+        PowerMockito.doReturn(true).when(BridgeUtils.class, "isReleaseTx", any(BtcTransaction.class), anyListOf(Federation.class));
+
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                mock(Repository.class),
+                mockBridgeStorageProvider,
+                mock(Block.class),
+                config,
+                bridgeConstants,
+                mock(BridgeEventLogger.class),
+                btcContext,
+                mockFederationSupport,
+                mockBtcBlockStore,
+                mock(BtcBlockChain.class)
+        );
+
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
+
+        assertThat(retiringFederationUtxos, hasSize(1));
+        UTXO changeUtxo = retiringFederationUtxos.get(0);
+        assertThat(changeUtxo.getValue(), is(changeValue));
+        assertThat(changeUtxo.getScript().getToAddress(params), is(retiringFederationAddress));
+
+        ArgumentCaptor<BtcTransaction> releasedBtcTxCaptor = ArgumentCaptor.forClass(BtcTransaction.class);
+        ArgumentCaptor<List<Federation>> fedListCaptor = ArgumentCaptor.forClass((Class) List.class);
+        PowerMockito.verifyStatic();
+        BridgeUtils.isReleaseTx(releasedBtcTxCaptor.capture(), fedListCaptor.capture());
+
+        assertThat(releasedBtcTxCaptor.getValue(), is(releaseWithChangeTx));
+        assertThat(fedListCaptor.getValue(), IsIterableContainingInOrder.contains(activeFederation, retiringFederation));
     }
 
     @Test
