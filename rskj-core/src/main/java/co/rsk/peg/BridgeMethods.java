@@ -49,7 +49,8 @@ public enum BridgeMethods {
             ),
             25000L,
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
-            blockChainConfig -> !blockChainConfig.isRskip87()
+            blockChainConfig -> !blockChainConfig.isRskip87(),
+            false
     ),
     ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -59,7 +60,8 @@ public enum BridgeMethods {
             ),
             25000L, // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
-            blockChainConfig -> blockChainConfig.isRskip87()
+            blockChainConfig -> blockChainConfig.isRskip87(),
+            false
     ),
     ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS(
             CallTransaction.Function.fromSignature(
@@ -69,7 +71,8 @@ public enum BridgeMethods {
             ),
             25000L, // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
             (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
-            blockChainConfig -> blockChainConfig.isRskip87()
+            blockChainConfig -> blockChainConfig.isRskip87(),
+            false
     ),
     ADD_SIGNATURE(
             CallTransaction.Function.fromSignature(
@@ -119,7 +122,8 @@ public enum BridgeMethods {
             ),
             20000L,
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight,
-            (blockchainConfig -> blockchainConfig.isRskip89())
+            blockchainConfig -> blockchainConfig.isRskip89(),
+            true
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR(
             CallTransaction.Function.fromSignature(
@@ -140,7 +144,8 @@ public enum BridgeMethods {
             ),
             20000L,
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth,
-            (blockchainConfig -> blockchainConfig.isRskip89())
+            blockchainConfig -> blockchainConfig.isRskip89(),
+            true
     ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
             CallTransaction.Function.fromSignature(
@@ -240,7 +245,8 @@ public enum BridgeMethods {
             ),
             16000L,
             (BridgeMethodExecutorTyped) Bridge::getLockWhitelistEntryByAddress,
-            blockchainConfig -> blockchainConfig.isRskip87()
+            blockchainConfig -> blockchainConfig.isRskip87(),
+            true
     ),
     GET_LOCK_WHITELIST_SIZE(
             CallTransaction.Function.fromSignature(
