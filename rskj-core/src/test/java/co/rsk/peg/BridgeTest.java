@@ -289,7 +289,7 @@ public class BridgeTest {
         try {
             Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
             Transaction mockedTx = mock(Transaction.class);
-            bridge.init(mockedTx, null, null, null, null, null);
+            bridge.init(mockedTx, getGenesisBlock(), null, null, null, null);
             bridge.execute(new byte[3]);
             Assert.fail();
         } catch (RuntimeException e) {
@@ -303,7 +303,7 @@ public class BridgeTest {
         try {
             Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
             Transaction mockedTx = mock(Transaction.class);
-            bridge.init(mockedTx, null, null, null, null, null);
+            bridge.init(mockedTx, getGenesisBlock(), null, null, null, null);
             bridge.execute(new byte[4]);
             Assert.fail();
         } catch (RuntimeException e) {
@@ -329,27 +329,6 @@ public class BridgeTest {
         }
 
         track.commit();
-    }
-
-    @Test
-    public void executeGetStateForDebuggingInBamboo() {
-        executeBridgeMethod(new RegTestGenesisConfig(), Bridge.GET_STATE_FOR_DEBUGGING);
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void executeGetStateForDebuggingAfterBamboo() {
-        executeBridgeMethod(new RegTestOrchidConfig(), Bridge.GET_STATE_FOR_DEBUGGING);
-    }
-
-    private void executeBridgeMethod(BlockchainNetConfig blockchainConfig, CallTransaction.Function bridgeMethod) {
-        TestSystemProperties propertiesInBamboo = new TestSystemProperties();
-        propertiesInBamboo.setBlockchainConfig(blockchainConfig);
-
-        Repository repository = new RepositoryImpl(propertiesInBamboo).startTracking();
-        Bridge bridge = new Bridge(propertiesInBamboo, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(mock(Transaction.class), mock(Block.class), repository, mock(BlockStore.class), mock(ReceiptStore.class), Collections.emptyList());
-
-        bridge.execute(bridgeMethod.encodeSignature());
     }
 
     @Test
@@ -1476,14 +1455,16 @@ public class BridgeTest {
         Transaction mockedTransaction = mock(Transaction.class);
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
-        // I still mock the data to make sure that the null is because of the method deactivation and not lack of data
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getLockWhitelistEntryByAddress(any(String.class))).then((InvocationOnMock invocation) ->
-                new UnlimitedWhiteListEntry(address)
-        );
 
-        Assert.assertNull(bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toBase58() })));
+        try {
+            bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toBase58() }));
+            Assert.fail();
+        }
+        catch(Exception e) {
+            Throwable causeException = e.getCause();
+            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
+            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
+        }
     }
 
     @Test
@@ -1511,6 +1492,7 @@ public class BridgeTest {
         PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
 
         mockedTransaction = mock(Transaction.class);
+        when(mockedTransaction.isLocalCallTransaction()).thenReturn(true);
         spiedBridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         // Get the unlimited whitelist address
@@ -1572,7 +1554,14 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        Assert.assertNull(bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) })));
+        try {
+            bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) }));
+            Assert.fail();
+        } catch(Exception e) {
+            Throwable causeException = e.getCause();
+            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
+            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
+        }
     }
 
     @Test
@@ -1588,7 +1577,14 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        Assert.assertNull(bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) })));
+        try {
+            bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) }));
+            Assert.fail();
+        } catch(Exception e) {
+            Throwable causeException = e.getCause();
+            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
+            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
+        }
     }
 
     @Test
@@ -1631,7 +1627,15 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        Assert.assertNull(bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address" })));
+        try {
+            bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address" }));
+            Assert.fail();
+        } catch(Exception e) {
+            Throwable causeException = e.getCause();
+            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
+            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
+        }
+
     }
 
     @Test
@@ -1749,13 +1753,12 @@ public class BridgeTest {
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(true);
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(tx, null, null, null, null, null);
+        bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
-        Address mockedAddress = mock(Address.class);
-        when(mockedAddress.toString()).thenReturn("i-am-an-address");
-        when(bridgeSupportMock.getFederationAddress()).thenReturn(mockedAddress);
+        Address address = new BtcECKey().toAddress(networkParameters);
+        when(bridgeSupportMock.getFederationAddress()).thenReturn(address);
 
         byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
         bridge.execute(data);
@@ -1772,7 +1775,7 @@ public class BridgeTest {
             Transaction tx = mock(Transaction.class);
             when(tx.isLocalCallTransaction()).thenReturn(false);
             Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-            bridge.init(tx, null, null, null, null, null);
+            bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
             byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
             bridge.execute(data);
@@ -1797,7 +1800,7 @@ public class BridgeTest {
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(localCall);
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(tx, null, null, null, null, null);
+        bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);

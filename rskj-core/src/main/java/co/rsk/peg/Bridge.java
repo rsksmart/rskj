@@ -291,10 +291,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 throw new BridgeIllegalArgumentException(errorMessage);
             }
 
-            if (blockchainConfig.isRskip88() && GET_STATE_FOR_DEBUGGING.equals(bridgeParsedData.bridgeMethod.getFunction())) {
-                throw new NoSuchMethodException(GET_STATE_FOR_DEBUGGING.name + " call is not supported after Bamboo");
-            }
-
             // If this is not a local call, then first check whether the function
             // allows for non-local calls
             if (!isLocalCall() && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
