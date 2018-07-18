@@ -1397,9 +1397,9 @@ public class BridgeTest {
     }
 
     @Test
-    public void getLockWhitelistEntryByAddressBeforeRfs170Fork() throws IOException {
+    public void getLockWhitelistEntryByAddressBeforeRskip87Fork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRfs170()).thenReturn(false);
+        when(mockedConfig.isRskip87()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Address address = new BtcECKey().toAddress(networkParameters);
@@ -1421,12 +1421,12 @@ public class BridgeTest {
     }
 
     @Test
-    public void getLockWhitelistEntryByAddressAfterRfs170Fork() throws IOException, Exception {
+    public void getLockWhitelistEntryByAddressAfterRskip87Fork() throws IOException, Exception {
         byte[] result;
         Transaction mockedTransaction;
 
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRfs170()).thenReturn(true);
+        when(mockedConfig.isRskip87()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
@@ -1467,9 +1467,9 @@ public class BridgeTest {
     }
 
     @Test
-    public void addLockWhitelistAddressBeforeRfs170Fork() throws IOException {
+    public void addLockWhitelistAddressBeforeRskip87Fork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRfs170()).thenReturn(false);
+        when(mockedConfig.isRskip87()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
@@ -1494,9 +1494,9 @@ public class BridgeTest {
     }
 
     @Test
-    public void addLockWhitelistAddressAfterRfs170Fork() throws IOException {
+    public void addLockWhitelistAddressAfterRskip87Fork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRfs170()).thenReturn(true);
+        when(mockedConfig.isRskip87()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
@@ -1510,9 +1510,9 @@ public class BridgeTest {
     }
 
     @Test
-    public void addOneOffLockWhitelistAddressBeforeRfs170Fork() throws IOException {
+    public void addOneOffLockWhitelistAddressBeforeRskip87Fork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRfs170()).thenReturn(false);
+        when(mockedConfig.isRskip87()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
@@ -1526,9 +1526,9 @@ public class BridgeTest {
     }
 
     @Test
-    public void addOneOffLockWhitelistAddressAfterRfs170Fork() throws IOException {
+    public void addOneOffLockWhitelistAddressAfterRskip87Fork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRfs170()).thenReturn(true);
+        when(mockedConfig.isRskip87()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
@@ -1553,9 +1553,9 @@ public class BridgeTest {
     }
 
     @Test
-    public void addUnlimitedLockWhitelistAddressBeforeRfs170Fork() {
+    public void addUnlimitedLockWhitelistAddressBeforeRskip87Fork() {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRfs170()).thenReturn(false);
+        when(mockedConfig.isRskip87()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
@@ -1569,9 +1569,9 @@ public class BridgeTest {
     }
 
     @Test
-    public void addUnlimitedLockWhitelistAddressAfterRfs170Fork() {
+    public void addUnlimitedLockWhitelistAddressAfterRskip87Fork() {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRfs170()).thenReturn(true);
+        when(mockedConfig.isRskip87()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
