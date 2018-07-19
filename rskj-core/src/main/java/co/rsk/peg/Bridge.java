@@ -201,6 +201,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public long getGasForData(byte[] data) {
+        if (!blockchainConfig.isRskip88() && senderIsContract()) {
+            throw new IllegalStateException("Call from contract before Orchid");
+        }
+
         if (BridgeUtils.isFreeBridgeTx(config, rskTx, rskExecutionBlock.getNumber())) {
             return 0;
         }
@@ -293,7 +297,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             // If this is not a local call, then first check whether the function
             // allows for non-local calls
-            if (blockchainConfig.isRskip99() && !isLocalCall() && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
+            if (blockchainConfig.isRskip88() && !isLocalCall() && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
                 String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
                 logger.info(errorMessage);
                 throw new BridgeIllegalArgumentException(errorMessage);
@@ -901,5 +905,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private boolean isLocalCall() {
         return rskTx.isLocalCallTransaction();
+    }
+
+    private boolean senderIsContract() {
+        byte[] senderCode = repository.getCode(rskTx.getSender());
+
+        // The sender of the transaction is a contract iif it has associated code
+        return senderCode != null && senderCode.length > 0;
     }
 }

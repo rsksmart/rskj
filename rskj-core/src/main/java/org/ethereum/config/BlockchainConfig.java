@@ -53,5 +53,5 @@ public interface BlockchainConfig {
 
     boolean isRskip87();
 
-    boolean isRskip99();
+    boolean isRskip88();
 }

@@ -40,11 +40,8 @@ import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
-import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -1024,7 +1021,11 @@ public class BridgeTest {
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(Genesis.getInstance(config));
-        bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
+
+        Repository mockRepository = mock(Repository.class);
+        when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
+
+        bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
         Assert.assertEquals(0, bridge.getGasForData(rskTx.getData()));
 
         config.setBlockchainConfig(blockchainNetConfigOriginal);
@@ -1121,7 +1122,11 @@ public class BridgeTest {
         for (int i = 0; i < 20; i++) {
             rskExecutionBlock = blockGenerator.createChildBlock(rskExecutionBlock);
         }
-        bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
+
+        Repository mockRepository = mock(Repository.class);
+        when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
+
+        bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
         Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
 
         config.setBlockchainConfig(blockchainNetConfigOriginal);
@@ -1769,7 +1774,7 @@ public class BridgeTest {
     @Test
     public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx_beforeOrchid() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskip99()).thenReturn(false);
+        when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1788,7 +1793,7 @@ public class BridgeTest {
     @Test
     public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskip99()).thenReturn(true);
+        when(mockedConfig.isRskip88()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1873,7 +1878,7 @@ public class BridgeTest {
     @Test
     public void testCallFromContract_beforeOrchid() {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskip99()).thenReturn(false);
+        when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
@@ -1900,17 +1905,22 @@ public class BridgeTest {
         Transaction tx = mock(Transaction.class);
         when(tx.getHash()).thenReturn(new Keccak256("001122334455667788990011223344556677889900112233445566778899aabb"));
 
-        // Run the program on the VM
-        Program program = new Program(config.getVmConfig(), precompiledContracts, mock(BlockchainConfig.class), code, invoke, tx);
-        for (int i = 0; i < numOps; i++) {
-            vm.step(program);
+        try {
+            // Run the program on the VM
+            Program program = new Program(config.getVmConfig(), precompiledContracts, mock(BlockchainConfig.class), code, invoke, tx);
+            for (int i = 0; i < numOps; i++) {
+                vm.step(program);
+            }
+            Assert.fail();
+        } catch (IllegalStateException e) {
+            Assert.assertEquals("Call from contract before Orchid", e.getMessage());
         }
     }
 
     @Test
     public void testCallFromContract_afterOrchid() {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskip99()).thenReturn(true);
+        when(mockedConfig.isRskip88()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
