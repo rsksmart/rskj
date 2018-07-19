@@ -43,4 +43,7 @@ public class RegTestOrchidConfig extends RegTestGenesisConfig {
 
     @Override
     public boolean isRskip87() { return true; }
+
+    @Override
+    public boolean isRskip85() { return true; }
 }

@@ -29,8 +29,6 @@ import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
-import org.ethereum.config.blockchain.AbstractConfig;
-import org.ethereum.config.blockchain.testnet.TestNetFirstForkConfig;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;

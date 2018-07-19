@@ -75,7 +75,7 @@ public class RemascProcessMinerFeesTest {
     public static void setUpBeforeClass() throws Exception {
         config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
-        when(((RegTestGenesisConfig) blockchainConfig).isRskIp85()).thenReturn(false);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         RemascProcessMinerFeesTest.config.setBlockchainConfig(blockchainConfig);
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
@@ -733,7 +733,7 @@ public class RemascProcessMinerFeesTest {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        when(((RegTestGenesisConfig) blockchainConfig).isRskIp85()).thenReturn(false);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
 
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
@@ -763,7 +763,7 @@ public class RemascProcessMinerFeesTest {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        when(((RegTestGenesisConfig) blockchainConfig).isRskIp85()).thenReturn(false);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
 
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
@@ -799,7 +799,7 @@ public class RemascProcessMinerFeesTest {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        when(((RegTestGenesisConfig) blockchainConfig).isRskIp85()).thenReturn(false);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
 
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
@@ -834,7 +834,7 @@ public class RemascProcessMinerFeesTest {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        when(((RegTestGenesisConfig) blockchainConfig).isRskIp85()).thenReturn(false);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
 
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
         long minerFee = 21000;
@@ -878,7 +878,7 @@ public class RemascProcessMinerFeesTest {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        when(((RegTestGenesisConfig) blockchainConfig).isRskIp85()).thenReturn(false);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
 
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
         long minerFee = 21000;

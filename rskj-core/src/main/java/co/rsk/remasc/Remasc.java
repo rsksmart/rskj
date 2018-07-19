@@ -94,9 +94,9 @@ public class Remasc {
 
         long blockNbr = executionBlock.getNumber();
         BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(blockNbr);
-        boolean isRskIp85Enabled = configForBlock.isRskIp85();
+        boolean isRskip85Enabled = configForBlock.isRskip85();
 
-        if (!isRskIp85Enabled) {
+        if (!isRskip85Enabled) {
             this.addNewSiblings();
         } else {
             if (!this.provider.getSiblings().isEmpty()) {
@@ -149,7 +149,7 @@ public class Remasc {
 
         // Takes from rewardBalance this block's height reward.
         Coin syntheticReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
-        if (isRskIp85Enabled) {
+        if (isRskip85Enabled) {
             BigInteger minimumPayableGas = configForBlock.getConstants().getMinimumPayableGas();
             Coin minPayableFees = executionBlock.getMinimumGasPrice().multiply(minimumPayableGas);
             if (syntheticReward.compareTo(minPayableFees) < 0) {
@@ -205,7 +205,7 @@ public class Remasc {
             feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), syntheticReward, processingBlockHeader.getCoinbase(), logs);
         }
 
-        if (!isRskIp85Enabled) {
+        if (!isRskip85Enabled) {
             this.removeUsedSiblings(processingBlockHeader);
         }
     }

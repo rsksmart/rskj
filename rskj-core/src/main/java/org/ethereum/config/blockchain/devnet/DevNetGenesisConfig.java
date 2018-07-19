@@ -51,27 +51,7 @@ public class DevNetGenesisConfig extends TestNetAfterBridgeSyncConfig {
     }
 
     @Override
-    public boolean isRfs50() {
-        return true;
-    }
-
-    @Override
-    public boolean isRfs55() {
-        return true;
-    }
-
-    @Override
-    public boolean isRfs94() {
-        return true;
-    }
-
-    @Override
-    public boolean isRcs230() {
-        return true;
-    }
-
-    @Override
-    public boolean isRskIp85() {
+    public boolean isRskip85() {
         return true;
     }
 }
