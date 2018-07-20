@@ -20,8 +20,8 @@
 package org.ethereum.jsontestsuite;
 
 import org.json.simple.JSONObject;
-import org.spongycastle.util.BigIntegers;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * @author Roman Mandeleil

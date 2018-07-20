@@ -28,7 +28,7 @@ import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.util.ByteUtil;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Collections;

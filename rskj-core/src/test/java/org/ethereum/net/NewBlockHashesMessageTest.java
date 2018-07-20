@@ -28,8 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.spongycastle.util.encoders.Hex.decode;
-import static org.spongycastle.util.encoders.Hex.toHexString;
+import static org.bouncycastle.util.encoders.Hex.decode;
+import static org.bouncycastle.util.encoders.Hex.toHexString;
 
 /**
  * @author Mikhail Kalinin

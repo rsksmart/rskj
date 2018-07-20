@@ -3,7 +3,7 @@ package co.rsk.util;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.util.ContractRunner;
 import org.ethereum.vm.program.ProgramResult;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.HashMap;

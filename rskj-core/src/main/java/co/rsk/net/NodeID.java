@@ -18,7 +18,7 @@
 
 package co.rsk.net;
 
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;

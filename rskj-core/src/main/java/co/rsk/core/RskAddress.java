@@ -21,7 +21,7 @@ package co.rsk.core;
 import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 import java.util.Comparator;

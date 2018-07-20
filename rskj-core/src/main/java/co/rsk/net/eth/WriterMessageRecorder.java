@@ -22,7 +22,7 @@ import co.rsk.net.NodeID;
 import org.ethereum.net.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

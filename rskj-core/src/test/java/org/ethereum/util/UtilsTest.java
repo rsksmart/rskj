@@ -23,8 +23,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 
-import org.spongycastle.util.Arrays;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 

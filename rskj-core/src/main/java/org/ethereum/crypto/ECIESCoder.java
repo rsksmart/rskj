@@ -21,21 +21,21 @@ package org.ethereum.crypto;
 
 import com.google.common.base.Throwables;
 import org.ethereum.ConcatKDFBytesGenerator;
-import org.spongycastle.crypto.AsymmetricCipherKeyPair;
-import org.spongycastle.crypto.BufferedBlockCipher;
-import org.spongycastle.crypto.InvalidCipherTextException;
-import org.spongycastle.crypto.KeyGenerationParameters;
-import org.spongycastle.crypto.agreement.ECDHBasicAgreement;
-import org.spongycastle.crypto.digests.SHA1Digest;
-import org.spongycastle.crypto.digests.SHA256Digest;
-import org.spongycastle.crypto.engines.AESFastEngine;
-import org.spongycastle.crypto.generators.ECKeyPairGenerator;
-import org.spongycastle.crypto.generators.EphemeralKeyPairGenerator;
-import org.spongycastle.crypto.macs.HMac;
-import org.spongycastle.crypto.modes.SICBlockCipher;
-import org.spongycastle.crypto.params.*;
-import org.spongycastle.crypto.parsers.ECIESPublicKeyParser;
-import org.spongycastle.math.ec.ECPoint;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
+import org.bouncycastle.crypto.params.*;
+import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
+import org.bouncycastle.math.ec.ECPoint;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -74,14 +74,14 @@ public class ECIESCoder {
     }
 
     public static byte[] decrypt(ECPoint ephem, BigInteger prv, byte[] iv, byte[] cipher, byte[] macData) throws InvalidCipherTextException {
-        AESFastEngine aesFastEngine = new AESFastEngine();
+        AESEngine aesEngine = new AESEngine();
 
         EthereumIESEngine iesEngine = new EthereumIESEngine(
                 new ECDHBasicAgreement(),
                 new ConcatKDFBytesGenerator(new SHA256Digest()),
                 new HMac(new SHA256Digest()),
                 new SHA256Digest(),
-                new BufferedBlockCipher(new SICBlockCipher(aesFastEngine)));
+                new BufferedBlockCipher(new SICBlockCipher(aesEngine)));
 
 
         byte[]         d = new byte[] {};
@@ -208,14 +208,14 @@ public class ECIESCoder {
 
 
     private static EthereumIESEngine makeIESEngine(boolean isEncrypt, ECPoint pub, BigInteger prv, byte[] iv) {
-        AESFastEngine aesFastEngine = new AESFastEngine();
+        AESEngine aesEngine = new AESEngine();
 
         EthereumIESEngine iesEngine = new EthereumIESEngine(
                 new ECDHBasicAgreement(),
                 new ConcatKDFBytesGenerator(new SHA256Digest()),
                 new HMac(new SHA256Digest()),
                 new SHA256Digest(),
-                new BufferedBlockCipher(new SICBlockCipher(aesFastEngine)));
+                new BufferedBlockCipher(new SICBlockCipher(aesEngine)));
 
 
         byte[]         d = new byte[] {};

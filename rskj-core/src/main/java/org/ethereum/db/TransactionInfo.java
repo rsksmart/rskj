@@ -25,7 +25,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
-import org.spongycastle.util.BigIntegers;
+import org.bouncycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.ArrayList;

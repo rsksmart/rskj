@@ -25,7 +25,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;

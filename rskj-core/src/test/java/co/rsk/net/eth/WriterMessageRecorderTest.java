@@ -30,7 +30,7 @@ import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.net.message.Message;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

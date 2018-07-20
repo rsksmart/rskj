@@ -21,7 +21,7 @@ package co.rsk.net.discovery.table;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Created by mario on 21/02/17.

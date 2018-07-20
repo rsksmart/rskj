@@ -32,7 +32,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.Arrays;
+import org.bouncycastle.util.Arrays;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

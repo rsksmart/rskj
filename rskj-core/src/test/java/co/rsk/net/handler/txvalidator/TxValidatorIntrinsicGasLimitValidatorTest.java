@@ -20,7 +20,7 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;

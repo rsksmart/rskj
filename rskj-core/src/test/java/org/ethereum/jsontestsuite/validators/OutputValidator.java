@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite.validators;
 
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.List;

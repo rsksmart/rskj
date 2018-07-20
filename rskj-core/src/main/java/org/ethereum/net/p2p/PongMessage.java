@@ -19,7 +19,7 @@
 
 package org.ethereum.net.p2p;
 
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Wrapper around an Ethereum Pong message on the network

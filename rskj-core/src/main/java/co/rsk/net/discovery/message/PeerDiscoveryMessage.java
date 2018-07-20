@@ -26,8 +26,8 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLPElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.BigIntegers;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.security.SignatureException;
 import java.util.Optional;

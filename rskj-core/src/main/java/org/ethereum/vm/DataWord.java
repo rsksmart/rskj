@@ -25,8 +25,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
-import org.spongycastle.util.Arrays;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;

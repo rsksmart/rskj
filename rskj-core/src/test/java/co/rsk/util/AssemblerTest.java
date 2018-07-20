@@ -3,7 +3,7 @@ package co.rsk.util;
 import co.rsk.asm.EVMAssembler;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;

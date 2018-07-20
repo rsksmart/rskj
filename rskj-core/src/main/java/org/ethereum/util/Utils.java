@@ -19,8 +19,8 @@
 
 package org.ethereum.util;
 
-import org.spongycastle.util.encoders.DecoderException;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.DecoderException;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.lang.reflect.Array;
 import java.math.BigInteger;
