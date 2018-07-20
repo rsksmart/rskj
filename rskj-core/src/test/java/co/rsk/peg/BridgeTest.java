@@ -997,7 +997,13 @@ public class BridgeTest {
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), track, null, null, null);
 
-        Assert.assertNull(bridge.execute(Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.encode(new Object[]{ })));
+        try {
+            bridge.execute(Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.encode(new Object[]{ }));
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid data given:"));
+
+        }
     }
 
     private BtcTransaction createTransaction() {
@@ -1957,5 +1963,72 @@ public class BridgeTest {
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("Non-local-call"));
         }
+    }
+
+    @Test
+    public void localCallOnlyMethodsDefinition() {
+        // To force initialization
+        String foo = Bridge.UPDATE_COLLECTIONS.name;
+
+        // Actual tests
+        Arrays.asList(
+            BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT,
+            BridgeMethods.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT,
+            BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR,
+            BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH,
+            BridgeMethods.GET_BTC_TX_HASH_PROCESSED_HEIGHT,
+            BridgeMethods.GET_FEDERATION_ADDRESS,
+            BridgeMethods.GET_FEDERATION_CREATION_BLOCK_NUMBER,
+            BridgeMethods.GET_FEDERATION_CREATION_TIME,
+            BridgeMethods.GET_FEDERATION_SIZE,
+            BridgeMethods.GET_FEDERATION_THRESHOLD,
+            BridgeMethods.GET_FEDERATOR_PUBLIC_KEY,
+            BridgeMethods.GET_FEE_PER_KB,
+            BridgeMethods.GET_LOCK_WHITELIST_ADDRESS,
+            BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS,
+            BridgeMethods.GET_LOCK_WHITELIST_SIZE,
+            BridgeMethods.GET_MINIMUM_LOCK_TX_VALUE,
+            BridgeMethods.GET_PENDING_FEDERATION_HASH,
+            BridgeMethods.GET_PENDING_FEDERATION_SIZE,
+            BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY,
+            BridgeMethods.GET_RETIRING_FEDERATION_ADDRESS,
+            BridgeMethods.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER,
+            BridgeMethods.GET_RETIRING_FEDERATION_CREATION_TIME,
+            BridgeMethods.GET_RETIRING_FEDERATION_SIZE,
+            BridgeMethods.GET_RETIRING_FEDERATION_THRESHOLD,
+            BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY,
+            BridgeMethods.GET_STATE_FOR_BTC_RELEASE_CLIENT,
+            BridgeMethods.GET_STATE_FOR_DEBUGGING,
+            BridgeMethods.IS_BTC_TX_HASH_ALREADY_PROCESSED
+        ).stream().forEach(m -> {
+            Assert.assertTrue(m.onlyAllowsLocalCalls());
+        });
+    }
+
+    @Test
+    public void mineableMethodsDefinition() {
+        // To force initialization
+        String foo = Bridge.UPDATE_COLLECTIONS.name;
+
+        // Actual tests
+        Arrays.asList(
+                BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY,
+                BridgeMethods.ADD_LOCK_WHITELIST_ADDRESS,
+                BridgeMethods.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS,
+                BridgeMethods.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS,
+                BridgeMethods.ADD_SIGNATURE,
+                BridgeMethods.COMMIT_FEDERATION,
+                BridgeMethods.CREATE_FEDERATION,
+                BridgeMethods.RECEIVE_HEADERS,
+                BridgeMethods.REGISTER_BTC_TRANSACTION,
+                BridgeMethods.RELEASE_BTC,
+                BridgeMethods.REMOVE_LOCK_WHITELIST_ADDRESS,
+                BridgeMethods.ROLLBACK_FEDERATION,
+                BridgeMethods.SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY,
+                BridgeMethods.UPDATE_COLLECTIONS,
+                BridgeMethods.VOTE_FEE_PER_KB
+        ).stream().forEach(m -> {
+            Assert.assertFalse(m.onlyAllowsLocalCalls());
+        });
     }
 }
