@@ -1080,7 +1080,7 @@ public class VM {
     }
 
     protected void doLOG(){
-        if (program.isStaticCall() && program.getBlockchainConfig().isRcs230()) {
+        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
             throw Program.ExceptionHelper.modificationException();
         }
 
@@ -1225,7 +1225,7 @@ public class VM {
     }
 
     protected void doSSTORE() {
-        if (program.isStaticCall() && program.getBlockchainConfig().isRcs230()) {
+        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
             throw Program.ExceptionHelper.modificationException();
         }
 
@@ -1368,7 +1368,7 @@ public class VM {
     }
 
     protected void doCREATE(){
-        if (program.isStaticCall() && program.getBlockchainConfig().isRcs230()) {
+        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
             throw Program.ExceptionHelper.modificationException();
         }
 
@@ -1567,7 +1567,7 @@ public class VM {
     }
 
     protected void doSUICIDE(){
-        if (program.isStaticCall() && program.getBlockchainConfig().isRcs230()) {
+        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
             throw Program.ExceptionHelper.modificationException();
         }
 
@@ -1860,7 +1860,7 @@ public class VM {
                 doCALL();
             break;
             case OpCodes.OP_STATICCALL:
-                if (!config.isRcs230()) {
+                if (!config.isRskip91()) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doCALL();
