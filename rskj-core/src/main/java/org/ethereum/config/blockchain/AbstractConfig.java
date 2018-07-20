@@ -156,4 +156,6 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
 
     @Override
     public boolean isRskip93() { return false; }
+
+    @Override public boolean isOrchidFork() { return false; }
 }

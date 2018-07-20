@@ -54,4 +54,6 @@ public interface BlockchainConfig {
     boolean isRskip87();
 
     boolean isRskip93();
+
+    boolean isOrchidFork();
 }

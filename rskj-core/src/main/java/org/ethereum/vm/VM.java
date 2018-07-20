@@ -1874,7 +1874,11 @@ public class VM {
             break;
             case OpCodes.OP_SUICIDE: doSUICIDE();
             break;
-            case OpCodes.OP_CODEREPLACE: doCODEREPLACE();
+            case OpCodes.OP_CODEREPLACE:
+                if (config.isOrchidFork()) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doCODEREPLACE();
             break;
             case OpCodes.OP_DUPN: doDUPN();
                 break;
