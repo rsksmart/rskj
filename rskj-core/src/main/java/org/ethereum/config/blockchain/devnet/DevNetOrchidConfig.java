@@ -40,7 +40,7 @@ public class DevNetOrchidConfig extends DevNetGenesisConfig {
     }
 
     @Override
-    public boolean isRcs230() {
+    public boolean isRskip91() {
         return true;
     }
 
