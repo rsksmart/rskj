@@ -86,4 +86,5 @@ public class RemascConfig {
     public long getPublishersDivisor() {
         return publishersDivisor;
     }
+
 }

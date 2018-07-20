@@ -20,7 +20,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.config.SystemProperties;
@@ -41,7 +40,7 @@ public class RepositoryBlockStore implements BtcBlockstoreWithCache {
 
     // power of 2 size that contains enough hashes to handle one year of blocks
     private static final int MAX_SIZE_MAP_STORED_BLOCKS = 65535;
-    private static Map<Sha256Hash, StoredBlock> knownBlocks = new MaxSizeHashMap<>(MAX_SIZE_MAP_STORED_BLOCKS);
+    private static Map<Sha256Hash, StoredBlock> knownBlocks = new MaxSizeHashMap<>(MAX_SIZE_MAP_STORED_BLOCKS, false);
 
     private final Repository repository;
     private final RskAddress contractAddress;

@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
+import co.rsk.remasc.Sibling;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockParentDependantValidationRule;
@@ -40,10 +41,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ajlopez on 04/08/2016.
@@ -977,6 +975,11 @@ public class BlockValidatorTest {
 
         @Override
         public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
+
+        @Override
+        public Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
+            return null;
+        }
     }
 }
 

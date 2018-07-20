@@ -49,4 +49,9 @@ public class DevNetGenesisConfig extends TestNetAfterBridgeSyncConfig {
     public boolean areBridgeTxsFree() {
         return true;
     }
+
+    @Override
+    public boolean isRskip85() {
+        return true;
+    }
 }

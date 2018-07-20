@@ -42,6 +42,8 @@ public interface BlockchainConfig {
     boolean areBridgeTxsFree();
 
     boolean isRskip90();
+    
+    boolean isRskip85();
 
     boolean isRskip89();
 

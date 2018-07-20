@@ -24,7 +24,8 @@ public class MaxSizeHashMap<K, V> extends LinkedHashMap<K, V> {
     private static final long serialVersionUID = -4738743439913276608L;
     private final int maxSize;
 
-    public MaxSizeHashMap(int maxSize) {
+    public MaxSizeHashMap(int maxSize, boolean accessOrder) {
+        super(maxSize, 0.75f, accessOrder);
         this.maxSize = maxSize;
     }
 
