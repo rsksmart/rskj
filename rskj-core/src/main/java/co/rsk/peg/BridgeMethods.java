@@ -20,7 +20,6 @@ package co.rsk.peg;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.db.ByteArrayWrapper;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Optional;
