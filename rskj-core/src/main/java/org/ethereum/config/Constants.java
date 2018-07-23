@@ -68,6 +68,7 @@ public class Constants {
     private int newBlockMaxSecondsInTheFuture = 540;
 
     private final BigInteger minimumPayableGas = BigInteger.valueOf(200000);
+    private final BigInteger federatorMinimumPayableGas = BigInteger.valueOf(50000);
 
     private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
 
@@ -167,5 +168,9 @@ public class Constants {
 
     public BigInteger getMinimumPayableGas() {
         return minimumPayableGas;
+    }
+
+    public BigInteger getFederatorMinimumPayableGas() {
+        return federatorMinimumPayableGas;
     }
 }

@@ -166,30 +166,7 @@ public class Remasc {
         Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
         syntheticReward = syntheticReward.subtract(payToRskLabs);
-
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config, repository, processingBlock);
-
-        Coin payToFederation = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
-
-        byte[] processingBlockHash = processingBlockHeader.getHash().getBytes();
-        int nfederators = federationProvider.getFederationSize();
-        Coin[] payAndRemainderToFederator = payToFederation.divideAndRemainder(BigInteger.valueOf(nfederators));
-        Coin payToFederator = payAndRemainderToFederator[0];
-        Coin restToLastFederator = payAndRemainderToFederator[1];
-        Coin paidToFederation = Coin.ZERO;
-
-        for (int k = 0; k < nfederators; k++) {
-            RskAddress federatorAddress = federationProvider.getFederatorAddress(k);
-
-            if (k == nfederators - 1 && restToLastFederator.compareTo(Coin.ZERO) > 0) {
-                feesPayer.payMiningFees(processingBlockHash, payToFederator.add(restToLastFederator), federatorAddress, logs);
-            } else {
-                feesPayer.payMiningFees(processingBlockHash, payToFederator, federatorAddress, logs);
-            }
-
-            paidToFederation = paidToFederation.add(payToFederator);
-        }
-
+        Coin payToFederation = payToTheFedation(configForBlock, isRskip85Enabled, processingBlock, processingBlockHeader, syntheticReward);
         syntheticReward = syntheticReward.subtract(payToFederation);
 
         if (!siblings.isEmpty()) {
@@ -210,7 +187,54 @@ public class Remasc {
         }
     }
 
+    private Coin payToTheFedation(BlockchainConfig configForBlock, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config, repository, processingBlock);
+        Coin payToFederation = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
+        BigInteger minimumFederatorPayableGas= null;
+        Coin minPayableFederatorFees = null;
+
+        if (isRskip85Enabled) {
+            minimumFederatorPayableGas = configForBlock.getConstants().getFederatorMinimumPayableGas();
+            minPayableFederatorFees = executionBlock.getMinimumGasPrice().multiply(minimumFederatorPayableGas);
+            provider.setFederationBalance(provider.getFederationBalance().add(payToFederation));
+        }
+
+        byte[] processingBlockHash = processingBlockHeader.getHash().getBytes();
+        int nfederators = federationProvider.getFederationSize();
+        Coin[] payAndRemainderToFederator = provider.getFederationBalance().divideAndRemainder(BigInteger.valueOf(nfederators));
+        Coin payToFederator = payAndRemainderToFederator[0];
+
+        if ((isRskip85Enabled) && (payToFederator.compareTo(minPayableFederatorFees)<0)) {
+            return Coin.ZERO;
+        }
+
+        Coin restToLastFederator = payAndRemainderToFederator[1];
+
+        for (int k = 0; k < nfederators; k++) {
+            RskAddress federatorAddress = federationProvider.getFederatorAddress(k);
+
+            if (k == nfederators - 1 && restToLastFederator.compareTo(Coin.ZERO) > 0) {
+                feesPayer.payMiningFees(processingBlockHash, payToFederator.add(restToLastFederator), federatorAddress, logs);
+            } else {
+                feesPayer.payMiningFees(processingBlockHash, payToFederator, federatorAddress, logs);
+            }
+
+        }
+
+        if (isRskip85Enabled) {
+            provider.setFederationBalance(Coin.ZERO);
+        }
+        else
+            provider.setFederationBalance(null);
+
+        return payToFederation;
+    }
+
+
+    void payToFederators() {
+
+    }
     /**
      * Remove siblings just processed if any
      */
