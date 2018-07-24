@@ -37,10 +37,15 @@ import org.springframework.context.annotation.Configuration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static java.lang.System.getProperty;
 import static java.util.Arrays.asList;
 
 @Configuration
@@ -59,22 +64,52 @@ public class CommonConfig {
             logger.info("Database reset done");
         }
 
-        // The code used to be associated to an account and it belonged to the account state
-        // We need to move it into its own database
-        // For this we copy all the code that appears on every account state into the right entry on the code database
-        // It is mandatory for a "state" database to exist and not a "code" one
-        // The db abstraction will need to check if this migration is actually needed, we just assumed that it is here
-        boolean shouldMigrateCode = new File(databaseDir + "/state").exists() && !new File(databaseDir + "/code").exists();
-
         KeyValueDataSource ds = makeDataSource(config, "state");
         KeyValueDataSource detailsDS = makeDataSource(config, "details");
         KeyValueDataSource codeDS = makeDataSource(config, "code");
+        KeyValueDataSource version = makeDataSource(config, "version");
 
-        final RepositoryImpl repository = new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS, codeDS);
+        RepositoryImpl repository = new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS, codeDS, version);
 
-        if (shouldMigrateCode) {
-            repository.migrateCode();
+
+        // The code used to be associated to an account and it belonged to the account state
+        // We need to move it into its own database
+        // For this we copy all the code that appears on every account state into the right entry on the code database
+        // The db abstraction will need to check if this migration is actually needed
+        //TODO(donequis): should move to a nice place where healthy checks take place
+        if (repository.shouldMigrateDb()) {
+            logger.info("Code db is out of date. Migrating [...]");
+            LevelDbDataSource temp = null;
+            boolean success = false;
+            try {
+                temp = (LevelDbDataSource) makeDataSource(config, "temp");
+                success = repository.migrateCode(temp);
+            } finally {
+                if (temp != null) temp.close();
+            }
+
+            if (success) {
+                detailsDS.close();
+                Path src;
+
+                //TODO: repeated code in leveldb datasource
+                if (Paths.get(config.databaseDir()).isAbsolute()) {
+                    src = Paths.get(config.databaseDir(), "temp");
+                } else {
+                    src = Paths.get(getProperty("user.dir"), config.databaseDir(), "temp");
+                }
+
+                FileUtil.recursiveDelete(src.resolveSibling("details").toAbsolutePath().toString());
+                Files.move(src, src.resolveSibling("details"), StandardCopyOption.REPLACE_EXISTING);
+                repository.setVersion();
+
+                detailsDS = makeDataSource(config, "details");
+                repository = new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS, codeDS, version);
+            }
+        } else {
+            logger.debug("No need to migrate code db");
         }
+
 
 
         return repository;

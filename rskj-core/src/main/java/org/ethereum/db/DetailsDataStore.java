@@ -28,6 +28,7 @@ import org.ethereum.datasource.LevelDbDataSource;
 import org.iq80.leveldb.DBIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.*;
@@ -52,8 +53,6 @@ public class DetailsDataStore {
     private final DatabaseImpl db;
     private final DatabaseImpl codedb;
 
-    private final static byte[] DB_VERSION = "bamboo_version".getBytes();
-    private final static byte[] DB_V_KEY = "VERSION".getBytes();
     private boolean versionSet = false;
 
     public DetailsDataStore(RskSystemProperties config, DatabaseImpl db, DatabaseImpl codedb) {
@@ -123,11 +122,6 @@ public class DetailsDataStore {
         long keys = cache.size();
         keys += codeCache.size();
 
-        if (!versionSet) {
-            db.put(DB_V_KEY, DB_VERSION);
-            versionSet = true;
-        }
-
         long start = System.nanoTime();
         long totalSize = flushInternal();
         long finish = System.nanoTime();
@@ -181,38 +175,35 @@ public class DetailsDataStore {
         return keys;
     }
 
-    public void checkAndMigrateDB() throws IOException {
-        gLogger.info("Checking if we need to migrate code to new database");
-        byte[] version = db.get(DB_V_KEY);
-        if (version != null && Arrays.equals(version, DB_VERSION)) {
-            return;
-        }
+    public boolean checkAndMigrateDB(LevelDbDataSource dst) throws IOException {
 
         DBIterator iterator = ((LevelDbDataSource)db.getDb()).getLevelDb().iterator();
         try {
             int count = 0;
+            gLogger.info("Starting code db migration. This process may take a few minutes.");
             for(iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-                gLogger.trace("Migrating entry number {}", count++);
                 byte[] key = iterator.peekNext().getKey();
-                if (key.length != 20) {
-                    continue;
-                }
                 byte[] value = iterator.peekNext().getValue();
-
+                if (key.length > 20) {
+                    //ABORT
+                    gLogger.warn("Unexpected key size on details db k:{} v:{}", Hex.toHexString(key), Hex.toHexString(value));
+                    throw new IllegalStateException("Unexpected key size on details db k:" + Hex.toHexString(key) + "v:" + Hex.toHexString(value));
+                }
                 byte[] code = extractCode(value);
                 code = code != null ? code : EMPTY_BYTE_ARRAY;
                 ContractDetailsImpl details = createFromOldData(value);
 
-                update(new RskAddress(key), details);
+                dst.put(key, details.getEncoded());
                 // Hash was saved on another db
                 // I wanted to avoid calculating this hash here, but ideally this code will be deleted soon
                 Keccak256 hash = new Keccak256(Keccak256Helper.keccak256(code));
                 newCode(hash, code);
             }
+            gLogger.info("Code db migration ended succesfully");
         } finally {
-            // Make sure you close the iterator to avoid resource leaks.
             iterator.close();
         }
+        return true;
     }
 
     protected byte[] extractCode(byte[] data) {

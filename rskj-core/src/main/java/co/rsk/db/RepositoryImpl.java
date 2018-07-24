@@ -32,6 +32,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.*;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -54,6 +55,7 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 public class RepositoryImpl implements Repository {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
+    private static final byte[] VERSION = "version".getBytes();
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
@@ -62,6 +64,7 @@ public class RepositoryImpl implements Repository {
     private Trie trie;
     private DetailsDataStore detailsDataStore;
     private boolean closed;
+    private KeyValueDataSource version;
 
     public RepositoryImpl(RskSystemProperties config) {
         this(config, null);
@@ -72,14 +75,18 @@ public class RepositoryImpl implements Repository {
     }
 
     public RepositoryImpl(RskSystemProperties config, TrieStore store, KeyValueDataSource detailsDS, KeyValueDataSource codeDS) {
-        this(config, store, new DetailsDataStore(config, new DatabaseImpl(detailsDS), new DatabaseImpl(codeDS)));
+        this(config, store, detailsDS, codeDS, (KeyValueDataSource)null);
+    }
+    public RepositoryImpl(RskSystemProperties config, TrieStore store, KeyValueDataSource detailsDS, KeyValueDataSource codeDS, KeyValueDataSource version) {
+        this(config, store, new DetailsDataStore(config, new DatabaseImpl(detailsDS), new DatabaseImpl(codeDS)), version);
     }
 
-    private RepositoryImpl(RskSystemProperties config, TrieStore store, DetailsDataStore detailsDataStore) {
+    private RepositoryImpl(RskSystemProperties config, TrieStore store, DetailsDataStore detailsDataStore, KeyValueDataSource version) {
         this.config = config;
         this.store = store;
         this.trie = new TrieImpl(store, true);
         this.detailsDataStore = detailsDataStore;
+        this.version = version;
     }
 
     @Override
@@ -401,7 +408,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository getSnapshotTo(byte[] root) {
-        RepositoryImpl snapshotRepository = new RepositoryImpl(this.config, this.store, this.detailsDataStore);
+        RepositoryImpl snapshotRepository = new RepositoryImpl(this.config, this.store, this.detailsDataStore, (KeyValueDataSource)null);
         snapshotRepository.syncToRoot(root);
         return snapshotRepository;
     }
@@ -434,7 +441,18 @@ public class RepositoryImpl implements Repository {
 
     // This moves `code` that appears in the account state to code database
     // It should be called only once and it belongs to an update on the client
-    public void migrateCode() throws IOException {
-        detailsDataStore.checkAndMigrateDB();
+    public boolean migrateCode(LevelDbDataSource dst) throws IOException {
+        return detailsDataStore.checkAndMigrateDB(dst);
+    }
+
+    public boolean shouldMigrateDb() {
+        //TODO(donequis): maybe check that details is non empty ?
+        byte[] v = this.version.get(VERSION);
+        return !(v != null && v.length == 1 && v[0] == 1);
+    }
+
+    public void setVersion() {
+        byte[] v = new byte[1]; v[0] = 1;
+        version.put(VERSION, v);
     }
 }
