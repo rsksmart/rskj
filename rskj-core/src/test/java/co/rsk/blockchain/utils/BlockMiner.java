@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 import java.math.BigInteger;
 
 import static co.rsk.mine.MinerServerImpl.compressCoinbase;
-import static co.rsk.mine.MinerServerImpl.getBitcoinMergedMerkleBranch;
+import static co.rsk.mine.MerkleProofBuilder.getBitcoinMergedMerkleBranch;
 
 /**
  * Created by ajlopez on 13/09/2017.

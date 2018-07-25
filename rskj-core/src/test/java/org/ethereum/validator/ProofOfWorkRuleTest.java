@@ -38,7 +38,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-import static co.rsk.mine.MinerServerImpl.getBitcoinMergedMerkleBranch;
+import static co.rsk.mine.MerkleProofBuilder.getBitcoinMergedMerkleBranch;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
