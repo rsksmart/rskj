@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -39,6 +40,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class MinerUtils {
@@ -130,6 +132,21 @@ public class MinerUtils {
         long time = System.currentTimeMillis() / 1000;
         long difficultyTarget = co.rsk.bitcoinj.core.Utils.encodeCompactBits(params.getMaxTarget());
         return new co.rsk.bitcoinj.core.BtcBlock(params, params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT), prevBlockHash, null, time, difficultyTarget, 0, transactions);
+    }
+
+    /**
+     * Takes in a proofBuilderFunction (e.g. buildFromTxHashes)
+     * and executes it on the builder corresponding to this block number.
+     */
+    public static byte[] buildMerkleProof(
+            BlockchainNetConfig blockchainConfig,
+            Function<MerkleProofBuilder, byte[]> proofBuilderFunction,
+            long blockNumber) {
+        if (blockchainConfig.getConfigForBlock(blockNumber).isRskip92()) {
+            return proofBuilderFunction.apply(new Rskip92MerkleProofBuilder());
+        } else {
+            return proofBuilderFunction.apply(new GenesisMerkleProofBuilder());
+        }
     }
 
     public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool) {

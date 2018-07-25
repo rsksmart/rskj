@@ -56,18 +56,22 @@ import static org.junit.Assert.*;
 /**
  * Created by adrian.eidelman on 3/16/2016.
  */
-public class MinerServerTest {
-    private static final TestSystemProperties config = new TestSystemProperties();
-    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
+public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
+    private final DifficultyCalculator difficultyCalculator;
     private BlockChainImpl blockchain;
     private Repository repository;
     private BlockStore blockStore;
     private TransactionPool transactionPool;
 
+    public MinerServerTest(TestSystemProperties config) {
+        super(config);
+        this.difficultyCalculator = new DifficultyCalculator(config);
+    }
+
     @Before
     public void setUp() {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         repository = factory.getRepository();
         blockStore = factory.getBlockStore();
@@ -105,14 +109,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 this.blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         localTransactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -144,14 +148,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         transactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -207,14 +211,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         transactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -255,14 +259,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         transactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -306,14 +310,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         transactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -364,14 +368,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         transactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -414,14 +418,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         transactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -469,14 +473,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 this.blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         transactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -506,14 +510,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 this.blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         transactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -543,14 +547,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 this.blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         transactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -584,14 +588,14 @@ public class MinerServerTest {
                 ethereumImpl,
                 this.blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         blockStore,
                         transactionPool,
-                        DIFFICULTY_CALCULATOR,
+                        difficultyCalculator,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
@@ -716,7 +720,7 @@ public class MinerServerTest {
                 Mockito.mock(Ethereum.class),
                 Mockito.mock(Blockchain.class),
                 null,
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 getBuilderWithMocks(),
                 ConfigUtils.getDefaultMiningConfig()
@@ -729,7 +733,7 @@ public class MinerServerTest {
                 Mockito.mock(Repository.class),
                 Mockito.mock(BlockStore.class),
                 Mockito.mock(TransactionPool.class),
-                DIFFICULTY_CALCULATOR,
+                difficultyCalculator,
                 new GasLimitCalculator(config),
                 Mockito.mock(BlockValidationRule.class),
                 config,

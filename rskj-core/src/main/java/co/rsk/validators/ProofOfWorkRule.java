@@ -28,6 +28,7 @@ import co.rsk.util.DifficultyUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Pack;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -53,14 +54,16 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
+    private final BlockchainNetConfig blockchainConfig;
     private final BridgeConstants bridgeConstants;
     private final Constants constants;
     private boolean fallbackMiningEnabled = true;
 
     @Autowired
     public ProofOfWorkRule(RskSystemProperties config) {
-        this.bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
-        this.constants = config.getBlockchainConfig().getCommonConstants();
+        this.blockchainConfig = config.getBlockchainConfig();
+        this.bridgeConstants = blockchainConfig.getCommonConstants().getBridgeConstants();
+        this.constants = blockchainConfig.getCommonConstants();
     }
 
     public ProofOfWorkRule setFallbackMiningEnabled(boolean e) {
@@ -123,7 +126,11 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = bridgeConstants.getBtcParams();
         MerkleProofValidator mpValidator;
         try {
-            mpValidator = new MerkleProofValidator(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());
+            if (blockchainConfig.getConfigForBlock(header.getNumber()).isRskip92()) {
+                mpValidator = new Rskip92MerkleProofValidator(header.getBitcoinMergedMiningMerkleProof());
+            } else {
+                mpValidator = new GenesisMerkleProofValidator(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());
+            }
         } catch (RuntimeException ex) {
             logger.warn("Merkle proof can't be validated. Header {}", header.getShortHash(), ex);
             return false;

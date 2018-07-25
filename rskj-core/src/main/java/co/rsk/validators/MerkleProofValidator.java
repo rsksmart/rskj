@@ -17,36 +17,13 @@
  */
 package co.rsk.validators;
 
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class MerkleProofValidator {
-
-    private final NetworkParameters bitcoinNetworkParameters;
-    private final byte[] pmtSerialized;
-
-    public MerkleProofValidator(NetworkParameters bitcoinNetworkParameters, byte[] pmtSerialized) {
-        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
-            throw new IllegalArgumentException("Partial merkle tree does not have the expected size");
-        }
-
-        this.bitcoinNetworkParameters = bitcoinNetworkParameters;
-        this.pmtSerialized = pmtSerialized;
-    }
+public interface MerkleProofValidator {
 
     /**
      * Validates that the coinbase hash is included in the serialized PartialMerkleTree
      * and it has the expected root.
      */
-    public boolean isValid(Sha256Hash expectedRoot, Sha256Hash coinbaseHash) {
-        PartialMerkleTree merkleTree = new PartialMerkleTree(bitcoinNetworkParameters, pmtSerialized, 0);
-        List<Sha256Hash> txHashes = new ArrayList<>();
-        Sha256Hash root = merkleTree.getTxnHashAndMerkleRoot(txHashes);
-        return root.equals(expectedRoot) && txHashes.contains(coinbaseHash);
-    }
+    boolean isValid(Sha256Hash expectedRoot, Sha256Hash coinbaseHash);
 }

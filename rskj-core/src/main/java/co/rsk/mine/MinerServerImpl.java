@@ -18,7 +18,8 @@
 
 package co.rsk.mine;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
@@ -35,6 +36,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.Ethereum;
@@ -56,6 +58,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * The MinerServer provides support to components that perform the actual mining.
@@ -77,6 +80,7 @@ public class MinerServerImpl implements MinerServer {
     private final Blockchain blockchain;
     private final ProofOfWorkRule powRule;
     private final BlockToMineBuilder builder;
+    private final BlockchainNetConfig blockchainConfig;
 
     private boolean isFallbackMining;
     private int fallbackBlocksGenerated;
@@ -129,6 +133,7 @@ public class MinerServerImpl implements MinerServer {
         this.difficultyCalculator = difficultyCalculator;
         this.powRule = powRule;
         this.builder = builder;
+        this.blockchainConfig = config.getBlockchainConfig();
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
 
@@ -146,9 +151,9 @@ public class MinerServerImpl implements MinerServer {
                 config.getAverageFallbackMiningTime();
         // default
         if (secsBetweenFallbackMinedBlocks == 0) {
-            secsBetweenFallbackMinedBlocks = (config.getBlockchainConfig().getCommonConstants().getDurationLimit());
+            secsBetweenFallbackMinedBlocks = (blockchainConfig.getCommonConstants().getDurationLimit());
         }
-        autoSwitchBetweenNormalAndFallbackMining = !config.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BlockDifficulty.ZERO);
+        autoSwitchBetweenNormalAndFallbackMining = !blockchainConfig.getCommonConstants().getFallbackMiningDifficulty().equals(BlockDifficulty.ZERO);
     }
 
     // This method is used for tests
@@ -384,10 +389,13 @@ public class MinerServerImpl implements MinerServer {
             int blockTxnCount) {
         logger.debug("Received merkle solution with hash {} for merged mining", blockHashForMergedMining);
 
-        MerkleProofBuilder proofBuilder = new MerkleProofBuilder();
-        byte[] merkleProof = proofBuilder.buildFromMerkleHashes(blockWithHeaderOnly, merkleHashes, blockTxnCount);
-
-        return processSolution(blockHashForMergedMining, blockWithHeaderOnly, coinbase, merkleProof, true);
+        return processSolution(
+                blockHashForMergedMining,
+                blockWithHeaderOnly,
+                coinbase,
+                (pb) -> pb.buildFromMerkleHashes(blockWithHeaderOnly, merkleHashes, blockTxnCount),
+                true
+        );
     }
 
     @Override
@@ -398,10 +406,13 @@ public class MinerServerImpl implements MinerServer {
             List<String> txHashes) {
         logger.debug("Received tx solution with hash {} for merged mining", blockHashForMergedMining);
 
-        MerkleProofBuilder proofBuilder = new MerkleProofBuilder();
-        byte[] merkleProof = proofBuilder.buildFromTxHashes(blockWithHeaderOnly, txHashes);
-
-        return processSolution(blockHashForMergedMining, blockWithHeaderOnly, coinbase, merkleProof, true);
+        return processSolution(
+                blockHashForMergedMining,
+                blockWithHeaderOnly,
+                coinbase,
+                (pb) -> pb.buildFromTxHashes(blockWithHeaderOnly, txHashes),
+                true
+        );
     }
 
     @Override
@@ -412,19 +423,20 @@ public class MinerServerImpl implements MinerServer {
     SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
         logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
 
-        //noinspection ConstantConditions
-        BtcTransaction coinbase = bitcoinMergedMiningBlock.getTransactions().get(0);
-        MerkleProofBuilder proofBuilder = new MerkleProofBuilder();
-        byte[] merkleProof = proofBuilder.buildFromBlock(bitcoinMergedMiningBlock);
-
-        return processSolution(blockHashForMergedMining, bitcoinMergedMiningBlock, coinbase, merkleProof, lastTag);
+        return processSolution(
+                blockHashForMergedMining,
+                bitcoinMergedMiningBlock,
+                bitcoinMergedMiningBlock.getTransactions().get(0),
+                (pb) -> pb.buildFromBlock(bitcoinMergedMiningBlock),
+                lastTag
+        );
     }
 
     private SubmitBlockResult processSolution(
             String blockHashForMergedMining,
             BtcBlock blockWithHeaderOnly,
             BtcTransaction coinbase,
-            byte[] merkleProof,
+            Function<MerkleProofBuilder, byte[]> proofBuilderFunction,
             boolean lastTag) {
         Block newBlock;
         Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
@@ -449,7 +461,7 @@ public class MinerServerImpl implements MinerServer {
 
         newBlock.setBitcoinMergedMiningHeader(blockWithHeaderOnly.cloneAsHeader().bitcoinSerialize());
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), lastTag));
-        newBlock.setBitcoinMergedMiningMerkleProof(merkleProof);
+        newBlock.setBitcoinMergedMiningMerkleProof(MinerUtils.buildMerkleProof(blockchainConfig, proofBuilderFunction, newBlock.getNumber()));
         newBlock.seal();
 
         if (!isValid(newBlock)) {
