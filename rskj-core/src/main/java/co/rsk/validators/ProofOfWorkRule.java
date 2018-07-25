@@ -28,6 +28,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import co.rsk.util.DifficultyUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.util.Pack;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -37,7 +39,6 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -197,6 +198,14 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
         if (remainingByteCount > RskMiningConstants.MAX_BYTES_AFTER_MERGED_MINING_HASH) {
             logger.warn("More than 128 bytes after RSK tag");
+            return false;
+        }
+
+        // TODO test
+        long byteCount = Pack.bigEndianToLong(bitcoinMergedMiningCoinbaseTransactionMidstate, 8);
+        long coinbaseLength = bitcoinMergedMiningCoinbaseTransactionTail.length + byteCount;
+        if (coinbaseLength <= 64) {
+            logger.warn("Coinbase transaction must always be greater than 64-bytes long. But it was: {}", coinbaseLength);
             return false;
         }
 
