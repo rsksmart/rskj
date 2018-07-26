@@ -480,6 +480,63 @@ public class RemascStorageProviderTest {
     }
 
     @Test
+    public void alwaysPaysFedBeforeRFS() throws IOException {
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetAfterBridgeSyncConfig());
+        Constants constants = spy(new TestNetAfterBridgeSyncConfig.TestNetConstants());
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        when(blockchainConfig.getCommonConstants()).thenReturn(constants);
+        when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn((BlockchainConfig)blockchainConfig);
+        // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
+        when(constants.getChainId()).thenReturn((byte)33);
+
+        long minerFee = 21000;
+        long txValue = 10000;
+        long gasPrice = 1L;
+
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
+
+        RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)
+                .initialHeight(15).siblingElements(new ArrayList<>()).txSigningKey(this.cowKey).gasPrice(gasPrice);
+
+        testRunner.start();
+        Repository repository = testRunner.getBlockChain().getRepository();
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config, repository, testRunner.getBlockChain().getBestBlock());
+        assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(testRunner.getBlockChain()).getFederationBalance());
+        assertEquals(Coin.valueOf(48), RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
+    }
+
+    @Test
+    public void doesntPayFedBelowMinimumRewardAfterRFS() throws IOException {
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetOrchidConfig());
+        Constants constants = spy(new TestNetAfterBridgeSyncConfig.TestNetConstants());
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        when(blockchainConfig.getCommonConstants()).thenReturn(constants);
+        when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn((BlockchainConfig)blockchainConfig);
+        // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
+        when(constants.getChainId()).thenReturn((byte)33);
+        when(constants.getMinimumPayableGas()).thenReturn(BigInteger.valueOf(0));
+        when(constants.getFederatorMinimumPayableGas()).thenReturn(BigInteger.valueOf(10000L));
+        long minerFee = 21000;
+        long txValue = 10000;
+        long gasPrice = 1L;
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
+        RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)
+                .initialHeight(15).siblingElements(new ArrayList<>()).txSigningKey(this.cowKey).gasPrice(gasPrice);
+
+        testRunner.start();
+        Repository repository = testRunner.getBlockChain().getRepository();
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config, repository, testRunner.getBlockChain().getBestBlock());
+        assertEquals(Coin.valueOf(336), this.getRemascStorageProvider(testRunner.getBlockChain()).getFederationBalance());
+        assertEquals(null, RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
+    }
+
+    @Test
     public void doesntPayBelowMinimumRewardAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new TestNetOrchidConfig());
@@ -501,6 +558,35 @@ public class RemascStorageProviderTest {
 
         testRunner.start();
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(testRunner.getBlockChain()), Coin.valueOf(126000), Coin.valueOf(0L), 0L);
+    }
+
+    @Test
+    public void paysFedWhenHigherThanMinimumRewardAfterRFS() throws IOException {
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetOrchidConfig());
+        Constants constants = spy(new TestNetAfterBridgeSyncConfig.TestNetConstants());
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        when(blockchainConfig.getCommonConstants()).thenReturn(constants);
+        when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn((BlockchainConfig)blockchainConfig);
+        // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
+        when(constants.getChainId()).thenReturn((byte)33);
+        when(constants.getMinimumPayableGas()).thenReturn(BigInteger.valueOf(0));
+        when(constants.getFederatorMinimumPayableGas()).thenReturn(BigInteger.valueOf(10L));
+        long minerFee = 21000;
+        long txValue = 10000;
+        long gasPrice = 10L;
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
+
+        RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)
+                .initialHeight(15).siblingElements(new ArrayList<>()).txSigningKey(this.cowKey).gasPrice(gasPrice);
+
+        testRunner.start();
+        Repository repository = testRunner.getBlockChain().getRepository();
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config, repository, testRunner.getBlockChain().getBestBlock());
+        assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(testRunner.getBlockChain()).getFederationBalance());
+        assertEquals(Coin.valueOf(480), RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
     }
 
     @Test
