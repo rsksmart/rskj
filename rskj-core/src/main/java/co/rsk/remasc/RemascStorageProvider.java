@@ -41,6 +41,7 @@ class RemascStorageProvider {
     private static final String BURNED_BALANCE_KEY = "burnedBalance";
     private static final String SIBLINGS_KEY = "siblings";
     private static final String BROKEN_SELECTION_RULE_KEY = "brokenSelectionRule";
+    private static final String FEDERATION_BALANCE_KEY = "federationBalance";
 
     private Repository repository;
     private RskAddress contractAddress;
@@ -48,6 +49,7 @@ class RemascStorageProvider {
     // Values retrieved / to be stored on the contract state
     private Coin rewardBalance;
     private Coin burnedBalance;
+    private Coin federationBalance;
     private SortedMap<Long, List<Sibling>> siblings;
     private Boolean brokenSelectionRule;
 
@@ -55,6 +57,23 @@ class RemascStorageProvider {
         this.repository = repository;
         this.contractAddress = contractAddress;
     }
+
+    public Coin getFederationBalance() {
+        if (federationBalance != null) {
+            return federationBalance ;
+        }
+
+        DataWord address = new DataWord(FEDERATION_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
+
+        DataWord value = this.repository.getStorageValue(this.contractAddress, address);
+
+        if (value == null) {
+            return Coin.ZERO;
+        }
+
+        return new Coin(value.getData());
+    }
+
 
     public Coin getRewardBalance() {
         if (rewardBalance != null) {
@@ -70,6 +89,21 @@ class RemascStorageProvider {
         }
 
         return new Coin(value.getData());
+    }
+
+
+    public void setFederationBalance(Coin federationBalance) {
+        this.federationBalance = federationBalance;
+    }
+
+    private void saveFederationBalance() {
+        if (federationBalance == null) {
+            return;
+        }
+
+        DataWord address = new DataWord(FEDERATION_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
+
+        this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.federationBalance.getBytes()));
     }
 
     public void setRewardBalance(Coin rewardBalance) {
@@ -257,5 +291,6 @@ class RemascStorageProvider {
         saveBurnedBalance();
         saveSiblings();
         saveBrokenSelectionRule();
+        saveFederationBalance();
     }
 }
