@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import co.rsk.asm.EVMAssembler;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -28,22 +29,25 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.GenesisConfig;
-import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.VM;
+import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -79,7 +83,6 @@ import static org.mockito.Mockito.*;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Bridge.class, BridgeUtils.class})
 public class BridgeTest {
-
     private static NetworkParameters networkParameters;
     private static BridgeConstants bridgeConstants;
 
@@ -237,8 +240,6 @@ public class BridgeTest {
         track.commit();
     }
 
-
-
     @Test
     public void sendNoBlockHeader() throws IOException {
         Repository repository = new RepositoryImpl(config);
@@ -282,15 +283,29 @@ public class BridgeTest {
 
     @Test
     public void executeWithFunctionSignatureLengthTooShort() {
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        Assert.assertNull(bridge.execute(new byte[3]));
+        try {
+            Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+            Transaction mockedTx = mock(Transaction.class);
+            bridge.init(mockedTx, getGenesisBlock(), null, null, null, null);
+            bridge.execute(new byte[3]);
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid data given"));
+        }
     }
 
 
     @Test
     public void executeWithInexistentFunction() {
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        Assert.assertNull(bridge.execute(new byte[4]));
+        try {
+            Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+            Transaction mockedTx = mock(Transaction.class);
+            bridge.init(mockedTx, getGenesisBlock(), null, null, null, null);
+            bridge.execute(new byte[4]);
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid data given"));
+        }
     }
 
     @Test
@@ -311,27 +326,6 @@ public class BridgeTest {
         }
 
         track.commit();
-    }
-
-    @Test
-    public void executeGetStateForDebuggingInBamboo() {
-        executeBridgeMethod(new RegTestGenesisConfig(), Bridge.GET_STATE_FOR_DEBUGGING);
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void executeGetStateForDebuggingAfterBamboo() {
-        executeBridgeMethod(new RegTestOrchidConfig(), Bridge.GET_STATE_FOR_DEBUGGING);
-    }
-
-    private void executeBridgeMethod(BlockchainNetConfig blockchainConfig, CallTransaction.Function bridgeMethod) {
-        TestSystemProperties propertiesInBamboo = new TestSystemProperties();
-        propertiesInBamboo.setBlockchainConfig(blockchainConfig);
-
-        Repository repository = new RepositoryImpl(propertiesInBamboo).startTracking();
-        Bridge bridge = new Bridge(propertiesInBamboo, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(mock(Transaction.class), mock(Block.class), repository, mock(BlockStore.class), mock(ReceiptStore.class), Collections.emptyList());
-
-        bridge.execute(bridgeMethod.encodeSignature());
     }
 
     @Test
@@ -759,7 +753,9 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, getGenesisBlock(), track, null, null, null);
+        Transaction mockedTx = mock(Transaction.class);
+        when(mockedTx.isLocalCallTransaction()).thenReturn(true);
+        bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
 
         byte[] data = Bridge.GET_FEDERATION_ADDRESS.encode();
 
@@ -773,7 +769,9 @@ public class BridgeTest {
 
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, getGenesisBlock(), track, null, null, null);
+        Transaction mockedTx = mock(Transaction.class);
+        when(mockedTx.isLocalCallTransaction()).thenReturn(true);
+        bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
 
         byte[] data = Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
 
@@ -958,6 +956,56 @@ public class BridgeTest {
         }
     }
 
+    @Test
+    public void getBtcBlockchainBlockLocatorBeforeRskip89Fork() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        String hashedString = "0000000000000000000000000000000000000000000000000000000000000001";
+
+        Sha256Hash hash = Sha256Hash.wrap(hashedString);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getBtcBlockchainBlockLocator())
+                .then((InvocationOnMock invocation) -> Arrays.asList(hash));
+
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
+        PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
+
+        spiedBridge.init(mock(Transaction.class), getGenesisBlock(), track, null, null, null);
+
+        byte[] result = spiedBridge.execute(Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.encode(new Object[]{ }));
+        Object[] decodedResult = (Object[]) BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.getFunction().decodeResult(result)[0];
+
+        Assert.assertEquals(1, decodedResult.length);
+        Assert.assertEquals(hashedString, decodedResult[0]);
+    }
+
+    @Test
+    public void getBtcBlockchainBlockLocatorAfterRskip89Fork() {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip89()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+
+        bridge.init(mock(Transaction.class), getGenesisBlock(), track, null, null, null);
+
+        try {
+            bridge.execute(Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.encode(new Object[]{ }));
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid data given:"));
+
+        }
+    }
+
     private BtcTransaction createTransaction() {
         return new SimpleBtcTransaction(networkParameters, PegTestUtils.createHash());
     }
@@ -979,7 +1027,11 @@ public class BridgeTest {
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(Genesis.getInstance(config));
-        bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
+
+        Repository mockRepository = mock(Repository.class);
+        when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
+
+        bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
         Assert.assertEquals(0, bridge.getGasForData(rskTx.getData()));
 
         config.setBlockchainConfig(blockchainNetConfigOriginal);
@@ -1076,7 +1128,11 @@ public class BridgeTest {
         for (int i = 0; i < 20; i++) {
             rskExecutionBlock = blockGenerator.createChildBlock(rskExecutionBlock);
         }
-        bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
+
+        Repository mockRepository = mock(Repository.class);
+        when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
+
+        bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
         Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
 
         config.setBlockchainConfig(blockchainNetConfigOriginal);
@@ -1410,14 +1466,16 @@ public class BridgeTest {
         Transaction mockedTransaction = mock(Transaction.class);
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
-        // I still mock the data to make sure that the null is because of the method deactivation and not lack of data
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getLockWhitelistEntryByAddress(any(String.class))).then((InvocationOnMock invocation) ->
-                new UnlimitedWhiteListEntry(address)
-        );
 
-        Assert.assertNull(bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toBase58() })));
+        try {
+            bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toBase58() }));
+            Assert.fail();
+        }
+        catch(Exception e) {
+            Throwable causeException = e.getCause();
+            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
+            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
+        }
     }
 
     @Test
@@ -1445,6 +1503,7 @@ public class BridgeTest {
         PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
 
         mockedTransaction = mock(Transaction.class);
+        when(mockedTransaction.isLocalCallTransaction()).thenReturn(true);
         spiedBridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         // Get the unlimited whitelist address
@@ -1506,7 +1565,14 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        Assert.assertNull(bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) })));
+        try {
+            bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) }));
+            Assert.fail();
+        } catch(Exception e) {
+            Throwable causeException = e.getCause();
+            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
+            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
+        }
     }
 
     @Test
@@ -1522,7 +1588,14 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        Assert.assertNull(bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) })));
+        try {
+            bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) }));
+            Assert.fail();
+        } catch(Exception e) {
+            Throwable causeException = e.getCause();
+            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
+            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
+        }
     }
 
     @Test
@@ -1565,7 +1638,15 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        Assert.assertNull(bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address" })));
+        try {
+            bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address" }));
+            Assert.fail();
+        } catch(Exception e) {
+            Throwable causeException = e.getCause();
+            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
+            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
+        }
+
     }
 
     @Test
@@ -1678,6 +1759,93 @@ public class BridgeTest {
         verify(mockedLogger, never()).warn(any(String.class), any(), any()); // "Invalid function arguments {} for function {}."
     }
 
+    @Test
+    public void executeMethodWithOnlyLocalCallsAllowed_localCallTx() throws Exception {
+        Transaction tx = mock(Transaction.class);
+        when(tx.isLocalCallTransaction()).thenReturn(true);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(tx, getGenesisBlock(), null, null, null, null);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+        Address address = new BtcECKey().toAddress(networkParameters);
+        when(bridgeSupportMock.getFederationAddress()).thenReturn(address);
+
+        byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
+        bridge.execute(data);
+
+        verify(bridgeSupportMock, times(1)).getFederationAddress();
+    }
+
+    @Test
+    public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx_beforeOrchid() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip88()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getFederationAddress()).thenReturn(new BtcECKey().toAddress(networkParameters));
+        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+
+        Transaction tx = mock(Transaction.class);
+        when(tx.isLocalCallTransaction()).thenReturn(false);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(tx, getGenesisBlock(), null, null, null, null);
+
+        byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
+        bridge.execute(data);
+    }
+
+    @Test
+    public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip88()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+
+        try {
+            Transaction tx = mock(Transaction.class);
+            when(tx.isLocalCallTransaction()).thenReturn(false);
+            Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+            bridge.init(tx, getGenesisBlock(), null, null, null, null);
+
+            byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
+            bridge.execute(data);
+            Assert.fail();
+        } catch (RuntimeException e) {
+            verify(bridgeSupportMock, never()).getFederationAddress();
+            Assert.assertTrue(e.getMessage().contains("Non-local-call"));
+        }
+    }
+
+    @Test
+    public void executeMethodWithAnyCallsAllowed_localCallTx() throws Exception {
+        executeAndCheckMethodWithAnyCallsAllowed(true);
+    }
+
+    @Test
+    public void executeMethodWithAnyCallsAllowed_nonLocalCallTx() throws Exception {
+        executeAndCheckMethodWithAnyCallsAllowed(false);
+    }
+
+    private void executeAndCheckMethodWithAnyCallsAllowed(boolean localCall) throws Exception {
+        Transaction tx = mock(Transaction.class);
+        when(tx.isLocalCallTransaction()).thenReturn(localCall);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(tx, getGenesisBlock(), null, null, null, null);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+        when(bridgeSupportMock.voteFeePerKbChange(tx, Coin.CENT)).thenReturn(1);
+
+        byte[] data = BridgeMethods.VOTE_FEE_PER_KB.getFunction().encode(new Object[]{ Coin.CENT.longValue() });
+        bridge.execute(data);
+
+        verify(bridgeSupportMock, times(1)).voteFeePerKbChange(tx, Coin.CENT);
+    }
+
     // We need reflection to mock static final fields
     private void setFinalStatic(Field field, Object newValue) throws Exception {
         field.setAccessible(true);
@@ -1711,5 +1879,156 @@ public class BridgeTest {
 
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();
+    }
+
+    @Test
+    public void testCallFromContract_beforeOrchid() {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip88()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+        EVMAssembler assembler = new EVMAssembler();
+        ProgramInvoke invoke = new ProgramInvokeMockImpl();
+
+        // Save code on the sender's address so that the bridge
+        // thinks its being called by a contract
+        byte[] callerCode = assembler.assemble("0xaabb 0xccdd 0xeeff");
+        invoke.getRepository().saveCode(new RskAddress(invoke.getOwnerAddress().getLast20Bytes()), callerCode);
+
+        VM vm = new VM(config.getVmConfig(), precompiledContracts);
+
+        // Encode a call to the bridge's getMinimumLockTxValue function
+        // That means first pushing the corresponding encoded ABI storage to memory (MSTORE)
+        // and then doing a DELEGATECALL to the corresponding address with the correct parameters
+        String bridgeFunctionHex = Hex.toHexString(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode());
+        bridgeFunctionHex = String.format("0x%s%s", bridgeFunctionHex, String.join("", Collections.nCopies(32 * 2 - bridgeFunctionHex.length(), "0")));
+        String asm = String.format("%s 0x00 MSTORE 0x20 0x30 0x20 0x00 0x0000000000000000000000000000000001000006 0x6000 DELEGATECALL", bridgeFunctionHex);
+        int numOps = asm.split(" ").length;
+        byte[] code = assembler.assemble(asm);
+
+        // Mock a transaction, all we really need is a hash
+        Transaction tx = mock(Transaction.class);
+        when(tx.getHash()).thenReturn(new Keccak256("001122334455667788990011223344556677889900112233445566778899aabb"));
+
+        try {
+            // Run the program on the VM
+            Program program = new Program(config.getVmConfig(), precompiledContracts, mock(BlockchainConfig.class), code, invoke, tx);
+            for (int i = 0; i < numOps; i++) {
+                vm.step(program);
+            }
+            Assert.fail();
+        } catch (IllegalStateException e) {
+            Assert.assertEquals("Call from contract before Orchid", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCallFromContract_afterOrchid() {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip88()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+        EVMAssembler assembler = new EVMAssembler();
+        ProgramInvoke invoke = new ProgramInvokeMockImpl();
+
+        // Save code on the sender's address so that the bridge
+        // thinks its being called by a contract
+        byte[] callerCode = assembler.assemble("0xaabb 0xccdd 0xeeff");
+        invoke.getRepository().saveCode(new RskAddress(invoke.getOwnerAddress().getLast20Bytes()), callerCode);
+
+        VM vm = new VM(config.getVmConfig(), precompiledContracts);
+
+        // Encode a call to the bridge's getMinimumLockTxValue function
+        // That means first pushing the corresponding encoded ABI storage to memory (MSTORE)
+        // and then doing a DELEGATECALL to the corresponding address with the correct parameters
+        String bridgeFunctionHex = Hex.toHexString(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode());
+        bridgeFunctionHex = String.format("0x%s%s", bridgeFunctionHex, String.join("", Collections.nCopies(32 * 2 - bridgeFunctionHex.length(), "0")));
+        String asm = String.format("%s 0x00 MSTORE 0x20 0x30 0x20 0x00 0x0000000000000000000000000000000001000006 0x6000 DELEGATECALL", bridgeFunctionHex);
+        int numOps = asm.split(" ").length;
+        byte[] code = assembler.assemble(asm);
+
+        // Mock a transaction, all we really need is a hash
+        Transaction tx = mock(Transaction.class);
+        when(tx.getHash()).thenReturn(new Keccak256("001122334455667788990011223344556677889900112233445566778899aabb"));
+
+        // Run the program on the VM
+        Program program = new Program(config.getVmConfig(), precompiledContracts, mock(BlockchainConfig.class), code, invoke, tx);
+        try {
+            for (int i = 0; i < numOps; i++) {
+                vm.step(program);
+            }
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Non-local-call"));
+        }
+    }
+
+    @Test
+    public void localCallOnlyMethodsDefinition() {
+        // To force initialization
+        String foo = Bridge.UPDATE_COLLECTIONS.name;
+
+        // Actual tests
+        Arrays.asList(
+            BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT,
+            BridgeMethods.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT,
+            BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR,
+            BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH,
+            BridgeMethods.GET_BTC_TX_HASH_PROCESSED_HEIGHT,
+            BridgeMethods.GET_FEDERATION_ADDRESS,
+            BridgeMethods.GET_FEDERATION_CREATION_BLOCK_NUMBER,
+            BridgeMethods.GET_FEDERATION_CREATION_TIME,
+            BridgeMethods.GET_FEDERATION_SIZE,
+            BridgeMethods.GET_FEDERATION_THRESHOLD,
+            BridgeMethods.GET_FEDERATOR_PUBLIC_KEY,
+            BridgeMethods.GET_FEE_PER_KB,
+            BridgeMethods.GET_LOCK_WHITELIST_ADDRESS,
+            BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS,
+            BridgeMethods.GET_LOCK_WHITELIST_SIZE,
+            BridgeMethods.GET_MINIMUM_LOCK_TX_VALUE,
+            BridgeMethods.GET_PENDING_FEDERATION_HASH,
+            BridgeMethods.GET_PENDING_FEDERATION_SIZE,
+            BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY,
+            BridgeMethods.GET_RETIRING_FEDERATION_ADDRESS,
+            BridgeMethods.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER,
+            BridgeMethods.GET_RETIRING_FEDERATION_CREATION_TIME,
+            BridgeMethods.GET_RETIRING_FEDERATION_SIZE,
+            BridgeMethods.GET_RETIRING_FEDERATION_THRESHOLD,
+            BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY,
+            BridgeMethods.GET_STATE_FOR_BTC_RELEASE_CLIENT,
+            BridgeMethods.GET_STATE_FOR_DEBUGGING,
+            BridgeMethods.IS_BTC_TX_HASH_ALREADY_PROCESSED
+        ).stream().forEach(m -> {
+            Assert.assertTrue(m.onlyAllowsLocalCalls());
+        });
+    }
+
+    @Test
+    public void mineableMethodsDefinition() {
+        // To force initialization
+        String foo = Bridge.UPDATE_COLLECTIONS.name;
+
+        // Actual tests
+        Arrays.asList(
+                BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY,
+                BridgeMethods.ADD_LOCK_WHITELIST_ADDRESS,
+                BridgeMethods.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS,
+                BridgeMethods.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS,
+                BridgeMethods.ADD_SIGNATURE,
+                BridgeMethods.COMMIT_FEDERATION,
+                BridgeMethods.CREATE_FEDERATION,
+                BridgeMethods.RECEIVE_HEADERS,
+                BridgeMethods.REGISTER_BTC_TRANSACTION,
+                BridgeMethods.RELEASE_BTC,
+                BridgeMethods.REMOVE_LOCK_WHITELIST_ADDRESS,
+                BridgeMethods.ROLLBACK_FEDERATION,
+                BridgeMethods.SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY,
+                BridgeMethods.UPDATE_COLLECTIONS,
+                BridgeMethods.VOTE_FEE_PER_KB
+        ).stream().forEach(m -> {
+            Assert.assertFalse(m.onlyAllowsLocalCalls());
+        });
     }
 }

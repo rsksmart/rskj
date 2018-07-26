@@ -32,7 +32,7 @@ public class ProgramTest {
 
     @Test
     public void helloContract() {
-        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.ZERO);
+        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.ZERO, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
@@ -42,28 +42,28 @@ public class ProgramTest {
 
     @Test
     public void helloContractIsNotPayable() {
-        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.TEN);
+        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.TEN, false);
         Assert.assertTrue(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
     @Test
     public void childContractDoesntInheritMsgValue() {
-        ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN);
+        ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
     @Test
     public void childContractDoesntInheritMsgValue_2() {
-        ProgramResult result = TestContract.msgValueTest().executeFunction("test_create", BigInteger.TEN);
+        ProgramResult result = TestContract.msgValueTest().executeFunction("test_create", BigInteger.TEN, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
     @Test
     public void sendFailsAndReturnsFalseThenExecutionContinuesNormally() {
-        ProgramResult result = TestContract.sendTest().executeFunction("test", BigInteger.TEN);
+        ProgramResult result = TestContract.sendTest().executeFunction("test", BigInteger.TEN, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
@@ -73,7 +73,7 @@ public class ProgramTest {
 
     @Test
     public void childContractGetsStipend() {
-        ProgramResult result = TestContract.bankTest().executeFunction("test", BigInteger.TEN);
+        ProgramResult result = TestContract.bankTest().executeFunction("test", BigInteger.TEN, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
@@ -83,7 +83,7 @@ public class ProgramTest {
 
     @Test
     public void shouldRevertIfLessThanStipendGasAvailable() {
-        ProgramResult result = TestContract.bankTest2().executeFunction("test", BigInteger.TEN);
+        ProgramResult result = TestContract.bankTest2().executeFunction("test", BigInteger.TEN, false);
         Assert.assertTrue(result.isRevert());
         Assert.assertNull(result.getException());
     }
@@ -98,31 +98,29 @@ public class ProgramTest {
 
     @Test
     public void returnDataSizeTests() {
-        ProgramResult result = TestContract.returnDataTest().executeFunction("testSize", BigInteger.ZERO);
+        ProgramResult result = TestContract.returnDataTest().executeFunction("testSize", BigInteger.ZERO, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
-// COMMENTING OUT TESTS UNTIL RFS-151 GETS MERGED INTO MASTER
+    @Test
+    public void returnPrecompiledDataSizeTest() {
+        ProgramResult result = TestContract.returnDataTest().executeFunction("testPrecompiledSize", BigInteger.ZERO, true);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+    }
 
-//    @Test
-//    public void returnPrecompiledDataSizeTest() {
-//        ProgramResult result = TestContract.returnDataTest().executeFunction("testPrecompiledSize", BigInteger.ZERO);
-//        Assert.assertFalse(result.isRevert());
-//        Assert.assertNull(result.getException());
-//    }
-
-//    @Test
-//    public void callPrecompiledContractMethodThroughStub() {
-//        ProgramResult result = TestContract.returnBridgeTest().executeFunction("invokeGetFeePerKb", BigInteger.ZERO);
-//        Assert.assertFalse(result.isRevert());
-//        Assert.assertNull(result.getException());
-//    }
+    @Test
+    public void callPrecompiledContractMethodThroughStub() {
+        ProgramResult result = TestContract.returnBridgeTest().executeFunction("invokeGetFeePerKb", BigInteger.ZERO, true);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+    }
 
     @Test
     public void returnDataCopyTest() {
         TestContract contract = TestContract.returnDataTest();
-        ProgramResult result = contract.executeFunction("testCopy", BigInteger.ZERO);
+        ProgramResult result = contract.executeFunction("testCopy", BigInteger.ZERO, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(

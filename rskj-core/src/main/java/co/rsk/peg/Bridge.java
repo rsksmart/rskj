@@ -201,6 +201,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public long getGasForData(byte[] data) {
+        if (!blockchainConfig.isRskip88() && senderIsContract()) {
+            throw new IllegalStateException("Call from contract before Orchid");
+        }
+
         if (BridgeUtils.isFreeBridgeTx(config, rskTx, rskExecutionBlock.getNumber())) {
             return 0;
         }
@@ -277,14 +281,26 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public byte[] execute(byte[] data) {
         try
         {
-            BridgeParsedData bridgeParsedData = parseData(data);
-
-            if (bridgeParsedData == null) {
-                return null;
+            // Preliminary validation: the transaction on which we execute cannot be null
+            if (rskTx == null) {
+                throw new RuntimeException("Rsk Transaction is null");
             }
 
-            if (blockchainConfig.isRskip88() && GET_STATE_FOR_DEBUGGING.equals(bridgeParsedData.bridgeMethod.getFunction())) {
-                throw new NoSuchMethodException(GET_STATE_FOR_DEBUGGING.name + " call is not supported after Bamboo");
+            BridgeParsedData bridgeParsedData = parseData(data);
+
+            // Function parsing from data returned null => invalid function selected, halt!
+            if (bridgeParsedData == null) {
+                String errorMessage = String.format("Invalid data given: %s.", Hex.toHexString(data));
+                logger.info(errorMessage);
+                throw new BridgeIllegalArgumentException(errorMessage);
+            }
+
+            // If this is not a local call, then first check whether the function
+            // allows for non-local calls
+            if (blockchainConfig.isRskip88() && !isLocalCall() && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
+                String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
+                logger.info(errorMessage);
+                throw new BridgeIllegalArgumentException(errorMessage);
             }
 
             this.bridgeSupport = setup();
@@ -875,11 +891,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
-            if(self.rskTx == null){
-                String errorMessage = String.format("Rsk Transaction is null for function '%s'",funcName);
-                logger.warn(errorMessage);
-                throw new RuntimeException(errorMessage);
-            }
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
 
             if (!BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation())
@@ -892,4 +903,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         };
     }
 
+    private boolean isLocalCall() {
+        return rskTx.isLocalCallTransaction();
+    }
+
+    private boolean senderIsContract() {
+        byte[] senderCode = repository.getCode(rskTx.getSender());
+
+        // The sender of the transaction is a contract iif it has associated code
+        return senderCode != null && senderCode.length > 0;
+    }
 }

@@ -67,6 +67,9 @@ public class Transaction {
 
     public static final int DATAWORD_LENGTH = 32;
 
+    /* whether this is a local call transaction */
+    private boolean isLocalCall;
+
     /* SHA3 hash of the RLP encoded transaction */
     private byte[] hash;
 
@@ -159,6 +162,7 @@ public class Transaction {
         this.value = RLP.parseCoin(this.valueRaw);
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
+        this.isLocalCall = false;
 
         parsed = true;
     }
@@ -613,4 +617,11 @@ public class Transaction {
         return data == null ? ZERO_BYTE_ARRAY : data;
     }
 
+    public boolean isLocalCallTransaction() {
+        return isLocalCall;
+    }
+
+    public void setLocalCallTransaction(boolean isLocalCall) {
+        this.isLocalCall = isLocalCall;
+    }
 }
