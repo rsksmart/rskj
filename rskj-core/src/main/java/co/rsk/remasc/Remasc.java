@@ -166,7 +166,7 @@ public class Remasc {
         Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
         syntheticReward = syntheticReward.subtract(payToRskLabs);
-        Coin payToFederation = payToTheFedation(configForBlock, isRskip85Enabled, processingBlock, processingBlockHeader, syntheticReward);
+        Coin payToFederation = payToFederation(configForBlock, isRskip85Enabled, processingBlock, processingBlockHeader, syntheticReward);
         syntheticReward = syntheticReward.subtract(payToFederation);
 
         if (!siblings.isEmpty()) {
@@ -187,29 +187,27 @@ public class Remasc {
         }
     }
 
-    private Coin payToTheFedation(BlockchainConfig configForBlock, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
+    private Coin payToFederation(BlockchainConfig configForBlock, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
         RemascFederationProvider federationProvider = new RemascFederationProvider(config, repository, processingBlock);
-        Coin payToFederation = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
+        Coin federationReward = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
-        BigInteger minimumFederatorPayableGas= null;
-        Coin minPayableFederatorFees = null;
-
-        if (isRskip85Enabled) {
-            minimumFederatorPayableGas = configForBlock.getConstants().getFederatorMinimumPayableGas();
-            minPayableFederatorFees = executionBlock.getMinimumGasPrice().multiply(minimumFederatorPayableGas);
-            provider.setFederationBalance(provider.getFederationBalance().add(payToFederation));
-        }
-
+        Coin payToFederation = provider.getFederationBalance().add(federationReward);
         byte[] processingBlockHash = processingBlockHeader.getHash().getBytes();
         int nfederators = federationProvider.getFederationSize();
-        Coin[] payAndRemainderToFederator = provider.getFederationBalance().divideAndRemainder(BigInteger.valueOf(nfederators));
+        Coin[] payAndRemainderToFederator = payToFederation.divideAndRemainder(BigInteger.valueOf(nfederators));
         Coin payToFederator = payAndRemainderToFederator[0];
-
-        if ((isRskip85Enabled) && (payToFederator.compareTo(minPayableFederatorFees)<0)) {
-            return Coin.ZERO;
-        }
-
         Coin restToLastFederator = payAndRemainderToFederator[1];
+
+        if (isRskip85Enabled) {
+            BigInteger minimumFederatorPayableGas = configForBlock.getConstants().getFederatorMinimumPayableGas();
+            Coin minPayableFederatorFees = executionBlock.getMinimumGasPrice().multiply(minimumFederatorPayableGas);
+            if (payToFederator.compareTo(minPayableFederatorFees) < 0) {
+                provider.setFederationBalance(payToFederation);
+                return federationReward;
+            } else { // balance goes to zero because all federation balance will be distributed
+                provider.setFederationBalance(Coin.ZERO);
+            }
+        }
 
         for (int k = 0; k < nfederators; k++) {
             RskAddress federatorAddress = federationProvider.getFederatorAddress(k);
@@ -222,19 +220,9 @@ public class Remasc {
 
         }
 
-        if (isRskip85Enabled) {
-            provider.setFederationBalance(Coin.ZERO);
-        }
-        else
-            provider.setFederationBalance(null);
-
-        return payToFederation;
+        return federationReward;
     }
 
-
-    void payToFederators() {
-
-    }
     /**
      * Remove siblings just processed if any
      */

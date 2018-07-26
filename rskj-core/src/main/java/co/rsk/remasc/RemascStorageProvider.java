@@ -93,7 +93,7 @@ class RemascStorageProvider {
 
 
     public void setFederationBalance(Coin federationBalance) {
-        this.federationBalance= federationBalance;
+        this.federationBalance = federationBalance;
     }
 
     private void saveFederationBalance() {
