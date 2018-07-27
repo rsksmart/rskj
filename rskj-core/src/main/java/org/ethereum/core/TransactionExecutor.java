@@ -251,7 +251,8 @@ public class TransactionExecutor {
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        precompiledContract = precompiledContracts.getContractForAddress(new DataWord(targetAddress.getBytes()));
+        BlockchainConfig blockchainConfig = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+        precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());

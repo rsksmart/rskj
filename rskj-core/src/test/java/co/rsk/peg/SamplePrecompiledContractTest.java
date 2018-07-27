@@ -21,11 +21,13 @@ package co.rsk.peg;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import org.apache.commons.lang3.StringUtils;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -33,6 +35,8 @@ import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by adrian.eidelman on 3/15/2016.
@@ -42,11 +46,17 @@ public class SamplePrecompiledContractTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
+    private BlockchainConfig getRskIp93ConfigMock(boolean enabled) {
+        BlockchainConfig result = mock(BlockchainConfig.class);
+        when(result.isRskip93()).thenReturn(enabled);
+        return result;
+    }
+
     @Test
     public void samplePrecompiledContractMethod1Ok()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(getRskIp93ConfigMock(false), addr);
 
 
         String funcJson = "{\n" +
@@ -76,7 +86,7 @@ public class SamplePrecompiledContractTest {
     public void samplePrecompiledContractMethod1WrongData()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(getRskIp93ConfigMock(false), addr);
 
 
         String funcJson = "{\n" +
@@ -104,7 +114,7 @@ public class SamplePrecompiledContractTest {
     public void samplePrecompiledContractMethodDoesNotExist()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(getRskIp93ConfigMock(false), addr);
 
 
         String funcJson = "{\n" +
@@ -133,7 +143,7 @@ public class SamplePrecompiledContractTest {
     public void samplePrecompiledContractMethod1LargeData()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(getRskIp93ConfigMock(false), addr);
 
 
         String funcJson = "{\n" +
@@ -161,7 +171,7 @@ public class SamplePrecompiledContractTest {
     public void samplePrecompiledContractAddBalanceOk()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(getRskIp93ConfigMock(false), addr);
 
 
         String funcJson = "{\n" +
@@ -196,7 +206,7 @@ public class SamplePrecompiledContractTest {
     public void samplePrecompiledContractIncrementResultOk()
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(getRskIp93ConfigMock(false), addr);
 
 
         String funcJson = "{\n" +
@@ -232,7 +242,7 @@ public class SamplePrecompiledContractTest {
     private int GetBalance(Repository repository)
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(getRskIp93ConfigMock(false), addr);
 
 
         String funcJson = "{\n" +
@@ -259,7 +269,7 @@ public class SamplePrecompiledContractTest {
     private int GetResult(Repository repository)
     {
         DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
-        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(addr);
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(getRskIp93ConfigMock(false), addr);
 
 
         String funcJson = "{\n" +
@@ -281,5 +291,14 @@ public class SamplePrecompiledContractTest {
         Object[] results = function.decodeResult(result);
 
         return ((BigInteger)results[0]).intValue();
+    }
+
+    @Test
+    public void samplePrecompiledContractPostRskIp93DoesntExist()
+    {
+        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
+        SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(getRskIp93ConfigMock(true), addr);
+
+        Assert.assertNull(contract);
     }
 }
