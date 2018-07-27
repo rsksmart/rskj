@@ -51,6 +51,7 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
@@ -65,8 +66,10 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.Assert;
@@ -1173,9 +1176,17 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
+        org.ethereum.core.Transaction tx = new InternalTransaction(
+                null, 0, 0,
+                BigIntegers.asUnsignedByteArray(NONCE),
+                new DataWord(BigIntegers.asUnsignedByteArray(GAS_PRICE)),
+                new DataWord(BigIntegers.asUnsignedByteArray(GAS_LIMIT)),
+                new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(new BtcECKey().getPrivKey()).getAddress()).getBytes(),
+                Hex.decode(TO_ADDRESS),
+                BigIntegers.asUnsignedByteArray(AMOUNT),
+                Hex.decode(DATA),
+                "");
 
-        tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
         track.saveCode(tx.getSender(), new byte[] {0x1});
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);

@@ -241,6 +241,16 @@ public class BridgeUtils {
                );
     }
 
+    /**
+     * Indicates if the provided tx was generated from a contract
+     * @param rskTx
+     * @return
+     */
+    public static boolean isContractTx(Transaction rskTx) {
+        // TODO: this should be refactored to provide a more robust way of checking the transaction origin
+        return rskTx.getClass() == org.ethereum.vm.program.InternalTransaction.class;
+    }
+
     public static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
         return federation.hasMemberWithRskAddress(rskTx.getSender().getBytes());
     }
