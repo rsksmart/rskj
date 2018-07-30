@@ -41,7 +41,7 @@ public abstract class ParameterizedNetworkUpgradeTest {
     public static Object[] data() {
         TestSystemProperties bambooConfig = new TestSystemProperties() {
             @Override
-            public BlockchainNetConfig getBlockchainConfig() {
+            protected BlockchainNetConfig buildBlockchainConfig() {
                 return RegTestConfig.getFromConfig(new HardForkActivationConfig(Integer.MAX_VALUE));
             }
 
@@ -52,7 +52,7 @@ public abstract class ParameterizedNetworkUpgradeTest {
         };
         TestSystemProperties orchidConfig = new TestSystemProperties() {
             @Override
-            public BlockchainNetConfig getBlockchainConfig() {
+            protected BlockchainNetConfig buildBlockchainConfig() {
                 return RegTestConfig.getFromConfig(new HardForkActivationConfig(0));
             }
 
