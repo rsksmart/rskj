@@ -201,7 +201,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public long getGasForData(byte[] data) {
-        if (!blockchainConfig.isRskip88() && senderIsContract()) {
+        if (!blockchainConfig.isRskip88() && BridgeUtils.isContractTx(rskTx)) {
             throw new IllegalStateException("Call from contract before Orchid");
         }
 
@@ -905,12 +905,5 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private boolean isLocalCall() {
         return rskTx.isLocalCallTransaction();
-    }
-
-    private boolean senderIsContract() {
-        byte[] senderCode = repository.getCode(rskTx.getSender());
-
-        // The sender of the transaction is a contract iif it has associated code
-        return senderCode != null && senderCode.length > 0;
     }
 }

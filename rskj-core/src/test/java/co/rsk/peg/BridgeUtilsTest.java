@@ -31,9 +31,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
-import org.ethereum.core.Block;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Genesis;
+import org.ethereum.core.*;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
@@ -459,6 +457,13 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(federation2, federation2Keys, releaseFromFederation2, releaseWithChange, bridgeConstants);
         assertThat(BridgeUtils.isLockTx(releaseWithChange, federations, btcContext, bridgeConstants), is(false));
         assertThat(BridgeUtils.isReleaseTx(releaseWithChange, federations), is(true));
+    }
+
+    @Test
+    public void testIsContractTx() {
+        Assert.assertFalse(BridgeUtils.isContractTx(new Transaction(null, null, null, null, null, null)));
+        Assert.assertTrue(BridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null)));
+        Assert.assertFalse(BridgeUtils.isContractTx(new ImmutableTransaction(null)));
     }
 
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {

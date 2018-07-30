@@ -543,10 +543,9 @@ public class BridgeSupport {
      * @throws IOException
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
-        byte[] senderCode = rskRepository.getCode(rskTx.getSender());
 
         //as we can't send btc from contracts we want to send them back to the sender
-        if (senderCode != null && senderCode.length > 0) {
+        if (BridgeUtils.isContractTx(rskTx)) {
             logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx);
             throw new Program.OutOfGasException("Contract calling releaseBTC");
         }
