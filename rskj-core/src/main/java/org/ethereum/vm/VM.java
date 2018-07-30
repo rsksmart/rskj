@@ -21,6 +21,7 @@ package org.ethereum.vm;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.db.ContractDetails;
@@ -777,8 +778,9 @@ public class VM {
         } else {
             DataWord address = program.stackPop();
             codeLength = new DataWord(program.getCodeAt(address).length);
-            if (program.getBlockchainConfig().isRskip90()) {
-                PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(address);
+            BlockchainConfig blockchainConfig = program.getBlockchainConfig();
+            if (blockchainConfig.isRskip90()) {
+                PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, address);
                 if (precompiledContract != null) {
                     codeLength = new DataWord(BigIntegers.asUnsignedByteArray(DataWord.MAX_VALUE));
                 }
@@ -1490,7 +1492,8 @@ public class VM {
     }
 
     private void callToAddress(DataWord codeAddress, MessageCall msg) {
-        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(codeAddress);
+        BlockchainConfig blockchainConfig = program.getBlockchainConfig();
+        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(blockchainConfig, codeAddress);
 
         if (contract != null) {
             program.callToPrecompiledAddress(msg, contract);
