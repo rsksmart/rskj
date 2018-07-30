@@ -116,7 +116,7 @@ public abstract class SystemProperties {
     private Boolean syncEnabled = null;
     private Boolean discoveryEnabled = null;
 
-    private BlockchainNetConfig blockchainConfig;
+    protected BlockchainNetConfig blockchainConfig;
     
     protected SystemProperties(ConfigLoader loader) {
         try {

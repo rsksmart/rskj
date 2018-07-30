@@ -21,8 +21,12 @@ package co.rsk.config;
 import co.rsk.cli.CliArgs;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 
 public class TestSystemProperties extends RskSystemProperties {
+
+    public static final int CODEREPLACE_PREORCHID = 1;
+
     private static final ConfigLoader TEST_LOADER = new ConfigLoader(CliArgs.empty()) {
         /**
          * Cache configurations that don't change so we don't read files multiple times.
@@ -39,5 +43,17 @@ public class TestSystemProperties extends RskSystemProperties {
 
     public TestSystemProperties() {
         super(TEST_LOADER);
+    }
+
+    public TestSystemProperties(int conf) {
+        super(TEST_LOADER);
+        if (conf == CODEREPLACE_PREORCHID) {
+            this.blockchainConfig = new RegTestOrchidConfig() {
+                @Override public boolean isOrchidFork() {
+                    return false;
+                }
+            };
+        }
+
     }
 }
