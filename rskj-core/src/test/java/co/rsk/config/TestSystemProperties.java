@@ -49,7 +49,7 @@ public class TestSystemProperties extends RskSystemProperties {
         super(TEST_LOADER);
         if (conf == CODEREPLACE_PREORCHID) {
             this.blockchainConfig = new RegTestOrchidConfig() {
-                @Override public boolean isOrchidFork() {
+                @Override public boolean isRskip94() {
                     return false;
                 }
             };

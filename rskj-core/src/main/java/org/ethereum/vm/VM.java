@@ -1875,7 +1875,7 @@ public class VM {
             case OpCodes.OP_SUICIDE: doSUICIDE();
             break;
             case OpCodes.OP_CODEREPLACE:
-                if (config.isOrchidFork()) {
+                if (config.isRskip94()) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doCODEREPLACE();
