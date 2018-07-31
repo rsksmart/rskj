@@ -33,6 +33,6 @@ public class TestNetConfig extends AbstractNetConfig {
         // On blockchain launch blocks will be faster until difficulty is adjusted to available hashing power.
         add(129600, new TestNetAfterBridgeSyncConfig());
         // TODO: establish when to apply this fork. 500_000 is just a made up figure.
-        add(500_000, new TestNetOrchidConfig());
+        add(777_700, new TestNetOrchidConfig());
     }
 }
