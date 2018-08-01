@@ -69,6 +69,17 @@ import java.util.stream.Collectors;
 public abstract class SystemProperties {
     private static Logger logger = LoggerFactory.getLogger("general");
 
+    /**
+     * This is here because we don't want to inject a BlockchainNetConfig object into the BlockHeader.
+     * That would require a multitude of changes that we really don't want in the long run:
+     * what we want is to have a very simple immutable POJO for the Block and BlockHeader.
+     * The current implementation of those classes could transform into some kind of builder (e.g. BlockBuilder,
+     * BlockHeaderBuilder).
+     * Don't you dare using this *global static variable* for anything other than the block hash fork implementation.
+     * Refactor ASAP.
+     */
+    public static BlockchainNetConfig DONOTUSE_blockchainConfig;
+
     public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
     // TODO: define a proper name for this config setting
     public static final String PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME = "blockchain.config.hardforkActivationHeights";
@@ -184,10 +195,17 @@ public abstract class SystemProperties {
     }
 
     @ValidateMe
-    public BlockchainNetConfig getBlockchainConfig() {
-        if (blockchainConfig != null) {
-            return blockchainConfig;
+    public synchronized BlockchainNetConfig getBlockchainConfig() {
+        if (blockchainConfig == null) {
+            blockchainConfig = buildBlockchainConfig();
+            DONOTUSE_blockchainConfig = blockchainConfig;
         }
+
+        return blockchainConfig;
+    }
+
+    protected BlockchainNetConfig buildBlockchainConfig() {
+        BlockchainNetConfig blockchainConfig;
         String netName = netName();
         if (netName != null && configFromFiles.hasPath("blockchain.config.class")) {
             throw new RuntimeException(String.format(

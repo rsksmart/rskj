@@ -15,26 +15,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.ethereum.config.blockchain;
+package co.rsk.mine;
 
-import com.typesafe.config.Config;
+import co.rsk.bitcoinj.core.BtcBlock;
 
-public class HardForkActivationConfig {
-    private final int orchidActivationHeight;
+import java.util.List;
 
-    private static final String PROPERTY_ORCHID_NAME = "orchid";
+/**
+ * Builds Merkle proofs for inclusion in the merged-mining block header
+ */
+public interface MerkleProofBuilder {
 
-    public HardForkActivationConfig(Config config) {
-        // If I don't have any config for orchidActivationHeight I will set it to 0
-        this(config.hasPath(PROPERTY_ORCHID_NAME) ? config.getInt(PROPERTY_ORCHID_NAME) : 0);
-    }
+    byte[] buildFromMerkleHashes(
+            BtcBlock blockWithHeaderOnly,
+            List<String> merkleHashesString,
+            int blockTxnCount);
 
-    public HardForkActivationConfig(int orchidActivationHeight) {
-        this.orchidActivationHeight = orchidActivationHeight;
-    }
+    byte[] buildFromTxHashes(
+            BtcBlock blockWithHeaderOnly,
+            List<String> txHashesString);
 
-    public int getOrchidActivationHeight() {
-        return orchidActivationHeight;
-    }
-
+    byte[] buildFromBlock(BtcBlock bitcoinMergedMiningBlock);
 }

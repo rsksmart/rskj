@@ -20,14 +20,15 @@
 package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import co.rsk.util.DifficultyUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.util.Pack;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -37,12 +38,10 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -55,14 +54,16 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
+    private final BlockchainNetConfig blockchainConfig;
     private final BridgeConstants bridgeConstants;
     private final Constants constants;
     private boolean fallbackMiningEnabled = true;
 
     @Autowired
     public ProofOfWorkRule(RskSystemProperties config) {
-        this.bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
-        this.constants = config.getBlockchainConfig().getCommonConstants();
+        this.blockchainConfig = config.getBlockchainConfig();
+        this.bridgeConstants = blockchainConfig.getCommonConstants().getBridgeConstants();
+        this.constants = blockchainConfig.getCommonConstants();
     }
 
     public ProofOfWorkRule setFallbackMiningEnabled(boolean e) {
@@ -114,7 +115,6 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
     public boolean isValid(BlockHeader header) {
         // TODO: refactor this an move it to another class. Change the Global ProofOfWorkRule to AuthenticationRule.
         // TODO: Make ProofOfWorkRule one of the classes that inherits from AuthenticationRule.
-
         if (isFallbackMiningPossibleAndBlockSigned(header)) {
             boolean isValidFallbackSignature = validFallbackBlockSignature(constants, header, header.getBitcoinMergedMiningHeader());
             if (!isValidFallbackSignature) {
@@ -124,6 +124,18 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         }
 
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = bridgeConstants.getBtcParams();
+        MerkleProofValidator mpValidator;
+        try {
+            if (blockchainConfig.getConfigForBlock(header.getNumber()).isRskip92()) {
+                mpValidator = new Rskip92MerkleProofValidator(header.getBitcoinMergedMiningMerkleProof());
+            } else {
+                mpValidator = new GenesisMerkleProofValidator(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());
+            }
+        } catch (RuntimeException ex) {
+            logger.warn("Merkle proof can't be validated. Header {}", header.getShortHash(), ex);
+            return false;
+        }
+
         byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
 
         if (bitcoinMergedMiningCoinbaseTransactionCompressed == null) {
@@ -136,14 +148,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        byte[] pmtSerialized = header.getBitcoinMergedMiningMerkleProof();
-        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
-            logger.warn("Partial merkle tree does not have the expected size. Header {}", header.getShortHash());
-            return false;
-        }
-
         BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
-        PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new PartialMerkleTree(bitcoinNetworkParameters, pmtSerialized, 0);
 
         BigInteger target = DifficultyUtils.difficultyToTarget(header.getDifficulty());
 
@@ -200,20 +205,22 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
+        // TODO test
+        long byteCount = Pack.bigEndianToLong(bitcoinMergedMiningCoinbaseTransactionMidstate, 8);
+        long coinbaseLength = bitcoinMergedMiningCoinbaseTransactionTail.length + byteCount;
+        if (coinbaseLength <= 64) {
+            logger.warn("Coinbase transaction must always be greater than 64-bytes long. But it was: {}", coinbaseLength);
+            return false;
+        }
+
         SHA256Digest digest = new SHA256Digest(bitcoinMergedMiningCoinbaseTransactionMidstate);
         digest.update(bitcoinMergedMiningCoinbaseTransactionTail,0,bitcoinMergedMiningCoinbaseTransactionTail.length);
         byte[] bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash = new byte[32];
         digest.doFinal(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash, 0);
         Sha256Hash bitcoinMergedMiningCoinbaseTransactionHash = Sha256Hash.wrapReversed(Sha256Hash.hash(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash));
 
-        List<Sha256Hash> txHashesInTheMerkleBranch = new ArrayList<>();
-        Sha256Hash merkleRoot = bitcoinMergedMiningMerkleBranch.getTxnHashAndMerkleRoot(txHashesInTheMerkleBranch);
-        if (!merkleRoot.equals(bitcoinMergedMiningBlock.getMerkleRoot())) {
-            logger.warn("bitcoin merkle root of bitcoin block does not match the merkle root of merkle branch");
-            return false;
-        }
-        if (!txHashesInTheMerkleBranch.contains(bitcoinMergedMiningCoinbaseTransactionHash)) {
-            logger.warn("bitcoin coinbase transaction {} not included in merkle branch", bitcoinMergedMiningCoinbaseTransactionHash);
+        if (!mpValidator.isValid(bitcoinMergedMiningBlock.getMerkleRoot(), bitcoinMergedMiningCoinbaseTransactionHash)) {
+            logger.warn("bitcoin merkle branch doesn't match coinbase and state root");
             return false;
         }
 

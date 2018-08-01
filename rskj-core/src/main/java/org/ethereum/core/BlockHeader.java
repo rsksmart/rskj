@@ -18,18 +18,19 @@
  */
 package org.ethereum.core;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.BigIntegers;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.ethereum.util.Utils;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -399,22 +400,27 @@ public class BlockHeader {
     }
 
     public Keccak256 getHash() {
-        return new Keccak256(HashUtil.keccak256(getEncoded()));
+        return new Keccak256(HashUtil.keccak256(getEncoded(
+                true,
+                !SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(getNumber()).isRskip92()
+        )));
     }
 
     public byte[] getEncoded() {
-        return this.getEncoded(true); // with nonce
+        // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
+        // calculating RSKIP92 block hashes
+        return this.getEncoded(true, true);
     }
 
     public byte[] getEncodedWithoutNonceMergedMiningFields() {
-        return this.getEncoded(false);
+        return this.getEncoded(false, false);
     }
 
     public Coin getMinimumGasPrice() {
         return this.minimumGasPrice;
     }
 
-    public byte[] getEncoded(boolean withMergedMiningFields) {
+    public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase) {
         byte[] parentHash = RLP.encodeElement(this.parentHash);
 
         byte[] unclesHash = RLP.encodeElement(this.unclesHash);
@@ -453,10 +459,12 @@ public class BlockHeader {
         if (withMergedMiningFields && hasMiningFields()) {
             byte[] bitcoinMergedMiningHeader = RLP.encodeElement(this.bitcoinMergedMiningHeader);
             fieldToEncodeList.add(bitcoinMergedMiningHeader);
-            byte[] bitcoinMergedMiningMerkleProof = RLP.encodeElement(this.bitcoinMergedMiningMerkleProof);
-            fieldToEncodeList.add(bitcoinMergedMiningMerkleProof);
-            byte[] bitcoinMergedMiningCoinbaseTransaction = RLP.encodeElement(this.bitcoinMergedMiningCoinbaseTransaction);
-            fieldToEncodeList.add(bitcoinMergedMiningCoinbaseTransaction);
+            if (withMerkleProofAndCoinbase) {
+                byte[] bitcoinMergedMiningMerkleProof = RLP.encodeElement(this.bitcoinMergedMiningMerkleProof);
+                fieldToEncodeList.add(bitcoinMergedMiningMerkleProof);
+                byte[] bitcoinMergedMiningCoinbaseTransaction = RLP.encodeElement(this.bitcoinMergedMiningCoinbaseTransaction);
+                fieldToEncodeList.add(bitcoinMergedMiningCoinbaseTransaction);
+            }
         }
 
 
@@ -586,7 +594,7 @@ public class BlockHeader {
     }
 
     public byte[] getHashForMergedMining() {
-        return HashUtil.keccak256(getEncoded(false));
+        return HashUtil.keccak256(getEncoded(false, false));
     }
 
     public String getShortHash() {

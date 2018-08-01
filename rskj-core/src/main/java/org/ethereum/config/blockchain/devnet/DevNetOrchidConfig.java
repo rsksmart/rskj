@@ -48,5 +48,10 @@ public class DevNetOrchidConfig extends DevNetGenesisConfig {
     public boolean isRskip87() { return true; }
 
     @Override
+    public boolean isRskip92() {
+        return true;
+    }
+
+    @Override
     public boolean isRskip93() { return true; }
 }

@@ -15,26 +15,15 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.ethereum.config.blockchain;
+package co.rsk.validators;
 
-import com.typesafe.config.Config;
+import co.rsk.bitcoinj.core.Sha256Hash;
 
-public class HardForkActivationConfig {
-    private final int orchidActivationHeight;
+public interface MerkleProofValidator {
 
-    private static final String PROPERTY_ORCHID_NAME = "orchid";
-
-    public HardForkActivationConfig(Config config) {
-        // If I don't have any config for orchidActivationHeight I will set it to 0
-        this(config.hasPath(PROPERTY_ORCHID_NAME) ? config.getInt(PROPERTY_ORCHID_NAME) : 0);
-    }
-
-    public HardForkActivationConfig(int orchidActivationHeight) {
-        this.orchidActivationHeight = orchidActivationHeight;
-    }
-
-    public int getOrchidActivationHeight() {
-        return orchidActivationHeight;
-    }
-
+    /**
+     * Validates that the coinbase hash is included in the serialized PartialMerkleTree
+     * and it has the expected root.
+     */
+    boolean isValid(Sha256Hash expectedRoot, Sha256Hash coinbaseHash);
 }
