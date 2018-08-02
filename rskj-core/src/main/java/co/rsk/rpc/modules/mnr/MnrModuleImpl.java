@@ -96,6 +96,10 @@ public class MnrModuleImpl implements MnrModule {
     public SubmittedBlockInfo submitBitcoinBlockPartialMerkle(String blockHashHex, String blockHeaderHex, String coinbaseHex, String merkleHashesHex, String blockTxnCountHex) {
         logger.debug("submitBitcoinBlockPartialMerkle(): {}, {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, merkleHashesHex, blockTxnCountHex);
 
+        if (merkleHashesHex.isEmpty()) {
+            throw new JsonRpcSubmitBlockException("The list of merkle hashes can't be empty");
+        }
+
         NetworkParameters params = RegTestParams.get();
         new Context(params);
 
