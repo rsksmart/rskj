@@ -172,10 +172,6 @@ public class BlockHeader {
         this.sealed = sealed;
     }
 
-    private byte[] orEmpty(byte[] rlpData) {
-        return rlpData == null ? new byte[] {} : rlpData;
-    }
-
     public BlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
                        byte[] logsBloom, byte[] difficulty, long number,
                        byte[] gasLimit, long gasUsed, long timestamp,
