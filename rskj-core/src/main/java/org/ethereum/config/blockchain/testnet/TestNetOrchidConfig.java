@@ -34,4 +34,5 @@ public class TestNetOrchidConfig extends TestNetAfterBridgeSyncConfig {
     public boolean isRskip91() {
         return true;
     }
+    @Override public boolean isRskip94() { return true; }
 }

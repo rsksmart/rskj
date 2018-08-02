@@ -54,4 +54,6 @@ public class DevNetOrchidConfig extends DevNetGenesisConfig {
 
     @Override
     public boolean isRskip93() { return true; }
+
+    @Override public boolean isRskip94() { return true; }
 }
