@@ -40,6 +40,10 @@ public class RLPList extends ArrayList<RLPElement> implements RLPElement {
         return rlpData;
     }
 
+    public byte[] getRLPRawData() {
+        return this.rlpData;
+    }
+
     public static void recursivePrint(RLPElement element) {
 
         if (element == null) {
