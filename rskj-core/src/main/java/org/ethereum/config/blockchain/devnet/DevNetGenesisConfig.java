@@ -50,8 +50,4 @@ public class DevNetGenesisConfig extends TestNetAfterBridgeSyncConfig {
         return true;
     }
 
-    @Override
-    public boolean isRskip85() {
-        return true;
-    }
 }
