@@ -292,7 +292,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             if (bridgeParsedData == null) {
                 String errorMessage = String.format("Invalid data given: %s.", Hex.toHexString(data));
                 logger.info(errorMessage);
-                throw new BridgeIllegalArgumentException(errorMessage);
+                if (blockchainConfig.isRskip88()) {
+                    throw new BridgeIllegalArgumentException(errorMessage);
+                }
+
+                return null;
             }
 
             // If this is not a local call, then first check whether the function
@@ -311,7 +315,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 // If the user tries to call an non-existent function, parseData() will return null.
                 result = bridgeParsedData.bridgeMethod.getExecutor().execute(this, bridgeParsedData.args);
             } catch (BridgeIllegalArgumentException ex) {
-                logger.warn("Error executing: {}", bridgeParsedData.bridgeMethod, ex);
+                String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
+                logger.warn(errorMessage, ex);
+                if (blockchainConfig.isRskip88()) {
+                    throw new BridgeIllegalArgumentException(errorMessage);
+                }
+
                 return null;
             }
 
