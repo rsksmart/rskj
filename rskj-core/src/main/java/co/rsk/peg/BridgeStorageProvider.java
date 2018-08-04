@@ -29,6 +29,8 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -57,6 +59,8 @@ public class BridgeStorageProvider {
     private static final DataWord LOCK_UNLIMITED_WHITELIST_KEY = DataWord.fromString("unlimitedLockWhitelist");
     private static final DataWord FEE_PER_KB_KEY = DataWord.fromString("feePerKb");
     private static final DataWord FEE_PER_KB_ELECTION_KEY = DataWord.fromString("feePerKbElection");
+
+    private static final Logger logger = LoggerFactory.getLogger(BridgeStorageProvider.class);
 
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -321,7 +325,10 @@ public class BridgeStorageProvider {
      * Save the lock whitelist
      */
     public void saveLockWhitelist() {
+        logger.trace("saveLockWhitelist - START");
+
         if (lockWhitelist == null) {
+            logger.trace("nothing to save");
             return;
         }
 
@@ -329,13 +336,17 @@ public class BridgeStorageProvider {
         safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight()), BridgeSerializationUtils::serializeOneOffLockWhitelist);
 
         if (this.bridgeStorageConfiguration.getUnlimitedWhitelistEnabled()) {
+            logger.trace("unlimited whitelist enabled");
             List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getAll(UnlimitedWhiteListEntry.class);
             safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
         }
+        logger.trace("saveLockWhitelist - END");
     }
 
     public LockWhitelist getLockWhitelist() {
+        logger.trace("getLockWhitelist - START");
         if (lockWhitelist != null) {
+            logger.trace("nothing to get");
             return lockWhitelist;
         }
 
@@ -343,6 +354,7 @@ public class BridgeStorageProvider {
                 safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY,
                         data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, btcContext.getParams()));
         if (oneOffWhitelistAndDisableBlockHeightData == null) {
+            logger.trace("oneOff storage is empty, nothing to get");
             lockWhitelist = new LockWhitelist(new HashMap<>());
             return lockWhitelist;
         }
@@ -352,12 +364,14 @@ public class BridgeStorageProvider {
         whitelistedAddresses.putAll(oneOffWhitelistAndDisableBlockHeightData.getLeft());
 
         if (this.bridgeStorageConfiguration.getUnlimitedWhitelistEnabled()) {
+            logger.trace("unlimited whitelist enabled");
             whitelistedAddresses.putAll(safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY,
                     data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, btcContext.getParams())));
         }
 
         lockWhitelist = new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());
 
+        logger.trace("getLockWhitelist - END");
         return lockWhitelist;
     }
 

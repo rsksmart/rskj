@@ -1674,6 +1674,7 @@ public class BridgeSupport {
      * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
      */
     public Integer addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
+        logger.trace("addOneOffLockWhitelistAddress");
         try {
             Address address = getParsedAddress(addressBase58);
             Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
@@ -1695,7 +1696,9 @@ public class BridgeSupport {
     }
 
     private Integer addLockWhitelistAddress(Transaction tx, LockWhitelistEntry entry) {
+        logger.trace("addLockWhitelistAddress");
         if (!isLockWhitelistChangeAuthorized(tx)) {
+            logger.trace("not authorized");
             return LOCK_WHITELIST_GENERIC_ERROR_CODE;
         }
 
@@ -1703,9 +1706,11 @@ public class BridgeSupport {
 
         try {
             if (whitelist.isWhitelisted(entry.address())) {
+                logger.trace("already exists");
                 return LOCK_WHITELIST_ALREADY_EXISTS_ERROR_CODE;
             }
             whitelist.put(entry.address(), entry);
+            logger.trace("succeed");
             return LOCK_WHITELIST_SUCCESS_CODE;
         } catch (Exception e) {
             logger.error("Unexpected error in addLockWhitelistAddress: {}", e);
