@@ -346,7 +346,7 @@ public class BridgeStorageProvider {
     public LockWhitelist getLockWhitelist() {
         logger.trace("getLockWhitelist - START");
         if (lockWhitelist != null) {
-            logger.trace("nothing to get");
+            logger.trace("returning cached list");
             return lockWhitelist;
         }
 
