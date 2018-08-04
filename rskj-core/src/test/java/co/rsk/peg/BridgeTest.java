@@ -282,10 +282,28 @@ public class BridgeTest {
     }
 
     @Test
-    public void executeWithFunctionSignatureLengthTooShort() {
+    public void executeWithFunctionSignatureLengthTooShortBeforeRskip88() {
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Transaction mockedTx = mock(Transaction.class);
+        bridge.init(mockedTx, getGenesisBlock(), null, null, null, null);
+        Assert.assertNull(bridge.execute(new byte[3]));
+    }
+
+    @Test
+    public void executeWithFunctionSignatureLengthTooShortAfterRskip88() {
+
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip88()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Transaction mockedTx = mock(Transaction.class);
+
         try {
-            Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-            Transaction mockedTx = mock(Transaction.class);
             bridge.init(mockedTx, getGenesisBlock(), null, null, null, null);
             bridge.execute(new byte[3]);
             Assert.fail();
@@ -296,10 +314,26 @@ public class BridgeTest {
 
 
     @Test
-    public void executeWithInexistentFunction() {
+    public void executeWithInexistentFunctionBeforeRskip88() {
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Transaction mockedTx = mock(Transaction.class);
+        bridge.init(mockedTx, getGenesisBlock(), null, null, null, null);
+        Assert.assertNull(bridge.execute(new byte[4]));
+    }
+
+    @Test
+    public void executeWithInexistentFunctionAfterRskip88() {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip88()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = new RepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Transaction mockedTx = mock(Transaction.class);
+
         try {
-            Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-            Transaction mockedTx = mock(Transaction.class);
             bridge.init(mockedTx, getGenesisBlock(), null, null, null, null);
             bridge.execute(new byte[4]);
             Assert.fail();
@@ -985,8 +1019,9 @@ public class BridgeTest {
     }
 
     @Test
-    public void getBtcBlockchainBlockLocatorAfterRskip89Fork() {
+    public void getBtcBlockchainBlockLocatorAfterRskip88And89Fork() {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskip88()).thenReturn(true);
         when(mockedConfig.isRskip89()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
@@ -1453,9 +1488,10 @@ public class BridgeTest {
     }
 
     @Test
-    public void getLockWhitelistEntryByAddressBeforeRskip87Fork() throws IOException {
+    public void getLockWhitelistEntryByAddressBeforeRskip87And88Fork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
         when(mockedConfig.isRskip87()).thenReturn(false);
+        when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Address address = new BtcECKey().toAddress(networkParameters);
@@ -1467,15 +1503,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        try {
-            bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toBase58() }));
-            Assert.fail();
-        }
-        catch(Exception e) {
-            Throwable causeException = e.getCause();
-            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
-            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
-        }
+        Assert.assertNull(bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toBase58() })));
     }
 
     @Test
@@ -1553,9 +1581,10 @@ public class BridgeTest {
     }
 
     @Test
-    public void addLockWhitelistAddressAfterRskip87Fork() throws IOException {
+    public void addLockWhitelistAddressAfterRskip87And88Fork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
         when(mockedConfig.isRskip87()).thenReturn(true);
+        when(mockedConfig.isRskip88()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
@@ -1576,9 +1605,10 @@ public class BridgeTest {
     }
 
     @Test
-    public void addOneOffLockWhitelistAddressBeforeRskip87Fork() throws IOException {
+    public void addOneOffLockWhitelistAddressBeforeRskip87And88Fork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
         when(mockedConfig.isRskip87()).thenReturn(false);
+        when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
@@ -1588,14 +1618,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        try {
-            bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) }));
-            Assert.fail();
-        } catch(Exception e) {
-            Throwable causeException = e.getCause();
-            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
-            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
-        }
+        Assert.assertNull(bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) })));
     }
 
     @Test
@@ -1626,9 +1649,10 @@ public class BridgeTest {
     }
 
     @Test
-    public void addUnlimitedLockWhitelistAddressBeforeRskip87Fork() {
+    public void addUnlimitedLockWhitelistAddressBeforeRskip87And88Fork() {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
         when(mockedConfig.isRskip87()).thenReturn(false);
+        when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
@@ -1638,15 +1662,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        try {
-            bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address" }));
-            Assert.fail();
-        } catch(Exception e) {
-            Throwable causeException = e.getCause();
-            Assert.assertEquals(BridgeIllegalArgumentException.class, causeException.getClass());
-            Assert.assertTrue(causeException.getMessage().startsWith("Invalid data given"));
-        }
-
+        Assert.assertNull(bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address" })));
     }
 
     @Test
