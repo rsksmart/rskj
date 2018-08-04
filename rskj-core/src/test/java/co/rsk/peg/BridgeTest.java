@@ -1488,9 +1488,10 @@ public class BridgeTest {
     }
 
     @Test
-    public void getLockWhitelistEntryByAddressBeforeRskip87Fork() throws IOException {
+    public void getLockWhitelistEntryByAddressBeforeRskip87And88Fork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
         when(mockedConfig.isRskip87()).thenReturn(false);
+        when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Address address = new BtcECKey().toAddress(networkParameters);
@@ -1604,9 +1605,10 @@ public class BridgeTest {
     }
 
     @Test
-    public void addOneOffLockWhitelistAddressBeforeRskip87Fork() throws IOException {
+    public void addOneOffLockWhitelistAddressBeforeRskip87And88Fork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
         when(mockedConfig.isRskip87()).thenReturn(false);
+        when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
@@ -1647,9 +1649,10 @@ public class BridgeTest {
     }
 
     @Test
-    public void addUnlimitedLockWhitelistAddressBeforeRskip87Fork() {
+    public void addUnlimitedLockWhitelistAddressBeforeRskip87And88Fork() {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
         when(mockedConfig.isRskip87()).thenReturn(false);
+        when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = new RepositoryImpl(config);
