@@ -202,7 +202,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     @Override
     public long getGasForData(byte[] data) {
         if (!blockchainConfig.isRskip88() && BridgeUtils.isContractTx(rskTx)) {
-            throw new IllegalStateException("Call from contract before Orchid");
+            logger.warn("Call from contract before Orchid");
+            throw new NullPointerException();
         }
 
         if (BridgeUtils.isFreeBridgeTx(config, rskTx, rskExecutionBlock.getNumber())) {
