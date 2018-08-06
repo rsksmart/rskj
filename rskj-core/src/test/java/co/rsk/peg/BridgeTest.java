@@ -1934,8 +1934,8 @@ public class BridgeTest {
                 vm.step(program);
             }
             Assert.fail();
-        } catch (IllegalStateException e) {
-            Assert.assertEquals("Call from contract before Orchid", e.getMessage());
+        } catch (NullPointerException e) {
+            Assert.assertNull(e.getMessage());
         }
     }
 
