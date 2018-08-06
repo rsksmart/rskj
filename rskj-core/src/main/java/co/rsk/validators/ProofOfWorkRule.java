@@ -99,7 +99,8 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        if (header.getBitcoinMergedMiningMerkleProof() != null) {
+        byte[] merkleProof = header.getBitcoinMergedMiningMerkleProof();
+        if (merkleProof != null && merkleProof.length > 0) {
             return false;
         }
 
@@ -227,15 +228,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         return true;
     }
 
-    public static boolean validFallbackBlockSignature(Constants constants, BlockHeader header, byte[] signatureBytesRLP) {
-
-        if (header.getBitcoinMergedMiningCoinbaseTransaction() != null) {
-            return false;
-        }
-
-        if (header.getBitcoinMergedMiningMerkleProof() != null) {
-            return false;
-        }
+    private static boolean validFallbackBlockSignature(Constants constants, BlockHeader header, byte[] signatureBytesRLP) {
 
         byte[] fallbackMiningPubKeyBytes;
         boolean isEvenBlockNumber = header.getNumber() % 2 == 0;
