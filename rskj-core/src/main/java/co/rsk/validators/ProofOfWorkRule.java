@@ -266,6 +266,12 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        return fallbackMiningPubKey.verify(header.getHashForMergedMining(), signature);
+        if (signature.v > 31 || signature.v < 27) {
+            return false;
+        }
+
+        ECKey pub = ECKey.recoverFromSignature(signature.v - 27, signature, header.getHashForMergedMining(), false);
+
+        return pub.getPubKeyPoint().equals(fallbackMiningPubKey.getPubKeyPoint());
     }
 }
