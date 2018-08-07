@@ -239,7 +239,11 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         }
 
         ECKey fallbackMiningPubKey = ECKey.fromPublicOnly(fallbackMiningPubKeyBytes);
-        List<RLPElement> signatureRLP = (RLPList) RLP.decode2(signatureBytesRLP).get(0);
+        List<RLPElement> signatureRlpElements = RLP.decode2(signatureBytesRLP);
+        if (signatureRlpElements.size() != 1) {
+            return false;
+        }
+        List<RLPElement> signatureRLP = (RLPList) signatureRlpElements.get(0);
         if (signatureRLP.size() != 3) {
             return false;
         }
@@ -248,8 +252,26 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         byte[] r = signatureRLP.get(1).getRLPData();
         byte[] s = signatureRLP.get(2).getRLPData();
 
+        if (v == null || v.length != 1) {
+            return false;
+        }
+
         ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[0]);
 
-        return fallbackMiningPubKey.verify(header.getHashForMergedMining(), signature);
+        if (!Arrays.equals(r, signature.r.toByteArray())) {
+            return false;
+        }
+
+        if (!Arrays.equals(s, signature.s.toByteArray())) {
+            return false;
+        }
+
+        if (signature.v > 31 || signature.v < 27) {
+            return false;
+        }
+
+        ECKey pub = ECKey.recoverFromSignature(signature.v - 27, signature, header.getHashForMergedMining(), false);
+
+        return pub.getPubKeyPoint().equals(fallbackMiningPubKey.getPubKeyPoint());
     }
 }
