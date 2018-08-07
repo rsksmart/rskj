@@ -53,6 +53,7 @@ import java.util.List;
 public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
+    private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
     private final BlockchainNetConfig blockchainConfig;
     private final BridgeConstants bridgeConstants;
@@ -267,6 +268,10 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         }
 
         if (signature.v > 31 || signature.v < 27) {
+            return false;
+        }
+
+        if (signature.s.compareTo(SECP256K1N_HALF) >= 0) {
             return false;
         }
 
