@@ -25,9 +25,8 @@ import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.eth.RskMessage;
 import co.rsk.net.messages.*;
+import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.map.LRUMap;
 import org.ethereum.config.NodeFilter;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
@@ -74,7 +73,7 @@ public class ChannelManagerImpl implements ChannelManager {
 
     private ScheduledExecutorService mainWorker = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "newPeersProcessor"));
     private int maxActivePeers;
-    private Map<InetAddress, Date> recentlyDisconnected = Collections.synchronizedMap(new LRUMap<>(500));
+    private Map<InetAddress, Date> recentlyDisconnected = Collections.synchronizedMap(new MaxSizeHashMap<>(500, false));
     private NodeFilter trustedPeers;
 
     @Autowired
@@ -101,7 +100,7 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private void processNewPeers() {
-        if (!CollectionUtils.isEmpty(newPeers)) {
+        if (!newPeers.isEmpty()) {
             final List<Channel>  processed = new ArrayList<>();
             newPeers.stream().filter(Channel::isProtocolsInitialized).forEach(channel -> {
                 ReasonCode reason = getNewPeerDisconnectionReason(channel);
