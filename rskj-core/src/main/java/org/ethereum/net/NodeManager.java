@@ -55,8 +55,6 @@ public class NodeManager {
     private final PeerExplorer peerExplorer;
 
     private Map<String, NodeHandler> nodeHandlerMap = new ConcurrentHashMap<>();
-    private Set<NodeHandler> initialNodes = new HashSet<>();
-
     private boolean discoveryEnabled;
 
     @Autowired
@@ -87,15 +85,13 @@ public class NodeManager {
     }
 
     public synchronized List<NodeHandler> getNodes(Set<String> nodesInUse) {
-        List<NodeHandler> handlers = new ArrayList<>();
-        handlers.addAll(initialNodes);
-
         List<Node> foundNodes = this.peerExplorer.getNodes();
         if (this.discoveryEnabled && CollectionUtils.isNotEmpty(foundNodes)) {
             logger.debug("{} Nodes retrieved from the PE.", CollectionUtils.size(foundNodes));
             foundNodes.stream().filter(n -> !nodeHandlerMap.containsKey(n.getHexId())).forEach(this::createNodeHandler);
         }
 
+        List<NodeHandler> handlers = new ArrayList<>();
         for(NodeHandler handler : this.nodeHandlerMap.values()) {
             if(!nodesInUse.contains(handler.getNode().getHexId())) {
                 handlers.add(handler);
