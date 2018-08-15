@@ -36,20 +36,17 @@ import java.util.List;
 public class TransactionsMessage extends EthMessage {
 
     private List<Transaction> transactions;
-    private final RskSystemProperties config;
 
-    public TransactionsMessage(RskSystemProperties config, byte[] encoded) {
+    public TransactionsMessage(byte[] encoded) {
         super(encoded);
-        this.config = config;
     }
 
-    public TransactionsMessage(RskSystemProperties config, Transaction transaction) {
-        this(config, new ArrayList<>());
+    public TransactionsMessage(Transaction transaction) {
+        this(new ArrayList<>());
         transactions.add(transaction);
     }
 
-    public TransactionsMessage(RskSystemProperties config, List<Transaction> transactionList) {
-        this.config = config;
+    public TransactionsMessage(List<Transaction> transactionList) {
         this.transactions = transactionList;
         parsed = true;
     }

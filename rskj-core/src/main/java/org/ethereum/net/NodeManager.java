@@ -53,7 +53,6 @@ public class NodeManager {
     private static final NodeStatistics DUMMY_STAT = new NodeStatistics(new Node(new byte[0], "dummy.node", 0));
 
     private final PeerExplorer peerExplorer;
-    private final SystemProperties config;
 
     private Map<String, NodeHandler> nodeHandlerMap = new ConcurrentHashMap<>();
     private Set<NodeHandler> initialNodes = new HashSet<>();
@@ -63,8 +62,7 @@ public class NodeManager {
     @Autowired
     public NodeManager(PeerExplorer peerExplorer, SystemProperties config) {
         this.peerExplorer = peerExplorer;
-        this.config = config;
-        discoveryEnabled = config.isPeerDiscoveryEnabled();
+        this.discoveryEnabled = config.isPeerDiscoveryEnabled();
 
         for (Node node : config.peerActive()) {
             NodeHandler handler = new NodeHandler(node, this);

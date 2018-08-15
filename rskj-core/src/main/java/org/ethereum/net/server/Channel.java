@@ -59,7 +59,6 @@ public class Channel {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
-    private final RskSystemProperties config;
     private final MessageQueue msgQueue;
     private final P2pHandler p2pHandler;
     private final MessageCodec messageCodec;
@@ -79,6 +78,7 @@ public class Channel {
     private boolean isActive;
 
     private final PeerStatistics peerStats = new PeerStatistics();
+    private final Integer peerChannelReadTimeout;
 
     public Channel(RskSystemProperties config,
                    MessageQueue msgQueue,
@@ -88,7 +88,6 @@ public class Channel {
                    NodeManager nodeManager,
                    EthHandlerFactory ethHandlerFactory,
                    StaticMessages staticMessages) {
-        this.config = config;
         this.msgQueue = msgQueue;
         this.p2pHandler = p2pHandler;
         this.messageCodec = messageCodec;
@@ -96,14 +95,14 @@ public class Channel {
         this.nodeManager = nodeManager;
         this.ethHandlerFactory = ethHandlerFactory;
         this.staticMessages = staticMessages;
+        this.peerChannelReadTimeout = config.peerChannelReadTimeout();
     }
 
     public void init(ChannelPipeline pipeline, String remoteId, boolean discoveryMode) {
 
         isActive = remoteId != null && !remoteId.isEmpty();
 
-        pipeline.addLast("readTimeoutHandler",
-                new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
+        pipeline.addLast("readTimeoutHandler",new ReadTimeoutHandler(peerChannelReadTimeout, TimeUnit.SECONDS));
         pipeline.addLast("handshakeHandler", handshakeHandler);
 
         this.discoveryMode = discoveryMode;
@@ -193,7 +192,7 @@ public class Channel {
 
     private MessageFactory createEthMessageFactory(EthVersion version) {
         switch (version) {
-            case V62:   return new Eth62MessageFactory(config);
+            case V62:   return new Eth62MessageFactory();
             default:    throw new IllegalArgumentException("Eth " + version + " is not supported");
         }
     }

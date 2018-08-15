@@ -56,7 +56,7 @@ public class EthMessageSender implements MessageChannel {
      * @param message the message to be sent.
      */
     public void sendMessage(@Nonnull final Message message) {
-        this.eth.sendMessage(new RskMessage(config, message));
+        this.eth.sendMessage(new RskMessage(message));
     }
 
     /**
