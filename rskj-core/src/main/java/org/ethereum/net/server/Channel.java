@@ -227,17 +227,6 @@ public class Channel {
     public void onDisconnect() {
     }
 
-    public void onSyncDone(boolean done) {
-
-        if (done) {
-            eth.enableTransactions();
-        } else {
-            eth.disableTransactions();
-        }
-
-        eth.onSyncDone(done);
-    }
-
     public boolean isDiscoveryMode() {
         return discoveryMode;
     }
@@ -279,20 +268,12 @@ public class Channel {
         return eth.hasStatusSucceeded();
     }
 
-    public void logSyncStats() {
-        eth.logSyncStats();
-    }
-
     public BigInteger getTotalDifficulty() {
         return nodeStatistics.getEthTotalDifficulty();
     }
 
     public SyncStatistics getSyncStats() {
         return eth.getStats();
-    }
-
-    public boolean isMaster() {
-        return eth.isHashRetrieving() || eth.isHashRetrievingDone();
     }
 
     public boolean isIdle() {
