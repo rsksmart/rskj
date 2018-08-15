@@ -72,7 +72,6 @@ public class Channel {
     private Node node;
     private NodeStatistics nodeStatistics;
 
-    private boolean discoveryMode;
     private boolean isActive;
 
     private final PeerStatistics peerStats = new PeerStatistics();
@@ -96,30 +95,18 @@ public class Channel {
         this.peerChannelReadTimeout = config.peerChannelReadTimeout();
     }
 
-    public void init(ChannelPipeline pipeline, String remoteId, boolean discoveryMode) {
+    public void init(ChannelPipeline pipeline, String remoteId) {
 
         isActive = remoteId != null && !remoteId.isEmpty();
 
         pipeline.addLast("readTimeoutHandler",new ReadTimeoutHandler(peerChannelReadTimeout, TimeUnit.SECONDS));
         pipeline.addLast("handshakeHandler", handshakeHandler);
 
-        this.discoveryMode = discoveryMode;
-
-        if (discoveryMode) {
-            // temporary key/nodeId to not accidentally smear our reputation with
-            // unexpected disconnect
-            handshakeHandler.generateTempKey();
-        }
-
         handshakeHandler.setRemoteId(remoteId, this);
-
         messageCodec.setChannel(this);
-
         msgQueue.setChannel(this);
-
         p2pHandler.setMsgQueue(msgQueue);
         messageCodec.setP2pMessageFactory(new P2pMessageFactory());
-
     }
 
     public void publicRLPxHandshakeFinished(ChannelHandlerContext ctx, FrameCodec frameCodec,
@@ -149,8 +136,7 @@ public class Channel {
 
         // in discovery mode we are supplying fake port along with fake nodeID to not receive
         // incoming connections with fake public key
-        HelloMessage helloMessage = discoveryMode ? staticMessages.createHelloMessage(nodeId, 9) :
-                staticMessages.createHelloMessage(nodeId);
+        HelloMessage helloMessage = staticMessages.createHelloMessage(nodeId);
 
         if (inboundHelloMessage != null && P2pHandler.isProtocolVersionSupported(inboundHelloMessage.getP2PVersion())) {
             // the p2p version can be downgraded if requested by peer and supported by us
@@ -181,7 +167,6 @@ public class Channel {
 
         handler.setMsgQueue(msgQueue);
         handler.setChannel(this);
-        handler.setPeerDiscoveryMode(discoveryMode);
 
         handler.activate();
 
@@ -225,10 +210,6 @@ public class Channel {
     }
 
     public void onDisconnect() {
-    }
-
-    public boolean isDiscoveryMode() {
-        return discoveryMode;
     }
 
     public String getPeerId() {

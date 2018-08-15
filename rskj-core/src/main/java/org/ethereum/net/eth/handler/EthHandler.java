@@ -32,7 +32,6 @@ import org.ethereum.net.MessageQueue;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.eth.message.EthMessageCodes;
-import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
@@ -44,7 +43,6 @@ import java.util.List;
  * Process the messages between peers with 'eth' capability on the network<br>
  * Contains common logic to all supported versions
  * delegating version specific stuff to its descendants
- *
  */
 public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage> implements Eth {
 
@@ -56,8 +54,6 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
     private MessageQueue msgQueue = null;
 
     protected EthVersion version;
-
-    protected boolean peerDiscoveryMode = false;
 
     protected Block bestBlock;
     protected EthereumListener listener = new EthereumListenerAdapter() {
@@ -130,10 +126,6 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
 
     public void setMsgQueue(MessageQueue msgQueue) {
         this.msgQueue = msgQueue;
-    }
-
-    public void setPeerDiscoveryMode(boolean peerDiscoveryMode) {
-        this.peerDiscoveryMode = peerDiscoveryMode;
     }
 
     public void setChannel(Channel channel) {

@@ -91,9 +91,7 @@ public class PeerScoringManager {
      * @return  <tt>true</tt> if the node has good reputation
      */
     public boolean hasGoodReputation(NodeID id) {
-        synchronized (accessLock) {
-            return this.getPeerScoring(id).hasGoodReputation();
-        }
+        return this.getPeerScoring(id).hasGoodReputation();
     }
 
     /**
