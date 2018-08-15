@@ -19,13 +19,9 @@
 
 package org.ethereum.net.eth.handler;
 
-import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.sync.SyncStatistics;
-
-import java.util.List;
 
 import static org.ethereum.net.eth.EthVersion.*;
 
@@ -88,19 +84,6 @@ public class EthAdapter implements Eth {
 
     @Override
     public void enableTransactions() {
-    }
-
-    @Override
-    public void sendTransaction(List<Transaction> tx) {
-    }
-
-    @Override
-    public void sendNewBlock(Block newBlock) {
-    }
-
-    @Override
-    public void sendNewBlockHashes(Block block) {
-
     }
 
     @Override

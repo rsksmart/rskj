@@ -35,7 +35,6 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.handler.EthHandler;
 import org.ethereum.net.eth.message.EthMessage;
-import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
 import org.ethereum.sync.SyncState;
@@ -49,7 +48,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Arrays;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 import static org.ethereum.net.eth.EthVersion.V62;
@@ -250,22 +248,6 @@ public class RskWireProtocol extends EthHandler {
         sendMessage(rskmessage);
 
         ethState = EthState.STATUS_SENT;
-    }
-
-    @Override
-    public void sendTransaction(List<Transaction> txs) {
-        TransactionsMessage msg = new TransactionsMessage(txs);
-        sendMessage(msg);
-    }
-
-    @Override
-    public void sendNewBlock(Block newBlock) {
-
-    }
-
-    @Override
-    public void sendNewBlockHashes(Block block) {
-
     }
 
     /*************************

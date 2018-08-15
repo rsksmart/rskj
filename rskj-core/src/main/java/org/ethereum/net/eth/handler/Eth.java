@@ -90,23 +90,6 @@ public interface Eth {
     void enableTransactions();
 
     /**
-     * Sends transaction to the wire
-     *
-     * @param tx sending transaction
-     */
-    void sendTransaction(List<Transaction> tx);
-
-    /**
-     * Sends new block to the wire
-     */
-    void sendNewBlock(Block newBlock);
-
-    /**
-     * Sends new block hashes message to the wire
-     */
-    void sendNewBlockHashes(Block block);
-
-    /**
      * @return protocol version
      */
     EthVersion getVersion();
