@@ -130,52 +130,6 @@ public class SyncPool implements Iterable<Channel> {
         logger.info("Peer {}: added to pool", Utils.getNodeIdShort(peer.getPeerId()));
     }
 
-    public void remove(Channel peer) {
-        synchronized (peers) {
-            peers.values().remove(peer);
-        }
-    }
-
-    @Nullable
-    public Channel getMaster() {
-
-        synchronized (peers) {
-
-            for (Channel peer : peers.values()) {
-                if (peer.isMaster()) {
-                    return peer;
-                }
-            }
-
-            return null;
-        }
-    }
-
-    @Nullable
-    public Channel getMasterCandidate() {
-        synchronized (activePeers) {
-            if (activePeers.isEmpty()) {
-                return null;
-            }
-
-            return activePeers.get(0);
-        }
-    }
-
-    @Nullable
-    public Channel getBestIdle() {
-        synchronized (activePeers) {
-
-            for (Channel peer : activePeers) {
-                if (peer.isIdle()) {
-                    return peer;
-                }
-            }
-        }
-
-        return null;
-    }
-
     public void onDisconnect(Channel peer) {
 
         if (peer.getNodeId() == null) {
@@ -250,32 +204,10 @@ public class SyncPool implements Iterable<Channel> {
         return nodesInUse().contains(nodeId);
     }
 
-    public boolean isEmpty() {
-        synchronized (peers) {
-            return peers.isEmpty();
-        }
-    }
-
     @Override
     public Iterator<Channel> iterator() {
         synchronized (peers) {
             return new ArrayList<>(peers.values()).iterator();
-        }
-    }
-
-    void logActivePeers() {
-        synchronized (activePeers) {
-            if (activePeers.isEmpty()) {
-                return;
-            }
-
-            logger.info("\n");
-            logger.info("Active peers");
-            logger.info("============");
-
-            for (Channel peer : activePeers) {
-                peer.logSyncStats();
-            }
         }
     }
 
