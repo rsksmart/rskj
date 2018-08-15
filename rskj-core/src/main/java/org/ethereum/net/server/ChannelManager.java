@@ -84,22 +84,9 @@ public interface ChannelManager {
 
     int broadcastStatus(@Nonnull final Status status);
 
-    /**
-     * Propagates the new block message across active peers with exclusion of
-     * 'receivedFrom' peer.
-     * @param block  new Block to be sent
-     * @param receivedFrom the peer which sent original message or null if
-     *                     the block has been mined by us
-     */
-
-    @Deprecated // Use broadcastBlock
-    void sendNewBlock(Block block, Channel receivedFrom);
-
     void add(Channel peer);
 
     void notifyDisconnect(Channel channel);
-
-    void onSyncDone(boolean done) ;
 
     Collection<Channel> getActivePeers();
 

@@ -92,11 +92,6 @@ public class SimpleChannelManager implements ChannelManager {
     }
 
     @Override
-    public void sendNewBlock(Block block, Channel receivedFrom) {
-
-    }
-
-    @Override
     public void add(Channel peer) {
 
     }
@@ -114,11 +109,6 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Override
     public void notifyDisconnect(Channel channel) {
-
-    }
-
-    @Override
-    public void onSyncDone(boolean done) {
 
     }
 

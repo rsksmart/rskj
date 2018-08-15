@@ -292,28 +292,6 @@ public class ChannelManagerImpl implements ChannelManager {
         return Math.min(10, Math.min(Math.max(3, peerCountSqrt), peerCount));
     }
 
-    /**
-     * Propagates the new block message across active peers with exclusion of
-     * 'receivedFrom' peer.
-     * @deprecated
-     * @param block        new Block to be sent
-     * @param receivedFrom the peer which sent original message or null if
-     *                     the block has been mined by us
-     */
-    @Deprecated // Use broadcastBlock
-    public void sendNewBlock(Block block, Channel receivedFrom) {
-        EthMessage message = new RskMessage(new BlockMessage(block));
-
-        synchronized (activePeers) {
-            for (Channel channel : activePeers.values()) {
-                if (channel != receivedFrom) {
-                    channel.sendMessage(message);
-                }
-            }
-        }
-    }
-
-
     public void add(Channel peer) {
         newPeers.add(peer);
     }
@@ -325,15 +303,6 @@ public class ChannelManagerImpl implements ChannelManager {
         activePeers.values().remove(channel);
         if(newPeers.remove(channel)) {
             logger.info("Peer removed from active peers: {}", channel.getPeerId());
-        }
-    }
-
-    public void onSyncDone(boolean done) {
-
-        synchronized (activePeers) {
-            for (Channel channel : activePeers.values()) {
-                channel.onSyncDone(done);
-            }
         }
     }
 
