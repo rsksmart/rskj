@@ -128,10 +128,6 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
         channel.getNodeStatistics().ethOutbound.add();
     }
 
-    public StatusMessage getHandshakeStatusMessage() {
-        return channel.getNodeStatistics().getEthLastInboundStatusMsg();
-    }
-
     public void setMsgQueue(MessageQueue msgQueue) {
         this.msgQueue = msgQueue;
     }
