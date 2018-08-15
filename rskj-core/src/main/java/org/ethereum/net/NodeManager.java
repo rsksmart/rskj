@@ -65,8 +65,6 @@ public class NodeManager {
         this.discoveryEnabled = config.isPeerDiscoveryEnabled();
 
         for (Node node : config.peerActive()) {
-            NodeHandler handler = new NodeHandler(node);
-            handler.getNodeStatistics().setPredefined(true);
             createNodeHandler(node);
         }
     }
