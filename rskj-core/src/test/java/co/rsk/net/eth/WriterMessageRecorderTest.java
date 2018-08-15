@@ -45,8 +45,6 @@ import java.util.Random;
  */
 public class WriterMessageRecorderTest {
 
-    private static final TestSystemProperties config = new TestSystemProperties();
-
     @Test
     public void recordRskMessage() throws IOException {
         Message message = createRskMessage();
@@ -141,13 +139,13 @@ public class WriterMessageRecorderTest {
     public static Message createRskMessage() {
         Block block = new BlockGenerator().getBlock(1);
         GetBlockMessage message = new GetBlockMessage(block.getHash().getBytes());
-        return new RskMessage(config, message);
+        return new RskMessage(message);
     }
 
     public static Message createEthMessage() {
         Account acc1 = new AccountBuilder().name("acc1").build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new co.rsk.test.builders.TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
-        return new TransactionsMessage(config, tx);
+        return new TransactionsMessage(tx);
     }
 }
