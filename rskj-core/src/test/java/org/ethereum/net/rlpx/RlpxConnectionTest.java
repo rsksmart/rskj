@@ -42,7 +42,6 @@ public class RlpxConnectionTest {
     private PipedInputStream to;
     private PipedOutputStream toOut;
     private PipedInputStream from;
-    private PipedOutputStream fromOut;
 
     @Before
     public void setUp() throws Exception {
@@ -57,7 +56,6 @@ public class RlpxConnectionTest {
         to = new PipedInputStream(1024*1024);
         toOut = new PipedOutputStream(to);
         from = new PipedInputStream(1024*1024);
-        fromOut = new PipedOutputStream(from);
         iCodec = new FrameCodec(initiator.getSecrets());
         rCodec = new FrameCodec(responder.getSecrets());
         byte[] nodeId = {1, 2, 3, 4};
@@ -96,16 +94,5 @@ public class RlpxConnectionTest {
         assertEquals(3333, message1.listenPort);
         assertArrayEquals(message1.nodeId, message1.nodeId);
         assertEquals(iMessage.caps, message1.caps);
-    }
-
-    @Test
-    public void testHandshake() throws IOException {
-        RlpxConnection iConn =  new RlpxConnection(initiator.getSecrets(), from, toOut);
-        RlpxConnection rConn =  new RlpxConnection(responder.getSecrets(), to, fromOut);
-        iConn.sendProtocolHandshake(iMessage);
-        rConn.handleNextMessage();
-        HandshakeMessage receivedMessage = rConn.getHandshakeMessage();
-        assertNotNull(receivedMessage);
-        assertArrayEquals(iMessage.nodeId, receivedMessage.nodeId);
     }
 }
