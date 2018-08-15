@@ -72,8 +72,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
 
     private MessageQueue msgQueue;
 
-    private HelloMessage handshakeHelloMessage = null;
-
     private int ethInbound;
     private int ethOutbound;
 
@@ -168,10 +166,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
         }
     }
 
-    private void sendGetPeers() {
-        msgQueue.sendMessage(StaticMessages.GET_PEERS_MESSAGE);
-    }
-
     public void setHandshake(HelloMessage msg, ChannelHandlerContext ctx) {
 
         channel.getNodeStatistics().setClientId(msg.getClientId());
@@ -179,7 +173,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
         this.ethInbound = channel.getNodeStatistics().ethInbound.get();
         this.ethOutbound = channel.getNodeStatistics().ethOutbound.get();
 
-        this.handshakeHelloMessage = msg;
         if (!isProtocolVersionSupported(msg.getP2PVersion())) {
             disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
         }
@@ -197,25 +190,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
             ethereumListener.onHandShakePeer(channel, msg);
 
         }
-    }
-
-    /**
-     * submit transaction to the network
-     *
-     * @param tx - fresh transaction object
-     */
-    public void sendTransaction(Transaction tx) {
-
-        TransactionsMessage msg = new TransactionsMessage(tx);
-        msgQueue.sendMessage(msg);
-    }
-
-    public void sendDisconnect() {
-        msgQueue.disconnect();
-    }
-
-    public HelloMessage getHandshakeHelloMessage() {
-        return handshakeHelloMessage;
     }
 
     private void startTimers() {
