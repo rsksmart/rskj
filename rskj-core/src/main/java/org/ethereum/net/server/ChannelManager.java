@@ -62,11 +62,10 @@ public interface ChannelManager {
      * the peers with an id belonging to the skip set.
      *
      * @param block new Block to be sent
-     * @param skip  the set of peers to avoid sending the message.
      * @return a set containing the ids of the peers that received the block.
      */
     @Nonnull
-    Set<NodeID> broadcastBlock(@Nonnull final Block block, @Nullable final Set<NodeID> skip);
+    Set<NodeID> broadcastBlock(@Nonnull final Block block);
 
     @Nonnull
     Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, @Nullable final Set<NodeID> targets);

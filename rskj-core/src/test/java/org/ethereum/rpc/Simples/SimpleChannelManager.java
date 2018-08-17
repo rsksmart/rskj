@@ -68,7 +68,7 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Nonnull
     @Override
-    public Set<NodeID> broadcastBlock(@Nonnull Block block, @Nullable Set<NodeID> skip) {
+    public Set<NodeID> broadcastBlock(@Nonnull Block block) {
         return new HashSet<>();
     }
 

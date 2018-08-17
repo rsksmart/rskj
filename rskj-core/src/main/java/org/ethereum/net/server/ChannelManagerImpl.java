@@ -180,11 +180,10 @@ public class ChannelManagerImpl implements ChannelManager {
      * the peers with an id belonging to the skip set.
      *
      * @param block new Block to be sent
-     * @param skip  the set of peers to avoid sending the message.
      * @return a set containing the ids of the peers that received the block.
      */
     @Nonnull
-    public Set<NodeID> broadcastBlock(@Nonnull final Block block, @Nullable final Set<NodeID> skip) {
+    public Set<NodeID> broadcastBlock(@Nonnull final Block block) {
         Metrics.broadcastBlock(block);
 
         final Set<NodeID> res = new HashSet<>();
@@ -194,9 +193,7 @@ public class ChannelManagerImpl implements ChannelManager {
         synchronized (activePeers) {
             // Get a randomized list with all the peers that don't have the block yet.
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
-            final Vector<Channel> peers = activePeers.values().stream()
-                    .filter(p -> skip == null || !skip.contains(p.getNodeId()))
-                    .collect(Collectors.toCollection(Vector::new));
+            final Vector<Channel> peers = new Vector<>(activePeers.values());
             Collections.shuffle(peers);
 
             int sqrt = (int) Math.floor(Math.sqrt(peers.size()));

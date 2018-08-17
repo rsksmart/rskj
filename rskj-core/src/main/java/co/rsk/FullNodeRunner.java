@@ -311,7 +311,7 @@ public class FullNodeRunner implements NodeRunner {
         for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
             ImportResult tryToConnectResult = bc.tryToConnect(block);
             if (BlockProcessResult.importOk(tryToConnectResult)) {
-                cm.broadcastBlock(block, null);
+                cm.broadcastBlock(block);
             }
         }
     }
