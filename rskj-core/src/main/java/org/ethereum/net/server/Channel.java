@@ -21,6 +21,7 @@ package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.NodeID;
+import co.rsk.net.eth.RskWireProtocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -33,7 +34,6 @@ import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.handler.Eth;
 import org.ethereum.net.eth.handler.EthAdapter;
 import org.ethereum.net.eth.handler.EthHandler;
-import org.ethereum.net.eth.handler.EthHandlerFactory;
 import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.message.MessageFactory;
@@ -62,7 +62,7 @@ public class Channel {
     private final MessageCodec messageCodec;
     private final HandshakeHandler handshakeHandler;
     private final NodeManager nodeManager;
-    private final EthHandlerFactory ethHandlerFactory;
+    private final RskWireProtocol.Factory rskWireProtocolFactory;
     private final StaticMessages staticMessages;
 
     private Eth eth = new EthAdapter();
@@ -83,14 +83,14 @@ public class Channel {
                    MessageCodec messageCodec,
                    HandshakeHandler handshakeHandler,
                    NodeManager nodeManager,
-                   EthHandlerFactory ethHandlerFactory,
+                   RskWireProtocol.Factory rskWireProtocolFactory,
                    StaticMessages staticMessages) {
         this.msgQueue = msgQueue;
         this.p2pHandler = p2pHandler;
         this.messageCodec = messageCodec;
         this.handshakeHandler = handshakeHandler;
         this.nodeManager = nodeManager;
-        this.ethHandlerFactory = ethHandlerFactory;
+        this.rskWireProtocolFactory = rskWireProtocolFactory;
         this.staticMessages = staticMessages;
         this.peerChannelReadTimeout = config.peerChannelReadTimeout();
     }
@@ -156,7 +156,7 @@ public class Channel {
     }
 
     public void activateEth(ChannelHandlerContext ctx, EthVersion version) {
-        EthHandler handler = ethHandlerFactory.create(version);
+        EthHandler handler = createEthHandler(version);
         MessageFactory messageFactory = createEthMessageFactory(version);
         messageCodec.setEthVersion(version);
         messageCodec.setEthMessageFactory(messageFactory);
@@ -171,6 +171,13 @@ public class Channel {
         handler.activate();
 
         eth = handler;
+    }
+
+    public EthHandler createEthHandler(EthVersion version) {
+        switch (version) {
+            case V62:   return rskWireProtocolFactory.newInstance();
+            default:    throw new IllegalArgumentException("Eth " + version + " is not supported");
+        }
     }
 
     private MessageFactory createEthMessageFactory(EthVersion version) {

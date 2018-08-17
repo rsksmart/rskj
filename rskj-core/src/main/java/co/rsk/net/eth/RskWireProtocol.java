@@ -336,4 +336,8 @@ public class RskWireProtocol extends EthHandler {
         STATUS_SUCCEEDED,
         STATUS_FAILED
     }
+
+    public interface Factory {
+        RskWireProtocol newInstance();
+    }
 }

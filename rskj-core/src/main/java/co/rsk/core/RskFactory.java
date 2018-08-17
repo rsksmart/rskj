@@ -56,8 +56,6 @@ import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.client.PeerClient;
-import org.ethereum.net.eth.handler.EthHandlerFactory;
-import org.ethereum.net.eth.handler.EthHandlerFactoryImpl;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.HandshakeHandler;
@@ -272,7 +270,7 @@ public class RskFactory {
                                                                        @Qualifier("compositeEthereumListener") EthereumListener ethereumListener,
                                                                        ConfigCapabilities configCapabilities,
                                                                        NodeManager nodeManager,
-                                                                       EthHandlerFactory ethHandlerFactory,
+                                                                       RskWireProtocol.Factory rskWireProtocolFactory,
                                                                        StaticMessages staticMessages,
                                                                        PeerScoringManager peerScoringManager) {
         return () -> {
@@ -280,16 +278,17 @@ public class RskFactory {
             MessageQueue messageQueue = new MessageQueue();
             P2pHandler p2pHandler = new P2pHandler(config, ethereumListener, configCapabilities);
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
-            return new Channel(config, messageQueue, p2pHandler, messageCodec, handshakeHandler, nodeManager, ethHandlerFactory, staticMessages);
+            return new Channel(config, messageQueue, p2pHandler, messageCodec, handshakeHandler, nodeManager, rskWireProtocolFactory, staticMessages);
         };
     }
 
     @Bean
-    public EthHandlerFactoryImpl.RskWireProtocolFactory getRskWireProtocolFactory(PeerScoringManager peerScoringManager,
-                                                                                  MessageHandler messageHandler,
-                                                                                  Blockchain blockchain,
-                                                                                  RskSystemProperties config,
-                                                                                  CompositeEthereumListener ethereumListener){
+    public RskWireProtocol.Factory getRskWireProtocolFactory(
+            RskSystemProperties config,
+            PeerScoringManager peerScoringManager,
+            MessageHandler messageHandler,
+            Blockchain blockchain,
+            CompositeEthereumListener ethereumListener) {
         return () -> new RskWireProtocol(config, peerScoringManager, messageHandler, blockchain, ethereumListener);
     }
 
