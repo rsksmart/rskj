@@ -46,6 +46,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -308,10 +310,11 @@ public class FullNodeRunner implements NodeRunner {
     }
 
     private void connectBlocks(FileBlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
+        Set<NodeID> skipNodes = Collections.emptySet();
         for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
             ImportResult tryToConnectResult = bc.tryToConnect(block);
             if (BlockProcessResult.importOk(tryToConnectResult)) {
-                cm.broadcastBlock(block, null);
+                cm.broadcastBlock(block);
             }
         }
     }
