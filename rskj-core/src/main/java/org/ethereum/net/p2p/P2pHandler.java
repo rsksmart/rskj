@@ -24,8 +24,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.MessageQueue;
-import org.ethereum.net.client.Capability;
-import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.message.StaticMessages;
@@ -33,11 +31,8 @@ import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.*;
 
-import static org.ethereum.net.eth.EthVersion.fromCode;
 import static org.ethereum.net.message.StaticMessages.PING_MESSAGE;
 import static org.ethereum.net.message.StaticMessages.PONG_MESSAGE;
 
@@ -75,17 +70,14 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
     private int ethOutbound;
 
     private final EthereumListener ethereumListener;
-    private final ConfigCapabilities configCapabilities;
     private final MessageQueue msgQueue;
     private final int pingInterval;
 
     public P2pHandler(
             EthereumListener ethereumListener,
-            ConfigCapabilities configCapabilities,
             MessageQueue msgQueue,
             int pingInterval) {
         this.ethereumListener = ethereumListener;
-        this.configCapabilities = configCapabilities;
         this.msgQueue = msgQueue;
         this.pingInterval = pingInterval;
     }
@@ -176,7 +168,7 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
         msgQueue.sendMessage(StaticMessages.GET_PEERS_MESSAGE);
     }
 
-    public void setHandshake(HelloMessage msg, ChannelHandlerContext ctx) {
+    public void setHandshake(HelloMessage msg) {
 
         channel.getNodeStatistics().setClientId(msg.getClientId());
 
@@ -184,23 +176,7 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
         this.ethOutbound = channel.getNodeStatistics().ethOutbound.get();
 
         this.handshakeHelloMessage = msg;
-        if (!isProtocolVersionSupported(msg.getP2PVersion())) {
-            disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
-        }
-        else {
-            List<Capability> capInCommon = getSupportedCapabilities(msg);
-            channel.initMessageCodes(capInCommon);
-            for (Capability capability : capInCommon) {
-                if (capability.getName().equals(Capability.RSK)) {
-
-                    // Activate EthHandler for this peer
-                    channel.activateEth(ctx, fromCode(capability.getVersion()));
-                }
-            }
-
-            ethereumListener.onHandShakePeer(channel, msg);
-
-        }
+        ethereumListener.onHandShakePeer(channel, msg);
     }
 
     /**
@@ -252,39 +228,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
             }
         }
         return false;
-    }
-
-    public List<Capability> getSupportedCapabilities(HelloMessage hello) {
-        List<Capability> configCaps = configCapabilities.getConfigCapabilities();
-        List<Capability> supported = new ArrayList<>();
-
-        List<Capability> eths = new ArrayList<>();
-
-        for (Capability cap : hello.getCapabilities()) {
-            if (configCaps.contains(cap)) {
-                if (cap.isRSK()) {
-                    eths.add(cap);
-                } else {
-                    supported.add(cap);
-                }
-            }
-        }
-
-        if (eths.isEmpty()) {
-            return supported;
-        }
-
-        // we need to pick up
-        // the most recent Eth version
-        Capability highest = null;
-        for (Capability eth : eths) {
-            if (highest == null || highest.getVersion() < eth.getVersion()) {
-                highest = eth;
-            }
-        }
-
-        supported.add(highest);
-        return supported;
     }
 
 }

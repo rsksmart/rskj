@@ -89,9 +89,9 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
             }
 
             MessageQueue messageQueue = new MessageQueue();
-            P2pHandler p2pHandler = new P2pHandler(ethereumListener, configCapabilities, messageQueue, config.getPeerP2PPingInterval());
+            P2pHandler p2pHandler = new P2pHandler(ethereumListener, messageQueue, config.getPeerP2PPingInterval());
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
-            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec);
+            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
             Channel channel = new Channel(messageQueue, messageCodec, nodeManager, ethHandlerFactory, staticMessages, remoteId);
 
             ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
