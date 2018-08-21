@@ -61,14 +61,9 @@ public class SimpleChannelManager implements ChannelManager {
         return false;
     }
 
-    @Override
-    public void broadcastTransactionMessage(List<Transaction> tx, Channel receivedFrom) {
-
-    }
-
     @Nonnull
     @Override
-    public Set<NodeID> broadcastBlock(@Nonnull Block block, @Nullable Set<NodeID> skip) {
+    public Set<NodeID> broadcastBlock(@Nonnull Block block) {
         return new HashSet<>();
     }
 
@@ -89,11 +84,6 @@ public class SimpleChannelManager implements ChannelManager {
     @Override
     public int broadcastStatus(Status status) {
         return 0;
-    }
-
-    @Override
-    public void sendNewBlock(Block block, Channel receivedFrom) {
-
     }
 
     @Override
@@ -146,6 +136,11 @@ public class SimpleChannelManager implements ChannelManager {
         if (channel != null){
             channel.sendMessage(message);
         }
+        return true;
+    }
+
+    @Override
+    public boolean isAddressBlockAvailable(InetAddress address) {
         return true;
     }
 

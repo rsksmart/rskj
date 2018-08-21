@@ -20,12 +20,12 @@ import java.net.InetAddress;
 public class Web3HttpServer {
 
     private final InetAddress bindAddress;
-    private int port;
+    private final int port;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
-    private int socketLinger;
-    private boolean reuseAddress;
-    private CorsConfiguration corsConfiguration;
+    private final int socketLinger;
+    private final boolean reuseAddress;
+    private final CorsConfiguration corsConfiguration;
     private final JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private final JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
 
