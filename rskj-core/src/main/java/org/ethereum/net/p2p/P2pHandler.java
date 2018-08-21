@@ -114,8 +114,9 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
 
         switch (msg.getCommand()) {
             case HELLO:
+                logger.trace("Received unexpected HELLO message, channel {}", channel);
                 msgQueue.receivedMessage(msg);
-                setHandshake((HelloMessage) msg, ctx);
+                sendDisconnect();
                 break;
             case DISCONNECT:
                 msgQueue.receivedMessage(msg);
