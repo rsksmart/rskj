@@ -439,6 +439,15 @@ public class RLP {
         }
     }
 
+    @Nullable
+    public static Coin parseCoinNonNullZero(byte[] bytes) {
+        if (bytes == null) {
+            return null;
+        }
+
+        return new Coin(bytes);
+    }
+
     /**
      * Get exactly one message payload
      */
@@ -580,6 +589,18 @@ public class RLP {
         }
 
         return encodeBigInteger(coin.asBigInteger());
+    }
+
+    public static byte[] encodeCoinNonNullZero(@CheckForNull Coin coin) {
+        if (coin == null) {
+            return encodeElement(null);
+        }
+
+        if (coin.equals(Coin.ZERO)) {
+            return new byte[]{0};
+        }
+
+        return encodeElement(BigIntegers.asUnsignedByteArray(coin.asBigInteger()));
     }
 
     public static byte[] encodeBlockDifficulty(BlockDifficulty difficulty) {

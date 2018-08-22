@@ -88,12 +88,6 @@ public class Transaction {
      * In creation transaction the receive address is - 0 */
     private RskAddress receiveAddress;
 
-    /**
-     * The amount to pay as a transaction fee to the miner for each unit of gas.
-     * Note that gasPriceRaw is saved to perform {@link #validate()} and {@link #getEncoded()},
-     * but once validated a Transaction should only rely on gasPrice.
-     * */
-    private byte[] gasPriceRaw;
     private Coin gasPrice;
 
     /* the amount of "gas" to allow for the computation.
@@ -150,8 +144,7 @@ public class Transaction {
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
                        byte chainId) {
         this.nonce = ByteUtil.cloneBytes(nonce);
-        this.gasPriceRaw = ByteUtil.cloneBytes(gasPriceRaw);
-        this.gasPrice = RLP.parseCoin(this.gasPriceRaw);
+        this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
         this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
         if (valueRaw == null || ByteUtil.isSingleZero(valueRaw)) {
@@ -224,7 +217,7 @@ public class Transaction {
         if (gasLimit.length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Limit is not valid");
         }
-        if (gasPriceRaw != null && gasPriceRaw.length > DATAWORD_LENGTH) {
+        if (gasPrice != null && gasPrice.getBytes().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Price is not valid");
         }
         if (valueRaw != null && valueRaw.length > DATAWORD_LENGTH) {
@@ -247,8 +240,7 @@ public class Transaction {
         List<RLPElement> transaction = (RLPList)RLP.decode2(rlpEncoded).get(0);
 
         this.nonce = transaction.get(0).getRLPData();
-        this.gasPriceRaw = transaction.get(1).getRLPData();
-        this.gasPrice = RLP.parseCoin(this.gasPriceRaw);
+        this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());
         this.gasLimit = transaction.get(2).getRLPData();
         this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
         this.valueRaw = transaction.get(4).getRLPData();
@@ -321,6 +313,12 @@ public class Transaction {
     public Coin getGasPrice() {
         if (!parsed) {
             rlpParse();
+        }
+
+        // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
+        // give a different value than the original.
+        if (gasPrice == null) {
+            return Coin.ZERO;
         }
 
         return gasPrice;
@@ -497,7 +495,7 @@ public class Transaction {
         } else {
             toEncodeNonce = RLP.encodeElement(this.nonce);
         }
-        byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPriceRaw);
+        byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
         byte[] toEncodeValue = RLP.encodeElement(this.valueRaw);
@@ -532,7 +530,7 @@ public class Transaction {
         } else {
             toEncodeNonce = RLP.encodeElement(this.nonce);
         }
-        byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPriceRaw);
+        byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
         byte[] toEncodeValue = RLP.encodeElement(this.valueRaw);
