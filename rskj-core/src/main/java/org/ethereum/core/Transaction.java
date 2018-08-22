@@ -117,7 +117,9 @@ public class Transaction {
 
     protected Transaction(byte[] rawData) {
         this.rlpEncoded = rawData;
-        parsed = false;
+        rlpParse();
+        // clear it so we always reencode the received data
+        this.rlpEncoded = null;
     }
 
     /* creation contract tx
