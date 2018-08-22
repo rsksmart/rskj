@@ -448,6 +448,14 @@ public class RLP {
         return new Coin(bytes);
     }
 
+    public static Coin parseCoinNullZero(@Nullable byte[] bytes) {
+        if (bytes == null) {
+            return Coin.ZERO;
+        }
+
+        return new Coin(bytes);
+    }
+
     /**
      * Get exactly one message payload
      */
@@ -601,6 +609,14 @@ public class RLP {
         }
 
         return encodeElement(BigIntegers.asUnsignedByteArray(coin.asBigInteger()));
+    }
+
+    public static byte[] encodeCoinNullZero(Coin coin) {
+        if (coin.equals(Coin.ZERO)) {
+            return encodeByte((byte) 0);
+        }
+
+        return encodeCoinNonNullZero(coin);
     }
 
     public static byte[] encodeBlockDifficulty(BlockDifficulty difficulty) {

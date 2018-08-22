@@ -76,12 +76,6 @@ public class Transaction {
     /* a counter used to make sure each transaction can only be processed once */
     private byte[] nonce;
 
-    /**
-     * The amount to transfer.
-     * Note that valueRaw is saved to perform {@link #validate()} and {@link #getEncoded()},
-     * but once validated a Transaction should only rely on value.
-     * */
-    private byte[] valueRaw;
     private Coin value;
 
     /* the address of the destination account
@@ -147,12 +141,7 @@ public class Transaction {
         this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
         this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
-        if (valueRaw == null || ByteUtil.isSingleZero(valueRaw)) {
-            this.valueRaw = EMPTY_BYTE_ARRAY;
-        } else {
-            this.valueRaw = ByteUtil.cloneBytes(valueRaw);
-        }
-        this.value = RLP.parseCoin(this.valueRaw);
+        this.value = RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw));
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
@@ -220,7 +209,7 @@ public class Transaction {
         if (gasPrice != null && gasPrice.getBytes().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Price is not valid");
         }
-        if (valueRaw != null && valueRaw.length > DATAWORD_LENGTH) {
+        if (value.getBytes().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Value is not valid");
         }
         if (getSignature() != null) {
@@ -243,8 +232,7 @@ public class Transaction {
         this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());
         this.gasLimit = transaction.get(2).getRLPData();
         this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
-        this.valueRaw = transaction.get(4).getRLPData();
-        this.value = RLP.parseCoin(this.valueRaw);
+        this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
         this.data = transaction.get(5).getRLPData();
         // only parse signature in case tx is signed
         if (transaction.get(6).getRLPData() != null) {
@@ -498,7 +486,7 @@ public class Transaction {
         byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
-        byte[] toEncodeValue = RLP.encodeElement(this.valueRaw);
+        byte[] toEncodeValue = RLP.encodeCoinNullZero(this.value);
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
         // Since EIP-155 use chainId for v
@@ -533,7 +521,7 @@ public class Transaction {
         byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
-        byte[] toEncodeValue = RLP.encodeElement(this.valueRaw);
+        byte[] toEncodeValue = RLP.encodeCoinNullZero(this.value);
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
         byte[] v;
