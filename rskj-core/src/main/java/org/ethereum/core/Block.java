@@ -85,6 +85,9 @@ public class Block {
     protected Block(byte[] rawData, boolean sealed) {
         this.rlpEncoded = rawData;
         this.sealed = sealed;
+        parseRLP();
+        // clear it so we always reencode the received data
+        this.rlpEncoded = null;
     }
 
     public Block(BlockHeader header) {
@@ -186,9 +189,7 @@ public class Block {
     }
 
     public static Block fromValidData(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-        Block block = new Block((byte[])null);
-        block.parsed = true;
-        block.header = header;
+        Block block = new Block(header);
         block.transactionsList = transactionsList;
         block.uncleList = uncleList;
         block.seal();
