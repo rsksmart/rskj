@@ -228,7 +228,10 @@ public class Transaction {
     }
 
     public void rlpParse() {
-        List<RLPElement> transaction = (RLPList)RLP.decode2(rlpEncoded).get(0);
+        List<RLPElement> transaction = RLP.decodeList(rlpEncoded);
+        if (transaction.size() != 9) {
+            throw new IllegalArgumentException("A transaction must have exactly 9 elements");
+        }
 
         this.nonce = transaction.get(0).getRLPData();
         this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());

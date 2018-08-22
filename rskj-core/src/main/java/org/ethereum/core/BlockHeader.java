@@ -112,10 +112,18 @@ public class BlockHeader {
     private volatile boolean sealed;
 
     public BlockHeader(byte[] encoded, boolean sealed) {
-        this((RLPList) RLP.decode2(encoded).get(0), sealed);
+        this(RLP.decodeList(encoded), sealed);
     }
 
     public BlockHeader(RLPList rlpHeader, boolean sealed) {
+        // TODO fix old tests that have other sizes
+        if (rlpHeader.size() != 19 && rlpHeader.size() != 16) {
+            throw new IllegalArgumentException(String.format(
+                    "A block header must have 16 elements or 19 including merged-mining fields but it had %d",
+                    rlpHeader.size()
+            ));
+        }
+
         this.parentHash = rlpHeader.get(0).getRLPData();
         this.unclesHash = rlpHeader.get(1).getRLPData();
         this.coinbase = RLP.parseRskAddress(rlpHeader.get(2).getRLPData());

@@ -211,8 +211,10 @@ public class Block {
     }
 
     private void parseRLP() {
-        ArrayList<RLPElement> params = RLP.decode2(rlpEncoded);
-        RLPList block = (RLPList) params.get(0);
+        RLPList block = RLP.decodeList(rlpEncoded);
+        if (block.size() != 3) {
+            throw new IllegalArgumentException("A block must have 3 exactly items");
+        }
 
         // Parse Header
         RLPList header = (RLPList) block.get(0);

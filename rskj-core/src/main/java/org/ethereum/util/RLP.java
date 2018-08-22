@@ -405,6 +405,23 @@ public class RLP {
         return decode(ByteBuffer.wrap(msgData));
     }
 
+    /**
+     * Parse and verify that the passed data has just one list encoded as RLP
+     */
+    public static RLPList decodeList(byte[] msgData) {
+        List<RLPElement> decoded = RLP.decode2(msgData);
+        if (decoded.size() != 1) {
+            throw new IllegalArgumentException(String.format("Expected one RLP item but got %d", decoded.size()));
+        }
+
+        RLPElement element = decoded.get(0);
+        if (!(element instanceof RLPList)) {
+            throw new IllegalArgumentException("The decoded element wasn't a list");
+        }
+
+        return (RLPList) element;
+    }
+
     @Nullable
     public static RLPElement decode2OneItem(@CheckForNull byte[] msgData, int startPos) {
         if (msgData == null) {
