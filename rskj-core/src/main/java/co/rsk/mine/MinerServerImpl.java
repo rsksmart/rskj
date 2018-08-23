@@ -596,14 +596,7 @@ public class MinerServerImpl implements MinerServer {
         final Block newBlock = builder.build(newBlockParent, extraData);
 
         if (autoSwitchBetweenNormalAndFallbackMining) {
-            if (ProofOfWorkRule.isFallbackMiningPossible(
-                    config.getBlockchainConfig().getCommonConstants(),
-                    newBlock.getHeader())) {
-
-                setFallbackMining(true);
-            } else {
-                setFallbackMining(false);
-            }
+            setFallbackMining(ProofOfWorkRule.isFallbackMiningPossible(config, newBlock.getHeader()));
         }
 
         synchronized (lock) {

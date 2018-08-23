@@ -38,4 +38,9 @@ public class MainNetOrchidConfig extends MainNetAfterBridgeSyncConfig {
     }
 
     @Override public boolean isRskip94() { return true; }
+
+    @Override
+    public boolean isRskip98() {
+        return true;
+    }
 }
