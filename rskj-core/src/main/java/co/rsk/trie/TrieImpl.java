@@ -1108,7 +1108,6 @@ public class TrieImpl implements Trie {
      * a bit value of the original byte
      *
      * @param bytes original key
-     * @param arity number of subnodes in each node trie
      *
      * @return expanded key
      */
