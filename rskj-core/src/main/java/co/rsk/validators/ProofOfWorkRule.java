@@ -55,6 +55,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
+    private final RskSystemProperties config;
     private final BlockchainNetConfig blockchainConfig;
     private final BridgeConstants bridgeConstants;
     private final Constants constants;
@@ -62,6 +63,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
     @Autowired
     public ProofOfWorkRule(RskSystemProperties config) {
+        this.config = config;
         this.blockchainConfig = config.getBlockchainConfig();
         this.bridgeConstants = blockchainConfig.getCommonConstants().getBridgeConstants();
         this.constants = blockchainConfig.getCommonConstants();
@@ -77,8 +79,12 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         return isValid(block.getHeader());
     }
 
-    public static boolean isFallbackMiningPossible(Constants constants, BlockHeader header) {
+    public static boolean isFallbackMiningPossible(RskSystemProperties config, BlockHeader header) {
+        if (config.getBlockchainConfig().getConfigForBlock(header.getNumber()).isRskip98()) {
+            return false;
+        }
 
+        Constants constants = config.getBlockchainConfig().getCommonConstants();
         if (header.getNumber() >= constants.getEndOfFallbackMiningBlockNumber()) {
             return false;
         }
@@ -109,7 +115,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        return isFallbackMiningPossible(constants, header);
+        return isFallbackMiningPossible(config, header);
 
     }
 
