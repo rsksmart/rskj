@@ -64,23 +64,18 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
 
     @Override
     public BlockDifficulty calcDifficulty(BlockHeader curBlockHeader, BlockHeader parent) {
-        BlockDifficulty pd = parent.getDifficulty();
-        int uncleCount = curBlockHeader.getUncleCount();
-        long curBlockTS = curBlockHeader.getTimestamp();
-        long parentBlockTS =parent.getTimestamp();
-
-        return calcDifficultyFortConstants(getConstants(),curBlockTS, parentBlockTS,pd,uncleCount);
+        return getBlockDifficulty(curBlockHeader, parent, getConstants());
     }
 
-    public static BlockDifficulty calcDifficultyFortConstants(Constants constants,
-                                                         long curBlockTS,
-                                                         long parentBlockTS,
-                                                         BlockDifficulty pd ,
-                                                         int uncleCount) {
-        int duration =constants.getDurationLimit();
+    public static BlockDifficulty getBlockDifficulty(BlockHeader curBlockHeader, BlockHeader parent, Constants constants) {
+        BlockDifficulty pd = parent.getDifficulty();
+        long parentBlockTS = parent.getTimestamp();
+        int uncleCount = curBlockHeader.getUncleCount();
+        long curBlockTS = curBlockHeader.getTimestamp();
+        int duration = constants.getDurationLimit();
         BigInteger difDivisor = constants.getDifficultyBoundDivisor();
         BlockDifficulty minDif = constants.getMinimumDifficulty();
-        return calcDifficultyWithTimeStamps(curBlockTS, parentBlockTS,pd,uncleCount,duration,difDivisor,minDif );
+        return calcDifficultyWithTimeStamps(curBlockTS, parentBlockTS, pd, uncleCount, duration, difDivisor, minDif);
     }
 
     public static BlockDifficulty calcDifficultyWithTimeStamps(long curBlockTS, long parentBlockTS,

@@ -1,5 +1,8 @@
 package org.ethereum.config.blockchain.testnet;
 
+import co.rsk.core.BlockDifficulty;
+import org.ethereum.core.BlockHeader;
+
 public class TestNetOrchidConfig extends TestNetAfterBridgeSyncConfig {
     @Override
     public boolean isRskip90() {
@@ -39,5 +42,11 @@ public class TestNetOrchidConfig extends TestNetAfterBridgeSyncConfig {
     @Override
     public boolean isRskip98() {
         return true;
+    }
+
+    //RSKIP97
+    @Override
+    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
+        return getBlockDifficulty(curBlock, parent, getConstants());
     }
 }

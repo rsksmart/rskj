@@ -1,5 +1,8 @@
 package org.ethereum.config.blockchain.mainnet;
 
+import co.rsk.core.BlockDifficulty;
+import org.ethereum.core.BlockHeader;
+
 public class MainNetOrchidConfig extends MainNetAfterBridgeSyncConfig {
     @Override
     public boolean isRskip90() {
@@ -42,5 +45,11 @@ public class MainNetOrchidConfig extends MainNetAfterBridgeSyncConfig {
     @Override
     public boolean isRskip98() {
         return true;
+    }
+
+    //RSKIP97
+    @Override
+    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
+        return getBlockDifficulty(curBlock, parent, getConstants());
     }
 }
