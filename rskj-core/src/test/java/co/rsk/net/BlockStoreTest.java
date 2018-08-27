@@ -220,7 +220,7 @@ public class BlockStoreTest {
         BlockStore store = new BlockStore();
         BlockHeader blockHeader = new BlockHeader(new byte[]{},
                 new byte[]{},
-                RskAddress.nullAddress().getBytes(),
+                TestUtils.randomAddress().getBytes(),
                 new Bloom().getData(),
                 new byte[]{},
                 1,
@@ -244,7 +244,7 @@ public class BlockStoreTest {
         BlockStore store = new BlockStore();
         BlockHeader blockHeader = new BlockHeader(new byte[]{},
                 new byte[]{},
-                RskAddress.nullAddress().getBytes(),
+                TestUtils.randomAddress().getBytes(),
                 new Bloom().getData(),
                 new byte[]{},
                 1,

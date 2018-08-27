@@ -440,7 +440,7 @@ public class RLP {
 
     @Nonnull
     public static RskAddress parseRskAddress(@Nullable byte[] bytes) {
-        if (bytes == null || isAllZeroes(bytes)) {
+        if (bytes == null || bytes.length == 0) {
             return RskAddress.nullAddress();
         } else {
             return new RskAddress(bytes);

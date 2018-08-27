@@ -42,7 +42,7 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
     public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BlockHeader blockHeader = new BlockHeader(new byte[]{},
                 new byte[]{},
-                RskAddress.nullAddress().getBytes(),
+                new byte[20],
                 new Bloom().getData(),
                 new byte[]{},
                 bestBlockNumber,

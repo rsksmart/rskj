@@ -294,16 +294,15 @@ public class TransactionTest {
         Assert.assertTrue(tx.isContractCreation());
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void isContractCreationWhenReceiveAddressIs00() {
-        Transaction tx = Transaction.create(config, "00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
-        Assert.assertTrue(tx.isContractCreation());
+        Transaction.create(config, "00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
         Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
-        Assert.assertTrue(tx.isContractCreation());
+        Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
