@@ -32,6 +32,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.ethereum.util.Utils;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -71,10 +72,7 @@ public class BlockHeader {
      * A scalar value corresponding to the difficulty level of this block.
      * This can be calculated from the previous block’s difficulty level
      * and the timestamp.
-     * Note that difficultyRaw is saved to perform {@link #getEncoded()},
-     * but for other uses you should only rely on difficulty.
      */
-    private byte[] difficultyRaw;
     private BlockDifficulty difficulty;
     /* A scalar value equalBytes to the reasonable output of Unix's time()
      * at this block's inception */
@@ -143,8 +141,7 @@ public class BlockHeader {
         }
 
         this.logsBloom = rlpHeader.get(6).getRLPData();
-        this.difficultyRaw = rlpHeader.get(7).getRLPData();
-        this.difficulty = new BlockDifficulty(difficultyRaw);
+        this.difficulty = RLP.parseBlockDifficulty(rlpHeader.get(7).getRLPData());
 
         byte[] nrBytes = rlpHeader.get(8).getRLPData();
         byte[] glBytes = rlpHeader.get(9).getRLPData();
@@ -202,8 +199,7 @@ public class BlockHeader {
         this.unclesHash = unclesHash;
         this.coinbase = new RskAddress(coinbase);
         this.logsBloom = logsBloom;
-        this.difficultyRaw = difficulty;
-        this.difficulty = new BlockDifficulty(difficultyRaw);
+        this.difficulty = RLP.parseBlockDifficulty(difficulty);
         this.number = number;
         this.gasLimit = gasLimit;
         this.gasUsed = gasUsed;
@@ -307,6 +303,12 @@ public class BlockHeader {
     }
 
     public BlockDifficulty getDifficulty() {
+        // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
+        // give a different value than the original.
+        if (difficulty == null) {
+            return BlockDifficulty.ZERO;
+        }
+
         return difficulty;
     }
 
@@ -316,7 +318,6 @@ public class BlockHeader {
             throw new SealedBlockHeaderException("trying to alter difficulty");
         }
 
-        this.difficultyRaw = difficulty.getBytes();
         this.difficulty = difficulty;
     }
 
@@ -424,6 +425,7 @@ public class BlockHeader {
         return this.getEncoded(false, false);
     }
 
+    @Nullable
     public Coin getMinimumGasPrice() {
         return this.minimumGasPrice;
     }
@@ -449,7 +451,7 @@ public class BlockHeader {
         byte[] receiptTrieRoot = RLP.encodeElement(this.receiptTrieRoot);
 
         byte[] logsBloom = RLP.encodeElement(this.logsBloom);
-        byte[] difficulty = RLP.encodeElement(this.difficultyRaw);
+        byte[] difficulty = encodeBlockDifficulty(this.difficulty);
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
         byte[] gasLimit = RLP.encodeElement(this.gasLimit);
         byte[] gasUsed = RLP.encodeBigInteger(BigInteger.valueOf(this.gasUsed));
@@ -477,6 +479,13 @@ public class BlockHeader {
 
 
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+    }
+
+    /**
+     * This is here to override specific non-minimal instances such as the mainnet Genesis
+     */
+    protected byte[] encodeBlockDifficulty(BlockDifficulty difficulty) {
+        return RLP.encodeBlockDifficulty(difficulty);
     }
 
     // Warning: This method does not use the object's attributes

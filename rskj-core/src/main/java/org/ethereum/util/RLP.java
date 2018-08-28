@@ -19,15 +19,15 @@
 
 package org.ethereum.util;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.BlockDifficulty;
 import co.rsk.util.ByteBufferUtil;
 import co.rsk.util.RLPElementType;
 import co.rsk.util.RLPElementView;
 import co.rsk.util.RLPException;
-import org.ethereum.db.ByteArrayWrapper;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -37,9 +37,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static org.ethereum.util.ByteUtil.*;
 import static org.bouncycastle.util.Arrays.concatenate;
 import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
+import static org.ethereum.util.ByteUtil.*;
 
 /**
  * Recursive Length Prefix (RLP) encoding.
@@ -474,6 +474,18 @@ public class RLP {
     }
 
     /**
+     * @param bytes the difficulty bytes, as expected by {@link BigInteger#BigInteger(byte[])}.
+     */
+    @Nullable
+    public static BlockDifficulty parseBlockDifficulty(@Nullable byte[] bytes) {
+        if (bytes == null) {
+            return null;
+        }
+
+        return new BlockDifficulty(new BigInteger(bytes));
+    }
+
+    /**
      * Get exactly one message payload
      */
     private static void fullTraverse(@Nonnull ByteBuffer msgData, @Nonnull ArrayList<RLPElement> rlpList) {
@@ -637,6 +649,10 @@ public class RLP {
     }
 
     public static byte[] encodeBlockDifficulty(BlockDifficulty difficulty) {
+        if (difficulty == null) {
+            return encodeElement(null);
+        }
+
         return encodeElement(difficulty.getBytes());
     }
 

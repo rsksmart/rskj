@@ -36,6 +36,7 @@ import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -112,7 +113,7 @@ public class BlockValidatorTest {
     public void invalidChildBlockBadDifficulty() {
         Block genesis = new BlockGenerator().getGenesisBlock();
         Block block = new BlockGenerator().createChildBlock(genesis);
-        block.getHeader().setDifficulty(new BlockDifficulty(new byte[]{0x00}));
+        block.getHeader().setDifficulty(BlockDifficulty.ZERO);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addDifficultyRule()

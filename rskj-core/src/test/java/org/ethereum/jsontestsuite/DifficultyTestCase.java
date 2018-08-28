@@ -94,7 +94,7 @@ public class DifficultyTestCase {
 
     public BlockHeader getCurrent() {
         return new BlockHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY, null,
                 org.ethereum.json.Utils.parseLong(currentBlockNumber), new byte[] {0}, 0,
                 org.ethereum.json.Utils.parseLong(currentTimestamp),
                 EMPTY_BYTE_ARRAY, null,0);

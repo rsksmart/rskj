@@ -51,7 +51,7 @@ public enum MessageType {
 
             byte[] parentHash = list.get(2).getRLPData();
             byte[] rlpTotalDifficulty = list.get(3).getRLPData();
-            BlockDifficulty totalDifficulty = rlpTotalDifficulty == null ? BlockDifficulty.ZERO : new BlockDifficulty(rlpTotalDifficulty);
+            BlockDifficulty totalDifficulty = rlpTotalDifficulty == null ? BlockDifficulty.ZERO : RLP.parseBlockDifficulty(rlpTotalDifficulty);
 
             return new StatusMessage(new Status(number, hash, parentHash, totalDifficulty));
         }

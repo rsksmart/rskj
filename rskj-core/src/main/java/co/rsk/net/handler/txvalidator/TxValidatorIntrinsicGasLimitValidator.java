@@ -44,7 +44,7 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
                 new byte[]{},
                 new byte[20],
                 new Bloom().getData(),
-                new byte[]{},
+                null,
                 bestBlockNumber,
                 new byte[]{},
                 0,
