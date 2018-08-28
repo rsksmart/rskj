@@ -465,6 +465,15 @@ public class RLP {
         return new Coin(bytes);
     }
 
+    @Nullable
+    public static Coin parseSignedCoinNonNullZero(byte[] bytes) {
+        if (bytes == null) {
+            return null;
+        }
+
+        return new Coin(new BigInteger(bytes));
+    }
+
     public static Coin parseCoinNullZero(@Nullable byte[] bytes) {
         if (bytes == null) {
             return Coin.ZERO;
@@ -638,6 +647,18 @@ public class RLP {
         }
 
         return encodeElement(BigIntegers.asUnsignedByteArray(coin.asBigInteger()));
+    }
+
+    public static byte[] encodeSignedCoinNonNullZero(@CheckForNull Coin coin) {
+        if (coin == null) {
+            return encodeElement(null);
+        }
+
+        if (Coin.ZERO.equals(coin)) {
+            return new byte[]{0};
+        }
+
+        return encodeElement(coin.getBytes());
     }
 
     public static byte[] encodeCoinNullZero(Coin coin) {

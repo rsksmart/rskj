@@ -20,7 +20,6 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import org.ethereum.core.*;
 
 import javax.annotation.Nullable;
@@ -53,7 +52,7 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
-                new byte[]{},
+                new byte[]{0},
                 0
         );
         Block block = new Block(blockHeader);

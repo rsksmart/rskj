@@ -26,6 +26,9 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.ECDSASignature;
@@ -34,13 +37,9 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -596,7 +595,7 @@ public class Transaction {
 
     public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData) {
         return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
-                BigIntegers.asUnsignedByteArray(gasPrice),
+                gasPrice.toByteArray(),
                 BigIntegers.asUnsignedByteArray(gasLimit),
                 to != null ? Hex.decode(to) : null,
                 BigIntegers.asUnsignedByteArray(amount),
