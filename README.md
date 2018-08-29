@@ -13,6 +13,9 @@ You may also want to check [our blog](http://media.rsk.co) for articles and upda
 # Getting Started
 Information about compiling and running an RSK node can be found in the [wiki](https://github.com/rsksmart/rskj/wiki).
 
+# Report Security Vulnerabilities
+If you find a security issue, please contact us at <security@rsk.co>, or report it through our [bug bounty program](https://bounty.rsk.co/). We reward security experts, software developers and hackers who dedicate time and effort to improve the RSK platform.
+
 # License
 RskJ is licensed under the GNU Lesser General Public License v3.0, also included in our repository in the COPYING.LESSER file.
 
