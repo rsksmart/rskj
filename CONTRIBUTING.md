@@ -13,7 +13,7 @@ These are mostly guidelines, not rules. Use your best judgment, and feel free to
 
 ### Did you find a bug?
 
-* **Do not open up a GitHub issue if the bug is a security vulnerability**, and instead refer to our [Bug Bounty Program](https://bounty.rsk.co/).
+* **Do not open up a GitHub issue if the bug is a security vulnerability**, and instead contact us at <security@rsk.co> or refer to our [Bug Bounty Program](https://bounty.rsk.co/).
 
 * **Ensure the bug was not already reported** by searching on GitHub under [Issues](https://github.com/rsksmart/rskj/issues).
 
