@@ -32,6 +32,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.ethereum.util.Utils;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -71,10 +72,7 @@ public class BlockHeader {
      * A scalar value corresponding to the difficulty level of this block.
      * This can be calculated from the previous block’s difficulty level
      * and the timestamp.
-     * Note that difficultyRaw is saved to perform {@link #getEncoded()},
-     * but for other uses you should only rely on difficulty.
      */
-    private byte[] difficultyRaw;
     private BlockDifficulty difficulty;
     /* A scalar value equalBytes to the reasonable output of Unix's time()
      * at this block's inception */
@@ -101,10 +99,7 @@ public class BlockHeader {
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     /**
      * The mgp for a tx to be included in the block.
-     * Note that minimumGasPriceRaw is saved to perform {@link #getEncoded()},
-     * but for other uses you should only rely on minimumGasPrice.
      */
-    private byte[] minimumGasPriceRaw;
     private Coin minimumGasPrice;
     private int uncleCount;
 
@@ -112,10 +107,18 @@ public class BlockHeader {
     private volatile boolean sealed;
 
     public BlockHeader(byte[] encoded, boolean sealed) {
-        this((RLPList) RLP.decode2(encoded).get(0), sealed);
+        this(RLP.decodeList(encoded), sealed);
     }
 
     public BlockHeader(RLPList rlpHeader, boolean sealed) {
+        // TODO fix old tests that have other sizes
+        if (rlpHeader.size() != 19 && rlpHeader.size() != 16) {
+            throw new IllegalArgumentException(String.format(
+                    "A block header must have 16 elements or 19 including merged-mining fields but it had %d",
+                    rlpHeader.size()
+            ));
+        }
+
         this.parentHash = rlpHeader.get(0).getRLPData();
         this.unclesHash = rlpHeader.get(1).getRLPData();
         this.coinbase = RLP.parseRskAddress(rlpHeader.get(2).getRLPData());
@@ -135,8 +138,7 @@ public class BlockHeader {
         }
 
         this.logsBloom = rlpHeader.get(6).getRLPData();
-        this.difficultyRaw = rlpHeader.get(7).getRLPData();
-        this.difficulty = new BlockDifficulty(difficultyRaw);
+        this.difficulty = RLP.parseBlockDifficulty(rlpHeader.get(7).getRLPData());
 
         byte[] nrBytes = rlpHeader.get(8).getRLPData();
         byte[] glBytes = rlpHeader.get(9).getRLPData();
@@ -152,8 +154,7 @@ public class BlockHeader {
         this.extraData = rlpHeader.get(12).getRLPData();
 
         this.paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
-        this.minimumGasPriceRaw = rlpHeader.get(14).getRLPData();
-        this.minimumGasPrice = RLP.parseCoin(this.minimumGasPriceRaw);
+        this.minimumGasPrice = RLP.parseSignedCoinNonNullZero(rlpHeader.get(14).getRLPData());
 
         int r = 15;
 
@@ -194,16 +195,14 @@ public class BlockHeader {
         this.unclesHash = unclesHash;
         this.coinbase = new RskAddress(coinbase);
         this.logsBloom = logsBloom;
-        this.difficultyRaw = difficulty;
-        this.difficulty = new BlockDifficulty(difficultyRaw);
+        this.difficulty = RLP.parseBlockDifficulty(difficulty);
         this.number = number;
         this.gasLimit = gasLimit;
         this.gasUsed = gasUsed;
         this.timestamp = timestamp;
         this.extraData = extraData;
         this.stateRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
-        this.minimumGasPriceRaw = minimumGasPrice;
-        this.minimumGasPrice = minimumGasPriceRaw == null ? null : new Coin(minimumGasPriceRaw);
+        this.minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPrice);
         this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.uncleCount = uncleCount;
         this.paidFees = Coin.ZERO;
@@ -299,6 +298,12 @@ public class BlockHeader {
     }
 
     public BlockDifficulty getDifficulty() {
+        // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
+        // give a different value than the original.
+        if (difficulty == null) {
+            return BlockDifficulty.ZERO;
+        }
+
         return difficulty;
     }
 
@@ -308,7 +313,6 @@ public class BlockHeader {
             throw new SealedBlockHeaderException("trying to alter difficulty");
         }
 
-        this.difficultyRaw = difficulty.getBytes();
         this.difficulty = difficulty;
     }
 
@@ -416,6 +420,7 @@ public class BlockHeader {
         return this.getEncoded(false, false);
     }
 
+    @Nullable
     public Coin getMinimumGasPrice() {
         return this.minimumGasPrice;
     }
@@ -441,14 +446,14 @@ public class BlockHeader {
         byte[] receiptTrieRoot = RLP.encodeElement(this.receiptTrieRoot);
 
         byte[] logsBloom = RLP.encodeElement(this.logsBloom);
-        byte[] difficulty = RLP.encodeElement(this.difficultyRaw);
+        byte[] difficulty = encodeBlockDifficulty(this.difficulty);
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
         byte[] gasLimit = RLP.encodeElement(this.gasLimit);
         byte[] gasUsed = RLP.encodeBigInteger(BigInteger.valueOf(this.gasUsed));
         byte[] timestamp = RLP.encodeBigInteger(BigInteger.valueOf(this.timestamp));
         byte[] extraData = RLP.encodeElement(this.extraData);
         byte[] paidFees = RLP.encodeCoin(this.paidFees);
-        byte[] mgp = RLP.encodeElement(this.minimumGasPriceRaw);
+        byte[] mgp = RLP.encodeSignedCoinNonNullZero(this.minimumGasPrice);
         List<byte[]> fieldToEncodeList = Lists.newArrayList(parentHash, unclesHash, coinbase,
                 stateRoot, txTrieRoot, receiptTrieRoot, logsBloom, difficulty, number,
                 gasLimit, gasUsed, timestamp, extraData, paidFees, mgp);
@@ -469,6 +474,13 @@ public class BlockHeader {
 
 
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+    }
+
+    /**
+     * This is here to override specific non-minimal instances such as the mainnet Genesis
+     */
+    protected byte[] encodeBlockDifficulty(BlockDifficulty difficulty) {
+        return RLP.encodeBlockDifficulty(difficulty);
     }
 
     // Warning: This method does not use the object's attributes

@@ -18,8 +18,8 @@
 
 package org.ethereum.validator;
 
-import co.rsk.core.RskAddress;
 import co.rsk.core.BlockDifficulty;
+import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
 import org.junit.Test;
 
@@ -55,7 +55,7 @@ public class ParentNumberRuleTest {
     }
 
     private static BlockHeader getHeader(long number) {
-        BlockHeader header = new BlockHeader(null, null, RskAddress.nullAddress().getBytes(),
+        BlockHeader header = new BlockHeader(null, null, TestUtils.randomAddress().getBytes(),
                 null, BlockDifficulty.ZERO.getBytes(), number, null, 0,
                 0, null, null, 0);
 

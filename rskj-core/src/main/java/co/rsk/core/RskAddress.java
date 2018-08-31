@@ -39,7 +39,7 @@ public class RskAddress {
      */
     private static final int LENGTH_IN_BYTES = 20;
 
-    private static final RskAddress NULL_ADDRESS = new RskAddress(new byte[LENGTH_IN_BYTES]);
+    private static final RskAddress NULL_ADDRESS = new RskAddress();
 
     /**
      * This compares using the lexicographical order of the sender unsigned bytes.
@@ -73,6 +73,13 @@ public class RskAddress {
         }
 
         this.bytes = bytes;
+    }
+
+    /**
+     * This instantiates the contract creation address.
+     */
+    private RskAddress() {
+        this.bytes = new byte[0];
     }
 
     /**

@@ -38,7 +38,7 @@ public class RemascTransaction extends Transaction {
      * Instead of the empty array, it is encoded as the array with just one zero.
      * This instance should not be used for any other reason.
      */
-    public static final RskAddress REMASC_ADDRESS = new RskAddress(RskAddress.nullAddress().getBytes()) {
+    public static final RskAddress REMASC_ADDRESS = new RskAddress(new byte[20]) {
         @Override
         public byte[] getBytes() {
             return ZERO_BYTE_ARRAY;

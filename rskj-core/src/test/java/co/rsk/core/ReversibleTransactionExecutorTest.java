@@ -20,6 +20,8 @@
 package co.rsk.core;
 
 import co.rsk.util.TestContract;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.db.ContractDetails;
@@ -28,7 +30,8 @@ import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
+
+import java.math.BigInteger;
 
 public class ReversibleTransactionExecutorTest {
 
@@ -42,7 +45,7 @@ public class ReversibleTransactionExecutorTest {
         CallTransaction.Function helloFn = hello.functions.get("hello");
         ContractDetails contract = contractRunner.addContract(hello.runtimeBytecode);
 
-        RskAddress from = RskAddress.nullAddress();
+        RskAddress from = TestUtils.randomAddress();
         byte[] gasPrice = Hex.decode("00");
         byte[] value = Hex.decode("00");
         byte[] gasLimit = Hex.decode("f424");
@@ -70,24 +73,12 @@ public class ReversibleTransactionExecutorTest {
     public void executeTransactionGreeter() {
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
-        ContractDetails contract = contractRunner.addContract(greeter.runtimeBytecode);
 
-        RskAddress from = RskAddress.nullAddress();
-        byte[] gasPrice = Hex.decode("00");
-        byte[] value = Hex.decode("00");
-        byte[] gasLimit = Hex.decode("f424");
-
-        Block bestBlock = factory.getBlockchain().getBestBlock();
-
-        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
-                bestBlock,
-                bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contract.getAddress(),
-                value,
+        ProgramResult result = contractRunner.createAndRunContract(
+                Hex.decode(greeter.bytecode),
                 greeterFn.encode("greet me"),
-                from.getBytes()
+                BigInteger.ZERO,
+                true
         );
 
         Assert.assertNull(result.getException());

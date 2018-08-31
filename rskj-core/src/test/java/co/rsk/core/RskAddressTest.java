@@ -38,16 +38,19 @@ public class RskAddressTest {
     }
 
     @Test
-    public void nullAddress() {
+    public void zeroAddress() {
         RskAddress senderA = new RskAddress("0000000000000000000000000000000000000000");
         RskAddress senderB = new RskAddress("0x0000000000000000000000000000000000000000");
         RskAddress senderC = new RskAddress(new byte[20]);
-        RskAddress senderD = new RskAddress("0000000000000000000000000000000000000001");
 
-        Assert.assertEquals(RskAddress.nullAddress(), senderA);
-        Assert.assertEquals(RskAddress.nullAddress(), senderB);
-        Assert.assertEquals(RskAddress.nullAddress(), senderC);
-        Assert.assertNotEquals(RskAddress.nullAddress(), senderD);
+        Assert.assertEquals(senderA, senderB);
+        Assert.assertEquals(senderB, senderC);
+        Assert.assertNotEquals(RskAddress.nullAddress(), senderC);
+    }
+
+    @Test
+    public void nullAddress() {
+        Assert.assertArrayEquals(RskAddress.nullAddress().getBytes(), new byte[0]);
     }
 
     @Test(expected = RuntimeException.class)

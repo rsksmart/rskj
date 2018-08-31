@@ -85,6 +85,9 @@ public class Block {
     protected Block(byte[] rawData, boolean sealed) {
         this.rlpEncoded = rawData;
         this.sealed = sealed;
+        parseRLP();
+        // clear it so we always reencode the received data
+        this.rlpEncoded = null;
     }
 
     public Block(BlockHeader header) {
@@ -186,9 +189,7 @@ public class Block {
     }
 
     public static Block fromValidData(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-        Block block = new Block((byte[])null);
-        block.parsed = true;
-        block.header = header;
+        Block block = new Block(header);
         block.transactionsList = transactionsList;
         block.uncleList = uncleList;
         block.seal();
@@ -210,8 +211,10 @@ public class Block {
     }
 
     private void parseRLP() {
-        ArrayList<RLPElement> params = RLP.decode2(rlpEncoded);
-        RLPList block = (RLPList) params.get(0);
+        RLPList block = RLP.decodeList(rlpEncoded);
+        if (block.size() != 3) {
+            throw new IllegalArgumentException("A block must have 3 exactly items");
+        }
 
         // Parse Header
         RLPList header = (RLPList) block.get(0);

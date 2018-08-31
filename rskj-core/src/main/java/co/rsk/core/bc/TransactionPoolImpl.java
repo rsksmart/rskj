@@ -399,7 +399,7 @@ public class TransactionPoolImpl implements TransactionPool {
         // creating fake lightweight calculated block with no hashes calculations
         return new Block(best.getHash().getBytes(),
                             emptyUncleHashList, // uncleHash
-                            RskAddress.nullAddress().getBytes(), //coinbase
+                            new byte[20], //coinbase
                             new byte[32], // log bloom - from tx receipts
                             best.getDifficulty().getBytes(), // difficulty
                             best.getNumber() + 1, //number

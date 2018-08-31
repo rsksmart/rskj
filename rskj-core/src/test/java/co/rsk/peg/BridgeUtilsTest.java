@@ -463,7 +463,11 @@ public class BridgeUtilsTest {
     public void testIsContractTx() {
         Assert.assertFalse(BridgeUtils.isContractTx(new Transaction(null, null, null, null, null, null)));
         Assert.assertTrue(BridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null)));
-        Assert.assertFalse(BridgeUtils.isContractTx(new ImmutableTransaction(null)));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIsContractTxInvalidTx() {
+        new ImmutableTransaction(null);
     }
 
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {
