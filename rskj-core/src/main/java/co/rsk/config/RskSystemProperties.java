@@ -84,7 +84,8 @@ public class RskSystemProperties extends SystemProperties {
     @Nullable
     public RskAddress coinbaseAddress() {
         if (!isMinerServerEnabled()) {
-            return RskAddress.nullAddress();
+            //todo(diegoll): we should carefully handle the case when you don't have a coinbase and want to execute pending blocks
+            return new RskAddress(new byte[20]);
         }
 
         // validity checks are performed by localCoinbaseAccount
