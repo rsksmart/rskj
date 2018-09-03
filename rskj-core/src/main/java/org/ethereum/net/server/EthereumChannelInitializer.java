@@ -89,7 +89,7 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
                     ch.disconnect();
                     return;
                 } else if (!channelManager.isAddressBlockAvailable(address)) {
-                    // avoid too many connection from same block
+                    // avoid too many connection from same block address
                     logger.info("IP range is full, IP {} is not accepted for new connection", address);
                     ch.disconnect();
                     return;
