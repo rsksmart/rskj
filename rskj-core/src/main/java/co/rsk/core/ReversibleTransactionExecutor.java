@@ -66,10 +66,10 @@ public class ReversibleTransactionExecutor {
             byte[] toAddress,
             byte[] value,
             byte[] data,
-            byte[] fromAddress) {
+            RskAddress fromAddress) {
         Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
 
-        byte[] nonce = repository.getNonce(new RskAddress(fromAddress)).toByteArray();
+        byte[] nonce = repository.getNonce(fromAddress).toByteArray();
         UnsignedTransaction tx = new UnsignedTransaction(
                 nonce,
                 gasPrice,
@@ -108,9 +108,9 @@ public class ReversibleTransactionExecutor {
                 byte[] receiveAddress,
                 byte[] value,
                 byte[] data,
-                byte[] fromAddress) {
+                RskAddress fromAddress) {
             super(nonce, gasPrice, gasLimit, receiveAddress, value, data);
-            this.sender = new RskAddress(fromAddress);
+            this.sender = fromAddress;
         }
 
         @Override
