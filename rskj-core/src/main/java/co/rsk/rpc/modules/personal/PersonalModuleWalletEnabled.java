@@ -22,7 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.WalletAccount;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
-import org.ethereum.config.blockchain.RegTestConfig;
+import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.Account;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Transaction;
@@ -33,7 +33,7 @@ import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;

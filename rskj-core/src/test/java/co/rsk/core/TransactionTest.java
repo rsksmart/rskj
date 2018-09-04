@@ -30,8 +30,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.BigIntegers;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -294,16 +294,15 @@ public class TransactionTest {
         Assert.assertTrue(tx.isContractCreation());
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void isContractCreationWhenReceiveAddressIs00() {
-        Transaction tx = Transaction.create(config, "00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
-        Assert.assertTrue(tx.isContractCreation());
+        Transaction.create(config, "00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
         Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
-        Assert.assertTrue(tx.isContractCreation());
+        Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test

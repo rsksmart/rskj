@@ -25,7 +25,7 @@ import co.rsk.trie.TrieImpl;
 import org.apache.commons.collections4.MapUtils;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.*;
 

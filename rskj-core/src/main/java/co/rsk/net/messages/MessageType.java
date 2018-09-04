@@ -25,7 +25,7 @@ import org.ethereum.core.*;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
-import org.spongycastle.util.BigIntegers;
+import org.bouncycastle.util.BigIntegers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +51,7 @@ public enum MessageType {
 
             byte[] parentHash = list.get(2).getRLPData();
             byte[] rlpTotalDifficulty = list.get(3).getRLPData();
-            BlockDifficulty totalDifficulty = rlpTotalDifficulty == null ? BlockDifficulty.ZERO : new BlockDifficulty(rlpTotalDifficulty);
+            BlockDifficulty totalDifficulty = rlpTotalDifficulty == null ? BlockDifficulty.ZERO : RLP.parseBlockDifficulty(rlpTotalDifficulty);
 
             return new StatusMessage(new Status(number, hash, parentHash, totalDifficulty));
         }

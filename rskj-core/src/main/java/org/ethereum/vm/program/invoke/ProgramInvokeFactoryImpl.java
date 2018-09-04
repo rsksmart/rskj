@@ -30,7 +30,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
@@ -146,7 +146,8 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                                              DataWord inValue,
                                              long inGas,
                                              Coin balanceInt, byte[] dataIn,
-                                             Repository repository, BlockStore blockStore, boolean byTestingSuite) {
+                                             Repository repository, BlockStore blockStore,
+                                             boolean isStaticCall, boolean byTestingSuite) {
 
         DataWord address = toAddress;
         DataWord origin = program.getOriginAddress();
@@ -202,6 +203,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, agas, callValue,
                 data, lastHash, coinbase, timestamp, number, transactionIndex, difficulty, gasLimit,
-                repository, program.getCallDeep() + 1, blockStore, byTestingSuite);
+                repository, program.getCallDeep() + 1, blockStore,
+                isStaticCall, byTestingSuite);
     }
 }

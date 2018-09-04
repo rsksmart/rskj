@@ -28,7 +28,7 @@ import org.ethereum.util.RLPList;
 
 import java.util.ArrayList;
 
-import static org.spongycastle.util.encoders.Hex.decode;
+import static org.bouncycastle.util.encoders.Hex.decode;
 
 /**
  * @author Mikhail Kalinin

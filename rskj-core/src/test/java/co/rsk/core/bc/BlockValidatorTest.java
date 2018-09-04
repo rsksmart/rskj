@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
+import co.rsk.remasc.Sibling;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockParentDependantValidationRule;
@@ -35,15 +36,13 @@ import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ajlopez on 04/08/2016.
@@ -114,7 +113,7 @@ public class BlockValidatorTest {
     public void invalidChildBlockBadDifficulty() {
         Block genesis = new BlockGenerator().getGenesisBlock();
         Block block = new BlockGenerator().createChildBlock(genesis);
-        block.getHeader().setDifficulty(new BlockDifficulty(new byte[]{0x00}));
+        block.getHeader().setDifficulty(BlockDifficulty.ZERO);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addDifficultyRule()
@@ -977,6 +976,11 @@ public class BlockValidatorTest {
 
         @Override
         public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
+
+        @Override
+        public Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
+            return null;
+        }
     }
 }
 

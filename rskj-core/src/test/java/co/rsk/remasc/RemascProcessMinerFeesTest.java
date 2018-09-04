@@ -21,6 +21,7 @@ package co.rsk.remasc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -30,20 +31,23 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
 import org.ethereum.TestUtils;
-import org.ethereum.config.blockchain.RegTestConfig;
+import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 public class RemascProcessMinerFeesTest {
 
@@ -68,9 +72,12 @@ public class RemascProcessMinerFeesTest {
     private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
 
     @BeforeClass
-    public static void setUpBeforeClass() {
-        config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestConfig());
+    public static void setUpBeforeClass() throws Exception {
+        config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        RemascProcessMinerFeesTest.config.setBlockchainConfig(blockchainConfig);
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 
         accountsAddressesUpToD = new LinkedList<>();
@@ -188,7 +195,7 @@ public class RemascProcessMinerFeesTest {
         assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
         assertEquals(0, remascStorageProvider.getSiblings().size());
 
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
 
     @Test
@@ -259,7 +266,7 @@ public class RemascProcessMinerFeesTest {
         assertEquals(Coin.valueOf(1), remascStorageProvider.getBurnedBalance());
         assertEquals(0, remascStorageProvider.getSiblings().size());
 
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
 
     @Test
@@ -350,7 +357,7 @@ public class RemascProcessMinerFeesTest {
         // TODO review one unit burned?
         this.validateAccountsCurrentBalanceIsCorrect(repository, cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, otherAccountsBalanceOnHeightFour);
 
-        this.validateFederatorsBalanceIsCorrect(repository, federationReward);
+        this.validateFederatorsBalanceIsCorrect(repository, federationReward, blockToPayFeesOnHeightFour);
 
         // validate that REMASC's state is correct
         long blockRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
@@ -399,7 +406,7 @@ public class RemascProcessMinerFeesTest {
         expectedBurnedBalance = Coin.valueOf((2 * punishmentFee) + siblingPunishmentLvlFour);
         // TODO review value + 1
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, expectedBurnedBalance.add(Coin.valueOf(1)), 0L);
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2, blockToPayFeesOnHeightFive);
     }
 
     @Test
@@ -455,7 +462,7 @@ public class RemascProcessMinerFeesTest {
         blockRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
         Coin expectedRewardBalance = Coin.valueOf(minerFee - blockRewardOnHeightFour);
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, Coin.ZERO, 1L);
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, blockToPayFeesOnHeightFour);
     }
 
 
@@ -528,7 +535,7 @@ public class RemascProcessMinerFeesTest {
         long minerRewardOnHeightFive = blockRewardOnHeightFive / 2;
         List<Long> otherAccountsBalanceOnHeightFive = new ArrayList<>(Arrays.asList(minerRewardOnHeightFive, minerRewardOnHeightFive, publisherReward, null));
 
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, blockToPayFeesOnHeightFive);
 
         // TODO review value + 1
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, this.getAccountsWithExpectedBalance(otherAccountsBalanceOnHeightFive));
@@ -564,7 +571,7 @@ public class RemascProcessMinerFeesTest {
 
         // TODO review + 1
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, this.getAccountsWithExpectedBalance(otherAccountsBalanceOnHeightSix));
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2, blockToPayFeesOnHeightSix);
         // TODO review + 1
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.valueOf(rewardBalance), Coin.valueOf(burnedBalance + 1), 0L);
     }
@@ -630,7 +637,7 @@ public class RemascProcessMinerFeesTest {
 
         Coin expectedRewardBalance = Coin.valueOf(minerFee - originalBlockReward);
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, Coin.ZERO, 0L);
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
 
     @Test
@@ -718,17 +725,22 @@ public class RemascProcessMinerFeesTest {
 
         Coin expectedRewardBalance = Coin.valueOf(minerFee - originalBlockReward);
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, Coin.ZERO, 0L);
-        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
 
     @Test
     public void siblingIncludedOneBlockLater() {
-        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
         List<SiblingElement> siblings = Lists.newArrayList(new SiblingElement(5, 7, this.minerFee));
 
         RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(this.minerFee)
-                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey);
+                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey).gasPrice(1L);
 
         testRunner.start();
 
@@ -748,12 +760,17 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void oneSiblingIncludedOneBlockLaterAndAnotherIncludedRightAfter() {
-        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
         List<SiblingElement> siblings = Lists.newArrayList(new SiblingElement(5, 6, this.minerFee), new SiblingElement(5, 7, this.minerFee));
 
         RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(this.minerFee)
-                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey);
+                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey).gasPrice(1L);
 
         testRunner.start();
 
@@ -779,12 +796,17 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void siblingIncludedSevenBlocksLater() {
-        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
         List<SiblingElement> siblings = Lists.newArrayList(new SiblingElement(5, 12, this.minerFee));
 
         RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(this.minerFee)
-                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey);
+                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey).gasPrice(1L);
 
         testRunner.start();
 
@@ -809,9 +831,12 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void siblingsFeeForMiningBlockMustBeRoundedAndTheRoundedSurplusBurned() {
-        BlockChainBuilder builder = new BlockChainBuilder()
-                .setTesting(true)
-                .setGenesis(genesisBlock);
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
         long minerFee = 21000;
 
         List<SiblingElement> siblings = Lists.newArrayList();
@@ -820,7 +845,7 @@ public class RemascProcessMinerFeesTest {
         }
 
         RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)
-                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey);
+                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey).gasPrice(1L);
 
         testRunner.start();
 
@@ -850,7 +875,12 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void unclesPublishingFeeMustBeRoundedAndTheRoundedSurplusBurned() {
-        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
+        RskSystemProperties config = spy(new TestSystemProperties());
+        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
+        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
+        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
         long minerFee = 21000;
 
         List<SiblingElement> siblings = Lists.newArrayList();
@@ -859,7 +889,7 @@ public class RemascProcessMinerFeesTest {
         }
 
         RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)
-                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey);
+                .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey).gasPrice(1L);
 
         testRunner.start();
 
@@ -907,8 +937,8 @@ public class RemascProcessMinerFeesTest {
         return accountsWithExpectedBalance;
     }
 
-    private void validateFederatorsBalanceIsCorrect(Repository repository, long federationReward) {
-        RemascFederationProvider provider = new RemascFederationProvider(config, repository, null);
+    private void validateFederatorsBalanceIsCorrect(Repository repository, long federationReward, Block executionBlock) {
+        RemascFederationProvider provider = new RemascFederationProvider(config, repository, executionBlock);
 
         int nfederators = provider.getFederationSize();
 

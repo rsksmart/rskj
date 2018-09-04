@@ -23,7 +23,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -66,6 +66,9 @@ public class Constants {
     private int bestNumberDiffLimit = 100;
 
     private int newBlockMaxSecondsInTheFuture = 540;
+
+    private final BigInteger minimumPayableGas = BigInteger.valueOf(200000);
+    private final BigInteger federatorMinimumPayableGas = BigInteger.valueOf(50000);
 
     private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
 
@@ -162,4 +165,12 @@ public class Constants {
      * EIP155: https://github.com/ethereum/EIPs/issues/155
      */
     public byte getChainId() { return Constants.CHAIN_ID; }
+
+    public BigInteger getMinimumPayableGas() {
+        return minimumPayableGas;
+    }
+
+    public BigInteger getFederatorMinimumPayableGas() {
+        return federatorMinimumPayableGas;
+    }
 }

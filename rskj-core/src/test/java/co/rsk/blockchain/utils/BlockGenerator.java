@@ -38,8 +38,8 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -61,8 +61,18 @@ public class BlockGenerator {
 
     private static final Block[] blockCache = new Block[5];
 
-    private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(new TestSystemProperties());
+    private final DifficultyCalculator difficultyCalculator;
     private int count = 0;
+    private TestSystemProperties config;
+
+    public BlockGenerator() {
+        this(new TestSystemProperties());
+    }
+
+    public BlockGenerator(TestSystemProperties config) {
+        this.config = config;
+        this.difficultyCalculator = new DifficultyCalculator(this.config);
+    }
 
     public Genesis getGenesisBlock() {
         return getNewGenesisBlock(3141592, null, new byte[] { 2, 0, 0});
@@ -467,7 +477,7 @@ public class BlockGenerator {
                     BigInteger.valueOf(1));
 
             if (withMining) {
-                newblock = BlockMiner.mineBlock(newblock);
+                newblock = new BlockMiner(config).mineBlock(newblock);
             }
 
             chain.add(newblock);

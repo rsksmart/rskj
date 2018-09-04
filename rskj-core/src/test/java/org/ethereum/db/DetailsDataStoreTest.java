@@ -25,7 +25,7 @@ import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import static org.ethereum.TestUtils.randomAddress;
 import static org.junit.Assert.assertEquals;

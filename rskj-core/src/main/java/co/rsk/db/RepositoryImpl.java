@@ -36,7 +36,7 @@ import org.ethereum.db.*;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;

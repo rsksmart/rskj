@@ -20,7 +20,7 @@
 package org.ethereum.net;
 
 import org.ethereum.net.rlpx.Node;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * The instance of this class responsible for discovery messages exchange with the specified Node

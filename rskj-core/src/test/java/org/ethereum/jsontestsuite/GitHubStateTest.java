@@ -46,7 +46,7 @@ public class GitHubStateTest {
     private static TestSystemProperties config;
 
     @BeforeClass
-    public void setup() {
+    public static void setup() {
         // TODO remove this after Homestead launch and shacommit update with actual block number
         // for this JSON test commit the Homestead block was defined as 900000
         config = new TestSystemProperties();

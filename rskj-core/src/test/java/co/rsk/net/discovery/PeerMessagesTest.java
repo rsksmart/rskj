@@ -4,10 +4,8 @@ import co.rsk.net.discovery.message.DiscoveryMessageType;
 import co.rsk.net.discovery.message.FindNodePeerMessage;
 import co.rsk.net.discovery.message.PingPeerMessage;
 import co.rsk.net.discovery.message.PongPeerMessage;
-import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.*;
 

@@ -19,6 +19,7 @@
 
 package org.ethereum.util;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
 
 /**
@@ -29,5 +30,13 @@ import java.io.Serializable;
  */
 public interface RLPElement extends Serializable {
 
-    public byte[] getRLPData();
+    /**
+     * @implNote this function will return null when the RLP data is an empty byte array.
+     * It's recommended to use {@link RLPElement#getRLPRawData()} and handle this distinction in the calling code
+     * because RLP can't know if you intended to encode a null or an empty byte array.
+     */
+    @Nullable
+    byte[] getRLPData();
+
+    byte[] getRLPRawData();
 }

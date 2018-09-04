@@ -20,7 +20,7 @@ package co.rsk.test.dsl;
 
 import co.rsk.test.World;
 import co.rsk.test.builders.TransactionBuilder;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;

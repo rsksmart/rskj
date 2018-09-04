@@ -21,14 +21,17 @@ package org.ethereum.vm;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -36,6 +39,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.vm.OpCode.CALL;
 
 
 /**
@@ -768,20 +772,24 @@ public class VM {
             spendOpCodeGas();
         }
         // EXECUTION PHASE
-        int length;
-        if (op == OpCode.CODESIZE)
-            //TODO(mmarquez): we need to add support to precompiled contracts
-        {
-            length = program.getCode().length; // during initialization it will return the initialization code size
+        DataWord codeLength;
+        if (op == OpCode.CODESIZE) {
+            codeLength = new DataWord(program.getCode().length); // during initialization it will return the initialization code size
         } else {
             DataWord address = program.stackPop();
-            length = program.getCodeAt(address).length;
+            codeLength = new DataWord(program.getCodeAt(address).length);
+            BlockchainConfig blockchainConfig = program.getBlockchainConfig();
+            if (blockchainConfig.isRskip90()) {
+                PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, address);
+                if (precompiledContract != null) {
+                    codeLength = new DataWord(BigIntegers.asUnsignedByteArray(DataWord.MAX_VALUE));
+                }
+            }
             program.disposeWord(address);
         }
-        DataWord codeLength = new DataWord(length);
 
         if (isLogEnabled) {
-            hint = "size: " + length;
+            hint = "size: " + codeLength;
         }
 
         program.stackPush(codeLength);
@@ -1074,6 +1082,10 @@ public class VM {
     }
 
     protected void doLOG(){
+        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
+            throw Program.ExceptionHelper.modificationException();
+        }
+
         DataWord size;
         long sizeLong;
         long newMemSize ;
@@ -1215,6 +1227,10 @@ public class VM {
     }
 
     protected void doSSTORE() {
+        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
+            throw Program.ExceptionHelper.modificationException();
+        }
+
         if (computeGas) {
             DataWord newValue = stack.get(stack.size() - 2);
             DataWord oldValue = program.storageLoad(stack.peek());
@@ -1354,6 +1370,10 @@ public class VM {
     }
 
     protected void doCREATE(){
+        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
+            throw Program.ExceptionHelper.modificationException();
+        }
+
         DataWord size;
         long sizeLong;
         long newMemSize ;
@@ -1393,6 +1413,10 @@ public class VM {
 
         // value is always zero in a DELEGATECALL operation
         DataWord value = op.equals(OpCode.DELEGATECALL) ? DataWord.ZERO : program.stackPop();
+
+        if (program.isStaticCall() && op == CALL && !value.isZero()) {
+            throw Program.ExceptionHelper.modificationException();
+        }
 
         DataWord inDataOffs = program.stackPop();
         DataWord inDataSize = program.stackPop();
@@ -1468,7 +1492,8 @@ public class VM {
     }
 
     private void callToAddress(DataWord codeAddress, MessageCall msg) {
-        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(codeAddress);
+        BlockchainConfig blockchainConfig = program.getBlockchainConfig();
+        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(blockchainConfig, codeAddress);
 
         if (contract != null) {
             program.callToPrecompiledAddress(msg, contract);
@@ -1545,6 +1570,10 @@ public class VM {
     }
 
     protected void doSUICIDE(){
+        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
+            throw Program.ExceptionHelper.modificationException();
+        }
+
         if (computeGas) {
             gasCost = GasCost.SUICIDE;
             DataWord suicideAddressWord = stack.get(stack.size() - 1);
@@ -1617,6 +1646,7 @@ public class VM {
 
     protected void executeOpcode() {
         // Execute operation
+        BlockchainConfig config = program.getBlockchainConfig();
         switch (op.val()) {
             /**
              * Stop and Arithmetic Operations
@@ -1829,7 +1859,14 @@ public class VM {
             break;
             case OpCodes.OP_CALL:
             case OpCodes.OP_CALLCODE:
-            case OpCodes.OP_DELEGATECALL: doCALL();
+            case OpCodes.OP_DELEGATECALL:
+                doCALL();
+            break;
+            case OpCodes.OP_STATICCALL:
+                if (!config.isRskip91()) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doCALL();
             break;
             case OpCodes.OP_RETURN: doRETURN();
             break;
@@ -1837,7 +1874,11 @@ public class VM {
             break;
             case OpCodes.OP_SUICIDE: doSUICIDE();
             break;
-            case OpCodes.OP_CODEREPLACE: doCODEREPLACE();
+            case OpCodes.OP_CODEREPLACE:
+                if (config.isRskip94()) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doCODEREPLACE();
             break;
             case OpCodes.OP_DUPN: doDUPN();
                 break;

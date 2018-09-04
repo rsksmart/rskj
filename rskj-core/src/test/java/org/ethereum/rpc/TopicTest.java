@@ -20,7 +20,7 @@ package org.ethereum.rpc;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.DecoderException;
+import org.bouncycastle.util.encoders.DecoderException;
 
 /**
  * Created by ajlopez on 18/01/2018.

@@ -6,7 +6,7 @@ import org.ethereum.util.RLPList;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.spongycastle.util.BigIntegers;
+import org.bouncycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.ArrayList;

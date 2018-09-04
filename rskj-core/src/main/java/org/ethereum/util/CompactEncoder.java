@@ -27,8 +27,8 @@ import java.util.Map;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.copyOfRange;
 import static org.ethereum.util.ByteUtil.appendByte;
-import static org.spongycastle.util.Arrays.concatenate;
-import static org.spongycastle.util.encoders.Hex.encode;
+import static org.bouncycastle.util.Arrays.concatenate;
+import static org.bouncycastle.util.encoders.Hex.encode;
 
 /**
  * Compact encoding of hex sequence with optional terminator

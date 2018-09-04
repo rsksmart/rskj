@@ -24,7 +24,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.json.simple.JSONObject;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.HashMap;

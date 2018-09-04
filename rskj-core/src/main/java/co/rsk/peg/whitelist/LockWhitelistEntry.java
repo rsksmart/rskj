@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,24 +16,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.config.blockchain;
+package co.rsk.peg.whitelist;
 
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.Coin;
 
-import org.ethereum.config.Constants;
-
-public class TestNetBeforeBridgeSyncConfig extends TestNetAfterBridgeSyncConfig {
-
-    public TestNetBeforeBridgeSyncConfig() {
-        super(new TestNetConstants());
-    }
-
-    protected TestNetBeforeBridgeSyncConfig(Constants constants) {
-        super(constants);
-    }
-
-    @Override
-    public boolean areBridgeTxsFree() {
-        return true;
-    }
-
+/**
+ * Represents a lock whitelist
+ * entry for a LockWhiteList.
+ *
+ * @author Jose Dahlquist
+ */
+public interface LockWhitelistEntry {
+    Address address();
+    boolean canLock(Coin value);
+    boolean isConsumed();
+    void consume();
 }

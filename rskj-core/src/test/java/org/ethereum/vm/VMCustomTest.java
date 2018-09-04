@@ -30,7 +30,7 @@ import org.ethereum.vm.program.Program.StackTooSmallException;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

@@ -35,7 +35,7 @@ import org.junit.Test;
 import org.mapdb.DB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.File;
 import java.io.IOException;
@@ -722,6 +722,7 @@ public class IndexedBlockStoreTest {
     }
 
     @Test // leveldb + mapdb, multi branch, total difficulty test
+    @Ignore("Ethereum block format")
     public void test6() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
@@ -825,6 +826,7 @@ public class IndexedBlockStoreTest {
     }
 
     @Test // leveldb + mapdb, multi branch, total re-branch test
+    @Ignore("Ethereum block format")
     public void test7() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
@@ -878,6 +880,7 @@ public class IndexedBlockStoreTest {
     }
 
     @Test // leveldb + mapdb, multi branch, total re-branch test
+    @Ignore("Ethereum block format")
     public void test8() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
@@ -953,6 +956,7 @@ public class IndexedBlockStoreTest {
     }
 
     @Test // test index merging during the flush
+    @Ignore("Ethereum block format")
     public void test9() {
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 

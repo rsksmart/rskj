@@ -24,7 +24,7 @@ import org.ethereum.net.p2p.Peer;
 
 import org.junit.Test;
 
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
 

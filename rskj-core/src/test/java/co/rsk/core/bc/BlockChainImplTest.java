@@ -44,7 +44,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mapdb.DB;
-import org.spongycastle.util.Arrays;
+import org.bouncycastle.util.Arrays;
 
 import java.math.BigInteger;
 import java.util.ArrayList;

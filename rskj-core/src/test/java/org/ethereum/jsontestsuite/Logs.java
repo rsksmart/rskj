@@ -23,7 +23,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.Iterator;

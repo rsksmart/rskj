@@ -3,6 +3,10 @@ package co.rsk.peg.utils;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.VarInt;
 
+import java.util.Arrays;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 public class PartialMerkleTreeFormatUtils {
 
     private static final int BLOCK_TRANSACTION_COUNT_LENGTH = 4;
@@ -36,5 +40,19 @@ public class PartialMerkleTreeFormatUtils {
         } catch (RuntimeException e) {
             return false;
         }
+    }
+
+    public static Stream<Sha256Hash> streamIntermediateHashes(byte[] pmtSerialized) {
+        VarInt hashesCount = PartialMerkleTreeFormatUtils.getHashesCount(pmtSerialized);
+        int offset = BLOCK_TRANSACTION_COUNT_LENGTH + hashesCount.getOriginalSizeInBytes();
+        return IntStream.range(0, (int) hashesCount.value)
+                .mapToObj(index -> getHash(pmtSerialized, offset, index));
+    }
+
+    private static Sha256Hash getHash(byte[] pmtSerialized, int offset, int index) {
+        int start = index * Sha256Hash.LENGTH;
+        int end = (index + 1) * Sha256Hash.LENGTH;
+        byte[] hash = Arrays.copyOfRange(pmtSerialized, offset + start, offset + end);
+        return Sha256Hash.wrapReversed(hash);
     }
 }

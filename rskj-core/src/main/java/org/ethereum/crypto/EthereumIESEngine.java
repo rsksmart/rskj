@@ -23,12 +23,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import org.spongycastle.crypto.*;
-import org.spongycastle.crypto.generators.EphemeralKeyPairGenerator;
-import org.spongycastle.crypto.params.*;
-import org.spongycastle.util.Arrays;
-import org.spongycastle.util.BigIntegers;
-import org.spongycastle.util.Pack;
+import org.bouncycastle.crypto.*;
+import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
+import org.bouncycastle.crypto.params.*;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Pack;
 
 /**
  * Support class for constructing integrated encryption cipher

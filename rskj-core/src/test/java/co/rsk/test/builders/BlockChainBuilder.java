@@ -19,6 +19,7 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -46,9 +47,7 @@ import java.util.List;
  * Created by ajlopez on 8/6/2016.
  */
 public class BlockChainBuilder {
-    private final TestSystemProperties config = new TestSystemProperties();
     private boolean testing;
-
     private List<Block> blocks;
     private List<TransactionInfo> txinfos;
 
@@ -57,6 +56,7 @@ public class BlockChainBuilder {
     private BlockStore blockStore;
     private Genesis genesis;
     private ReceiptStore receiptStore;
+    private RskSystemProperties config;
 
     public BlockChainBuilder setAdminInfo(AdminInfo adminInfo) {
         this.adminInfo = adminInfo;
@@ -93,9 +93,18 @@ public class BlockChainBuilder {
         return this;
     }
 
+    public BlockChainBuilder setConfig(RskSystemProperties config) {
+        this.config = config;
+        return this;
+    }
+
     public BlockChainBuilder setReceiptStore(ReceiptStore receiptStore) {
         this.receiptStore = receiptStore;
         return this;
+    }
+
+    public RskSystemProperties getConfig() {
+        return config;
     }
 
     public BlockChainImpl build() {
@@ -103,6 +112,10 @@ public class BlockChainBuilder {
     }
 
     public BlockChainImpl build(boolean withoutCleaner) {
+        if (config == null){
+            config = new TestSystemProperties();
+        }
+
         if (repository == null)
             repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
 

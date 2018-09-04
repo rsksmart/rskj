@@ -38,7 +38,7 @@ import java.util.HashMap;
  * tests yet.
  */
 public class RskTestFactory {
-    private final TestSystemProperties config = new TestSystemProperties();
+    private final TestSystemProperties config;
     private BlockChainImpl blockchain;
     private IndexedBlockStore blockStore;
     private TransactionPool transactionPool;
@@ -51,6 +51,11 @@ public class RskTestFactory {
     private ReceiptStoreImpl receiptStore;
 
     public RskTestFactory() {
+        this(new TestSystemProperties());
+    }
+
+    public RskTestFactory(TestSystemProperties config) {
+        this.config = config;
         Genesis genesis = new BlockGenerator().getGenesisBlock();
         genesis.setStateRoot(getRepository().getRoot());
         genesis.flushRLP();

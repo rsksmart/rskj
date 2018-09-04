@@ -20,17 +20,19 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 /**
  * The genesis block is the first block in the chain and has fixed values according to
  * the protocol specification. The genesis block is 13 items, and is specified thus:
@@ -55,21 +57,25 @@ public class Genesis extends Block {
     private static final byte[] ZERO_HASH_2048 = new byte[256];
     protected static final long NUMBER = 0;
 
-    public Genesis(byte[] rawData){
-        // TODO(ajlopez) Genesis block should be sealed
-        super(rawData, false);
-    }
-
     public Genesis(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                    byte[] difficulty, long number, long gasLimit,
                    long gasUsed, long timestamp,
                    byte[] extraData, byte[] mixHash, byte[] nonce,
                    byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                    byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] minimumGasPrice){
-        super(parentHash, unclesHash, coinbase, logsBloom, difficulty,
-                number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData,
-                mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, null, null, minimumGasPrice);
+        super(
+                new BlockHeader(parentHash, unclesHash, coinbase, logsBloom, difficulty,
+                        number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData,
+                        bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                        bitcoinMergedMiningCoinbaseTransaction, minimumGasPrice, 0) {
+
+                    @Override
+                    protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {
+                        return RLP.encodeElement(difficulty);
+                    }
+                });
+
+        setTransactionsList(Collections.emptyList());
     }
 
     public static Block getInstance(RskSystemProperties config) {
