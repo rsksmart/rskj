@@ -74,6 +74,9 @@ public class TransactionResultDTO {
     }
 
     private String addressToJsonHex(RskAddress address) {
+        if (RskAddress.nullAddress().equals(address)) {
+            return null;
+        }
         // Web3.js requires the address to be valid (20 bytes),
         // so we have to serialize the Remasc sender as a valid address.
         if (address.equals(RemascTransaction.REMASC_ADDRESS)) {
