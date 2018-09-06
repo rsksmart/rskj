@@ -112,14 +112,26 @@ public class NodeManager {
         if (nodeHandlerMap.size() > NODES_TRIM_THRESHOLD) {
             //I create a stream
             List<NodeHandler> toRemove = nodeHandlerMap.values().stream()
+                    //collect all reputations first to avoid concurrency issues
+                    .map(NodeHandlerWithReputation::new)
                     //sort by reputation
-                    .sorted(Comparator.comparingInt(o -> o.getNodeStatistics().getReputation()))
+                    .sorted(Comparator.comparingInt(o -> o.reputation))
                     //and just keep the ones that exceeds the MAX_NODES
                     .limit(nodeHandlerMap.size() - MAX_NODES)
+                    .map(o -> o.nodeHandler)
                     .collect(Collectors.toList());
             //Remove them
             nodeHandlerMap.values().removeAll(toRemove);
         }
     }
 
+    private static class NodeHandlerWithReputation {
+        private NodeHandler nodeHandler;
+        private int reputation;
+
+        private NodeHandlerWithReputation(NodeHandler nodeHandler) {
+            this.nodeHandler = nodeHandler;
+            this.reputation = nodeHandler.getNodeStatistics().getReputation();
+        }
+    }
 }
