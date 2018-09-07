@@ -21,11 +21,11 @@ package co.rsk.net;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.bc.SelectionRule;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
-import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
@@ -62,28 +62,24 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
 
-    private BlockValidationRule blockValidationRule;
-
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
-    private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<Keccak256>());
-    private long cleanMsgTimestamp = 0;
+    private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
+    private long cleanMsgTimestamp;
 
     private volatile boolean stopped;
 
     @Autowired
     public NodeMessageHandler(RskSystemProperties config,
-                              @Nonnull final BlockProcessor blockProcessor,
-                              final SyncProcessor syncProcessor,
-                              @Nullable final ChannelManager channelManager,
-                              @Nullable final TransactionGateway transactionGateway,
-                              @Nullable final PeerScoringManager peerScoringManager,
-                              @Nonnull BlockValidationRule blockValidationRule) {
+                              BlockProcessor blockProcessor,
+                              SyncProcessor syncProcessor,
+                              @Nullable ChannelManager channelManager,
+                              @Nullable TransactionGateway transactionGateway,
+                              @Nullable PeerScoringManager peerScoringManager) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
         this.transactionGateway = transactionGateway;
-        this.blockValidationRule = blockValidationRule;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
     }
@@ -239,37 +235,13 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private synchronized void sendStatusToAll() {
-        BlockChainStatus blockChainStatus = this.blockProcessor.getBlockchain().getStatus();
+        BlockChainStatus blockChainStatus = getBlockChainStatus();
         Block block = blockChainStatus.getBestBlock();
         BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
         Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), totalDifficulty);
         logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
         this.channelManager.broadcastStatus(status);
-    }
-
-    public synchronized Block getBestBlock() {
-        return this.blockProcessor.getBlockchain().getBestBlock();
-    }
-
-    public synchronized BlockDifficulty getTotalDifficulty() {
-        return this.blockProcessor.getBlockchain().getTotalDifficulty();
-    }
-
-    /**
-     * isValidBlock validates if the given block meets the minimum criteria to be processed:
-     * The PoW should be valid and the block can't be too far in the future.
-     *
-     * @param block the block to check
-     * @return true if the block is valid, false otherwise.
-     */
-    private boolean isValidBlock(@Nonnull final Block block) {
-        try {
-            return blockValidationRule.isValid(block);
-        } catch (Exception e) {
-            logger.error("Failed to validate PoW from block {}: {}", block.getShortHash(), e);
-            return false;
-        }
     }
 
     /**
@@ -298,12 +270,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         Metrics.processBlockMessage("start", block, sender.getPeerNodeID());
 
-        if (!isValidBlock(block)) {
-            logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
-            recordEvent(sender, EventType.INVALID_BLOCK);
-            return;
-        }
-
         if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
             logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
             Metrics.processBlockMessage("blockIgnored", block, sender.getPeerNodeID());
@@ -316,21 +282,45 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
         }
 
-        BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
-        Metrics.processBlockMessage("blockProcessed", block, sender.getPeerNodeID());
-        tryRelayBlock(sender, block, result);
-        recordEvent(sender, EventType.VALID_BLOCK);
+        if (isBestBlock(block) ) { // It is the new best block
+            BlockProcessResult result = this.blockProcessor.processBlock(block, sender);
+            if (result.isInvalidBlock()) {
+                logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
+                recordEvent(sender, EventType.INVALID_BLOCK);
+                return;
+            }
+            Metrics.processBlockMessage("blockProcessed", block, sender.getPeerNodeID());
+            recordEvent(sender, EventType.VALID_BLOCK);
+            tryRelayBlock(sender, block, result);
+        } else {
+            this.blockProcessor.processSibling(sender, block);
+            tryRelayBlock(sender, block, null);
+        }
+
         Metrics.processBlockMessage("finish", block, sender.getPeerNodeID());
     }
 
-    private void tryRelayBlock(@Nonnull MessageChannel sender, Block block, BlockProcessResult result) {
+    @VisibleForTesting
+    public boolean isBestBlock(Block block) {
+        BlockChainStatus blockChainStatus = getBlockChainStatus();
+        Block bestBlock = blockChainStatus.getBestBlock();
+        BlockDifficulty totalDifficulty = blockProcessor.getTotalDifficultyFor(block);
+        BlockDifficulty currentDifficulty = blockChainStatus.getTotalDifficulty();
+        return SelectionRule.shouldWeAddThisBlock(totalDifficulty, currentDifficulty, block, bestBlock);
+    }
+
+    private BlockChainStatus getBlockChainStatus() {
+        return this.blockProcessor.getBlockchain().getStatus();
+    }
+
+    private void tryRelayBlock(MessageChannel sender, Block block, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
-        if (result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
+        if (!this.blockProcessor.hasBetterBlockToSync() && (result == null || !result.isInvalidBlock())) {
             relayBlock(sender, block);
         }
     }
 
-    private void relayBlock(@Nonnull MessageChannel sender, Block block) {
+    private void relayBlock(MessageChannel sender, Block block) {
         byte[] blockHash = block.getHash().getBytes();
         final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
         final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(blockHash);

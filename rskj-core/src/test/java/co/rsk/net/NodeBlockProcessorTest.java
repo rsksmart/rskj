@@ -58,10 +58,32 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        processor.processBlock(sender, orphan);
+        processor.processBlock(orphan, sender);
         Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(orphan.getHash().getBytes()).size() == 1);
 
         Assert.assertTrue(store.hasBlock(orphan));
+        Assert.assertEquals(1, store.size());
+    }
+
+    @Test
+    public void processSibling() {
+        final BlockStore store = new BlockStore();
+        final MessageChannel sender = new SimpleMessageChannel();
+
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        final Block sibling = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        TestSystemProperties config = new TestSystemProperties();
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+
+        processor.processSibling(sender, sibling);
+        Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(sibling.getHash().getBytes()).size() == 1);
+
+        Assert.assertTrue(store.hasBlock(sibling));
         Assert.assertEquals(1, store.size());
     }
 
@@ -79,7 +101,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        processor.processBlock(sender, orphan);
+        processor.processBlock(orphan, sender);
 
         Assert.assertFalse(processor.getNodeInformation().getNodesByBlock(orphan.getHash().getBytes()).size() == 1);
         Assert.assertFalse(store.hasBlock(orphan));
@@ -145,7 +167,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        processor.processBlock(null, block);
+        processor.processBlock(block, null);
 
         Assert.assertFalse(store.hasBlock(block));
         Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
@@ -167,11 +189,11 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        processor.processBlock(null, genesis);
+        processor.processBlock(genesis, null);
         Assert.assertEquals(0, store.size());
 
         for (Block b : blocks)
-            processor.processBlock(null, b);
+            processor.processBlock(b, null);
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(0, store.size());
@@ -192,13 +214,13 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        processor.processBlock(null, genesis);
+        processor.processBlock(genesis, null);
         Assert.assertEquals(0, store.size());
 
         for (Block b : blocks)
-            processor.processBlock(null, b);
+            processor.processBlock(b, null);
         for (Block b : blocks2)
-            processor.processBlock(null, b);
+            processor.processBlock(b, null);
 
         Assert.assertEquals(20, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(0, store.size());
@@ -220,13 +242,13 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        processor.processBlock(null, genesis);
+        processor.processBlock(genesis, null);
         Assert.assertEquals(0, store.size());
 
         for (Block b : blocks)
-            processor.processBlock(null, b);
+            processor.processBlock(b, null);
         for (Block b : blocks2)
-            processor.processBlock(null, b);
+            processor.processBlock(b, null);
 
         Assert.assertEquals(25, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(0, store.size());
@@ -334,9 +356,9 @@ public class NodeBlockProcessorTest {
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         for (Block b : blocks)
-            processor.processBlock(null, b);
+            processor.processBlock(b, null);
 
-        processor.processBlock(null, genesis);
+        processor.processBlock(genesis, null);
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(0, store.size());
@@ -356,9 +378,9 @@ public class NodeBlockProcessorTest {
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         for (int k = 0; k < 10; k++)
-            processor.processBlock(null, blocks.get(9 - k));
+            processor.processBlock(blocks.get(9 - k), null);
 
-        processor.processBlock(null, genesis);
+        processor.processBlock(genesis, null);
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(0, store.size());
@@ -379,10 +401,10 @@ public class NodeBlockProcessorTest {
 
         for (int k = 0; k < 10; k++)
             if (k != 5)
-                processor.processBlock(null, blocks.get(9 - k));
+                processor.processBlock(blocks.get(9 - k), null);
 
-        processor.processBlock(null, genesis);
-        processor.processBlock(null, blocks.get(4));
+        processor.processBlock(genesis, null);
+        processor.processBlock(blocks.get(4), null);
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(0, store.size());
@@ -408,12 +430,12 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        processor.processBlock(null, block);
+        processor.processBlock(block, null);
 
         Assert.assertTrue(store.hasBlock(block));
         Assert.assertNull(blockchain.getBlockByHash(block.getHash().getBytes()));
 
-        processor.processBlock(null, parent);
+        processor.processBlock(parent, null);
 
         Assert.assertFalse(store.hasBlock(block));
         Assert.assertFalse(store.hasBlock(parent));
@@ -440,7 +462,7 @@ public class NodeBlockProcessorTest {
         final Block parent = blockGenerator.createChildBlock(genesis);
         final Block block = blockGenerator.createChildBlock(parent);
 
-        processor.processBlock(sender, block);
+        processor.processBlock(block, sender);
 
         Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size() == 1);
         Assert.assertTrue(store.hasBlock(block));

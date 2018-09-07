@@ -5,7 +5,6 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
-import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.DummyBlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Blockchain;
@@ -23,7 +22,7 @@ public class NodeMessageHandlerUtil {
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
 
-    public static NodeMessageHandler createHandler(BlockValidationRule validationRule) {
+    public static NodeMessageHandler createHandler() {
         final World world = new World();
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
@@ -34,19 +33,7 @@ public class NodeMessageHandlerUtil {
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, new DummyBlockValidationRule(), DIFFICULTY_CALCULATOR);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule);
-    }
-
-    public static NodeMessageHandler createHandlerWithSyncProcessor() {
-        return createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING);
-    }
-
-    public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration) {
-        return createHandlerWithSyncProcessor(syncConfiguration, new ChannelManagerImpl(config, mock(SyncPool.class)));
-    }
-
-    public static NodeMessageHandler createHandlerWithSyncProcessor(ChannelManager channelManager) {
-        return createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
+        return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager());
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration, ChannelManager channelManager) {
@@ -68,6 +55,6 @@ public class NodeMessageHandlerUtil {
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, DIFFICULTY_CALCULATOR);
-        return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, blockValidationRule);
+        return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null);
     }
 }

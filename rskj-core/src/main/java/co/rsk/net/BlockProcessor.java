@@ -18,18 +18,16 @@
 
 package co.rsk.net;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
-
-import java.util.List;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public interface BlockProcessor {
-    BlockProcessResult processBlock(MessageChannel sender, Block block);
+    BlockProcessResult processBlock(Block block, MessageChannel sender);
 
     void processGetBlock(MessageChannel sender, byte[] hash);
 
@@ -40,8 +38,6 @@ public interface BlockProcessor {
     long getLastKnownBlockNumber();
 
     void processNewBlockHashesMessage(MessageChannel sender, NewBlockHashesMessage message);
-
-    void processBlockHeaders(MessageChannel sender, List<BlockHeader> blockHeaders);
 
     boolean hasBlock(byte[] hash);
 
@@ -66,4 +62,8 @@ public interface BlockProcessor {
     void processSkeletonRequest(MessageChannel sender, long requestId, long startNumber);
 
     boolean canBeIgnoredForUnclesRewards(long blockNumber);
+
+    BlockDifficulty getTotalDifficultyFor(Block block);
+
+    void processSibling(MessageChannel sender, Block block);
 }

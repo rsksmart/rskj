@@ -85,7 +85,7 @@ public class BlockChainImpl implements Blockchain {
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
-    private EthereumListener listener;
+    private final EthereumListener listener;
     private final AdminInfo adminInfo;
     private BlockValidator blockValidator;
 
@@ -127,8 +127,6 @@ public class BlockChainImpl implements Blockchain {
     public BlockStore getBlockStore() { return blockStore; }
 
     public EthereumListener getListener() { return listener; }
-
-    public void setListener(EthereumListener listener) { this.listener = listener; }
 
     public BlockValidator getBlockValidator() { return blockValidator; }
 
@@ -220,22 +218,19 @@ public class BlockChainImpl implements Blockchain {
 
         logger.trace("get current state");
 
-        // get current state
-        synchronized (accessLock) {
-            bestBlock = status.getBestBlock();
-            bestTotalDifficulty = status.getTotalDifficulty();
-        }
+        BlockChainStatus currentStatus = status;
+        bestBlock = currentStatus.getBestBlock();
+        bestTotalDifficulty = currentStatus.getTotalDifficulty();
 
+        boolean hasBestBlock = bestBlock != null;
+        boolean isChildOfBestBlock = hasBestBlock && bestBlock.isParentOf(block);
         Block parent;
         BlockDifficulty parentTotalDifficulty;
 
-        // Incoming block is child of current best block
-        if (bestBlock == null || bestBlock.isParentOf(block)) {
+        if (!hasBestBlock || isChildOfBestBlock) { // Incoming block is child of current best block
             parent = bestBlock;
             parentTotalDifficulty = bestTotalDifficulty;
-        }
-        // else, Get parent AND total difficulty
-        else {
+        } else { // else, Get parent AND total difficulty
             logger.trace("get parent and total difficulty");
             parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
@@ -259,7 +254,6 @@ public class BlockChainImpl implements Blockchain {
         }
 
         BlockResult result = null;
-
         if (parent != null) {
             long saveTime = System.nanoTime();
             logger.trace("execute start");
@@ -294,8 +288,8 @@ public class BlockChainImpl implements Blockchain {
         logger.trace("TD: updated to {}", totalDifficulty);
 
         // It is the new best block
-        if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, status.getTotalDifficulty(),block, bestBlock)) {
-            if (bestBlock != null && !bestBlock.isParentOf(block)) {
+        if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, status.getTotalDifficulty(), block, bestBlock)) {
+            if (hasBestBlock && !isChildOfBestBlock) {
                 logger.trace("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
                         status.getTotalDifficulty().toString(), totalDifficulty.toString());
@@ -326,10 +320,9 @@ public class BlockChainImpl implements Blockchain {
             }
 
             return ImportResult.IMPORTED_BEST;
-        }
-        // It is not the new best block
-        else {
-            if (bestBlock != null && !bestBlock.isParentOf(block)) {
+
+        } else { // It is not the new best block
+            if (hasBestBlock && !isChildOfBestBlock) {
                 logger.trace("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
                         status.getTotalDifficulty().toString(), totalDifficulty.toString());
@@ -344,7 +337,7 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("Start flushData");
             flushData();
 
-            if (bestBlock != null && block.getNumber() > bestBlock.getNumber()) {
+            if (hasBestBlock && block.getNumber() > bestBlock.getNumber()) {
                 logger.warn("Strange block number state");
             }
 

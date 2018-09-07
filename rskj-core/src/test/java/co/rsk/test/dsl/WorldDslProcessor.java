@@ -196,7 +196,7 @@ public class WorldDslProcessor {
         for (int k = 0; k < nblocks; k++) {
             String name = cmd.getArgument(k);
             Block block = world.getBlockByName(name);
-            blockProcessor.processBlock(null, block);
+            blockProcessor.processBlock(block, null);
         }
     }
 

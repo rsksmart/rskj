@@ -47,7 +47,7 @@ public class NodeBlockProcessorUnclesTest {
 
         Block block1 = new BlockBuilder().parent(genesis).build();
 
-        processor.processBlock(null, block1);
+        processor.processBlock(block1, null);
 
         Assert.assertEquals(1, processor.getBlockchain().getBestBlock().getNumber());
         Assert.assertArrayEquals(block1.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
@@ -71,13 +71,13 @@ public class NodeBlockProcessorUnclesTest {
 
         Block block2 = blockBuilder.parent(block1).uncles(uncles).build();
 
-        processor.processBlock(null, block1);
-        processor.processBlock(null, uncle1);
-        processor.processBlock(null, uncle2);
+        processor.processBlock(block1, null);
+        processor.processBlock(uncle1, null);
+        processor.processBlock(uncle2, null);
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        processor.processBlock(sender, block2);
+        processor.processBlock(block2, sender);
 
         Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
         Assert.assertArrayEquals(block2.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
@@ -102,11 +102,11 @@ public class NodeBlockProcessorUnclesTest {
 
         Block block2 = blockBuilder.parent(block1).uncles(uncles).build();
 
-        processor.processBlock(null, block1);
+        processor.processBlock(block1, null);
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        processor.processBlock(sender, block2);
+        processor.processBlock(block2, sender);
 
         Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
         Assert.assertArrayEquals(block2.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
@@ -132,7 +132,7 @@ public class NodeBlockProcessorUnclesTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        processor.processBlock(sender, block2);
+        processor.processBlock(block2, sender);
 
         Assert.assertEquals(0, processor.getBlockchain().getBestBlock().getNumber());
         Assert.assertArrayEquals(genesis.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());

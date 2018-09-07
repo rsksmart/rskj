@@ -41,9 +41,9 @@ import java.util.*;
  * If a block is not ready to be added to the blockchain, it will be on hold in a BlockStore.
  */
 public class BlockSyncService {
-    public static final int CHUNK_PART_LIMIT = 8;
-    public static final int PROCESSED_BLOCKS_TO_CHECK_STORE = 200;
-    public static final int RELEASED_RANGE = 1000;
+    private static final int CHUNK_PART_LIMIT = 8;
+    private static final int PROCESSED_BLOCKS_TO_CHECK_STORE = 200;
+    private static final int RELEASED_RANGE = 1000;
     private Map<Keccak256, Integer> unknownBlockHashes;
     private long processedBlocksCounter;
     private long lastKnownBlockNumber = 0;
@@ -58,11 +58,11 @@ public class BlockSyncService {
     // this is tightly coupled with NodeProcessorService and SyncProcessor,
     // and we should use the same objects everywhere to ensure consistency
     public BlockSyncService(
-            @Nonnull final RskSystemProperties config,
-            @Nonnull final BlockStore store,
-            @Nonnull final Blockchain blockchain,
-            @Nonnull final BlockNodeInformation nodeInformation,
-            @Nonnull final SyncConfiguration syncConfiguration) {
+            RskSystemProperties config,
+            BlockStore store,
+            Blockchain blockchain,
+            BlockNodeInformation nodeInformation,
+            SyncConfiguration syncConfiguration) {
         this.store = store;
         this.blockchain = blockchain;
         this.syncConfiguration = syncConfiguration;
@@ -71,7 +71,7 @@ public class BlockSyncService {
         this.config = config;
     }
 
-    public BlockProcessResult processBlock(@Nonnull Block block, MessageChannel sender, boolean ignoreMissingHashes) {
+    public BlockProcessResult processBlock(Block block, MessageChannel sender, boolean ignoreMissingHashes) {
         Instant start = Instant.now();
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
@@ -119,6 +119,14 @@ public class BlockSyncService {
 
         return new BlockProcessResult(true, connectResult, block.getShortHash(),
                 Duration.between(start, Instant.now()));
+    }
+
+    public void processSibling(Block block, MessageChannel sender){
+        tryReleaseStore(getBestBlockNumber());
+        trySaveStore(block);
+        if (sender != null){
+            nodeInformation.addBlockToNode(block.getHash(), sender.getPeerNodeID());
+        }
     }
 
     private void tryReleaseStore(long bestBlockNumber) {
