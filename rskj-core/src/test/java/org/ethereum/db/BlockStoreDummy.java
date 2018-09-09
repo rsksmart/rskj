@@ -104,10 +104,6 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public void load() {
-    }
-
-    @Override
     public long getMaxNumber() {
         return 0;
     }

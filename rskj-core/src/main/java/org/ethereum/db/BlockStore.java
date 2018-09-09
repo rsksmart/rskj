@@ -73,7 +73,5 @@ public interface BlockStore extends RemascCache {
 
     void reBranch(Block forkBlock);
 
-    void load();
-
     List<BlockInformation> getBlocksInformationByNumber(long number);
 }

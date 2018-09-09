@@ -91,9 +91,6 @@ public class BlockChainLoader {
                 adminInfo,
                 blockValidator
         );
-        if (!config.databaseReset()) {
-            blockStore.load();
-        }
 
         Block bestBlock = blockStore.getBestBlock();
         if (bestBlock == null) {

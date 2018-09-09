@@ -520,10 +520,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public void load() {
-    }
-
-    @Override
     public synchronized List<Block> getChainBlocksByNumber(long number){
         List<Block> result = new ArrayList<>();
 
