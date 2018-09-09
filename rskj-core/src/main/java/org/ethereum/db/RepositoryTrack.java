@@ -19,7 +19,6 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
@@ -54,15 +53,12 @@ public class RepositoryTrack implements Repository {
     private final Map<RskAddress, AccountState> cacheAccounts = new HashMap<>();
     private final Map<RskAddress, ContractDetails> cacheDetails = new HashMap<>();
 
-    private final RskSystemProperties config;
     private final DetailsDataStore dds;
+    private final Repository repository;
 
-    Repository repository;
-
-    public RepositoryTrack(RskSystemProperties config, Repository repository) {
-        this.config = config;
+    public RepositoryTrack(Repository repository) {
         this.repository = repository;
-        dds = new DetailsDataStore(this.config, new DatabaseImpl(new HashMapDB()));
+        this.dds = new DetailsDataStore(new DatabaseImpl(new HashMapDB()));
     }
 
     @Override
@@ -327,7 +323,7 @@ public class RepositoryTrack implements Repository {
     public Repository startTracking() {
         logger.debug("start tracking");
 
-        return new RepositoryTrack(config, this);
+        return new RepositoryTrack(this);
     }
 
 

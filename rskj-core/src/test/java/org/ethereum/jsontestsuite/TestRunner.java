@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
@@ -194,7 +195,7 @@ public class TestRunner {
 
 
         logger.info("--------- PRE ---------");
-        Repository repository = loadRepository(new RepositoryImpl(config).startTracking(), testCase.getPre());
+        Repository repository = loadRepository(createRepositoryImpl(config).startTracking(), testCase.getPre());
 
         try {
 
@@ -607,5 +608,9 @@ public class TestRunner {
 
     public ProgramTrace getTrace() {
         return trace;
+    }
+
+    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
+        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
     }
 }

@@ -18,8 +18,10 @@
 
 package co.rsk.db;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.AccountState;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
@@ -28,15 +30,18 @@ import org.ethereum.vm.DataWord;
  * Created by ajlopez on 08/04/2017.
  */
 public class RepositoryImplForTesting extends RepositoryImpl {
+
+    private static RskSystemProperties config = new TestSystemProperties();
+
     public RepositoryImplForTesting() {
-        super(new TestSystemProperties());
+        super(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
     }
 
     @Override
     public synchronized void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
         super.addStorageRow(addr, key, value);
         AccountState accountState = getAccountState(addr);
-        ContractDetails details = getDetailsDataStore().get(addr);
+        ContractDetails details = getDetailsDataStore().get(addr, config.detailsInMemoryStorageLimit(), config.databaseDir());
         accountState.setStateRoot(details.getStorageHash());
         updateAccountState(addr, accountState);
     }
@@ -45,7 +50,7 @@ public class RepositoryImplForTesting extends RepositoryImpl {
     public synchronized void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
         super.addStorageBytes(addr, key, value);
         AccountState accountState = getAccountState(addr);
-        ContractDetails details = getDetailsDataStore().get(addr);
+        ContractDetails details = getDetailsDataStore().get(addr, config.detailsInMemoryStorageLimit(), config.databaseDir());
         accountState.setStateRoot(details.getStorageHash());
         updateAccountState(addr, accountState);
     }

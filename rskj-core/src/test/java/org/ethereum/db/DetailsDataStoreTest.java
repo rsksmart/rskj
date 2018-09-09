@@ -40,7 +40,7 @@ public class DetailsDataStoreTest {
     @Test
     public void test1(){
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        DetailsDataStore dds = new DetailsDataStore(db);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -60,7 +60,7 @@ public class DetailsDataStoreTest {
 
         dds.update(c_key, contractDetails);
 
-        ContractDetails contractDetails_ = dds.get(c_key);
+        ContractDetails contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
 
         String encoded1 = Hex.toHexString(contractDetails.getEncoded());
         String encoded2 = Hex.toHexString(contractDetails_.getEncoded());
@@ -69,7 +69,7 @@ public class DetailsDataStoreTest {
 
         dds.flush();
 
-        contractDetails_ = dds.get(c_key);
+        contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
         encoded2 = Hex.toHexString(contractDetails_.getEncoded());
         assertEquals(encoded1, encoded2);
     }
@@ -78,7 +78,7 @@ public class DetailsDataStoreTest {
     public void test2(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        DetailsDataStore dds = new DetailsDataStore(db);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -98,7 +98,7 @@ public class DetailsDataStoreTest {
 
         dds.update(c_key, contractDetails);
 
-        ContractDetails contractDetails_ = dds.get(c_key);
+        ContractDetails contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
 
         String encoded1 = Hex.toHexString(contractDetails.getEncoded());
         String encoded2 = Hex.toHexString(contractDetails_.getEncoded());
@@ -107,12 +107,12 @@ public class DetailsDataStoreTest {
 
         dds.remove(c_key);
 
-        contractDetails_ = dds.get(c_key);
+        contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
         assertNull(contractDetails_);
 
         dds.flush();
 
-        contractDetails_ = dds.get(c_key);
+        contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
         assertNull(contractDetails_);
     }
 
@@ -120,7 +120,7 @@ public class DetailsDataStoreTest {
     public void test3(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        DetailsDataStore dds = new DetailsDataStore(db);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -139,7 +139,7 @@ public class DetailsDataStoreTest {
 
         dds.update(c_key, contractDetails);
 
-        ContractDetails contractDetails_ = dds.get(c_key);
+        ContractDetails contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
 
         String encoded1 = Hex.toHexString(contractDetails.getEncoded());
         String encoded2 = Hex.toHexString(contractDetails_.getEncoded());
@@ -149,13 +149,13 @@ public class DetailsDataStoreTest {
         dds.remove(c_key);
         dds.update(c_key, contractDetails);
 
-        contractDetails_ = dds.get(c_key);
+        contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
         encoded2 = Hex.toHexString(contractDetails_.getEncoded());
         assertEquals(encoded1, encoded2);
 
         dds.flush();
 
-        contractDetails_ = dds.get(c_key);
+        contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
         encoded2 = Hex.toHexString(contractDetails_.getEncoded());
         assertEquals(encoded1, encoded2);
     }
@@ -164,11 +164,11 @@ public class DetailsDataStoreTest {
     public void test4() {
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        DetailsDataStore dds = new DetailsDataStore(db);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
 
-        ContractDetails contractDetails = dds.get(c_key);
+        ContractDetails contractDetails = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
         assertNull(contractDetails);
     }
 }

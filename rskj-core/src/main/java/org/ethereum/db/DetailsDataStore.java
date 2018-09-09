@@ -19,7 +19,6 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import org.slf4j.Logger;
@@ -43,15 +42,13 @@ public class DetailsDataStore {
     private final Map<RskAddress, ContractDetails> cache = new ConcurrentHashMap<>();
     private final Set<RskAddress> removes = new HashSet<>();
 
-    private final RskSystemProperties config;
     private final DatabaseImpl db;
 
-    public DetailsDataStore(RskSystemProperties config, DatabaseImpl db) {
-        this.config = config;
+    public DetailsDataStore(DatabaseImpl db) {
         this.db = db;
     }
 
-    public synchronized ContractDetails get(RskAddress addr) {
+    public synchronized ContractDetails get(RskAddress addr, int memoryStorageLimit, String databaseDir) {
         ContractDetails details = cache.get(addr);
 
         if (details == null) {
@@ -64,7 +61,7 @@ public class DetailsDataStore {
                 return null;
             }
 
-            details = createContractDetails(data);
+            details = createContractDetails(data, memoryStorageLimit, databaseDir);
             cache.put(addr, details);
 
             float out = ((float) data.length) / 1048576;
@@ -77,8 +74,8 @@ public class DetailsDataStore {
         return details;
     }
 
-    protected ContractDetails createContractDetails(byte[] data) {
-        return new ContractDetailsImpl(data, config.detailsInMemoryStorageLimit(), config.databaseDir());
+    protected ContractDetails createContractDetails(byte[] data, int memoryStorageLimit, String databaseDir) {
+        return new ContractDetailsImpl(data, memoryStorageLimit, databaseDir);
     }
 
     public synchronized void update(RskAddress addr, ContractDetails contractDetails) {

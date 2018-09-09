@@ -187,7 +187,7 @@ public class RskTestFactory {
     public Repository getRepository() {
         if (repository == null) {
             HashMapDB stateStore = new HashMapDB();
-            repository = new RepositoryImpl(config, new TrieStoreImpl(stateStore));
+            repository = new RepositoryImpl(new TrieStoreImpl(stateStore), config.detailsInMemoryStorageLimit(), config.databaseDir());
         }
 
         return repository;

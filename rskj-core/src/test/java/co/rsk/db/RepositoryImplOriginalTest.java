@@ -19,6 +19,7 @@
 
 package co.rsk.db;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -57,7 +58,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test1() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         repository.increaseNonce(COW);
         repository.increaseNonce(HORSE);
@@ -71,7 +72,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test2() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         repository.addBalance(COW, Coin.valueOf(10L));
         repository.addBalance(HORSE, Coin.valueOf(1L));
@@ -84,7 +85,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test3() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         byte[] cowCode = Hex.decode("A1A2A3");
         byte[] horseCode = Hex.decode("B1B2B3");
@@ -100,7 +101,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test4() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
         byte[] cowKey = Hex.decode("A1A2A3");
@@ -121,7 +122,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test5() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         Repository track = repository.startTracking();
 
@@ -148,7 +149,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test6() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
         track.increaseNonce(COW);
@@ -177,7 +178,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test7() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
         track.addBalance(COW, Coin.valueOf(10L));
@@ -196,7 +197,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test8() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
         track.addBalance(COW, Coin.valueOf(10L));
@@ -215,7 +216,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test7_1() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track1 = repository.startTracking();
 
         track1.addBalance(COW, Coin.valueOf(10L));
@@ -245,7 +246,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test7_2() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track1 = repository.startTracking();
 
         track1.addBalance(COW, Coin.valueOf(10L));
@@ -275,7 +276,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test9() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
         DataWord cowKey = new DataWord(Hex.decode("A1A2A3"));
@@ -300,7 +301,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test10() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
         DataWord cowKey = new DataWord(Hex.decode("A1A2A3"));
@@ -326,7 +327,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test11() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
         byte[] cowCode = Hex.decode("A1A2A3");
@@ -348,7 +349,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test12() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
         byte[] cowCode = Hex.decode("A1A2A3");
@@ -370,7 +371,7 @@ public class RepositoryImplOriginalTest {
 
     @Test  // Let's upload genesis pre-mine just like in the real world
     public void test13() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
         Genesis genesis = (Genesis)Genesis.getInstance(config);
@@ -389,7 +390,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test14() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         final BigInteger ELEVEN = BigInteger.TEN.add(BigInteger.ONE);
 
@@ -422,7 +423,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test15() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         final BigInteger ELEVEN = BigInteger.TEN.add(BigInteger.ONE);
 
@@ -454,7 +455,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test16() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
@@ -510,7 +511,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test16_2() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
@@ -561,7 +562,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test16_3() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
@@ -612,7 +613,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test16_4() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
@@ -653,7 +654,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test16_5() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
@@ -690,7 +691,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test17() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
@@ -714,7 +715,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test18() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository repoTrack2 = repository.startTracking(); //track
 
         RskAddress pig = new RskAddress("F0B8C9D84DD2B877E0B952130B73E218106FEC04");
@@ -736,7 +737,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test19() {
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
         DataWord cowKey1 = new DataWord("c1");
@@ -778,7 +779,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void test20() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new RepositoryImpl(config, store);
+        Repository repository = new RepositoryImpl(store, config.detailsInMemoryStorageLimit(), config.databaseDir());
         byte[] root = repository.getRoot();
 
         DataWord cowKey1 = new DataWord("c1");
@@ -835,7 +836,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new RepositoryImpl(config, store);
+        final Repository repository = new RepositoryImpl(store, config.detailsInMemoryStorageLimit(), config.databaseDir());
 
         final DataWord cowKey1 = new DataWord("c1");
         final DataWord cowKey2 = new DataWord("c2");
@@ -900,5 +901,9 @@ public class RepositoryImplOriginalTest {
         if (failSema.getCount() == 0) {
             throw new RuntimeException("Test failed.");
         }
+    }
+
+    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
+        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
     }
 }
