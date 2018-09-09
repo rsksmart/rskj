@@ -38,7 +38,6 @@ import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -197,19 +196,12 @@ public class BlockChainImplTest {
         Block genesis = getGenesisBlock(blockChain);
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        SimpleAdminInfo adminInfo = (SimpleAdminInfo)blockChain.getAdminInfo();
-        Assert.assertEquals(0, adminInfo.getCount());
-        Assert.assertEquals(0, adminInfo.getTime());
-
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Assert.assertEquals(2, blockChain.getSize());
         Assert.assertTrue(blockChain.isBlockExist(genesis.getHash().getBytes()));
         Assert.assertTrue(blockChain.isBlockExist(block1.getHash().getBytes()));
-
-        Assert.assertEquals(1, adminInfo.getCount());
-        Assert.assertTrue(adminInfo.getTime() >= 0);
 
         BlockChainStatus status = blockChain.getStatus();
 
@@ -813,7 +805,7 @@ public class BlockChainImplTest {
 
     @Test
     public void createWithoutArgumentsAndUnusedMethods() {
-        BlockChainImpl blockChain = new BlockChainImpl(config, null, null, null, null, null, null, new DummyBlockValidator(), new BlockExecutor(config, null, null, null, null));
+        BlockChainImpl blockChain = new BlockChainImpl(config, null, null, null, null, null, new DummyBlockValidator(), new BlockExecutor(config, null, null, null, null));
         blockChain.setExitOn(0);
         blockChain.close();
     }
@@ -900,7 +892,7 @@ public class BlockChainImplTest {
     }
 
     public static BlockChainImpl createBlockChain() {
-        return new BlockChainBuilder().setAdminInfo(new SimpleAdminInfo()).build();
+        return new BlockChainBuilder().build();
     }
 
     public static BlockChainImpl createBlockChain(Repository repository) {
@@ -920,12 +912,10 @@ public class BlockChainImplTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        AdminInfo adminInfo = new SimpleAdminInfo();
-
         CompositeEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
-        return new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, listener, adminInfo, blockValidator, new BlockExecutor(config, repository, receiptStore, blockStore, listener));
+        return new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, listener, blockValidator, new BlockExecutor(config, repository, receiptStore, blockStore, listener));
     }
 
     public static Block getGenesisBlock(BlockChainImpl blockChain) {
@@ -960,25 +950,6 @@ public class BlockChainImplTest {
 
         alterBytes(cloned);
         return cloned;
-    }
-
-    public static class SimpleAdminInfo extends AdminInfo {
-        private long time;
-        private int count;
-
-        @Override
-        public void addBlockExecTime(long time){
-            this.time += time;
-            count++;
-        }
-
-        public long getTime() {
-            return time;
-        }
-
-        public int getCount() {
-            return count;
-        }
     }
 
     public static class RejectValidator implements BlockValidator {

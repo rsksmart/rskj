@@ -36,7 +36,6 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
-import org.ethereum.manager.AdminInfo;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -72,7 +71,6 @@ public class ImportLightTest {
                 receiptStore,
                 transactionPool,
                 listener,
-                new AdminInfo(),
                 new DummyBlockValidator(),
                 new BlockExecutor(config, repository, receiptStore, blockStore, listener)
         );

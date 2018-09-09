@@ -130,7 +130,6 @@ public class RskTestFactory {
                     getReceiptStore(),
                     getTransactionPool(),
                     getCompositeEthereumListener(),
-                    null,
                     new DummyBlockValidator(),
                     new BlockExecutor(config, getRepository(), getReceiptStore(), getBlockStore(), getCompositeEthereumListener())
             );

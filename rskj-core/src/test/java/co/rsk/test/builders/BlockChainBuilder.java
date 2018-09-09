@@ -35,7 +35,6 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -51,17 +50,11 @@ public class BlockChainBuilder {
     private List<Block> blocks;
     private List<TransactionInfo> txinfos;
 
-    private AdminInfo adminInfo;
     private Repository repository;
     private BlockStore blockStore;
     private Genesis genesis;
     private ReceiptStore receiptStore;
     private RskSystemProperties config;
-
-    public BlockChainBuilder setAdminInfo(AdminInfo adminInfo) {
-        this.adminInfo = adminInfo;
-        return this;
-    }
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -142,10 +135,6 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
-        if (this.adminInfo == null)
-            this.adminInfo = new AdminInfo();
-
-
         TransactionPoolImpl transactionPool;
         if (withoutCleaner) {
             transactionPool = new TransactionPoolImplNoCleaner(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
@@ -153,7 +142,7 @@ public class BlockChainBuilder {
             transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
         }
 
-        BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, transactionPool, listener, this.adminInfo, blockValidator, new BlockExecutor(config, this.repository, receiptStore, this.blockStore, listener));
+        BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, new BlockExecutor(config, this.repository, receiptStore, this.blockStore, listener));
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());

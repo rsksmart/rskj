@@ -30,7 +30,6 @@ import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -57,7 +56,6 @@ public class BlockChainLoader {
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
     private final EthereumListener listener;
-    private final AdminInfo adminInfo;
     private final BlockValidator blockValidator;
 
     @Autowired
@@ -68,7 +66,6 @@ public class BlockChainLoader {
             ReceiptStore receiptStore,
             TransactionPool transactionPool,
             EthereumListener listener,
-            AdminInfo adminInfo,
             BlockValidator blockValidator) {
 
         this.config = config;
@@ -77,7 +74,6 @@ public class BlockChainLoader {
         this.receiptStore = receiptStore;
         this.transactionPool = transactionPool;
         this.listener = listener;
-        this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
     }
 
@@ -89,7 +85,6 @@ public class BlockChainLoader {
                 receiptStore,
                 transactionPool,
                 listener,
-                adminInfo,
                 blockValidator,
                 new BlockExecutor(config, repository, receiptStore, blockStore, listener)
         );
