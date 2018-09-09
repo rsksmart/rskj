@@ -79,13 +79,14 @@ public class BlockChainLoader {
 
     public BlockChainImpl loadBlockchain() {
         BlockChainImpl blockchain = new BlockChainImpl(
-                config,
                 repository,
                 blockStore,
                 receiptStore,
                 transactionPool,
                 listener,
                 blockValidator,
+                config.isFlushEnabled(),
+                config.flushNumberOfBlocks(),
                 new BlockExecutor(config, repository, receiptStore, blockStore, listener)
         );
 

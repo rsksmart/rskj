@@ -50,7 +50,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final RskSystemProperties config;
-    private String name;
+    private final String name;
     private DB db;
     private boolean alive;
 
@@ -142,11 +142,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
         } finally {
             resetDbLock.writeLock().unlock();
         }
-    }
-
-    @Override
-    public void setName(String name) {
-        this.name = name;
     }
 
     @Override

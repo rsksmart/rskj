@@ -47,14 +47,6 @@ public class DatabaseImpl implements Database {
         this.keyValueDataSource = keyValueDataSource;
     }
 
-
-    public DatabaseImpl(String name) {
-
-        keyValueDataSource.setName(name);
-        keyValueDataSource.init();
-    }
-
-
     @Override
     public byte[] get(byte[] key) {
         return keyValueDataSource.get(key);

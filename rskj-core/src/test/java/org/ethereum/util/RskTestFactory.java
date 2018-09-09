@@ -125,12 +125,14 @@ public class RskTestFactory {
     public BlockChainImpl getBlockchain() {
         if (blockchain == null) {
             blockchain = new BlockChainImpl(
-                    config, getRepository(),
+                    getRepository(),
                     getBlockStore(),
                     getReceiptStore(),
                     getTransactionPool(),
                     getCompositeEthereumListener(),
                     new DummyBlockValidator(),
+                    false,
+                    1,
                     new BlockExecutor(config, getRepository(), getReceiptStore(), getBlockStore(), getCompositeEthereumListener())
             );
         }

@@ -61,11 +61,6 @@ public class HashMapDB implements KeyValueDataSource {
     }
 
     @Override
-    public void setName(String name) {
-
-    }
-
-    @Override
     public String getName() {
         return "in-memory";
     }

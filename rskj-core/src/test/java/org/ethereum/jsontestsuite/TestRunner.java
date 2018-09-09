@@ -115,7 +115,7 @@ public class TestRunner {
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
-        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, null, new DummyBlockValidator(), new BlockExecutor(config, repository, receiptStore, blockStore, null));
+        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, null, new DummyBlockValidator(), false, 1, new BlockExecutor(config, repository, receiptStore, blockStore, null));
 
         blockchain.setNoValidation(true);
 

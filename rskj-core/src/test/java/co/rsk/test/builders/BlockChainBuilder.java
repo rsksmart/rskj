@@ -142,7 +142,7 @@ public class BlockChainBuilder {
             transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
         }
 
-        BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, new BlockExecutor(config, this.repository, receiptStore, this.blockStore, listener));
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(config, this.repository, receiptStore, this.blockStore, listener));
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
