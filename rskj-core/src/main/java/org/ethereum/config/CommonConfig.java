@@ -64,7 +64,7 @@ public class CommonConfig {
     }
 
     private KeyValueDataSource makeDataSource(RskSystemProperties config, String name) {
-        KeyValueDataSource ds = new LevelDbDataSource(config, name);
+        KeyValueDataSource ds = new LevelDbDataSource(name, config.databaseDir());
         ds.init();
         return ds;
     }

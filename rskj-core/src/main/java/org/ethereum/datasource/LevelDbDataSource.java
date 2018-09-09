@@ -19,7 +19,6 @@
 
 package org.ethereum.datasource;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
@@ -49,7 +48,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final RskSystemProperties config;
+    private final String databaseDir;
     private final String name;
     private DB db;
     private boolean alive;
@@ -62,8 +61,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDbDataSource(RskSystemProperties config, String name) {
-        this.config = config;
+    public LevelDbDataSource(String name, String databaseDir) {
+        this.databaseDir = databaseDir;
         this.name = name;
         logger.debug("New LevelDbDataSource: {}", name);
     }
@@ -95,10 +94,10 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 logger.debug("Opening database");
                 Path dbPath;
 
-                if (Paths.get(config.databaseDir()).isAbsolute()) {
-                    dbPath = Paths.get(config.databaseDir(), name);
+                if (Paths.get(databaseDir).isAbsolute()) {
+                    dbPath = Paths.get(databaseDir, name);
                 } else {
-                    dbPath = Paths.get(getProperty("user.dir"), config.databaseDir(), name);
+                    dbPath = Paths.get(getProperty("user.dir"), databaseDir, name);
                 }
 
                 Files.createDirectories(dbPath.getParent());

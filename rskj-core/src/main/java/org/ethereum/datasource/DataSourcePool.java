@@ -33,7 +33,7 @@ public class DataSourcePool {
     private static ConcurrentMap<String, DataSourceEx> pool = new ConcurrentHashMap<>();
 
     public static KeyValueDataSource levelDbByName(RskSystemProperties config, String name) {
-        DataSource dataSource = new LevelDbDataSource(config, name);
+        DataSource dataSource = new LevelDbDataSource(name, config.databaseDir());
         DataSourceEx dataSourceEx = new DataSourceEx(dataSource);
         DataSourceEx result = pool.putIfAbsent(name, dataSourceEx);
         if (result == null) {
