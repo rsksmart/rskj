@@ -21,6 +21,9 @@ package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.db.ContractDetailsImpl;
+import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
 import org.bouncycastle.util.encoders.Hex;
@@ -39,7 +42,13 @@ public class ContractDetailsMapper {
     public ContractDetails mapFromContract(Contract contract) {
         ContractDetails contractDetails;
 
-        contractDetails = new ContractDetailsImpl(config);
+        contractDetails = new ContractDetailsImpl(
+                null,
+                new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+                null,
+                config.detailsInMemoryStorageLimit(),
+                config.databaseDir()
+        );
 
         if (contract.getCode()!=null) {
             contractDetails.setCode(Hex.decode(contract.getCode()));

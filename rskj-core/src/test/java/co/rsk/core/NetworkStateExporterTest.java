@@ -20,6 +20,7 @@ package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -122,7 +123,13 @@ public class NetworkStateExporterTest {
         repository.createAccount(addr1);
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
-        ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(config);
+        ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(
+            null,
+            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+            null,
+            config.detailsInMemoryStorageLimit(),
+            config.databaseDir()
+        );
         contractDetails.setCode(new byte[] {1, 2, 3, 4});
         contractDetails.put(DataWord.ZERO, DataWord.ONE);
         contractDetails.putBytes(DataWord.ONE, new byte[] {5, 6, 7, 8});

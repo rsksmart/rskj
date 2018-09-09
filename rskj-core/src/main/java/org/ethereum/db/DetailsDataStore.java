@@ -78,7 +78,7 @@ public class DetailsDataStore {
     }
 
     protected ContractDetails createContractDetails(byte[] data) {
-        return new ContractDetailsImpl(config, data);
+        return new ContractDetailsImpl(data, config.detailsInMemoryStorageLimit(), config.databaseDir());
     }
 
     public synchronized void update(RskAddress addr, ContractDetails contractDetails) {

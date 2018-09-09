@@ -25,6 +25,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -85,7 +86,13 @@ public class RepositoryImpl implements Repository {
     public synchronized AccountState createAccount(RskAddress addr) {
         AccountState accountState = new AccountState();
         updateAccountState(addr, accountState);
-        updateContractDetails(addr, new ContractDetailsImpl(config));
+        updateContractDetails(addr, new ContractDetailsImpl(
+                null,
+                new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+                null,
+                config.detailsInMemoryStorageLimit(),
+                config.databaseDir()
+        ));
         return accountState;
     }
 
@@ -341,7 +348,13 @@ public class RepositoryImpl implements Repository {
                 ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) contractDetails;
 
                 if (contractDetailsCache.getOriginalContractDetails() == null) {
-                    ContractDetails originalContractDetails = new ContractDetailsImpl(config);
+                    ContractDetails originalContractDetails = new ContractDetailsImpl(
+                            null,
+                            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+                            null,
+                            config.detailsInMemoryStorageLimit(),
+                            config.databaseDir()
+                    );
                     originalContractDetails.setAddress(addr.getBytes());
                     contractDetailsCache.setOriginalContractDetails(originalContractDetails);
                     contractDetailsCache.commit();

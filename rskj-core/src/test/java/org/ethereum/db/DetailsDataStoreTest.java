@@ -22,6 +22,8 @@ package org.ethereum.db;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
+import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
@@ -45,7 +47,13 @@ public class DetailsDataStoreTest {
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl(config);
+        ContractDetails contractDetails = new ContractDetailsImpl(
+            null,
+            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+            null,
+            config.detailsInMemoryStorageLimit(),
+            config.databaseDir()
+        );
         contractDetails.setAddress(randomAddress().getBytes());
         contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
@@ -77,7 +85,13 @@ public class DetailsDataStoreTest {
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl(config);
+        ContractDetails contractDetails = new ContractDetailsImpl(
+            null,
+            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+            null,
+            config.detailsInMemoryStorageLimit(),
+            config.databaseDir()
+        );
         contractDetails.setCode(code);
         contractDetails.setAddress(randomAddress().getBytes());
         contractDetails.put(new DataWord(key), new DataWord(value));
@@ -113,7 +127,13 @@ public class DetailsDataStoreTest {
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl(config);
+        ContractDetails contractDetails = new ContractDetailsImpl(
+            null,
+            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+            null,
+            config.detailsInMemoryStorageLimit(),
+            config.databaseDir()
+        );
         contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
 
