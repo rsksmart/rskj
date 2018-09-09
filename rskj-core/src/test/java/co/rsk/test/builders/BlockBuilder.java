@@ -27,6 +27,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.core.TransactionExecutor;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -101,7 +104,29 @@ public class BlockBuilder {
         Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
         if (blockChain != null) {
-            BlockExecutor executor = new BlockExecutor(new TestSystemProperties(), blockChain.getRepository(), null, blockChain.getBlockStore(), blockChain.getListener());
+            final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+            final TestSystemProperties config = new TestSystemProperties();
+            BlockExecutor executor = new BlockExecutor(blockChain.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                    tx1,
+                    txindex1,
+                    block1.getCoinbase(),
+                    track1,
+                    blockChain.getBlockStore(),
+                    null,
+                    programInvokeFactory,
+                    block1,
+                    blockChain.getListener(),
+                    totalGasUsed1,
+                    config.getVmConfig(),
+                    config.getBlockchainConfig(),
+                    config.playVM(),
+                    config.isRemascEnabled(),
+                    config.vmTrace(),
+                    new PrecompiledContracts(config),
+                    config.databaseDir(),
+                    config.vmTraceDir(),
+                    config.vmTraceCompressed()
+            ));
             executor.executeAndFill(block, parent);
         }
 

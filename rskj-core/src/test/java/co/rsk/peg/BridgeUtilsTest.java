@@ -493,6 +493,6 @@ public class BridgeUtilsTest {
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(Genesis.getInstance(config));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
-        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(config, rskTx, rskExecutionBlock.getNumber()));
+        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber(), config.getBlockchainConfig()));
     }
 }

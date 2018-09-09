@@ -36,6 +36,8 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -65,6 +67,7 @@ public class ImportLightTest {
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
@@ -74,7 +77,27 @@ public class ImportLightTest {
                 new DummyBlockValidator(),
                 false,
                 1,
-                new BlockExecutor(config, repository, receiptStore, blockStore, listener)
+                new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                        tx1,
+                        txindex1,
+                        block1.getCoinbase(),
+                        track1,
+                        blockStore,
+                        receiptStore,
+                        programInvokeFactory,
+                        block1,
+                        listener,
+                        totalGasUsed1,
+                        config.getVmConfig(),
+                        config.getBlockchainConfig(),
+                        config.playVM(),
+                        config.isRemascEnabled(),
+                        config.vmTrace(),
+                        new PrecompiledContracts(config),
+                        config.databaseDir(),
+                        config.vmTraceDir(),
+                        config.vmTraceCompressed()
+                ))
         );
 
         blockchain.setNoValidation(true);

@@ -38,9 +38,12 @@ import org.ethereum.jsontestsuite.builder.*;
 import org.ethereum.jsontestsuite.validators.LogsValidator;
 import org.ethereum.jsontestsuite.validators.OutputValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -73,10 +76,27 @@ public class StateTestRunner {
     protected ProgramResult executeTransaction(Transaction tx) {
         Repository track = repository.startTracking();
 
-        TransactionExecutor executor =
-                new TransactionExecutor(config, transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, new BlockStoreDummy(), null,
-                        invokeFactory, blockchain.getBestBlock());
-
+        TransactionExecutor executor = new TransactionExecutor(
+                transaction,
+                0,
+                new RskAddress(env.getCurrentCoinbase()),
+                track,
+                new BlockStoreDummy(),
+                null,
+                invokeFactory,
+                blockchain.getBestBlock(),
+                new EthereumListenerAdapter(),
+                0,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        );
         try{
             executor.init();
             executor.execute();
@@ -101,7 +121,28 @@ public class StateTestRunner {
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
-        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, false, 1, new BlockExecutor(config, repository, null, blockStore, null));
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                tx1,
+                txindex1,
+                block1.getCoinbase(),
+                track1,
+                blockStore,
+                null,
+                programInvokeFactory,
+                block1,
+                null,
+                totalGasUsed1,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        )));
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);

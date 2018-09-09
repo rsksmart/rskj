@@ -27,10 +27,9 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
-import org.ethereum.core.Account;
-import org.ethereum.core.Block;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -224,8 +223,30 @@ public class WorldDslProcessor {
                 difficulty = difficultyTokenizer.hasMoreTokens()?parseDifficulty(difficultyTokenizer.nextToken(),k):k;
             }
             Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
-            BlockExecutor executor = new BlockExecutor(new TestSystemProperties(), world.getRepository(),
-                                                       null, world.getBlockChain().getBlockStore(), null);
+            final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+            final TestSystemProperties config = new TestSystemProperties();
+            BlockExecutor executor = new BlockExecutor(world.getRepository(),
+                    (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                                                               tx1,
+                                                               txindex1,
+                                                               block1.getCoinbase(),
+                                                               track1,
+                    world.getBlockChain().getBlockStore(),
+                    null,
+                    programInvokeFactory,
+                                                               block1,
+                    null,
+                                                               totalGasUsed1,
+                                                               config.getVmConfig(),
+                                                               config.getBlockchainConfig(),
+                                                               config.playVM(),
+                                                               config.isRemascEnabled(),
+                                                               config.vmTrace(),
+                                                               new PrecompiledContracts(config),
+                                                               config.databaseDir(),
+                                                               config.vmTraceDir(),
+                                                               config.vmTraceCompressed()
+                                                       ));
             executor.executeAndFill(block, parent);
             world.saveBlock(name, block);
             parent = block;

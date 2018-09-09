@@ -21,7 +21,6 @@ package co.rsk.remasc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
-import co.rsk.core.Rsk;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -33,6 +32,8 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -119,8 +120,29 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
-        BlockExecutor blockExecutor = new BlockExecutor(builder.getConfig(), blockchain.getRepository(),
-                                                        null, blockchain.getBlockStore(), null);
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(),
+                (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+                    tx,
+                    txindex,
+                    block.getCoinbase(),
+                    track,
+                    blockchain.getBlockStore(),
+                    null,
+                    programInvokeFactory,
+                    block,
+                    null,
+                    totalGasUsed,
+                    builder.getConfig().getVmConfig(),
+                    builder.getConfig().getBlockchainConfig(),
+                    builder.getConfig().playVM(),
+                    builder.getConfig().isRemascEnabled(),
+                    builder.getConfig().vmTrace(),
+                    new PrecompiledContracts(builder.getConfig()),
+                    builder.getConfig().databaseDir(),
+                    builder.getConfig().vmTraceDir(),
+                    builder.getConfig().vmTraceCompressed())
+        );
 
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;

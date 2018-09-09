@@ -22,8 +22,10 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
@@ -103,9 +105,27 @@ public class RskTestFactory {
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(config, transaction, 0, RskAddress.nullAddress(),
-                getRepository(), getBlockStore(), getReceiptStore(),
-                getProgramInvokeFactory(), getBlockchain().getBestBlock());
+        TransactionExecutor executor = new TransactionExecutor(
+                transaction,
+                0,
+                RskAddress.nullAddress(),
+                getRepository(),
+                getBlockStore(),
+                getReceiptStore(),
+                getProgramInvokeFactory(),
+                getBlockchain().getBestBlock(),
+                new EthereumListenerAdapter(),
+                0,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        );
         executor.init();
         executor.execute();
         executor.go();
@@ -124,6 +144,7 @@ public class RskTestFactory {
 
     public BlockChainImpl getBlockchain() {
         if (blockchain == null) {
+            final ProgramInvokeFactoryImpl programInvokeFactory1 = new ProgramInvokeFactoryImpl();
             blockchain = new BlockChainImpl(
                     getRepository(),
                     getBlockStore(),
@@ -133,7 +154,27 @@ public class RskTestFactory {
                     new DummyBlockValidator(),
                     false,
                     1,
-                    new BlockExecutor(config, getRepository(), getReceiptStore(), getBlockStore(), getCompositeEthereumListener())
+                    new BlockExecutor(getRepository(), (tx, txindex, coinbase, repository, block, totalGasUsed) -> new TransactionExecutor(
+                            tx,
+                            txindex,
+                            block.getCoinbase(),
+                            repository,
+                            getBlockStore(),
+                            getReceiptStore(),
+                            programInvokeFactory1,
+                            block,
+                            getCompositeEthereumListener(),
+                            totalGasUsed,
+                            config.getVmConfig(),
+                            config.getBlockchainConfig(),
+                            config.playVM(),
+                            config.isRemascEnabled(),
+                            config.vmTrace(),
+                            new PrecompiledContracts(config),
+                            config.databaseDir(),
+                            config.vmTraceDir(),
+                            config.vmTraceCompressed()
+                    ))
             );
         }
 

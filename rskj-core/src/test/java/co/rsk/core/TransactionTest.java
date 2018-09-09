@@ -26,6 +26,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
@@ -238,10 +239,27 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
-                    TransactionExecutor executor = new TransactionExecutor
-                            (config, txConst, 0, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,
-                                    invokeFactory, bestBlock)
-                            .setLocalCall(true);
+                    TransactionExecutor executor = new TransactionExecutor(
+                            txConst,
+                            0,
+                            bestBlock.getCoinbase(),
+                            track,
+                            new BlockStoreDummy(),
+                            null,
+                            invokeFactory,
+                            bestBlock,
+                            new EthereumListenerAdapter(),
+                            0,
+                            config.getVmConfig(),
+                            config.getBlockchainConfig(),
+                            config.playVM(),
+                            config.isRemascEnabled(),
+                            config.vmTrace(),
+                            new PrecompiledContracts(config),
+                            config.databaseDir(),
+                            config.vmTraceDir(),
+                            config.vmTraceCompressed())
+                        .setLocalCall(true);
 
                     executor.init();
                     executor.execute();

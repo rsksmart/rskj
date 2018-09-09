@@ -33,6 +33,7 @@ import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -349,9 +350,27 @@ public class RskForksBridgeTest {
                 Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}));
         rskTx.sign(new byte[32]);
 
-        TransactionExecutor executor = new TransactionExecutor(beforeBambooProperties, rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository,
-                        blockChain.getBlockStore(), null, new ProgramInvokeFactoryImpl(), blockChain.getBestBlock())
-                .setLocalCall(true);
+        TransactionExecutor executor = new TransactionExecutor(
+                rskTx,
+                0,
+                blockChain.getBestBlock().getCoinbase(),
+                repository,
+                blockChain.getBlockStore(),
+                null,
+                new ProgramInvokeFactoryImpl(),
+                blockChain.getBestBlock(),
+                new EthereumListenerAdapter(),
+                0,
+                beforeBambooProperties.getVmConfig(),
+                beforeBambooProperties.getBlockchainConfig(),
+                beforeBambooProperties.playVM(),
+                beforeBambooProperties.isRemascEnabled(),
+                beforeBambooProperties.vmTrace(),
+                new PrecompiledContracts(beforeBambooProperties),
+                beforeBambooProperties.databaseDir(),
+                beforeBambooProperties.vmTraceDir(),
+                beforeBambooProperties.vmTraceCompressed())
+            .setLocalCall(true);
 
         executor.init();
         executor.execute();
