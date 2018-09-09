@@ -193,7 +193,7 @@ public class ContractDetailsImpl implements ContractDetails {
 
         if (this.externalStorage) {
             Keccak256 snapshotHash = new Keccak256(rlpStorage.getRLPData());
-            this.trie = new TrieImpl(new TrieStoreImpl(levelDbByName(config, getDataSourceName())), true).getSnapshotTo(snapshotHash);
+            this.trie = new TrieImpl(new TrieStoreImpl(levelDbByName(getDataSourceName(), config.databaseDir())), true).getSnapshotTo(snapshotHash);
         } else {
             this.trie = TrieImpl.deserialize(rlpStorage.getRLPData());
         }
@@ -333,7 +333,7 @@ public class ContractDetailsImpl implements ContractDetails {
                 // switching to data source
 
                 logger.trace("switching to data source, hash {}, address {}", hashString, addressString);
-                KeyValueDataSource ds = levelDbByName(config, this.getDataSourceName());
+                KeyValueDataSource ds = levelDbByName(this.getDataSourceName(), config.databaseDir());
                 TrieStoreImpl newStore = new TrieStoreImpl(ds);
                 TrieStoreImpl originalStore = (TrieStoreImpl)((TrieImpl) this.trie).getStore();
                 newStore.copyFrom(originalStore);
@@ -374,7 +374,7 @@ public class ContractDetailsImpl implements ContractDetails {
         details.originalExternalStorage = this.originalExternalStorage;
 
         if (this.externalStorage) {
-            levelDbByName(config, getDataSourceName());
+            levelDbByName(getDataSourceName(), config.databaseDir());
         }
 
         logger.trace("getting contract details snapshot hash {}, address {}, storage size {}, has external storage {}", details.getStorageHashAsString(), details.getAddressAsString(), details.getStorageSize(), details.hasExternalStorage());
@@ -431,7 +431,7 @@ public class ContractDetailsImpl implements ContractDetails {
         }
 
         logger.trace("reopening contract details data source");
-        KeyValueDataSource ds = levelDbByName(config, this.getDataSourceName());
+        KeyValueDataSource ds = levelDbByName(this.getDataSourceName(), config.databaseDir());
         TrieStoreImpl newStore = new TrieStoreImpl(ds);
         Trie newTrie = newStore.retrieve(this.trie.getHash().getBytes());
         this.trie = newTrie;

@@ -85,9 +85,9 @@ public class DoPrune {
         logger.info("Datasource Name {}", dataSourceName);
         logger.info("Blockchain height {}", height);
 
-        TrieImpl source = new TrieImpl(new TrieStoreImpl(levelDbByName(this.rskSystemProperties, dataSourceName)), true);
+        TrieImpl source = new TrieImpl(new TrieStoreImpl(levelDbByName(dataSourceName, this.rskSystemProperties.databaseDir())), true);
         String targetDataSourceName = dataSourceName + "B";
-        KeyValueDataSource targetDataSource = levelDbByName(this.rskSystemProperties, targetDataSourceName);
+        KeyValueDataSource targetDataSource = levelDbByName(targetDataSourceName, this.rskSystemProperties.databaseDir());
         TrieStore targetStore = new TrieStoreImpl(targetDataSource);
 
         this.processBlocks(height - blocksToProcess, source, contractAddress, targetStore);

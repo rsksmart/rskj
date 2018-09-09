@@ -19,7 +19,6 @@
 
 package org.ethereum.datasource;
 
-import co.rsk.config.RskSystemProperties;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,8 +31,8 @@ public class DataSourcePool {
     private static final Logger logger = getLogger("db");
     private static ConcurrentMap<String, DataSourceEx> pool = new ConcurrentHashMap<>();
 
-    public static KeyValueDataSource levelDbByName(RskSystemProperties config, String name) {
-        DataSource dataSource = new LevelDbDataSource(name, config.databaseDir());
+    public static KeyValueDataSource levelDbByName(String name, String databaseDir) {
+        DataSource dataSource = new LevelDbDataSource(name, databaseDir);
         DataSourceEx dataSourceEx = new DataSourceEx(dataSource);
         DataSourceEx result = pool.putIfAbsent(name, dataSourceEx);
         if (result == null) {

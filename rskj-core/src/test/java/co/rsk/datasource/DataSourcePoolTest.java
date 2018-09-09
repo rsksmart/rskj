@@ -39,16 +39,16 @@ public class DataSourcePoolTest {
 
     @Test
     public void openAndCloseDataSource() {
-        KeyValueDataSource dataSource = DataSourcePool.levelDbByName(config, "test1");
+        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test1", config.databaseDir());
         dataSource.close();
     }
 
     @Test
     public void openUseAndCloseDataSource() {
-        KeyValueDataSource dataSource = DataSourcePool.levelDbByName(config, "test2");
+        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test2", config.databaseDir());
         dataSource.put(new byte[] { 0x01 }, new byte[] { 0x02 });
         dataSource.close();
-        KeyValueDataSource dataSource2 = DataSourcePool.levelDbByName(config, "test2");
+        KeyValueDataSource dataSource2 = DataSourcePool.levelDbByName("test2", config.databaseDir());
         byte[] result = dataSource2.get(new byte[] { 0x01 });
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.length);
@@ -58,8 +58,8 @@ public class DataSourcePoolTest {
 
     @Test
     public void openUseAndCloseDataSourceTwice() {
-        KeyValueDataSource dataSource = DataSourcePool.levelDbByName(config, "test3");
-        KeyValueDataSource dataSource2 = DataSourcePool.levelDbByName(config, "test3");
+        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test3", config.databaseDir());
+        KeyValueDataSource dataSource2 = DataSourcePool.levelDbByName("test3", config.databaseDir());
 
         Assert.assertSame(dataSource, dataSource2);
 
@@ -77,7 +77,7 @@ public class DataSourcePoolTest {
     @Test
     public void openAndCloseTenTimes() {
         for (int k = 0; k < 10; k++) {
-            KeyValueDataSource dataSource = DataSourcePool.levelDbByName(config, "test4");
+            KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test4", config.databaseDir());
             dataSource.put(new byte[] { (byte) k }, new byte[] { (byte) k });
             byte[] result = dataSource.get(new byte[] { (byte) k });
 
