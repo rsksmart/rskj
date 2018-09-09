@@ -7,6 +7,7 @@ import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.RskImpl;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.net.BlockNodeInformation;
@@ -130,7 +131,8 @@ public class RskTestFactory {
                     getTransactionPool(),
                     getCompositeEthereumListener(),
                     null,
-                    new DummyBlockValidator()
+                    new DummyBlockValidator(),
+                    new BlockExecutor(config, getRepository(), getReceiptStore(), getBlockStore(), getCompositeEthereumListener())
             );
         }
 

@@ -23,6 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.validators.BlockValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.*;
@@ -89,7 +90,8 @@ public class BlockChainLoader {
                 transactionPool,
                 listener,
                 adminInfo,
-                blockValidator
+                blockValidator,
+                new BlockExecutor(config, repository, receiptStore, blockStore, listener)
         );
 
         Block bestBlock = blockStore.getBestBlock();

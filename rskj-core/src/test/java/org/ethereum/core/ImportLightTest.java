@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
@@ -72,7 +73,8 @@ public class ImportLightTest {
                 transactionPool,
                 listener,
                 new AdminInfo(),
-                new DummyBlockValidator()
+                new DummyBlockValidator(),
+                new BlockExecutor(config, repository, receiptStore, blockStore, listener)
         );
 
         blockchain.setNoValidation(true);

@@ -24,6 +24,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.validators.DummyBlockValidator;
@@ -114,7 +115,7 @@ public class TestRunner {
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
-        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, null, null, new DummyBlockValidator());
+        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, null, null, new DummyBlockValidator(), new BlockExecutor(config, repository, receiptStore, blockStore, null));
 
         blockchain.setNoValidation(true);
 

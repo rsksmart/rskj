@@ -106,7 +106,8 @@ public class BlockChainImpl implements Blockchain {
                           TransactionPool transactionPool,
                           EthereumListener listener,
                           AdminInfo adminInfo,
-                          BlockValidator blockValidator) {
+                          BlockValidator blockValidator,
+                          BlockExecutor blockExecutor) {
         this.config = config;
         this.repository = repository;
         this.blockStore = blockStore;
@@ -114,7 +115,7 @@ public class BlockChainImpl implements Blockchain {
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
-        this.blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
+        this.blockExecutor = blockExecutor;
         this.transactionPool = transactionPool;
     }
 

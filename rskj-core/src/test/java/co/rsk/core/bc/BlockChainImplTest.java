@@ -813,7 +813,7 @@ public class BlockChainImplTest {
 
     @Test
     public void createWithoutArgumentsAndUnusedMethods() {
-        BlockChainImpl blockChain = new BlockChainImpl(config, null, null, null, null, null, null, new DummyBlockValidator());
+        BlockChainImpl blockChain = new BlockChainImpl(config, null, null, null, null, null, null, new DummyBlockValidator(), new BlockExecutor(config, null, null, null, null));
         blockChain.setExitOn(0);
         blockChain.close();
     }
@@ -925,7 +925,7 @@ public class BlockChainImplTest {
         CompositeEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
-        return new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, listener, adminInfo, blockValidator);
+        return new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, listener, adminInfo, blockValidator, new BlockExecutor(config, repository, receiptStore, blockStore, listener));
     }
 
     public static Block getGenesisBlock(BlockChainImpl blockChain) {

@@ -22,6 +22,7 @@ package org.ethereum.jsontestsuite.runners;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -100,7 +101,7 @@ public class StateTestRunner {
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
-        blockchain = new BlockChainImpl(config, repository, blockStore, null, null, null, null, null);
+        blockchain = new BlockChainImpl(config, repository, blockStore, null, null, null, null, null, new BlockExecutor(config, repository, null, blockStore, null));
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);
