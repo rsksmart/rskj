@@ -49,7 +49,7 @@ public class NodeManager {
     protected static final long NODES_TRIM_THRESHOLD = MAX_NODES + 1000;
 
     // to avoid checking for null
-    private static final NodeStatistics DUMMY_STAT = new NodeStatistics(new Node(new byte[0], "dummy.node", 0));
+    private static final NodeStatistics DUMMY_STAT = new NodeStatistics();
 
     private final PeerExplorer peerExplorer;
 

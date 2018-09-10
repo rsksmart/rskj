@@ -43,7 +43,7 @@ public class NodeHandler {
 
     public NodeStatistics getNodeStatistics() {
         if (nodeStatistics == null) {
-            nodeStatistics = new NodeStatistics(node);
+            nodeStatistics = new NodeStatistics();
         }
         return nodeStatistics;
     }
