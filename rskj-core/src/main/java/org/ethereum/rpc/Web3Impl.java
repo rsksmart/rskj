@@ -148,7 +148,7 @@ public class Web3Impl implements Web3 {
         this.configCapabilities = configCapabilities;
         this.config = config;
         filterManager = new FilterManager(eth);
-        snapshotManager = new SnapshotManager(blockchain, transactionPool);
+        snapshotManager = new SnapshotManager(blockchain, transactionPool, minerServer);
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
         personalModule.init(this.config);
