@@ -54,7 +54,6 @@ public class NodeManager {
     private final PeerExplorer peerExplorer;
 
     private Map<String, NodeHandler> nodeHandlerMap = new ConcurrentHashMap<>();
-    private Set<NodeHandler> initialNodes = new HashSet<>();
 
     private boolean discoveryEnabled;
 
@@ -89,7 +88,6 @@ public class NodeManager {
 
     public synchronized List<NodeHandler> getNodes(Set<String> nodesInUse) {
         List<NodeHandler> handlers = new ArrayList<>();
-        handlers.addAll(initialNodes);
 
         List<Node> foundNodes = this.peerExplorer.getNodes();
         if (this.discoveryEnabled && CollectionUtils.isNotEmpty(foundNodes)) {
