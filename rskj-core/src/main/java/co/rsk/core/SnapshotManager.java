@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.mine.MinerServer;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -35,10 +36,12 @@ public class SnapshotManager {
     private List<Long> snapshots = new ArrayList<>();
     private final Blockchain blockchain;
     private final TransactionPool transactionPool;
+    private final MinerServer minerServer;
 
-    public SnapshotManager(Blockchain blockchain, TransactionPool transactionPool) {
+    public SnapshotManager(Blockchain blockchain, TransactionPool transactionPool, MinerServer minerServer) {
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
+        this.minerServer = minerServer;
     }
 
     public int takeSnapshot() {
@@ -68,6 +71,9 @@ public class SnapshotManager {
         for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= bestNumber; nb++) {
             blockchain.removeBlocksByNumber(nb);
         }
+
+        // start mining on top of the new best block
+        minerServer.buildBlockToMine(block, false);
 
         return true;
     }
@@ -104,6 +110,9 @@ public class SnapshotManager {
         for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= currentBestBlockNumber; nb++) {
             blockchain.removeBlocksByNumber(nb);
         }
+
+        // start mining on top of the new best block
+        minerServer.buildBlockToMine(block, false);
 
         return true;
     }

@@ -21,6 +21,7 @@ package co.rsk.core;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.mine.MinerServer;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
@@ -31,6 +32,8 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.List;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 15/04/2017.
@@ -50,7 +53,7 @@ public class SnapshotManagerTest {
         transactionPool = factory.getTransactionPool();
         // don't call start to avoid creating threads
         transactionPool.processBest(blockchain.getBestBlock());
-        manager = new SnapshotManager(blockchain, transactionPool);
+        manager = new SnapshotManager(blockchain, transactionPool, mock(MinerServer.class));
     }
 
     @Test
