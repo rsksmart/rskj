@@ -48,14 +48,24 @@ public class MessageDecoder {
         byte[] data = new byte[wire.length - 98];
         System.arraycopy(wire, 98, data, 0, data.length);
 
-        byte[] mdcCheck = keccak256(wire, 32, wire.length - 32);
-
-        int check = FastByteComparisons.compareTo(mdc, 0, mdc.length, mdcCheck, 0, mdcCheck.length);
+        int check = check(wire, mdc);
 
         if (check != 0) {
             throw new PeerDiscoveryException("MDC check failed");
         }
 
         return PeerDiscoveryMessageFactory.createMessage(wire, mdc, signature, type, data);
+  }
+
+  public static int check(byte[] wire, byte[] mdc) {
+      byte[] mdcCheck = keccak256(wire, 32, wire.length - 32);
+
+      return FastByteComparisons.compareTo(
+              mdc,
+              0,
+              mdc.length,
+              mdcCheck,
+              0,
+              mdcCheck.length);
   }
 }
