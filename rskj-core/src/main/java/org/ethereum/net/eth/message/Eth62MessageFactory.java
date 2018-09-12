@@ -19,7 +19,6 @@
 
 package org.ethereum.net.eth.message;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.eth.RskMessage;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.message.MessageFactory;
@@ -32,12 +31,6 @@ import static org.ethereum.net.eth.EthVersion.V62;
  */
 public class Eth62MessageFactory implements MessageFactory {
 
-    private final RskSystemProperties config;
-
-    public Eth62MessageFactory(RskSystemProperties config) {
-        this.config = config;
-    }
-
     @Override
     public Message create(byte code, byte[] encoded) {
 
@@ -48,7 +41,7 @@ public class Eth62MessageFactory implements MessageFactory {
             case NEW_BLOCK_HASHES:
                 return new NewBlockHashesMessage(encoded);
             case TRANSACTIONS:
-                return new TransactionsMessage(config, encoded);
+                return new TransactionsMessage(encoded);
             case GET_BLOCK_HEADERS:
                 return new GetBlockHeadersMessage(encoded);
             case BLOCK_HEADERS:
@@ -61,7 +54,7 @@ public class Eth62MessageFactory implements MessageFactory {
                 return new NewBlockMessage(encoded);
             // RSK new message
             case RSK_MESSAGE:
-                return new RskMessage(config, encoded);
+                return new RskMessage(encoded);
             default:
                 throw new IllegalArgumentException("No such message");
         }

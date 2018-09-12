@@ -60,7 +60,7 @@ public class NodeManager {
     @Autowired
     public NodeManager(PeerExplorer peerExplorer, SystemProperties config) {
         this.peerExplorer = peerExplorer;
-        discoveryEnabled = config.isPeerDiscoveryEnabled();
+        this.discoveryEnabled = config.isPeerDiscoveryEnabled();
 
         for (Node node : config.peerActive()) {
             NodeHandler handler = new NodeHandler(node);

@@ -59,15 +59,9 @@ public class RskSystemProperties extends SystemProperties {
     private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; //miliseconds
     private static final int PD_DEFAULT_REFRESH_PERIOD = 60000; //miliseconds
 
-    public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
-
-    // Prune default values
-    private static final int PRUNE_BLOCKS_TO_COPY_DEFAULT = 5000;
-    private static final int PRUNE_BLOCKS_TO_WAIT_DEFAULT = 10000;
-    private static final int PRUNE_BLOCKS_TO_AVOID_FORKS_DEFAULT = 100;
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -75,7 +69,6 @@ public class RskSystemProperties extends SystemProperties {
     private MessageRecorder messageRecorder;
 
     private List<ModuleDescription> moduleDescriptions;
-    private VmConfig vmConfig;
 
     public RskSystemProperties(ConfigLoader loader) {
         super(loader);
@@ -127,57 +120,47 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public boolean isMinerClientEnabled() {
-        return configFromFiles.hasPath("miner.client.enabled") ?
-                configFromFiles.getBoolean("miner.client.enabled") : false;
+        return getBoolean("miner.client.enabled", false);
     }
 
     public boolean isMinerServerEnabled() {
-        return configFromFiles.hasPath("miner.server.enabled") ?
-                configFromFiles.getBoolean("miner.server.enabled") : false;
+        return getBoolean("miner.server.enabled", false);
     }
 
     public long minerMinGasPrice() {
-        return configFromFiles.hasPath("miner.minGasPrice") ?
-                configFromFiles.getLong("miner.minGasPrice") : 0;
+        return getLong("miner.minGasPrice", 0);
     }
 
     public double minerGasUnitInDollars() {
-        return configFromFiles.hasPath("miner.gasUnitInDollars") ?
-                configFromFiles.getDouble("miner.gasUnitInDollars") : 0;
+        return getDouble("miner.gasUnitInDollars", 0);
     }
 
     public double minerMinFeesNotifyInDollars() {
-        return configFromFiles.hasPath("miner.minFeesNotifyInDollars") ?
-                configFromFiles.getDouble("miner.minFeesNotifyInDollars") : 0;
+        return getDouble("miner.minFeesNotifyInDollars", 0);
     }
 
     public boolean simulateTxs() {
-        return configFromFiles.hasPath("simulateTxs.enabled") ?
-                configFromFiles.getBoolean("simulateTxs.enabled") : false;
+        return getBoolean("simulateTxs.enabled", false);
     }
 
     public boolean simulateTxsEx() {
-        return configFromFiles.hasPath("simulateTxsEx.enabled") ?
-                configFromFiles.getBoolean("simulateTxsEx.enabled") : false;
+        return getBoolean("simulateTxsEx.enabled", false);
     }
 
     public Long simulateTxsExFounding() {
-        return configFromFiles.hasPath("simulateTxsEx.foundingAmount") ?
-                configFromFiles.getLong("simulateTxsEx.foundingAmount") : 10000000000L;
+        return getLong("simulateTxsEx.foundingAmount", 10000000000L);
     }
 
     public String simulateTxsExAccountSeed() {
-        return configFromFiles.hasPath("simulateTxsEx.accountSeed") ?
-                configFromFiles.getString("simulateTxsEx.accountSeed") : "this is a seed";
+        return getString("simulateTxsEx.accountSeed", "this is a seed");
     }
 
     public boolean waitForSync() {
-        return configFromFiles.hasPath("sync.waitForSync") && configFromFiles.getBoolean("sync.waitForSync");
+        return getBoolean("sync.waitForSync", false);
     }
 
     public boolean isWalletEnabled() {
-        return configFromFiles.hasPath("wallet.enabled") &&
-                configFromFiles.getBoolean("wallet.enabled");
+        return getBoolean("wallet.enabled", false);
     }
 
     public List<WalletAccount> walletAccounts() {
@@ -202,29 +185,20 @@ public class RskSystemProperties extends SystemProperties {
         return ret;
     }
 
-    public boolean isPanicExitEnabled() {
-        return configFromFiles.hasPath("panic.enabled") ?
-                configFromFiles.getBoolean("panic.enabled") : false;
-    }
-
     public boolean isBlocksEnabled() {
-        return configFromFiles.hasPath("blocks.enabled") ?
-                configFromFiles.getBoolean("blocks.enabled") : false;
+        return getBoolean("blocks.enabled", false);
     }
 
     public String blocksRecorder() {
-        return configFromFiles.hasPath("blocks.recorder") ?
-                configFromFiles.getString("blocks.recorder") : null;
+        return getString("blocks.recorder", null);
     }
 
     public String blocksPlayer() {
-        return configFromFiles.hasPath("blocks.player") ?
-                configFromFiles.getString("blocks.player") : null;
+        return getString("blocks.player", null);
     }
 
     public boolean isFlushEnabled() {
-        return configFromFiles.hasPath("blockchain.flush") ?
-                configFromFiles.getBoolean("blockchain.flush") : true;
+        return getBoolean("blockchain.flush", true);
     }
 
     public int flushNumberOfBlocks() {
@@ -235,20 +209,6 @@ public class RskSystemProperties extends SystemProperties {
     public int soLingerTime() {
         return configFromFiles.getInt("rpc.providers.web.http.linger_time");
 
-    }
-
-    public int acceptorsNumber() {
-        return configFromFiles.hasPath("rpc.acceptors.number") ?
-                configFromFiles.getInt("rpc.acceptors.number") : -1;
-    }
-
-    public int acceptQueueSize() {
-        return configFromFiles.hasPath("rpc.accept.queue.size") ?
-                configFromFiles.getInt("rpc.accept.queue.size") : 0;
-    }
-
-    public String multipleUsersAccountsFile()  {
-        return configFromFiles.hasPath("multipleUser.file.path") ? configFromFiles.getString("multipleUser.file.path") : "";
     }
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
@@ -267,13 +227,11 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public long peerDiscoveryMessageTimeOut() {
-        return configFromFiles.hasPath("peer.discovery.msg.timeout") ?
-                configFromFiles.getLong("peer.discovery.msg.timeout") : PD_DEFAULT_TIMEOUT_MESSAGE;
+        return getLong("peer.discovery.msg.timeout", PD_DEFAULT_TIMEOUT_MESSAGE);
     }
 
     public long peerDiscoveryRefreshPeriod() {
-        long period = configFromFiles.hasPath("peer.discovery.refresh.period") ?
-                configFromFiles.getLong("peer.discovery.refresh.period") : PD_DEFAULT_REFRESH_PERIOD;
+        long period = getLong("peer.discovery.refresh.period", PD_DEFAULT_REFRESH_PERIOD);
 
         return (period < PD_DEFAULT_REFRESH_PERIOD)? PD_DEFAULT_REFRESH_PERIOD : period;
     }
@@ -316,8 +274,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public boolean hasMessageRecorderEnabled() {
-        return configFromFiles.hasPath("messages.recorder.enabled") ?
-                configFromFiles.getBoolean("messages.recorder.enabled") : false;
+        return getBoolean("messages.recorder.enabled",false);
     }
 
     public List<String> getMessageRecorderCommands() {
@@ -361,44 +318,37 @@ public class RskSystemProperties extends SystemProperties {
         return messageRecorder;
     }
 
-    public long getBlocksForPeers() {
-        return getLongProperty("blocksforpeers", BLOCKS_FOR_PEERS_DEFAULT);
-    }
-
     public long getTargetGasLimit() {
-        return getLongProperty("targetgaslimit",
-                6_800_000L);
+        return getLong("targetgaslimit",6_800_000L);
     }
 
     public boolean getForceTargetGasLimit() {
-        return getBooleanProperty("forcegaslimit", true);
-    }
-
-    /**
-     * SYNC CONFIG PROPERTIES
-     * **/
-    public int getExpectedPeers() {
-        return getInt("sync.expectedPeers", 5);
-    }
-
-    public int getTimeoutWaitingPeers() {
-        return getInt("sync.timeoutWaitingPeers", 1);
+        return getBoolean("forcegaslimit", true);
     }
 
     public int getAverageFallbackMiningTime() {
         return getInt("fallbackMining.blockTime", 0);
     }
 
+    // Sync config properties
+    public int getExpectedPeers() {
+        return configFromFiles.getInt("sync.expectedPeers");
+    }
+
+    public int getTimeoutWaitingPeers() {
+        return configFromFiles.getInt("sync.timeoutWaitingPeers");
+    }
+
     public int getTimeoutWaitingRequest() {
-        return getInt("sync.timeoutWaitingRequest", 30);
+        return configFromFiles.getInt("sync.timeoutWaitingRequest");
     }
 
     public int getExpirationTimePeerStatus() {
-        return getInt("sync.expirationTimePeerStatus", 10);
+        return configFromFiles.getInt("sync.expirationTimePeerStatus");
     }
 
     public int getMaxSkeletonChunks() {
-        return getInt("sync.maxSkeletonChunks", 20);
+        return configFromFiles.getInt("sync.maxSkeletonChunks");
     }
 
     // its fixed, cannot be set by config file
@@ -407,37 +357,37 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public VmConfig getVmConfig() {
-        if (vmConfig == null) {
-            vmConfig = new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle());
-        }
-
-        return vmConfig;
+        return new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle());
     }
 
     // New prune service properties
-
     public boolean isPruneEnabled() {
-        return configFromFiles.hasPath("prune.enabled") ?
-                configFromFiles.getBoolean("prune.enabled") : false;
+        return configFromFiles.getBoolean("prune.enabled");
     }
 
     public int getPruneNoBlocksToCopy() {
-        return getInt("prune.blocks.toCopy", PRUNE_BLOCKS_TO_COPY_DEFAULT);
+        return configFromFiles.getInt("prune.blocks.toCopy");
     }
 
     public int getPruneNoBlocksToWait() {
-        return getInt("prune.blocks.toWait", PRUNE_BLOCKS_TO_WAIT_DEFAULT);
+        return configFromFiles.getInt("prune.blocks.toWait");
     }
 
     public int getPruneNoBlocksToAvoidForks() {
-        return getInt("prune.blocks.toAvoidForks", PRUNE_BLOCKS_TO_AVOID_FORKS_DEFAULT);
+        return configFromFiles.getInt("prune.blocks.toAvoidForks");
     }
 
     public PruneConfiguration getPruneConfiguration() {
-        return new PruneConfiguration(this.getPruneNoBlocksToCopy(), this.getPruneNoBlocksToAvoidForks(), this.getPruneNoBlocksToWait());
+        return new PruneConfiguration(this.getPruneNoBlocksToCopy(),
+                                      this.getPruneNoBlocksToAvoidForks(),
+                                      this.getPruneNoBlocksToWait());
     }
 
     public long peerDiscoveryCleanPeriod() {
         return PD_DEFAULT_CLEAN_PERIOD;
+    }
+
+    public int getPeerP2PPingInterval(){
+        return configFromFiles.getInt("peer.p2p.pingInterval");
     }
 }

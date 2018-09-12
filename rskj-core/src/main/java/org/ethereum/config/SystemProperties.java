@@ -181,19 +181,6 @@ public abstract class SystemProperties {
         }
     }
 
-    public <T> T getProperty(String propName, T defaultValue) {
-        if (!configFromFiles.hasPath(propName)) {
-            return defaultValue;
-        }
-
-        String string = configFromFiles.getString(propName);
-        if (string.trim().isEmpty()) {
-            return defaultValue;
-        }
-        
-        return (T) configFromFiles.getAnyRef(propName);
-    }
-
     @ValidateMe
     public synchronized BlockchainNetConfig getBlockchainConfig() {
         if (blockchainConfig == null) {
@@ -680,6 +667,18 @@ public abstract class SystemProperties {
         return configFromFiles.hasPath(path) ? configFromFiles.getLong(path) : val;
     }
 
+    protected double getDouble(String path, double val) {
+        return configFromFiles.hasPath(path) ? configFromFiles.getDouble(path) : val;
+    }
+
+    protected boolean getBoolean(String path, boolean val) {
+        return configFromFiles.hasPath(path) ? configFromFiles.getBoolean(path) : val;
+    }
+
+    protected String getString(String path, String val) {
+        return configFromFiles.hasPath(path) ? configFromFiles.getString(path) : val;
+    }
+
     /*
      *
      * Testing
@@ -743,13 +742,6 @@ public abstract class SystemProperties {
 
     public String corsDomains() {
         return configFromFiles.getString(PROPERTY_RPC_CORS);
-    }
-
-    protected long getLongProperty(String propertyName, long defaultValue) {
-        return configFromFiles.hasPath(propertyName) ? configFromFiles.getLong(propertyName) : defaultValue;
-    }
-    protected boolean getBooleanProperty(String propertyName, boolean defaultValue) {
-        return configFromFiles.hasPath(propertyName) ? configFromFiles.getBoolean(propertyName) : defaultValue;
     }
 
     private InetAddress tryParseIpOrThrow(String ipToParse) throws IOException {
