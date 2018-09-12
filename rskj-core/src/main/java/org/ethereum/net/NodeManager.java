@@ -48,26 +48,22 @@ public class NodeManager {
     private static final long MAX_NODES = 2000;
     protected static final long NODES_TRIM_THRESHOLD = MAX_NODES + 1000;
 
-
     // to avoid checking for null
-    private static final NodeStatistics DUMMY_STAT = new NodeStatistics(new Node(new byte[0], "dummy.node", 0));
+    private static final NodeStatistics DUMMY_STAT = new NodeStatistics();
 
     private final PeerExplorer peerExplorer;
-    private final SystemProperties config;
 
     private Map<String, NodeHandler> nodeHandlerMap = new ConcurrentHashMap<>();
-    private Set<NodeHandler> initialNodes = new HashSet<>();
 
     private boolean discoveryEnabled;
 
     @Autowired
     public NodeManager(PeerExplorer peerExplorer, SystemProperties config) {
         this.peerExplorer = peerExplorer;
-        this.config = config;
         discoveryEnabled = config.isPeerDiscoveryEnabled();
 
         for (Node node : config.peerActive()) {
-            NodeHandler handler = new NodeHandler(node, this);
+            NodeHandler handler = new NodeHandler(node);
             handler.getNodeStatistics().setPredefined(true);
             createNodeHandler(node);
         }
@@ -80,7 +76,7 @@ public class NodeManager {
     }
 
     private NodeHandler createNodeHandler(Node n) {
-        NodeHandler handler = new NodeHandler(n, this);
+        NodeHandler handler = new NodeHandler(n);
         purgeNodeHandlers();
         nodeHandlerMap.put(n.getHexId(), handler);
         return handler;
@@ -92,7 +88,6 @@ public class NodeManager {
 
     public synchronized List<NodeHandler> getNodes(Set<String> nodesInUse) {
         List<NodeHandler> handlers = new ArrayList<>();
-        handlers.addAll(initialNodes);
 
         List<Node> foundNodes = this.peerExplorer.getNodes();
         if (this.discoveryEnabled && CollectionUtils.isNotEmpty(foundNodes)) {
