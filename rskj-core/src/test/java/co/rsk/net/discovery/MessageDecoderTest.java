@@ -3,70 +3,169 @@ package co.rsk.net.discovery;
 import co.rsk.net.discovery.message.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.RLP;
 import org.junit.Assert;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.UUID;
+
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import static org.ethereum.util.ByteUtil.intToBytes;
+import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 
 public class MessageDecoderTest {
 
     private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
     private static final int NETWORK_ID = 1;
+    public static final String LOCALHOST = "localhost";
+    public static final int PORT = 44035;
 
-    @Test(expected = PeerDiscoveryException.class)
+    @Rule
+    public ExpectedException exceptionRule = ExpectedException.none();
+
+    @Test
     public void testMDCCheckFail() {
-        byte[] wire = Hex.decode("00000000000000000000000000000000000000000000000000000000000000000000000000000000" +
-                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
-                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
-                "000000000000000000000000000000000000000000000000000000000000000000");
+        //An array of all 0 would fail the sumcheck
+        byte[] wire = new byte[172];
+        exceptionRule.expect(PeerDiscoveryException.class);
+        exceptionRule.expectMessage(MessageDecoder.MDC_CHECK_FAILED);
         MessageDecoder.decode(wire);
-        Assert.fail();
     }
 
-    @Test(expected = PeerDiscoveryException.class)
+    @Test
     public void testLengthFail() {
+        exceptionRule.expect(PeerDiscoveryException.class);
+        exceptionRule.expectMessage(MessageDecoder.BAD_MESSAGE);
         MessageDecoder.decode(new byte[] {11});
-        Assert.fail();
     }
 
-    @Test(expected = PeerDiscoveryException.class)
+    @Test
     public void testDataSizeNeighborsMessage() {
-        byte[] wire = Hex.decode("64161b75a22291a416f2b3ad0c9e69311bda74d0fd8b168c018228fa1c9ecd33352771ac6b300bd2" +
-            "a4590064340da20824cacaf46dec55e9abf0be17b5ebde786bab0a7e90c0a27115a27d30b4694500b8a3c9f19c8a5d3e802e" +
-            "2094b17fce230104f856f854f852893132372e302e302e31827661827661b8402bc32aa570b3e292a9bd93380c1a23fb5c87" +
-            "7d91bad5462affc80f45658e0abad0c4bef2d44aea6c2715e891114aa95ee09731dedf96bec099377a2f92aa13f0");
-        MessageDecoder.decode(wire);
-        Assert.fail();
+        exceptionRule.expect(PeerDiscoveryException.class);
+        exceptionRule.expectMessage(NeighborsPeerMessage.MORE_DATA);
+        String check = UUID.randomUUID().toString();
+        ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        NeighborsPeerMessage neighborsPeerMessage = NeighborsPeerMessage.create(
+                new ArrayList<>(),
+                check,
+                key1,
+                NETWORK_ID);
+        byte[] type = new byte[]{(byte) DiscoveryMessageType.NEIGHBORS.getTypeValue()};
+        byte[] data = RLP.encodeList();
+        neighborsPeerMessage.encode(type, data, key1);
+        MessageDecoder.decode(neighborsPeerMessage.getPacket());
     }
 
-    @Test(expected = PeerDiscoveryException.class)
+    @Test
     public void testDataSizePingMessage() {
-        byte[] wire = Hex.decode("1ccab8cd78349c8d08a7f1145b2d6066bb91df6286e50746d391ef351174d28ce61029cfd6392" +
-                "d1a44fdf8f9433c5f22e57bb3290f5cede073498bd61993564a6ed74bb60173781daa5e3efd83cbf33e87e8041ac17f1" +
-                "c63532f2ae688798dc40001f838d0896c6f63616c686f737482ac0382ac03c0a462316237623631332d333163652d343" +
-                "262342d613762612d62343436373161666564323401");
-        MessageDecoder.decode(wire);
+        exceptionRule.expect(PeerDiscoveryException.class);
+        exceptionRule.expectMessage(PingPeerMessage.MORE_DATA);
+        String check = UUID.randomUUID().toString();
+        ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        //String host, int port, String check, ECKey privKey, Integer networkId) {
+        PingPeerMessage pingPeerMessage = PingPeerMessage.create(
+                LOCALHOST,
+                PORT,
+                check,
+                key1,
+                NETWORK_ID);
+        byte[] type = new byte[]{(byte) DiscoveryMessageType.PING.getTypeValue()};
+        byte[] data = RLP.encodeList();
+        pingPeerMessage.encode(type, data, key1);
+        MessageDecoder.decode(pingPeerMessage.getPacket());
         Assert.fail();
     }
 
-    @Test(expected = PeerDiscoveryException.class)
-    public void testDataSizePingMessage2() {
-        byte[] wire = Hex.decode("271886d091b351c39711d8a7da9003d2d2f5974bfa53f832b74b7de8db59612bcda62f5d428" +
-                "7bdad055045993cba5e6a35b7f7af956b1528a3fe8b9a4cfff3fa643d430c3a156301dc30a49464b7ee5fcb18564bba" +
-                "6a9ec86eee017e713bf0860001c101");
-        MessageDecoder.decode(wire);
-        Assert.fail();
+    @Test
+    public void testFromToListSizePingMessage() {
+        exceptionRule.expect(PeerDiscoveryException.class);
+        exceptionRule.expectMessage(PingPeerMessage.MORE_FROM_DATA);
+        String check = UUID.randomUUID().toString();
+        ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        //String host, int port, String check, ECKey privKey, Integer networkId) {
+        PingPeerMessage pingPeerMessage = PingPeerMessage.create(
+                LOCALHOST,
+                PORT,
+                check,
+                key1,
+                NETWORK_ID);
+        byte[] tmpNetworkId = intToBytes(NETWORK_ID);
+        byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
+        byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
+        byte[] type = new byte[]{(byte) DiscoveryMessageType.PING.getTypeValue()};
+        byte[] data = RLP.encodeList(RLP.encodeList(), RLP.encodeList(), rlpCheck, rlpNetworkID);
+        pingPeerMessage.encode(type, data, key1);
+        MessageDecoder.decode(pingPeerMessage.getPacket());
     }
 
+    @Test
+    public void testDataSizePongMessage() {
+        exceptionRule.expect(PeerDiscoveryException.class);
+        exceptionRule.expectMessage(PongPeerMessage.MORE_DATA);
+        String check = UUID.randomUUID().toString();
+        ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        //String host, int port, String check, ECKey privKey, Integer networkId) {
+        PongPeerMessage pongPeerMessage = PongPeerMessage.create(
+                LOCALHOST,
+                PORT,
+                check,
+                key1,
+                NETWORK_ID);
+        byte[] type = new byte[]{(byte) DiscoveryMessageType.PONG.getTypeValue()};
+        byte[] data = RLP.encodeList();
+        pongPeerMessage.encode(type, data, key1);
+        MessageDecoder.decode(pongPeerMessage.getPacket());
+    }
+
+    @Test
+    public void testFromToListSizePongMessage() {
+        exceptionRule.expect(PeerDiscoveryException.class);
+        exceptionRule.expectMessage(PongPeerMessage.MORE_FROM_DATA);
+        String check = UUID.randomUUID().toString();
+        ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        //String host, int port, String check, ECKey privKey, Integer networkId) {
+        PongPeerMessage pongPeerMessage = PongPeerMessage.create(
+                LOCALHOST,
+                PORT,
+                check,
+                key1,
+                NETWORK_ID);
+        byte[] tmpNetworkId = intToBytes(NETWORK_ID);
+        byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
+        byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
+        byte[] type = new byte[]{(byte) DiscoveryMessageType.PONG.getTypeValue()};
+        byte[] data = RLP.encodeList(RLP.encodeList(), RLP.encodeList(), rlpCheck, rlpNetworkID);
+        pongPeerMessage.encode(type, data, key1);
+        MessageDecoder.decode(pongPeerMessage.getPacket());
+    }
+
+    @Test
+    public void testDataSizeFindNodeMessage() {
+        exceptionRule.expect(PeerDiscoveryException.class);
+        exceptionRule.expectMessage(FindNodePeerMessage.MORE_DATA);
+        String check = UUID.randomUUID().toString();
+        ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        //String host, int port, String check, ECKey privKey, Integer networkId) {
+        FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(key1.getNodeId(), check, key1, NETWORK_ID);
+        byte[] type = new byte[]{(byte) DiscoveryMessageType.FIND_NODE.getTypeValue()};
+        byte[] data = RLP.encodeList();
+        findNodePeerMessage.encode(type, data, key1);
+        MessageDecoder.decode(findNodePeerMessage.getPacket());
+    }
+
+    @Test
     public void decode() {
         String check = UUID.randomUUID().toString();
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
 
         PingPeerMessage expectedPingMessage = PingPeerMessage.create(
-                "localhost",
-                44035,
+                LOCALHOST,
+                PORT,
                 check,
                 key1,
                 NETWORK_ID);
@@ -74,20 +173,20 @@ public class MessageDecoderTest {
 
         assertDecodedMessage(actualPingMessage, expectedPingMessage);
 
-        Assert.assertEquals(actualPingMessage.getMessageId(), DiscoveryMessageType.PING);
-        Assert.assertEquals(actualPingMessage.getPort(), expectedPingMessage.getPort());
-        Assert.assertEquals(actualPingMessage.getHost(), expectedPingMessage.getHost());
+        Assert.assertEquals(actualPingMessage.getMessageType(), DiscoveryMessageType.PING);
+        Assert.assertEquals(actualPingMessage.getPort(), PORT);
+        Assert.assertEquals(actualPingMessage.getHost(), LOCALHOST);
         Assert.assertEquals(actualPingMessage.getNodeId(), expectedPingMessage.getNodeId());
         Assert.assertEquals(actualPingMessage.getKey(), expectedPingMessage.getKey());
 
-        PongPeerMessage expectedPongMessage = PongPeerMessage.create("localhost", 44036, check, key1, NETWORK_ID);
+        PongPeerMessage expectedPongMessage = PongPeerMessage.create(LOCALHOST, PORT+1, check, key1, NETWORK_ID);
         PongPeerMessage actualPongMessage = (PongPeerMessage) MessageDecoder.decode(expectedPongMessage.getPacket());
 
         assertDecodedMessage(actualPongMessage, expectedPongMessage);
 
-        Assert.assertEquals(actualPongMessage.getMessageId(), DiscoveryMessageType.PONG);
-        Assert.assertEquals(actualPongMessage.getPort(), expectedPongMessage.getPort());
-        Assert.assertEquals(actualPongMessage.getHost(), expectedPongMessage.getHost());
+        Assert.assertEquals(actualPongMessage.getMessageType(), DiscoveryMessageType.PONG);
+        Assert.assertEquals(actualPongMessage.getPort(), PORT+1);
+        Assert.assertEquals(actualPongMessage.getHost(), LOCALHOST);
         Assert.assertEquals(actualPongMessage.getNodeId(), expectedPongMessage.getNodeId());
         Assert.assertEquals(actualPongMessage.getKey(), expectedPongMessage.getKey());
 
@@ -96,7 +195,7 @@ public class MessageDecoderTest {
 
         assertDecodedMessage(actualPingMessage, expectedPingMessage);
 
-        Assert.assertEquals(actualFindNodePeerMessage.getMessageId(), DiscoveryMessageType.FIND_NODE);
+        Assert.assertEquals(actualFindNodePeerMessage.getMessageType(), DiscoveryMessageType.FIND_NODE);
         Assert.assertEquals(actualFindNodePeerMessage.getNodeId(), expectedFindNodePeerMessage.getNodeId());
 
         NeighborsPeerMessage expectedNeighborsPeerMessage = NeighborsPeerMessage.create(new ArrayList<>(), check, key1, NETWORK_ID);
@@ -105,7 +204,7 @@ public class MessageDecoderTest {
         assertDecodedMessage(actualNeighborsPeerMessage, expectedNeighborsPeerMessage);
 
         Assert.assertEquals(actualNeighborsPeerMessage.getNodes(), expectedNeighborsPeerMessage.getNodes());
-        Assert.assertEquals(actualNeighborsPeerMessage.getMessageId(), DiscoveryMessageType.NEIGHBORS);
+        Assert.assertEquals(actualNeighborsPeerMessage.getMessageType(), DiscoveryMessageType.NEIGHBORS);
     }
 
     public void assertDecodedMessage(PeerDiscoveryMessage actualMessage, PeerDiscoveryMessage expectedMessage) {
@@ -116,6 +215,6 @@ public class MessageDecoderTest {
         Assert.assertNotNull(actualMessage.getData());
         Assert.assertEquals(actualMessage.getMessageType(), expectedMessage.getMessageType());
         Assert.assertTrue(actualMessage.getNetworkId().isPresent());
-        Assert.assertEquals(actualMessage.getNetworkId().getAsInt(), expectedMessage.getNetworkId().getAsInt());
+        Assert.assertEquals(actualMessage.getNetworkId().getAsInt(), NETWORK_ID);
     }
 }
