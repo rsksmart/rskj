@@ -33,10 +33,6 @@ import static org.ethereum.util.BIUtil.toBI;
 
 public class PendingState implements AccountInformationProvider {
 
-    public static final Comparator<Transaction> TRANSACTION_COMPARATOR =
-            Comparator.<Transaction>comparingLong(tx -> ByteUtil.byteArrayToLong(tx.getNonce()))
-                    .thenComparing(Transaction::getHash);
-
     private static final Logger LOGGER = LoggerFactory.getLogger(PendingState.class);
 
     private final Repository pendingRepository;
@@ -81,6 +77,71 @@ public class PendingState implements AccountInformationProvider {
         return nextNonce;
     }
 
+    // SortByPriceTakingIntoAccountSenderAndNonce sorts the transactions by price, but
+    // first clustering by sender and then each cluster is order by nonce.
+    //
+    // This method first sorts list of getPendingTransactions into individual
+    // sender and sorts those lists by nonce. After the nonce ordering is
+    // satisfied, the results are merged back together by price, always comparing only
+    // the head transaction from each sender, in this way we keep the sender and nonce ordering
+    // for each individual list.
+    // To order the price we use a heap to keep it fast.
+
+    //Note that this sort doesn't return the best solution, it is an approximation algorithm to find approximate
+    // solution. (No trivial solution)
+    public static final List<Transaction> SortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions) {
+
+        long txsCount = transactions.size();
+
+        Map<RskAddress, List<Transaction>> mapSenderToTxs = new HashMap();
+
+        //First create a map to separate txs by each sender.
+        transactions.stream().forEach(x -> {
+
+            if(mapSenderToTxs.containsKey(x.getSender())){
+                List<Transaction> list = mapSenderToTxs.get(x.getSender());
+                list.add(x);
+                mapSenderToTxs.put(x.getSender(), list);
+            }else{
+                List<Transaction> list = new ArrayList<>();
+                list.add(x);
+                mapSenderToTxs.put(x.getSender(),list);
+            }
+        });
+
+        //For each sender list order all txs by nonce and then by hash
+        for (Map.Entry<RskAddress, List<Transaction>> entry : mapSenderToTxs.entrySet()) {
+            entry.getValue().sort(Comparator.<Transaction>comparingLong(tx -> ByteUtil.byteArrayToLong(tx.getNonce()))
+                    .thenComparing(Transaction::getHash));
+        }
+
+        //Priority heap is ordered according this comparator.
+        Comparator<Transaction> comp = (Transaction tx1, Transaction tx2) -> (tx2.getGasPrice().compareTo(tx1.getGasPrice()));
+
+        PriorityQueue<Transaction> treeTxs = new PriorityQueue(comp);
+
+        List<Transaction> retOrderTxs = new ArrayList();
+
+        //Add every head of each list of sender's transactions to the heap
+        for (Map.Entry<RskAddress, List<Transaction>> entry : mapSenderToTxs.entrySet())
+        {
+            treeTxs.add(entry.getValue().get(0));
+            entry.getValue().remove(0);
+        }
+
+        //Get in each iteration the max price (head) from the heap.
+        while (txsCount > 0) {
+            Transaction nextTxToAdd = treeTxs.poll();
+            retOrderTxs.add(nextTxToAdd);
+            if(mapSenderToTxs.get(nextTxToAdd.getSender()).size() > 0){
+                treeTxs.add(mapSenderToTxs.get(nextTxToAdd.getSender()).get(0));
+                mapSenderToTxs.get(nextTxToAdd.getSender()).remove(0);
+            }
+            txsCount--;
+        }
+
+        return retOrderTxs;
+    }
 
     private <T> T postExecutionReturn(PostExecutionAction<T> action) {
         if (!executed) {
@@ -91,9 +152,9 @@ public class PendingState implements AccountInformationProvider {
     }
 
     private void executeTransactions(Repository currentRepository, List<Transaction> pendingTransactions) {
-        pendingTransactions.stream()
-            .sorted(TRANSACTION_COMPARATOR)
-            .forEach(pendingTransaction -> executeTransaction(currentRepository, pendingTransaction));
+
+        PendingState.SortByPriceTakingIntoAccountSenderAndNonce(pendingTransactions)
+                .forEach(pendingTransaction -> executeTransaction(currentRepository, pendingTransaction));
     }
 
     private void executeTransaction(Repository currentRepository, Transaction tx) {
