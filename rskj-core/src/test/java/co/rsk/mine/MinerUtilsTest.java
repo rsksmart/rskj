@@ -51,12 +51,16 @@ public class MinerUtilsTest {
         s1[0] = 0;
         s2[0] = 1;
 
+        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+
         Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
         Mockito.when(tx2.getHash()).thenReturn(new Keccak256(s2));
         Mockito.when(tx1.getNonce()).thenReturn(ByteUtil.cloneBytes( BigInteger.ZERO.toByteArray()));
         Mockito.when(tx2.getNonce()).thenReturn(ByteUtil.cloneBytes( BigInteger.TEN.toByteArray()));
         Mockito.when(tx1.getGasPrice()).thenReturn(Coin.valueOf(1));
         Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx1.getSender()).thenReturn(new RskAddress(addressBytes));
+        Mockito.when(tx2.getSender()).thenReturn(new RskAddress(addressBytes));
 
         List<Transaction> txs = new LinkedList<>();
 
