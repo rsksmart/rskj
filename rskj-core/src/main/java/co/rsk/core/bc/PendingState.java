@@ -88,7 +88,7 @@ public class PendingState implements AccountInformationProvider {
     // for each individual list.
     // To order the price we use a heap to keep it fast.
 
-    //Note that this sort doesn't return the best solution, it is an approximation algorithm to find approximate
+    // Note that this sort doesn't return the best solution, it is an approximation algorithm to find approximate
     // solution. (No trivial solution)
     public static final List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions) {
 
