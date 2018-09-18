@@ -152,7 +152,7 @@ public class MinerUtils {
 
         List<Transaction> txs = transactionPool.getPendingTransactions();
 
-        return PendingState.SortByPriceTakingIntoAccountSenderAndNonce(txs);
+        return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs);
     }
 
     public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, Coin minGasPrice) {

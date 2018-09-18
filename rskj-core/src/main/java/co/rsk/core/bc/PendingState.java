@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.ethereum.util.BIUtil.toBI;
 
@@ -77,7 +78,7 @@ public class PendingState implements AccountInformationProvider {
         return nextNonce;
     }
 
-    // SortByPriceTakingIntoAccountSenderAndNonce sorts the transactions by price, but
+    // sortByPriceTakingIntoAccountSenderAndNonce sorts the transactions by price, but
     // first clustering by sender and then each cluster is order by nonce.
     //
     // This method first sorts list of getPendingTransactions into individual
@@ -89,25 +90,14 @@ public class PendingState implements AccountInformationProvider {
 
     //Note that this sort doesn't return the best solution, it is an approximation algorithm to find approximate
     // solution. (No trivial solution)
-    public static final List<Transaction> SortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions) {
+    public static final List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions) {
 
         long txsCount = transactions.size();
 
         Map<RskAddress, List<Transaction>> mapSenderToTxs = new HashMap();
 
         //First create a map to separate txs by each sender.
-        transactions.stream().forEach(x -> {
-
-            if(mapSenderToTxs.containsKey(x.getSender())){
-                List<Transaction> list = mapSenderToTxs.get(x.getSender());
-                list.add(x);
-                mapSenderToTxs.put(x.getSender(), list);
-            }else{
-                List<Transaction> list = new ArrayList<>();
-                list.add(x);
-                mapSenderToTxs.put(x.getSender(),list);
-            }
-        });
+        mapSenderToTxs = transactions.stream().collect(Collectors.groupingBy(Transaction::getSender));
 
         //For each sender list order all txs by nonce and then by hash
         for (Map.Entry<RskAddress, List<Transaction>> entry : mapSenderToTxs.entrySet()) {
@@ -133,7 +123,7 @@ public class PendingState implements AccountInformationProvider {
         while (txsCount > 0) {
             Transaction nextTxToAdd = treeTxs.poll();
             retOrderTxs.add(nextTxToAdd);
-            if(mapSenderToTxs.get(nextTxToAdd.getSender()).size() > 0){
+            if(!mapSenderToTxs.get(nextTxToAdd.getSender()).isEmpty()){
                 treeTxs.add(mapSenderToTxs.get(nextTxToAdd.getSender()).get(0));
                 mapSenderToTxs.get(nextTxToAdd.getSender()).remove(0);
             }
@@ -153,7 +143,7 @@ public class PendingState implements AccountInformationProvider {
 
     private void executeTransactions(Repository currentRepository, List<Transaction> pendingTransactions) {
 
-        PendingState.SortByPriceTakingIntoAccountSenderAndNonce(pendingTransactions)
+        PendingState.sortByPriceTakingIntoAccountSenderAndNonce(pendingTransactions)
                 .forEach(pendingTransaction -> executeTransaction(currentRepository, pendingTransaction));
     }
 
