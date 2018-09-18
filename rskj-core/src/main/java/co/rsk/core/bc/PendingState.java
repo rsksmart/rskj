@@ -94,10 +94,8 @@ public class PendingState implements AccountInformationProvider {
 
         long txsCount = transactions.size();
 
-        Map<RskAddress, List<Transaction>> mapSenderToTxs = new HashMap();
-
         //First create a map to separate txs by each sender.
-        mapSenderToTxs = transactions.stream().collect(Collectors.groupingBy(Transaction::getSender));
+        Map<RskAddress, List<Transaction>> mapSenderToTxs = transactions.stream().collect(Collectors.groupingBy(Transaction::getSender));
 
         //For each sender list order all txs by nonce and then by hash
         for (Map.Entry<RskAddress, List<Transaction>> entry : mapSenderToTxs.entrySet()) {
