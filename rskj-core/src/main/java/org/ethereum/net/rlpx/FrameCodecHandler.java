@@ -80,9 +80,7 @@ public class FrameCodecHandler extends ByteToMessageCodec<FrameCodec.Frame> {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        if (channel.isDiscoveryMode()) {
-            loggerNet.debug("FrameCodec failed: address {}", ctx.channel().remoteAddress(), cause);
-        } else if (cause instanceof IOException) {
+        if (cause instanceof IOException) {
             loggerNet.info("FrameCodec failed: address {}", ctx.channel().remoteAddress(), cause);
         } else {
             loggerNet.warn("FrameCodec failed: ", cause);
