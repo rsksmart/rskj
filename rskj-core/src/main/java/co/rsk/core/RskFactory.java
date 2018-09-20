@@ -276,11 +276,11 @@ public class RskFactory {
                                                                        StaticMessages staticMessages,
                                                                        PeerScoringManager peerScoringManager) {
         return () -> {
-            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager);
             MessageQueue messageQueue = new MessageQueue();
-            P2pHandler p2pHandler = new P2pHandler(config, ethereumListener, configCapabilities);
+            P2pHandler p2pHandler = new P2pHandler(ethereumListener, configCapabilities, messageQueue, config.getPeerP2PPingInterval());
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
-            return new Channel(config, messageQueue, p2pHandler, messageCodec, handshakeHandler, nodeManager, ethHandlerFactory, staticMessages);
+            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec);
+            return new Channel(config, messageQueue, messageCodec, handshakeHandler, nodeManager, ethHandlerFactory, staticMessages);
         };
     }
 

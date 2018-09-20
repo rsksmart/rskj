@@ -60,7 +60,6 @@ public class Channel {
     private static final Logger logger = LoggerFactory.getLogger("net");
 
     private final MessageQueue msgQueue;
-    private final P2pHandler p2pHandler;
     private final MessageCodec messageCodec;
     private final HandshakeHandler handshakeHandler;
     private final NodeManager nodeManager;
@@ -81,14 +80,12 @@ public class Channel {
 
     public Channel(RskSystemProperties config,
                    MessageQueue msgQueue,
-                   P2pHandler p2pHandler,
                    MessageCodec messageCodec,
                    HandshakeHandler handshakeHandler,
                    NodeManager nodeManager,
                    EthHandlerFactory ethHandlerFactory,
                    StaticMessages staticMessages) {
         this.msgQueue = msgQueue;
-        this.p2pHandler = p2pHandler;
         this.messageCodec = messageCodec;
         this.handshakeHandler = handshakeHandler;
         this.nodeManager = nodeManager;
@@ -110,31 +107,8 @@ public class Channel {
 
         msgQueue.setChannel(this);
 
-        p2pHandler.setMsgQueue(msgQueue);
         messageCodec.setP2pMessageFactory(new P2pMessageFactory());
 
-    }
-
-    public void publicRLPxHandshakeFinished(ChannelHandlerContext ctx, FrameCodec frameCodec,
-                                            HelloMessage helloRemote) throws IOException, InterruptedException {
-
-        logger.debug("publicRLPxHandshakeFinished with " + ctx.channel().remoteAddress());
-        if (P2pHandler.isProtocolVersionSupported(helloRemote.getP2PVersion())) {
-
-            if (helloRemote.getP2PVersion() < 5) {
-                messageCodec.setSupportChunkedFrames(false);
-            }
-
-            FrameCodecHandler frameCodecHandler = new FrameCodecHandler(frameCodec, this);
-            ctx.pipeline().addLast("medianFrameCodec", frameCodecHandler);
-            ctx.pipeline().addLast("messageCodec", messageCodec);
-            ctx.pipeline().addLast(Capability.P2P, p2pHandler);
-
-            p2pHandler.setChannel(this);
-            p2pHandler.setHandshake(helloRemote, ctx);
-
-            getNodeStatistics().rlpxHandshake.add();
-        }
     }
 
     public void sendHelloMessage(ChannelHandlerContext ctx, FrameCodec frameCodec, String nodeId,
