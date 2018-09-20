@@ -19,12 +19,9 @@
 
 package org.ethereum.net.server;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.NodeID;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.handler.timeout.ReadTimeoutHandler;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.MessageQueue;
@@ -43,8 +40,9 @@ import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.p2p.P2pHandler;
-import org.ethereum.net.p2p.P2pMessageFactory;
-import org.ethereum.net.rlpx.*;
+import org.ethereum.net.rlpx.FrameCodec;
+import org.ethereum.net.rlpx.MessageCodec;
+import org.ethereum.net.rlpx.Node;
 import org.ethereum.sync.SyncStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +51,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class Channel {
 
@@ -61,10 +58,10 @@ public class Channel {
 
     private final MessageQueue msgQueue;
     private final MessageCodec messageCodec;
-    private final HandshakeHandler handshakeHandler;
     private final NodeManager nodeManager;
     private final EthHandlerFactory ethHandlerFactory;
     private final StaticMessages staticMessages;
+    private final boolean isActive;
 
     private Eth eth = new EthAdapter();
 
@@ -73,42 +70,20 @@ public class Channel {
     private Node node;
     private NodeStatistics nodeStatistics;
 
-    private boolean isActive;
-
     private final PeerStatistics peerStats = new PeerStatistics();
-    private final Integer peerChannelReadTimeout;
 
-    public Channel(RskSystemProperties config,
-                   MessageQueue msgQueue,
+    public Channel(MessageQueue msgQueue,
                    MessageCodec messageCodec,
-                   HandshakeHandler handshakeHandler,
                    NodeManager nodeManager,
                    EthHandlerFactory ethHandlerFactory,
-                   StaticMessages staticMessages) {
+                   StaticMessages staticMessages,
+                   String remoteId) {
         this.msgQueue = msgQueue;
         this.messageCodec = messageCodec;
-        this.handshakeHandler = handshakeHandler;
         this.nodeManager = nodeManager;
         this.ethHandlerFactory = ethHandlerFactory;
         this.staticMessages = staticMessages;
-        this.peerChannelReadTimeout = config.peerChannelReadTimeout();
-    }
-
-    public void init(ChannelPipeline pipeline, String remoteId) {
-
-        isActive = remoteId != null && !remoteId.isEmpty();
-
-        pipeline.addLast("readTimeoutHandler",new ReadTimeoutHandler(peerChannelReadTimeout, TimeUnit.SECONDS));
-        pipeline.addLast("handshakeHandler", handshakeHandler);
-
-        handshakeHandler.setRemoteId(remoteId, this);
-
-        messageCodec.setChannel(this);
-
-        msgQueue.setChannel(this);
-
-        messageCodec.setP2pMessageFactory(new P2pMessageFactory());
-
+        this.isActive = remoteId != null && !remoteId.isEmpty();
     }
 
     public void sendHelloMessage(ChannelHandlerContext ctx, FrameCodec frameCodec, String nodeId,
