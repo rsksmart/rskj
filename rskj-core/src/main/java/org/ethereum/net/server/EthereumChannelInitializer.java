@@ -19,23 +19,61 @@
 
 package org.ethereum.net.server;
 
-import io.netty.channel.*;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.scoring.PeerScoringManager;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.net.MessageQueue;
+import org.ethereum.net.NodeManager;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.eth.handler.EthHandlerFactory;
+import org.ethereum.net.message.StaticMessages;
+import org.ethereum.net.p2p.P2pHandler;
+import org.ethereum.net.p2p.P2pMessageFactory;
+import org.ethereum.net.rlpx.HandshakeHandler;
+import org.ethereum.net.rlpx.MessageCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChannel> {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
     private final String remoteId;
+    private final RskSystemProperties config;
     private final ChannelManager channelManager;
-    private final ChannelFactory channelFactory;
+    private final CompositeEthereumListener ethereumListener;
+    private final ConfigCapabilities configCapabilities;
+    private final NodeManager nodeManager;
+    private final EthHandlerFactory ethHandlerFactory;
+    private final StaticMessages staticMessages;
+    private final PeerScoringManager peerScoringManager;
 
-    public EthereumChannelInitializer(String remoteId, ChannelManager channelManager, ChannelFactory channelFactory) {
+    public EthereumChannelInitializer(
+            String remoteId,
+            RskSystemProperties config,
+            ChannelManager channelManager,
+            CompositeEthereumListener ethereumListener,
+            ConfigCapabilities configCapabilities,
+            NodeManager nodeManager,
+            EthHandlerFactory ethHandlerFactory,
+            StaticMessages staticMessages,
+            PeerScoringManager peerScoringManager) {
         this.remoteId = remoteId;
+        this.config = config;
         this.channelManager = channelManager;
-        this.channelFactory = channelFactory;
+        this.ethereumListener = ethereumListener;
+        this.configCapabilities = configCapabilities;
+        this.nodeManager = nodeManager;
+        this.ethHandlerFactory = ethHandlerFactory;
+        this.staticMessages = staticMessages;
+        this.peerScoringManager = peerScoringManager;
     }
 
     @Override
@@ -50,8 +88,20 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
                 return;
             }
 
-            final Channel channel = channelFactory.newInstance();
-            channel.init(ch.pipeline(), remoteId);
+            MessageQueue messageQueue = new MessageQueue();
+            P2pHandler p2pHandler = new P2pHandler(ethereumListener, configCapabilities, messageQueue, config.getPeerP2PPingInterval());
+            MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
+            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec);
+            Channel channel = new Channel(messageQueue, messageCodec, nodeManager, ethHandlerFactory, staticMessages, remoteId);
+
+            ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
+            ch.pipeline().addLast("handshakeHandler", handshakeHandler);
+
+            handshakeHandler.setRemoteId(remoteId, channel);
+            messageCodec.setChannel(channel);
+            messageQueue.setChannel(channel);
+            messageCodec.setP2pMessageFactory(new P2pMessageFactory());
+
             channelManager.add(channel);
 
             // limit the size of receiving buffer to 1024
@@ -69,9 +119,5 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
 
     private boolean isInbound() {
         return remoteId == null || remoteId.isEmpty();
-    }
-
-    public interface ChannelFactory {
-        Channel newInstance();
     }
 }
