@@ -56,7 +56,8 @@ public class RepositoryBuilder {
             detailsBatch.put(addr, detailsCache);
         }
 
-        RepositoryImpl repositoryDummy = new RepositoryImpl(new TestSystemProperties(), new TrieStoreImpl(new HashMapDB()));
+        final TestSystemProperties testSystemProperties = new TestSystemProperties();
+        RepositoryImpl repositoryDummy = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), testSystemProperties.detailsInMemoryStorageLimit(), testSystemProperties.databaseDir());
         Repository track = repositoryDummy.startTracking();
         track.updateBatch(stateBatch, detailsBatch);
         track.commit();

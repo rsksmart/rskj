@@ -19,7 +19,6 @@
 
 package org.ethereum.vm;
 
-import co.rsk.config.RskSystemProperties;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.Serializers;
 
@@ -53,12 +52,12 @@ public final class VMUtils {
         }
     }
 
-    public static void saveProgramTraceFile(RskSystemProperties config, String txHash, ProgramTrace trace) throws IOException {
-        Path tracePath = Paths.get(config.databaseDir(), config.vmTraceDir());
+    public static void saveProgramTraceFile(String txHash, ProgramTrace trace, String databaseDir, String vmTraceDir, boolean vmTraceCompressed) throws IOException {
+        Path tracePath = Paths.get(databaseDir, vmTraceDir);
         File traceDir = tracePath.toFile();
         if (!traceDir.exists()) {
             traceDir.mkdirs();
         }
-        saveProgramTraceFile(tracePath, txHash, config.vmTraceCompressed(), trace);
+        saveProgramTraceFile(tracePath, txHash, vmTraceCompressed, trace);
     }
 }

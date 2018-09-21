@@ -60,7 +60,7 @@ public class TxPendingValidator {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
-        long basicTxCost = tx.transactionCost(config, executionBlock);
+        long basicTxCost = tx.transactionCost(executionBlock, config.getBlockchainConfig());
 
         if (state == null && basicTxCost != 0) {
             logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender());

@@ -43,6 +43,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -50,7 +51,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.ethereum.TestUtils.randomAddress;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.spy;
@@ -103,7 +103,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefautRewardBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -113,7 +113,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetRewardBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -141,7 +141,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefautBurnedBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -151,7 +151,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetBurnedBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -179,7 +179,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefaultBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -189,7 +189,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -217,7 +217,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefaultSiblings() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -230,7 +230,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetSiblings() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -654,7 +654,28 @@ public class RemascStorageProviderTest {
 
         Repository repository = blockchain.getRepository();
         BlockStore blockStore = blockchain.getBlockStore();
-        BlockExecutor blockExecutor = new BlockExecutor(config, repository, null, blockStore, null);
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        BlockExecutor blockExecutor = new BlockExecutor(repository, (tx, txindex, coinbase1, track, block, totalGasUsed) -> new TransactionExecutor(
+                tx,
+                txindex,
+                block.getCoinbase(),
+                track,
+                blockStore,
+                null,
+                programInvokeFactory,
+                block,
+                null,
+                totalGasUsed,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        ));
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -671,4 +692,7 @@ public class RemascStorageProviderTest {
         }
     }
 
+    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
+        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+    }
 }

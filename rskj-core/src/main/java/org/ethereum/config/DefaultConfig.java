@@ -89,7 +89,7 @@ public class DefaultConfig {
                 .counterEnable()
                 .makeOrGet();
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource(config, "blocks");
+        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", database);
         blocksDB.init();
 
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(indexMap, blocksDB, indexDB);
@@ -99,7 +99,7 @@ public class DefaultConfig {
 
     @Bean
     public ReceiptStore receiptStore(RskSystemProperties config) {
-        KeyValueDataSource ds = new LevelDbDataSource(config, "receipts");
+        KeyValueDataSource ds = new LevelDbDataSource("receipts", config.databaseDir());
         ds.init();
         return new ReceiptStoreImpl(ds);
     }

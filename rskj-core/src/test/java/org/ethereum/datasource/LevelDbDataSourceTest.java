@@ -43,7 +43,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testBatchUpdating() {
-        LevelDbDataSource dataSource = new LevelDbDataSource(config, "test");
+        LevelDbDataSource dataSource = new LevelDbDataSource("test", config.databaseDir());
         dataSource.init();
 
         final int batchSize = 100;
@@ -58,7 +58,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testPutting() {
-        LevelDbDataSource dataSource = new LevelDbDataSource(config, "test");
+        LevelDbDataSource dataSource = new LevelDbDataSource("test", config.databaseDir());
         dataSource.init();
 
         byte[] key = randomBytes(32);

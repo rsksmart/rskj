@@ -38,9 +38,9 @@ import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mapdb.DB;
@@ -197,19 +197,12 @@ public class BlockChainImplTest {
         Block genesis = getGenesisBlock(blockChain);
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        SimpleAdminInfo adminInfo = (SimpleAdminInfo)blockChain.getAdminInfo();
-        Assert.assertEquals(0, adminInfo.getCount());
-        Assert.assertEquals(0, adminInfo.getTime());
-
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Assert.assertEquals(2, blockChain.getSize());
         Assert.assertTrue(blockChain.isBlockExist(genesis.getHash().getBytes()));
         Assert.assertTrue(blockChain.isBlockExist(block1.getHash().getBytes()));
-
-        Assert.assertEquals(1, adminInfo.getCount());
-        Assert.assertTrue(adminInfo.getTime() >= 0);
 
         BlockChainStatus status = blockChain.getStatus();
 
@@ -813,7 +806,28 @@ public class BlockChainImplTest {
 
     @Test
     public void createWithoutArgumentsAndUnusedMethods() {
-        BlockChainImpl blockChain = new BlockChainImpl(config, null, null, null, null, null, null, new DummyBlockValidator());
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        BlockChainImpl blockChain = new BlockChainImpl(null, null, null, null, null, new DummyBlockValidator(), false, 1, new BlockExecutor(null, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                tx1,
+                txindex1,
+                block1.getCoinbase(),
+                track1,
+                null,
+                null,
+                programInvokeFactory,
+                block1,
+                null,
+                totalGasUsed1,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        )));
         blockChain.setExitOn(0);
         blockChain.close();
     }
@@ -833,7 +847,7 @@ public class BlockChainImplTest {
 
     @Test
     public void addInvalidMGPBlock() {
-        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit(), config.databaseDir());
 
         IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
@@ -864,7 +878,7 @@ public class BlockChainImplTest {
 
     @Test
     public void addValidMGPBlock() {
-        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit(), config.databaseDir());
 
         IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), (DB) null);
 
@@ -892,7 +906,28 @@ public class BlockChainImplTest {
         Block block = new BlockBuilder().minGasPrice(BigInteger.ZERO).transactions(txs)
                 .parent(genesis).build();
 
-        BlockExecutor executor = new BlockExecutor(config, repository, null, null, null);
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                tx1,
+                txindex1,
+                block1.getCoinbase(),
+                track1,
+                null,
+                null,
+                programInvokeFactory,
+                block1,
+                null,
+                totalGasUsed1,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        ));
         executor.executeAndFill(block, genesis);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
@@ -900,7 +935,7 @@ public class BlockChainImplTest {
     }
 
     public static BlockChainImpl createBlockChain() {
-        return new BlockChainBuilder().setAdminInfo(new SimpleAdminInfo()).build();
+        return new BlockChainBuilder().build();
     }
 
     public static BlockChainImpl createBlockChain(Repository repository) {
@@ -920,12 +955,31 @@ public class BlockChainImplTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        AdminInfo adminInfo = new SimpleAdminInfo();
-
         CompositeEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
-        return new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, listener, adminInfo, blockValidator);
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        return new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                tx1,
+                txindex1,
+                block1.getCoinbase(),
+                track1,
+                blockStore,
+                receiptStore,
+                programInvokeFactory,
+                block1,
+                listener,
+                totalGasUsed1,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        )));
     }
 
     public static Block getGenesisBlock(BlockChainImpl blockChain) {
@@ -945,7 +999,28 @@ public class BlockChainImplTest {
     }
 
     private static BlockExecutor createExecutor(BlockChainImpl blockChain) {
-        return new BlockExecutor(config, blockChain.getRepository(), null, blockChain.getBlockStore(), blockChain.getListener());
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        return new BlockExecutor(blockChain.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                tx1,
+                txindex1,
+                block1.getCoinbase(),
+                track1,
+                blockChain.getBlockStore(),
+                null,
+                programInvokeFactory,
+                block1,
+                blockChain.getListener(),
+                totalGasUsed1,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        ));
     }
 
     private static void alterBytes(byte[] bytes) {
@@ -960,25 +1035,6 @@ public class BlockChainImplTest {
 
         alterBytes(cloned);
         return cloned;
-    }
-
-    public static class SimpleAdminInfo extends AdminInfo {
-        private long time;
-        private int count;
-
-        @Override
-        public void addBlockExecTime(long time){
-            this.time += time;
-            count++;
-        }
-
-        public long getTime() {
-            return time;
-        }
-
-        public int getCount() {
-            return count;
-        }
     }
 
     public static class RejectValidator implements BlockValidator {

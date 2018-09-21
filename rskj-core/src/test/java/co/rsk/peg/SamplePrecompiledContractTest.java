@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import org.apache.commons.lang3.StringUtils;
@@ -75,7 +76,7 @@ public class SamplePrecompiledContractTest {
         byte[] bytes = new byte[]{(byte) 0xab, (byte) 0xcd, (byte) 0xef};
         byte[] data = function.encode(111, bytes, 222);
 
-        contract.init(null, null, new RepositoryImpl(config), null, null, new ArrayList<LogInfo>());
+        contract.init(null, null, createRepositoryImpl(config), null, null, new ArrayList<LogInfo>());
         byte[] result = contract.execute(data);
 
         Object[] results = function.decodeResult(result);
@@ -104,7 +105,7 @@ public class SamplePrecompiledContractTest {
 
         byte[] data = new byte[]{(byte) 0xab, (byte) 0xcd, (byte) 0xef};
 
-        contract.init(null, null, new RepositoryImpl(config), null, null, new ArrayList<LogInfo>());
+        contract.init(null, null, createRepositoryImpl(config), null, null, new ArrayList<LogInfo>());
         byte[] result = contract.execute(data);
 
         assertNull(result);
@@ -133,7 +134,7 @@ public class SamplePrecompiledContractTest {
         byte[] bytes = new byte[]{(byte) 0xab, (byte) 0xcd, (byte) 0xef};
         byte[] data = function.encode(111, bytes, 222);
 
-        contract.init(null, null, new RepositoryImpl(config), null, null, new ArrayList<LogInfo>());
+        contract.init(null, null, createRepositoryImpl(config), null, null, new ArrayList<LogInfo>());
         byte[] result = contract.execute(data);
 
         assertNull(result);
@@ -160,7 +161,7 @@ public class SamplePrecompiledContractTest {
 
         byte[] data = function.encode(111, StringUtils.leftPad("foobar", 1000000, '*'));
 
-        contract.init(null, null, new RepositoryImpl(config), null, null, new ArrayList<LogInfo>());
+        contract.init(null, null, createRepositoryImpl(config), null, null, new ArrayList<LogInfo>());
         byte[] result = contract.execute(data);
 
         Object[] results = function.decodeResult(result);
@@ -187,7 +188,7 @@ public class SamplePrecompiledContractTest {
 
         byte[] data = function.encode();
 
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         contract.init(null, null, repository, null, null, new ArrayList<LogInfo>());
         contract.execute(data);
 
@@ -198,7 +199,7 @@ public class SamplePrecompiledContractTest {
     @Test
     public void samplePrecompiledContractGetBalanceInitialBalance()
     {
-        int balance = this.GetBalance(new RepositoryImpl(config));
+        int balance = this.GetBalance(createRepositoryImpl(config));
         assertEquals(0, balance);
     }
 
@@ -222,7 +223,7 @@ public class SamplePrecompiledContractTest {
 
         byte[] data = function.encode();
 
-        Repository repository = new RepositoryImpl(config);
+        Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
         contract.init(null, null, track, null, null, new ArrayList<LogInfo>());
         contract.execute(data);
@@ -235,7 +236,7 @@ public class SamplePrecompiledContractTest {
     @Test
     public void samplePrecompiledContractGetResultInitialValue()
     {
-        int result = this.GetResult(new RepositoryImpl(config));
+        int result = this.GetResult(createRepositoryImpl(config));
         assertEquals(0, result);
     }
 
@@ -300,5 +301,9 @@ public class SamplePrecompiledContractTest {
         SamplePrecompiledContract contract = (SamplePrecompiledContract) precompiledContracts.getContractForAddress(getRskIp93ConfigMock(true), addr);
 
         Assert.assertNull(contract);
+    }
+
+    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
+        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
     }
 }

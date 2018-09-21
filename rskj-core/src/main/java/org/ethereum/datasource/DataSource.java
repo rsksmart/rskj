@@ -25,8 +25,6 @@ package org.ethereum.datasource;
  */
 public interface DataSource {
 
-    void setName(String name);
-
     String getName();
 
     void init();

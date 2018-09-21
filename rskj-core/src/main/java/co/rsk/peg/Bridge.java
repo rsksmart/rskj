@@ -206,7 +206,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new NullPointerException();
         }
 
-        if (BridgeUtils.isFreeBridgeTx(config, rskTx, rskExecutionBlock.getNumber())) {
+        if (BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber(), config.getBlockchainConfig())) {
             return 0;
         }
 

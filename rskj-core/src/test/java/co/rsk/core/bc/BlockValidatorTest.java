@@ -965,11 +965,6 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public void load() {
-
-        }
-
-        @Override
         public void removeBlock(Block block) {
             throw new UnsupportedOperationException();
         }

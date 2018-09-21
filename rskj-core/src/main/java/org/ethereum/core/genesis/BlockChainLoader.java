@@ -23,13 +23,15 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.validators.BlockValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.manager.AdminInfo;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -56,7 +58,6 @@ public class BlockChainLoader {
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
     private final EthereumListener listener;
-    private final AdminInfo adminInfo;
     private final BlockValidator blockValidator;
 
     @Autowired
@@ -67,7 +68,6 @@ public class BlockChainLoader {
             ReceiptStore receiptStore,
             TransactionPool transactionPool,
             EthereumListener listener,
-            AdminInfo adminInfo,
             BlockValidator blockValidator) {
 
         this.config = config;
@@ -76,24 +76,45 @@ public class BlockChainLoader {
         this.receiptStore = receiptStore;
         this.transactionPool = transactionPool;
         this.listener = listener;
-        this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
     }
 
     public BlockChainImpl loadBlockchain() {
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockChainImpl blockchain = new BlockChainImpl(
-                config,
                 repository,
                 blockStore,
                 receiptStore,
                 transactionPool,
                 listener,
-                adminInfo,
-                blockValidator
+                blockValidator,
+                config.isFlushEnabled(),
+                config.flushNumberOfBlocks(),
+                new BlockExecutor(
+                    repository,
+                        (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                            tx1,
+                            txindex1,
+                            block1.getCoinbase(),
+                            track1,
+                            blockStore,
+                            receiptStore,
+                            programInvokeFactory,
+                            block1,
+                            listener,
+                            totalGasUsed1,
+                            config.getVmConfig(),
+                            config.getBlockchainConfig(),
+                            config.playVM(),
+                            config.isRemascEnabled(),
+                            config.vmTrace(),
+                            new PrecompiledContracts(config),
+                            config.databaseDir(),
+                            config.vmTraceDir(),
+                            config.vmTraceCompressed()
+                        )
+                )
         );
-        if (!config.databaseReset()) {
-            blockStore.load();
-        }
 
         Block bestBlock = blockStore.getBestBlock();
         if (bestBlock == null) {

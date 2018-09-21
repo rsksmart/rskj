@@ -7,6 +7,7 @@ import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.RskImpl;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.net.BlockNodeInformation;
@@ -21,8 +22,10 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
@@ -102,9 +105,27 @@ public class RskTestFactory {
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(config, transaction, 0, RskAddress.nullAddress(),
-                getRepository(), getBlockStore(), getReceiptStore(),
-                getProgramInvokeFactory(), getBlockchain().getBestBlock());
+        TransactionExecutor executor = new TransactionExecutor(
+                transaction,
+                0,
+                RskAddress.nullAddress(),
+                getRepository(),
+                getBlockStore(),
+                getReceiptStore(),
+                getProgramInvokeFactory(),
+                getBlockchain().getBestBlock(),
+                new EthereumListenerAdapter(),
+                0,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        );
         executor.init();
         executor.execute();
         executor.go();
@@ -123,14 +144,37 @@ public class RskTestFactory {
 
     public BlockChainImpl getBlockchain() {
         if (blockchain == null) {
+            final ProgramInvokeFactoryImpl programInvokeFactory1 = new ProgramInvokeFactoryImpl();
             blockchain = new BlockChainImpl(
-                    config, getRepository(),
+                    getRepository(),
                     getBlockStore(),
                     getReceiptStore(),
                     getTransactionPool(),
                     getCompositeEthereumListener(),
-                    null,
-                    new DummyBlockValidator()
+                    new DummyBlockValidator(),
+                    false,
+                    1,
+                    new BlockExecutor(getRepository(), (tx, txindex, coinbase, repository, block, totalGasUsed) -> new TransactionExecutor(
+                            tx,
+                            txindex,
+                            block.getCoinbase(),
+                            repository,
+                            getBlockStore(),
+                            getReceiptStore(),
+                            programInvokeFactory1,
+                            block,
+                            getCompositeEthereumListener(),
+                            totalGasUsed,
+                            config.getVmConfig(),
+                            config.getBlockchainConfig(),
+                            config.playVM(),
+                            config.isRemascEnabled(),
+                            config.vmTrace(),
+                            new PrecompiledContracts(config),
+                            config.databaseDir(),
+                            config.vmTraceDir(),
+                            config.vmTraceCompressed()
+                    ))
             );
         }
 
@@ -184,7 +228,7 @@ public class RskTestFactory {
     public Repository getRepository() {
         if (repository == null) {
             HashMapDB stateStore = new HashMapDB();
-            repository = new RepositoryImpl(config, new TrieStoreImpl(stateStore));
+            repository = new RepositoryImpl(new TrieStoreImpl(stateStore), config.detailsInMemoryStorageLimit(), config.databaseDir());
         }
 
         return repository;

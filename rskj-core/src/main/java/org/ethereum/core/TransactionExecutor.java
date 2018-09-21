@@ -19,18 +19,17 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
@@ -61,7 +60,6 @@ public class TransactionExecutor {
     private static final Logger logger = LoggerFactory.getLogger("execute");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final RskSystemProperties config;
     private final Transaction tx;
     private final int txindex;
     private final Repository track;
@@ -70,6 +68,13 @@ public class TransactionExecutor {
     private final ReceiptStore receiptStore;
     private final VmConfig vmConfig;
     private final PrecompiledContracts precompiledContracts;
+    private final BlockchainNetConfig netConfig;
+    private final boolean playVm;
+    private final boolean enableRemasc;
+    private final boolean vmTrace;
+    private final String databaseDir;
+    private final String vmTraceDir;
+    private final boolean vmTraceCompressed;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
@@ -95,15 +100,10 @@ public class TransactionExecutor {
 
     private boolean localCall = false;
 
-    public TransactionExecutor(RskSystemProperties config, Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
-                               ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
-        this(config, tx, txindex, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
-    }
-
-    public TransactionExecutor(RskSystemProperties config, Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
-                               ProgramInvokeFactory programInvokeFactory, Block executionBlock,
-                               EthereumListener listener, long gasUsedInTheBlock) {
-        this.config = config;
+    public TransactionExecutor(Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+                               ProgramInvokeFactory programInvokeFactory, Block executionBlock, EthereumListener listener, long gasUsedInTheBlock,
+                               VmConfig vmConfig, BlockchainNetConfig blockchainConfig, boolean playVm, boolean remascEnabled,
+                               boolean vmTrace, PrecompiledContracts precompiledContracts, String databaseDir, String vmTraceDir, boolean vmTraceCompressed) {
         this.tx = tx;
         this.txindex = txindex;
         this.coinbase = coinbase;
@@ -115,8 +115,15 @@ public class TransactionExecutor {
         this.executionBlock = executionBlock;
         this.listener = listener;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
-        this.vmConfig = config.getVmConfig();
-        this.precompiledContracts = new PrecompiledContracts(config);
+        this.vmConfig = vmConfig;
+        this.precompiledContracts = precompiledContracts;
+        this.netConfig = blockchainConfig;
+        this.playVm = playVm;
+        this.enableRemasc = remascEnabled;
+        this.vmTrace = vmTrace;
+        this.databaseDir = databaseDir;
+        this.vmTraceDir = vmTraceDir;
+        this.vmTraceCompressed = vmTraceCompressed;
     }
 
 
@@ -126,7 +133,7 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     public boolean init() {
-        basicTxCost = tx.transactionCost(config, executionBlock);
+        basicTxCost = tx.transactionCost(executionBlock, netConfig);
 
         if (localCall) {
             readyToExecute = true;
@@ -195,7 +202,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
+        if (!tx.acceptTransactionSignature(netConfig.getCommonConstants().getChainId())) {
             logger.warn("Transaction {} signature not accepted: {}", tx.getHash(), tx.getSignature());
             logger.warn("Transaction Data: {}", tx);
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
@@ -251,7 +258,7 @@ public class TransactionExecutor {
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        BlockchainConfig blockchainConfig = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+        BlockchainConfig blockchainConfig = netConfig.getConfigForBlock(executionBlock.getNumber());
         precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
@@ -290,7 +297,7 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
-                BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+                BlockchainConfig configForBlock = netConfig.getConfigForBlock(executionBlock.getNumber());
                 this.program = new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
             }
         }
@@ -310,7 +317,7 @@ public class TransactionExecutor {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
-            BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(executionBlock.getNumber());
+            BlockchainConfig configForBlock = netConfig.getConfigForBlock(executionBlock.getNumber());
             this.program = new Program(vmConfig, precompiledContracts, configForBlock, tx.getData(), programInvoke, tx);
 
             // reset storage if the contract with the same address already exists
@@ -351,9 +358,9 @@ public class TransactionExecutor {
         try {
 
             // Charge basic cost of the transaction
-            program.spendGas(tx.transactionCost(config, executionBlock), "TRANSACTION COST");
+            program.spendGas(tx.transactionCost(executionBlock, netConfig), "TRANSACTION COST");
 
-            if (config.playVM()) {
+            if (playVm) {
                 vm.play(program);
             }
 
@@ -481,7 +488,7 @@ public class TransactionExecutor {
         Coin summaryFee = summary.getFee();
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if(config.isRemascEnabled()) {
+        if(enableRemasc) {
             logger.trace("Adding fee to remasc contract account");
             track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
         } else {
@@ -503,11 +510,11 @@ public class TransactionExecutor {
 
         logger.trace("tx listener done");
 
-        if (config.vmTrace() && program != null) {
+        if (vmTrace && program != null) {
             ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
             String txHash = tx.getHash().toHexString();
             try {
-                saveProgramTraceFile(config, txHash, trace);
+                saveProgramTraceFile(txHash, trace, databaseDir, vmTraceDir, vmTraceCompressed);
                 if (listener != null) {
                     listener.onVMTraceCreated(txHash, trace);
                 }

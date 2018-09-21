@@ -18,14 +18,9 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.*;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.listener.EthereumListener;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -45,26 +40,12 @@ import java.util.List;
 public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
 
-    private final RskSystemProperties config;
     private final Repository repository;
-    private final ReceiptStore receiptStore;
-    private final BlockStore blockStore;
-    private final EthereumListener listener;
+    private final TransactionExecutorFactory transactionExecutorFactory;
 
-    private final ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
-
-    public BlockExecutor(
-        RskSystemProperties config,
-        Repository repository,
-        ReceiptStore receiptStore,
-        BlockStore blockStore,
-        EthereumListener listener) {
-
-        this.config = config;
+    public BlockExecutor(Repository repository, TransactionExecutorFactory transactionExecutorFactory) {
         this.repository = repository;
-        this.receiptStore = receiptStore;
-        this.blockStore = blockStore;
-        this.listener = listener;
+        this.transactionExecutorFactory = transactionExecutorFactory;
     }
 
     /**
@@ -209,8 +190,14 @@ public class BlockExecutor {
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
-            TransactionExecutor txExecutor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(), track, blockStore, receiptStore, programInvokeFactory, block, listener, totalGasUsed);
-
+            TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
+                    tx,
+                    txindex++,
+                    block.getCoinbase(),
+                    track,
+                    block,
+                    totalGasUsed
+            );
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {
                 if (discardInvalidTxs) {
@@ -264,5 +251,9 @@ public class BlockExecutor {
         }
 
         return new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees);
+    }
+
+    public interface TransactionExecutorFactory {
+        TransactionExecutor newInstance(Transaction tx, int txindex, RskAddress coinbase, Repository track, Block block, long totalGasUsed);
     }
 }

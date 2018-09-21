@@ -19,11 +19,13 @@
 
 package org.ethereum.jsontestsuite;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.validators.DummyBlockValidator;
@@ -31,6 +33,7 @@ import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
@@ -48,6 +51,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
@@ -114,7 +118,28 @@ public class TestRunner {
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
-        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, transactionPool, null, null, new DummyBlockValidator());
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, null, new DummyBlockValidator(), false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                tx1,
+                txindex1,
+                block1.getCoinbase(),
+                track1,
+                blockStore,
+                receiptStore,
+                programInvokeFactory,
+                block1,
+                null,
+                totalGasUsed1,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        )));
 
         blockchain.setNoValidation(true);
 
@@ -193,7 +218,7 @@ public class TestRunner {
 
 
         logger.info("--------- PRE ---------");
-        Repository repository = loadRepository(new RepositoryImpl(config).startTracking(), testCase.getPre());
+        Repository repository = loadRepository(createRepositoryImpl(config).startTracking(), testCase.getPre());
 
         try {
 
@@ -256,7 +281,7 @@ public class TestRunner {
             }
 
             try {
-                saveProgramTraceFile(config, testCase.getName(), program.getTrace());
+                saveProgramTraceFile(testCase.getName(), program.getTrace(), config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed());
             } catch (IOException ioe) {
                 vmDidThrowAnEception = true;
                 e = ioe;
@@ -606,5 +631,9 @@ public class TestRunner {
 
     public ProgramTrace getTrace() {
         return trace;
+    }
+
+    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
+        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
     }
 }

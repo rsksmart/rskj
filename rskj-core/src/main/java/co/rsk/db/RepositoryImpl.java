@@ -18,13 +18,13 @@
 
 package co.rsk.db;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -56,36 +56,40 @@ public class RepositoryImpl implements Repository {
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
-    private final RskSystemProperties config;
+    private final int memoryStorageLimit;
+    private final String databaseDir;
     private TrieStore store;
     private Trie trie;
     private DetailsDataStore detailsDataStore;
     private boolean closed;
 
-    public RepositoryImpl(RskSystemProperties config) {
-        this(config, null);
+    public RepositoryImpl(TrieStore store, int memoryStorageLimit, String databaseDir) {
+        this(store, new HashMapDB(), memoryStorageLimit, databaseDir);
     }
 
-    public RepositoryImpl(RskSystemProperties config, TrieStore store) {
-        this(config, store, new HashMapDB());
+    public RepositoryImpl(TrieStore store, KeyValueDataSource detailsDS, int memoryStorageLimit, String databaseDir) {
+        this(store, new DetailsDataStore(new DatabaseImpl(detailsDS)), memoryStorageLimit, databaseDir);
     }
 
-    public RepositoryImpl(RskSystemProperties config, TrieStore store, KeyValueDataSource detailsDS) {
-        this(config, store, new DetailsDataStore(config, new DatabaseImpl(detailsDS)));
-    }
-
-    private RepositoryImpl(RskSystemProperties config, TrieStore store, DetailsDataStore detailsDataStore) {
-        this.config = config;
+    private RepositoryImpl(TrieStore store, DetailsDataStore detailsDataStore, int memoryStorageLimit, String databaseDir) {
         this.store = store;
         this.trie = new TrieImpl(store, true);
         this.detailsDataStore = detailsDataStore;
+        this.memoryStorageLimit = memoryStorageLimit;
+        this.databaseDir = databaseDir;
     }
 
     @Override
     public synchronized AccountState createAccount(RskAddress addr) {
         AccountState accountState = new AccountState();
         updateAccountState(addr, accountState);
-        updateContractDetails(addr, new ContractDetailsImpl(config));
+        updateContractDetails(addr, new ContractDetailsImpl(
+                null,
+                new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+                null,
+                memoryStorageLimit,
+                databaseDir
+        ));
         return accountState;
     }
 
@@ -148,7 +152,7 @@ public class RepositoryImpl implements Repository {
             storageRoot = getAccountState(addr).getStateRoot();
         }
 
-        ContractDetails details =  detailsDataStore.get(addr);
+        ContractDetails details =  detailsDataStore.get(addr, memoryStorageLimit, databaseDir);
         if (details != null) {
             details = details.getSnapshotTo(storageRoot);
         }
@@ -270,7 +274,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository startTracking() {
-        return new RepositoryTrack(config, this);
+        return new RepositoryTrack(this);
     }
 
     @Override
@@ -341,7 +345,13 @@ public class RepositoryImpl implements Repository {
                 ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) contractDetails;
 
                 if (contractDetailsCache.getOriginalContractDetails() == null) {
-                    ContractDetails originalContractDetails = new ContractDetailsImpl(config);
+                    ContractDetails originalContractDetails = new ContractDetailsImpl(
+                            null,
+                            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+                            null,
+                            memoryStorageLimit,
+                            databaseDir
+                    );
                     originalContractDetails.setAddress(addr.getBytes());
                     contractDetailsCache.setOriginalContractDetails(originalContractDetails);
                     contractDetailsCache.commit();
@@ -394,7 +404,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository getSnapshotTo(byte[] root) {
-        RepositoryImpl snapshotRepository = new RepositoryImpl(this.config, this.store, this.detailsDataStore);
+        RepositoryImpl snapshotRepository = new RepositoryImpl(this.store, this.detailsDataStore, memoryStorageLimit, databaseDir);
         snapshotRepository.syncToRoot(root);
         return snapshotRepository;
     }

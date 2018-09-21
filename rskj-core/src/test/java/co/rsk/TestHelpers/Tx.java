@@ -85,7 +85,7 @@ public class Tx {
             b[i] = bytes.get(i);
         }
         Mockito.when(transaction.getData()).thenReturn(b);
-        Mockito.when(transaction.transactionCost(eq(config), any(Block.class))).thenReturn(amount);
+        Mockito.when(transaction.transactionCost(any(Block.class), eq(config.getBlockchainConfig()))).thenReturn(amount);
 
         return transaction;
     }

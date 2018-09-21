@@ -60,11 +60,11 @@ public class CommonConfig {
         KeyValueDataSource ds = makeDataSource(config, "state");
         KeyValueDataSource detailsDS = makeDataSource(config, "details");
 
-        return new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS);
+        return new RepositoryImpl(new TrieStoreImpl(ds), detailsDS, config.detailsInMemoryStorageLimit(), config.databaseDir());
     }
 
     private KeyValueDataSource makeDataSource(RskSystemProperties config, String name) {
-        KeyValueDataSource ds = new LevelDbDataSource(config, name);
+        KeyValueDataSource ds = new LevelDbDataSource(name, config.databaseDir());
         ds.init();
         return ds;
     }
