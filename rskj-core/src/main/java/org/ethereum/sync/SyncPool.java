@@ -225,7 +225,7 @@ public class SyncPool implements Iterable<Channel> {
             String remoteId = Hex.toHexString(node.getId().getID());
             logger.info("Connecting to: {}:{}", ip, port);
             PeerClient peerClient = peerClientFactory.newInstance();
-            peerClient.connectAsync(ip, port, remoteId, false);
+            peerClient.connectAsync(ip, port, remoteId);
             pendingConnections.put(node.getHexId(), timeAfterMillis(CONNECTION_TIMEOUT));
         }
     }

@@ -180,14 +180,6 @@ public class RskWireProtocol extends EthHandler {
             // basic checks passed, update statistics
             channel.getNodeStatistics().ethHandshake(msg);
             ethereumListener.onEthStatusUpdated(channel, msg);
-
-            if (peerDiscoveryMode) {
-                loggerNet.debug("Peer discovery mode: STATUS received, disconnecting...");
-                disconnect(ReasonCode.REQUESTED);
-                ctx.close().sync();
-                ctx.disconnect().sync();
-                return;
-            }
         } catch (NoSuchElementException e) {
             loggerNet.debug("EthHandler already removed");
         }
