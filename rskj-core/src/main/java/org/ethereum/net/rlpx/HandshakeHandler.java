@@ -22,6 +22,7 @@ package org.ethereum.net.rlpx;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -99,6 +100,11 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         channel.setInetSocketAddress((InetSocketAddress) ctx.channel().remoteAddress());
+        internalChannelActive(ctx);
+    }
+
+    @VisibleForTesting
+    public void internalChannelActive(ChannelHandlerContext ctx) throws Exception {
         if (remoteId.length == 64) {
             channel.setNode(remoteId);
             initiate(ctx);
