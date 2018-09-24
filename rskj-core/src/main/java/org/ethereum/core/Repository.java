@@ -22,6 +22,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.trie.MutableTrie;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
 
@@ -35,14 +36,26 @@ import java.util.Set;
  */
 public interface Repository extends AccountInformationProvider {
 
+    MutableTrie getMutableTrie();
+
     /**
      * Create a new account in the database
      *
      * @param addr of the contract
      * @return newly created account state
+     *
+     * This method creates an account, but is DOES NOT create a contract.
+     * To create a contract, internally the account node is extended with a root node
+     * for storage. To avoid creating the root node for storage each time a storage cell
+     * is added, we pre-create the storage node when we know the account will become a
+     * contract. This is done in setupContract().
+     * Note that we can't use the length or existence of the code node for this,
+     * because a contract's code can be empty!
+     *
      */
     AccountState createAccount(RskAddress addr);
 
+    void setupContract(RskAddress addr);
 
     /**
      * @param addr - account to check
@@ -60,7 +73,7 @@ public interface Repository extends AccountInformationProvider {
     AccountState getAccountState(RskAddress addr);
 
     /**
-     * Deletes the account
+     * Deletes the account. This is recursive: all storage keys are deleted
      *
      * @param addr of the account
      */
@@ -81,15 +94,7 @@ public interface Repository extends AccountInformationProvider {
      */
     BigInteger increaseNonce(RskAddress addr);
 
-    /**
-     * Retrieve contract details for a given account from the database
-     *
-     * @param addr of the account
-     * @return new contract details
-     * @deprecated prefer using {@link AccountInformationProvider}
-     */
-    @Deprecated
-    ContractDetails getContractDetails(RskAddress addr);
+    void setNonce(RskAddress addr,BigInteger  nonce);
 
     /**
      * Store code associated with an account
@@ -98,6 +103,23 @@ public interface Repository extends AccountInformationProvider {
      * @param code that will be associated with this account
      */
     void saveCode(RskAddress addr, byte[] code);
+
+    /**
+     * get the code associated with an account
+     *
+     * This method returns the NULL if there is no code in account.
+     * It may return the empty array for contracts that have installed zero code on construction.
+     * (not checked)
+     * It CAN return null.
+    */
+     byte[] getCode(RskAddress addr);
+
+     // This method can retrieve the code size without actually retrieving the code
+    // in some cases.
+    int getCodeLength(RskAddress addr);
+
+
+    byte[] getCodeHash(RskAddress addr);
 
     /**
      * Put a value in storage of an account at a given key
@@ -109,6 +131,12 @@ public interface Repository extends AccountInformationProvider {
     void addStorageRow(RskAddress addr, DataWord key, DataWord value);
 
     void addStorageBytes(RskAddress addr, DataWord key, byte[] value);
+
+    byte[] getStorageBytes(RskAddress addr, DataWord key);
+
+    byte[] getStorageStateRoot(RskAddress addr);
+
+    boolean contractHasStorage(RskAddress addr);
 
     /**
      * Add value to the balance of an account
@@ -167,22 +195,45 @@ public interface Repository extends AccountInformationProvider {
      */
     void syncToRoot(byte[] root);
 
-    void updateBatch(Map<RskAddress, AccountState> accountStates,
-                     Map<RskAddress, ContractDetails> contractDetailes);
+    /**
+     * Check to see if the current repository has an open connection to the database
+     *
+     * @return <tt>true</tt> if connection to database is open
+     */
+    boolean isClosed();
 
+    /**
+     * Close the database
+     */
+    void close();
+
+    /**
+     * Reset
+     */
+    void reset();
+
+    void updateBatch(Map<RskAddress, AccountState> accountStates);
+
+    void updateBatchDetails(Map<RskAddress, ContractDetails> cacheDetails);
 
     byte[] getRoot();
 
-    void loadAccount(RskAddress addr,
+    /*void loadAccount(RskAddress addr,
                      Map<RskAddress, AccountState> cacheAccounts,
                      Map<RskAddress, ContractDetails> cacheDetails);
-
+    */
+    // This creates a new repository. Does not modify the parent
     Repository getSnapshotTo(byte[] root);
+
+    // This modified in-place the repository
+    void setSnapshotTo(byte[] root);
+
 
     void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 
+    void save();
     default void transfer(RskAddress fromAddr, RskAddress toAddr, Coin value) {
         addBalance(fromAddr, value.negate());
         addBalance(toAddr, value);

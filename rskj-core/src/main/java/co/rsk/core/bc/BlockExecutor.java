@@ -83,7 +83,7 @@ public class BlockExecutor {
     private void fill(Block block, BlockResult result) {
         block.setTransactionsList(result.getExecutedTransactions());
         BlockHeader header = block.getHeader();
-        header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash().getBytes());
+        header.setTransactionsRoot(Block.getTxTrieRoot(block.getTransactionsList(), Block.isHardFork9999(block.getNumber())));
         header.setReceiptsRoot(result.getReceiptsRoot());
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
@@ -184,6 +184,17 @@ public class BlockExecutor {
     private BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
+        // Forks the repo, does not change "repository". It will have a completely different
+        // image of the repo, where the middle caches are immediately ignored.
+        // In fact, while cloning everything, it asserts that no cache elements remains.
+        // (see assertNoCache())
+        // Which means that you must commit changes and save them to be able to recover
+        // in the next block processed.
+        // Note that creating a snapshot is important when the block is executed twice
+        // (e.g. once while building the block in tests/mining, and the other when trying
+        // to conect the block). This is because the first execution will change the state
+        // of the repository to the state post execution, so it's necessary to get it to
+        // the state prior execution again.
         byte[] lastStateRootHash = stateRootHandler.translate(parent).getBytes();
         Repository initialRepository = repository.getSnapshotTo(lastStateRootHash);
 
@@ -227,7 +238,7 @@ public class BlockExecutor {
 
             logger.trace("tx executed");
 
-            track.commit();
+            // No need to commit the changes here. track.commit();
 
             logger.trace("track commit");
 
@@ -241,14 +252,13 @@ public class BlockExecutor {
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
             receipt.setCumulativeGas(totalGasUsed);
-            lastStateRootHash = initialRepository.getRoot();
+
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
             receipt.setStatus(txExecutor.getReceipt().getStatus());
 
-            logger.trace("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), tx.getHash(),
-                         Hex.toHexString(lastStateRootHash));
+            logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
 
             logger.trace("tx[{}].receipt", i);
 
@@ -259,13 +269,23 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
+        // This commitment changes the initialRepository's view of the state
+        // This does not affect the parent's (repository) view or state, but it DOES
+        // affect the storage of the parent.
+        track.commit();
+
+        // All data saved to store
+        initialRepository.save();
+
+        lastStateRootHash = initialRepository.getRoot();
+        boolean hardfork9999 = Block.isHardFork9999(block.getNumber());
         return new BlockResult(
                 executedTransactions,
                 receipts,
-                lastStateRootHash,
+                initialRepository.getRoot(),
                 totalGasUsed,
                 totalPaidFees,
-                calcReceiptsTrie(receipts),
+                calcReceiptsTrie(receipts, hardfork9999),
                 calculateLogsBloom(receipts)
         );
     }
@@ -280,12 +300,19 @@ public class BlockExecutor {
         return logBloom.getData();
     }
 
-    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
+    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts, boolean hardfork9999) {
+        if (hardfork9999) {
+            return calcReceiptsTrie(receipts, new Trie());
+        }
+
+        return calcReceiptsTrie(receipts, new Trie());
+    }
+
+    private static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts, Trie receiptsTrie) {
         if (receipts.isEmpty()) {
             return HashUtil.EMPTY_TRIE_HASH;
         }
 
-        Trie receiptsTrie = new Trie();
         for (int i = 0; i < receipts.size(); i++) {
             receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
         }

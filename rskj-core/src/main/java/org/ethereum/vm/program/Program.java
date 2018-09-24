@@ -117,6 +117,8 @@ public class Program {
     private boolean isLogEnabled;
     private boolean isGasLogEnabled;
 
+    private RskAddress rskOwnerAddress;
+
     public Program(
             VmConfig config,
             PrecompiledContracts precompiledContracts,
@@ -355,7 +357,7 @@ public class Program {
 
     public void suicide(DataWord obtainerAddress) {
 
-        RskAddress owner = new RskAddress(getOwnerAddress());
+        RskAddress owner = getOwnerRskAddress();
         Coin balance = getStorage().getBalance(owner);
 
         if (!balance.equals(Coin.ZERO)) {
@@ -379,7 +381,7 @@ public class Program {
 
     public void send(DataWord destAddress, Coin amount) {
 
-        RskAddress owner = new RskAddress(getOwnerAddress());
+        RskAddress owner = getOwnerRskAddress();
         RskAddress dest = new RskAddress(destAddress);
         Coin balance = getStorage().getBalance(owner);
 
@@ -410,7 +412,7 @@ public class Program {
             return;
         }
 
-        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        RskAddress senderAddress = getOwnerRskAddress();
         Coin endowment = new Coin(value.getData());
         if (isNotCovers(getStorage().getBalance(senderAddress), endowment)) {
             stackPushZero();
@@ -445,7 +447,7 @@ public class Program {
         if (!byTestingSuite()) {
             getStorage().increaseNonce(senderAddress);
         }
-
+        // Start tracking repository changes for the constructor of the contract
         Repository track = getStorage().startTracking();
 
         //In case of hashing collisions, check for any balance before createAccount()
@@ -455,7 +457,9 @@ public class Program {
             track.addBalance(newAddress, oldBalance);
         } else {
             track.createAccount(newAddress);
+
         }
+        track.setupContract(newAddress);
 
         // [4] TRANSFER THE BALANCE
         track.addBalance(senderAddress, endowment.negate());
@@ -527,6 +531,8 @@ public class Program {
             }
 
             track.commit();
+
+
             getResult().addDeleteAccounts(programResult.getDeleteAccounts());
             getResult().addLogInfos(programResult.getLogInfoList());
 
@@ -622,7 +628,7 @@ public class Program {
 
         // FETCH THE SAVED STORAGE
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
-        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        RskAddress senderAddress = getOwnerRskAddress();
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 
         if (isLogEnabled) {
@@ -643,6 +649,7 @@ public class Program {
 
         // FETCH THE CODE
         byte[] programCode = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
+        // programCode  can be null
 
         // Always first remove funds from sender
         track.addBalance(senderAddress, endowment.negate());
@@ -827,13 +834,34 @@ public class Program {
         DataWord keyWord = DataWord.valueOf(key);
         DataWord valWord = DataWord.valueOf(val);
 
-        getStorage().addStorageRow(new RskAddress(getOwnerAddress()), keyWord, valWord);
+        getStorage().addStorageRow(getOwnerRskAddress(), keyWord, valWord);
+    }
+
+    private RskAddress getOwnerRskAddress() {
+        if (rskOwnerAddress == null) {
+            rskOwnerAddress = new RskAddress(getOwnerAddress());
+        }
+
+        return rskOwnerAddress;
     }
 
     public byte[] getCode() {
         return ops;
     }
 
+    public byte[] getCodeHashAt(RskAddress addr) {
+        return invoke.getRepository().getCodeHash(addr);
+    }
+
+    public int getCodeLengthAt(RskAddress addr) {
+        return invoke.getRepository().getCodeLength(addr);
+    }
+
+
+    public int getCodeLengthAt(DataWord address) {
+        return getCodeLengthAt(new RskAddress(address));
+
+    }
     public byte[] getCodeAt(DataWord address) {
         return getCodeAt(new RskAddress(address));
     }
@@ -902,7 +930,7 @@ public class Program {
     }
 
     public DataWord storageLoad(DataWord key) {
-        return getStorage().getStorageValue(new RskAddress(getOwnerAddress()), key);
+        return getStorage().getStorageValue(getOwnerRskAddress(), key);
     }
 
     public DataWord getPrevHash() {
@@ -1196,7 +1224,7 @@ public class Program {
 
         Repository track = getStorage().startTracking();
 
-        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        RskAddress senderAddress = getOwnerRskAddress();
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 

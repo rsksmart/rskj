@@ -24,7 +24,6 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
-import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
@@ -125,8 +124,9 @@ public class BlockChainBuilder {
             config = new TestSystemProperties();
         }
 
-        if (repository == null)
-            repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        if (repository == null) {
+            repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true));
+        }
 
         if (stateRootHandler == null) {
             stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());

@@ -5,7 +5,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.RepositoryImpl;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.trie.Trie;
@@ -13,6 +13,7 @@ import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Genesis;
+import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.datasource.HashMapDB;
@@ -67,13 +68,9 @@ public class RskTestFactory extends RskContext {
     }
 
     @Override
-    public RepositoryImpl buildRepository() {
-        return new RepositoryImpl(
-                new Trie(new TrieStoreImpl(new HashMapDB()), true),
-                new HashMapDB(),
-                new TrieStorePoolOnMemory(),
-                getRskSystemProperties().detailsInMemoryStorageLimit()
-        );
+    public Repository buildRepository() {
+        HashMapDB stateStore = new HashMapDB();
+        return new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(stateStore),true)));
     }
 
     @Override

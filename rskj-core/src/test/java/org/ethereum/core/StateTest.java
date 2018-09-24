@@ -79,7 +79,7 @@ public class StateTest {
         // Add contract to world state
         byte[] codeData = Hex.decode("61778e600054");
         AccountState account_2 = new AccountState(BigInteger.ZERO, Coin.valueOf(1000));
-        account_2.setCodeHash(HashUtil.keccak256(codeData));
+
         byte[] contractAddress = Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051"); // generated based on sender + nonce
         trie = trie.put(contractAddress, account_2.getEncoded());
 
