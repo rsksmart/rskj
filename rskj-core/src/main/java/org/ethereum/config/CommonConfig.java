@@ -21,7 +21,8 @@ package org.ethereum.config;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.db.RepositoryImpl;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
@@ -29,7 +30,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
-import org.ethereum.db.TrieStorePoolOnDisk;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.util.FileUtil;
 import org.ethereum.validator.*;
 import org.slf4j.Logger;
@@ -59,23 +60,17 @@ public class CommonConfig {
             FileUtil.recursiveDelete(databaseDir);
             logger.info("Database reset done");
         }
-        return buildRepository(databaseDir, config.detailsInMemoryStorageLimit(), config.getStatesCacheSize());
+        return buildRepository(databaseDir, config.getStatesCacheSize());
     }
 
-    private Repository buildRepository(String databaseDir, int memoryStorageLimit, int statesCacheSize) {
+    private Repository buildRepository(String databaseDir, int statesCacheSize) {
         KeyValueDataSource ds = makeDataSource("state", databaseDir);
-        KeyValueDataSource detailsDS = makeDataSource("details", databaseDir);
 
         if (statesCacheSize != 0) {
             ds = new DataSourceWithCache(ds, statesCacheSize);
         }
 
-        return new RepositoryImpl(
-                new TrieImpl(new TrieStoreImpl(ds), true),
-                detailsDS,
-                new TrieStorePoolOnDisk(databaseDir),
-                memoryStorageLimit
-        );
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(ds), true))));
     }
 
     private KeyValueDataSource makeDataSource(String name, String databaseDir) {

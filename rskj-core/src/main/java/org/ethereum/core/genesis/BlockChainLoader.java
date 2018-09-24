@@ -26,9 +26,9 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.validators.BlockValidator;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.DataWord;
@@ -36,7 +36,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -133,13 +132,11 @@ public class BlockChainLoader {
             // second we create contracts whom only have code modifying the preexisting ContractDetails instance
             for (Map.Entry<RskAddress, byte[]> codeEntry : genesis.getCodes().entrySet()) {
                 RskAddress contractAddress = codeEntry.getKey();
-                ContractDetails contractDetails = repository.getContractDetails(contractAddress);
-                contractDetails.setCode(codeEntry.getValue());
+                repository.saveCode(contractAddress, codeEntry.getValue());
                 Map<DataWord, byte[]> contractStorage = genesis.getStorages().get(contractAddress);
                 for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
-                    contractDetails.putBytes(storageEntry.getKey(), storageEntry.getValue());
+                    repository.addStorageBytes(contractAddress, storageEntry.getKey(), storageEntry.getValue());
                 }
-                repository.updateContractDetails(contractAddress, contractDetails);
             }
 
             // given the accounts had the proper storage root set from the genesis construction we update the account state

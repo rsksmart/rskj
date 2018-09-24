@@ -19,6 +19,10 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
+import org.ethereum.db.ByteArrayWrapper;
+
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Created by ajlopez on 29/03/2017.
@@ -34,9 +38,15 @@ public interface Trie {
 
     Trie put(String key, byte[] value);
 
+    // This method optimizes cache-to-cache transfers
+    Trie put(ByteArrayWrapper key, byte[] value);
+
     Trie delete(byte[] key);
 
     Trie delete(String key);
+
+    // This is O(1). The node with exact key "key" MUST exists.
+    Trie deleteRecursive(byte[] key);
 
     byte[] toMessage();
 
@@ -47,10 +57,18 @@ public interface Trie {
      * store, not only to this node.
      */
     void flush();
+    
+    boolean isSecure();
 
     void copyTo(TrieStore target);
 
     int trieSize();
+
+    // This method can only return keys whose size is multiple of 8 bits
+    // Special value Integer.MAX_VALUE means collect them all.
+    Set<ByteArrayWrapper> collectKeys(int byteSize);
+
+    Set<ByteArrayWrapper> collectKeysFrom(byte[] key);
 
     Trie getSnapshotTo(Keccak256 hash);
 
@@ -62,5 +80,51 @@ public interface Trie {
 
     byte[] getValueHash();
 
+    int getValueLength();
+
+    Iterator<IterationElement> getInOrderIterator();
+
+    Iterator<IterationElement> getPreOrderIterator();
+
+    Iterator<IterationElement> getPostOrderIterator();
+
     byte[] getValue();
+
+    // find allows to explore a subtree
+    Trie find(byte[] key);
+
+    TrieKeySlice getSharedPath();
+
+    byte[] getEncodedSharedPath();
+
+    int getSharedPathLength();
+
+    class IterationElement {
+
+        private final TrieKeySlice nodeKey;
+        private final Trie node;
+
+        public IterationElement(final TrieKeySlice nodeKey, final Trie node) {
+            this.nodeKey = nodeKey;
+            this.node = node;
+        }
+
+        public final Trie getNode() {
+            return node;
+        }
+
+        public final TrieKeySlice getNodeKey() {
+            return nodeKey;
+        }
+
+        public String toString() {
+            byte[] encodedFullKey = nodeKey.encode();
+            StringBuilder ouput = new StringBuilder();
+            for (byte b : encodedFullKey) {
+                ouput.append( b == 0 ? '0': '1');
+            }
+            return ouput.toString();
+        }
+    }
+
 }

@@ -29,6 +29,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.program.Program;
 import org.junit.Assert;
 import org.junit.Test;
 import org.bouncycastle.util.BigIntegers;
@@ -88,8 +89,13 @@ public class DslFilesTest {
         Assert.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("010c2d")), gasUsed);
     }
 
+
     @Test
     public void runCreate02Resource() throws FileNotFoundException, DslProcessorException {
+        //byte[] code2 =Hex.decode("608060405234801561001057600080fd5b504361001a61017b565b80828152602001915050604051809103906000f080158015610040573d6000803e3d6000fd5b506000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f80ae3ec8027d0c5d1f3e47fb4bf1d9fc28225e7f4bcb1971b36efb81fe40574d6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1663209652556040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401602060405180830381600087803b15801561012657600080fd5b505af115801561013a573d6000803e3d6000fd5b505050506040513d602081101561015057600080fd5b81019080805190602001909291905050506040518082815260200191505060405180910390a161018b565b6040516101e38061028283390190565b60e9806101996000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806361bc221a146044575b600080fd5b348015604f57600080fd5b5060566098565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff16815600a165627a7a7230582091284634a2c8e5cbd0e4153a1422a41670914d8ef8b4f7dc71bd54cf80baf8f50029608060405234801561001057600080fd5b506040516020806101e383398101806040528101908080519060200190929190505050806000819055507f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad16000546040518082815260200191505060405180910390a150610160806100836000396000f30060806040526004361061004c576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632096525514610051578063d09de08a1461007c575b600080fd5b34801561005d57600080fd5b50610066610093565b6040518082815260200191505060405180910390f35b34801561008857600080fd5b506100916100d6565b005b60007f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b6000546040518082815260200191505060405180910390a1600054905090565b600080815460010191905081905550600160026000548115156100f557fe5b061415157f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad6000546040518082815260200191505060405180910390a25600a165627a7a7230582041617f72986040ac8590888e68e070d9d05aeb99361c0c77d1f67540db5ff6b10029");
+        //System.out.print(Program.stringifyMultiline(code2));
+
+
         DslParser parser = DslParser.fromResource("dsl/create02.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -103,117 +109,52 @@ public class DslFilesTest {
         Block top1 = world.getBlockByName("b01");
         Block top2 = world.getBlockByName("b02b");
 
+        // Creates a new view of the repository, standing on top1 state
         Repository repo1 = world.getRepository().getSnapshotTo(top1.getStateRoot());
-        Repository repo2 = world.getRepository().getSnapshotTo(top2.getStateRoot());
 
+        // Creates a new view of the repository, standing on top2 state
+        Repository repo2 = world.getRepository().getSnapshotTo(top2.getStateRoot());
+        // addr1: sender's account
         RskAddress addr1 = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
+        // addr2: Parent Contract account
         RskAddress addr2 = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
+        // add3: child contract account
         RskAddress addr3 = new RskAddress("8bdb1bf28586425b976b06a3079bd2c09a6f8e8b");
 
         // Sender account in branch 1
-        Assert.assertNotNull(repo1.getCode(addr1));
-        Assert.assertEquals(0, repo1.getCode(addr1).length);
-        Assert.assertTrue(Arrays.equals(repo1.getAccountState(addr1).getStateRoot(), EMPTY_TRIE_HASH));
+        // Null means no code
+        Assert.assertNull(repo1.getCode(addr1));
+        Assert.assertFalse(repo1.contractHasStorage(addr1));
 
-        // Contract account in branch 1
+
+        // "Creator" Contract account in branch 1
+        // This contract has storage.
+        Assert.assertTrue(repo1.contractHasStorage(addr2));
+
         Assert.assertNotNull(repo1.getCode(addr2));
         Assert.assertNotEquals(0, repo1.getCode(addr2).length);
 
-        // Subcontract account in branch 1
+        // Subcontract account in branch 1.
         Assert.assertNotNull(repo1.getCode(addr3));
         Assert.assertNotEquals(0, repo1.getCode(addr3).length);
 
         // Sender account in branch 2
-        Assert.assertNotNull(repo2.getCode(addr1));
-        Assert.assertEquals(0, repo2.getCode(addr1).length);
-        Assert.assertTrue(Arrays.equals(repo2.getAccountState(addr1).getStateRoot(), EMPTY_TRIE_HASH));
+        Assert.assertNull(repo2.getCode(addr1));
+        Assert.assertFalse(repo2.contractHasStorage(addr1));
 
-        // Contract account in branch 2
-        Assert.assertFalse(Arrays.equals(repo2.getAccountState(addr2).getStateRoot(), EMPTY_TRIE_HASH));
+        // "Creator" Contract account in branch 2
+        // This contract has no childs?
+        Assert.assertTrue(repo2.contractHasStorage(addr2));
         Assert.assertNotNull(repo2.getCode(addr2));
         Assert.assertNotEquals(0, repo2.getCode(addr2).length);
 
         // Subcontract account in branch 2
-        Assert.assertFalse(Arrays.equals(repo2.getAccountState(addr3).getStateRoot(), EMPTY_TRIE_HASH));
-        Assert.assertFalse(Arrays.equals(repo1.getAccountState(addr3).getStateRoot(), repo2.getAccountState(addr3).getStateRoot()));
+        Assert.assertTrue(repo2.contractHasStorage(addr3));
+        // I cannot check that the storage is equivalent or not easily.
+        Assert.assertFalse(Arrays.equals(
+                repo1.getStorageStateRoot(addr3), repo2.getStorageStateRoot(addr3)));
         Assert.assertNotNull(repo2.getCode(addr3));
         Assert.assertNotEquals(0, repo2.getCode(addr3).length);
-    }
-
-    @Test
-    public void runCreate03Resource() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/create03.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("g00").getHash().getBytes()));
-        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01").getHash().getBytes()));
-        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01b").getHash().getBytes()));
-
-        Block top1 = world.getBlockByName("b01");
-        Block top2 = world.getBlockByName("b01b");
-
-        Repository repo1 = world.getRepository().getSnapshotTo(top1.getStateRoot());
-        Repository repo2 = world.getRepository().getSnapshotTo(top2.getStateRoot());
-
-        RskAddress addr1 = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
-        RskAddress addr2 = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
-
-        // Sender account in branch 1
-        Assert.assertNotNull(repo1.getCode(addr1));
-        Assert.assertEquals(0, repo1.getCode(addr1).length);
-
-        // Contract account in branch 1
-        byte[] code1 = repo1.getCode(addr2);
-        Assert.assertNotNull(code1);
-        Assert.assertNotEquals(0, code1.length);
-
-        // Sender account in branch 2
-        byte[] code2 = repo2.getCode(addr2);
-        Assert.assertNotNull(code2);
-        Assert.assertNotEquals(0, code2.length);
-
-        // code 1 != code 2
-        Assert.assertFalse(Arrays.equals(code1, code2));
-    }
-
-    @Test
-    public void runCreate04Resource() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/create04.txt");
-        World world = new World();
-        WorldDslProcessor processor = new WorldDslProcessor(world);
-        processor.processCommands(parser);
-
-        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("g00").getHash().getBytes()));
-        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01").getHash().getBytes()));
-        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01b").getHash().getBytes()));
-
-        Block top1 = world.getBlockByName("b01");
-        Block top2 = world.getBlockByName("b01b");
-
-        Repository repo1 = world.getRepository().getSnapshotTo(top1.getStateRoot());
-        Repository repo2 = world.getRepository().getSnapshotTo(top2.getStateRoot());
-
-        RskAddress addr1 = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
-        RskAddress addr2 = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
-
-        // Sender account in branch 1
-        Assert.assertNotNull(repo1.getCode(addr1));
-        Assert.assertEquals(0, repo1.getCode(addr1).length);
-
-        // Contract account in branch 1
-        byte[] code1 = repo1.getCode(addr2);
-        Assert.assertNotNull(code1);
-        Assert.assertNotEquals(0, code1.length);
-
-        // Sender account in branch 2
-        byte[] code2 = repo2.getCode(addr2);
-        Assert.assertNotNull(code2);
-        Assert.assertEquals(0, code2.length);
-
-        // code 1 != code 2
-        Assert.assertFalse(Arrays.equals(code1, code2));
     }
 
     @Test

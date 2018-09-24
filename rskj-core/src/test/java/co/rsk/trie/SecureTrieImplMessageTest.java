@@ -20,6 +20,7 @@ package co.rsk.trie;
 
 import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.ethereum.crypto.Keccak256Helper.keccak256;
@@ -44,7 +45,10 @@ public class SecureTrieImplMessageTest {
         Assert.assertEquals(0, message[5]);
     }
 
-    @Test
+    @Ignore
+    // Tries are not secure anymore. What is secure is the repository that contains
+    // them. This test is therefore useless, but could be ported to work with
+    // A Repository
     public void trieWithValueToMessage() {
         byte[] key = new byte[0];
         byte[] newKey = Keccak256Helper.keccak256(key);
@@ -71,7 +75,10 @@ public class SecureTrieImplMessageTest {
         Assert.assertEquals(4, message[34 + 7]);
     }
 
-    @Test
+    @Ignore
+    // Tries are not secure anymore. What is secure is the repository that contains
+    // them. This test is therefore useless, but could be ported to work with
+    // A Repository
     public void trieWithLongValueToMessage() {
         byte[] key = new byte[0];
         byte[] newKey = Keccak256Helper.keccak256(key);
@@ -99,7 +106,10 @@ public class SecureTrieImplMessageTest {
         }
     }
 
-    @Test
+    @Ignore
+    // Tries are not secure anymore. What is secure is the repository that contains
+    // them. This test is therefore useless, but could be ported to work with
+    // A Repository
     public void trieWithSubtrieAndNoValueToMessage() {
         byte[] key = new byte[] { 0x02 };
         byte[] newKey = Keccak256Helper.keccak256(key);
@@ -126,7 +136,10 @@ public class SecureTrieImplMessageTest {
         Assert.assertEquals(4, message[34 + 7]);
     }
 
-    @Test
+    @Ignore
+    // Tries are not secure anymore. What is secure is the repository that contains
+    // them. This test is therefore useless, but could be ported to work with
+    // A Repository
     public void trieWithSubtriesAndNoValueToMessage() {
         Trie trie = new TrieImpl(true).put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
                 .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
