@@ -19,7 +19,6 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.crypto.Keccak256;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -215,8 +214,16 @@ public class TransactionTest {
                 "    } " +
                 "}";
 
+        // The transaction calls the method set() (signature 0x60fe47b1)
+        // passing the argument 0x400 (1024 in decimal)
+        // So the contract storage cell at address 0x00 should contain 0x400.
+
         StateTestSuite stateTestSuite = new StateTestSuite(json.replaceAll("'", "\""));
 
+        // Executes only the test1.
+        // Overrides the execution of the transaction to first execute a "get"
+        // and then proceed with the "set" specified in JSON.
+        // Why? I don't know. Maybe just to test if the returned value is the correct one.
         List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")) {
             @Override
             protected ProgramResult executeTransaction(Transaction tx) {
@@ -226,7 +233,8 @@ public class TransactionTest {
                 {
                     Repository track = repository.startTracking();
 
-                    Transaction txConst = CallTransaction.createCallTransaction(config, 0, 0, 100000000000000L,
+                    Transaction txConst = CallTransaction.createCallTransaction(
+                            config, 0, 0, 100000000000000L,
                             new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
                             CallTransaction.Function.fromSignature("get"));
                     txConst.sign(new byte[32]);
@@ -253,7 +261,7 @@ public class TransactionTest {
                             config.databaseDir(),
                             config.vmTraceDir(),
                             config.vmTraceCompressed())
-                        .setLocalCall(true);
+                            .setLocalCall(true);
 
                     executor.init();
                     executor.execute();

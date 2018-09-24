@@ -23,7 +23,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;
@@ -182,7 +181,7 @@ public class BlockGenerator {
                 EMPTY_BYTE_ARRAY,   // mixHash
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
+                Block.getTxTrieRoot(txs, Block.isHardFork9999(parent.getNumber() + 1)),  // transaction root
                 ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 uncles,        // uncle list
@@ -217,7 +216,7 @@ public class BlockGenerator {
                 EMPTY_BYTE_ARRAY,   // mixHash
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
+                Block.getTxTrieRoot(txs, Block.isHardFork9999(parent.getNumber() + 1)),  // transaction root
                 stateRoot, //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
@@ -287,7 +286,7 @@ public class BlockGenerator {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
+        newHeader.setTransactionsRoot(Block.getTxTrieRoot(txs, Block.isHardFork9999(newHeader.getNumber())));
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 

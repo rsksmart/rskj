@@ -20,12 +20,11 @@
 package co.rsk.db;
 
 import co.rsk.core.RskAddress;
-import co.rsk.trie.TrieStore;
 import org.ethereum.core.Repository;
-import org.ethereum.db.RepositoryTrack;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 
-public class RepositoryTrackWithBenchmarking extends RepositoryTrack {
+public class RepositoryTrackWithBenchmarking extends MutableRepository {
     public class Statistics {
         private final int SLOT_SIZE_BYTES = 32;
         private int slotsWritten;
@@ -64,7 +63,7 @@ public class RepositoryTrackWithBenchmarking extends RepositoryTrack {
     private final Statistics statistics;
 
     public RepositoryTrackWithBenchmarking(Repository repository) {
-        super(repository);
+        super(new MutableTrieCache(repository.getMutableTrie()));
         statistics = new Statistics();
     }
 

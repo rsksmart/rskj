@@ -23,11 +23,11 @@ import javax.annotation.Nonnull;
 /**
  * Created by martin.medina on 5/04/17.
  */
-class PathEncoder {
+public class PathEncoder {
     private PathEncoder() { }
 
     @Nonnull
-    static byte[] encode(byte[] path) {
+    public static byte[] encode(byte[] path) {
         if (path == null) {
             throw new IllegalArgumentException("path");
         }
@@ -36,7 +36,7 @@ class PathEncoder {
     }
 
     @Nonnull
-    static byte[] decode(byte[] encoded, int length) {
+    public static byte[] decode(byte[] encoded, int length) {
         if (encoded == null) {
             throw new IllegalArgumentException("encoded");
         }
@@ -45,6 +45,7 @@ class PathEncoder {
     }
 
     @Nonnull
+    // First bit is MOST SIGNIFICANT
     private static byte[] encodeBinaryPath(byte[] path) {
         int lpath = path.length;
         int lencoded = lpath / 8 + (lpath % 8 == 0 ? 0 : 1);
@@ -69,10 +70,12 @@ class PathEncoder {
     }
 
     @Nonnull
-    private static byte[] decodeBinaryPath(byte[] encoded, int length) {
-        byte[] path = new byte[length];
+    // length is the length in bits. For example ({1},8) is fine
+    // First bit is MOST SIGNIFICANT
+    private static byte[] decodeBinaryPath(byte[] encoded, int bitlength) {
+        byte[] path = new byte[bitlength];
 
-        for (int k = 0; k < length; k++) {
+        for (int k = 0; k < bitlength; k++) {
             int nbyte = k / 8;
             int offset = k % 8;
 
