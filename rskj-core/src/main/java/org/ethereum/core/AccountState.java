@@ -55,6 +55,7 @@ public class AccountState {
      * I define a convenient equivalence TRIE (σ[a] s ) ≡ σ[a] s .
      * It shall be understood that σ[a] s is not a ‘physical’ member
      * of the account and does not contribute to its later serialisation */
+    // State root will not be used anymore here
     private byte[] stateRoot = EMPTY_TRIE_HASH;
 
     /* The hash of the EVM code of this contract—this is the code
@@ -118,7 +119,7 @@ public class AccountState {
         return stateRoot;
     }
 
-    public void setStateRoot(byte[] stateRoot) {
+    public void setStateRoot_deprecated(byte[] stateRoot) {
         rlpEncoded = null;
         this.stateRoot = stateRoot;
         setDirty(true);
@@ -200,7 +201,7 @@ public class AccountState {
         AccountState accountState = new AccountState(nonce, balance);
 
         accountState.setCodeHash(this.getCodeHash());
-        accountState.setStateRoot(this.getStateRoot());
+        accountState.setStateRoot_deprecated(this.getStateRoot());
         accountState.setDirty(false);
         accountState.setStateFlags(this.stateFlags);
         return accountState;

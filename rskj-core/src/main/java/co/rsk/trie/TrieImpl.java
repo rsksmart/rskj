@@ -18,10 +18,12 @@
 
 package co.rsk.trie;
 
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +37,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -484,6 +484,20 @@ public class TrieImpl implements Trie {
     }
 
     @Override
+    public void commit() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void rollback() {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean isCache() {
+        return false;
+    }
+
+    @Override
     public void copyTo(TrieStore target) {
         if (target.retrieve(this.getHash().getBytes()) != null) {
             return;
@@ -504,6 +518,47 @@ public class TrieImpl implements Trie {
         target.save(this);
     }
 
+    public static byte[] concat(byte[] first, byte[] second) {
+        byte[] result = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, result, first.length, second.length);
+        return result;
+    }
+
+    private void collectKeys(Set<ByteArrayWrapper> set, byte[] key,int maxKeyLen) {
+
+        if (key.length == maxKeyLen) {
+            set.add(new ByteArrayWrapper(key));
+            return;
+        }
+
+        if (key.length > maxKeyLen) {
+            return;
+        }
+
+        if (this.encodedSharedPath != null) {
+            byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.sharedPathLength);
+            if (sharedPath.length + key.length > maxKeyLen)
+                return;
+            key = concat(key,sharedPath);
+        }
+
+        for (int k = 0; k < ARITY; k++) {
+            Trie node = this.retrieveNode(k);
+
+            if (node == null) {
+                return;
+            }
+
+            ((TrieImpl) node).collectKeys(set, key, maxKeyLen);
+        }
+    }
+
+    @Override
+    public Set<ByteArrayWrapper> collectKeys(int size) {
+        Set<ByteArrayWrapper> set = new HashSet<>();
+        collectKeys(set,new byte[] {}, size);
+        return set;
+    }
     /**
      * trieSize returns the number of nodes in trie
      *

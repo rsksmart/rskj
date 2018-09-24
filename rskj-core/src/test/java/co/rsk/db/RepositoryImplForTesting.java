@@ -34,24 +34,18 @@ public class RepositoryImplForTesting extends RepositoryImpl {
     private static RskSystemProperties config = new TestSystemProperties();
 
     public RepositoryImplForTesting() {
-        super(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        super();
     }
 
     @Override
     public synchronized void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
         super.addStorageRow(addr, key, value);
-        AccountState accountState = getAccountState(addr);
-        ContractDetails details = getDetailsDataStore().get(addr, config.detailsInMemoryStorageLimit(), config.databaseDir());
-        accountState.setStateRoot(details.getStorageHash());
-        updateAccountState(addr, accountState);
+
     }
 
     @Override
     public synchronized void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
         super.addStorageBytes(addr, key, value);
-        AccountState accountState = getAccountState(addr);
-        ContractDetails details = getDetailsDataStore().get(addr, config.detailsInMemoryStorageLimit(), config.databaseDir());
-        accountState.setStateRoot(details.getStorageHash());
-        updateAccountState(addr, accountState);
+
     }
 }

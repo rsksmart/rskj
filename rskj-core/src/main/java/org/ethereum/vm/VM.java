@@ -2025,9 +2025,8 @@ public class VM {
                 case STOP:
                 case RETURN:
                 case SUICIDE:
-
                     ContractDetails details = program.getStorage()
-                            .getContractDetails(new RskAddress(program.getOwnerAddress()));
+                            .getContractDetails_deprecated(new RskAddress(program.getOwnerAddress()));
                     List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
                     Collections.sort(storageKeys);
 
@@ -2056,7 +2055,7 @@ public class VM {
 
             dumpLogger.trace("    STORAGE");
             ContractDetails details = program.getStorage()
-                    .getContractDetails(new RskAddress(program.getOwnerAddress()));
+                    .getContractDetails_deprecated(new RskAddress(program.getOwnerAddress()));
             List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
             Collections.sort(storageKeys);
 

@@ -83,7 +83,7 @@ public class RepositoryImplTest {
     @Test
     public void syncToRootAfterCreatingAnAccount() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        RepositoryImpl repository = new RepositoryImpl(store, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        RepositoryImpl repository = new RepositoryImpl(store);
 
         repository.flush();
 
@@ -447,7 +447,7 @@ public class RepositoryImplTest {
         RskAddress accAddress2 = randomAccountAddress();
 
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        RepositoryImpl repository = new RepositoryImpl(store, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        RepositoryImpl repository = new RepositoryImpl(store);
 
         repository.createAccount(accAddress1);
         repository.flush();
@@ -465,17 +465,11 @@ public class RepositoryImplTest {
         Assert.assertEquals(1, keys.size());
     }
 
-    @Test
-    public void getDetailsDataStore() {
-        RepositoryImpl repository = createRepositoryImpl(config);
-
-        Assert.assertNotNull(repository.getDetailsDataStore());
-    }
 
     @Test
     public void flushNoReconnect() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        RepositoryImpl repository = new RepositoryImpl(store, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        RepositoryImpl repository = new RepositoryImpl(store);
 
         RskAddress accAddress = randomAccountAddress();
         byte[] initialRoot = repository.getRoot();
@@ -495,6 +489,6 @@ public class RepositoryImplTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl();
     }
 }

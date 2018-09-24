@@ -73,7 +73,7 @@ public class RskTestFactory {
                 .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                 .build();
 
-        return getRepository().getContractDetails(contractAccount.getAddress());
+        return getRepository().getContractDetails_deprecated(contractAccount.getAddress());
     }
 
     public ProgramResult executeRawContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {
@@ -228,7 +228,7 @@ public class RskTestFactory {
     public Repository getRepository() {
         if (repository == null) {
             HashMapDB stateStore = new HashMapDB();
-            repository = new RepositoryImpl(new TrieStoreImpl(stateStore), config.detailsInMemoryStorageLimit(), config.databaseDir());
+            repository = new RepositoryImpl(new TrieStoreImpl(stateStore));
         }
 
         return repository;

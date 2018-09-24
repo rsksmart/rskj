@@ -27,7 +27,6 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.db.ContractDetailsCacheImpl;
 import org.ethereum.jsontestsuite.model.AccountTck;
 
 import java.util.HashMap;
@@ -50,16 +49,16 @@ public class RepositoryBuilder {
 
             stateBatch.put(addr, state);
 
-            ContractDetailsCacheImpl detailsCache = new ContractDetailsCacheImpl(details);
-            detailsCache.setDirty(true);
+            details.setDirty(true);
 
-            detailsBatch.put(addr, detailsCache);
+            detailsBatch.put(addr, details);
         }
 
         final TestSystemProperties testSystemProperties = new TestSystemProperties();
-        RepositoryImpl repositoryDummy = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), testSystemProperties.detailsInMemoryStorageLimit(), testSystemProperties.databaseDir());
+        RepositoryImpl repositoryDummy = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
         Repository track = repositoryDummy.startTracking();
-        track.updateBatch(stateBatch, detailsBatch);
+        track.updateBatchDetails(detailsBatch);
+        track.updateBatch(stateBatch);
         track.commit();
 
         return repositoryDummy;

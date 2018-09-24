@@ -18,7 +18,11 @@
 
 package co.rsk.trie;
 
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.db.ByteArrayWrapper;
+
+import java.util.Set;
 
 /**
  * Created by ajlopez on 29/03/2017.
@@ -42,11 +46,19 @@ public interface Trie {
 
     void save();
 
+    void commit();
+    void rollback();
+
+    boolean isCache();
+
+
     void copyTo(TrieStore target);
 
     int trieSize();
 
     Trie cloneTrie();
+
+    Set<ByteArrayWrapper> collectKeys(int size);
 
     Trie cloneTrie(byte[] newValue);
 

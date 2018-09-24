@@ -2049,7 +2049,7 @@ public class BridgeTest {
         });
     }
 
-    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+    public static Repository createRepositoryImpl(RskSystemProperties config) {
+        return new RepositoryImpl();
     }
 }

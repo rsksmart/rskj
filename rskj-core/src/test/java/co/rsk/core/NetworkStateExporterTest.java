@@ -65,7 +65,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testEmptyRepo() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit(), config.databaseDir());
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
 
         Map result = writeAndReadJson(repository);
 
@@ -74,7 +74,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testNoContracts() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit(), config.databaseDir());
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
@@ -117,25 +117,18 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testContracts() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit(), config.databaseDir());
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
-        ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(
-            null,
-            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
-            null,
-            config.detailsInMemoryStorageLimit(),
-            config.databaseDir()
-        );
-        contractDetails.setCode(new byte[] {1, 2, 3, 4});
-        contractDetails.put(DataWord.ZERO, DataWord.ONE);
-        contractDetails.putBytes(DataWord.ONE, new byte[] {5, 6, 7, 8});
-        repository.updateContractDetails(addr1, contractDetails);
+
+        repository.saveCode(addr1,new byte[] {1, 2, 3, 4});
+        repository.addStorageRow(addr1,DataWord.ZERO, DataWord.ONE);
+        repository.addStorageBytes(addr1,DataWord.ONE, new byte[] {5, 6, 7, 8});
+
         AccountState accountState = repository.getAccountState(addr1);
-        accountState.setStateRoot(contractDetails.getStorageHash());
         repository.updateAccountState(addr1, accountState);
 
         Map result = writeAndReadJson(repository);

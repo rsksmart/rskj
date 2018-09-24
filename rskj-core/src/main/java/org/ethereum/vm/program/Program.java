@@ -1160,7 +1160,7 @@ public class Program {
             }
 
             ContractDetails contractDetails = getStorage().
-                    getContractDetails(new RskAddress(getOwnerAddress()));
+                    getContractDetails_deprecated(new RskAddress(getOwnerAddress()));
             StringBuilder storageData = new StringBuilder();
             if (contractDetails != null) {
                 List<DataWord> storageKeys = new ArrayList<>(contractDetails.getStorage().keySet());

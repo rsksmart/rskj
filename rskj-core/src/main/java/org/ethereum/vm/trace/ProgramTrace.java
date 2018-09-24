@@ -88,12 +88,9 @@ public class ProgramTrace {
 
     private static ContractDetails getContractDetails(ProgramInvoke programInvoke) {
         Repository repository = programInvoke.getRepository();
-        if (repository instanceof RepositoryTrack) {
-            repository = ((RepositoryTrack) repository).getOriginRepository();
-        }
 
         RskAddress addr = new RskAddress(programInvoke.getOwnerAddress());
-        return repository.getContractDetails(addr);
+        return repository.getContractDetails_deprecated(addr);
     }
 
     public List<Op> getOps() {

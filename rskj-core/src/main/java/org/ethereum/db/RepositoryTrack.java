@@ -21,7 +21,11 @@ package org.ethereum.db;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.db.ContractDetailsImpl;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.*;
+import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -33,11 +37,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
 
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.ethereum.crypto.Keccak256Helper.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -47,386 +49,288 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 17.11.2014
  */
 public class RepositoryTrack implements Repository {
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
+
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
-    private final Map<RskAddress, AccountState> cacheAccounts = new HashMap<>();
-    private final Map<RskAddress, ContractDetails> cacheDetails = new HashMap<>();
+    private MutableTrie trie;
+    private Repository parentRepo;
+    private boolean closed;
 
-    private final DetailsDataStore dds;
-    private final Repository repository;
+    public MutableTrie getMutableTrie() {
+        return trie;
+    }
 
-    public RepositoryTrack(Repository repository) {
-        this.repository = repository;
-        this.dds = new DetailsDataStore(new DatabaseImpl(new HashMapDB()));
+    public RepositoryTrack() {
+        trie = new MutableTrieImpl(new TrieImpl());
+
+    }
+
+    public RepositoryTrack(Repository aparentRepo) {
+        trie = new TrieCache(aparentRepo.getMutableTrie());
+        this.parentRepo = aparentRepo;
+    }
+    public RepositoryTrack(Trie atrie) {
+        trie = new TrieCache(new MutableTrieImpl(atrie));
+        this.parentRepo =null;
+    }
+    public RepositoryTrack(Trie atrie,Repository aparentRepo) {
+        trie = new TrieCache(new MutableTrieImpl(atrie));
+        this.parentRepo = aparentRepo;
     }
 
     @Override
-    public AccountState createAccount(RskAddress addr) {
+    public synchronized AccountState createAccount(RskAddress addr) {
+        AccountState accountState = new AccountState();
+        updateAccountState(addr, accountState);
+        return accountState;
+    }
 
-        synchronized (repository) {
-            logger.trace("createAccount: [{}]", addr);
+    public byte[] getAccountData(RskAddress addr) {
+        byte[] accountData = null;
 
-            AccountState accountState = new AccountState();
-            cacheAccounts.put(addr, accountState);
+        accountData = this.trie.get(getAccountKey(addr));
+        return accountData;
+    }
 
-            ContractDetails contractDetails = new ContractDetailsCacheImpl(null);
-            contractDetails.setDirty(true);
-            cacheDetails.put(addr, contractDetails);
+    public byte[] getAccountKey(RskAddress addr) {
+        return addr.getBytes();
+    }
 
-            return accountState;
+    public static byte[] concat(byte[] first, byte[] second) {
+        byte[] result = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, result, first.length, second.length);
+        return result;
+    }
+
+    public byte[] getAccountKeyChildKey(RskAddress addr,byte child) {
+        return concat(addr.getBytes(),new byte[] {child});
+    }
+
+    @Override
+    public synchronized boolean isExist(RskAddress addr) {
+        byte[] accountData = getAccountData(addr);
+        if (accountData != null && accountData.length != 0) {
+            return true;
         }
+        return false;
+
     }
 
     @Override
-    public AccountState getAccountState(RskAddress addr) {
+    public synchronized AccountState getAccountState(RskAddress addr) {
+        AccountState result = null;
+        byte[] accountData = getAccountData(addr);
 
-        synchronized (repository) {
-
-            AccountState accountState = cacheAccounts.get(addr);
-
-            if (accountState == null) {
-                repository.loadAccount(addr, cacheAccounts, cacheDetails);
-
-                accountState = cacheAccounts.get(addr);
-            }
-            return accountState;
+        if (accountData != null && accountData.length != 0) {
+            result = new AccountState(accountData);
         }
+        return result;
     }
 
     @Override
-    public boolean isExist(RskAddress addr) {
+    public synchronized void delete(RskAddress addr) {
+        this.trie.delete(getAccountKey(addr));
+    }
 
-        synchronized (repository) {
-            AccountState accountState = cacheAccounts.get(addr);
-            if (accountState != null) {
-                return !accountState.isDeleted();
-            }
+    @Override
+    public synchronized void hibernate(RskAddress addr) {
+        AccountState account = getAccountStateOrCreateNew(addr);
 
-            return repository.isExist(addr);
+        account.hibernate();
+        updateAccountState(addr, account);
+    }
+
+    @Override
+    public void setNonce(RskAddress addr,BigInteger  nonce) {
+        AccountState account = getAccountStateOrCreateNew(addr);
+
+        account.setNonce(nonce);
+        updateAccountState(addr, account);
+
+    }
+
+    @Override
+    public synchronized BigInteger increaseNonce(RskAddress addr) {
+        AccountState account = getAccountStateOrCreateNew(addr);
+
+        account.incrementNonce();
+        updateAccountState(addr, account);
+
+        return account.getNonce();
+    }
+
+    @Override
+    public synchronized BigInteger getNonce(RskAddress addr) {
+        AccountState account = getAccountStateOrCreateNew(addr);
+        return account.getNonce();
+    }
+
+    @Override
+    public synchronized ContractDetails getContractDetails_deprecated(RskAddress addr) {
+        ContractDetails details =  createProxyContractDetails(addr);
+        return  details;
+    }
+
+    public synchronized ContractDetails createProxyContractDetails(RskAddress addr) {
+        return new ContractDetailsImpl(addr.getBytes(),
+                null, // for now I'm not returning any storage rows
+                getCode(addr),0,"");
+        //
+    }
+
+    public byte[] getCodeKey(RskAddress addr) {
+        return getAccountKeyChildKey(addr,(byte) 1);
+    }
+
+
+    public byte[] getAccountStorageKey(RskAddress addr,byte[] subkey) {
+        return concat(getAccountKeyChildKey(addr,(byte) 0),subkey);
+    }
+
+    @Override
+    public synchronized void saveCode(RskAddress addr, byte[] code) {
+        byte[] key = getCodeKey(addr);
+        this.trie.put(key,code);
+
+        AccountState  accountState = getAccountState(addr);
+        accountState.setCodeHash(Keccak256Helper.keccak256(code));
+        updateAccountState(addr, accountState);
+    }
+
+    @Override
+    public synchronized byte[] getCode(RskAddress addr) {
+        if (!isExist(addr)) {
+            return EMPTY_BYTE_ARRAY;
         }
-    }
 
-    @Override
-    public ContractDetails getContractDetails(RskAddress addr) {
+        AccountState  account = getAccountState(addr);
 
-        synchronized (repository) {
-            ContractDetails contractDetails = cacheDetails.get(addr);
-
-            if (contractDetails == null) {
-                repository.loadAccount(addr, cacheAccounts, cacheDetails);
-                contractDetails = cacheDetails.get(addr);
-            }
-
-            return contractDetails;
+        if (account.isHibernated()) {
+            return EMPTY_BYTE_ARRAY;
         }
-    }
 
-    @Override
-    public void loadAccount(RskAddress addr, Map<RskAddress, AccountState> cacheAccounts,
-                            Map<RskAddress, ContractDetails> cacheDetails) {
+        byte[] codeHash = account.getCodeHash();
 
-        synchronized (repository) {
-            AccountState accountState = this.cacheAccounts.get(addr);
-            ContractDetails contractDetails = this.cacheDetails.get(addr);
-
-            if (accountState == null) {
-                repository.loadAccount(addr, this.cacheAccounts, this.cacheDetails);
-                accountState = this.cacheAccounts.get(addr);
-                contractDetails = this.cacheDetails.get(addr);
-            }
-
-            cacheAccounts.put(addr, accountState.clone());
-            ContractDetails contractDetailsLvl2 = new ContractDetailsCacheImpl(contractDetails);
-            cacheDetails.put(addr, contractDetailsLvl2);
+        if (Arrays.equals(codeHash, EMPTY_DATA_HASH)) {
+            return EMPTY_BYTE_ARRAY;
         }
+        byte[] key = getCodeKey(addr);
+        return this.trie.get(key);
     }
 
 
     @Override
-    public void delete(RskAddress addr) {
-        logger.trace("delete account: [{}]", addr);
+    public synchronized void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
+        addStorageBytes(addr,key,value.getData());
+    }
 
-        synchronized (repository) {
-            getAccountState(addr).setDeleted(true);
-            getContractDetails(addr).setDeleted(true);
+    @Override
+    public synchronized void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
+        if (!isExist(addr)) {
+            createAccount(addr);
         }
+        byte[] triekey = getAccountStorageKey(addr,key.getData());
+
+        this.trie.put(triekey, value);
     }
 
     @Override
-    public BigInteger increaseNonce(RskAddress addr) {
+    public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
+        byte[] triekey = getAccountStorageKey(addr,key.getData());
+        return new DataWord(this.trie.get(triekey));
+    }
 
-        synchronized (repository) {
-            AccountState accountState = getAccountState(addr);
+    @Override
+    public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key) {
+        byte[] triekey = getAccountStorageKey(addr,key.getData());
+        return this.trie.get(triekey);
+    }
 
-            if (accountState == null) {
-                accountState = createAccount(addr);
-            }
+    @Override
+    public synchronized Coin getBalance(RskAddress addr) {
+        AccountState account = getAccountState(addr);
+        //return (account == null) ? new Coin.ZERO : account.getBalance();
+        return (account == null) ? new Coin(BigInteger.ZERO): account.getBalance();
+    }
 
-            getContractDetails(addr).setDirty(true);
+    @Override
+    public synchronized Coin addBalance(RskAddress addr, Coin value) {
+        AccountState account = getAccountStateOrCreateNew(addr);
 
-            BigInteger saveNonce = accountState.getNonce();
-            accountState.incrementNonce();
+        Coin result = account.addToBalance(value);
+        updateAccountState(addr, account);
 
-            logger.trace("increase nonce addr: [{}], from: [{}], to: [{}]", addr,
-                    saveNonce, accountState.getNonce());
+        return result;
+    }
 
-            return accountState.getNonce();
+    @Override
+    public synchronized Set<RskAddress> getAccountsKeys() {
+        Set<ByteArrayWrapper>  r = trie.collectKeys(20); // size must be 20 bytes
+        Set<RskAddress> result = new HashSet<>();
+        for (ByteArrayWrapper b: r
+             ) {
+            result.add(new RskAddress(b.getData()));
         }
+        return result;
+
     }
 
     @Override
-    public void hibernate(RskAddress addr) {
-
-        synchronized (repository) {
-            AccountState accountState = getAccountState(addr);
-
-            if (accountState == null) {
-                accountState = createAccount(addr);
-            }
-
-            getContractDetails(addr).setDirty(true);
-
-            accountState.hibernate();
-        }
-        logger.trace("hibernate addr: [{}]", addr);
+    public synchronized void dumpState(Block block, long gasUsed, int txNumber, byte[] txHash) {
+        // To be implemented
     }
 
-    public BigInteger setNonce(RskAddress addr, BigInteger bigInteger) {
-        synchronized (repository) {
-            AccountState accountState = getAccountState(addr);
-
-            if (accountState == null) {
-                accountState = createAccount(addr);
-            }
-
-            getContractDetails(addr).setDirty(true);
-
-            BigInteger saveNonce = accountState.getNonce();
-            accountState.setNonce(bigInteger);
-
-            logger.trace("increase nonce addr: [{}], from: [{}], to: [{}]", addr,
-                    saveNonce, accountState.getNonce());
-
-            return accountState.getNonce();
-        }
-    }
-
-
+    // To start tracking, a new repository wrapper is created, with a TrieCache in the middle
     @Override
-    public BigInteger getNonce(RskAddress addr) {
-        AccountState accountState = getAccountState(addr);
-        return accountState == null ? new AccountState().getNonce() : accountState.getNonce();
-    }
-
-    @Override
-    public Coin getBalance(RskAddress addr) {
-        AccountState accountState = getAccountState(addr);
-        return accountState == null ? new AccountState().getBalance() : accountState.getBalance();
-    }
-
-    @Override
-    public Coin addBalance(RskAddress addr, Coin value) {
-
-        synchronized (repository) {
-            AccountState accountState = getAccountState(addr);
-            if (accountState == null) {
-                accountState = createAccount(addr);
-            }
-
-            getContractDetails(addr).setDirty(true);
-            Coin newBalance = accountState.addToBalance(value);
-
-            logger.trace("adding to balance addr: [{}], balance: [{}], delta: [{}]", addr,
-                    newBalance, value);
-
-            return newBalance;
-        }
-    }
-
-    @Override
-    public void saveCode(RskAddress addr, byte[] code) {
-        logger.trace("saving code addr: [{}], code: [{}]", addr,
-                Hex.toHexString(code));
-        synchronized (repository) {
-            getContractDetails(addr).setCode(code);
-            getContractDetails(addr).setDirty(true);
-            getAccountState(addr).setCodeHash(Keccak256Helper.keccak256(code));
-        }
-    }
-
-    @Override
-    public byte[] getCode(RskAddress addr) {
-
-        synchronized (repository) {
-            if (!isExist(addr)) {
-                return EMPTY_BYTE_ARRAY;
-            }
-
-            byte[] codeHash = getAccountState(addr).getCodeHash();
-            if (Arrays.equals(codeHash, EMPTY_DATA_HASH)) {
-                return EMPTY_BYTE_ARRAY;
-            }
-
-            return getContractDetails(addr).getCode();
-        }
-    }
-
-    @Override
-    public void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
-
-        logger.trace("add storage row, addr: [{}], key: [{}] val: [{}]", addr,
-                key.toString(), value.toString());
-
-        synchronized (repository) {
-            getContractDetails(addr).put(key, value);
-        }
-    }
-
-    @Override
-    public void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
-
-        logger.trace("add storage bytes, addr: [{}], key: [{}]", addr,
-                key.toString());
-
-        synchronized (repository) {
-            getContractDetails(addr).putBytes(key, value);
-        }
-    }
-
-    @Override
-    public DataWord getStorageValue(RskAddress addr, DataWord key) {
-        synchronized (repository) {
-            return getContractDetails(addr).get(key);
-        }
-    }
-
-    @Override
-    public byte[] getStorageBytes(RskAddress addr, DataWord key) {
-        synchronized (repository) {
-            return getContractDetails(addr).getBytes(key);
-        }
-    }
-
-    @Override
-    public Set<RskAddress> getAccountsKeys() {
-        throw new UnsupportedOperationException();
-    }
-
-
-    @Override
-    public void dumpState(Block block, long gasUsed, int txNumber, byte[] txHash) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Repository startTracking() {
-        logger.debug("start tracking");
+    public synchronized Repository startTracking() {
 
         return new RepositoryTrack(this);
     }
 
+    public synchronized Repository startTrackingWithBenchmark() {
 
-    @Override
-    public void flush() {
-        throw new UnsupportedOperationException();
+        return new RepositoryTrackWithBenchmarking(this);
     }
 
     @Override
-    public void flushNoReconnect() {
-        throw new UnsupportedOperationException();
+    public synchronized void flush() {
+        this.trie.save();
     }
 
     @Override
-    public void commit() {
-
-        synchronized (repository) {
-            applyCacheDetailsChanges();
-
-            repository.updateBatch(cacheAccounts, cacheDetails);
-            cacheAccounts.clear();
-            cacheDetails.clear();
-            logger.debug("committed changes");
-        }
-    }
-
-    public void applyCacheDetailsChanges(){
-        synchronized (repository) {
-            for (ContractDetails contractDetails : cacheDetails.values()) {
-
-                ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) contractDetails;
-                contractDetailsCache.commit();
-            }
-        }
+    public synchronized void flushNoReconnect() {
+        this.flush();
     }
 
     @Override
-    public void syncToRoot(byte[] root) {
-        throw new UnsupportedOperationException();
+    public synchronized void commit() {
+        this.trie.commit();
+    }
+
+
+
+    @Override
+    public synchronized void rollback() {
+
+        this.trie.rollback();
     }
 
     @Override
-    public void rollback() {
-        logger.debug("rollback changes");
+    public synchronized void syncToRoot(byte[] root) {
 
-        cacheAccounts.clear();
-        cacheDetails.clear();
-    }
-
-    public void dumpChanges() {
-        HashMap<RskAddress, AccountState> accountStates = new HashMap<>();
-        HashMap<RskAddress, ContractDetails> contractDetails= new HashMap<>();
-        updateBatch(accountStates,contractDetails);
-
-        StringBuilder buf = new StringBuilder();
-        buf.append("accountStates:\n");
-        for (HashMap.Entry<RskAddress, AccountState> entry : accountStates.entrySet()) {
-            buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
-        }
-
-        buf.append("contractDetails:\n");
-        for (HashMap.Entry<RskAddress, ContractDetails> entry : contractDetails.entrySet()) {
-            buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
-        }
-
-        logger.debug(buf.toString());
+        this.trie = this.trie.getSnapshotTo(new Keccak256(root));
     }
 
     @Override
-    public void updateBatch(Map<RskAddress, AccountState> accountStates,
-                            Map<RskAddress, ContractDetails> contractDetails) {
-
-        synchronized (repository) {
-            for (Map.Entry<RskAddress, AccountState> entry : accountStates.entrySet()) {
-                cacheAccounts.put(entry.getKey(), entry.getValue());
-            }
-
-            for (Map.Entry<RskAddress, ContractDetails> entry : contractDetails.entrySet()) {
-
-                ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) entry.getValue();
-                if (    contractDetailsCache.origContract != null
-                        && !(contractDetailsCache.origContract instanceof ContractDetailsImpl)) {
-                    cacheDetails.put(entry.getKey(), contractDetailsCache.origContract);
-                } else {
-                    cacheDetails.put(entry.getKey(), contractDetailsCache);
-                }
-            }
-        }
-    }
-
-    @Override // that's the idea track is here not for root calculations
-    public byte[] getRoot() {
-        throw new UnsupportedOperationException();
+    public synchronized boolean isClosed() {
+        return this.closed;
     }
 
     @Override
-    public boolean isClosed() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void close() {
-        throw new UnsupportedOperationException();
+    public synchronized void close() {
+        this.closed = true;
     }
 
     @Override
@@ -435,36 +339,69 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public Repository getSnapshotTo(byte[] root) {
-        throw new UnsupportedOperationException();
-    }
+    public synchronized void updateBatch(Map<RskAddress, AccountState> stateCache) {
+        logger.debug("updatingBatch: stateCache.size: {}", stateCache.size());
 
-    public Repository getOriginRepository() {
-        return (repository instanceof RepositoryTrack)
-                ? ((RepositoryTrack) repository).getOriginRepository()
-                : repository;
-    }
+        for (Map.Entry<RskAddress, AccountState> entry : stateCache.entrySet()) {
+            RskAddress addr = entry.getKey();
+            AccountState accountState = entry.getValue();
 
-    @Override
-    public DetailsDataStore getDetailsDataStore(){
-        return dds;
-    }
-
-    @Override
-    public void updateContractDetails(RskAddress addr, ContractDetails contractDetails) {
-        synchronized (repository) {
-            logger.trace("updateContractDetails: [{}]", addr);
-            ContractDetails contractDetailsCache = new ContractDetailsCacheImpl(null);
-            contractDetails.setDirty(true);
-            cacheDetails.put(addr, contractDetailsCache);
+            if (accountState.isDeleted()) {
+                delete(addr);
+                logger.debug("delete: [{}]", addr);
+            } else {
+                updateAccountState(addr, accountState);
+            }
         }
+        stateCache.clear();
     }
 
     @Override
-    public void updateAccountState(RskAddress addr, AccountState accountState) {
-        synchronized (repository) {
-            logger.trace("updateAccountState: [{}]", addr);
-            cacheAccounts.put(addr, accountState);
+    public void updateBatchDetails(Map<RskAddress, ContractDetails> cacheDetails) {
+        //
+        // Note: ContractDetails is only compatible with DataWord sized elements in storage!
+        for (Map.Entry<RskAddress, ContractDetails> entry : cacheDetails.entrySet()) {
+            RskAddress addr = entry.getKey();
+            ContractDetails details = entry.getValue();
+            for (DataWord key : details.getStorageKeys()) {
+                addStorageRow(addr, key, details.getStorage().get(key));
+            }
+            // inefficient
+            saveCode(addr,details.getCode());
+
         }
+
+
+    }
+
+
+    @Override
+    public synchronized byte[] getRoot() {
+        if (this.trie.hasStore()) {
+            this.trie.save();
+        }
+
+        byte[] rootHash = this.trie.getHash().getBytes();
+
+        logger.trace("getting repository root hash {}", Hex.toHexString(rootHash));
+
+        return rootHash;
+    }
+
+    @Override
+    public synchronized Repository getSnapshotTo(byte[] root) {
+        this.trie = this.trie.getSnapshotTo(new Keccak256(root));
+        return this;
+    }
+
+    @Override
+    public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
+        this.trie.put(addr.getBytes(), accountState.getEncoded());
+    }
+
+    @Nonnull
+    private synchronized AccountState getAccountStateOrCreateNew(RskAddress addr) {
+        AccountState account = getAccountState(addr);
+        return (account == null) ? createAccount(addr) : account;
     }
 }

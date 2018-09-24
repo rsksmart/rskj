@@ -22,8 +22,10 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.db.DetailsDataStore;
+//import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
@@ -35,6 +37,8 @@ import java.util.Set;
  * @since 08.09.2014
  */
 public interface Repository extends AccountInformationProvider {
+
+    MutableTrie getMutableTrie();
 
     /**
      * Create a new account in the database
@@ -82,13 +86,15 @@ public interface Repository extends AccountInformationProvider {
      */
     BigInteger increaseNonce(RskAddress addr);
 
+    void setNonce(RskAddress addr,BigInteger  nonce);
+
     /**
      * Retrieve contract details for a given account from the database
      *
      * @param addr of the account
      * @return new contract details
      */
-    ContractDetails getContractDetails(RskAddress addr);
+    ContractDetails getContractDetails_deprecated(RskAddress addr);
 
     /**
      * Store code associated with an account
@@ -97,6 +103,8 @@ public interface Repository extends AccountInformationProvider {
      * @param code that will be associated with this account
      */
     void saveCode(RskAddress addr, byte[] code);
+
+    byte[] getCode(RskAddress addr);
 
     /**
      * Put a value in storage of an account at a given key
@@ -185,21 +193,19 @@ public interface Repository extends AccountInformationProvider {
      */
     void reset();
 
-    void updateBatch(Map<RskAddress, AccountState> accountStates,
-                     Map<RskAddress, ContractDetails> contractDetailes);
+    void updateBatch(Map<RskAddress, AccountState> accountStates);
 
+    void updateBatchDetails(Map<RskAddress, ContractDetails> cacheDetails);
 
     byte[] getRoot();
 
-    void loadAccount(RskAddress addr,
+    /*void loadAccount(RskAddress addr,
                      Map<RskAddress, AccountState> cacheAccounts,
                      Map<RskAddress, ContractDetails> cacheDetails);
-
+    */
     Repository getSnapshotTo(byte[] root);
 
-    DetailsDataStore getDetailsDataStore();
-
-    void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
+    //void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 

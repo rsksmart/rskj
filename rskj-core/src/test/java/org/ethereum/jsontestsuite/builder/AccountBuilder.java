@@ -50,7 +50,7 @@ public class AccountBuilder {
 
         state.addToBalance(new Coin(unifiedNumericToBigInteger(account.getBalance())));
         state.setNonce(unifiedNumericToBigInteger(account.getNonce()));
-        state.setStateRoot(details.getStorageHash());
+        state.setStateRoot_deprecated(details.getStorageHash());
         state.setCodeHash(HashUtil.keccak256(details.getCode()));
 
         return new StateWrap(state, details);

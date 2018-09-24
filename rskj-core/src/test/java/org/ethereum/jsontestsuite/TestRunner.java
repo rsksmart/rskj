@@ -366,7 +366,7 @@ public class TestRunner {
                         byte[] expectedStValue = storage.get(storageKey).getData();
 
                         ContractDetails contractDetails =
-                                program.getStorage().getContractDetails(accountState.getAddress());
+                                program.getStorage().getContractDetails_deprecated(accountState.getAddress());
 
                         if (contractDetails == null) {
                             String output =
@@ -634,6 +634,6 @@ public class TestRunner {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl();
     }
 }

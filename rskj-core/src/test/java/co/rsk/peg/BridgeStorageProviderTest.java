@@ -123,7 +123,7 @@ public class BridgeStorageProviderTest {
 
         RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
-        Assert.assertNotNull(repository.getContractDetails(contractAddress));
+        Assert.assertNotNull(repository.getContractDetails_deprecated(contractAddress));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("btcTxHashesAP".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("releaseRequestQueue".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("releaseTransactionSet".getBytes())));
@@ -812,6 +812,6 @@ public class BridgeStorageProviderTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl();
     }
 }

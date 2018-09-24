@@ -94,6 +94,8 @@ public class GenesisLoader {
 
                 AccountState acctState = new AccountState(nonce, balance);
                 ContractDetails contractDetails = null;
+                /* No contracts pre-mined
+
                 Contract contract = accountEntry.getValue().getContract();
 
                 if (contract != null) {
@@ -105,7 +107,7 @@ public class GenesisLoader {
 
                     acctState.setStateRoot(contractDetails.getStorageHash());
                 }
-
+                */
                 premine.put(new RskAddress(accountEntry.getKey()), new InitialAddressState(acctState, contractDetails));
             }
         }

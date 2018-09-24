@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -61,7 +62,7 @@ public class BlockchainLoaderTest {
 
         EthereumListener ethereumListener = Mockito.mock(EthereumListener.class);
 
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), systemProperties.detailsInMemoryStorageLimit(), systemProperties.databaseDir());;
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));;
 
         BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null);
 
@@ -77,9 +78,9 @@ public class BlockchainLoaderTest {
 
         Assert.assertEquals(Coin.valueOf(10), repository.getBalance(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
         Assert.assertEquals(BigInteger.valueOf(25), repository.getNonce(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
-        Assert.assertEquals(DataWord.ONE, repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(3), repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ONE));
-        Assert.assertEquals(274, repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).getCode().length);
+        Assert.assertEquals(DataWord.ONE, repository.getContractDetails_deprecated(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ZERO));
+        Assert.assertEquals(new DataWord(3), repository.getContractDetails_deprecated(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ONE));
+        Assert.assertEquals(274, repository.getContractDetails_deprecated(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).getCode().length);
 
     }
 

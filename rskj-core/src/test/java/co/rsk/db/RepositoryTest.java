@@ -133,7 +133,7 @@ public class RepositoryTest {
 
     @Test
     public void test16() {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit(), config.databaseDir());
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -442,19 +442,19 @@ public class RepositoryTest {
         track2.addStorageBytes(HORSE, horseKey1, horseVal0);
         Repository track3 = track2.startTracking();
 
-        ContractDetails cowDetails = track3.getContractDetails(COW);
+        ContractDetails cowDetails = track3.getContractDetails_deprecated(COW);
         cowDetails.putBytes(cowKey1, cowVal1);
 
-        ContractDetails horseDetails = track3.getContractDetails(HORSE);
+        ContractDetails horseDetails = track3.getContractDetails_deprecated(HORSE);
         horseDetails.putBytes(horseKey1, horseVal1);
 
         track3.commit();
         track2.rollback();
 
-        ContractDetails cowDetailsOrigin = repository.getContractDetails(COW);
+        ContractDetails cowDetailsOrigin = repository.getContractDetails_deprecated(COW);
         byte[] cowValOrin = cowDetailsOrigin.getBytes(cowKey1);
 
-        ContractDetails horseDetailsOrigin = repository.getContractDetails(HORSE);
+        ContractDetails horseDetailsOrigin = repository.getContractDetails_deprecated(HORSE);
         byte[] horseValOrin = horseDetailsOrigin.getBytes(horseKey1);
 
         assertArrayEquals(cowVal0, cowValOrin);
@@ -486,19 +486,19 @@ public class RepositoryTest {
         track2.addStorageBytes(HORSE, horseKey1, horseVal0);
         Repository track3 = track2.startTracking();
 
-        ContractDetails cowDetails = track3.getContractDetails(COW);
+        ContractDetails cowDetails = track3.getContractDetails_deprecated(COW);
         cowDetails.putBytes(cowKey1, cowVal1);
 
-        ContractDetails horseDetails = track3.getContractDetails(HORSE);
+        ContractDetails horseDetails = track3.getContractDetails_deprecated(HORSE);
         horseDetails.putBytes(horseKey1, horseVal1);
 
         track3.commit();
         track2.rollback();
 
-        ContractDetails cowDetailsOrigin = repository.getContractDetails(COW);
+        ContractDetails cowDetailsOrigin = repository.getContractDetails_deprecated(COW);
         byte[] cowValOrin = cowDetailsOrigin.getBytes(cowKey1);
 
-        ContractDetails horseDetailsOrigin = repository.getContractDetails(HORSE);
+        ContractDetails horseDetailsOrigin = repository.getContractDetails_deprecated(HORSE);
         byte[] horseValOrin = horseDetailsOrigin.getBytes(horseKey1);
 
         assertArrayEquals(cowVal0, cowValOrin);
@@ -508,7 +508,7 @@ public class RepositoryTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new RepositoryImpl(store, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        final Repository repository = new RepositoryImpl(store);
 
         final byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
 
@@ -521,7 +521,7 @@ public class RepositoryTest {
         track2.commit();
         repository.flush();
 
-        ContractDetails cowDetails = repository.getContractDetails(COW);
+        ContractDetails cowDetails = repository.getContractDetails_deprecated(COW);
         assertArrayEquals(cowVal0, cowDetails.getBytes(cowKey2));
 
         final CountDownLatch failSema = new CountDownLatch(1);
@@ -575,6 +575,6 @@ public class RepositoryTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl();
     }
 }

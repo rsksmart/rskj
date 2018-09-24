@@ -43,7 +43,6 @@ public interface ContractDetails {
 
     byte[] getStorageHash();
 
-    void decode(byte[] rlpCode);
 
     void setDirty(boolean dirty);
 
@@ -52,8 +51,6 @@ public interface ContractDetails {
     boolean isDirty();
 
     boolean isDeleted();
-
-    byte[] getEncoded();
 
     int getStorageSize();
 
@@ -72,8 +69,6 @@ public interface ContractDetails {
     void setAddress(byte[] address);
 
     String toString();
-
-    void syncStorage();
 
     ContractDetails getSnapshotTo(byte[] hash);
 

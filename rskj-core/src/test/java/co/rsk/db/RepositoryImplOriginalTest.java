@@ -757,19 +757,19 @@ public class RepositoryImplOriginalTest {
         track2.addStorageRow(HORSE, horseKey1, horseVal0);
         Repository track3 = track2.startTracking();
 
-        ContractDetails cowDetails = track3.getContractDetails(COW);
+        ContractDetails cowDetails = track3.getContractDetails_deprecated(COW);
         cowDetails.put(cowKey1, cowVal1);
 
-        ContractDetails horseDetails = track3.getContractDetails(HORSE);
+        ContractDetails horseDetails = track3.getContractDetails_deprecated(HORSE);
         horseDetails.put(horseKey1, horseVal1);
 
         track3.commit();
         track2.rollback();
 
-        ContractDetails cowDetailsOrigin = repository.getContractDetails(COW);
+        ContractDetails cowDetailsOrigin = repository.getContractDetails_deprecated(COW);
         DataWord cowValOrin = cowDetailsOrigin.get(cowKey1);
 
-        ContractDetails horseDetailsOrigin = repository.getContractDetails(HORSE);
+        ContractDetails horseDetailsOrigin = repository.getContractDetails_deprecated(HORSE);
         DataWord horseValOrin = horseDetailsOrigin.get(horseKey1);
 
         assertEquals(cowVal0, cowValOrin);
@@ -779,7 +779,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void test20() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new RepositoryImpl(store, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        Repository repository = new RepositoryImpl(store);
         byte[] root = repository.getRoot();
 
         DataWord cowKey1 = new DataWord("c1");
@@ -807,24 +807,24 @@ public class RepositoryImplOriginalTest {
         byte[] root3 = repository.getRoot();
 
         Repository snapshot = repository.getSnapshotTo(root);
-        ContractDetails cowDetails = snapshot.getContractDetails(COW);
-        ContractDetails horseDetails = snapshot.getContractDetails(HORSE);
+        ContractDetails cowDetails = snapshot.getContractDetails_deprecated(COW);
+        ContractDetails horseDetails = snapshot.getContractDetails_deprecated(HORSE);
         assertEquals(null, cowDetails.get(cowKey1) );
         assertEquals(null, cowDetails.get(cowKey2) );
         assertEquals(null, horseDetails.get(horseKey1) );
         assertEquals(null, horseDetails.get(horseKey2) );
 
         snapshot = repository.getSnapshotTo(root2);
-        cowDetails = snapshot.getContractDetails(COW);
-        horseDetails = snapshot.getContractDetails(HORSE);
+        cowDetails = snapshot.getContractDetails_deprecated(COW);
+        horseDetails = snapshot.getContractDetails_deprecated(HORSE);
         assertEquals(cowVal1, cowDetails.get(cowKey1));
         assertEquals(null, cowDetails.get(cowKey2));
         assertEquals(horseVal1, horseDetails.get(horseKey1) );
         assertEquals(null, horseDetails.get(horseKey2) );
 
         snapshot = repository.getSnapshotTo(root3);
-        cowDetails = snapshot.getContractDetails(COW);
-        horseDetails = snapshot.getContractDetails(HORSE);
+        cowDetails = snapshot.getContractDetails_deprecated(COW);
+        horseDetails = snapshot.getContractDetails_deprecated(HORSE);
         assertEquals(cowVal1, cowDetails.get(cowKey1));
         assertEquals(cowVal0, cowDetails.get(cowKey2));
         assertEquals(horseVal1, horseDetails.get(horseKey1) );
@@ -836,7 +836,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new RepositoryImpl(store, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        final Repository repository = new RepositoryImpl(store);
 
         final DataWord cowKey1 = new DataWord("c1");
         final DataWord cowKey2 = new DataWord("c2");
@@ -846,7 +846,7 @@ public class RepositoryImplOriginalTest {
         track2.addStorageRow(COW, cowKey2, cowVal0);
         track2.commit();
 
-        ContractDetails cowDetails = repository.getContractDetails(COW);
+        ContractDetails cowDetails = repository.getContractDetails_deprecated(COW);
         assertEquals(cowVal0, cowDetails.get(cowKey2));
 
         final CountDownLatch failSema = new CountDownLatch(1);
@@ -904,6 +904,6 @@ public class RepositoryImplOriginalTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl();
     }
 }

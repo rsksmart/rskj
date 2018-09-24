@@ -110,7 +110,7 @@ public class BlockChainBuilder {
         }
 
         if (repository == null)
-            repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), config.detailsInMemoryStorageLimit(), config.databaseDir());
+            repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
 
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);

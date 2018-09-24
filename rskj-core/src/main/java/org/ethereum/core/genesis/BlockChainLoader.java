@@ -128,12 +128,14 @@ public class BlockChainLoader {
                 repository.addBalance(addr, initialAddressState.getAccountState().getBalance());
                 AccountState accountState = repository.getAccountState(addr);
                 accountState.setNonce(initialAddressState.getAccountState().getNonce());
-
+                // No initial contracts for now
+                /*
                 if (initialAddressState.getContractDetails()!=null) {
                     repository.updateContractDetails(addr, initialAddressState.getContractDetails());
                     accountState.setStateRoot(initialAddressState.getAccountState().getStateRoot());
                     accountState.setCodeHash(initialAddressState.getAccountState().getCodeHash());
                 }
+                */
 
                 repository.updateAccountState(addr, accountState);
             }
