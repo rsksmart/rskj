@@ -21,8 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
@@ -32,6 +31,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
@@ -66,7 +66,7 @@ public class BlockExecutorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
 
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()),true)));
 
         Repository track = repository.startTracking();
 
@@ -143,6 +143,7 @@ public class BlockExecutorTest {
         Repository repository = objects.getRepository();
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
+        repository = repository.getSnapshotTo(objects.getRootPriorExecution());
 
         BlockResult result = executor.execute(block, repository.getRoot(), false);
 
@@ -164,7 +165,10 @@ public class BlockExecutorTest {
         Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
 
         Assert.assertNotNull(result.getReceiptsRoot());
-        Assert.assertArrayEquals(BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
+        Assert.assertArrayEquals(
+                BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts(), Block.isHardFork9999(block.getNumber())),
+                result.getReceiptsRoot()
+        );
 
         Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
 
@@ -189,7 +193,7 @@ public class BlockExecutorTest {
 
     @Test
     public void executeBlockWithTwoTransactions() {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()),true)));
 
         Repository track = repository.startTracking();
 
@@ -198,8 +202,15 @@ public class BlockExecutorTest {
 
         track.commit();
 
+        // Create a snapshot at the time accounts were added
+        Repository startingRepository = repository.getSnapshotTo(repository.getRoot());
+        AccountState accountState1 = startingRepository.getAccountState(account.getAddress());
+        Assert.assertEquals(BigInteger.valueOf(60000), accountState1.getBalance().asBigInteger());
+
+
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
+        // Now initial accounts have been created
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
@@ -232,9 +243,15 @@ public class BlockExecutorTest {
         List<BlockHeader> uncles = new ArrayList<>();
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock(), txs, uncles, 1, null);
+        Block genesis =blockGenerator.getGenesisBlock();
+        // Now I set the modified repository stateRoot where the accounts have been created
+        genesis.setStateRoot(repository.getRoot());
 
-        BlockResult result = executor.execute(block, repository.getRoot(), false);
+        // Create first child block, add two transactions
+        Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
+
+        // Now execute the block
+        BlockResult result = executor.execute(block, genesis.getStateRoot(), false);
 
         Assert.assertNotNull(result);
 
@@ -258,18 +275,28 @@ public class BlockExecutorTest {
         Assert.assertEquals(42000, result.getPaidFees().asBigInteger().intValueExact());
 
         Assert.assertNotNull(result.getReceiptsRoot());
-        Assert.assertArrayEquals(BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
+        Assert.assertArrayEquals(
+                BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts(), Block.isHardFork9999(block.getNumber())),
+                result.getReceiptsRoot()
+        );
+
+        //here is the problem: in the prior code repository root would never be overwritten by childs
+        //while the new code does overwrite the root.
+        //Which semantic is correct ? I don't know
+
+        Assert.assertFalse(Arrays.equals(genesis.getStateRoot(), result.getStateRoot()));
 
         Assert.assertNotNull(result.getLogsBloom());
         Assert.assertEquals(256, result.getLogsBloom().length);
         for (int k = 0; k < result.getLogsBloom().length; k++)
             Assert.assertEquals(0, result.getLogsBloom()[k]);
 
-        AccountState accountState = repository.getAccountState(account.getAddress());
+        AccountState accountState = startingRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance().asBigInteger());
+
+        // here is the papa. my commit changes stateroot while previous commit did not.
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
@@ -321,7 +348,7 @@ public class BlockExecutorTest {
 
     @Test
     public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance() {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()),true)));
 
         Repository track = repository.startTracking();
 
@@ -374,14 +401,17 @@ public class BlockExecutorTest {
         // Check tx2 was excluded
         Assert.assertEquals(1, block.getTransactionsList().size());
         Assert.assertEquals(tx, block.getTransactionsList().get(0));
-        Assert.assertArrayEquals(Block.getTxTrie(Lists.newArrayList(tx)).getHash().getBytes(), block.getTxTrieRoot());
+        Assert.assertArrayEquals(
+                Block.getTxTrieRoot(Lists.newArrayList(tx), Block.isHardFork9999(block.getNumber())),
+                block.getTxTrieRoot()
+        );
         
         Assert.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
     @Test
     public void executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalance() {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()),true)));
 
         Repository track = repository.startTracking();
 
@@ -675,13 +705,21 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
+        // getGenesisBlock() modifies the repository, adding some pre-mined accounts
+        // Not nice for a getter, but it is what it is :(
         Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
         genesis.setStateRoot(repository.getRoot());
+
+        // Returns the root state prior block execution but after loading
+        // some sample accounts (account/account2) and the premined accounts
+        // in genesis.
+        byte[] rootPriorExecution =repository.getRoot();
+
         Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFill(block, genesis);
 
-        return new TestObjects(repository, block, genesis, tx, account);
+        return new TestObjects(repository, block, genesis, tx, account,rootPriorExecution );
     }
 
     private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
@@ -790,7 +828,10 @@ public class BlockExecutorTest {
         Assert.assertEquals(Coin.valueOf(21000), result.getPaidFees());
 
         Assert.assertNotNull(result.getReceiptsRoot());
-        Assert.assertArrayEquals(BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
+        Assert.assertArrayEquals(
+                BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts(),Block.isHardFork9999(block.getNumber())),
+                result.getReceiptsRoot()
+        );
 
         Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
 
@@ -907,6 +948,12 @@ public class BlockExecutorTest {
         private Block parent;
         private Transaction transaction;
         private Account account;
+        byte[] rootPriorExecution;
+
+
+        public byte[] getRootPriorExecution() {
+            return rootPriorExecution;
+        }
 
         public TestObjects(Repository repository, Block block, Block parent, Transaction transaction, Account account) {
             this.repository = repository;
@@ -914,6 +961,14 @@ public class BlockExecutorTest {
             this.parent = parent;
             this.transaction = transaction;
             this.account = account;
+        }
+        public TestObjects(Repository repository, Block block, Block parent, Transaction transaction, Account account,byte[]rootPriorExecution) {
+            this.repository = repository;
+            this.block = block;
+            this.parent = parent;
+            this.transaction = transaction;
+            this.account = account;
+            this.rootPriorExecution = rootPriorExecution;
         }
 
         public Repository getRepository() {

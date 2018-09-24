@@ -21,15 +21,14 @@ package org.ethereum.jsontestsuite.builder;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.db.ContractDetailsCacheImpl;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.jsontestsuite.model.AccountTck;
 
 import java.util.HashMap;
@@ -41,7 +40,6 @@ public class RepositoryBuilder {
         HashMap<RskAddress, AccountState> stateBatch = new HashMap<>();
         HashMap<RskAddress, ContractDetails> detailsBatch = new HashMap<>();
         HashMapDB store = new HashMapDB();
-        TrieStorePoolOnMemory pool = new TrieStorePoolOnMemory(() -> store);
 
         for (String address : accounts.keySet()) {
             RskAddress addr = new RskAddress(address);
@@ -54,16 +52,18 @@ public class RepositoryBuilder {
 
             stateBatch.put(addr, state);
 
-            ContractDetailsCacheImpl detailsCache = new ContractDetailsCacheImpl(details);
-            detailsCache.setDirty(true);
+            details.setDirty(true);
 
-            detailsBatch.put(addr, detailsCache);
+            detailsBatch.put(addr, details);
         }
 
         final TestSystemProperties testSystemProperties = new TestSystemProperties();
-        RepositoryImpl repositoryDummy = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(store), true), new HashMapDB(), pool, testSystemProperties.detailsInMemoryStorageLimit());
+        // It must me not secure in order to be able to collect keys later
+        Repository repositoryDummy = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)));
         Repository track = repositoryDummy.startTracking();
-        track.updateBatch(stateBatch, detailsBatch);
+        track.updateBatch(stateBatch);
+        track.updateBatchDetails(detailsBatch);
+
         track.commit();
 
         return repositoryDummy;

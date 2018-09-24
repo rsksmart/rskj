@@ -127,14 +127,12 @@ public class BlockChainLoader {
                 repository.addBalance(addr, initialAddressState.getAccountState().getBalance());
                 AccountState accountState = repository.getAccountState(addr);
                 accountState.setNonce(initialAddressState.getAccountState().getNonce());
-
+                // First account state
+                repository.updateAccountState(addr, accountState);
+                // Then contract details, because they overwrite accountState
                 if (initialAddressState.getContractDetails()!=null) {
                     repository.updateContractDetails(addr, initialAddressState.getContractDetails());
-                    accountState.setStateRoot(initialAddressState.getAccountState().getStateRoot());
-                    accountState.setCodeHash(initialAddressState.getAccountState().getCodeHash());
                 }
-
-                repository.updateAccountState(addr, accountState);
             }
 
             genesis.setStateRoot(repository.getRoot());

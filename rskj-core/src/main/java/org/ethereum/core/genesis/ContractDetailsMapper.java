@@ -19,24 +19,17 @@
 
 package org.ethereum.core.genesis;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.db.ContractDetailsImpl;
-import co.rsk.trie.TrieImpl;
-import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.datasource.HashMapDB;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Created by mario on 13/01/17.
  */
 public class ContractDetailsMapper {
 
-    private final RskSystemProperties config;
-
-    public ContractDetailsMapper(RskSystemProperties config) {
-        this.config = config;
+    public ContractDetailsMapper() {
     }
 
     public ContractDetails mapFromContract(Contract contract) {
@@ -44,10 +37,8 @@ public class ContractDetailsMapper {
 
         contractDetails = new ContractDetailsImpl(
                 null,
-                new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
-                null,
-                null,
-                config.detailsInMemoryStorageLimit()
+                ContractDetailsImpl.newStorage(),
+                null
         );
 
         if (contract.getCode()!=null) {

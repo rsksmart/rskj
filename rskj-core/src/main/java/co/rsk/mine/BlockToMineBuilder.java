@@ -214,7 +214,7 @@ public class BlockToMineBuilder {
                 CollectionUtils.size(uncles)
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
+        newHeader.setTransactionsRoot(Block.getTxTrieRoot(txs,Block.isHardFork9999(newHeader.getNumber())));
         return newHeader;
     }
 }

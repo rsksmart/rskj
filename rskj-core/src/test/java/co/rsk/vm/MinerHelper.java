@@ -138,7 +138,7 @@ public class MinerHelper {
     public void completeBlock(Block newBlock, Block parent) {
         processBlock(newBlock, parent);
 
-        newBlock.getHeader().setReceiptsRoot(BlockExecutor.calcReceiptsTrie(txReceipts));
+        newBlock.getHeader().setReceiptsRoot(BlockExecutor.calcReceiptsTrie(txReceipts, Block.isHardFork9999(newBlock.getNumber())));
         newBlock.getHeader().setStateRoot(latestStateRootHash);
         newBlock.getHeader().setGasUsed(totalGasUsed);
 

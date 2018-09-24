@@ -40,8 +40,6 @@ public interface ContractDetails {
 
     void setCode(byte[] code);
 
-    byte[] getStorageHash();
-
     void setDirty(boolean dirty);
 
     void setDeleted(boolean deleted);
@@ -50,17 +48,20 @@ public interface ContractDetails {
 
     boolean isDeleted();
 
-    byte[] getEncoded();
-
+    // We can't support getStorageSize() anymore for proxys
     int getStorageSize();
 
+    // We can't support getStorageKeys() anymore for proxys
     Set<DataWord> getStorageKeys();
 
-    Map<DataWord,DataWord> getStorage(@Nullable Collection<DataWord> keys);
 
-    Map<DataWord, DataWord> getStorage();
+    Map<DataWord,byte[]> getStorage(@Nullable Collection<DataWord> keys);
 
-    void setStorage(Map<DataWord, DataWord> storage);
+    // We can't support getStorage() anymore because we will not store the keys
+    // we only store hashed keys.
+    Map<DataWord, byte[]> getStorage();
+
+    void setStorage(Map<DataWord, byte[]> storage);
 
     byte[] getAddress();
 
@@ -68,11 +69,5 @@ public interface ContractDetails {
 
     String toString();
 
-    void syncStorage();
-
-    ContractDetails getSnapshotTo(byte[] hash);
-
     boolean isNullObject();
-
-    byte [] getCodeHash();
 }
