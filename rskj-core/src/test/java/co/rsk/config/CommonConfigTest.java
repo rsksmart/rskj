@@ -19,10 +19,10 @@
 package co.rsk.config;
 
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.db.RepositoryImpl;
 import org.ethereum.config.CommonConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.validator.ParentBlockHeaderValidator;
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,7 +43,7 @@ public class CommonConfigTest {
         Repository repository = config.repository(this.config);
 
         Assert.assertNotNull(repository);
-        Assert.assertTrue(repository instanceof RepositoryImpl);
+        Assert.assertTrue(repository instanceof MutableRepository);
     }
 
     @Test

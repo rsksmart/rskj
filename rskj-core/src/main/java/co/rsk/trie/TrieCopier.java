@@ -55,29 +55,4 @@ public class TrieCopier {
             blocks = blockchain.getBlocksByNumber(h);
         }
     }
-
-    public static void trieContractStateCopy(TrieStore target, Blockchain blockchain, long initialHeight, long finalHeight, Repository repository, RskAddress contractAddress) {
-        long h = initialHeight;
-
-        List<Block> blocks = blockchain.getBlocksByNumber(h);
-
-        while (!blocks.isEmpty()) {
-            for (Block block : blocks) {
-                Repository stateRepository = repository.getSnapshotTo(block.getStateRoot());
-                AccountState accountState = stateRepository.getAccountState(contractAddress);
-
-                ContractDetailsImpl contractDetails = (ContractDetailsImpl)stateRepository.getContractDetails(contractAddress);
-                Trie trie = contractDetails.getTrie();
-                trieStateCopy(trie.getStore(), target, new Keccak256(accountState.getStateRoot()));
-            }
-
-            h++;
-
-            if (finalHeight > 0 && finalHeight < h) {
-                break;
-            }
-
-            blocks = blockchain.getBlocksByNumber(h);
-        }
-    }
 }

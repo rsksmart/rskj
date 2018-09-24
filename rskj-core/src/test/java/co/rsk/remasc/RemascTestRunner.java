@@ -277,7 +277,7 @@ class RemascTestRunner {
                 new byte[0],                    // mixHash
                 BigInteger.ZERO.toByteArray(),         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                BlockChainImpl.calcTxTrie(txs), // transaction root
+                Block.getTxTrieRoot(txs, Block.isHardFork9999(parentBlock.getNumber() + 1)), // transaction root
                 genesis.getStateRoot(),         //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 uncles,                          // uncle list

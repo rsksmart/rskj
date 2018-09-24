@@ -19,12 +19,12 @@
 package co.rsk.peg;
 
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.*;
 

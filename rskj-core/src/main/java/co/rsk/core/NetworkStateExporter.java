@@ -53,6 +53,8 @@ public class NetworkStateExporter {
     }
 
     public boolean exportStatus(String outputFile) {
+        // This will only work if GlobalKeyMap.enabled = true when building the whole
+        // repository, since keys are not stored on disk.
         Repository frozenRepository = this.repository.getSnapshotTo(this.repository.getRoot());
 
         File dumpFile = new File(outputFile);

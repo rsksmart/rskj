@@ -110,6 +110,9 @@ public class PruneService {
     }
 
     public void process() {
+        return;
+        // NO prune until retested
+        /*
         long from = this.blockchain.getBestBlock().getNumber() - this.pruneConfiguration.getNoBlocksToCopy();
         long to = this.blockchain.getBestBlock().getNumber() - this.pruneConfiguration.getNoBlocksToAvoidForks();
 
@@ -155,6 +158,7 @@ public class PruneService {
 
             logger.info("Resume blockchain process");
         }
+        */
     }
 
     private static String getDatabaseDirectory(RskSystemProperties config, String subdirectoryName) {

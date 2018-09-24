@@ -537,6 +537,10 @@ public class Web3Impl implements Web3 {
 
             if(accountInformationProvider != null) {
                 byte[] code = accountInformationProvider.getCode(addr);
+
+                // Code can be null, if there is no account.
+                if (code==null) code = new byte[0];
+
                 s = TypeConverter.toJsonHex(code);
             }
 
