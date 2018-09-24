@@ -24,7 +24,8 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.RepositoryImpl;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryImplForTesting;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.PegTestUtils;
@@ -42,7 +43,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.TrieStorePoolOnMemory;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -103,7 +104,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefautRewardBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -113,7 +114,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetRewardBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -141,7 +142,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefautBurnedBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -151,7 +152,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetBurnedBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -179,7 +180,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefaultBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -189,7 +190,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -546,7 +547,7 @@ public class RemascStorageProviderTest {
         }
     }
 
-    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(new Trie(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+    private static Repository createRepository() {
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
     }
 }

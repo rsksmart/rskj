@@ -19,14 +19,13 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.bouncycastle.util.encoders.Hex;
 
-import javax.swing.text.html.Option;
 import java.math.BigInteger;
 import java.util.*;
 

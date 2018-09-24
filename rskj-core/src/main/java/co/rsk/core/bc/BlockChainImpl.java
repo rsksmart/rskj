@@ -258,6 +258,8 @@ public class BlockChainImpl implements Blockchain {
             if (!isValid) {
                 return ImportResult.INVALID_BLOCK;
             }
+            // Now that we know it's valid, we can commit the changes made by the block
+            // to the parent's repository.
 
             long totalTime = System.nanoTime() - saveTime;
             logger.trace("block: num: [{}] hash: [{}], executed after: [{}]nano", block.getNumber(), block.getShortHash(), totalTime);
@@ -521,10 +523,5 @@ public class BlockChainImpl implements Blockchain {
         }
         nFlush++;
         nFlush = nFlush % flushNumberOfBlocks;
-    }
-
-    @VisibleForTesting
-    public static byte[] calcTxTrie(List<Transaction> transactions) {
-        return Block.getTxTrie(transactions).getHash().getBytes();
     }
 }
