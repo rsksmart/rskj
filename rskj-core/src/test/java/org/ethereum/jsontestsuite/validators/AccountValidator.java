@@ -33,10 +33,18 @@ import java.util.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class AccountValidator {
+    // This class must be used with GlobalKeyMap.enabled == true. If not, a NullPointerException
+    // will be thrown in getStorage()
+
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
-    public static List<String> valid(RskAddress addr, AccountState expectedState, ContractDetails expectedDetails,
-                                     AccountState currentState, ContractDetails currentDetails){
+    public static List<String> valid(RskAddress addr,
+                                     AccountState expectedState,
+                                     ContractDetails expectedDetails,
+                                     byte[] expectedCodeHash,
+                                     AccountState currentState,
+                                     ContractDetails currentDetails,
+                                     byte[] currentCodeHash) {
 
         List<String> results = new ArrayList<>();
 
@@ -69,9 +77,10 @@ public class AccountValidator {
             results.add(formattedString);
         }
 
-        byte[] code = Arrays.equals(currentState.getCodeHash(), EMPTY_DATA_HASH) ?
-                new byte[0] : currentDetails.getCode();
-        if (!Arrays.equals(expectedDetails.getCode(), code)) {
+       //Arrays.equals(currentState.getCodeHash(), EMPTY_DATA_HASH) ?
+        //        new byte[0] : currentDetails.getCode();
+
+        if (!Arrays.equals(expectedDetails.getCode(), currentDetails.getCode())) {
             String formattedString = String.format("Account: %s: has unexpected code, expected code: %s found code: %s",
                     addr, Hex.toHexString(expectedDetails.getCode()), Hex.toHexString(currentDetails.getCode()));
             results.add(formattedString);
@@ -85,8 +94,8 @@ public class AccountValidator {
 
         for (DataWord key : currentKeys) {
 
-            DataWord currentValue = currentDetails.getStorage().get(key);
-            DataWord expectedValue = expectedDetails.getStorage().get(key);
+            byte[] currentValue = currentDetails.getStorage().get(key);
+            byte[] expectedValue = expectedDetails.getStorage().get(key);
             if (expectedValue == null) {
 
                 String formattedString = String.format("Account: %s: has unexpected storage data: %s = %s",
@@ -98,12 +107,14 @@ public class AccountValidator {
                 continue;
             }
 
-            if (!expectedValue.equals(currentValue)) {
+            if (!Arrays.equals(expectedValue,currentValue)) {
 
-                String formattedString = String.format("Account: %s: has unexpected value, for key: %s , expectedValue: %s real value: %s",
+                String formattedString = String.format("Account: %s: has unexpected value, for key: %s , "+
+                                "expectedValue: %s real value: %s",
                         addr,
                         key.toString(),
-                        expectedValue.toString(), currentValue.toString());
+                        Hex.toHexString(expectedValue),
+                        Hex.toHexString(currentValue));
                 results.add(formattedString);
                 continue;
             }

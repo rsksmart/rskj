@@ -33,10 +33,7 @@ import org.mapdb.Serializer;
 
 import java.io.File;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
@@ -46,10 +43,30 @@ public final class TestUtils {
     private TestUtils() {
     }
 
+    // Fix the Random object to make tests more deterministic. Each new Random object
+    // created gets a seed xores with system nanoTime.
+    // Alse it reduces the time to get the random in performance tests
+    static Random aRandom;
+
+    static public Random getRandom() {
+        if (aRandom==null)
+            aRandom = new Random();
+        return aRandom;
+    }
+
     public static byte[] randomBytes(int length) {
         byte[] result = new byte[length];
-        new Random().nextBytes(result);
+        getRandom().nextBytes(result);
         return result;
+    }
+
+    public static BigInteger randomBigInteger(int maxSizeBytes) {
+        return new BigInteger(maxSizeBytes*8,getRandom());
+    }
+
+    public static Coin randomCoin(int decimalZeros,int maxValue) {
+        return new Coin(BigInteger.TEN.pow(decimalZeros).multiply(
+                BigInteger.valueOf(getRandom().nextInt(maxValue))));
     }
 
     public static DataWord randomDataWord() {
@@ -123,5 +140,11 @@ public final class TestUtils {
 
     public static String padZeroesLeft(String s, int n) {
         return StringUtils.leftPad(s, n, '0');
+    }
+
+    public static byte[] concat(byte[] first, byte[] second) {
+        byte[] result = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, result, first.length, second.length);
+        return result;
     }
 }

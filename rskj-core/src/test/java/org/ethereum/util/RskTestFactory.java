@@ -10,7 +10,6 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
@@ -75,7 +74,7 @@ public class RskTestFactory {
                 .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                 .build();
 
-        return getRepository().getContractDetails(contractAccount.getAddress());
+        return getRepository().getContractDetails_deprecated(contractAccount.getAddress());
     }
 
     public ProgramResult executeRawContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {
@@ -230,7 +229,7 @@ public class RskTestFactory {
     public Repository getRepository() {
         if (repository == null) {
             HashMapDB stateStore = new HashMapDB();
-            repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(stateStore), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+            repository = new RepositoryImpl(new TrieStoreImpl(stateStore));
         }
 
         return repository;

@@ -121,6 +121,9 @@ public class BlockChainLoader {
             logger.info("DB is empty - adding Genesis");
 
             BigInteger initialNonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
+
+            // loadGenesis() precomputes the state root (applies all premined changes)
+            // but then this is recomputed here. another waste.
             Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), initialNonce, true);
             for (RskAddress addr : genesis.getPremine().keySet()) {
                 repository.createAccount(addr);
@@ -128,14 +131,12 @@ public class BlockChainLoader {
                 repository.addBalance(addr, initialAddressState.getAccountState().getBalance());
                 AccountState accountState = repository.getAccountState(addr);
                 accountState.setNonce(initialAddressState.getAccountState().getNonce());
-
+                // First account state
+                repository.updateAccountState(addr, accountState);
+                // Then contract details, because they overwrite accountState
                 if (initialAddressState.getContractDetails()!=null) {
                     repository.updateContractDetails(addr, initialAddressState.getContractDetails());
-                    accountState.setStateRoot(initialAddressState.getAccountState().getStateRoot());
-                    accountState.setCodeHash(initialAddressState.getAccountState().getCodeHash());
                 }
-
-                repository.updateAccountState(addr, accountState);
             }
 
             genesis.setStateRoot(repository.getRoot());

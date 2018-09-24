@@ -22,7 +22,7 @@ package org.ethereum.core.genesis;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.trie.Trie;
+import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,7 +30,7 @@ import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
-import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,9 +79,10 @@ public class GenesisLoader {
 
     private static Map<RskAddress, InitialAddressState> generatePreMine(RskSystemProperties config, BigInteger initialNonce, Map<String, AllocatedAccount> alloc){
         Map<RskAddress, InitialAddressState> premine = new HashMap<>();
-        ContractDetailsMapper detailsMapper = new ContractDetailsMapper(config);
+        ContractDetailsMapper detailsMapper = new ContractDetailsMapper();
 
         for (Map.Entry<String, AllocatedAccount> accountEntry : alloc.entrySet()) {
+            // Why contracts starting with "00" are excluded ? Are these precompiled ?
             if(!StringUtils.equals("00", accountEntry.getKey())) {
                 Coin balance = new Coin(new BigInteger(accountEntry.getValue().getBalance()));
                 BigInteger nonce;
@@ -98,14 +99,7 @@ public class GenesisLoader {
 
                 if (contract != null) {
                     contractDetails = detailsMapper.mapFromContract(contract);
-
-                    if (contractDetails.getCode() != null) {
-                        acctState.setCodeHash(Keccak256Helper.keccak256(contractDetails.getCode()));
-                    }
-
-                    acctState.setStateRoot(contractDetails.getStorageHash());
                 }
-
                 premine.put(new RskAddress(accountEntry.getKey()), new InitialAddressState(acctState, contractDetails));
             }
         }
@@ -114,13 +108,17 @@ public class GenesisLoader {
     }
 
     private static byte[] generateRootHash(Map<RskAddress, InitialAddressState> premine){
-        Trie state = new TrieImpl(null, true);
+        Repository repo = new RepositoryImpl(new TrieImpl(null, true));
 
         for (RskAddress addr : premine.keySet()) {
-            state = state.put(addr.getBytes(), premine.get(addr).getAccountState().getEncoded());
+            InitialAddressState state = premine.get(addr);
+            repo.updateAccountState(addr,state.getAccountState());
+            ContractDetails cd = state.getContractDetails();
+            if (cd!=null)
+                repo.updateContractDetails(addr,cd);
         }
 
-        return state.getHash().getBytes();
+        return repo.getRoot();
     }
 
 }

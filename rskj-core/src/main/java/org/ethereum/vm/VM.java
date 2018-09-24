@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.db.ContractDetails;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -776,7 +777,7 @@ public class VM {
             codeLength = new DataWord(program.getCode().length); // during initialization it will return the initialization code size
         } else {
             DataWord address = program.stackPop();
-            codeLength = new DataWord(program.getCodeAt(address).length);
+            codeLength = new DataWord(program.getCodeLengthAt(address));
             BlockchainConfig blockchainConfig = program.getBlockchainConfig();
             if (blockchainConfig.isRskip90()) {
                 PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, address);
@@ -1933,7 +1934,6 @@ public class VM {
                 }
 
                 op = OpCode.code(program.getCurrentOp());
-
                 checkOpcode();
                 program.setLastOp(op.val());
                 program.verifyStackSize(op.require());
@@ -2026,6 +2026,10 @@ public class VM {
         return (size==0)? 0 : limitedAddToMaxLong(Program.limitToMaxLong(offset.value()),size);
     }
 
+    static public String shortHex(byte[] b) {
+        String hexValue = Hex.toHexString(ByteUtil.stripLeadingZeroes(b)).toUpperCase();
+        return "0x" + hexValue.replaceFirst("^0+(?!$)", "");
+    }
     /*
      * Dumping the VM state at the current operation in various styles
      *  - standard  Not Yet Implemented
@@ -2040,15 +2044,14 @@ public class VM {
                 case STOP:
                 case RETURN:
                 case SUICIDE:
-
                     ContractDetails details = program.getStorage()
-                            .getContractDetails(new RskAddress(program.getOwnerAddress()));
+                            .getContractDetails_deprecated(new RskAddress(program.getOwnerAddress()));
                     List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
                     Collections.sort(storageKeys);
 
                     storageKeys.forEach(key -> dumpLogger.trace("{} {}",
                             Hex.toHexString(key.getNoLeadZeroesData()),
-                            Hex.toHexString(details.getStorage().get(key).getNoLeadZeroesData())));
+                            Hex.toHexString(details.getStorage().get(key))));
                     break;
                 default:
                     break;
@@ -2071,13 +2074,13 @@ public class VM {
 
             dumpLogger.trace("    STORAGE");
             ContractDetails details = program.getStorage()
-                    .getContractDetails(new RskAddress(program.getOwnerAddress()));
+                    .getContractDetails_deprecated(new RskAddress(program.getOwnerAddress()));
             List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
             Collections.sort(storageKeys);
 
             storageKeys.forEach(key -> dumpLogger.trace("{}: {}",
                     key.shortHex(),
-                    details.getStorage().get(key).shortHex()));
+                    shortHex(details.getStorage().get(key))));
 
             int level = program.getCallDeep();
             String contract = Hex.toHexString(program.getOwnerAddress().getLast20Bytes());
