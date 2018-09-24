@@ -41,7 +41,6 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class MinerUtils {
 
@@ -150,10 +149,10 @@ public class MinerUtils {
     }
 
     public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool) {
-        //TODO: optimize this by considering GasPrice (order by GasPrice/Nonce)
-        return transactionPool.getPendingTransactions().stream()
-                .sorted(PendingState.TRANSACTION_COMPARATOR)
-                .collect(Collectors.toCollection(LinkedList::new));
+
+        List<Transaction> txs = transactionPool.getPendingTransactions();
+
+        return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs);
     }
 
     public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, Coin minGasPrice) {
