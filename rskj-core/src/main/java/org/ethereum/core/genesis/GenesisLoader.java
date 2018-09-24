@@ -21,14 +21,11 @@ package org.ethereum.core.genesis;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.json.Utils;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -40,8 +37,6 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.ethereum.core.AccountState.EMPTY_DATA_HASH;
 
 public class GenesisLoader {
 
@@ -115,13 +110,11 @@ public class GenesisLoader {
                 if (contract != null) {
                     byte[] code = Hex.decode(contract.getCode());
                     codes.put(address, code);
-                    acctState.setCodeHash(code == null ? EMPTY_DATA_HASH : Keccak256Helper.keccak256(code));
                     Map<DataWord, byte[]> storage = new HashMap<>(contract.getData().size());
                     for (Map.Entry<String, String> storageData : contract.getData().entrySet()) {
                         storage.put(new DataWord(Hex.decode(storageData.getKey())), Hex.decode(storageData.getValue()));
                     }
                     storages.put(address, storage);
-                    acctState.setStateRoot(calculateStateRoot(storage));
                 }
                 accounts.put(address, acctState);
             }
@@ -131,14 +124,6 @@ public class GenesisLoader {
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, minGasPrice, accounts, codes, storages);
-    }
-
-    private static byte[] calculateStateRoot(Map<DataWord, byte[]> contractStorage) {
-        Trie trie = new TrieImpl(true);
-        for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
-            trie = trie.put(storageEntry.getKey().getData(), storageEntry.getValue());
-        }
-        return trie.getHash().getBytes();
     }
 
 }

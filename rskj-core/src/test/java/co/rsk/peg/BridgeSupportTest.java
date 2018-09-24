@@ -30,13 +30,12 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.peg.simples.SimpleWallet;
@@ -65,7 +64,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -145,7 +144,7 @@ public class BridgeSupportTest {
     @Test
     public void testInitialChainHeadWithoutBtcCheckpoints() throws Exception {
         NetworkParameters _networkParameters = btcParams;
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtHeightZero);
@@ -166,7 +165,7 @@ public class BridgeSupportTest {
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcParams = bridgeConstants.getBtcParams();
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
@@ -180,7 +179,7 @@ public class BridgeSupportTest {
 
     @Test
     public void feePerKbFromStorageProvider() throws Exception {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
@@ -198,7 +197,7 @@ public class BridgeSupportTest {
     public void testGetBtcBlockchainBlockLocatorWithoutBtcCheckpoints() throws Exception {
         NetworkParameters _networkParameters = btcParams;
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
@@ -231,7 +230,7 @@ public class BridgeSupportTest {
     public void testGetBtcBlockchainBlockLocatorWithBtcCheckpoints() throws Exception {
         NetworkParameters _networkParameters = btcParams;
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
@@ -312,7 +311,7 @@ public class BridgeSupportTest {
 
     @Test
     public void callUpdateCollectionsGenerateEventLog() throws IOException, BlockStoreException {
-        Repository track = createRepositoryImpl(config).startTracking();
+        Repository track = createRepository().startTracking();
 
         BlockGenerator blockGenerator = new BlockGenerator();
         List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
@@ -347,7 +346,7 @@ public class BridgeSupportTest {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
@@ -404,7 +403,7 @@ public class BridgeSupportTest {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
@@ -463,7 +462,7 @@ public class BridgeSupportTest {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
@@ -547,7 +546,7 @@ public class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(35, 1);
         Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, rskCurrentBlock);
 
@@ -660,7 +659,7 @@ public class BridgeSupportTest {
         PowerMockito.mockStatic(BridgeUtils.class);
         PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(Context.class), any(Federation.class), any(List.class))).thenReturn(new SimpleWallet(context));
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
@@ -720,7 +719,7 @@ public class BridgeSupportTest {
 
     @Test
     public void sendOrphanBlockHeader() throws IOException, BlockStoreException {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
@@ -747,7 +746,7 @@ public class BridgeSupportTest {
 
     @Test
     public void addBlockHeaderToBlockchain() throws IOException, BlockStoreException {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
@@ -775,7 +774,7 @@ public class BridgeSupportTest {
     public void addSignatureToMissingTransaction() throws Exception {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, mock(Block.class));
@@ -792,7 +791,7 @@ public class BridgeSupportTest {
 
     @Test
     public void addSignatureFromInvalidFederator() throws Exception {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, mock(Block.class));
@@ -834,7 +833,7 @@ public class BridgeSupportTest {
     public void addSignatureCreateEventLog() throws Exception {
         // Setup
         Federation federation = bridgeConstants.getGenesisFederation();
-        Repository track = createRepositoryImpl(config).startTracking();
+        Repository track = createRepository().startTracking();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtHeightZero);
 
         // Build prev btc tx
@@ -917,7 +916,7 @@ public class BridgeSupportTest {
     public void addSignatureMultipleInputsPartiallyValid() throws Exception {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
 
         final Keccak256 keccak256 = PegTestUtils.createHash3();
 
@@ -1029,7 +1028,7 @@ public class BridgeSupportTest {
     private void addSignatureFromValidFederator(List<BtcECKey> privateKeysToSignWith, int numberOfInputsToSign, boolean signatureCanonical, boolean signTwice, String expectedResult) throws Exception {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
 
         final Keccak256 keccak256 = PegTestUtils.createHash3();
 
@@ -1130,7 +1129,7 @@ public class BridgeSupportTest {
 
     @Test
     public void releaseBtcWithDustOutput() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction (config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
@@ -1154,7 +1153,7 @@ public class BridgeSupportTest {
 
     @Test
     public void releaseBtc() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
@@ -1178,7 +1177,7 @@ public class BridgeSupportTest {
 
     @Test
     public void releaseBtcFromContract() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         org.ethereum.core.Transaction tx = new InternalTransaction(
@@ -1206,7 +1205,7 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionOfAlreadyProcessedTransaction() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BtcTransaction tx = createTransaction();
@@ -1232,7 +1231,7 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionOfTransactionNotInMerkleTree() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BtcTransaction tx = createTransaction();
@@ -1263,7 +1262,7 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionOfTransactionInMerkleTreeWithNegativeHeight() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BtcTransaction tx = createTransaction();
@@ -1296,7 +1295,7 @@ public class BridgeSupportTest {
     public void registerBtcTransactionOfTransactionInMerkleTreeWithNotEnoughtHeight() throws BlockStoreException, AddressFormatException, IOException {
         NetworkParameters _networkParameters = btcParams;
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BtcTransaction tx = createTransaction();
@@ -1363,7 +1362,7 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionTxNotLockNorReleaseTx() throws BlockStoreException, AddressFormatException, IOException {
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
@@ -1414,7 +1413,7 @@ public class BridgeSupportTest {
     public void registerBtcTransactionReleaseTx() throws BlockStoreException, AddressFormatException, IOException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Repository track = repository.startTracking();
         Block executionBlock = Mockito.mock(Block.class);
@@ -1508,7 +1507,7 @@ public class BridgeSupportTest {
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
         Federation retiringFederation = new Federation(retiringFederationKeys, Instant.ofEpochMilli(1000L), 1L, parameters);
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(15L);
@@ -1679,7 +1678,7 @@ public class BridgeSupportTest {
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
         Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, parameters);
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(10L);
@@ -1799,7 +1798,7 @@ public class BridgeSupportTest {
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
         Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, parameters);
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(10L);
@@ -3263,7 +3262,7 @@ public class BridgeSupportTest {
         config.setBlockchainConfig(new RegTestOrchidConfig());
         NetworkParameters networkParameters = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
-        Repository repository = createRepositoryImpl(config);
+        Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
@@ -3486,7 +3485,7 @@ public class BridgeSupportTest {
         when(btcBlockStore.getFromCache(prevHash)).thenReturn(new StoredBlock(targetHeader, BigInteger.ONE, targetHeight));
     }
 
-    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+    public static Repository createRepository() {
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new TrieImpl())));
     }
 }

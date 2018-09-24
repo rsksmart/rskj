@@ -161,6 +161,12 @@ public final class DataWord implements Comparable<DataWord> {
         return ByteUtil.stripLeadingZeroes(data);
     }
 
+    // This is a special method that returns the data as the repository requires it.
+    // A zero value is converted into a null (the storage cell is deleted).
+    public byte[] getByteArrayForStorage() {
+        return ByteUtil.stripLeadingZeroes(data,null);
+    }
+
     public byte[] getLast20Bytes() {
         return Arrays.copyOfRange(data, 12, data.length);
     }

@@ -24,6 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.util.Arrays;
+
 /**
  * Validate the transaction root of a block.
  * It calculates the transaction root hash given the block transaction list
@@ -38,14 +40,14 @@ public class BlockRootValidationRule implements BlockValidationRule {
 
     @Override
     public boolean isValid(Block block) {
-        String trieHash = Hex.toHexString(block.getTxTrieRoot());
-        String trieListHash = Block.getTxTrie(block.getTransactionsList()).getHash().toHexString();
+        byte[] trieHash = block.getTxTrieRoot();
+        byte[] trieListHash = Block.getTxTrieRoot(block.getTransactionsList(),Block.isHardFork9999(block.getNumber()));
 
         boolean isValid = true;
 
-        if (!trieHash.equals(trieListHash)) {
-            logger.warn("Block's given Trie Hash doesn't match: {} != {}", trieHash, trieListHash);
-            panicProcessor.panic("invalidtrie", String.format("Block's given Trie Hash doesn't match: %s != %s", trieHash, trieListHash));
+        if (!Arrays.equals(trieHash,trieListHash)) {
+            logger.warn("Block's given Trie Hash doesn't match: {} != {}", Hex.toHexString(trieHash), Hex.toHexString(trieListHash));
+            panicProcessor.panic("invalidtrie", String.format("Block's given Trie Hash doesn't match: %s != %s", Hex.toHexString(trieHash), Hex.toHexString(trieListHash)));
             isValid = false;
         }
         return isValid;
