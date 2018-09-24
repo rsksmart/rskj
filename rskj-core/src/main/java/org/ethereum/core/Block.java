@@ -153,7 +153,7 @@ public class Block {
 
         this.header.setPaidFees(paidFees);
 
-        byte[] calculatedRoot = getTxTrie(transactionsList).getHash().getBytes();
+        byte[] calculatedRoot = getTxTrieRoot(transactionsList, isHardFork9999(number));
         this.header.setTransactionsRoot(calculatedRoot);
         this.checkExpectedRoot(transactionsRoot, calculatedRoot);
 
@@ -223,7 +223,7 @@ public class Block {
         // Parse Transactions
         RLPList txTransactions = (RLPList) block.get(1);
         this.transactionsList = parseTxs(txTransactions);
-        byte[] calculatedRoot = getTxTrie(this.transactionsList).getHash().getBytes();
+        byte[] calculatedRoot = getTxTrieRoot(this.transactionsList,isHardFork9999(this.header.getNumber()));
         this.checkExpectedRoot(this.header.getTxTrieRoot(), calculatedRoot);
 
         // Parse Uncles
@@ -728,12 +728,34 @@ public class Block {
         rlpEncoded = null;
     }
 
-    public static Trie getTxTrie(List<Transaction> transactions){
-        if (transactions == null) {
-            return new TrieImpl();
+    public static boolean isHardFork9999(long number) {
+        return number >= 9999;
+    }
+
+    public static byte[] getTxTrieRoot(List<Transaction> transactions, boolean hardfork9999) {
+        Trie trie;
+        if (hardfork9999) {
+            trie = getTxTrieNew(transactions);
+        } else {
+            trie = getTxTrieOld(transactions);
         }
 
-        Trie txsState = new TrieImpl();
+        return trie.getHash().getBytes();
+    }
+
+    private static Trie getTxTrieOld(List<Transaction> transactions) {
+        return getTxTrieFor(transactions, new TrieImpl());
+    }
+
+    private static Trie getTxTrieNew(List<Transaction> transactions) {
+        return getTxTrieFor(transactions, new TrieImpl());
+    }
+
+    private static Trie getTxTrieFor(List<Transaction> transactions, Trie txsState) {
+        if (transactions == null) {
+            return txsState;
+        }
+
         for (int i = 0; i < transactions.size(); i++) {
             Transaction transaction = transactions.get(i);
             txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());

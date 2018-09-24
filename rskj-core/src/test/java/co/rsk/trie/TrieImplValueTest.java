@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -39,9 +40,11 @@ public class TrieImplValueTest {
         byte[] value = new byte[] { 0x01, 0x02, 0x03 };
         byte[] key = new byte[] { 0x04, 0x05 };
         Trie trie = new TrieImpl().put(key, value);
+        byte[] valueHash = Keccak256Helper.keccak256(value);
 
         Assert.assertFalse(trie.hasLongValue());
-        Assert.assertNull(trie.getValueHash());
+        Assert.assertArrayEquals(trie.getValueHash(),valueHash);
+        Assert.assertEquals(value.length, trie.getValueLength());
         Assert.assertArrayEquals(value, trie.getValue());
     }
 
@@ -56,7 +59,8 @@ public class TrieImplValueTest {
         Trie trie = new TrieImpl().put(key, value);
 
         Assert.assertFalse(trie.hasLongValue());
-        Assert.assertNull(trie.getValueHash());
+        Assert.assertNotNull(trie.getValueHash());
+        Assert.assertEquals(value.length, trie.getValueLength());
         Assert.assertArrayEquals(value, trie.getValue());
     }
 

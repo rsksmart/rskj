@@ -22,8 +22,6 @@ package org.ethereum.vm.trace;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
-import org.ethereum.core.Repository;
-import org.ethereum.db.RepositoryTrack;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -68,13 +66,13 @@ public class ProgramTrace {
                     while (keysIterator.hasNext()) {
                         // TODO: solve NULL key/value storage problem
                         DataWord key = keysIterator.next();
-                        DataWord value = informationProvider.getStorageValue(ownerAddress, key);
+                        byte[] value = informationProvider.getStorageBytes(ownerAddress, key);
                         if (key == null || value == null) {
                             LOGGER.info("Null storage key/value: address[{}]" ,address);
                             continue;
                         }
 
-                        initStorage.put(key.toString(), value.toString());
+                        initStorage.put(key.toString(), new DataWord(value).toString());
                     }
 
                     if (!initStorage.isEmpty()) {
@@ -83,6 +81,10 @@ public class ProgramTrace {
                 }
             }
         }
+    }
+
+    public boolean isEmpty() {
+        return contractAddress == null;
     }
 
     private static AccountInformationProvider getInformationProvider(ProgramInvoke programInvoke) {

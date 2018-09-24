@@ -10,8 +10,7 @@ import co.rsk.core.RskImpl;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
@@ -48,7 +47,7 @@ public class RskTestFactory {
     private BlockChainImpl blockchain;
     private IndexedBlockStore blockStore;
     private TransactionPool transactionPool;
-    private RepositoryImpl repository;
+    private Repository repository;
     private ProgramInvokeFactoryImpl programInvokeFactory;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
     private NodeBlockProcessor blockProcessor;
@@ -225,7 +224,7 @@ public class RskTestFactory {
     public Repository getRepository() {
         if (repository == null) {
             HashMapDB stateStore = new HashMapDB();
-            repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(stateStore), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+            repository = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(stateStore),true)));
         }
 
         return repository;

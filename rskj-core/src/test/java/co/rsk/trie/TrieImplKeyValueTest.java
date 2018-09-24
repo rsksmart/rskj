@@ -43,6 +43,29 @@ public class TrieImplKeyValueTest {
     }
 
     @Test
+    public void putAndGetKeyValueTwice() {
+        Trie trie = new TrieImpl();
+        Trie trie1 = trie.put("foo", "bar".getBytes());
+        Trie trie2 = trie1.put("foo", "bar".getBytes());
+        Assert.assertNotNull(trie1.get("foo"));
+        Assert.assertArrayEquals("bar".getBytes(), trie1.get("foo"));
+        Assert.assertNotNull(trie2.get("foo"));
+        Assert.assertArrayEquals("bar".getBytes(), trie2.get("foo"));
+        Assert.assertSame(trie1, trie2);
+    }
+    @Test
+    public void putAndGetKeyValueTwiceWithDifferenteValues() {
+        Trie trie = new TrieImpl();
+        Trie trie1 = trie.put("foo", "bar1".getBytes());
+        Trie trie2 = trie1.put("foo", "bar2".getBytes());
+        Assert.assertNotNull(trie1.get("foo"));
+        Assert.assertArrayEquals("bar1".getBytes(), trie1.get("foo"));
+        Assert.assertNotNull(trie2.get("foo"));
+        Assert.assertArrayEquals("bar2".getBytes(), trie2.get("foo"));
+    }
+
+
+    @Test
     public void putAndGetKeyLongValue() {
         Trie trie = new TrieImpl();
         byte[] value = TrieImplValueTest.makeValue(100);

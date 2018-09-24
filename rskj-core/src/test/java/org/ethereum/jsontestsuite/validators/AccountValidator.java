@@ -33,6 +33,9 @@ import java.util.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class AccountValidator {
+    // This class must be used with GlobalKeyMap.enabled == true. If not, a NullPointerException
+    // will be thrown in getStorage()
+
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
     public static List<String> valid(RskAddress addr, Repository currentRepository, Repository expectedRepository) {
@@ -70,9 +73,7 @@ public class AccountValidator {
             results.add(formattedString);
         }
 
-        byte[] code = Arrays.equals(currentState.getCodeHash(), EMPTY_DATA_HASH) ?
-                new byte[0] : currentRepository.getCode(addr);
-        if (!Arrays.equals(expectedRepository.getCode(addr), code)) {
+        if (!Arrays.equals(expectedRepository.getCode(addr), currentRepository.getCode(addr))) {
             String formattedString = String.format("Account: %s: has unexpected code, expected code: %s found code: %s",
                     addr, Hex.toHexString(expectedRepository.getCode(addr)), Hex.toHexString(currentRepository.getCode(addr)));
             results.add(formattedString);
@@ -87,25 +88,27 @@ public class AccountValidator {
         while (currentKeys.hasNext()) {
             DataWord key = currentKeys.next();
 
-            DataWord currentValue = currentRepository.getStorageValue(addr, key);
-            DataWord expectedValue = expectedRepository.getStorageValue(addr, key);
+            byte[] currentValue = currentRepository.getStorageBytes(addr, key);
+            byte[] expectedValue = expectedRepository.getStorageBytes(addr, key);
             if (expectedValue == null) {
 
                 String formattedString = String.format("Account: %s: has unexpected storage data: %s = %s",
                         addr,
                         key,
-                        currentValue);
+                        Hex.toHexString(currentValue));
 
                 results.add(formattedString);
                 continue;
             }
 
-            if (!expectedValue.equals(currentValue)) {
+            if (!Arrays.equals(expectedValue, currentValue)) {
 
-                String formattedString = String.format("Account: %s: has unexpected value, for key: %s , expectedValue: %s real value: %s",
+                String formattedString = String.format("Account: %s: has unexpected value, for key: %s , "+
+                                "expectedValue: %s real value: %s",
                         addr,
                         key.toString(),
-                        expectedValue.toString(), currentValue.toString());
+                        Hex.toHexString(expectedValue),
+                        Hex.toHexString(currentValue));
                 results.add(formattedString);
                 continue;
             }
