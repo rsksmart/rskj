@@ -53,6 +53,8 @@ public class NetworkStateExporter {
     }
 
     public boolean exportStatus(String outputFile) {
+        // This will only work if GlobalKeyMap.enabled = true when building the whole
+        // repository, since keys are not stored on disk.
         Repository frozenRepository = this.repository.getSnapshotTo(this.repository.getRoot());
 
         File dumpFile = new File(outputFile);
@@ -80,6 +82,8 @@ public class NetworkStateExporter {
         ObjectNode contractNode = accountNode.objectNode();
         contractNode.put("code", Hex.toHexString(contractDetails.getCode()));
         ObjectNode dataNode = contractNode.objectNode();
+
+        // Why should we have a copy of storage keys ?
         for (DataWord key : contractDetails.getStorageKeys()) {
             byte[] value = contractDetails.getBytes(key);
             dataNode.put(Hex.toHexString(key.getData()), Hex.toHexString(value));
@@ -95,7 +99,7 @@ public class NetworkStateExporter {
         accountNode.put("balance", balance.asBigInteger().toString());
         BigInteger nonce = accountState.getNonce();
         accountNode.put("nonce", nonce.toString());
-        ContractDetails contractDetails = frozenRepository.getContractDetails(addr);
+        ContractDetails contractDetails = frozenRepository.getContractDetails_deprecated(addr);
         if (!contractDetails.isNullObject() && !PrecompiledContracts.REMASC_ADDR.equals(addr)) {
             accountNode.set("contract", createContractNode(contractDetails, accountNode));
         }

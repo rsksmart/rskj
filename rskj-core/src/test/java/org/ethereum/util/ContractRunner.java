@@ -68,7 +68,7 @@ public class ContractRunner {
                         .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                         .build();
 
-        return repository.getContractDetails(contractAccount.getAddress());
+        return repository.getContractDetails_deprecated(contractAccount.getAddress());
     }
 
     public ProgramResult createContract(byte[] bytecode) {

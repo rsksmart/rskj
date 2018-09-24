@@ -484,7 +484,7 @@ public class BlockValidatorTest {
 
         Block genesis = blockGenerator.getGenesisBlock();
         Block uncle1a = blockGenerator.createChildBlock(new SimpleBlock(null, null, TestUtils.randomAddress().getBytes(), null, TEST_DIFFICULTY.getBytes(),
-                0, null, 0L, 0L, new byte[]{}, null, null, null, Block.getTxTrie(null).getHash().getBytes(), null, null, null));
+                0, null, 0L, 0L, new byte[]{}, null, null, null, Block.getTxTrieRoot(null,false), null, null, null));
 
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());

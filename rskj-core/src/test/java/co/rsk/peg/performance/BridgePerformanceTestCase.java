@@ -24,7 +24,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
-import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeStorageProvider;
@@ -253,24 +252,22 @@ public abstract class BridgePerformanceTestCase {
         ExecutionTracker executionInfo = new ExecutionTracker(thread);
 
         RepositoryImpl repository = createRepositoryImpl(config);
-        Repository track = repository.startTracking();
+        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
         BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(executionIndex));
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,bridgeStorageConfigurationAtThisHeight);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,bridgeStorageConfigurationAtThisHeight);
 
-        storageInitializer.initialize(storageProvider, track, executionIndex);
+        storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex);
 
         try {
             storageProvider.save();
         } catch (Exception e) {
             throw new RuntimeException("Error trying to save the storage after initialization", e);
         }
-        track.commit();
+        benchmarkerTrack.commit();
 
         Transaction tx = txBuilder.build(executionIndex);
 
         List<LogInfo> logs = new ArrayList<>();
-
-        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         Blockchain blockchain = BlockChainBuilder.ofSizeWithNoTransactionPoolCleaner(heightProvider.getHeight(executionIndex));
@@ -326,6 +323,6 @@ public abstract class BridgePerformanceTestCase {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl(new TrieImpl());
     }
 }

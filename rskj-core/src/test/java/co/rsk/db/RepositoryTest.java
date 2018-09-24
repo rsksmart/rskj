@@ -26,14 +26,17 @@ import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -50,6 +53,43 @@ public class RepositoryTest {
     public static final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
     public static final RskAddress HORSE = new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5F");
     private final TestSystemProperties config = new TestSystemProperties();
+
+    @Test
+    public void testStorageRoot() {
+        Repository repository = createRepositoryImpl(config);
+        repository.createAccount(COW);
+        repository.setupContract(COW);
+        byte[] stateRoot1 = repository.getStorageStateRoot(COW);
+
+        byte[] cow1Key = Hex.decode("A1A2A3");
+        byte[] cow1Value = Hex.decode("A4A5A6");
+        byte[] cow2Key = Hex.decode("B1B2B3");
+        byte[] cow2Value = Hex.decode("B4B5B6");
+
+        repository.addStorageBytes(COW, new DataWord(cow1Key), cow1Value);
+
+        byte[] stateRoot2 = repository.getStorageStateRoot(COW);
+        assertFalse(Arrays.equals(stateRoot1,stateRoot2));
+
+        repository.addStorageBytes(COW, new DataWord(cow2Key), cow2Value);
+
+        byte[] stateRoot3 = repository.getStorageStateRoot(COW);
+        assertFalse(Arrays.equals(stateRoot1,stateRoot3));
+        assertFalse(Arrays.equals(stateRoot2,stateRoot3));
+
+        // Now delete the last item
+        repository.addStorageBytes(COW, new DataWord(cow2Key), ByteUtil.EMPTY_BYTE_ARRAY );
+
+        byte[] stateRoot4 = repository.getStorageStateRoot(COW);
+        assertTrue(Arrays.equals(stateRoot2,stateRoot4));
+
+        // Now delete the last item
+        repository.addStorageBytes(COW, new DataWord(cow1Key), ByteUtil.EMPTY_BYTE_ARRAY );
+
+        byte[] stateRoot5 = repository.getStorageStateRoot(COW);
+        assertTrue(Arrays.equals(stateRoot1,stateRoot5));
+
+    }
 
     @Test
     public void test4() {
@@ -127,7 +167,7 @@ public class RepositoryTest {
 
     @Test
     public void test16() {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -425,19 +465,19 @@ public class RepositoryTest {
         track2.addStorageBytes(HORSE, horseKey1, horseVal0);
         Repository track3 = track2.startTracking();
 
-        ContractDetails cowDetails = track3.getContractDetails(COW);
+        ContractDetails cowDetails = track3.getContractDetails_deprecated(COW);
         cowDetails.putBytes(cowKey1, cowVal1);
 
-        ContractDetails horseDetails = track3.getContractDetails(HORSE);
+        ContractDetails horseDetails = track3.getContractDetails_deprecated(HORSE);
         horseDetails.putBytes(horseKey1, horseVal1);
 
         track3.commit();
         track2.rollback();
 
-        ContractDetails cowDetailsOrigin = repository.getContractDetails(COW);
+        ContractDetails cowDetailsOrigin = repository.getContractDetails_deprecated(COW);
         byte[] cowValOrin = cowDetailsOrigin.getBytes(cowKey1);
 
-        ContractDetails horseDetailsOrigin = repository.getContractDetails(HORSE);
+        ContractDetails horseDetailsOrigin = repository.getContractDetails_deprecated(HORSE);
         byte[] horseValOrin = horseDetailsOrigin.getBytes(horseKey1);
 
         assertArrayEquals(cowVal0, cowValOrin);
@@ -469,19 +509,19 @@ public class RepositoryTest {
         track2.addStorageBytes(HORSE, horseKey1, horseVal0);
         Repository track3 = track2.startTracking();
 
-        ContractDetails cowDetails = track3.getContractDetails(COW);
+        ContractDetails cowDetails = track3.getContractDetails_deprecated(COW);
         cowDetails.putBytes(cowKey1, cowVal1);
 
-        ContractDetails horseDetails = track3.getContractDetails(HORSE);
+        ContractDetails horseDetails = track3.getContractDetails_deprecated(HORSE);
         horseDetails.putBytes(horseKey1, horseVal1);
 
         track3.commit();
         track2.rollback();
 
-        ContractDetails cowDetailsOrigin = repository.getContractDetails(COW);
+        ContractDetails cowDetailsOrigin = repository.getContractDetails_deprecated(COW);
         byte[] cowValOrin = cowDetailsOrigin.getBytes(cowKey1);
 
-        ContractDetails horseDetailsOrigin = repository.getContractDetails(HORSE);
+        ContractDetails horseDetailsOrigin = repository.getContractDetails_deprecated(HORSE);
         byte[] horseValOrin = horseDetailsOrigin.getBytes(horseKey1);
 
         assertArrayEquals(cowVal0, cowValOrin);
@@ -490,13 +530,8 @@ public class RepositoryTest {
 
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
-        HashMapDB store = new HashMapDB();
-        final Repository repository = new RepositoryImpl(
-                new TrieImpl(new TrieStoreImpl(store), true),
-                new HashMapDB(),
-                new TrieStorePoolOnMemory(() -> store),
-                config.detailsInMemoryStorageLimit()
-        );
+        TrieStoreImpl store = new TrieStoreImpl(new HashMapDB());
+        final Repository repository = new RepositoryImpl(store, true);
 
         final DataWord cowKey1 = new DataWord("c1");
         final DataWord cowKey2 = new DataWord("c2");
@@ -507,23 +542,23 @@ public class RepositoryTest {
         track2.commit();
         repository.flush();
 
-        ContractDetails cowDetails = repository.getContractDetails(COW);
+        ContractDetails cowDetails = repository.getContractDetails_deprecated(COW);
         assertArrayEquals(cowVal0, cowDetails.getBytes(cowKey2));
 
         final CountDownLatch failSema = new CountDownLatch(2);
 
+        Repository snap = repository.getSnapshotTo(repository.getRoot());
         new Thread(() -> {
             try {
                 int cnt = 1;
                 while(true) {
-                    // To Review, not needed?
-                    repository.flush();
 
-                    Repository snap = repository.getSnapshotTo(repository.getRoot()).startTracking();
+                    Repository snapTrack = snap.startTracking();
                     byte[] vcnr = new byte[1];
                     vcnr[0] = (byte)(cnt % 128);
-                    snap.addStorageBytes(COW, cowKey1, vcnr);
+                    snapTrack.addStorageBytes(COW, cowKey1, vcnr);
                     cnt++;
+
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -560,7 +595,61 @@ public class RepositoryTest {
         }
     }
 
+    @Test
+    public void testCode() {
+        TrieStoreImpl astore = new TrieStoreImpl(new HashMapDB());
+        Repository repository = createRepositoryImplWithStore(config, astore);
+        Repository track = repository.startTracking();
+        byte[] codeLongerThan32bytes = "this-is-code-because-I-say-it-man".getBytes();
+        assertTrue(codeLongerThan32bytes.length>32);
+
+        track.saveCode(COW, codeLongerThan32bytes );
+        byte[] returnedCode = track.getCode(COW);
+        assertArrayEquals(codeLongerThan32bytes,returnedCode);
+        track.commit();
+
+
+        // Now try to get the size
+        int codeSize = repository.getCodeLength(COW);
+        assertEquals(codeLongerThan32bytes.length,codeSize);
+
+        // Now try to get the hash
+        byte[] codeHash = repository.getCodeHash(COW);
+        assertArrayEquals(Keccak256Helper.keccak256(codeLongerThan32bytes),codeHash);
+
+
+        byte[] returnedCode2 = repository.getCode(COW);
+        assertArrayEquals(codeLongerThan32bytes,returnedCode2);
+
+        repository.save();
+        byte[] prevRoot = repository.getRoot();
+        repository.close();
+
+        // Use the same store
+        // Now we'll create a new repository based on the same store and force
+        // this new repository to read all nodes from the store. The results must
+        // be the same: lazy evaluation of the value must work.
+
+        Repository repository2 = createRepositoryImplWithStore(config, astore);
+        repository2.setSnapshotTo(prevRoot);
+        // Now try to get the size
+        codeSize = repository2.getCodeLength(COW);
+        assertEquals(codeLongerThan32bytes.length,codeSize);
+
+        // Now try to get the hash
+        codeHash = repository2.getCodeHash(COW);
+        assertArrayEquals(Keccak256Helper.keccak256(codeLongerThan32bytes),codeHash);
+
+
+        returnedCode2 = repository2.getCode(COW);
+        assertArrayEquals(codeLongerThan32bytes,returnedCode2);
+    }
+
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl();
+    }
+
+    private static RepositoryImpl createRepositoryImplWithStore(RskSystemProperties config, TrieStoreImpl store) {
+        return new RepositoryImpl(store,true);
     }
 }
