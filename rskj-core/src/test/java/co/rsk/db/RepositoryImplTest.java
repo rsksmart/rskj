@@ -32,8 +32,11 @@ import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.xml.crypto.Data;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Random;
@@ -45,6 +48,12 @@ import java.util.Set;
 public class RepositoryImplTest {
     private static Keccak256 emptyHash = TrieImplHashTest.makeEmptyHash();
     private final TestSystemProperties config = new TestSystemProperties();
+
+    @Before
+    public void setupTest() {
+        GlobalKeyMap.clear();
+        GlobalKeyMap.enabled = true;
+    }
 
     @Test
     public void getNonceUnknownAccount() {
@@ -77,7 +86,7 @@ public class RepositoryImplTest {
     @Test
     public void syncToRootAfterCreatingAnAccount() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        RepositoryImpl repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        RepositoryImpl repository = new RepositoryImpl(store, true);
 
         repository.flush();
 
@@ -229,8 +238,10 @@ public class RepositoryImplTest {
 
         byte[] code = repository.getCode(accAddress);
 
-        Assert.assertNotNull(code);
-        Assert.assertEquals(0, code.length);
+        // From now on null represents no code, because the code node is not even
+        // created
+        Assert.assertNull(code);
+
     }
 
     @Test
@@ -342,8 +353,11 @@ public class RepositoryImplTest {
 
         DataWord value = repository.getStorageValue(accAddress, DataWord.ONE);
 
-        // Account state points to previous state, use track to update values
-        Assert.assertNull(value);
+        // Prior this change repostiory state would point to previous state,
+        // so the returned value was null.
+        // This semantic has changed. If you modify a repository, you modify
+        // a repository. The previous semantics were really really weird.
+        Assert.assertEquals(DataWord.ONE,value);
     }
 
     @Test
@@ -417,21 +431,27 @@ public class RepositoryImplTest {
     }
 
     @Test
-    public void getAccountsKeys()
+    public void getAccountsKeys() {
+        getAccountsKeys(false);
+        getAccountsKeys(true);
+    }
+
+    public void getAccountsKeys(boolean isSecure)
     {
         RskAddress accAddress1 = randomAccountAddress();
         RskAddress accAddress2 = randomAccountAddress();
 
-        RepositoryImpl repository = createRepositoryImpl(config);
+        RepositoryImpl repository = createRepositoryImpl(config,isSecure);
 
         repository.createAccount(accAddress1);
         repository.createAccount(accAddress2);
 
         Set<RskAddress> keys = repository.getAccountsKeys();
-
         Assert.assertNotNull(keys);
         Assert.assertFalse(keys.isEmpty());
         Assert.assertEquals(2, keys.size());
+        Assert.assertTrue(keys.contains(accAddress1));
+        Assert.assertTrue(keys.contains(accAddress2));
     }
 
     @Test
@@ -441,7 +461,7 @@ public class RepositoryImplTest {
         RskAddress accAddress2 = randomAccountAddress();
 
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        RepositoryImpl repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        RepositoryImpl repository = new RepositoryImpl(store, false);
 
         repository.createAccount(accAddress1);
         repository.flush();
@@ -462,7 +482,7 @@ public class RepositoryImplTest {
     @Test
     public void flushNoReconnect() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        RepositoryImpl repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        RepositoryImpl repository = new RepositoryImpl(store,true);
 
         RskAddress accAddress = randomAccountAddress();
         byte[] initialRoot = repository.getRoot();
@@ -481,7 +501,11 @@ public class RepositoryImplTest {
         return new RskAddress(bytes);
     }
 
+    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config, boolean isSecure) {
+        return new RepositoryImpl(isSecure);
+    }
+
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl(false);
     }
 }

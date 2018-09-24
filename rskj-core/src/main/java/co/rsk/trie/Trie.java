@@ -19,6 +19,9 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
+import org.ethereum.db.ByteArrayWrapper;
+
+import java.util.Set;
 
 /**
  * Created by ajlopez on 29/03/2017.
@@ -28,23 +31,45 @@ public interface Trie {
 
     byte[] get(byte[] key);
 
+    //FutureFeature: ExpandedKey expandKey(byte[] key);
+
+    //FutureFeature: byte[] get(ExpandedKey key);
+
     byte[] get(String key);
 
     Trie put(byte[] key, byte[] value);
 
+    //FutureFeature: Trie put(ExpandedKey key, byte[] value);
+
     Trie put(String key, byte[] value);
+
+    // This method optimizes cache-to-cache transfers
+    Trie put(ByteArrayWrapper key, byte[] value);
+
+    //FutureFeature: Trie delete(ExpandedKey key);
 
     Trie delete(byte[] key);
 
     Trie delete(String key);
 
+    // This is O(1). The node with exact key "key" MUST exists.
+    Trie deleteRecursive(byte[] key);
+
     byte[] toMessage();
 
     void save();
 
+    boolean isSecure();
+
     void copyTo(TrieStore target);
 
     int trieSize();
+
+    // This method can only return keys whose size is multiple of 8 bits
+    // Special value Integer.MAX_VALUE means collect them all.
+    Set<ByteArrayWrapper> collectKeys(int byteSize);
+
+    Set<ByteArrayWrapper> collectKeysFrom(byte[] key);
 
     Trie getSnapshotTo(Keccak256 hash);
 
@@ -56,5 +81,15 @@ public interface Trie {
 
     byte[] getValueHash();
 
+    int getValueLength();
+
     byte[] getValue();
+
+    // find allows to explore a subtree
+    Trie find(byte[] key);
+
+    // key can only be pointing to a real node, it cannot be a partial prefix betweeen
+    // two nodes. In that case it will return false.
+    boolean hasDataWithPrefix(byte[] key);
+
 }

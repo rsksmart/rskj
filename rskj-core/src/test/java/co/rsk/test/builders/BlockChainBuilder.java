@@ -25,7 +25,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
@@ -117,8 +116,9 @@ public class BlockChainBuilder {
             config = new TestSystemProperties();
         }
 
-        if (repository == null)
-            repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        if (repository == null) {
+            repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
+        }
 
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);

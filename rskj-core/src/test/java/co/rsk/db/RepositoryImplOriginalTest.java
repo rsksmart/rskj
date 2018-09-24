@@ -297,7 +297,7 @@ public class RepositoryImplOriginalTest {
         assertEquals(horseValue, track.getStorageValue(HORSE, horseKey));
 
         track.rollback();
-
+        // getStorageValue() returns always a DataWord, not null anymore
         assertEquals(null, repository.getStorageValue(COW, cowKey));
         assertEquals(null, repository.getStorageValue(HORSE, horseKey));
     }
@@ -690,10 +690,18 @@ public class RepositoryImplOriginalTest {
         assertEquals(false, repoTrack2.isExist(pig));
         assertEquals(false, repoTrack2.isExist(precompiled));
     }
-
     @Test
     public void test19() {
-        Repository repository = createRepositoryImpl(config);
+        testTrie19(false);
+        testTrie19(true);
+    }
+
+    public void testTrie19(boolean isSecure) {
+        // Creates a repository without store
+        Repository repository = createRepositoryImpl(config,isSecure);
+
+        // Problem: the store is probably not copied into the track, which is good
+        // BUT how takes care of saving items ?
         Repository track = repository.startTracking();
 
         DataWord cowKey1 = new DataWord("c1");
@@ -708,15 +716,28 @@ public class RepositoryImplOriginalTest {
         track.addStorageRow(HORSE, horseKey1, horseVal0);
         track.commit();
 
+
+        DataWord horseValAfter = repository.getStorageValue(HORSE,horseKey1);
+        assertEquals(horseVal0, horseValAfter);
+
+        // The repository is modified at this time.
+        // To actually make it change
+        // we don't have to re-sync root
+        assertArrayEquals(repository.getRoot(),track.getRoot());
+        //repository.setSnapshotTo(track.getRoot());
+
+        // No we create another track, that will be later discarded
         Repository track2 = repository.startTracking(); //track
 
         track2.addStorageRow(HORSE, horseKey1, horseVal0);
-        Repository track3 = track2.startTracking();
 
+        // Track3 will commit to track2, but track2 will be discarded.
+        Repository track3 = track2.startTracking();
         track3.addStorageRow(COW, cowKey1, cowVal1);
         track3.addStorageRow(HORSE, horseKey1, horseVal1);
-
         track3.commit();
+
+        // Since track2 is rolled back, nothing changes in repo
         track2.rollback();
 
         assertThat(repository.getStorageValue(COW, cowKey1), is(cowVal0));
@@ -726,7 +747,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void test20() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(store,true);
         byte[] root = repository.getRoot();
 
         DataWord cowKey1 = new DataWord("c1");
@@ -777,7 +798,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        final Repository repository = new RepositoryImpl(store,true);
 
         final DataWord cowKey1 = new DataWord("c1");
         final DataWord cowKey2 = new DataWord("c2");
@@ -786,17 +807,25 @@ public class RepositoryImplOriginalTest {
         Repository track2 = repository.startTracking();
         track2.addStorageRow(COW, cowKey2, cowVal0);
         track2.commit();
+        // Changes commited to repository
 
         assertThat(repository.getStorageValue(COW, cowKey2), is(cowVal0));
 
         final CountDownLatch failSema = new CountDownLatch(1);
+        // First create the 10 snapshots. The snapshots should not be created while the
+        // repository is being changed.
+        Repository[] snaps = new Repository[10];
 
         for (int i = 0; i < 10; ++i) {
+            snaps[i] = repository.getSnapshotTo(repository.getRoot());
+        }
+        for (int i = 0; i < 10; ++i) {
+            int finalI = i;
             new Thread(() -> {
                 try {
                     int cnt = 1;
                     while (running) {
-                        Repository snap = repository.getSnapshotTo(repository.getRoot()).startTracking();
+                        Repository snap = snaps[finalI].startTracking();
                         snap.addBalance(COW, Coin.valueOf(10L));
                         snap.addStorageRow(COW, cowKey1, new DataWord(cnt));
                         snap.rollback();
@@ -843,7 +872,11 @@ public class RepositoryImplOriginalTest {
         }
     }
 
+    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config, boolean isSecure) {
+        return new RepositoryImpl(isSecure);
+    }
+
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl();
     }
 }

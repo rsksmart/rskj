@@ -22,11 +22,7 @@ package org.ethereum.jsontestsuite.builder;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.db.ContractDetailsImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
-import co.rsk.trie.TrieImpl;
-import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.jsontestsuite.model.AccountTck;
 import org.ethereum.vm.DataWord;
@@ -44,10 +40,7 @@ public class AccountBuilder {
 
         TestSystemProperties config = new TestSystemProperties();
         ContractDetailsImpl details = new ContractDetailsImpl(null,
-                                                              new TrieImpl(new TrieStoreImpl(store), true),
-                                                              null,
-                                                              new TrieStorePoolOnMemory(),
-                                                              config.detailsInMemoryStorageLimit());
+                ContractDetailsImpl.newStorage(), null);
         details.setCode(parseData(account.getCode()));
         details.setStorage(convertStorage(account.getStorage()));
 
@@ -55,22 +48,21 @@ public class AccountBuilder {
 
         state.addToBalance(new Coin(unifiedNumericToBigInteger(account.getBalance())));
         state.setNonce(unifiedNumericToBigInteger(account.getNonce()));
-        state.setStateRoot(details.getStorageHash());
-        state.setCodeHash(HashUtil.keccak256(details.getCode()));
+        //state.setCodeHash(HashUtil.keccak256(details.getCode()));
 
         return new StateWrap(state, details);
     }
 
 
-    private static Map<DataWord, DataWord> convertStorage(Map<String, String> storageTck) {
+    private static Map<DataWord, byte[]> convertStorage(Map<String, String> storageTck) {
 
-        Map<DataWord, DataWord> storage = new HashMap<>();
+        Map<DataWord, byte[]> storage = new HashMap<>();
 
         for (String keyTck : storageTck.keySet()) {
             String valueTck = storageTck.get(keyTck);
 
             DataWord key = new DataWord(parseData(keyTck));
-            DataWord value = new DataWord(parseData(valueTck));
+            byte[] value = parseData(valueTck);
 
             storage.put(key, value);
         }

@@ -23,8 +23,6 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
-import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -45,6 +43,21 @@ public class BlockchainLoaderTest {
     @Test
     public void testLoadBlockchainEmptyBlockchain() throws IOException {
         String jsonFile = "blockchain_loader_genesis.json";
+        // Initial state is
+        //"dabadabadabadabadabadabadabadabadaba0001" : {
+        //    "balance" : "2000",
+        //    "nonce" : "24"
+        //},
+        //"dabadabadabadabadabadabadabadabadaba0002" : {
+        //    "balance" : "1000"
+        //},
+        //"77045e71a7a2c50903d88e564cd72fab11e82051" : {
+        //    "balance" : "10",
+        //    "nonce" : "25",
+        //"data" : {
+        //    "0000000000000000000000000000000000000000000000000000000000000001" : "03",
+        //    "0000000000000000000000000000000000000000000000000000000000000000" : "01"
+        //}
 
         TestSystemProperties systemProperties = Mockito.mock(TestSystemProperties.class);
 
@@ -63,7 +76,8 @@ public class BlockchainLoaderTest {
 
         EthereumListener ethereumListener = Mockito.mock(EthereumListener.class);
 
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true), new HashMapDB(), new TrieStorePoolOnMemory(), systemProperties.detailsInMemoryStorageLimit());
+        // To use getAccountsKeys() the trie must not be secure
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)),false);
 
         BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null);
 
@@ -71,11 +85,13 @@ public class BlockchainLoaderTest {
 
         Assert.assertEquals(5, repository.getAccountsKeys().size());
 
-        Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
-        Assert.assertEquals(BigInteger.valueOf(24), repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
+        RskAddress daba01 = new RskAddress("dabadabadabadabadabadabadabadabadaba0001");
+        Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(daba01));
+        Assert.assertEquals(BigInteger.valueOf(24), repository.getNonce(daba01));
 
-        Assert.assertEquals(Coin.valueOf(1000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
-        Assert.assertEquals(BigInteger.ZERO, repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
+        RskAddress daba02 = new RskAddress("dabadabadabadabadabadabadabadabadaba0002");
+        Assert.assertEquals(Coin.valueOf(1000), repository.getBalance(daba02));
+        Assert.assertEquals(BigInteger.ZERO, repository.getNonce(daba02));
 
         RskAddress address = new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051");
         Assert.assertEquals(Coin.valueOf(10), repository.getBalance(address));

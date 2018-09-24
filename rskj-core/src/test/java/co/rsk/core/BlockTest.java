@@ -20,13 +20,11 @@ package co.rsk.core;
 
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.remasc.RemascTransaction;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
-import org.bouncycastle.util.encoders.Hex;
-import co.rsk.remasc.RemascTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -83,7 +81,7 @@ public class BlockTest {
                 new byte[0],                    // mixHash
                 new byte[]{0},         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                BlockChainImpl.calcTxTrie(txs), // transaction root
+                Block.getTxTrieRoot(txs, Block.isHardFork9999(1)), // transaction root
                 HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 null,  // uncle list
@@ -436,8 +434,8 @@ public class BlockTest {
     @Test
     public void checkTxTrieShouldBeEqualForHeaderAndBody() {
         Block block = new BlockGenerator().createBlock(10, 5);
-        Keccak256 trieHash = new Keccak256(block.getTxTrieRoot());
-        Keccak256 trieListHash = Block.getTxTrie(block.getTransactionsList()).getHash();
-        Assert.assertEquals(trieHash, trieListHash);
+        byte[] trieHash = block.getTxTrieRoot();
+        byte[] trieListHash = Block.getTxTrieRoot(block.getTransactionsList(), Block.isHardFork9999(block.getNumber()));
+        Assert.assertArrayEquals(trieHash, trieListHash);
     }
 }

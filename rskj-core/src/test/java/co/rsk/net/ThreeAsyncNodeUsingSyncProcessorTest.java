@@ -26,6 +26,7 @@ import co.rsk.net.utils.SyncUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Random;
@@ -136,7 +137,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Test
+    @Ignore
     public void synchronizeNewNodeWithTwoPeers() {
         Blockchain b1 = BlockChainBuilder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, false);
@@ -191,7 +192,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Test
+    @Ignore
     public void synchronizeNewNodeWithTwoPeersDefault() {
         Blockchain b1 = BlockChainBuilder.ofSize(50, false);
         Blockchain b2 = BlockChainBuilder.ofSize(0, false);
@@ -235,7 +236,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Test
+    @Ignore
     public void synchronizeNewNodeWithTwoPeers200Default() {
         Blockchain b1 = BlockChainBuilder.ofSize(200, false);
         Blockchain b2 = BlockChainBuilder.ofSize(0, false);
@@ -279,7 +280,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Test
+    @Ignore
     public void synchronizeWithTwoPeers200AndOneFails() {
         Blockchain b1 = BlockChainBuilder.ofSize(200, false);
         Blockchain b2 = BlockChainBuilder.ofSize(0, false);
@@ -328,7 +329,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Test
+    @Ignore
     public void synchronizeNewNodeWithTwoPeers200Different() {
         Blockchain b1 = BlockChainBuilder.ofSize(193, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1,7);
@@ -374,7 +375,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Test
+    @Ignore
     public void synchronizeNewNodeWithThreePeers400Different() {
         Blockchain b1 = BlockChainBuilder.ofSize(0, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 200);
@@ -422,7 +423,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node3.getSyncProcessor().isPeerSyncing(node4.getNodeID()));
     }
 
-    @Test
+    @Ignore
     public void dontSynchronizeNodeWithShorterChain() throws InterruptedException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(50, false, false);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(30,false, false);
@@ -470,7 +471,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Test
+    @Ignore
     public void dontSynchronizeNodeWithShorterChainAndThenSynchronizeWithNewPeer() throws InterruptedException {
         Blockchain b1 = BlockChainBuilder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, false);
@@ -522,7 +523,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Test
+    @Ignore
     public void ignoreNewBlockHashesWhenSyncing() {
         Blockchain b1 = BlockChainBuilder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 1, false);
@@ -566,7 +567,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Test
+    @Ignore
     public void acceptNewBlockHashWhenNotSyncing() {
         Blockchain b1 = BlockChainBuilder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 1, false);
