@@ -31,7 +31,7 @@ import org.ethereum.util.RskTestContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.internal.util.reflection.Whitebox;
+import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.util.ArrayList;

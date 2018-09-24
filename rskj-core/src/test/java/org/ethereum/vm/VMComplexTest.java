@@ -92,7 +92,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        //accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -476,7 +476,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        //accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -535,7 +535,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        //accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -594,7 +594,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        //accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -653,7 +653,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        //accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);

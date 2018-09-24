@@ -152,8 +152,8 @@ public class BlockGenerator {
         return new Block(
                 blockFactory.newHeader(
                         parent.getHash().getBytes(), EMPTY_LIST_HASH, coinbase,
-                        stateRoot, BlockChainImpl.calcTxTrie(txs), EMPTY_TRIE_HASH,
-                        logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
+                        stateRoot, Block.getTxTrieRoot(txs, Block.isHardFork9999(parent.getNumber() + 1)),
+                        EMPTY_TRIE_HASH, logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
                         EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
                 ),
@@ -224,7 +224,7 @@ public class BlockGenerator {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
+        newHeader.setTransactionsRoot(Block.getTxTrieRoot(txs, Block.isHardFork9999(newHeader.getNumber())));
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
@@ -254,7 +254,7 @@ public class BlockGenerator {
         return new Block(
                 blockFactory.newHeader(
                         parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
-                        EMPTY_TRIE_HASH, Block.getTxTrie(txs).getHash().getBytes(), EMPTY_TRIE_HASH,
+                        EMPTY_TRIE_HASH, Block.getTxTrieRoot(txs, Block.isHardFork9999(number)), EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), number,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
                         EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, minimumGasPrice.getBytes(), 0

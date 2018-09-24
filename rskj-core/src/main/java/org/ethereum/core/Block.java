@@ -64,7 +64,7 @@ public class Block {
     private volatile boolean sealed;
 
     public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-        byte[] calculatedRoot = getTxTrie(transactionsList).getHash().getBytes();
+        byte[] calculatedRoot = getTxTrieRoot(transactionsList, isHardFork9999(header.getNumber()));
         if (!Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
             String message = String.format(
                     "Transactions trie root validation failed for block %d %s", header.getNumber(), header.getHash()
@@ -365,12 +365,34 @@ public class Block {
         rlpEncoded = null;
     }
 
-    public static Trie getTxTrie(List<Transaction> transactions){
-        if (transactions == null) {
-            return new Trie();
+    public static boolean isHardFork9999(long number) {
+        return number >= 9999;
+    }
+
+    public static byte[] getTxTrieRoot(List<Transaction> transactions, boolean hardfork9999) {
+        Trie trie;
+        if (hardfork9999) {
+            trie = getTxTrieNew(transactions);
+        } else {
+            trie = getTxTrieOld(transactions);
         }
 
-        Trie txsState = new Trie();
+        return trie.getHash().getBytes();
+    }
+
+    private static Trie getTxTrieOld(List<Transaction> transactions) {
+        return getTxTrieFor(transactions, new Trie());
+    }
+
+    private static Trie getTxTrieNew(List<Transaction> transactions) {
+        return getTxTrieFor(transactions, new Trie());
+    }
+
+    private static Trie getTxTrieFor(List<Transaction> transactions, Trie txsState) {
+        if (transactions == null) {
+            return txsState;
+        }
+
         for (int i = 0; i < transactions.size(); i++) {
             Transaction transaction = transactions.get(i);
             txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());

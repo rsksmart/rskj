@@ -24,7 +24,8 @@ import co.rsk.core.*;
 import co.rsk.core.bc.BlockValidatorImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.RepositoryImpl;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.BlockHeaderElement;
@@ -74,9 +75,9 @@ import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.db.TrieStorePoolOnDisk;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.NodeManager;
@@ -101,7 +102,6 @@ import org.mapdb.Serializer;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
@@ -643,26 +643,16 @@ public class RskContext implements NodeBootstrapper {
         String databaseDir = rskSystemProperties.databaseDir();
         if (rskSystemProperties.databaseReset()) {
             FileUtil.recursiveDelete(databaseDir);
-            try {
-                Files.createDirectories(FileUtil.getDatabaseDirectoryPath(databaseDir, "database"));
-            } catch (IOException e) {
-                throw new IllegalStateException("Could not re-create database directory");
-            }
         }
 
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
         KeyValueDataSource ds = makeDataSource("state", databaseDir);
-        KeyValueDataSource detailsDS = makeDataSource("details", databaseDir);
 
         if (statesCacheSize != 0) {
             ds = new DataSourceWithCache(ds, statesCacheSize);
         }
 
-        return new RepositoryImpl(
-                new Trie(new TrieStoreImpl(ds), true),
-                detailsDS,
-                new TrieStorePoolOnDisk(databaseDir)
-        );
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(new TrieStoreImpl(ds), true))));
     }
 
     protected org.ethereum.db.BlockStore buildBlockStore() {

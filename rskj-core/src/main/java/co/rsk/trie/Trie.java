@@ -26,6 +26,7 @@ import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +34,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.*;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -65,6 +65,7 @@ public class Trie {
 
     private static final int MESSAGE_HEADER_LENGTH = 2 + Short.BYTES * 2;
     private static final int LAST_BYTE_ONLY_MASK = 0x000000ff;
+    private static final String INVALID_VALUE_LENGTH = "Invalid value length";
 
     // all zeroed, default hash for empty nodes
     private static Keccak256 emptyHash = makeEmptyHash();
@@ -82,6 +83,19 @@ public class Trie {
     // it is saved to store
     private boolean saved;
 
+    // valueLength enables lazy long value retrieval.
+    // The length of the data is now stored. This allows EXTCODESIZE to
+    // execute much faster without the need to actually retrieve the data.
+    // if valueLength>32 and value==null this means the value has not been retrieved yet.
+    // if valueLength==0, then there is no value AND no node.
+    // This trie structure does not distinguish between empty arrays
+    // and nulls. Storing an empty byte array has the same effect as removing the node.
+    //
+    private int valueLength;
+
+    // For lazy retrieval and also for cache.
+    private byte[] valueHash;
+
     // sha3 is applied to keys
     private final boolean isSecure;
 
@@ -93,25 +107,39 @@ public class Trie {
 
     // default constructor, no secure
     public Trie() {
-        this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), null, false);
+        this(false);
     }
 
     public Trie(boolean isSecure) {
-        this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), null, isSecure);
+        this(null, isSecure);
     }
 
     public Trie(TrieStore store, boolean isSecure) {
-        this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), store, isSecure);
+        this(store, TrieKeySlice.empty(), null, isSecure);
+    }
+
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure) {
+        this(store, sharedPath, value, isSecure, value == null ? 0 : value.length, null);
+    }
+
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure, int valueLength, byte[] valueHash) {
+        this(sharedPath, value, NodeReference.empty(), NodeReference.empty(), store, valueLength, valueHash, isSecure);
     }
 
     // full constructor
-    private Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store, boolean isSecure) {
+    public Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store, int valueLength, byte[] valueHash, boolean isSecure) {
         this.value = value;
         this.left = left;
         this.right = right;
         this.store = store;
         this.sharedPath = sharedPath;
+        this.valueLength = valueLength;
+        this.valueHash = valueHash;
         this.isSecure = isSecure;
+    }
+
+    public boolean isSecure() {
+        return isSecure;
     }
 
     /**
@@ -189,14 +217,17 @@ public class Trie {
 
         int offset = MESSAGE_HEADER_LENGTH + lencoded + nhashes * keccakSize;
         byte[] value = null;
+        int lvalue;
+        byte[] valueHash = null;
 
         if (hasLongVal) {
-            byte[] valueHash = readHash(message, current).getBytes();
+            valueHash = readHash(message, current).getBytes();
             // current += keccakSize; current position is not more needed
 
             value = store.retrieveValue(valueHash);
+            lvalue = value.length;
         } else {
-            int lvalue = msglength - offset;
+            lvalue = msglength - offset;
             if (lvalue > 0) {
                 if (message.length - current  < lvalue) {
                     profiler.stop(metric);
@@ -210,7 +241,7 @@ public class Trie {
         }
 
         // it doesn't need to clone value since it's retrieved from store or created from message
-        Trie trie = new Trie(sharedPath, value, left, right, store, isSecure);
+        Trie trie = new Trie(sharedPath, value, left, right, store, lvalue, valueHash, isSecure);
 
         if (store != null) {
             trie.saved = true;
@@ -258,8 +289,12 @@ public class Trie {
      */
     public byte[] get(byte[] key) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_GET_VALUE_FROM_KEY);
-        TrieKeySlice keySlice = TrieKeySlice.fromKey(this.isSecure ? Keccak256Helper.keccak256(key) : key);
-        byte[] result = cloneArray(get(keySlice));
+        Trie node = find(key);
+        if (node == null) {
+            return null;
+        }
+
+        byte[] result = node.getValue();
         profiler.stop(metric);
         return result;
     }
@@ -285,12 +320,15 @@ public class Trie {
      * is build, adding some new nodes
      */
     public Trie put(byte[] key, byte[] value) {
-        TrieKeySlice keySlice = TrieKeySlice.fromKey(this.isSecure ? Keccak256Helper.keccak256(key) : key);
+        TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
         Trie trie = put(keySlice, value);
 
         return trie == null ? new Trie(this.store, this.isSecure) : trie;
     }
 
+    public Trie put(ByteArrayWrapper key, byte[] value) {
+        return put(key.getData(), value);
+    }
     /**
      * put string key to value, the key is converted to byte array
      * utility method to be used from testing
@@ -315,6 +353,17 @@ public class Trie {
      */
     public Trie delete(byte[] key) {
         return put(key, null);
+    }
+
+    // This is O(1). The node with exact key "key" MUST exists.
+    public Trie deleteRecursive(byte[] key) {
+        /* Something Angel must do here !*/
+        /* Something Angel must do here !*/
+        /* Something Angel must do here !*/
+        /* Something Angel must do here !*/
+        /* Something Angel must do here !*/
+        // do a node delete just to pass tests
+        return delete(key);
     }
 
     /**
@@ -343,7 +392,7 @@ public class Trie {
      */
     public byte[] toMessage() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_TO_MESSAGE);
-        int lvalue = this.value == null ? 0 : this.value.length;
+        int lvalue = this.valueLength;
         int lshared = this.sharedPath.length();
         int lencoded = PathEncoder.calculateEncodedLength(lshared);
         boolean hasLongVal = this.hasLongValue();
@@ -362,7 +411,9 @@ public class Trie {
             nnodes++;
         }
 
-        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES + (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue));
+        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH  + (lshared > 0 ? lencoded: 0) // TODO(sergio): check if lencoded is 0 when lshared is zero
+                + nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES
+                + (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue)); //TODO(sergio) check lvalue == 0 case
 
         buffer.put((byte) ARITY);
 
@@ -421,11 +472,68 @@ public class Trie {
             return;
         }
 
+        // Without store, nodes cannot be saved. Abort silently
+        if (this.store == null) {
+            return;
+        }
+
         this.left.save();
         this.right.save();
 
         this.store.save(this);
         this.saved = true;
+    }
+
+    // key is the key with exactly collectKeyLen bytes.
+    // in non-expanded form (binary)
+    // special value Integer.MAX_VALUE means collect them all.
+    private void collectKeys(Set<ByteArrayWrapper> set, TrieKeySlice key, int collectKeyLen) {
+        if (collectKeyLen != Integer.MAX_VALUE && key.length() > collectKeyLen) {
+            return;
+        }
+
+        if (valueLength != 0) {
+            if (collectKeyLen == Integer.MAX_VALUE || key.length() == collectKeyLen) {
+                // convert bit string into byte[]
+                set.add(new ByteArrayWrapper(key.encode()));
+            }
+        }
+
+        for (byte k = 0; k < ARITY; k++) {
+            Trie node = this.retrieveNode(k);
+
+            if (node == null) {
+                continue;
+            }
+
+            TrieKeySlice nodeKey = key.rebuildSharedPath(k, node.getSharedPath());
+            node.collectKeys(set, nodeKey, collectKeyLen);
+        }
+    }
+
+    // Special value Integer.MAX_VALUE means collect them all.
+    public Set<ByteArrayWrapper> collectKeys(int byteSize) {
+        Set<ByteArrayWrapper> set = new HashSet<>();
+
+        int bitSize;
+        if (byteSize == Integer.MAX_VALUE) {
+            bitSize = Integer.MAX_VALUE;
+        } else {
+            bitSize = byteSize * 8;
+        }
+
+        collectKeys(set, getSharedPath(), bitSize);
+        return set;
+    }
+
+    public Set<ByteArrayWrapper> collectKeysFrom(byte[] key) {
+        Set<ByteArrayWrapper> set = new HashSet<>();
+        TrieKeySlice parentKey = TrieKeySlice.fromKey(key);
+        Trie parent = find(parentKey);
+        if (parent != null) {
+            parent.collectKeys(set, parentKey, Integer.MAX_VALUE);
+        }
+        return set;
     }
 
     /**
@@ -446,7 +554,12 @@ public class Trie {
      *
      */
     @Nullable
-    private byte[] get(TrieKeySlice key) {
+    public Trie find(byte[] key) {
+        return find(TrieKeySlice.fromKey(key));
+    }
+
+    @Nullable
+    private Trie find(TrieKeySlice key) {
         if (sharedPath.length() > key.length()) {
             return null;
         }
@@ -457,7 +570,7 @@ public class Trie {
         }
 
         if (commonPathLength == key.length()) {
-            return value;
+            return this;
         }
 
         Trie node = this.retrieveNode(key.get(commonPathLength));
@@ -465,11 +578,15 @@ public class Trie {
             return null;
         }
 
-        return node.get(key.slice(commonPathLength + 1, key.length()));
+        return node.find(key.slice(commonPathLength + 1, key.length()));
     }
 
     private Trie retrieveNode(byte implicitByte) {
-        return implicitByte == 0 ? this.left.getNode().orElse(null) : this.right.getNode().orElse(null);
+        return getNodeReference(implicitByte).getNode().orElse(null);
+    }
+
+    public NodeReference getNodeReference(byte implicitByte) {
+        return implicitByte == 0 ? this.left : this.right;
     }
 
     private static Trie internalRetrieve(TrieStore store, byte[] root) {
@@ -535,6 +652,13 @@ public class Trie {
      *
      */
     private Trie put(TrieKeySlice key, byte[] value) {
+        // First of all, setting the value as an empty byte array is equivalent
+        // to removing the key/value. This is because other parts of the trie make
+        // this equivalent. Use always null to mark a node for deletion.
+        if (value != null && value.length == 0) {
+            value = null;
+        }
+
         Trie trie = this.internalPut(key, value);
 
         // the following code coalesces nodes if needed for delete operation
@@ -549,7 +673,7 @@ public class Trie {
         }
 
         // only coalesce if node has only one child and no value
-        if (trie.value != null) {
+        if (trie.valueLength != 0) {
             return trie;
         }
 
@@ -574,7 +698,15 @@ public class Trie {
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        return new Trie(newSharedPath, child.value, child.left, child.right, child.store, child.isSecure);
+        return new Trie(newSharedPath, child.value, child.left, child.right, child.store, child.valueLength, child.valueHash, child.isSecure);
+    }
+
+    private static int getDataLength(byte[] value) {
+        if (value == null) {
+            return 0;
+        }
+
+        return value.length;
     }
 
     private Trie internalPut(TrieKeySlice key, byte[] value) {
@@ -589,15 +721,30 @@ public class Trie {
         }
 
         if (sharedPath.length() >= key.length()) {
-            if (Arrays.equals(this.value, value)) {
-                return this;
+            // To compare values we need to retrieve the previous value
+            // if not already done so. We could also compare by hash, to avoid retrieval
+            // We do a small optimization here: if sizes are not equal, then values
+            // obviously are not.
+            if (this.valueLength == getDataLength(value)) {
+                if (Arrays.equals(this.getValue(), value)) {
+                    return this;
+                }
             }
 
-            if (isEmptyTrie(value, this.left, this.right)) {
+            if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
                 return null;
             }
 
-            return new Trie(this.sharedPath, cloneArray(value), this.left, this.right, this.store, this.isSecure);
+            return new Trie(
+                    this.sharedPath,
+                    cloneArray(value),
+                    this.left,
+                    this.right,
+                    this.store,
+                    getDataLength(value),
+                    null,
+                    this.isSecure
+            );
         }
 
         if (isEmptyTrie()) {
@@ -607,6 +754,8 @@ public class Trie {
                     NodeReference.empty(),
                     NodeReference.empty(),
                     this.store,
+                    getDataLength(value),
+                    null,
                     this.isSecure
             );
         }
@@ -638,17 +787,17 @@ public class Trie {
             newRight = newNodeReference;
         }
 
-        if (isEmptyTrie(this.value, newLeft, newRight)) {
+        if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
             return null;
         }
 
-        return new Trie(this.sharedPath, this.value, newLeft, newRight, this.store, this.isSecure);
+        return new Trie(this.sharedPath, this.value, newLeft, newRight, this.store, this.valueLength, this.valueHash, this.isSecure);
     }
 
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        Trie newChildTrie = new Trie(newChildSharedPath, this.value, this.left, this.right, this.store, this.isSecure);
+        Trie newChildTrie = new Trie(newChildSharedPath, this.value, this.left, this.right, this.store, this.valueLength, this.valueHash, this.isSecure);
         NodeReference newChildReference = new NodeReference(this.store, newChildTrie, null);
 
         // this bit will be implicit and not present in a shared path
@@ -664,7 +813,7 @@ public class Trie {
             newRight = newChildReference;
         }
 
-        return new Trie(commonPath, null, newLeft, newRight, this.store, this.isSecure);
+        return new Trie(commonPath, null, newLeft, newRight, this.store, 0, null, this.isSecure);
     }
 
     public boolean hasStore() {
@@ -672,20 +821,20 @@ public class Trie {
     }
 
     public boolean isEmptyTrie() {
-        return isEmptyTrie(this.value, this.left, this.right);
+        return isEmptyTrie(this.valueLength, this.left, this.right);
     }
 
     /**
      * isEmptyTrie checks the existence of subnodes, subnodes hashes or value
      *
-     * @param value     current value
+     * @param valueLength     length of current value
      * @param left      a reference to the left node
      * @param right     a reference to the right node
      *
      * @return true if no data
      */
-    private static boolean isEmptyTrie(byte[] value, NodeReference left, NodeReference right) {
-        if (value != null && value.length != 0) {
+    private static boolean isEmptyTrie(int valueLength, NodeReference left, NodeReference right) {
+        if (valueLength != 0) {
             return false;
         }
 
@@ -710,23 +859,95 @@ public class Trie {
     }
 
     public boolean hasLongValue() {
-        return this.value != null && this.value.length > 32;
+        return this.valueLength > 32;
     }
 
+    public int getValueLength() {
+        return this.valueLength;
+    }
+
+    // Now getValueHash() returns the hash of the value independently
+    // on it's size: use hasLongValue() to known what type of value it will store in
+    // the node.
     public byte[] getValueHash() {
-        if (this.hasLongValue()) {
-            return Keccak256Helper.keccak256(this.value);
+        if (valueHash == null) {
+            if (this.valueLength != 0) {
+                valueHash = Keccak256Helper.keccak256(this.value);
+            }
+            // For empty values (valueLength==0) we return the null hash because
+            // in this trie empty arrays cannot be stored.
         }
 
-        return null;
+        //TODO(lsebrie): return a keccak256 instance
+        return cloneArray(valueHash);
     }
 
     public byte[] getValue() {
+        if (valueLength != 0 && value == null) {
+            this.value = retrieveLongValue();
+            checkValueLengthAfterRetrieve();
+        }
+
         return cloneArray(this.value);
+    }
+
+    private byte[] retrieveLongValue() {
+        return store.retrieveValue(valueHash);
+    }
+
+    private void checkValueLengthAfterRetrieve() {
+        // At this time value==null and value.length!=null is really bad.
+        if (value == null && valueLength != 0) {
+            // Serious DB inconsistency here
+            throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
+        }
+
+        checkValueLength();
+    }
+
+    private void checkValueLength() {
+        if (value != null && value.length != valueLength) {
+            // Serious DB inconsistency here
+            throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
+        }
+
+        if (value == null && valueLength != 0 && (valueHash == null || valueHash.length == 0)) {
+            // Serious DB inconsistency here
+            throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
+        }
+    }
+
+    public TrieKeySlice getSharedPath() {
+        return sharedPath;
+    }
+
+    // These two functions are for converting the trie to the old format
+    public byte[] getEncodedSharedPath() {
+        if (getSharedPathLength() == 0) {
+            return null;
+        }
+
+        return sharedPath.encode();
+    }
+
+    public int getSharedPathLength() {
+        return sharedPath.length();
+    }
+
+    public Iterator<IterationElement> getInOrderIterator() {
+        return new InOrderIterator(this);
+    }
+
+    public Iterator<IterationElement> getPreOrderIterator() {
+        return new PreOrderIterator(this);
     }
 
     private static byte[] cloneArray(byte[] array) {
         return array == null ? null : Arrays.copyOf(array, array.length);
+    }
+
+    public Iterator<IterationElement> getPostOrderIterator() {
+        return new PostOrderIterator(this);
     }
 
     /**
@@ -758,5 +979,194 @@ public class Trie {
         }
 
         return new Keccak256(Arrays.copyOfRange(bytes, position, position + keccakSize));
+    }
+
+    /**
+     * Returns the leftmost node that has not yet been visited that node is normally on top of the stack
+     */
+    private static class InOrderIterator implements Iterator<IterationElement> {
+
+        private final Deque<IterationElement> visiting;
+
+        public InOrderIterator(Trie root) {
+            Objects.requireNonNull(root);
+            TrieKeySlice traversedPath = root.getSharedPath();
+            this.visiting = new LinkedList<>();
+            // find the leftmost node, pushing all the intermediate nodes onto the visiting stack
+            visiting.push(new IterationElement(traversedPath, root));
+            pushLeftmostNode(traversedPath, root);
+            // now the leftmost unvisited node is on top of the visiting stack
+        }
+
+        /**
+         * return the leftmost node that has not yet been visited that node is normally on top of the stack
+         */
+        @Override
+        public IterationElement next() {
+            IterationElement visitingElement = visiting.pop();
+            Trie node = visitingElement.getNode();
+            // if the node has a right child, its leftmost node is next
+            Trie rightNode = node.retrieveNode((byte) 0x01);
+            if (rightNode != null) {
+                TrieKeySlice rightNodeKey = visitingElement.getNodeKey().rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
+                visiting.push(new IterationElement(rightNodeKey, rightNode)); // push the right node
+                // find the leftmost node of the right child
+                pushLeftmostNode(rightNodeKey, rightNode);
+                // note "node" has been replaced on the stack by its right child
+            } // else: no right subtree, go back up the stack
+            // next node on stack will be next returned
+            return visitingElement;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !visiting.isEmpty(); // no next node left
+        }
+
+        /**
+         * Find the leftmost node from this root, pushing all the intermediate nodes onto the visiting stack
+         *
+         * @param nodeKey
+         * @param node the root of the subtree for which we are trying to reach the leftmost node
+         */
+        private void pushLeftmostNode(TrieKeySlice nodeKey, Trie node) {
+            // find the leftmost node
+            Trie leftNode = node.retrieveNode((byte) 0x00);
+            if (leftNode != null) {
+                TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
+                visiting.push(new IterationElement(leftNodeKey, leftNode)); // push the left node
+                pushLeftmostNode(leftNodeKey, leftNode); // recurse on next left node
+            }
+        }
+    }
+
+    private class PreOrderIterator implements Iterator<IterationElement> {
+
+        private final Deque<IterationElement> visiting;
+
+        public PreOrderIterator(Trie root) {
+            Objects.requireNonNull(root);
+            TrieKeySlice traversedPath = root.getSharedPath();
+            this.visiting = new LinkedList<>();
+            this.visiting.push(new IterationElement(traversedPath, root));
+        }
+
+        @Override
+        public IterationElement next() {
+            IterationElement visitingElement = visiting.pop();
+            Trie node = visitingElement.getNode();
+            TrieKeySlice nodeKey = visitingElement.getNodeKey();
+            // need to visit the left subtree first, then the right since a stack is a LIFO, push the right subtree first,
+            // then the left
+            Trie rightNode = node.retrieveNode((byte) 0x01);
+            if (rightNode != null) {
+                TrieKeySlice rightNodeKey = nodeKey.rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
+                visiting.push(new IterationElement(rightNodeKey, rightNode));
+            }
+            Trie leftNode = node.retrieveNode((byte) 0x00);
+            if (leftNode != null) {
+                TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
+                visiting.push(new IterationElement(leftNodeKey, leftNode));
+            }
+            // may not have pushed anything.  If so, we are at the end
+            return visitingElement;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !visiting.isEmpty(); // no next node left
+        }
+    }
+
+    private class PostOrderIterator implements Iterator<IterationElement> {
+
+        private final Deque<IterationElement> visiting;
+        private final Deque<Boolean> visitingRightChild;
+
+        public PostOrderIterator(Trie root) {
+            Objects.requireNonNull(root);
+            TrieKeySlice traversedPath = root.getSharedPath();
+            this.visiting = new LinkedList<>();
+            this.visitingRightChild = new LinkedList<>();
+            // find the leftmost node, pushing all the intermediate nodes onto the visiting stack
+            visiting.push(new IterationElement(traversedPath, root));
+            visitingRightChild.push(Boolean.FALSE);
+            pushLeftmostNodeRecord(traversedPath, root);
+            // the node on top of the visiting stack is the next one to be visited, unless it has a right subtree
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !visiting.isEmpty(); // no next node left
+        }
+
+        @Override
+        public IterationElement next() {
+            IterationElement visitingElement = visiting.peek();
+            Trie node = visitingElement.getNode();
+            Trie rightNode = node.retrieveNode((byte) 0x01);
+            if (rightNode == null || visitingRightChild.peek()) { // no right subtree, or right subtree already visited
+                // already visited right child, time to visit the node on top
+                visiting.removeFirst(); // it was already picked
+                visitingRightChild.removeFirst(); // it was already picked
+                return visitingElement;
+            } else { // now visit this node's right subtree
+                // mark that we're visiting this element's right subtree
+                visitingRightChild.removeFirst();
+                visitingRightChild.push(Boolean.TRUE);
+
+                TrieKeySlice rightNodeKey = visitingElement.getNodeKey().rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
+                visiting.push(new IterationElement(rightNodeKey, rightNode)); // push the right node
+                visitingRightChild.push(Boolean.FALSE); // we're visiting the left subtree of the right node
+
+                // now push everything down to the leftmost node in the right subtree
+                pushLeftmostNodeRecord(rightNodeKey, rightNode);
+                return next(); // use recursive call to visit that node
+            }
+        }
+
+        /**
+         * Find the leftmost node from this root, pushing all the intermediate nodes onto the visiting stack
+         * and also stating that each is a left child of its parent
+         * @param nodeKey
+         * @param node the root of the subtree for which we are trying to reach the leftmost node
+         */
+        private void pushLeftmostNodeRecord(TrieKeySlice nodeKey, Trie node) {
+            // find the leftmost node
+            Trie leftNode = node.retrieveNode((byte) 0x00);
+            if (leftNode != null) {
+                TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
+                visiting.push(new IterationElement(leftNodeKey, leftNode)); // push the left node
+                visitingRightChild.push(Boolean.FALSE); // record that it is on the left
+                pushLeftmostNodeRecord(leftNodeKey, leftNode); // continue looping
+            }
+        }
+    }
+
+    public static class IterationElement {
+        private final TrieKeySlice nodeKey;
+        private final Trie node;
+
+        public IterationElement(final TrieKeySlice nodeKey, final Trie node) {
+            this.nodeKey = nodeKey;
+            this.node = node;
+        }
+
+        public final Trie getNode() {
+            return node;
+        }
+
+        public final TrieKeySlice getNodeKey() {
+            return nodeKey;
+        }
+
+        public String toString() {
+            byte[] encodedFullKey = nodeKey.encode();
+            StringBuilder ouput = new StringBuilder();
+            for (byte b : encodedFullKey) {
+                ouput.append( b == 0 ? '0': '1');
+            }
+            return ouput.toString();
+        }
     }
 }

@@ -25,19 +25,18 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.db.RepositoryImpl;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.PrecompiledContracts;
@@ -63,8 +62,7 @@ public class ImportLightTest {
         BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
-        TrieStore.Pool pool = new TrieStorePoolOnMemory();
-        Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), pool);
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true)));
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
 

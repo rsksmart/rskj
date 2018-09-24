@@ -19,7 +19,6 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
@@ -27,7 +26,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.db.RepositoryImpl;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.validators.DummyBlockValidator;
@@ -84,7 +84,6 @@ public class TestRunner {
     private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
-    private boolean setNewStateRoot;
     private boolean validateGasUsed = false; // until EIP150 test cases are ready.
 
     public List<String> runTestSuite(TestSuite testSuite) {
@@ -155,10 +154,6 @@ public class TestRunner {
         for (BlockTck blockTck : testCase.getBlocks()) {
             Block block = build(blockTck.getBlockHeader(), blockTck.getTransactions(), blockTck.getUncleHeaders());
 
-            setNewStateRoot = !((blockTck.getTransactions() == null)
-                    && (blockTck.getUncleHeaders() == null)
-                    && (blockTck.getBlockHeader() == null));
-
             Block tBlock = null;
             try {
                 byte[] rlp = parseData(blockTck.getRlp());
@@ -219,7 +214,7 @@ public class TestRunner {
 
 
         logger.info("--------- PRE ---------");
-        Repository repository = loadRepository(createRepositoryImpl(config).startTracking(), testCase.getPre());
+        Repository repository = loadRepository(createRepository().startTracking(), testCase.getPre());
 
         try {
 
@@ -281,21 +276,24 @@ public class TestRunner {
                 logger.info("Time elapsed [uS]: " + Long.toString(deltaTime));
             }
 
-            try {
-                saveProgramTraceFile(testCase.getName(), program.getTrace(), config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed());
-            } catch (IOException ioe) {
-                vmDidThrowAnEception = true;
-                e = ioe;
+            if (!program.getTrace().isEmpty()) {
+                try {
+                    saveProgramTraceFile(testCase.getName(), program.getTrace(), config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed());
+                } catch (IOException ioe) {
+                    vmDidThrowAnEception = true;
+                    e = ioe;
+                }
             }
 
+            // No items in POST means an exception is expected
             if (testCase.getPost().size() == 0) {
                 if (vmDidThrowAnEception != true) {
                     String output =
-                            "VM was expected to throw an exception";
+                            "VM was expected to throw an exception, but did not";
                     logger.info(output);
                     results.add(output);
                 } else
-                    logger.info("VM did throw an exception: " + e.toString());
+                    logger.info("VM did throw an EXPECTED exception: " + e.toString());
             } else {
                 if (vmDidThrowAnEception) {
                     String output =
@@ -317,9 +315,19 @@ public class TestRunner {
                     Coin expectedBalance = accountState.getBalance();
                     byte[] expectedCode = accountState.getCode();
 
+                    // The new semantic of getAccountState() is that it will return
+                    // null if the account does not exists. Previous semantic was
+                    // to return a new empty AccountState.
+                    // One example is ExtCodeSizeAddressInputTooBigRightMyAddress
+                    // the address 0x0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+                    // should not be an existent contract.
                     boolean accountExist = (null != repository.getAccountState(addr));
 
+                    // Therefore this check is useless now, if we're going to check
+                    // balance, nonce and storage.
+                    /*
                     if (!accountExist) {
+
                         String output =
                                 String.format("The expected account does not exist. key: [ %s ]",
                                         addr);
@@ -328,7 +336,9 @@ public class TestRunner {
 
                         continue;
                     }
-
+                    */
+                    // This "get" used to create an entry in the repository for the account.
+                    // It should not.
                     long actualNonce = repository.getNonce(addr).longValue();
                     Coin actualBalance = repository.getBalance(addr);
                     byte[] actualCode = repository.getCode(addr);
@@ -364,7 +374,7 @@ public class TestRunner {
                     Map<DataWord, DataWord> storage = accountState.getStorage();
 
                     for (DataWord storageKey : storage.keySet()) {
-                        byte[] expectedStValue = storage.get(storageKey).getData();
+                        DataWord expectedStValue = storage.get(storageKey);
 
                         RskAddress accountAddress = accountState.getAddress();
 
@@ -372,7 +382,7 @@ public class TestRunner {
                             String output =
                                     String.format("Storage raw doesn't exist: key [ %s ], expectedValue: [ %s ]",
                                             Hex.toHexString(storageKey.getData()),
-                                            Hex.toHexString(expectedStValue)
+                                            expectedStValue.toString()
                                     );
 
                             logger.info(output);
@@ -381,16 +391,21 @@ public class TestRunner {
                             continue;
                         }
 
-                        DataWord actualValue = program.getStorage().getStorageValue(accountAddress, storageKey);
+                        byte[] actualValue = program.getStorage().getStorageBytes(accountAddress, storageKey);
 
+                        // The actual value will be compressed (not leading zeros)
+                        // But the expected value is given in a DataWord.
+                        // Here we expand the actualValue: this may make subtle encoding errors
+                        // go undetected, but the whole TestRunner system is based on DataWords
+                        // and not byte arrays.
                         if (actualValue == null ||
-                                !Arrays.equals(expectedStValue, actualValue.getData())) {
+                                !(expectedStValue.equals(DataWord.valueOf(actualValue)))) {
 
                             String output =
                                     String.format("Storage value different: key [ %s ], expectedValue: [ %s ], actualValue: [ %s ]",
                                             Hex.toHexString(storageKey.getData()),
-                                            Hex.toHexString(expectedStValue),
-                                            actualValue == null ? "" : Hex.toHexString(actualValue.getNoLeadZeroesData()));
+                                            expectedStValue.toString(),
+                                            actualValue == null ? "" : Hex.toHexString(actualValue));
                             logger.info(output);
                             results.add(output);
                         }
@@ -616,7 +631,7 @@ public class TestRunner {
             AccountState accountState = pre.get(addr);
 
             track.addBalance(addr, accountState.getBalance());
-            ((RepositoryTrack)track).setNonce(addr, new BigInteger(1, accountState.getNonce()));
+            track.setNonce(addr, new BigInteger(1, accountState.getNonce()));
 
             track.saveCode(addr, accountState.getCode());
 
@@ -632,8 +647,8 @@ public class TestRunner {
         return trace;
     }
 
-    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(new Trie(null, true), new HashMapDB(), new TrieStorePoolOnMemory());
+    private static Repository createRepository() {
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
     }
 
     public Block build(

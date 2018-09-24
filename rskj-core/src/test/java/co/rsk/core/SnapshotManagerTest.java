@@ -161,6 +161,7 @@ public class SnapshotManagerTest {
         Assert.assertNotNull(transactionPool);
 
         setUpSampleAccounts();
+        repository.commit();
         transactionPool.addTransaction(createSampleTransaction());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
@@ -195,6 +196,9 @@ public class SnapshotManagerTest {
         Assert.assertEquals(10, status.getBestBlockNumber());
 
         setUpSampleAccounts();
+        // Now the repository has uncommited changes. Before taking a snapshot,
+        // it should commit them upstream.
+        repository.commit();
         transactionPool.addTransaction(createSampleTransaction());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());

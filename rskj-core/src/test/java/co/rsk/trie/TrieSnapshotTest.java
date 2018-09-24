@@ -36,18 +36,6 @@ public class TrieSnapshotTest {
     private static Keccak256 emptyHash = makeEmptyHash();
 
     @Test
-    public void getSnapshotToEmptyTrie() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new Trie(store, false);
-
-        Trie snapshot = trie.getSnapshotTo(trie.getHash());
-
-        Assert.assertNotNull(snapshot);
-        Assert.assertEquals(trie.trieSize(), snapshot.trieSize());
-        Assert.assertEquals(emptyHash, snapshot.getHash());
-    }
-
-    @Test
     public void getSnapshotToTrie() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
         Trie trie = new Trie(store, false);

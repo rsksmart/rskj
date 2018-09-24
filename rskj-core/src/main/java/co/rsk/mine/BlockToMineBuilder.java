@@ -204,7 +204,7 @@ public class BlockToMineBuilder {
                 unclesListHash,
                 miningConfig.getCoinbaseAddress().getBytes(),
                 EMPTY_TRIE_HASH,
-                Block.getTxTrie(txs).getHash().getBytes(),
+                Block.getTxTrieRoot(txs, Block.isHardFork9999(newBlockParent.getNumber() + 1)),
                 EMPTY_TRIE_HASH,
                 new Bloom().getData(),
                 new byte[]{1},

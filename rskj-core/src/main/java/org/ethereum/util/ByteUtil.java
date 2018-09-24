@@ -322,6 +322,10 @@ public class ByteUtil {
     }
 
     public static byte[] stripLeadingZeroes(byte[] data) {
+        return stripLeadingZeroes(data,ZERO_BYTE_ARRAY);
+    }
+
+    public static byte[] stripLeadingZeroes(byte[] data,byte[] valueForZero) {
 
         if (data == null) {
             return null;
@@ -331,7 +335,7 @@ public class ByteUtil {
 
         switch (firstNonZero) {
             case -1:
-                return ZERO_BYTE_ARRAY;
+                return valueForZero;
 
             case 0:
                 return data;
@@ -543,5 +547,25 @@ public class ByteUtil {
         return FastByteComparisons.compareTo(
                 left, 0, left.length,
                 right, 0, right.length) == 0;
+    }
+
+    public static boolean fastPrefix(byte[] left, byte[] right) {
+        // Short circuit equalBytes case
+        if (left == right) {
+            return true;
+        }
+        if (right.length > left.length)
+            return false;
+
+        int end1 = left.length;
+        int end2 = right.length;
+        for (int i = 0, j = 0; i < end1 && j < end2; i++, j++) {
+            int a = (left[i] & 0xff);
+            int b = (right[j] & 0xff);
+            if (a != b) {
+                return false;
+            }
+        }
+        return true;
     }
 }
