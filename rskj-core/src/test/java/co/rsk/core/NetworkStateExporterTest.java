@@ -43,6 +43,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by oscar on 13/01/2017.
@@ -65,7 +66,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testEmptyRepo() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()),false);
 
         Map result = writeAndReadJson(repository);
 
@@ -74,15 +75,26 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testNoContracts() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()),false);
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
+        Set<RskAddress> set;
+        set = repository.getAccountsKeys();
+        Assert.assertEquals(1,set.size());
+
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
+
+        set = repository.getAccountsKeys();
+        Assert.assertEquals(1,set.size());
+
         String address2String = "2000000000000000000000000000000000000000";
         RskAddress addr2 = new RskAddress(address2String);
         repository.createAccount(addr2);
+        set = repository.getAccountsKeys();
+        Assert.assertEquals(2,set.size());
+
         repository.addBalance(addr2, Coin.valueOf(10L));
         repository.increaseNonce(addr2);
         repository.increaseNonce(addr2);
@@ -117,7 +129,8 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testContracts() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        // it must not be secure, because
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()),false);
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
@@ -134,6 +147,8 @@ public class NetworkStateExporterTest {
         Map result = writeAndReadJson(repository);
 
         Assert.assertEquals(1, result.keySet().size());
+
+        // Getting address1String only works if the Trie is not secure.
         Map address1Value = (Map) result.get(address1String);
         Assert.assertEquals(3, address1Value.keySet().size());
         Assert.assertEquals("1",address1Value.get("balance"));
@@ -143,7 +158,8 @@ public class NetworkStateExporterTest {
         Assert.assertEquals("01020304",contract.get("code"));
         Map data = (Map) contract.get("data");
         Assert.assertEquals(2, data.keySet().size());
-        Assert.assertEquals("01", data.get(Hex.toHexString(DataWord.ZERO.getData())));
+        Assert.assertEquals("0000000000000000000000000000000000000000000000000000000000000001",
+                data.get(Hex.toHexString(DataWord.ZERO.getData())));
         Assert.assertEquals("05060708", data.get(Hex.toHexString(DataWord.ONE.getData())));
     }
 

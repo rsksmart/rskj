@@ -193,6 +193,13 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public void save() {
+        repository.save();
+    }
+
+
+
+    @Override
     public void rollback() {
         repository.rollback();
     }
@@ -239,6 +246,10 @@ public class Storage implements Repository, ProgramListenerAware {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void setSnapshotTo(byte[] root)  {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public void updateAccountState(RskAddress addr, AccountState accountState) {

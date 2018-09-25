@@ -174,7 +174,12 @@ public class BlockExecutor {
     private BlockResult execute(Block block, byte[] stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
+        // Forks the repo, does not change "repository"
         Repository initialRepository = repository.getSnapshotTo(stateRoot);
+        //Repository initialRepository = repository;
+        // Changes the repo
+        //repository.setSnapshotTo(stateRoot);
+
 
         byte[] lastStateRootHash = initialRepository.getRoot();
 
@@ -232,7 +237,7 @@ public class BlockExecutor {
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
             receipt.setCumulativeGas(totalGasUsed);
-            lastStateRootHash = initialRepository.getRoot();
+
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
@@ -249,7 +254,7 @@ public class BlockExecutor {
 
             logger.trace("tx done");
         }
-
+        lastStateRootHash = initialRepository.getRoot();
         return new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees);
     }
 

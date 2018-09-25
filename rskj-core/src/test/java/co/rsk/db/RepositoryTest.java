@@ -508,7 +508,7 @@ public class RepositoryTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new RepositoryImpl(store);
+        final Repository repository = new RepositoryImpl(store,true);
 
         final byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
 
@@ -526,18 +526,18 @@ public class RepositoryTest {
 
         final CountDownLatch failSema = new CountDownLatch(1);
 
+        Repository snap = repository.getSnapshotTo(repository.getRoot());
         new Thread(() -> {
             try {
                 int cnt = 1;
                 while(true) {
-                    // To Review, not needed?
-                    repository.flush();
 
-                    Repository snap = repository.getSnapshotTo(repository.getRoot()).startTracking();
+                    Repository snapTrack = snap.startTracking();
                     byte[] vcnr = new byte[1];
                     vcnr[0] = (byte)(cnt % 128);
-                    snap.addStorageBytes(COW, cowKey1, vcnr);
+                    snapTrack.addStorageBytes(COW, cowKey1, vcnr);
                     cnt++;
+
                 }
             } catch (Throwable e) {
                 e.printStackTrace();

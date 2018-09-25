@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.*;
+import co.rsk.trie.MutableSubtrie;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
@@ -31,7 +32,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +42,6 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.crypto.Keccak256Helper.keccak256;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * @author Roman Mandeleil
@@ -64,19 +63,27 @@ public class RepositoryTrack implements Repository {
 
     public RepositoryTrack() {
         trie = new MutableTrieImpl(new TrieImpl());
+    }
 
+    public RepositoryTrack(boolean isSecure) {
+        trie = new MutableTrieImpl(new TrieImpl(isSecure));
     }
 
     public RepositoryTrack(Repository aparentRepo) {
-        trie = new TrieCache(aparentRepo.getMutableTrie());
+        trie = new MutableTrieCache(aparentRepo.getMutableTrie());
         this.parentRepo = aparentRepo;
     }
+
     public RepositoryTrack(Trie atrie) {
-        trie = new TrieCache(new MutableTrieImpl(atrie));
+        trie = new MutableTrieCache(new MutableTrieImpl(atrie));
         this.parentRepo =null;
     }
     public RepositoryTrack(Trie atrie,Repository aparentRepo) {
-        trie = new TrieCache(new MutableTrieImpl(atrie));
+        // If there is no parent then we don't need to track changes
+        if (aparentRepo==null)
+            trie = new MutableTrieImpl(atrie);
+        else
+            trie = new MutableTrieCache(new MutableTrieImpl(atrie));
         this.parentRepo = aparentRepo;
     }
 
@@ -95,8 +102,22 @@ public class RepositoryTrack implements Repository {
     }
 
     public byte[] getAccountKey(RskAddress addr) {
-        return addr.getBytes();
+        return getAccountKey(addr,trie.isSecure());
     }
+
+    static public byte[] getAccountKey(RskAddress addr,boolean isSecure) {
+        byte[] secureKey = addr.getBytes();
+
+        if (isSecure) {
+            // Secure tries
+            secureKey = Keccak256Helper.keccak256(addr.getBytes());
+        } else
+            secureKey = addr.getBytes();
+
+        // a zero prefix allows us to extend the namespace in the future
+        return concat(new byte[]{0},secureKey);
+    }
+
 
     public static byte[] concat(byte[] first, byte[] second) {
         byte[] result = Arrays.copyOf(first, first.length + second.length);
@@ -105,7 +126,11 @@ public class RepositoryTrack implements Repository {
     }
 
     public byte[] getAccountKeyChildKey(RskAddress addr,byte child) {
-        return concat(addr.getBytes(),new byte[] {child});
+        return getAccountKeyChildKey(addr,child,trie.isSecure());
+    }
+
+    static public byte[] getAccountKeyChildKey(RskAddress addr,byte child,boolean isSecure) {
+        return concat(getAccountKey(addr,isSecure),new byte[] {child});
     }
 
     @Override
@@ -131,7 +156,7 @@ public class RepositoryTrack implements Repository {
 
     @Override
     public synchronized void delete(RskAddress addr) {
-        this.trie.delete(getAccountKey(addr));
+        this.trie.deleteRecursive(getAccountKey(addr));
     }
 
     @Override
@@ -163,7 +188,11 @@ public class RepositoryTrack implements Repository {
 
     @Override
     public synchronized BigInteger getNonce(RskAddress addr) {
-        AccountState account = getAccountStateOrCreateNew(addr);
+        // Why would getNonce create an Account in the repository? The semantic of a get()
+        // is clear: do not change anything!
+        AccountState account = getAccountState(addr);
+        if (account==null)
+            return BigInteger.ZERO;
         return account.getNonce();
     }
 
@@ -174,9 +203,13 @@ public class RepositoryTrack implements Repository {
     }
 
     public synchronized ContractDetails createProxyContractDetails(RskAddress addr) {
-        return new ContractDetailsImpl(addr.getBytes(),
-                null, // for now I'm not returning any storage rows
-                getCode(addr),0,"");
+        MutableSubtrie mst = new MutableSubtrie(trie,
+                // Compute the prefix with isSecure transformation, because there is no
+                // repository object to do it for us.
+                RepositoryTrack.getAccountStoragePrefixKey(addr,trie.isSecure()));
+
+        return new ProxyContractDetails(addr.getBytes(),
+                mst,getCode(addr));
         //
     }
 
@@ -185,8 +218,23 @@ public class RepositoryTrack implements Repository {
     }
 
 
+    static byte[] getAccountStoragePrefixKey(RskAddress addr,boolean isSecure) {
+        return getAccountKeyChildKey(addr,(byte) 0,isSecure);
+    }
+
+    public static byte[] GetStorageTailKey(byte[] subkey,boolean isSecure) {
+        byte[] secureSubKey;
+        if (isSecure) {
+            // Secure tries
+            secureSubKey = Keccak256Helper.keccak256(subkey);
+        } else
+            secureSubKey = subkey;
+        return secureSubKey;
+    }
+
     public byte[] getAccountStorageKey(RskAddress addr,byte[] subkey) {
-        return concat(getAccountKeyChildKey(addr,(byte) 0),subkey);
+        byte[] secureSubKey = GetStorageTailKey(subkey,trie.isSecure());
+        return concat(getAccountStoragePrefixKey(addr,trie.isSecure()),secureSubKey);
     }
 
     @Override
@@ -195,6 +243,13 @@ public class RepositoryTrack implements Repository {
         this.trie.put(key,code);
 
         AccountState  accountState = getAccountState(addr);
+        if ((code==null) || code.length==0)
+            if (accountState ==null)
+                return;
+
+        if (accountState ==null)
+            accountState  = createAccount(addr);
+
         accountState.setCodeHash(Keccak256Helper.keccak256(code));
         updateAccountState(addr, accountState);
     }
@@ -231,15 +286,25 @@ public class RepositoryTrack implements Repository {
         if (!isExist(addr)) {
             createAccount(addr);
         }
+        GlobalKeyMap.globalKeyMap.add(key);
         byte[] triekey = getAccountStorageKey(addr,key.getData());
 
         this.trie.put(triekey, value);
     }
 
     @Override
+
+    // Returns null if the key doesn't exist
     public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
         byte[] triekey = getAccountStorageKey(addr,key.getData());
-        return new DataWord(this.trie.get(triekey));
+        byte[] value = this.trie.get(triekey);
+        if (value==null)
+            return null;
+
+        DataWord dw = new DataWord();
+        dw.assignData(value);
+        // Creates a new copy to prevent external modification of cached values
+        return dw;
     }
 
     @Override
@@ -265,13 +330,26 @@ public class RepositoryTrack implements Repository {
         return result;
     }
 
+    static public byte[] stripFirstByte(byte[] str) {
+        return Arrays.copyOfRange(str,1,str.length);
+    }
+
     @Override
     public synchronized Set<RskAddress> getAccountsKeys() {
-        Set<ByteArrayWrapper>  r = trie.collectKeys(20); // size must be 20 bytes
+        // This method would do two different things for a secure trie
+        // than for a non-secure trie.
+        int keySize;
+        // a Zero prefix is used, so sizes are 20+1 and 32+1
+        if (trie.isSecure())
+            keySize = 33;
+        else
+            keySize = 21;
+
+        Set<ByteArrayWrapper>  r = trie.collectKeys(keySize );
         Set<RskAddress> result = new HashSet<>();
         for (ByteArrayWrapper b: r
              ) {
-            result.add(new RskAddress(b.getData()));
+            result.add(new RskAddress(stripFirstByte(b.getData())));
         }
         return result;
 
@@ -282,7 +360,7 @@ public class RepositoryTrack implements Repository {
         // To be implemented
     }
 
-    // To start tracking, a new repository wrapper is created, with a TrieCache in the middle
+    // To start tracking, a new repository wrapper is created, with a MutableTrieCache in the middle
     @Override
     public synchronized Repository startTracking() {
 
@@ -302,6 +380,12 @@ public class RepositoryTrack implements Repository {
     @Override
     public synchronized void flushNoReconnect() {
         this.flush();
+    }
+
+
+    @Override
+    public void save() {
+        this.trie.save();
     }
 
     @Override
@@ -366,6 +450,7 @@ public class RepositoryTrack implements Repository {
             for (DataWord key : details.getStorageKeys()) {
                 addStorageRow(addr, key, details.getStorage().get(key));
             }
+            createAccount(addr); // if not exists
             // inefficient
             saveCode(addr,details.getCode());
 
@@ -390,13 +475,18 @@ public class RepositoryTrack implements Repository {
 
     @Override
     public synchronized Repository getSnapshotTo(byte[] root) {
-        this.trie = this.trie.getSnapshotTo(new Keccak256(root));
-        return this;
+        MutableTrie atrie = this.trie.getSnapshotTo(new Keccak256(root));
+        return new RepositoryImpl(atrie.getTrie());
+    }
+
+    @Override
+    public synchronized void setSnapshotTo(byte[] root) {
+        this.trie.setSnapshotTo(new Keccak256(root));
     }
 
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
-        this.trie.put(addr.getBytes(), accountState.getEncoded());
+        this.trie.put(getAccountKey(addr), accountState.getEncoded());
     }
 
     @Nonnull

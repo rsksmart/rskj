@@ -52,6 +52,10 @@ public class ProgramTrace {
     private int storageSize;
     private String contractAddress;
 
+    public boolean isEmpty() {
+        return contractAddress==null;
+    }
+
     public ProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
         if (config.vmTrace() && programInvoke != null) {
             contractAddress = Hex.toHexString(programInvoke.getOwnerAddress().getLast20Bytes());

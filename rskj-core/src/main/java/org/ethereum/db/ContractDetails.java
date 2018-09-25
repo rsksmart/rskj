@@ -52,12 +52,16 @@ public interface ContractDetails {
 
     boolean isDeleted();
 
+    // We can't support getStorageSize() anymore
     int getStorageSize();
 
+    // We can't support getStorageKeys() anymore
     Set<DataWord> getStorageKeys();
 
     Map<DataWord,DataWord> getStorage(@Nullable Collection<DataWord> keys);
 
+    // We can't support getStorage() anymore because we will not store the keys
+    // we only store hashed keys.
     Map<DataWord, DataWord> getStorage();
 
     void setStorage(List<DataWord> storageKeys, List<DataWord> storageValues);

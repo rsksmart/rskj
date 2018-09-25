@@ -982,6 +982,7 @@ public class BlockChainImplTest {
         )));
     }
 
+    // This method modifies the repository! Not nice for a getter.
     public static Block getGenesisBlock(BlockChainImpl blockChain) {
         Repository repository = blockChain.getRepository();
 

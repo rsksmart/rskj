@@ -55,7 +55,8 @@ public class RepositoryBuilder {
         }
 
         final TestSystemProperties testSystemProperties = new TestSystemProperties();
-        RepositoryImpl repositoryDummy = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        // It must me not secure in order to be able to collect keys later
+        RepositoryImpl repositoryDummy = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()),false);
         Repository track = repositoryDummy.startTracking();
         track.updateBatchDetails(detailsBatch);
         track.updateBatch(stateBatch);

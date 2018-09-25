@@ -280,21 +280,24 @@ public class TestRunner {
                 logger.info("Time elapsed [uS]: " + Long.toString(deltaTime));
             }
 
-            try {
-                saveProgramTraceFile(testCase.getName(), program.getTrace(), config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed());
-            } catch (IOException ioe) {
-                vmDidThrowAnEception = true;
-                e = ioe;
+            if (!program.getTrace().isEmpty()) {
+                try {
+                    saveProgramTraceFile(testCase.getName(), program.getTrace(), config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed());
+                } catch (IOException ioe) {
+                    vmDidThrowAnEception = true;
+                    e = ioe;
+                }
             }
 
+            // No items in POST means an exception is expected
             if (testCase.getPost().size() == 0) {
                 if (vmDidThrowAnEception != true) {
                     String output =
-                            "VM was expected to throw an exception";
+                            "VM was expected to throw an exception, but did not";
                     logger.info(output);
                     results.add(output);
                 } else
-                    logger.info("VM did throw an exception: " + e.toString());
+                    logger.info("VM did throw an EXPECTED exception: " + e.toString());
             } else {
                 if (vmDidThrowAnEception) {
                     String output =
@@ -316,9 +319,19 @@ public class TestRunner {
                     Coin expectedBalance = accountState.getBalance();
                     byte[] expectedCode = accountState.getCode();
 
+                    // The new semantic of getAccountState() is that it will return
+                    // null if the account does not exists. Previous semantic was
+                    // to return a new empty AccountState.
+                    // One example is ExtCodeSizeAddressInputTooBigRightMyAddress
+                    // the address 0x0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+                    // should not be an existent contract.
                     boolean accountExist = (null != repository.getAccountState(addr));
 
+                    // Therefore this check is useless now, if we're going to check
+                    // balance, nonce and storage.
+                    /*
                     if (!accountExist) {
+
                         String output =
                                 String.format("The expected account does not exist. key: [ %s ]",
                                         addr);
@@ -327,7 +340,9 @@ public class TestRunner {
 
                         continue;
                     }
-
+                    */
+                    // This "get" used to create an entry in the repository for the account.
+                    // It should not.
                     long actualNonce = repository.getNonce(addr).longValue();
                     Coin actualBalance = repository.getBalance(addr);
                     byte[] actualCode = repository.getCode(addr);

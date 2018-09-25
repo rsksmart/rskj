@@ -20,10 +20,19 @@ public class MutableTrieImpl implements MutableTrie {
         hash = atrie.getHash();
     }
 
+    public Trie getTrie() {
+        return trie;
+    }
+
     @Override
     public Keccak256 getHash() {
         hash = trie.getHash();
         return hash;
+    }
+
+    @Override
+    public boolean isSecure() {
+     return trie.isSecure();
     }
 
     @Override
@@ -51,6 +60,9 @@ public class MutableTrieImpl implements MutableTrie {
     public void delete(byte[] key) {
         trie = trie.delete(key);
     }
+
+    @Override
+    public void deleteRecursive(byte[] key) { trie = trie.deleteRecursive(key); }
 
     @Override
     public void delete(String key) {
@@ -93,9 +105,15 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
+    public Set<ByteArrayWrapper> collectKeysFrom(byte[] key) { return trie.collectKeysFrom(key); }
+
+    @Override
     public MutableTrie getSnapshotTo(Keccak256 hash) {
         return new MutableTrieImpl(trie.getSnapshotTo(hash));
     }
+
+    @Override
+    public void setSnapshotTo(Keccak256 hash) { this.trie = trie.getSnapshotTo(hash);}
 
     @Override
     public byte[] serialize() {

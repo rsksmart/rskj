@@ -69,10 +69,11 @@ class PathEncoder {
     }
 
     @Nonnull
-    private static byte[] decodeBinaryPath(byte[] encoded, int length) {
-        byte[] path = new byte[length];
+    // length is the length in bits. For example ({1},8) is fine
+    private static byte[] decodeBinaryPath(byte[] encoded, int bitlength) {
+        byte[] path = new byte[bitlength];
 
-        for (int k = 0; k < length; k++) {
+        for (int k = 0; k < bitlength; k++) {
             int nbyte = k / 8;
             int offset = k % 8;
 

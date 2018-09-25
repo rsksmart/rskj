@@ -30,18 +30,23 @@ public class RepositoryImpl extends RepositoryTrack {
     public RepositoryImpl() {
         super();
     }
+    public RepositoryImpl(boolean isSecure) {
+        super(isSecure);
+    }
 
     public RepositoryImpl (Trie atrie) {
         super(atrie);
     }
 
-    public RepositoryImpl(TrieStore store) {
-        super(new TrieImpl(store,true),null); // secure by default
+    public RepositoryImpl(TrieStore store,boolean isSecure) {
+        super(new TrieImpl(store,isSecure),null); // secure by default
     }
 
     public RepositoryImpl(TrieStoreImpl storeImpl) {
         super(new TrieImpl(storeImpl,true),null); // secure by default
     }
-
+    public RepositoryImpl(TrieStoreImpl storeImpl,boolean isSecure) {
+        super(new TrieImpl(storeImpl,isSecure),null); // secure by default
+    }
 
 }

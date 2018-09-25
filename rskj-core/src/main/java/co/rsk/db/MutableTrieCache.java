@@ -1,31 +1,34 @@
 package co.rsk.db;
 
-import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.util.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
  * Created by SerAdmin on 9/23/2018.
  */
-public class TrieCache implements MutableTrie {
+public class MutableTrieCache implements MutableTrie {
 
     MutableTrie trie;
     HashMap<ByteArrayWrapper,byte[]> cache;
     Set<ByteArrayWrapper> deleteCache;
 
-    public TrieCache(MutableTrie parentTrie) {
+    public MutableTrieCache(MutableTrie parentTrie) {
         trie = parentTrie;
         cache = new HashMap<>();
         deleteCache = new HashSet<>();
+    }
+
+    public Trie getTrie() {
+        assertNoCache();
+        return trie.getTrie();
     }
 
     public MutableTrie getParentTrie() {
@@ -34,6 +37,10 @@ public class TrieCache implements MutableTrie {
 
     public boolean isCache() {
         return true;
+    }
+
+    public boolean isSecure() {
+        return trie.isSecure();
     }
 
     @Override
@@ -79,6 +86,48 @@ public class TrieCache implements MutableTrie {
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
         cache.remove(wrap);
         deleteCache.add(wrap );
+        return;
+    }
+
+    @Override
+    public Set<ByteArrayWrapper> collectKeysFrom(byte[] key) {
+        ByteArrayWrapper wrap = new ByteArrayWrapper(key);
+        Set<ByteArrayWrapper> set = trie.collectKeysFrom(key);
+
+        // This can be slow. When can it be slow ?
+        // If the user creates a contract, then modifies lots of storage keys
+        // then selfdestroys the contract.
+        // Maybe if the semantic is that an element in deleteCache means all
+        // childs must be deleted, then that would help make this code O(1)
+        for (ByteArrayWrapper item : cache.keySet()) {
+            ByteUtil.fastPrefix(key,item.getData());
+                set.add(item);
+        }
+        for (ByteArrayWrapper s : set) {
+            if (deleteCache.contains(s)) {
+                set.remove(s);
+            }
+        }
+
+        return set;
+    }
+
+    @Override
+    public void deleteRecursive(byte[] key) {
+        ByteArrayWrapper wrap = new ByteArrayWrapper(key);
+        // This is a bit ugly. All keys in cache with a a certain key prefix must
+        // be deleted. The only way to do this right is to get all keys and store them
+        // all here in deleteCache.
+        Set<ByteArrayWrapper> set = trie.collectKeysFrom(key);
+
+        cache.remove(wrap);
+        deleteCache.add(wrap);
+
+        for (ByteArrayWrapper s : set) {
+            cache.remove(s);
+            deleteCache.add(s);
+        }
+
         return;
     }
 
@@ -156,8 +205,15 @@ public class TrieCache implements MutableTrie {
     @Override
     public MutableTrie getSnapshotTo(Keccak256 hash) {
         assertNoCache();
-        return new TrieCache(trie.getSnapshotTo(hash));
+        return new MutableTrieCache(trie.getSnapshotTo(hash));
     }
+
+    @Override
+    public void setSnapshotTo(Keccak256 hash) {
+        assertNoCache();
+        this.trie = trie.getSnapshotTo(hash);
+    }
+
 
     @Override
     public byte[] serialize() {

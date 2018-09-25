@@ -544,4 +544,24 @@ public class ByteUtil {
                 left, 0, left.length,
                 right, 0, right.length) == 0;
     }
+
+    public static boolean fastPrefix(byte[] left, byte[] right) {
+        // Short circuit equalBytes case
+        if (left == right) {
+            return true;
+        }
+        if (right.length > left.length)
+            return false;
+
+        int end1 = left.length;
+        int end2 = right.length;
+        for (int i = 0, j = 0; i < end1 && j < end2; i++, j++) {
+            int a = (left[i] & 0xff);
+            int b = (right[j] & 0xff);
+            if (a != b) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

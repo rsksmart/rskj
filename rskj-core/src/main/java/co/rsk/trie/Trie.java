@@ -32,24 +32,35 @@ public interface Trie {
 
     byte[] get(byte[] key);
 
+    //FutureFeature: ExpandedKey expandKey(byte[] key);
+
+    //FutureFeature: byte[] get(ExpandedKey key);
+
     byte[] get(String key);
 
     Trie put(byte[] key, byte[] value);
 
+    //FutureFeature: Trie put(ExpandedKey key, byte[] value);
+
     Trie put(String key, byte[] value);
+
+    //FutureFeature: Trie delete(ExpandedKey key);
 
     Trie delete(byte[] key);
 
     Trie delete(String key);
 
+    // This is O(1). The node with exact key "key" MUST exists.
+    Trie deleteRecursive(byte[] key);
+
     byte[] toMessage();
 
     void save();
 
-    void commit();
-    void rollback();
+    //void commit();
+    //void rollback();
 
-    boolean isCache();
+    boolean isSecure();
 
 
     void copyTo(TrieStore target);
@@ -58,7 +69,10 @@ public interface Trie {
 
     Trie cloneTrie();
 
-    Set<ByteArrayWrapper> collectKeys(int size);
+    // This method can only return keys whose size is multiple of 8 bits
+    Set<ByteArrayWrapper> collectKeys(int byteSize);
+
+    Set<ByteArrayWrapper> collectKeysFrom(byte[] key);
 
     Trie cloneTrie(byte[] newValue);
 
@@ -79,4 +93,8 @@ public interface Trie {
     byte[] getValueHash();
 
     byte[] getValue();
+
+    // find allows to explore a subtree
+    Trie find(byte[] key);
+
 }

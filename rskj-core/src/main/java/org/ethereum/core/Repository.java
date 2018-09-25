@@ -65,7 +65,7 @@ public interface Repository extends AccountInformationProvider {
     AccountState getAccountState(RskAddress addr);
 
     /**
-     * Deletes the account
+     * Deletes the account. This is recursive: all storage keys are deleted
      *
      * @param addr of the account
      */
@@ -203,12 +203,18 @@ public interface Repository extends AccountInformationProvider {
                      Map<RskAddress, AccountState> cacheAccounts,
                      Map<RskAddress, ContractDetails> cacheDetails);
     */
+    // This creates a new repository. Does not modify the parent
     Repository getSnapshotTo(byte[] root);
 
-    //void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
+    // This modified in-place the repository
+    void setSnapshotTo(byte[] root);
+
+
+        //void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 
+    void save();
     default void transfer(RskAddress fromAddr, RskAddress toAddr, Coin value) {
         addBalance(fromAddr, value.negate());
         addBalance(toAddr, value);

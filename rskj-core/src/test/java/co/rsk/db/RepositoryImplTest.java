@@ -83,7 +83,7 @@ public class RepositoryImplTest {
     @Test
     public void syncToRootAfterCreatingAnAccount() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        RepositoryImpl repository = new RepositoryImpl(store);
+        RepositoryImpl repository = new RepositoryImpl(store,true);
 
         repository.flush();
 
@@ -447,7 +447,7 @@ public class RepositoryImplTest {
         RskAddress accAddress2 = randomAccountAddress();
 
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        RepositoryImpl repository = new RepositoryImpl(store);
+        RepositoryImpl repository = new RepositoryImpl(store,false);
 
         repository.createAccount(accAddress1);
         repository.flush();
@@ -469,7 +469,7 @@ public class RepositoryImplTest {
     @Test
     public void flushNoReconnect() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        RepositoryImpl repository = new RepositoryImpl(store);
+        RepositoryImpl repository = new RepositoryImpl(store,true);
 
         RskAddress accAddress = randomAccountAddress();
         byte[] initialRoot = repository.getRoot();
@@ -489,6 +489,6 @@ public class RepositoryImplTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl();
+        return new RepositoryImpl(false);
     }
 }
