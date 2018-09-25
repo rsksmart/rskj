@@ -18,10 +18,7 @@
 
 package co.rsk.net.discovery;
 
-//import co.rsk.net.discovery.message.GetNodeMessage;
-//import co.rsk.net.discovery.message.SendNodesMessage;
 import co.rsk.net.discovery.message.*;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
@@ -31,7 +28,6 @@ import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
@@ -73,22 +69,9 @@ public class PacketDecoderTest {
 
     }
 
-    @Test(expected = PeerDiscoveryException.class)
-    public void decodeInvalidMessage() throws Exception {
-
-        PacketDecoder decoder = new PacketDecoder();
-        ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
-        InetSocketAddress sender = new InetSocketAddress("localhost", 44035);
-        Channel channel = Mockito.mock(Channel.class);
-        Mockito.when(ctx.channel()).thenReturn(channel);
-        Mockito.when(channel.remoteAddress()).thenReturn(sender);
-
-        decoder.decodeMessage(ctx, new byte[] {11}, sender);
-
-        Assert.fail();
-    }
-
-    private void assertDecodedMessage(DiscoveryEvent event, InetSocketAddress sender, DiscoveryMessageType messageType) {
+    private void assertDecodedMessage(DiscoveryEvent event,
+                                      InetSocketAddress sender,
+                                      DiscoveryMessageType messageType) {
         Assert.assertEquals(messageType, event.getMessage().getMessageType());
         Assert.assertEquals(sender, event.getAddress());
         Assert.assertNotNull(event.getMessage().getPacket());
