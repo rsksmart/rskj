@@ -78,6 +78,7 @@ dependencies {
     compile "org.fusesource.leveldbjni:leveldbjni:1.8"
     compile "org.ethereum:leveldbjni-all:1.18.3"
     compile "org.slf4j:slf4j-api:${slf4jVersion}"
+    compile "ch.qos.logback:logback-core:${logbackVersion}"
     compile "com.fasterxml.jackson.core:jackson-databind:2.8.7"
     compile "org.apache.commons:commons-collections4:4.1"
     compile "org.apache.commons:commons-lang3:3.5"
