@@ -33,6 +33,7 @@ import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
 
+import javax.xml.crypto.Data;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Random;
@@ -348,8 +349,11 @@ public class RepositoryImplTest {
 
         DataWord value = repository.getStorageValue(accAddress, DataWord.ONE);
 
-        // Account state points to previous state, use track to update values
-        Assert.assertNull(value);
+        // Prior this change repostiory state would point to previous state,
+        // so the returned value was null.
+        // This semantic has changed. If you modify a repository, you modify
+        // a repository. The previous semantics were really really weird.
+        Assert.assertEquals(DataWord.ONE,value);
     }
 
     @Test

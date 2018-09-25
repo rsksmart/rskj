@@ -77,12 +77,19 @@ public class SecureTrieImplKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
-        Trie trie = new TrieImpl(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
-                .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
+        Trie trie = new TrieImpl(true);
+        byte[] msgZero ="So, first of all, let me assert my firm belief that".getBytes();
+        trie = trie.put(zeroKey,msgZero );
+        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
+
+        trie = trie.put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
+
+        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
 
         trie = trie.delete(oneKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), "So, first of all, let me assert my firm belief that".getBytes()));
+
+        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
         Assert.assertNull(trie.get(oneKey));
     }
 }
