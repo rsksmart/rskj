@@ -39,10 +39,10 @@ import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
 
 public class AccountBuilder {
 
-    public static StateWrap build(AccountTck account) {
+    public static StateWrap build(AccountTck account, HashMapDB store) {
 
         TestSystemProperties config = new TestSystemProperties();
-        ContractDetailsImpl details = new ContractDetailsImpl(null, new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        ContractDetailsImpl details = new ContractDetailsImpl(null, new TrieImpl(new TrieStoreImpl(store), true), null, name -> new TrieStoreImpl(store), config.detailsInMemoryStorageLimit());
         details.setCode(parseData(account.getCode()));
         details.setStorage(convertStorage(account.getStorage()));
 

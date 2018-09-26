@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static org.ethereum.datasource.DataSourcePool.levelDbByName;
 
 @Configuration
 @ComponentScan(
@@ -63,7 +64,10 @@ public class CommonConfig {
         KeyValueDataSource ds = makeDataSource("state", databaseDir);
         KeyValueDataSource detailsDS = makeDataSource("details", databaseDir);
 
-        return new RepositoryImpl(new TrieStoreImpl(ds), detailsDS, memoryStorageLimit, databaseDir));
+        return new RepositoryImpl(new TrieStoreImpl(ds), detailsDS,
+                                  name -> new TrieStoreImpl(levelDbByName(name, databaseDir)),
+                                  memoryStorageLimit
+        );
     }
 
     private KeyValueDataSource makeDataSource(String name, String databaseDir) {

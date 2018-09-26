@@ -56,27 +56,35 @@ public class RepositoryImpl implements Repository {
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
-    private final int memoryStorageLimit;
-    private final String databaseDir;
     private TrieStore store;
     private Trie trie;
     private DetailsDataStore detailsDataStore;
     private boolean closed;
+    private TrieStore.Factory trieStoreFactory;
+    private int memoryStorageLimit;
 
-    public RepositoryImpl(TrieStore store, int memoryStorageLimit, String databaseDir) {
-        this(store, new HashMapDB(), memoryStorageLimit, databaseDir);
+    public RepositoryImpl(TrieStore store, TrieStore.Factory trieStoreFactory, int memoryStorageLimit) {
+        this(store, new HashMapDB(), trieStoreFactory, memoryStorageLimit);
     }
 
-    public RepositoryImpl(TrieStore store, KeyValueDataSource detailsDS, int memoryStorageLimit, String databaseDir) {
-        this(store, new DetailsDataStore(new DatabaseImpl(detailsDS)), memoryStorageLimit, databaseDir);
+    public RepositoryImpl(
+            TrieStore store,
+            KeyValueDataSource detailsDS,
+            TrieStore.Factory trieStoreFactory,
+            int memoryStorageLimit) {
+        this(store, new DetailsDataStore(new DatabaseImpl(detailsDS), trieStoreFactory, memoryStorageLimit), trieStoreFactory, memoryStorageLimit);
     }
 
-    private RepositoryImpl(TrieStore store, DetailsDataStore detailsDataStore, int memoryStorageLimit, String databaseDir) {
+    private RepositoryImpl(
+            TrieStore store,
+            DetailsDataStore detailsDataStore,
+            TrieStore.Factory trieStoreFactory,
+            int memoryStorageLimit) {
         this.store = store;
         this.trie = new TrieImpl(store, true);
         this.detailsDataStore = detailsDataStore;
+        this.trieStoreFactory = trieStoreFactory;
         this.memoryStorageLimit = memoryStorageLimit;
-        this.databaseDir = databaseDir;
     }
 
     @Override
@@ -87,8 +95,8 @@ public class RepositoryImpl implements Repository {
                 null,
                 new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
                 null,
-                memoryStorageLimit,
-                databaseDir
+                trieStoreFactory,
+                memoryStorageLimit
         ));
         return accountState;
     }
@@ -152,7 +160,7 @@ public class RepositoryImpl implements Repository {
             storageRoot = getAccountState(addr).getStateRoot();
         }
 
-        ContractDetails details =  detailsDataStore.get(addr, memoryStorageLimit, databaseDir);
+        ContractDetails details =  detailsDataStore.get(addr);
         if (details != null) {
             details = details.getSnapshotTo(storageRoot);
         }
@@ -274,7 +282,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository startTracking() {
-        return new RepositoryTrack(this);
+        return new RepositoryTrack(this, trieStoreFactory, memoryStorageLimit);
     }
 
     @Override
@@ -349,8 +357,8 @@ public class RepositoryImpl implements Repository {
                             null,
                             new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
                             null,
-                            memoryStorageLimit,
-                            databaseDir
+                            trieStoreFactory,
+                            memoryStorageLimit
                     );
                     originalContractDetails.setAddress(addr.getBytes());
                     contractDetailsCache.setOriginalContractDetails(originalContractDetails);
@@ -404,7 +412,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository getSnapshotTo(byte[] root) {
-        RepositoryImpl snapshotRepository = new RepositoryImpl(this.store, this.detailsDataStore, memoryStorageLimit, databaseDir);
+        RepositoryImpl snapshotRepository = new RepositoryImpl(this.store, this.detailsDataStore, this.trieStoreFactory, this.memoryStorageLimit);
         snapshotRepository.syncToRoot(root);
         return snapshotRepository;
     }

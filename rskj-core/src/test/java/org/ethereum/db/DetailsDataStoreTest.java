@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
@@ -39,8 +40,10 @@ public class DetailsDataStoreTest {
 
     @Test
     public void test1(){
+        HashMapDB keyValueDataSource = new HashMapDB();
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(db);
+        TrieStore.Factory trieStoreFactory = name -> new TrieStoreImpl(keyValueDataSource);
+        DetailsDataStore dds = new DetailsDataStore(db, trieStoreFactory, config.detailsInMemoryStorageLimit());
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -49,10 +52,10 @@ public class DetailsDataStoreTest {
 
         ContractDetails contractDetails = new ContractDetailsImpl(
             null,
-            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+            new TrieImpl(new TrieStoreImpl(keyValueDataSource), true),
             null,
-            config.detailsInMemoryStorageLimit(),
-            config.databaseDir()
+            trieStoreFactory,
+            config.detailsInMemoryStorageLimit()
         );
         contractDetails.setAddress(randomAddress().getBytes());
         contractDetails.setCode(code);
@@ -60,7 +63,7 @@ public class DetailsDataStoreTest {
 
         dds.update(c_key, contractDetails);
 
-        ContractDetails contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        ContractDetails contractDetails_ = dds.get(c_key);
 
         String encoded1 = Hex.toHexString(contractDetails.getEncoded());
         String encoded2 = Hex.toHexString(contractDetails_.getEncoded());
@@ -69,7 +72,7 @@ public class DetailsDataStoreTest {
 
         dds.flush();
 
-        contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        contractDetails_ = dds.get(c_key);
         encoded2 = Hex.toHexString(contractDetails_.getEncoded());
         assertEquals(encoded1, encoded2);
     }
@@ -78,7 +81,8 @@ public class DetailsDataStoreTest {
     public void test2(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(db);
+        TrieStore.Factory trieStoreFactory = name -> new TrieStoreImpl(new HashMapDB());
+        DetailsDataStore dds = new DetailsDataStore(db, trieStoreFactory, config.detailsInMemoryStorageLimit());
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -89,8 +93,8 @@ public class DetailsDataStoreTest {
             null,
             new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
             null,
-            config.detailsInMemoryStorageLimit(),
-            config.databaseDir()
+            trieStoreFactory,
+            config.detailsInMemoryStorageLimit()
         );
         contractDetails.setCode(code);
         contractDetails.setAddress(randomAddress().getBytes());
@@ -98,7 +102,7 @@ public class DetailsDataStoreTest {
 
         dds.update(c_key, contractDetails);
 
-        ContractDetails contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        ContractDetails contractDetails_ = dds.get(c_key);
 
         String encoded1 = Hex.toHexString(contractDetails.getEncoded());
         String encoded2 = Hex.toHexString(contractDetails_.getEncoded());
@@ -107,20 +111,22 @@ public class DetailsDataStoreTest {
 
         dds.remove(c_key);
 
-        contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        contractDetails_ = dds.get(c_key);
         assertNull(contractDetails_);
 
         dds.flush();
 
-        contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        contractDetails_ = dds.get(c_key);
         assertNull(contractDetails_);
     }
 
     @Test
     public void test3(){
 
+        HashMapDB store = new HashMapDB();
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(db);
+        TrieStore.Factory trieStoreFactory = name -> new TrieStoreImpl(store);
+        DetailsDataStore dds = new DetailsDataStore(db, trieStoreFactory, config.detailsInMemoryStorageLimit());
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -129,17 +135,17 @@ public class DetailsDataStoreTest {
 
         ContractDetails contractDetails = new ContractDetailsImpl(
             null,
-            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+            new TrieImpl(new TrieStoreImpl(store), true),
             null,
-            config.detailsInMemoryStorageLimit(),
-            config.databaseDir()
+            trieStoreFactory,
+            config.detailsInMemoryStorageLimit()
         );
         contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
 
         dds.update(c_key, contractDetails);
 
-        ContractDetails contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        ContractDetails contractDetails_ = dds.get(c_key);
 
         String encoded1 = Hex.toHexString(contractDetails.getEncoded());
         String encoded2 = Hex.toHexString(contractDetails_.getEncoded());
@@ -149,13 +155,13 @@ public class DetailsDataStoreTest {
         dds.remove(c_key);
         dds.update(c_key, contractDetails);
 
-        contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        contractDetails_ = dds.get(c_key);
         encoded2 = Hex.toHexString(contractDetails_.getEncoded());
         assertEquals(encoded1, encoded2);
 
         dds.flush();
 
-        contractDetails_ = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        contractDetails_ = dds.get(c_key);
         encoded2 = Hex.toHexString(contractDetails_.getEncoded());
         assertEquals(encoded1, encoded2);
     }
@@ -164,11 +170,12 @@ public class DetailsDataStoreTest {
     public void test4() {
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(db);
+        TrieStore.Factory trieStoreFactory = name -> new TrieStoreImpl(new HashMapDB());
+        DetailsDataStore dds = new DetailsDataStore(db, trieStoreFactory, config.detailsInMemoryStorageLimit());
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
 
-        ContractDetails contractDetails = dds.get(c_key, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        ContractDetails contractDetails = dds.get(c_key);
         assertNull(contractDetails);
     }
 }

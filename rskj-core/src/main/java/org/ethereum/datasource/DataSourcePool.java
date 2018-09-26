@@ -52,6 +52,15 @@ public class DataSourcePool {
         return (KeyValueDataSource) result.getDataSource();
     }
 
+    public static void reserve(String name) {
+        DataSourceEx dataSourceEx = pool.get(name);
+        if (dataSourceEx != null) {
+            synchronized (dataSourceEx) {
+                dataSourceEx.reserve();
+            }
+        }
+    }
+
     public static void closeDataSource(String name){
         DataSourceEx dataSourceEx = pool.get(name);
 
