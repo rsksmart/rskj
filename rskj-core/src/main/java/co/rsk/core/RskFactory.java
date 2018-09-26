@@ -328,7 +328,21 @@ public class RskFactory {
             return new EthModuleWalletDisabled();
         }
 
-        return new EthModuleWalletEnabled(config, rsk, wallet, transactionPool);
+        return new EthModuleWalletEnabled(wallet);
+    }
+
+    @Bean
+    public EthModuleTransaction getEthModuleTransaction(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
+
+        if (wallet == null) {
+            return new EthModuleTransactionDisabled();
+        }
+
+        if(config.autoMine()){
+            return new EthModuleTransactionInstant(config, eth, wallet, transactionPool);
+        }
+
+        return new EthModuleTransactionEnabled(config, eth, wallet, transactionPool);
     }
 
     @Bean
