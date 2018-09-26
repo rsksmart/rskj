@@ -70,6 +70,7 @@ public interface Trie {
     Trie cloneTrie();
 
     // This method can only return keys whose size is multiple of 8 bits
+    // Special value Integer.MAX_VALUE means collect them all.
     Set<ByteArrayWrapper> collectKeys(int byteSize);
 
     Set<ByteArrayWrapper> collectKeysFrom(byte[] key);

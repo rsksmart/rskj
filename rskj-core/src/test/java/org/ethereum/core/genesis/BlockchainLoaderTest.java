@@ -62,13 +62,15 @@ public class BlockchainLoaderTest {
 
         EthereumListener ethereumListener = Mockito.mock(EthereumListener.class);
 
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));;
+        // To use getAccountsKeys() the trie must not be secure
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)),false);
 
         BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null);
 
         blockChainLoader.loadBlockchain();
 
         Assert.assertEquals(5, repository.getAccountsKeys().size());
+
 
         Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
         Assert.assertEquals(BigInteger.valueOf(24), repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));

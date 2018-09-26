@@ -545,17 +545,20 @@ public class TrieImpl implements Trie {
         return result;
     }
 
-    // key is the key up to this point, in non-expanded form (binary)
-    private void collectKeys(Set<ByteArrayWrapper> set, ExpandedKey key,int maxKeyLen) {
+    // key is the key with exactly collectKeyLen bytes.
+    // in non-expanded form (binary)
+    // special value Integer.MAX_VALUE means collect them all.
+
+    private void collectKeys(Set<ByteArrayWrapper> set, ExpandedKey key,int collectKeyLen) {
 
 
-        if (key.length() > maxKeyLen) {
+        if ((collectKeyLen!=Integer.MAX_VALUE) && (key.length() >  collectKeyLen)) {
             return;
         }
 
         if (this.encodedSharedPath != null) {
             // sharedPath is decoded (only ones and zeros)
-            if (this.sharedPathLength+ key.length() > maxKeyLen)
+            if (this.sharedPathLength+ key.length() > collectKeyLen)
                 return;
 
             byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.sharedPathLength);
@@ -563,10 +566,13 @@ public class TrieImpl implements Trie {
         }
 
         // if the count is exact, and there is no prefix, then add
-        if (key.length() == maxKeyLen) {
-            // convert bit string into byte[]
-            set.add(new ByteArrayWrapper(PathEncoder.encode(key.getData())));
+        // and the value is not null
+        if (value!=null)
+            if ((collectKeyLen==Integer.MAX_VALUE) || (key.length() == collectKeyLen)) {
+              // convert bit string into byte[]
+              set.add(new ByteArrayWrapper(PathEncoder.encode(key.getData())));
         }
+
         for (int k = 0; k < ARITY; k++) {
             Trie node = this.retrieveNode(k);
 
@@ -574,14 +580,22 @@ public class TrieImpl implements Trie {
                 return;
             }
             // Now append to the key the zero/one
-            ((TrieImpl) node).collectKeys(set, key.append((byte)k), maxKeyLen);
+            ((TrieImpl) node).collectKeys(set, key.append((byte)k), collectKeyLen);
         }
     }
 
     @Override
+    // Special value Integer.MAX_VALUE means collect them all.
     public Set<ByteArrayWrapper> collectKeys(int byteSize) {
         Set<ByteArrayWrapper> set = new HashSet<>();
-        collectKeys(set,new ExpandedKeyImpl(), byteSize*8);
+
+        int bitSize;
+        if (byteSize==Integer.MAX_VALUE)
+            bitSize =Integer.MAX_VALUE;
+        else
+            bitSize = byteSize*8;
+
+        collectKeys(set,new ExpandedKeyImpl(), bitSize);
         return set;
     }
 

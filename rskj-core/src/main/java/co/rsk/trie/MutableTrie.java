@@ -21,6 +21,15 @@ public interface MutableTrie {
 
         void put(String key, byte[] value);
 
+        /////////////////////////////////////////////////////////////////////////////////
+        // deleteRecursive()
+        // The semantic of deleteRecursive() is special, and not the same of delete()
+        // When it is applied to a mutable trie which has a cache (such as MutableTrieCache)
+        // then this is DELETE ON COMMIT, which means that changes are not applies until
+        // commit() is called, and changes are applied as the last step of commit.
+        // In a normal MutableTrie or Trie, changes are applied immediately.
+        /////////////////////////////////////////////////////////////////////////////////
+
         void deleteRecursive(byte[] key);
 
         void delete(byte[] key);
