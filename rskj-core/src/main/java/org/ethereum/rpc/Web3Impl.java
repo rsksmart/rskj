@@ -547,28 +547,6 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    @Override
-    public String eth_sendRawTransaction(String rawData) throws Exception {
-        String s = null;
-        try {
-            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
-
-            if (null == tx.getGasLimit()
-                    || null == tx.getGasPrice()
-                    || null == tx.getValue()) {
-                throw new JsonRpcInvalidParamException("Missing parameter, gasPrice, gas or value");
-            }
-
-            eth.submitTransaction(tx);
-
-            return s = tx.getHash().toJsonString();
-        } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("eth_sendRawTransaction({}): {}", rawData, s);
-            }
-        }
-    }
-
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
         BlockInformationResult bir = new BlockInformationResult();
         bir.hash = TypeConverter.toJsonHex(blockInformation.getHash());
@@ -921,6 +899,13 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getFilterChanges(String id) {
         logger.debug("eth_getFilterChanges ...");
+
+        // TODO(mc): this is a quick solution that seems to work with OpenZeppelin tests, but needs to be reviewed
+        // We do the same as in Ganache: mine a block in each request to getFilterChanges so block filters work
+        if (config.isMinerClientEnabled() && config.minerClientAutoMine()) {
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            minerClient.mineBlock();
+        }
 
         Object[] s = null;
 

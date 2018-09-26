@@ -132,6 +132,10 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getDuration("miner.client.delayBetweenRefreshes");
     }
 
+    public boolean minerClientAutoMine() {
+        return configFromFiles.getBoolean("miner.client.autoMine");
+    }
+
     public boolean isMinerServerEnabled() {
         return configFromFiles.getBoolean("miner.server.enabled");
     }

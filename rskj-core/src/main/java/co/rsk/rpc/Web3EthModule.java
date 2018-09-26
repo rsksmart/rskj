@@ -36,10 +36,6 @@ public interface Web3EthModule {
         return getEthModule().sign(addr, data);
     }
 
-    default String eth_sendTransaction(Web3.CallArguments args) {
-        return getEthModule().sendTransaction(args);
-    }
-
     default String eth_call(Web3.CallArguments args, String bnOrId) {
         return getEthModule().call(args, bnOrId);
     }
@@ -90,7 +86,13 @@ public interface Web3EthModule {
 
     String eth_getCode(String addr, String bnOrId)throws Exception;
 
-    String eth_sendRawTransaction(String rawData) throws Exception;
+    default String eth_sendRawTransaction(String rawData) {
+        return getEthModule().sendRawTransaction(rawData);
+    }
+
+    default String eth_sendTransaction(Web3.CallArguments args) {
+        return getEthModule().sendTransaction(args);
+    }
 
     Web3.BlockResult eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception;
 
