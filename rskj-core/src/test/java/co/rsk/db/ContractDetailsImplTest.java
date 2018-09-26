@@ -27,6 +27,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -486,6 +487,7 @@ public class ContractDetailsImplTest {
         values.add(new DataWord(144));
 
         details.setStorage(keys, values);
+        details.syncStorage();
 
         byte[] encoded = details.getEncoded();
 
@@ -635,7 +637,7 @@ public class ContractDetailsImplTest {
         Assert.assertEquals(clone.getStorageSize(), snapshot.getStorageSize());
     }
 
-    @Test
+    @Test @Ignore("From now on we always save to external storage")
     public void testExternalStorageSerialization() {
         byte[] address = randomAddress();
         byte[] code = randomBytes(512);

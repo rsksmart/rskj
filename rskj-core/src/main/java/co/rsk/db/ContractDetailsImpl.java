@@ -226,10 +226,10 @@ public class ContractDetailsImpl implements ContractDetails {
         logger.trace("getting contract details as bytes, hash {}, address {}, storage size {}, has external storage {}", this.getStorageHashAsString(), this.getAddressAsString(), this.getStorageSize(), this.hasExternalStorage());
 
         byte[] rlpAddress = RLP.encodeElement(address);
-        byte[] rlpIsExternalStorage = RLP.encodeByte((byte) (externalStorage ? 1 : 0));
+        byte[] rlpIsExternalStorage = RLP.encodeByte((byte) 1);
 
         // Serialize the full trie, or only the root hash if external storage is used
-        byte[] rlpStorage = RLP.encodeElement(externalStorage ? this.trie.getHash().getBytes() : this.trie.serialize());
+        byte[] rlpStorage = RLP.encodeElement(this.trie.getHash().getBytes());
 
         byte[] rlpCode = RLP.encodeElement(this.code);
         byte[] rlpKeys = RLP.encodeSet(this.keys);
@@ -401,7 +401,7 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     private void checkExternalStorage() {
-        this.externalStorage = (keys.size() > memoryStorageLimit) || this.externalStorage;
+        this.externalStorage = true;
     }
 
     private String getDataSourceName() {
