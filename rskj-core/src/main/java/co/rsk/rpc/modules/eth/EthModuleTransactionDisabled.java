@@ -18,26 +18,18 @@
 
 package co.rsk.rpc.modules.eth;
 
+import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-
-public class EthModuleWalletDisabled implements EthModuleWallet {
+public class EthModuleTransactionDisabled implements EthModuleTransaction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
     @Override
-    public String[] accounts() {
-        String[] accounts = {};
-        LOGGER.debug("eth_accounts(): {}", Arrays.toString(accounts));
-        return accounts;
-    }
-
-    @Override
-    public String sign(String addr, String data) {
-        LOGGER.debug("eth_sign({}, {}): {}", addr, data, null);
+    public String sendTransaction(Web3.CallArguments args) {
+        LOGGER.debug("eth_sendTransaction({}): {}", args, null);
         throw new JsonRpcInvalidParamException("Local wallet is disabled in this node");
     }
 }
