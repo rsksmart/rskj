@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,26 +18,24 @@
 
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.config.RskSystemProperties;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
+/**
+ * This module disables sendTransaction because it needs a local wallet, but sendRawTransaction should still work.
+ */
+public class EthModuleTransactionDisabled extends EthModuleTransactionBase {
 
-public class EthModuleWalletDisabled implements EthModuleWallet {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("web3");
-
-    @Override
-    public String[] accounts() {
-        String[] accounts = {};
-        LOGGER.debug("eth_accounts(): {}", Arrays.toString(accounts));
-        return accounts;
+    public EthModuleTransactionDisabled(RskSystemProperties config, TransactionPool transactionPool) {
+        // wallet is only used from EthModuleTransactionBase::sendTransaction, which is overrode
+        super(config, null, transactionPool);
     }
 
     @Override
-    public String sign(String addr, String data) {
-        LOGGER.debug("eth_sign({}, {}): {}", addr, data, null);
+    public String sendTransaction(Web3.CallArguments args) {
+        LOGGER.debug("eth_sendTransaction({}): {}", args, null);
         throw new JsonRpcInvalidParamException("Local wallet is disabled in this node");
     }
 }
