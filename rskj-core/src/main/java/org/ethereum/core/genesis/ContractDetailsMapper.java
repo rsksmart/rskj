@@ -44,7 +44,7 @@ public class ContractDetailsMapper {
 
         contractDetails = new ContractDetailsImpl(
                 null,
-                new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+                ContractDetailsImpl.newStorage(),
                 null,
                 config.detailsInMemoryStorageLimit(),
                 config.databaseDir()

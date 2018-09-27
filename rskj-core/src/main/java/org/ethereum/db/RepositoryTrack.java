@@ -447,18 +447,9 @@ public class RepositoryTrack implements Repository {
         for (Map.Entry<RskAddress, ContractDetails> entry : cacheDetails.entrySet()) {
             RskAddress addr = entry.getKey();
             ContractDetails details = entry.getValue();
-            for (DataWord key : details.getStorageKeys()) {
-                addStorageRow(addr, key, details.getStorage().get(key));
-            }
-            createAccount(addr); // if not exists
-            // inefficient
-            saveCode(addr,details.getCode());
-
+            updateContractDetails(addr,details);
         }
-
-
     }
-
 
     @Override
     public synchronized byte[] getRoot() {
@@ -482,6 +473,17 @@ public class RepositoryTrack implements Repository {
     @Override
     public synchronized void setSnapshotTo(byte[] root) {
         this.trie.setSnapshotTo(new Keccak256(root));
+    }
+
+    @Override
+    public synchronized void updateContractDetails(RskAddress addr, final ContractDetails contractDetails){
+        Map<DataWord, byte[]> storage = contractDetails.getStorage();
+        for (Map.Entry<DataWord , byte[]> entry : storage.entrySet()) {
+            addStorageBytes(addr,entry.getKey(),entry.getValue());
+        }
+        createAccount(addr); // if not exists
+        saveCode(addr, contractDetails.getCode());
+
     }
 
     @Override

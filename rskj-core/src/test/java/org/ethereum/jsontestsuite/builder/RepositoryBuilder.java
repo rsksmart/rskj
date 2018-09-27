@@ -58,8 +58,9 @@ public class RepositoryBuilder {
         // It must me not secure in order to be able to collect keys later
         RepositoryImpl repositoryDummy = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()),false);
         Repository track = repositoryDummy.startTracking();
-        track.updateBatchDetails(detailsBatch);
         track.updateBatch(stateBatch);
+        track.updateBatchDetails(detailsBatch);
+
         track.commit();
 
         return repositoryDummy;

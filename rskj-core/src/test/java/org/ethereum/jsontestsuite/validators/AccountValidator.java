@@ -85,8 +85,8 @@ public class AccountValidator {
 
         for (DataWord key : currentKeys) {
 
-            DataWord currentValue = currentDetails.getStorage().get(key);
-            DataWord expectedValue = expectedDetails.getStorage().get(key);
+            byte[] currentValue = currentDetails.getStorage().get(key);
+            byte[] expectedValue = expectedDetails.getStorage().get(key);
             if (expectedValue == null) {
 
                 String formattedString = String.format("Account: %s: has unexpected storage data: %s = %s",
@@ -98,7 +98,7 @@ public class AccountValidator {
                 continue;
             }
 
-            if (!expectedValue.equals(currentValue)) {
+            if (!Arrays.equals(expectedValue,currentValue)) {
 
                 String formattedString = String.format("Account: %s: has unexpected value, for key: %s , expectedValue: %s real value: %s",
                         addr,

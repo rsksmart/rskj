@@ -96,36 +96,7 @@ public class ContractDetailsImplTest {
         Assert.assertEquals(1, details.getStorageSize());
     }
 
-    @Test
-    public void putDataWordWithoutLeadingZeroes() {
-        ContractDetailsImpl details = buildContractDetails();
 
-        details.put(DataWord.ONE, new DataWord(42));
-
-        Trie trie = details.getTrie();
-
-        byte[] value = trie.get(DataWord.ONE.getData());
-
-        Assert.assertNotNull(value);
-        Assert.assertEquals(1, value.length);
-        Assert.assertEquals(42, value[0]);
-        Assert.assertEquals(1, details.getStorageSize());
-    }
-
-    @Test
-    public void putDataWordZeroAsDeleteValue() {
-        ContractDetailsImpl details = buildContractDetails();
-
-        details.put(DataWord.ONE, new DataWord(42));
-        details.put(DataWord.ONE, DataWord.ZERO);
-
-        Trie trie = details.getTrie();
-
-        byte[] value = trie.get(DataWord.ONE.getData());
-
-        Assert.assertNull(value);
-        Assert.assertEquals(0, details.getStorageSize());
-    }
 
     @Test
     public void getNullBytesFromUnusedAddress() {
@@ -147,34 +118,7 @@ public class ContractDetailsImplTest {
         Assert.assertEquals(1, details.getStorageSize());
     }
 
-    @Test
-    public void putNullValueAsDeleteValue() {
-        ContractDetailsImpl details = buildContractDetails();
 
-        details.putBytes(DataWord.ONE, new byte[] { 0x01, 0x02, 0x03 });
-        details.putBytes(DataWord.ONE, null);
-
-        Trie trie = details.getTrie();
-
-        byte[] value = trie.get(DataWord.ONE.getData());
-
-        Assert.assertNull(value);
-        Assert.assertEquals(0, details.getStorageSize());
-    }
-
-    @Test
-    public void getStorageRoot() {
-        ContractDetailsImpl details = buildContractDetails();
-
-        details.put(DataWord.ONE, new DataWord(42));
-        details.put(DataWord.ZERO, new DataWord(1));
-
-        Trie trie = details.getTrie();
-
-        Assert.assertNotNull(trie.getHash().getBytes());
-
-        Assert.assertArrayEquals(trie.getHash().getBytes(), details.getStorageHash());
-    }
 
     @Test
     public void getNullCode() {
@@ -245,7 +189,7 @@ public class ContractDetailsImplTest {
     public void getStorageFromEmptyDetails() {
         ContractDetailsImpl details = buildContractDetails();
 
-        Map<DataWord, DataWord> map = details.getStorage();
+        Map<DataWord, byte[]> map = details.getStorage();
 
         Assert.assertNotNull(map);
         Assert.assertTrue(map.isEmpty());
@@ -255,7 +199,7 @@ public class ContractDetailsImplTest {
     public void getStorageUsingNullFromEmptyDetails() {
         ContractDetailsImpl details = buildContractDetails();
 
-        Map<DataWord, DataWord> map = details.getStorage(null);
+        Map<DataWord, byte[]> map = details.getStorage(null);
 
         Assert.assertNotNull(map);
         Assert.assertTrue(map.isEmpty());
@@ -268,7 +212,7 @@ public class ContractDetailsImplTest {
         details.put(DataWord.ZERO, DataWord.ONE);
         details.put(DataWord.ONE, new DataWord(42));
 
-        Map<DataWord, DataWord> map = details.getStorage();
+        Map<DataWord, byte[]> map = details.getStorage();
 
         Assert.assertNotNull(map);
         Assert.assertFalse(map.isEmpty());
@@ -276,8 +220,8 @@ public class ContractDetailsImplTest {
         Assert.assertTrue(map.containsKey(DataWord.ZERO));
         Assert.assertTrue(map.containsKey(DataWord.ONE));
 
-        Assert.assertEquals(DataWord.ONE, map.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(42), map.get(DataWord.ONE));
+        Assert.assertEquals(DataWord.ONE, new DataWord(map.get(DataWord.ZERO)));
+        Assert.assertEquals(new DataWord(42), new DataWord(map.get(DataWord.ONE)));
     }
 
     @Test
@@ -293,7 +237,7 @@ public class ContractDetailsImplTest {
         keys.add(DataWord.ZERO);
         keys.add(new DataWord(3));
 
-        Map<DataWord, DataWord> map = details.getStorage(keys);
+        Map<DataWord, byte[]> map = details.getStorage(keys);
 
         Assert.assertNotNull(map);
         Assert.assertFalse(map.isEmpty());
@@ -303,8 +247,8 @@ public class ContractDetailsImplTest {
         Assert.assertTrue(map.containsKey(DataWord.ZERO));
         Assert.assertTrue(map.containsKey(new DataWord(3)));
 
-        Assert.assertEquals(DataWord.ONE, map.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), map.get(new DataWord(3)));
+        Assert.assertEquals(DataWord.ONE, new DataWord(map.get(DataWord.ZERO)));
+        Assert.assertEquals(new DataWord(144), new DataWord(map.get(new DataWord(3))));
     }
 
     @Test
@@ -371,83 +315,31 @@ public class ContractDetailsImplTest {
         keys.add(DataWord.ZERO);
         keys.add(DataWord.ONE);
 
-        List<DataWord> values = new ArrayList<>();
+        List<byte[]> values = new ArrayList<>();
 
-        values.add(new DataWord(42));
-        values.add(new DataWord(144));
+        values.add(new DataWord(42).getData());
+        values.add(new DataWord(144).getData());
 
         details.setStorage(keys, values);
 
-        Assert.assertEquals(new DataWord(42), details.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), details.get(DataWord.ONE));
+        Assert.assertEquals(new DataWord(42), new DataWord(details.getBytes(DataWord.ZERO)));
+        Assert.assertEquals(new DataWord(144), new DataWord(details.getBytes(DataWord.ONE)));
     }
 
     @Test
     public void setStorageUsingMap() {
         ContractDetailsImpl details = buildContractDetails();
 
-        Map<DataWord, DataWord> map = new HashMap<>();
+        Map<DataWord, byte[]> map = new HashMap<>();
 
-        map.put(DataWord.ZERO, new DataWord(42));
-        map.put(DataWord.ONE, new DataWord(144));
+        map.put(DataWord.ZERO, new DataWord(42).getData());
+        map.put(DataWord.ONE, new DataWord(144).getData());
 
         details.setStorage(map);
 
-        Assert.assertEquals(new DataWord(42), details.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), details.get(DataWord.ONE));
+        Assert.assertEquals(new DataWord(42), new DataWord(details.getBytes(DataWord.ZERO)));
+        Assert.assertEquals(new DataWord(144), new DataWord(details.getBytes(DataWord.ONE)));
     }
-
-    @Test
-    public void getSnapshot() {
-        ContractDetailsImpl details = buildContractDetails();
-
-        byte[] initialRoot = details.getStorageHash();
-
-        List<DataWord> keys = new ArrayList<>();
-
-        keys.add(DataWord.ZERO);
-        keys.add(DataWord.ONE);
-
-        List<DataWord> values = new ArrayList<>();
-
-        values.add(new DataWord(42));
-        values.add(new DataWord(144));
-
-        details.setStorage(keys, values);
-
-        byte[] root = details.getStorageHash();
-
-        List<DataWord> keys2 = new ArrayList<>();
-
-        keys2.add(new DataWord(2));
-        keys2.add(new DataWord(3));
-
-        List<DataWord> values2 = new ArrayList<>();
-
-        values2.add(new DataWord(1));
-        values2.add(new DataWord(2));
-
-        details.setStorage(keys2, values2);
-
-        ContractDetails result = details.getSnapshotTo(root);
-
-        Assert.assertEquals(new DataWord(42), result.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), result.get(DataWord.ONE));
-        Assert.assertEquals(null, result.get(new DataWord(2)));
-        Assert.assertEquals(null, result.get(new DataWord(3)));
-
-        ContractDetails result2 = details.getSnapshotTo(initialRoot);
-
-        Assert.assertEquals(null, result2.get(DataWord.ZERO));
-        Assert.assertEquals(null, result2.get(DataWord.ONE));
-        Assert.assertEquals(null, result2.get(new DataWord(2)));
-        Assert.assertEquals(null, result2.get(new DataWord(3)));
-    }
-
-
-
-
-
 
 
 
@@ -612,10 +504,7 @@ public class ContractDetailsImplTest {
     private ContractDetailsImpl buildContractDetails() {
         return new ContractDetailsImpl(
                 null,
-                new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
-                null,
-                config.detailsInMemoryStorageLimit(),
-                config.databaseDir()
-        );
+                ContractDetailsImpl.newStorage(),
+                null);
     }
 }

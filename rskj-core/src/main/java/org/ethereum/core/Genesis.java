@@ -79,7 +79,7 @@ public class Genesis extends Block {
     }
 
     public static Block getInstance(RskSystemProperties config) {
-        return GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false);
+        return GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false,true);
     }
 
     public static byte[] getZeroHash(){

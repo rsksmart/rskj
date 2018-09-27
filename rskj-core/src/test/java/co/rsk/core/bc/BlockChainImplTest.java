@@ -986,9 +986,11 @@ public class BlockChainImplTest {
     public static Block getGenesisBlock(BlockChainImpl blockChain) {
         Repository repository = blockChain.getRepository();
 
-        Genesis genesis = GenesisLoader.loadGenesis(config, "rsk-unittests.json", BigInteger.ZERO, true);
+        Genesis genesis = GenesisLoader.loadGenesis(config, "rsk-unittests.json",
+                BigInteger.ZERO, true,true);
 
         for (RskAddress addr : genesis.getPremine().keySet()) {
+            // Note that this preMine only updates balance, but not nonce, nor code, nor storage
             repository.createAccount(addr);
             repository.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
         }

@@ -396,17 +396,18 @@ public class TestRunner {
                             continue;
                         }
 
-                        Map<DataWord, DataWord> testStorage = contractDetails.getStorage();
-                        DataWord actualValue = testStorage.get(new DataWord(storageKey.getData()));
+                        Map<DataWord, byte[]> testStorage = contractDetails.getStorage();
+                        byte[] actualValue = testStorage.get(
+                                new DataWord(storageKey.getData()));
 
                         if (actualValue == null ||
-                                !Arrays.equals(expectedStValue, actualValue.getData())) {
+                                !Arrays.equals(expectedStValue, actualValue)) {
 
                             String output =
                                     String.format("Storage value different: key [ %s ], expectedValue: [ %s ], actualValue: [ %s ]",
                                             Hex.toHexString(storageKey.getData()),
                                             Hex.toHexString(expectedStValue),
-                                            actualValue == null ? "" : Hex.toHexString(actualValue.getNoLeadZeroesData()));
+                                            actualValue == null ? "" : Hex.toHexString(actualValue));
                             logger.info(output);
                             results.add(output);
                         }

@@ -70,16 +70,16 @@ public class ProgramTrace {
                     fullStorage = true;
 
                     String address = toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
-                    for (Map.Entry<DataWord, DataWord> entry : contractDetails.getStorage().entrySet()) {
+                    for (Map.Entry<DataWord, byte[]> entry : contractDetails.getStorage().entrySet()) {
                         // TODO: solve NULL key/value storage problem
                         DataWord key = entry.getKey();
-                        DataWord value = entry.getValue();
+                        byte[] value = entry.getValue();
                         if (key == null || value == null) {
                             LOGGER.info("Null storage key/value: address[{}]" ,address);
                             continue;
                         }
 
-                        initStorage.put(key.toString(), value.toString());
+                        initStorage.put(key.toString(), new DataWord(value).toString());
                     }
 
                     if (!initStorage.isEmpty()) {

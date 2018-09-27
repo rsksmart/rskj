@@ -25,6 +25,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.db.ContractDetails;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -2011,6 +2012,10 @@ public class VM {
         return (size==0)? 0 : limitedAddToMaxLong(Program.limitToMaxLong(offset.value()),size);
     }
 
+    static public String shortHex(byte[] b) {
+        String hexValue = Hex.toHexString(ByteUtil.stripLeadingZeroes(b)).toUpperCase();
+        return "0x" + hexValue.replaceFirst("^0+(?!$)", "");
+    }
     /*
      * Dumping the VM state at the current operation in various styles
      *  - standard  Not Yet Implemented
@@ -2032,7 +2037,7 @@ public class VM {
 
                     storageKeys.forEach(key -> dumpLogger.trace("{} {}",
                             Hex.toHexString(key.getNoLeadZeroesData()),
-                            Hex.toHexString(details.getStorage().get(key).getNoLeadZeroesData())));
+                            Hex.toHexString(details.getStorage().get(key))));
                     break;
                 default:
                     break;
@@ -2061,7 +2066,7 @@ public class VM {
 
             storageKeys.forEach(key -> dumpLogger.trace("{}: {}",
                     key.shortHex(),
-                    details.getStorage().get(key).shortHex()));
+                    shortHex(details.getStorage().get(key))));
 
             int level = program.getCallDeep();
             String contract = Hex.toHexString(program.getOwnerAddress().getLast20Bytes());

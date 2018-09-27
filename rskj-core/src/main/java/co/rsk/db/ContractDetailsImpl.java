@@ -36,6 +36,7 @@ import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
+import javax.xml.crypto.Data;
 import java.util.*;
 
 import static org.ethereum.datasource.DataSourcePool.levelDbByName;
@@ -50,22 +51,32 @@ public class ContractDetailsImpl implements ContractDetails {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final Logger logger = LoggerFactory.getLogger("contractdetails");
 
-    private Trie trie;
+    private Map<DataWord,byte[]> storage;
     private byte[] code;
     private byte[] address;
     private boolean dirty;
     private boolean deleted;
-
     private boolean closed;
-    private Set<ByteArrayWrapper> keys = new HashSet<>();
 
+    public static Map<DataWord,byte[]> newStorage() {
+        return new HashMap<>();
+    }
 
-    public ContractDetailsImpl(byte[] address, Trie trie, byte[] code, int memoryStorageLimit, String databaseDir) {
+    public ContractDetailsImpl(byte[] address, Map<DataWord,byte[]> astorage,
+                               byte[] code, int memoryStorageLimit, String databaseDir) {
         this.address = ByteUtils.clone(address);
-        this.trie = trie;
+        this.storage = astorage;
+        this.code = ByteUtils.clone(code);
+    }
+
+    public ContractDetailsImpl(byte[] address, Map<DataWord,byte[]> astorage,
+                               byte[] code) {
+        this.address = ByteUtils.clone(address);
+        this.storage = astorage;
         this.code = ByteUtils.clone(code);
 
     }
+
 
     @Override
     public synchronized void put(DataWord key, DataWord value) {
@@ -74,12 +85,10 @@ public class ContractDetailsImpl implements ContractDetails {
         byte[] keyBytes = key.getData();
 
         if (value.equals(DataWord.ZERO)) {
-            this.trie = this.trie.delete(keyBytes);
-            removeKey(keyBytes);
+            storage.remove(key);
         }
         else {
-            this.trie = this.trie.put(keyBytes, value.getNoLeadZeroesData());
-            addKey(keyBytes);
+            storage.put(key, value.getNoLeadZeroesData());
         }
 
         this.setDirty(true);
@@ -93,12 +102,10 @@ public class ContractDetailsImpl implements ContractDetails {
         byte[] keyBytes = key.getData();
 
         if (bytes == null) {
-            this.trie = this.trie.delete(keyBytes);
-            removeKey(keyBytes);
+            storage.remove(key);
         }
         else {
-            this.trie = this.trie.put(keyBytes, bytes);
-            addKey(keyBytes);
+            storage.put(key, bytes);
         }
 
         this.setDirty(true);
@@ -110,9 +117,7 @@ public class ContractDetailsImpl implements ContractDetails {
         logger.trace("get word");
 
 
-        byte[] value = null;
-
-        value = this.trie.get(key.getData());
+        byte[] value = storage.get(key);
 
         if (value == null || value.length == 0) {
             return null;
@@ -124,7 +129,7 @@ public class ContractDetailsImpl implements ContractDetails {
     @Override
     public synchronized byte[] getBytes(DataWord key) {
         logger.trace("get bytes");
-        return this.trie.get(key.getData());
+        return storage.get(key);
 
     }
 
@@ -138,14 +143,6 @@ public class ContractDetailsImpl implements ContractDetails {
         this.code = ByteUtils.clone(code);
     }
 
-    @Override
-    public synchronized byte[] getStorageHash() {
-
-        this.trie.save();
-        byte[] trieHash = this.trie.getHash().getBytes();
-        logger.trace("getting contract details trie hash {}, address {}", getHashAsString(trieHash), this.getAddressAsString());
-        return trieHash;
-    }
 
 
     @Override
@@ -170,66 +167,54 @@ public class ContractDetailsImpl implements ContractDetails {
 
     @Override
     public synchronized int getStorageSize() {
-        return keys.size();
+        return storage.keySet().size();
     }
 
     @Override
     public synchronized Set<DataWord> getStorageKeys() {
-        Set<DataWord> result = new HashSet<>();
 
-        for (ByteArrayWrapper key : keys) {
-            result.add(new DataWord(key));
-        }
-
-        return result;
+        return storage.keySet();
     }
 
     @Override
-    public synchronized Map<DataWord, DataWord> getStorage(@Nullable Collection<DataWord> keys) {
-        Map<DataWord, DataWord> storage = new HashMap<>();
+    public synchronized Map<DataWord, byte[]> getStorage(@Nullable Collection<DataWord> keys) {
+        Map<DataWord, byte[]> astorage = new HashMap<>();
 
         if (keys == null) {
-            for (ByteArrayWrapper keyBytes : this.keys) {
-                DataWord key = new DataWord(keyBytes);
-                DataWord value = get(key);
-
-                // we check if the value is not null,
-                // cause we keep all historical keys
+            for (DataWord key: this.getStorageKeys()) {
+                byte[] value = storage.get(key);
                 if (value != null) {
-                    storage.put(key, value);
+                    astorage.put(key, value);
                 }
             }
         } else {
             for (DataWord key : keys) {
-                DataWord value = get(key);
-
-                // we check if the value is not null,
-                // cause we keep all historical keys
+                byte[] value = getBytes(key);
                 if (value != null) {
-                    storage.put(key, value);
+                    astorage.put(key, value);
                 }
             }
         }
 
-        return storage;
+        return astorage;
     }
 
     @Override
-    public synchronized Map<DataWord, DataWord> getStorage() {
+    public synchronized Map<DataWord, byte[]> getStorage() {
         return getStorage(null);
     }
 
     @Override
-    public synchronized void setStorage(List<DataWord> storageKeys, List<DataWord> storageValues) {
+    public synchronized void setStorage(List<DataWord> storageKeys, List<byte[]> storageValues) {
         for (int i = 0; i < storageKeys.size(); ++i) {
-            put(storageKeys.get(i), storageValues.get(i));
+            putBytes(storageKeys.get(i), storageValues.get(i));
         }
     }
 
     @Override
-    public synchronized void setStorage(Map<DataWord, DataWord> storage) {
-        for (Map.Entry<DataWord, DataWord> entry : storage.entrySet()) {
-            put(entry.getKey(), entry.getValue());
+    public synchronized void setStorage(Map<DataWord, byte[]> storage) {
+        for (Map.Entry<DataWord, byte[]> entry : storage.entrySet()) {
+            putBytes(entry.getKey(), entry.getValue());
         }
     }
 
@@ -244,64 +229,11 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
 
-    @Override
-    public synchronized ContractDetails getSnapshotTo(byte[] hash) {
-        logger.trace("get snapshot");
-
-        this.trie.save();
-
-        ContractDetailsImpl details = new ContractDetailsImpl(this.address, this.trie.getSnapshotTo(new Keccak256(hash)), this.code, 0, "");
-        details.keys = new HashSet<>();
-        details.keys.addAll(this.keys);
-
-        logger.trace("getting contract details snapshot hash {}, address {}, storage size {}", details.getStorageHashAsString(), details.getAddressAsString(), details.getStorageSize());
-
-        return details;
-    }
 
     @Override
     public boolean isNullObject() {
-        return (code==null || code.length==0) && keys.isEmpty();
-    }
-
-    public Trie getTrie() {
-        return this.trie;
+        return (code==null || code.length==0) && storage.entrySet().isEmpty();
     }
 
 
-    private void addKey(byte[] key) {
-        keys.add(wrap(key));
-    }
-
-    private void removeKey(byte[] key) {
-        keys.remove(wrap(key));
-    }
-
-
-    private String getDataSourceName() {
-        return "details-storage/" + toHexString(address);
-    }
-
-    private String getAddressAsString() {
-        byte[] addr = this.getAddress();
-
-        if (addr == null) {
-            return "";
-        }
-
-        return Hex.toHexString(addr);
-    }
-
-
-    private String getStorageHashAsString() {
-        return getHashAsString(this.trie.getHash().getBytes());
-    }
-
-    private static String getHashAsString(byte[] hash) {
-        if (hash == null) {
-            return "";
-        }
-
-        return Hex.toHexString(hash);
-    }
 }

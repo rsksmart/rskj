@@ -210,7 +210,7 @@ public interface Repository extends AccountInformationProvider {
     void setSnapshotTo(byte[] root);
 
 
-        //void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
+    void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 

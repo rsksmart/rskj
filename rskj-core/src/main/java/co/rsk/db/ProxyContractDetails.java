@@ -109,10 +109,6 @@ public class ProxyContractDetails implements ContractDetails {
         this.code = ByteUtils.clone(code);
     }
 
-    @Override
-    public synchronized byte[] getStorageHash() {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public void setDirty(boolean dirty) {
@@ -159,8 +155,8 @@ public class ProxyContractDetails implements ContractDetails {
     }
 
     @Override
-    public synchronized Map<DataWord, DataWord> getStorage(@Nullable Collection<DataWord> keys) {
-        Map<DataWord, DataWord> storage = new HashMap<>();
+    public synchronized Map<DataWord, byte[]> getStorage(@Nullable Collection<DataWord> keys) {
+        Map<DataWord, byte[]> storage = new HashMap<>();
 
         // Currently we don't store the keys, so we return an empty map.
         // To tweak it, we've a global map of possible keys, and we try them all!
@@ -168,7 +164,7 @@ public class ProxyContractDetails implements ContractDetails {
             keys =GlobalKeyMap.globalKeyMap;
         }
         for (DataWord key : keys) {
-            DataWord value = get(key);
+            byte[] value = getBytes(key);
 
             // we check if the value is not null,
             // cause we keep all historical keys
@@ -181,21 +177,21 @@ public class ProxyContractDetails implements ContractDetails {
     }
 
     @Override
-    public synchronized Map<DataWord, DataWord> getStorage() {
+    public synchronized Map<DataWord, byte[]> getStorage() {
         return getStorage(null);
     }
 
     @Override
-    public synchronized void setStorage(List<DataWord> storageKeys, List<DataWord> storageValues) {
+    public synchronized void setStorage(List<DataWord> storageKeys, List<byte[]> storageValues) {
         for (int i = 0; i < storageKeys.size(); ++i) {
-            put(storageKeys.get(i), storageValues.get(i));
+            putBytes(storageKeys.get(i), storageValues.get(i));
         }
     }
 
     @Override
-    public synchronized void setStorage(Map<DataWord, DataWord> storage) {
-        for (Map.Entry<DataWord, DataWord> entry : storage.entrySet()) {
-            put(entry.getKey(), entry.getValue());
+    public synchronized void setStorage(Map<DataWord, byte[]> storage) {
+        for (Map.Entry<DataWord, byte[]> entry : storage.entrySet()) {
+            putBytes(entry.getKey(), entry.getValue());
         }
     }
 

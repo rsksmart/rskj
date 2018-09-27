@@ -153,7 +153,9 @@ public class RskWireProtocol extends EthHandler {
     protected void processStatus(org.ethereum.net.eth.message.StatusMessage msg, ChannelHandlerContext ctx) throws InterruptedException {
 
         try {
-            Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
+            // I don't understand: loadGenesis() is called EVERY time a status message is
+            // received? What a waste!
+            Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true,true);
             if (!Arrays.equals(msg.getGenesisHash(), genesis.getHash().getBytes())
                     || msg.getProtocolVersion() != version.getCode()) {
                 loggerNet.info("Removing EthHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
@@ -230,7 +232,8 @@ public class RskWireProtocol extends EthHandler {
         BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
         // Original status
-        Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
+        // EVERY time a status is sent, loadGenesis() is called: a complete waste of resources.
+        Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true,true);
         org.ethereum.net.eth.message.StatusMessage msg = new org.ethereum.net.eth.message.StatusMessage(protocolVersion, networkId,
                 ByteUtil.bigIntegerToBytes(totalDifficulty.asBigInteger()), bestBlock.getHash().getBytes(), genesis.getHash().getBytes());
         sendMessage(msg);
