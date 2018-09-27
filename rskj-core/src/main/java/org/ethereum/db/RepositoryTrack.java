@@ -481,7 +481,10 @@ public class RepositoryTrack implements Repository {
         for (Map.Entry<DataWord , byte[]> entry : storage.entrySet()) {
             addStorageBytes(addr,entry.getKey(),entry.getValue());
         }
-        createAccount(addr); // if not exists
+
+        // Don't let a storage key live without an accountstate
+        if (!isExist(addr))
+            createAccount(addr); // if not exists
         saveCode(addr, contractDetails.getCode());
 
     }

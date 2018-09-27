@@ -85,6 +85,7 @@ public class GenesisLoader {
         ContractDetailsMapper detailsMapper = new ContractDetailsMapper(config);
 
         for (Map.Entry<String, AllocatedAccount> accountEntry : alloc.entrySet()) {
+            // Why contracts starting with "00" are excluded ? Are these precompiled ?
             if(!StringUtils.equals("00", accountEntry.getKey())) {
                 Coin balance = new Coin(new BigInteger(accountEntry.getValue().getBalance()));
                 BigInteger nonce;
