@@ -100,10 +100,12 @@ public class AccountValidator {
 
             if (!Arrays.equals(expectedValue,currentValue)) {
 
-                String formattedString = String.format("Account: %s: has unexpected value, for key: %s , expectedValue: %s real value: %s",
+                String formattedString = String.format("Account: %s: has unexpected value, for key: %s , "+
+                                "expectedValue: %s real value: %s",
                         addr,
                         key.toString(),
-                        expectedValue.toString(), currentValue.toString());
+                        Hex.toHexString(expectedValue),
+                        Hex.toHexString(currentValue));
                 results.add(formattedString);
                 continue;
             }

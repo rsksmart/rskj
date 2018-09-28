@@ -55,7 +55,7 @@ public class ProxyContractDetails implements ContractDetails {
         }
         else {
             GlobalKeyMap.globalKeyMap.add(key);
-            this.trie.put(keyBytes, value.getNoLeadZeroesData());
+            this.trie.put(keyBytes, value.getByteArrayForStorage());
         }
 
         this.setDirty(true);

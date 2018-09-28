@@ -378,7 +378,7 @@ public class TestRunner {
                     Map<DataWord, DataWord> storage = accountState.getStorage();
 
                     for (DataWord storageKey : storage.keySet()) {
-                        byte[] expectedStValue = storage.get(storageKey).getData();
+                        DataWord expectedStValue = storage.get(storageKey);
 
                         ContractDetails contractDetails =
                                 program.getStorage().getContractDetails_deprecated(accountState.getAddress());
@@ -387,7 +387,7 @@ public class TestRunner {
                             String output =
                                     String.format("Storage raw doesn't exist: key [ %s ], expectedValue: [ %s ]",
                                             Hex.toHexString(storageKey.getData()),
-                                            Hex.toHexString(expectedStValue)
+                                            expectedStValue.toString()
                                     );
 
                             logger.info(output);
@@ -400,13 +400,18 @@ public class TestRunner {
                         byte[] actualValue = testStorage.get(
                                 new DataWord(storageKey.getData()));
 
+                        // The actual value will be compressed (not leading zeros)
+                        // But the expected value is given in a DataWord.
+                        // Here we expand the actualValue: this may make subtle encoding errors
+                        // go undetected, but the whole TestRunner system is based on DataWords
+                        // and not byte arrays.
                         if (actualValue == null ||
-                                !Arrays.equals(expectedStValue, actualValue)) {
+                                !(expectedStValue.equals(new DataWord(actualValue)))) {
 
                             String output =
                                     String.format("Storage value different: key [ %s ], expectedValue: [ %s ], actualValue: [ %s ]",
                                             Hex.toHexString(storageKey.getData()),
-                                            Hex.toHexString(expectedStValue),
+                                            expectedStValue.toString(),
                                             actualValue == null ? "" : Hex.toHexString(actualValue));
                             logger.info(output);
                             results.add(output);

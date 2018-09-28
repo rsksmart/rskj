@@ -158,8 +158,11 @@ public class NetworkStateExporterTest {
         Assert.assertEquals("01020304",contract.get("code"));
         Map data = (Map) contract.get("data");
         Assert.assertEquals(2, data.keySet().size());
-        Assert.assertEquals("0000000000000000000000000000000000000000000000000000000000000001",
-                data.get(Hex.toHexString(DataWord.ZERO.getData())));
+
+        String addrStr = Hex.toHexString(DataWord.ZERO.getData());
+
+        // A value expanded with leading zeros requires testing in expanded form.
+        Assert.assertEquals("01",data.get(addrStr));
         Assert.assertEquals("05060708", data.get(Hex.toHexString(DataWord.ONE.getData())));
     }
 

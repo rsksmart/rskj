@@ -250,7 +250,11 @@ public class RepositoryTrack implements Repository {
         if (accountState ==null)
             accountState  = createAccount(addr);
 
-        accountState.setCodeHash(Keccak256Helper.keccak256(code));
+        if (code!=null)
+            accountState.setCodeHash(Keccak256Helper.keccak256(code));
+        else {
+            // This is only used in tests. We can either use the hash of empty code or do nothing
+        }
         updateAccountState(addr, accountState);
     }
 
@@ -278,7 +282,9 @@ public class RepositoryTrack implements Repository {
 
     @Override
     public synchronized void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
-        addStorageBytes(addr,key,value.getData());
+        // This is important: DataWords are stored stripping leading zeros.
+
+        addStorageBytes(addr,key,value.getByteArrayForStorage());
     }
 
     @Override
@@ -477,14 +483,16 @@ public class RepositoryTrack implements Repository {
 
     @Override
     public synchronized void updateContractDetails(RskAddress addr, final ContractDetails contractDetails){
+        // Don't let a storage key live without an accountstate
+        if (!isExist(addr))
+            createAccount(addr); // if not exists
+
         Map<DataWord, byte[]> storage = contractDetails.getStorage();
         for (Map.Entry<DataWord , byte[]> entry : storage.entrySet()) {
             addStorageBytes(addr,entry.getKey(),entry.getValue());
         }
 
-        // Don't let a storage key live without an accountstate
-        if (!isExist(addr))
-            createAccount(addr); // if not exists
+
         saveCode(addr, contractDetails.getCode());
 
     }

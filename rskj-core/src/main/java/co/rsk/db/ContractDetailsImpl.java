@@ -88,7 +88,7 @@ public class ContractDetailsImpl implements ContractDetails {
             storage.remove(key);
         }
         else {
-            storage.put(key, value.getNoLeadZeroesData());
+            storage.put(key, value.getByteArrayForStorage());
         }
 
         this.setDirty(true);

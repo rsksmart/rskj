@@ -33,7 +33,7 @@ public class RepositoryUpdateTest {
         RepositoryImpl repo = new RepositoryImpl();
         repo.updateContractDetails(address,details);
 
-        byte[] value = repo.getMutableTrie().get(DataWord.ONE.getData());
+        byte[] value = repo.getStorageBytes(address,DataWord.ONE);
 
         Assert.assertNotNull(value);
         Assert.assertEquals(1, value.length);
