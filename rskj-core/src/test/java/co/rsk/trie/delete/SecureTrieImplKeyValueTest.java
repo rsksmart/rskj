@@ -22,8 +22,11 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.junit.Assert;
 import org.junit.Test;
+import org.spongycastle.util.encoders.Hex;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by ajlopez on 03/04/2017.
@@ -70,6 +73,54 @@ public class SecureTrieImplKeyValueTest {
 
         Assert.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
         Assert.assertNull(trie.get(zeroKey));
+    }
+
+    @Test
+    public void testRecursivelyDelete(){
+        byte[] key0 = "0".getBytes();
+        byte[] key1 = "1".getBytes();
+        byte[] key2 = "112999".getBytes();
+        byte[] key3 = "11200".getBytes();
+        byte[] key4 = "1145".getBytes();
+
+        byte[] msg0 = Hex.toHexString(key0).getBytes();
+        byte[] msg1 = Hex.toHexString(key1).getBytes();
+        byte[] msg2 = Hex.toHexString(key2).getBytes();
+        byte[] msg3 = Hex.toHexString(key3).getBytes();
+        byte[] msg4 = Hex.toHexString(key4).getBytes();
+
+        List<byte[]> keys = new ArrayList<>(Arrays.asList(key0,key1,key2,key3,key4));
+        List<byte[]> values = new ArrayList<>(Arrays.asList(msg0,msg1,msg2,msg3,msg4));
+
+        Trie trie = new TrieImpl(true);
+        for (int i=0;i<keys.size();i++) {
+            trie.put(keys.get(i),values.get(i));
+        }
+
+        int trieSize = -1;
+
+        // Now check that all values are there
+        for (int i=0;i<keys.size();i++) {
+            Assert.assertTrue(Arrays.equals(trie.get(keys.get(i)), values.get(i)));
+            if (i==0)
+                // Now store the tree size: this must remain equal at the end
+                trieSize = trie.trieSize();
+        }
+
+
+
+        trie = trie.delete(key1);
+
+        // Now only key0 must remain
+        Assert.assertTrue(Arrays.equals(key0, msg0));
+
+        for (int i=0;i<keys.size();i++) {
+            if (i!=1)
+                Assert.assertNull(trie.get(keys.get(i)));
+        }
+
+        // Now check the tree size and make sure it's the original
+        Assert.assertEquals(trieSize,trie.trieSize());
     }
 
     @Test
