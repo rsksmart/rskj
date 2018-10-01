@@ -920,7 +920,7 @@ public class TrieImpl implements Trie {
             newHashes[pos] = null;
         }
 
-        if (isEmptyTrie(value, newNodes, newHashes)) {
+        if (isEmptyTrie(this.value, newNodes, newHashes)) {
             return null;
         }
 
