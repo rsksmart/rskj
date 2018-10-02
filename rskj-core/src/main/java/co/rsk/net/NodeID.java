@@ -18,7 +18,7 @@
 
 package co.rsk.net;
 
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -27,7 +27,7 @@ import java.util.Arrays;
  * NodeID is a wrapper over the nodeID byte array used by Ethereum.
  */
 public class NodeID {
-    protected static final char[] hexArray = "0123456789ABCDEF".toCharArray();
+
     private final byte[] nodeID;
 
     public NodeID(@Nonnull final byte[] nodeID) {

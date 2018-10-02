@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static org.ethereum.datasource.DataSourcePool.levelDbByName;
 
 @Configuration
 @ComponentScan(
@@ -56,15 +57,21 @@ public class CommonConfig {
             FileUtil.recursiveDelete(databaseDir);
             logger.info("Database reset done");
         }
-
-        KeyValueDataSource ds = makeDataSource(config, "state");
-        KeyValueDataSource detailsDS = makeDataSource(config, "details");
-
-        return new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS);
+        return buildRepository(databaseDir, config.detailsInMemoryStorageLimit());
     }
 
-    private KeyValueDataSource makeDataSource(RskSystemProperties config, String name) {
-        KeyValueDataSource ds = new LevelDbDataSource(config, name);
+    public Repository buildRepository(String databaseDir, int memoryStorageLimit) {
+        KeyValueDataSource ds = makeDataSource("state", databaseDir);
+        KeyValueDataSource detailsDS = makeDataSource("details", databaseDir);
+
+        return new RepositoryImpl(new TrieStoreImpl(ds), detailsDS,
+                                  name -> new TrieStoreImpl(levelDbByName(name, databaseDir)),
+                                  memoryStorageLimit
+        );
+    }
+
+    private KeyValueDataSource makeDataSource(String name, String databaseDir) {
+        KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir);
         ds.init();
         return ds;
     }

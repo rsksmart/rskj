@@ -25,8 +25,8 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -313,52 +313,6 @@ public class TrieImpl implements Trie {
     public byte[] get(byte[] key) {
         byte[] keyBytes = this.isSecure ? bytesToKey(Keccak256Helper.keccak256(key)) : bytesToKey(key);
         return get(keyBytes, keyBytes.length, 0);
-    }
-
-    @Override
-    public PartialMerkleTree getPartialMerkleTree(byte[] key) {
-        byte[] keyBytes = this.isSecure ? bytesToKey(Keccak256Helper.keccak256(key)) : bytesToKey(key);
-        return getPartialMerkleTree(keyBytes, keyBytes.length, 0);
-    }
-
-    private PartialMerkleTree getPartialMerkleTree(byte[] key, int length, int keyPosition) {
-        int position = keyPosition;
-
-        if (position >= length) {
-            return new PartialMerkleTree(this);
-        }
-
-        if (this.encodedSharedPath != null) {
-            byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.sharedPathLength);
-
-            for (int k = 0; k < sharedPath.length; k++, position++) {
-                if (position >= length) {
-                    return null;
-                }
-
-                if (key[position] != sharedPath[k]) {
-                    return null;
-                }
-            }
-
-            if (position >= length) {
-                return new PartialMerkleTree(this);
-            }
-        }
-
-        int pos = key[position];
-
-        Trie node = this.retrieveNode(pos);
-
-        if (node == null) {
-            return null;
-        }
-
-        PartialMerkleTree tree = ((TrieImpl)node).getPartialMerkleTree(key, length, position + 1);
-
-        tree.addTrie(this, pos);
-
-        return tree;
     }
 
     /**

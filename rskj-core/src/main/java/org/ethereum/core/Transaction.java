@@ -26,6 +26,10 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.ECDSASignature;
@@ -34,13 +38,9 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
-import org.spongycastle.util.BigIntegers;
-import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -67,30 +67,35 @@ public class Transaction {
 
     public static final int DATAWORD_LENGTH = 32;
 
+    // There was a bug that allowed the TestNet block 170541 to include a transaction with a padded s value.
+    // These are here as an exception to allow making the code stricter.
+    private static final Keccak256 TESTNET_TX_170541_WRONG_HASH = new Keccak256("bfd306ea4c30ad4432f5553b050e5a92b9169d81bac3edfa6cdeb22b83c8ba11");
+    private static final byte[] TESTNET_TX_170541_ENCODED = Hex.decode(
+            "f901a50a8082d8649480006ac02bf828aca0bca6bc1e8ef04508b121da80b90144203eaf27000000000000000000000000000000000" +
+            "00000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000100000000000000" +
+            "0000000000000000000000000000000000000000000000000084b9a527b4000000000000000000000000d1c744ac0657c6043840981" +
+            "bd1a43a5d223de4bc000000000000000000000000c1d53cfe0b737df315a1e920b236f1df2de96e0300000000000000000000000000" +
+            "000000000000000000000000000000000044ce000000000000000000000000000000000000000000000000000000000000000100000" +
+            "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+            "00000009677565737444617461000000000000000000000000000000000000000000000062a00e47af4460ef08c22217a24efe423e3" +
+            "49acc4bacf0c4a7e95dc8219023b15b85a00028fa9206ace53d9a90c1864d7908e50b5c8a1b1394f575986592d6e3d0dfbe"
+    );
+
+    /* whether this is a local call transaction */
+    private boolean isLocalCall;
+
     /* SHA3 hash of the RLP encoded transaction */
     private byte[] hash;
 
     /* a counter used to make sure each transaction can only be processed once */
     private byte[] nonce;
 
-    /**
-     * The amount to transfer.
-     * Note that valueRaw is saved to perform {@link #validate()} and {@link #getEncoded()},
-     * but once validated a Transaction should only rely on value.
-     * */
-    private byte[] valueRaw;
     private Coin value;
 
     /* the address of the destination account
      * In creation transaction the receive address is - 0 */
     private RskAddress receiveAddress;
 
-    /**
-     * The amount to pay as a transaction fee to the miner for each unit of gas.
-     * Note that gasPriceRaw is saved to perform {@link #validate()} and {@link #getEncoded()},
-     * but once validated a Transaction should only rely on gasPrice.
-     * */
-    private byte[] gasPriceRaw;
     private Coin gasPrice;
 
     /* the amount of "gas" to allow for the computation.
@@ -126,7 +131,9 @@ public class Transaction {
 
     protected Transaction(byte[] rawData) {
         this.rlpEncoded = rawData;
-        parsed = false;
+        rlpParse();
+        // clear it so we always reencode the received data
+        this.rlpEncoded = null;
     }
 
     /* creation contract tx
@@ -147,18 +154,13 @@ public class Transaction {
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
                        byte chainId) {
         this.nonce = ByteUtil.cloneBytes(nonce);
-        this.gasPriceRaw = ByteUtil.cloneBytes(gasPriceRaw);
-        this.gasPrice = RLP.parseCoin(this.gasPriceRaw);
+        this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
         this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
-        if (valueRaw == null || ByteUtil.isSingleZero(valueRaw)) {
-            this.valueRaw = EMPTY_BYTE_ARRAY;
-        } else {
-            this.valueRaw = ByteUtil.cloneBytes(valueRaw);
-        }
-        this.value = RLP.parseCoin(this.valueRaw);
+        this.value = RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw));
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
+        this.isLocalCall = false;
 
         parsed = true;
     }
@@ -189,13 +191,13 @@ public class Transaction {
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:
     // "return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION)
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
-    public long transactionCost(RskSystemProperties config, Block block){
+    public long transactionCost(Block block, BlockchainNetConfig netConfig){
         if (!parsed) {
             rlpParse();
         }
 
 		// Federators txs to the bridge are free during system setup
-        if (BridgeUtils.isFreeBridgeTx(config, this, block.getNumber())) {
+        if (BridgeUtils.isFreeBridgeTx(this, block.getNumber(), netConfig)) {
             return 0;
         }
 
@@ -220,10 +222,10 @@ public class Transaction {
         if (gasLimit.length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Limit is not valid");
         }
-        if (gasPriceRaw != null && gasPriceRaw.length > DATAWORD_LENGTH) {
+        if (gasPrice != null && gasPrice.getBytes().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Price is not valid");
         }
-        if (valueRaw != null && valueRaw.length > DATAWORD_LENGTH) {
+        if (value.getBytes().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Value is not valid");
         }
         if (getSignature() != null) {
@@ -240,15 +242,16 @@ public class Transaction {
     }
 
     public void rlpParse() {
-        List<RLPElement> transaction = (RLPList)RLP.decode2(rlpEncoded).get(0);
+        List<RLPElement> transaction = RLP.decodeList(rlpEncoded);
+        if (transaction.size() != 9) {
+            throw new IllegalArgumentException("A transaction must have exactly 9 elements");
+        }
 
         this.nonce = transaction.get(0).getRLPData();
-        this.gasPriceRaw = transaction.get(1).getRLPData();
-        this.gasPrice = RLP.parseCoin(this.gasPriceRaw);
+        this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());
         this.gasLimit = transaction.get(2).getRLPData();
         this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
-        this.valueRaw = transaction.get(4).getRLPData();
-        this.value = RLP.parseCoin(this.valueRaw);
+        this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
         this.data = transaction.get(5).getRLPData();
         // only parse signature in case tx is signed
         if (transaction.get(6).getRLPData() != null) {
@@ -317,6 +320,12 @@ public class Transaction {
     public Coin getGasPrice() {
         if (!parsed) {
             rlpParse();
+        }
+
+        // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
+        // give a different value than the original.
+        if (gasPrice == null) {
+            return Coin.ZERO;
         }
 
         return gasPrice;
@@ -493,10 +502,10 @@ public class Transaction {
         } else {
             toEncodeNonce = RLP.encodeElement(this.nonce);
         }
-        byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPriceRaw);
+        byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
-        byte[] toEncodeValue = RLP.encodeElement(this.valueRaw);
+        byte[] toEncodeValue = RLP.encodeCoinNullZero(this.value);
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
         // Since EIP-155 use chainId for v
@@ -528,10 +537,10 @@ public class Transaction {
         } else {
             toEncodeNonce = RLP.encodeElement(this.nonce);
         }
-        byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPriceRaw);
+        byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
-        byte[] toEncodeValue = RLP.encodeElement(this.valueRaw);
+        byte[] toEncodeValue = RLP.encodeCoinNullZero(this.value);
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
         byte[] v;
@@ -560,6 +569,12 @@ public class Transaction {
                 toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
 
         Keccak256 hash = this.getHash();
+
+        if (TESTNET_TX_170541_WRONG_HASH.equals(hash)) {
+            this.rlpEncoded = TESTNET_TX_170541_ENCODED;
+            hash = this.getHash();
+        }
+
         this.hash = hash == null ? null : hash.getBytes();
 
         return rlpEncoded;
@@ -601,7 +616,7 @@ public class Transaction {
 
     public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData) {
         return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
-                BigIntegers.asUnsignedByteArray(gasPrice),
+                gasPrice.toByteArray(),
                 BigIntegers.asUnsignedByteArray(gasLimit),
                 to != null ? Hex.decode(to) : null,
                 BigIntegers.asUnsignedByteArray(amount),
@@ -613,4 +628,11 @@ public class Transaction {
         return data == null ? ZERO_BYTE_ARRAY : data;
     }
 
+    public boolean isLocalCallTransaction() {
+        return isLocalCall;
+    }
+
+    public void setLocalCallTransaction(boolean isLocalCall) {
+        this.isLocalCall = isLocalCall;
+    }
 }

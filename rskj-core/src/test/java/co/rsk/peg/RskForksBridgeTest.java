@@ -30,9 +30,10 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
-import org.ethereum.config.blockchain.RegTestConfig;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -40,7 +41,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -58,7 +59,7 @@ public class RskForksBridgeTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestGenesisConfig());
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         BtcECKey fedBTCPrivateKey = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0);
         fedECPrivateKey = ECKey.fromPrivate(fedBTCPrivateKey.getPrivKey());
@@ -242,7 +243,7 @@ public class RskForksBridgeTest {
         BigInteger gasLimit = BigInteger.valueOf(1000000);
         Transaction rskTx = CallTransaction.createCallTransaction(config, nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
-                Bridge.ADD_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value) });
+                Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value) });
         rskTx.sign(whitelistManipulationKey.getPrivKeyBytes());
         return rskTx;
     }
@@ -339,7 +340,9 @@ public class RskForksBridgeTest {
     }
 
     private BridgeState callGetStateForDebuggingTx() throws IOException, ClassNotFoundException {
-        Transaction rskTx = CallTransaction.createRawTransaction(config, 0,
+        TestSystemProperties beforeBambooProperties = new TestSystemProperties();
+        beforeBambooProperties.setBlockchainConfig(new RegTestGenesisConfig());
+        Transaction rskTx = CallTransaction.createRawTransaction(beforeBambooProperties, 0,
                 Long.MAX_VALUE,
                 Long.MAX_VALUE,
                 PrecompiledContracts.BRIDGE_ADDR,
@@ -347,9 +350,27 @@ public class RskForksBridgeTest {
                 Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}));
         rskTx.sign(new byte[32]);
 
-        TransactionExecutor executor = new TransactionExecutor(config, rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository,
-                        blockChain.getBlockStore(), null, new ProgramInvokeFactoryImpl(), blockChain.getBestBlock())
-                .setLocalCall(true);
+        TransactionExecutor executor = new TransactionExecutor(
+                rskTx,
+                0,
+                blockChain.getBestBlock().getCoinbase(),
+                repository,
+                blockChain.getBlockStore(),
+                null,
+                new ProgramInvokeFactoryImpl(),
+                blockChain.getBestBlock(),
+                new EthereumListenerAdapter(),
+                0,
+                beforeBambooProperties.getVmConfig(),
+                beforeBambooProperties.getBlockchainConfig(),
+                beforeBambooProperties.playVM(),
+                beforeBambooProperties.isRemascEnabled(),
+                beforeBambooProperties.vmTrace(),
+                new PrecompiledContracts(beforeBambooProperties),
+                beforeBambooProperties.databaseDir(),
+                beforeBambooProperties.vmTraceDir(),
+                beforeBambooProperties.vmTraceCompressed())
+            .setLocalCall(true);
 
         executor.init();
         executor.execute();
@@ -360,7 +381,7 @@ public class RskForksBridgeTest {
 
         Object[] result = Bridge.GET_STATE_FOR_DEBUGGING.decodeResult(res.getHReturn());
 
-        return BridgeState.create(config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), (byte[])result[0]);
+        return BridgeState.create(beforeBambooProperties.getBlockchainConfig().getCommonConstants().getBridgeConstants(), (byte[])result[0]);
     }
 
 

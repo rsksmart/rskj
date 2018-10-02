@@ -143,7 +143,7 @@ public class MainNetMinerTest {
             }
 
             @Override
-            public BlockchainNetConfig getBlockchainConfig() {
+            protected BlockchainNetConfig buildBlockchainConfig() {
                 return new BlockchainNetConfig() {
                     @Override
                     public BlockchainConfig getConfigForBlock(long blockNumber) {

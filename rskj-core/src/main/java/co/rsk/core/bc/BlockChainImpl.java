@@ -19,7 +19,6 @@
 package co.rsk.core.bc;
 
 import co.rsk.blocks.BlockRecorder;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
@@ -34,7 +33,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,13 +78,11 @@ public class BlockChainImpl implements Blockchain {
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final RskSystemProperties config;
     private final Repository repository;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
     private EthereumListener listener;
-    private final AdminInfo adminInfo;
     private BlockValidator blockValidator;
 
     private volatile BlockChainStatus status = new BlockChainStatus(null, BlockDifficulty.ZERO);
@@ -95,26 +91,29 @@ public class BlockChainImpl implements Blockchain {
     private final Object accessLock = new Object();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
+    private final boolean flushEnabled;
+    private final int flushNumberOfBlocks;
     private final BlockExecutor blockExecutor;
     private BlockRecorder blockRecorder;
     private boolean noValidation;
 
-    public BlockChainImpl(RskSystemProperties config,
-                          Repository repository,
+    public BlockChainImpl(Repository repository,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
                           TransactionPool transactionPool,
                           EthereumListener listener,
-                          AdminInfo adminInfo,
-                          BlockValidator blockValidator) {
-        this.config = config;
+                          BlockValidator blockValidator,
+                          boolean flushEnabled,
+                          int flushNumberOfBlocks,
+                          BlockExecutor blockExecutor) {
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.listener = listener;
-        this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
-        this.blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
+        this.flushEnabled = flushEnabled;
+        this.flushNumberOfBlocks = flushNumberOfBlocks;
+        this.blockExecutor = blockExecutor;
         this.transactionPool = transactionPool;
     }
 
@@ -131,8 +130,6 @@ public class BlockChainImpl implements Blockchain {
     public void setListener(EthereumListener listener) { this.listener = listener; }
 
     public BlockValidator getBlockValidator() { return blockValidator; }
-
-    public AdminInfo getAdminInfo() { return adminInfo; }
 
     @VisibleForTesting
     public void setBlockValidator(BlockValidator validator) {
@@ -281,11 +278,6 @@ public class BlockChainImpl implements Blockchain {
             }
 
             long totalTime = System.nanoTime() - saveTime;
-
-            if (adminInfo != null) {
-                adminInfo.addBlockExecTime(totalTime);
-            }
-
             logger.trace("block: num: [{}] hash: [{}], executed after: [{}]nano", block.getNumber(), block.getShortHash(), totalTime);
         }
 
@@ -568,7 +560,7 @@ public class BlockChainImpl implements Blockchain {
     private int nFlush = 0;
 
     private void flushData() {
-        if (config.isFlushEnabled() && nFlush == 0)  {
+        if (flushEnabled && nFlush == 0)  {
             long saveTime = System.nanoTime();
             repository.flush();
             long totalTime = System.nanoTime() - saveTime;
@@ -579,7 +571,7 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("blockstore flush: [{}]nano", totalTime);
         }
         nFlush++;
-        nFlush = nFlush % config.flushNumberOfBlocks();
+        nFlush = nFlush % flushNumberOfBlocks;
     }
 
     public static byte[] calcTxTrie(List<Transaction> transactions) {

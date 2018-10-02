@@ -33,6 +33,6 @@ public class RemascFederationProviderTest {
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
         Blockchain blockchain = builder.build();
 
-        return new RemascFederationProvider(new TestSystemProperties(), blockchain.getRepository(), null);
+        return new RemascFederationProvider(new TestSystemProperties(), blockchain.getRepository(), blockchain.getBestBlock());
     }
 }

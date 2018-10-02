@@ -19,9 +19,9 @@
 
 package org.ethereum.crypto;
 
-import org.spongycastle.crypto.KeyEncoder;
-import org.spongycastle.crypto.params.AsymmetricKeyParameter;
-import org.spongycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.KeyEncoder;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 
 /**
  * Created by Anton Nashatyrev on 01.10.2015.

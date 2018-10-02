@@ -18,10 +18,11 @@
 
 package co.rsk.net.discovery.message;
 
+import co.rsk.net.discovery.PeerDiscoveryException;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.*;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +36,7 @@ import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
  */
 public class FindNodePeerMessage extends PeerDiscoveryMessage {
 
+    public static final String MORE_DATA = "FindNodePeerMessage needs more data";
     private byte[] nodeId;
     private String messageId;
 
@@ -71,6 +73,9 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     @Override
     public final void parse(byte[] data) {
         RLPList dataList = (RLPList) RLP.decode2OneItem(data, 0);
+        if (dataList.size() < 2) {
+            throw new PeerDiscoveryException(MORE_DATA);
+        }
         RLPItem chk = (RLPItem) dataList.get(1);
 
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));

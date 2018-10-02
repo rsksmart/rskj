@@ -19,8 +19,8 @@
 
 package co.rsk.db;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.Repository;
 import org.ethereum.db.RepositoryTrack;
 import org.ethereum.vm.DataWord;
@@ -63,8 +63,8 @@ public class RepositoryTrackWithBenchmarking extends RepositoryTrack {
 
     private final Statistics statistics;
 
-    public RepositoryTrackWithBenchmarking(RskSystemProperties config, Repository repository) {
-        super(config, repository);
+    public RepositoryTrackWithBenchmarking(Repository repository, TrieStore.Factory trieStoreFactory, int memoryStorageLimit) {
+        super(repository, trieStoreFactory, memoryStorageLimit);
         statistics = new Statistics();
     }
 

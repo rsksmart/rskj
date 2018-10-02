@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.SamplePrecompiledContract;
 import co.rsk.remasc.RemascContract;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -76,7 +77,7 @@ public class PrecompiledContracts {
         this.config = config;
     }
 
-    public PrecompiledContract getContractForAddress(DataWord address) {
+    public PrecompiledContract getContractForAddress(BlockchainConfig blockchainConfig, DataWord address) {
 
         if (address == null) {
             return identity;
@@ -93,7 +94,8 @@ public class PrecompiledContracts {
         if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + IDENTITY_ADDR_STR)) {
             return identity;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + SAMPLE_ADDR_STR)) {
+        // RSKIP-93 removes this contract completely
+        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + SAMPLE_ADDR_STR) && !blockchainConfig.isRskip93()) {
             return sample;
         }
         if (address.isHex(BRIDGE_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR_STR)) {

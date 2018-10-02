@@ -23,7 +23,7 @@ import org.ethereum.crypto.HashUtil;
 
 import org.junit.Test;
 
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import static org.junit.Assert.assertEquals;
 

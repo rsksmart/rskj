@@ -20,7 +20,6 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import org.ethereum.core.*;
 
 import javax.annotation.Nullable;
@@ -42,9 +41,9 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
     public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BlockHeader blockHeader = new BlockHeader(new byte[]{},
                 new byte[]{},
-                RskAddress.nullAddress().getBytes(),
+                new byte[20],
                 new Bloom().getData(),
-                new byte[]{},
+                null,
                 bestBlockNumber,
                 new byte[]{},
                 0,
@@ -53,10 +52,10 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
-                new byte[]{},
+                new byte[]{0},
                 0
         );
         Block block = new Block(blockHeader);
-        return BigInteger.valueOf(tx.transactionCost(config, block)).compareTo(tx.getGasLimitAsInteger()) <= 0;
+        return BigInteger.valueOf(tx.transactionCost(block, config.getBlockchainConfig())).compareTo(tx.getGasLimitAsInteger()) <= 0;
     }
 }

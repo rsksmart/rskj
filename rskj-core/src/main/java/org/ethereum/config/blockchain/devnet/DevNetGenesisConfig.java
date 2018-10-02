@@ -17,57 +17,37 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.config.blockchain;
+package org.ethereum.config.blockchain.devnet;
 
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.core.BlockDifficulty;
+import co.rsk.config.BridgeDevNetConstants;
+import org.ethereum.config.blockchain.testnet.TestNetAfterBridgeSyncConfig;
 
-import java.math.BigInteger;
+/**
+ * Created by Oscar Guindzberg on 25.10.2016.
+ */
+public class DevNetGenesisConfig extends TestNetAfterBridgeSyncConfig {
 
-
-public class RegTestConfig extends GenesisConfig {
-
-    public static class RegTestConstants extends GenesisConstants {
-
-        private final BlockDifficulty minimumDifficulty = new BlockDifficulty(BigInteger.valueOf(1));
-        private static final byte CHAIN_ID = 33;
-
-        @Override
-        public BlockDifficulty getFallbackMiningDifficulty() { return BlockDifficulty.ZERO; }
-
+    public static class DevNetConstants extends TestNetConstants {
+        private static final byte CHAIN_ID = 32;
         @Override
         public BridgeConstants getBridgeConstants() {
-            return BridgeRegTestConstants.getInstance();
-        }
-
-        @Override
-        public BlockDifficulty getMinimumDifficulty() {
-            return minimumDifficulty;
-        }
-
-        @Override
-        public int getDurationLimit() {
-            return 10;
-        }
-
-        @Override
-        public int getNewBlockMaxSecondsInTheFuture() {
-            return 0;
+            return BridgeDevNetConstants.getInstance();
         }
 
         @Override
         public byte getChainId() {
-            return RegTestConstants.CHAIN_ID;
+            return DevNetConstants.CHAIN_ID;
         }
-    };
+    }
 
-    public RegTestConfig() {
-        super(new RegTestConstants());
+    public DevNetGenesisConfig() {
+        super(new DevNetConstants());
     }
 
     @Override
     public boolean areBridgeTxsFree() {
         return true;
     }
+
 }

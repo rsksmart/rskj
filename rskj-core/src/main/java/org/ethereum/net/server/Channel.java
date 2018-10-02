@@ -59,7 +59,6 @@ public class Channel {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
-    private final RskSystemProperties config;
     private final MessageQueue msgQueue;
     private final P2pHandler p2pHandler;
     private final MessageCodec messageCodec;
@@ -75,10 +74,10 @@ public class Channel {
     private Node node;
     private NodeStatistics nodeStatistics;
 
-    private boolean discoveryMode;
     private boolean isActive;
 
     private final PeerStatistics peerStats = new PeerStatistics();
+    private final Integer peerChannelReadTimeout;
 
     public Channel(RskSystemProperties config,
                    MessageQueue msgQueue,
@@ -88,7 +87,6 @@ public class Channel {
                    NodeManager nodeManager,
                    EthHandlerFactory ethHandlerFactory,
                    StaticMessages staticMessages) {
-        this.config = config;
         this.msgQueue = msgQueue;
         this.p2pHandler = p2pHandler;
         this.messageCodec = messageCodec;
@@ -96,23 +94,15 @@ public class Channel {
         this.nodeManager = nodeManager;
         this.ethHandlerFactory = ethHandlerFactory;
         this.staticMessages = staticMessages;
+        this.peerChannelReadTimeout = config.peerChannelReadTimeout();
     }
 
-    public void init(ChannelPipeline pipeline, String remoteId, boolean discoveryMode) {
+    public void init(ChannelPipeline pipeline, String remoteId) {
 
         isActive = remoteId != null && !remoteId.isEmpty();
 
-        pipeline.addLast("readTimeoutHandler",
-                new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
+        pipeline.addLast("readTimeoutHandler",new ReadTimeoutHandler(peerChannelReadTimeout, TimeUnit.SECONDS));
         pipeline.addLast("handshakeHandler", handshakeHandler);
-
-        this.discoveryMode = discoveryMode;
-
-        if (discoveryMode) {
-            // temporary key/nodeId to not accidentally smear our reputation with
-            // unexpected disconnect
-            handshakeHandler.generateTempKey();
-        }
 
         handshakeHandler.setRemoteId(remoteId, this);
 
@@ -152,8 +142,7 @@ public class Channel {
 
         // in discovery mode we are supplying fake port along with fake nodeID to not receive
         // incoming connections with fake public key
-        HelloMessage helloMessage = discoveryMode ? staticMessages.createHelloMessage(nodeId, 9) :
-                staticMessages.createHelloMessage(nodeId);
+        HelloMessage helloMessage = staticMessages.createHelloMessage(nodeId);
 
         if (inboundHelloMessage != null && P2pHandler.isProtocolVersionSupported(inboundHelloMessage.getP2PVersion())) {
             // the p2p version can be downgraded if requested by peer and supported by us
@@ -184,7 +173,6 @@ public class Channel {
 
         handler.setMsgQueue(msgQueue);
         handler.setChannel(this);
-        handler.setPeerDiscoveryMode(discoveryMode);
 
         handler.activate();
 
@@ -193,7 +181,7 @@ public class Channel {
 
     private MessageFactory createEthMessageFactory(EthVersion version) {
         switch (version) {
-            case V62:   return new Eth62MessageFactory(config);
+            case V62:   return new Eth62MessageFactory();
             default:    throw new IllegalArgumentException("Eth " + version + " is not supported");
         }
     }
@@ -239,10 +227,6 @@ public class Channel {
         }
 
         eth.onSyncDone(done);
-    }
-
-    public boolean isDiscoveryMode() {
-        return discoveryMode;
     }
 
     public String getPeerId() {

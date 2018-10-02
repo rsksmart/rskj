@@ -20,6 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.db.RemascCache;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
@@ -30,7 +31,7 @@ import java.util.List;
  * @author Roman Mandeleil
  * @since 08.01.2015
  */
-public interface BlockStore {
+public interface BlockStore extends RemascCache {
 
     byte[] getBlockHashByNumber(long blockNumber);
 
@@ -71,8 +72,6 @@ public interface BlockStore {
     void flush();
 
     void reBranch(Block forkBlock);
-
-    void load();
 
     List<BlockInformation> getBlocksInformationByNumber(long number);
 }

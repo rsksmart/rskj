@@ -22,7 +22,7 @@ import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Validate the transaction root of a block.

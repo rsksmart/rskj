@@ -20,7 +20,7 @@
 package org.ethereum.net;
 
 import org.ethereum.net.rlpx.Node;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * The instance of this class responsible for discovery messages exchange with the specified Node
@@ -31,25 +31,19 @@ import org.spongycastle.util.encoders.Hex;
 public class NodeHandler {
 
     private Node node;
-    private NodeManager nodeManager;
     private NodeStatistics nodeStatistics;
 
-    public NodeHandler(Node node, NodeManager nodeManager) {
+    public NodeHandler(Node node) {
         this.node = node;
-        this.nodeManager = nodeManager;
     }
 
     public Node getNode() {
         return node;
     }
 
-    public NodeManager getNodeManager() {
-        return this.nodeManager;
-    }
-
     public NodeStatistics getNodeStatistics() {
         if (nodeStatistics == null) {
-            nodeStatistics = new NodeStatistics(node);
+            nodeStatistics = new NodeStatistics();
         }
         return nodeStatistics;
     }

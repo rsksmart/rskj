@@ -20,6 +20,8 @@
 package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
+import co.rsk.remasc.Sibling;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
@@ -27,6 +29,7 @@ import org.ethereum.crypto.HashUtil;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Roman Mandeleil
@@ -101,10 +104,6 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public void load() {
-    }
-
-    @Override
     public long getMaxNumber() {
         return 0;
     }
@@ -127,4 +126,9 @@ public class BlockStoreDummy implements BlockStore {
 
     @Override
     public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
+
+    @Override
+    public Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
+        return null;
+    }
 }

@@ -32,8 +32,6 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
     private final ChannelManager channelManager;
     private final ChannelFactory channelFactory;
 
-    private boolean peerDiscoveryMode = false;
-
     public EthereumChannelInitializer(String remoteId, ChannelManager channelManager, ChannelFactory channelFactory) {
         this.remoteId = remoteId;
         this.channelManager = channelManager;
@@ -43,23 +41,18 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
     @Override
     public void initChannel(NioSocketChannel ch) throws Exception {
         try {
-            if (!peerDiscoveryMode) {
-                logger.info("Open {} connection, channel: {}", isInbound() ? "inbound" : "outbound", ch.toString());
-            }
+            logger.info("Open {} connection, channel: {}", isInbound() ? "inbound" : "outbound", ch);
 
             if (isInbound() && channelManager.isRecentlyDisconnected(ch.remoteAddress().getAddress())) {
                 // avoid too frequent connection attempts
-                logger.info("Drop connection - the same IP was disconnected recently, channel: {}", ch.toString());
+                logger.info("Drop connection - the same IP was disconnected recently, channel: {}", ch);
                 ch.disconnect();
                 return;
             }
 
             final Channel channel = channelFactory.newInstance();
-            channel.init(ch.pipeline(), remoteId, peerDiscoveryMode);
-
-            if(!peerDiscoveryMode) {
-                channelManager.add(channel);
-            }
+            channel.init(ch.pipeline(), remoteId);
+            channelManager.add(channel);
 
             // limit the size of receiving buffer to 1024
             ch.config().setRecvByteBufAllocator(new FixedRecvByteBufAllocator(16_777_216));
@@ -67,14 +60,7 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
             ch.config().setOption(ChannelOption.SO_BACKLOG, 1024);
 
             // be aware of channel closing
-            ch.closeFuture().addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (!peerDiscoveryMode) {
-                        channelManager.notifyDisconnect(channel);
-                    }
-                }
-            });
+            ch.closeFuture().addListener(f -> channelManager.notifyDisconnect(channel));
 
         } catch (Exception e) {
             logger.error("Unexpected error: ", e);
@@ -83,10 +69,6 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
 
     private boolean isInbound() {
         return remoteId == null || remoteId.isEmpty();
-    }
-
-    public void setPeerDiscoveryMode(boolean peerDiscoveryMode) {
-        this.peerDiscoveryMode = peerDiscoveryMode;
     }
 
     public interface ChannelFactory {

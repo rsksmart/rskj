@@ -77,14 +77,14 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
     private int ethInbound;
     private int ethOutbound;
 
-    private final RskSystemProperties config;
     private final EthereumListener ethereumListener;
     private final ConfigCapabilities configCapabilities;
+    private final Integer pingInterval;
 
     public P2pHandler(RskSystemProperties config, EthereumListener ethereumListener, ConfigCapabilities configCapabilities) {
-        this.config = config;
         this.ethereumListener = ethereumListener;
         this.configCapabilities = configCapabilities;
+        this.pingInterval = config.getPeerP2PPingInterval();
     }
 
     private Channel channel;
@@ -206,7 +206,7 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
      */
     public void sendTransaction(Transaction tx) {
 
-        TransactionsMessage msg = new TransactionsMessage(config, tx);
+        TransactionsMessage msg = new TransactionsMessage(tx);
         msgQueue.sendMessage(msg);
     }
 
@@ -229,7 +229,7 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
                     logger.error("Unhandled exception", t);
                 }
             }
-        }, 2, config.getProperty("peer.p2p.pingInterval", 5), TimeUnit.SECONDS);
+        }, 2, pingInterval, TimeUnit.SECONDS);
     }
 
     public void killTimers() {

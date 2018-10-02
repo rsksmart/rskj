@@ -28,9 +28,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * The central class for Peer Discovery machinery.
@@ -45,38 +45,25 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NodeManager {
     private static final Logger logger = LoggerFactory.getLogger("discover");
 
-    private static final int MAX_NODES = 2000;
-    private static final int NODES_TRIM_THRESHOLD = 3000;
-
+    private static final long MAX_NODES = 2000;
+    protected static final long NODES_TRIM_THRESHOLD = MAX_NODES + 1000;
 
     // to avoid checking for null
-    private static final NodeStatistics DUMMY_STAT = new NodeStatistics(new Node(new byte[0], "dummy.node", 0));
+    private static final NodeStatistics DUMMY_STAT = new NodeStatistics();
 
     private final PeerExplorer peerExplorer;
-    private final SystemProperties config;
 
     private Map<String, NodeHandler> nodeHandlerMap = new ConcurrentHashMap<>();
-    private Set<NodeHandler> initialNodes = new HashSet<>();
-    private Node homeNode;
 
     private boolean discoveryEnabled;
-
-    private boolean inited = false;
 
     @Autowired
     public NodeManager(PeerExplorer peerExplorer, SystemProperties config) {
         this.peerExplorer = peerExplorer;
-        this.config = config;
-    }
-
-    @PostConstruct
-    void init() {
-        discoveryEnabled = config.isPeerDiscoveryEnabled();
-
-        homeNode = new Node(config.nodeId(), config.getPublicIp(), config.getPeerPort());
+        this.discoveryEnabled = config.isPeerDiscoveryEnabled();
 
         for (Node node : config.peerActive()) {
-            NodeHandler handler = new NodeHandler(node, this);
+            NodeHandler handler = new NodeHandler(node);
             handler.getNodeStatistics().setPredefined(true);
             createNodeHandler(node);
         }
@@ -89,10 +76,9 @@ public class NodeManager {
     }
 
     private NodeHandler createNodeHandler(Node n) {
-        String key = n.getHexId();
-        NodeHandler handler = new NodeHandler(n, this);
+        NodeHandler handler = new NodeHandler(n);
         purgeNodeHandlers();
-        nodeHandlerMap.put(key, handler);
+        nodeHandlerMap.put(n.getHexId(), handler);
         return handler;
     }
 
@@ -100,10 +86,8 @@ public class NodeManager {
         return discoveryEnabled ? getNodeHandler(n).getNodeStatistics() : DUMMY_STAT;
     }
 
-
     public synchronized List<NodeHandler> getNodes(Set<String> nodesInUse) {
         List<NodeHandler> handlers = new ArrayList<>();
-        handlers.addAll(initialNodes);
 
         List<Node> foundNodes = this.peerExplorer.getNodes();
         if (this.discoveryEnabled && CollectionUtils.isNotEmpty(foundNodes)) {
@@ -119,25 +103,30 @@ public class NodeManager {
         return handlers;
     }
 
-    public Node getHomeNode() {
-        return this.homeNode;
-    }
-
-    public Boolean inited() {
-        return inited;
-    }
-
     private void purgeNodeHandlers() {
         if (nodeHandlerMap.size() > NODES_TRIM_THRESHOLD) {
-            List<NodeHandler> sorted = new ArrayList<>(nodeHandlerMap.values());
-            Collections.sort(sorted, (o1, o2) -> Integer.compare(o1.getNodeStatistics().getReputation(), o2.getNodeStatistics().getReputation()));
-            for (NodeHandler handler : sorted) {
-                nodeHandlerMap.remove(handler.getNode().getAddressAsString());
-                if (nodeHandlerMap.size() <= MAX_NODES) {
-                    break;
-                }
-            }
+            //I create a stream
+            List<NodeHandler> toRemove = nodeHandlerMap.values().stream()
+                    //collect all reputations first to avoid concurrency issues
+                    .map(NodeHandlerWithReputation::new)
+                    //sort by reputation
+                    .sorted(Comparator.comparingInt(o -> o.reputation))
+                    //and just keep the ones that exceeds the MAX_NODES
+                    .limit(nodeHandlerMap.size() - MAX_NODES)
+                    .map(o -> o.nodeHandler)
+                    .collect(Collectors.toList());
+            //Remove them
+            nodeHandlerMap.values().removeAll(toRemove);
         }
     }
 
+    private static class NodeHandlerWithReputation {
+        private NodeHandler nodeHandler;
+        private int reputation;
+
+        private NodeHandlerWithReputation(NodeHandler nodeHandler) {
+            this.nodeHandler = nodeHandler;
+            this.reputation = nodeHandler.getNodeStatistics().getReputation();
+        }
+    }
 }

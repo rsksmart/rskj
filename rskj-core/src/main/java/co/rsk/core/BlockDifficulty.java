@@ -31,14 +31,6 @@ public class BlockDifficulty implements Comparable<BlockDifficulty>, Serializabl
     private final BigInteger value;
 
     /**
-     * @param bytes the difficulty bytes, as expected by {@link java.math.BigInteger#BigInteger(byte[])}.
-     *              Since we previously converted an empty array to ZERO, we'll do that here too.
-     */
-    public BlockDifficulty(byte[] bytes) {
-        this(bytes.length == 0 ? BigInteger.ZERO : new BigInteger(bytes));
-    }
-
-    /**
      * @param value the difficulty value, which should be positive.
      */
     public BlockDifficulty(BigInteger value) {

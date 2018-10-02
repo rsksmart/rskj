@@ -37,9 +37,9 @@ import org.ethereum.net.p2p.P2pMessageFactory;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.crypto.InvalidCipherTextException;
-import org.spongycastle.math.ec.ECPoint;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -334,9 +334,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         recordFailedHandshake(ctx);
-        if (channel.isDiscoveryMode()) {
-            loggerNet.debug("Handshake failed: address {}", ctx.channel().remoteAddress(), cause);
-        } else if (cause instanceof IOException) {
+        if (cause instanceof IOException) {
             loggerNet.info("Handshake failed: address {}", ctx.channel().remoteAddress(), cause);
         } else {
             loggerNet.warn("Handshake failed", cause);

@@ -32,6 +32,8 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -50,6 +52,8 @@ class RemascTestRunner {
 
     private long minerFee;
 
+    private long gasPrice;
+
     private int initialHeight;
 
     private List<SiblingElement> siblingElements;
@@ -61,6 +65,7 @@ class RemascTestRunner {
     private BlockChainBuilder builder;
 
     private Block genesis;
+    private RskAddress fixedCoinbase;
 
     public RemascTestRunner(BlockChainBuilder blockchainBuilder, Block genesis) {
         this.builder = blockchainBuilder;
@@ -82,6 +87,11 @@ class RemascTestRunner {
         return this;
     }
 
+    public RemascTestRunner gasPrice(long gasPrice) {
+        this.gasPrice = gasPrice;
+        return this;
+    }
+
     public RemascTestRunner initialHeight(int initialHeight) {
         this.initialHeight = initialHeight;
         return this;
@@ -89,6 +99,11 @@ class RemascTestRunner {
 
     public RemascTestRunner siblingElements(List<SiblingElement> siblingElements) {
         this.siblingElements = siblingElements;
+        return this;
+    }
+
+    public RemascTestRunner setFixedCoinbase(RskAddress fixedCoinbase) {
+        this.fixedCoinbase = fixedCoinbase;
         return this;
     }
 
@@ -105,8 +120,29 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
-        BlockExecutor blockExecutor = new BlockExecutor(new TestSystemProperties(), blockchain.getRepository(),
-                                                        null, blockchain.getBlockStore(), null);
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(),
+                (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+                    tx,
+                    txindex,
+                    block.getCoinbase(),
+                    track,
+                    blockchain.getBlockStore(),
+                    null,
+                    programInvokeFactory,
+                    block,
+                    null,
+                    totalGasUsed,
+                    builder.getConfig().getVmConfig(),
+                    builder.getConfig().getBlockchainConfig(),
+                    builder.getConfig().playVM(),
+                    builder.getConfig().isRemascEnabled(),
+                    builder.getConfig().vmTrace(),
+                    new PrecompiledContracts(builder.getConfig()),
+                    builder.getConfig().databaseDir(),
+                    builder.getConfig().vmTraceDir(),
+                    builder.getConfig().vmTraceCompressed())
+        );
 
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;
@@ -127,7 +163,7 @@ class RemascTestRunner {
                 RskAddress siblingCoinbase = TestUtils.randomAddress();
                 Block mainchainSiblingParent = mainChainBlocks.get(sibling.getHeight() - 1);
                 Block siblingBlock = createBlock(this.genesis, mainchainSiblingParent, PegTestUtils.createHash3(),
-                        siblingCoinbase, null, minerFee, Long.valueOf(i), this.txValue,
+                        siblingCoinbase, null, minerFee, this.gasPrice, Long.valueOf(i), this.txValue,
                         this.txSigningKey, null);
 
                 blockSiblings.add(siblingBlock.getHeader());
@@ -137,9 +173,9 @@ class RemascTestRunner {
             }
 
             long txNonce = i;
-            RskAddress coinbase = TestUtils.randomAddress();
+            RskAddress coinbase = fixedCoinbase != null ? fixedCoinbase : TestUtils.randomAddress();
             Block block = createBlock(this.genesis, this.blockchain.getBestBlock(), PegTestUtils.createHash3(),
-                    coinbase, blockSiblings, minerFee, txNonce, this.txValue, this.txSigningKey, null);
+                                      coinbase, blockSiblings, minerFee, this.gasPrice, txNonce, this.txValue, this.txSigningKey, null);
             mainChainBlocks.add(block);
 
             blockExecutor.executeAndFillAll(block, this.blockchain.getBestBlock());
@@ -170,22 +206,30 @@ class RemascTestRunner {
     }
 
     public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
-                                    List<BlockHeader> uncles, long minerFee, long txNonce, long txValue,
+                                    List<BlockHeader> uncles, long gasLimit, long txNonce, long txValue,
                                     ECKey txSigningKey) {
-        return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, minerFee, txNonce,
-                txValue, txSigningKey, null);
+        return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, gasLimit, 1L,  txNonce,
+                           txValue, txSigningKey, null);
     }
+
     public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
-                                    List<BlockHeader> uncles, long minerFee, long txNonce, long txValue,
+                                    List<BlockHeader> uncles, long gasLimit, long txNonce, long txValue,
                                     ECKey txSigningKey, Long difficulty) {
-        if (minerFee == 0) throw new IllegalArgumentException();
+        return  createBlock(genesis, parentBlock, blockHash, coinbase, uncles, gasLimit, 1L, txNonce, txValue, txSigningKey, difficulty);
+    }
+
+    public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
+                                    List<BlockHeader> uncles, long gasLimit, long gasPrice, long txNonce, long txValue,
+                                    ECKey txSigningKey, Long difficulty) {
+        if (gasLimit == 0) throw new IllegalArgumentException();
         Transaction tx = new Transaction(
                 BigInteger.valueOf(txNonce).toByteArray(),
-                BigInteger.ONE.toByteArray(),
-                BigInteger.valueOf(minerFee).toByteArray(),
+                BigInteger.valueOf(gasPrice).toByteArray(),
+                BigInteger.valueOf(gasLimit).toByteArray(),
                 new ECKey().getAddress() ,
                 BigInteger.valueOf(txValue).toByteArray(),
                 null,
+                //TODO(lsebrie): remove this properties creation from method
                 new TestSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
 
         tx.sign(txSigningKey.getPrivKeyBytes());
@@ -222,7 +266,7 @@ class RemascTestRunner {
         Block block =  new Block(
                 parentBlock.getHash().getBytes(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
-                coinbase.getBytes(),            // coinbase
+                coinbase.getBytes(),            // fixedCoinbase
                 new Bloom().getData(),          // logs bloom
                 diffBytes,    // difficulty
                 parentBlock.getNumber() + 1,

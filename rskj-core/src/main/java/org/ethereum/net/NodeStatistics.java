@@ -21,7 +21,6 @@ package org.ethereum.net;
 
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.ReasonCode;
-import org.ethereum.net.rlpx.Node;
 import org.ethereum.util.ByteUtil;
 import org.mapdb.Serializer;
 
@@ -70,8 +69,6 @@ public class NodeStatistics {
         int reputation;
     }
 
-    private final Node node;
-
     private boolean isPredefined = false;
 
     private int savedReputation = 0;
@@ -109,9 +106,6 @@ public class NodeStatistics {
     private StatusMessage ethLastInboundStatusMsg = null;
     private BigInteger ethTotalDifficulty = BigInteger.ZERO;
 
-    public NodeStatistics(Node node) {
-        this.node = node;
-    }
 
     int getSessionReputation() {
         return getSessionFairReputation() + (isPredefined ? REPUTATION_PREDEFINED : 0);

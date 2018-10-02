@@ -33,4 +33,8 @@ public interface TrieStore {
     byte[] serialize();
 
     byte[] retrieveValue(byte[] hash);
+
+    interface Factory {
+        TrieStore newInstance(String name);
+    }
 }

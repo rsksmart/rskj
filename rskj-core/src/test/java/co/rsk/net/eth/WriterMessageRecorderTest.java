@@ -30,7 +30,7 @@ import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.net.message.Message;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -44,8 +44,6 @@ import java.util.Random;
  * Created by ajlopez on 26/04/2017.
  */
 public class WriterMessageRecorderTest {
-
-    private static final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void recordRskMessage() throws IOException {
@@ -141,13 +139,13 @@ public class WriterMessageRecorderTest {
     public static Message createRskMessage() {
         Block block = new BlockGenerator().getBlock(1);
         GetBlockMessage message = new GetBlockMessage(block.getHash().getBytes());
-        return new RskMessage(config, message);
+        return new RskMessage(message);
     }
 
     public static Message createEthMessage() {
         Account acc1 = new AccountBuilder().name("acc1").build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new co.rsk.test.builders.TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
-        return new TransactionsMessage(config, tx);
+        return new TransactionsMessage(tx);
     }
 }

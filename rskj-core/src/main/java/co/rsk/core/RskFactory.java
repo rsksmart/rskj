@@ -308,7 +308,7 @@ public class RskFactory {
         }
 
         logger.info("Local wallet enabled");
-        KeyValueDataSource ds = new LevelDbDataSource(config, "wallet");
+        KeyValueDataSource ds = new LevelDbDataSource("wallet", config.databaseDir());
         ds.init();
         return new Wallet(ds);
     }

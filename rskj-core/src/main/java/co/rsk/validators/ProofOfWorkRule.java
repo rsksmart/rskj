@@ -20,14 +20,15 @@
 package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import co.rsk.util.DifficultyUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.util.Pack;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -37,12 +38,10 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.crypto.digests.SHA256Digest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -54,15 +53,20 @@ import java.util.List;
 public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
+    private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
+    private final RskSystemProperties config;
+    private final BlockchainNetConfig blockchainConfig;
     private final BridgeConstants bridgeConstants;
     private final Constants constants;
     private boolean fallbackMiningEnabled = true;
 
     @Autowired
     public ProofOfWorkRule(RskSystemProperties config) {
-        this.bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
-        this.constants = config.getBlockchainConfig().getCommonConstants();
+        this.config = config;
+        this.blockchainConfig = config.getBlockchainConfig();
+        this.bridgeConstants = blockchainConfig.getCommonConstants().getBridgeConstants();
+        this.constants = blockchainConfig.getCommonConstants();
     }
 
     public ProofOfWorkRule setFallbackMiningEnabled(boolean e) {
@@ -75,8 +79,12 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         return isValid(block.getHeader());
     }
 
-    public static boolean isFallbackMiningPossible(Constants constants, BlockHeader header) {
+    public static boolean isFallbackMiningPossible(RskSystemProperties config, BlockHeader header) {
+        if (config.getBlockchainConfig().getConfigForBlock(header.getNumber()).isRskip98()) {
+            return false;
+        }
 
+        Constants constants = config.getBlockchainConfig().getCommonConstants();
         if (header.getNumber() >= constants.getEndOfFallbackMiningBlockNumber()) {
             return false;
         }
@@ -98,7 +106,8 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        if (header.getBitcoinMergedMiningMerkleProof() != null) {
+        byte[] merkleProof = header.getBitcoinMergedMiningMerkleProof();
+        if (merkleProof != null && merkleProof.length > 0) {
             return false;
         }
 
@@ -106,7 +115,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        return isFallbackMiningPossible(constants, header);
+        return isFallbackMiningPossible(config, header);
 
     }
 
@@ -114,7 +123,6 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
     public boolean isValid(BlockHeader header) {
         // TODO: refactor this an move it to another class. Change the Global ProofOfWorkRule to AuthenticationRule.
         // TODO: Make ProofOfWorkRule one of the classes that inherits from AuthenticationRule.
-
         if (isFallbackMiningPossibleAndBlockSigned(header)) {
             boolean isValidFallbackSignature = validFallbackBlockSignature(constants, header, header.getBitcoinMergedMiningHeader());
             if (!isValidFallbackSignature) {
@@ -124,6 +132,18 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         }
 
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = bridgeConstants.getBtcParams();
+        MerkleProofValidator mpValidator;
+        try {
+            if (blockchainConfig.getConfigForBlock(header.getNumber()).isRskip92()) {
+                mpValidator = new Rskip92MerkleProofValidator(header.getBitcoinMergedMiningMerkleProof());
+            } else {
+                mpValidator = new GenesisMerkleProofValidator(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());
+            }
+        } catch (RuntimeException ex) {
+            logger.warn("Merkle proof can't be validated. Header {}", header.getShortHash(), ex);
+            return false;
+        }
+
         byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
 
         if (bitcoinMergedMiningCoinbaseTransactionCompressed == null) {
@@ -136,14 +156,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        byte[] pmtSerialized = header.getBitcoinMergedMiningMerkleProof();
-        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
-            logger.warn("Partial merkle tree does not have the expected size. Header {}", header.getShortHash());
-            return false;
-        }
-
         BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
-        PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new PartialMerkleTree(bitcoinNetworkParameters, pmtSerialized, 0);
 
         BigInteger target = DifficultyUtils.difficultyToTarget(header.getDifficulty());
 
@@ -161,7 +174,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         System.arraycopy(bitcoinMergedMiningCoinbaseTransactionCompressed, RskMiningConstants.MIDSTATE_SIZE_TRIMMED,
                 bitcoinMergedMiningCoinbaseTransactionTail, 0, bitcoinMergedMiningCoinbaseTransactionTail.length);
 
-        byte[] expectedCoinbaseMessageBytes = org.spongycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, header.getHashForMergedMining());
+        byte[] expectedCoinbaseMessageBytes = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, header.getHashForMergedMining());
 
 
         List<Byte> bitcoinMergedMiningCoinbaseTransactionTailAsList = Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionTail));
@@ -200,35 +213,29 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
+        // TODO test
+        long byteCount = Pack.bigEndianToLong(bitcoinMergedMiningCoinbaseTransactionMidstate, 8);
+        long coinbaseLength = bitcoinMergedMiningCoinbaseTransactionTail.length + byteCount;
+        if (coinbaseLength <= 64) {
+            logger.warn("Coinbase transaction must always be greater than 64-bytes long. But it was: {}", coinbaseLength);
+            return false;
+        }
+
         SHA256Digest digest = new SHA256Digest(bitcoinMergedMiningCoinbaseTransactionMidstate);
         digest.update(bitcoinMergedMiningCoinbaseTransactionTail,0,bitcoinMergedMiningCoinbaseTransactionTail.length);
         byte[] bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash = new byte[32];
         digest.doFinal(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash, 0);
         Sha256Hash bitcoinMergedMiningCoinbaseTransactionHash = Sha256Hash.wrapReversed(Sha256Hash.hash(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash));
 
-        List<Sha256Hash> txHashesInTheMerkleBranch = new ArrayList<>();
-        Sha256Hash merkleRoot = bitcoinMergedMiningMerkleBranch.getTxnHashAndMerkleRoot(txHashesInTheMerkleBranch);
-        if (!merkleRoot.equals(bitcoinMergedMiningBlock.getMerkleRoot())) {
-            logger.warn("bitcoin merkle root of bitcoin block does not match the merkle root of merkle branch");
-            return false;
-        }
-        if (!txHashesInTheMerkleBranch.contains(bitcoinMergedMiningCoinbaseTransactionHash)) {
-            logger.warn("bitcoin coinbase transaction {} not included in merkle branch", bitcoinMergedMiningCoinbaseTransactionHash);
+        if (!mpValidator.isValid(bitcoinMergedMiningBlock.getMerkleRoot(), bitcoinMergedMiningCoinbaseTransactionHash)) {
+            logger.warn("bitcoin merkle branch doesn't match coinbase and state root");
             return false;
         }
 
         return true;
     }
 
-    public static boolean validFallbackBlockSignature(Constants constants, BlockHeader header, byte[] signatureBytesRLP) {
-
-        if (header.getBitcoinMergedMiningCoinbaseTransaction() != null) {
-            return false;
-        }
-
-        if (header.getBitcoinMergedMiningMerkleProof() != null) {
-            return false;
-        }
+    private static boolean validFallbackBlockSignature(Constants constants, BlockHeader header, byte[] signatureBytesRLP) {
 
         byte[] fallbackMiningPubKeyBytes;
         boolean isEvenBlockNumber = header.getNumber() % 2 == 0;
@@ -239,7 +246,11 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         }
 
         ECKey fallbackMiningPubKey = ECKey.fromPublicOnly(fallbackMiningPubKeyBytes);
-        List<RLPElement> signatureRLP = (RLPList) RLP.decode2(signatureBytesRLP).get(0);
+        List<RLPElement> signatureRlpElements = RLP.decode2(signatureBytesRLP);
+        if (signatureRlpElements.size() != 1) {
+            return false;
+        }
+        List<RLPElement> signatureRLP = (RLPList) signatureRlpElements.get(0);
         if (signatureRLP.size() != 3) {
             return false;
         }
@@ -248,8 +259,30 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         byte[] r = signatureRLP.get(1).getRLPData();
         byte[] s = signatureRLP.get(2).getRLPData();
 
+        if (v == null || v.length != 1) {
+            return false;
+        }
+
         ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[0]);
 
-        return fallbackMiningPubKey.verify(header.getHashForMergedMining(), signature);
+        if (!Arrays.equals(r, signature.r.toByteArray())) {
+            return false;
+        }
+
+        if (!Arrays.equals(s, signature.s.toByteArray())) {
+            return false;
+        }
+
+        if (signature.v > 31 || signature.v < 27) {
+            return false;
+        }
+
+        if (signature.s.compareTo(SECP256K1N_HALF) >= 0) {
+            return false;
+        }
+
+        ECKey pub = ECKey.recoverFromSignature(signature.v - 27, signature, header.getHashForMergedMining(), false);
+
+        return pub.getPubKeyPoint().equals(fallbackMiningPubKey.getPubKeyPoint());
     }
 }

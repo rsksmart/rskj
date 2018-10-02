@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.Utils;
 import org.ethereum.vm.DataWord;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.lang.reflect.Array;
 import java.math.BigInteger;

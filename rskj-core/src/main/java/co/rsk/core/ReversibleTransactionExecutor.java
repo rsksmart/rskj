@@ -26,6 +26,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,10 +68,10 @@ public class ReversibleTransactionExecutor {
             byte[] toAddress,
             byte[] value,
             byte[] data,
-            byte[] fromAddress) {
+            RskAddress fromAddress) {
         Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
 
-        byte[] nonce = repository.getNonce(new RskAddress(fromAddress)).toByteArray();
+        byte[] nonce = repository.getNonce(fromAddress).toByteArray();
         UnsignedTransaction tx = new UnsignedTransaction(
                 nonce,
                 gasPrice,
@@ -81,15 +83,10 @@ public class ReversibleTransactionExecutor {
         );
 
         TransactionExecutor executor = new TransactionExecutor(
-                config,
-                tx,
-                0,
-                coinbase,
-                repository,
-                blockStore,
-                receiptStore,
-                programInvokeFactory,
-                executionBlock
+                tx, 0, coinbase, repository, blockStore, receiptStore,
+                programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0, config.getVmConfig(),
+                config.getBlockchainConfig(), config.playVM(), config.isRemascEnabled(), config.vmTrace(), new PrecompiledContracts(config),
+                config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed()
         ).setLocalCall(true);
 
         executor.init();
@@ -108,9 +105,9 @@ public class ReversibleTransactionExecutor {
                 byte[] receiveAddress,
                 byte[] value,
                 byte[] data,
-                byte[] fromAddress) {
+                RskAddress fromAddress) {
             super(nonce, gasPrice, gasLimit, receiveAddress, value, data);
-            this.sender = new RskAddress(fromAddress);
+            this.sender = fromAddress;
         }
 
         @Override

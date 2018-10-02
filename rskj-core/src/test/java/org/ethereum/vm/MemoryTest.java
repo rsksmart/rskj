@@ -21,7 +21,7 @@ package org.ethereum.vm;
 
 import org.ethereum.vm.program.Memory;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 

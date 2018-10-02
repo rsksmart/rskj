@@ -57,8 +57,6 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
 
     protected EthVersion version;
 
-    protected boolean peerDiscoveryMode = false;
-
     protected Block bestBlock;
     protected EthereumListener listener = new EthereumListenerAdapter() {
         @Override
@@ -134,10 +132,6 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
 
     public void setMsgQueue(MessageQueue msgQueue) {
         this.msgQueue = msgQueue;
-    }
-
-    public void setPeerDiscoveryMode(boolean peerDiscoveryMode) {
-        this.peerDiscoveryMode = peerDiscoveryMode;
     }
 
     public void setChannel(Channel channel) {

@@ -22,13 +22,13 @@ package org.ethereum.net.rlpx;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
+import org.bouncycastle.crypto.StreamCipher;
+import org.bouncycastle.crypto.digests.KeccakDigest;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.ethereum.util.RLP;
-import org.spongycastle.crypto.StreamCipher;
-import org.spongycastle.crypto.digests.SHA3Digest;
-import org.spongycastle.crypto.engines.AESFastEngine;
-import org.spongycastle.crypto.modes.SICBlockCipher;
-import org.spongycastle.crypto.params.KeyParameter;
-import org.spongycastle.crypto.params.ParametersWithIV;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -43,8 +43,8 @@ import static org.ethereum.util.RLP.decode2OneItem;
 public class FrameCodec {
     private final StreamCipher enc;
     private final StreamCipher dec;
-    private final SHA3Digest egressMac;
-    private final SHA3Digest ingressMac;
+    private final KeccakDigest egressMac;
+    private final KeccakDigest ingressMac;
     private final byte[] mac;
     boolean isHeadRead;
     private int totalBodySize;
@@ -53,18 +53,19 @@ public class FrameCodec {
 
     public FrameCodec(EncryptionHandshake.Secrets secrets) {
         this.mac = secrets.mac;
-        int blockSize = secrets.aes.length * 8;
-        enc = new SICBlockCipher(new AESFastEngine());
-        enc.init(true, new ParametersWithIV(new KeyParameter(secrets.aes), new byte[blockSize / 8]));
-        dec = new SICBlockCipher(new AESFastEngine());
-        dec.init(false, new ParametersWithIV(new KeyParameter(secrets.aes), new byte[blockSize / 8]));
+        AESEngine encCipher = new AESEngine();
+        enc = new SICBlockCipher(encCipher);
+        enc.init(true, new ParametersWithIV(new KeyParameter(secrets.aes), new byte[encCipher.getBlockSize()]));
+        AESEngine decCipher = new AESEngine();
+        dec = new SICBlockCipher(decCipher);
+        dec.init(false, new ParametersWithIV(new KeyParameter(secrets.aes), new byte[decCipher.getBlockSize()]));
         egressMac = secrets.egressMac;
         ingressMac = secrets.ingressMac;
     }
 
-    private AESFastEngine makeMacCipher() {
+    private AESEngine makeMacCipher() {
         // Stateless AES encryption
-        AESFastEngine macc = new AESFastEngine();
+        AESEngine macc = new AESEngine();
         macc.init(true, new KeyParameter(mac));
         return macc;
     }
@@ -223,7 +224,7 @@ public class FrameCodec {
         return Collections.singletonList(frame);
     }
 
-    private byte[] updateMac(SHA3Digest mac, byte[] seed, int offset, byte[] out, int outOffset, boolean egress) throws IOException {
+    private byte[] updateMac(KeccakDigest mac, byte[] seed, int offset, byte[] out, int outOffset, boolean egress) throws IOException {
         byte[] aesBlock = new byte[mac.getDigestSize()];
         doSum(mac, aesBlock);
         makeMacCipher().processBlock(aesBlock, 0, aesBlock, 0);
@@ -247,9 +248,9 @@ public class FrameCodec {
         return result;
     }
 
-    private void doSum(SHA3Digest mac, byte[] out) {
+    private void doSum(KeccakDigest mac, byte[] out) {
         // doFinal without resetting the MAC by using clone of digest state
-        new SHA3Digest(mac).doFinal(out, 0);
+        new KeccakDigest(mac).doFinal(out, 0);
     }
 
 }

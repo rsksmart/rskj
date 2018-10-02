@@ -1,6 +1,7 @@
 package org.ethereum.util;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -12,7 +13,9 @@ import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
@@ -73,11 +76,11 @@ public class ContractRunner {
         return executeTransaction(creationTx).getResult();
     }
 
-    public ProgramResult createAndRunContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {
+    public ProgramResult createAndRunContract(byte[] bytecode, byte[] encodedCall, BigInteger value, boolean localCall) {
         createContract(bytecode);
         Transaction creationTx = contractCreateTx(bytecode);
         executeTransaction(creationTx);
-        return runContract(creationTx.getContractAddress().getBytes(), encodedCall, value);
+        return runContract(creationTx.getContractAddress().getBytes(), encodedCall, value, localCall);
     }
 
     private Transaction contractCreateTx(byte[] bytecode) {
@@ -90,7 +93,7 @@ public class ContractRunner {
                 .build();
     }
 
-    private ProgramResult runContract(byte[] contractAddress, byte[] encodedCall, BigInteger value) {
+    private ProgramResult runContract(byte[] contractAddress, byte[] encodedCall, BigInteger value, boolean localCall) {
         BigInteger nonceExecute = repository.getNonce(sender.getAddress());
         Transaction transaction = new TransactionBuilder()
                 // a large gas limit will allow running any contract
@@ -101,14 +104,33 @@ public class ContractRunner {
                 .nonce(nonceExecute.longValue())
                 .value(value)
                 .build();
+        transaction.setLocalCallTransaction(localCall);
         return executeTransaction(transaction).getResult();
     }
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = repository.startTracking();
-        TransactionExecutor executor = new TransactionExecutor(new TestSystemProperties(), transaction, 0, RskAddress.nullAddress(),
-                                                               repository, blockStore, receiptStore,
-                                                               new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
+        RskSystemProperties config = new TestSystemProperties();
+        TransactionExecutor executor = new TransactionExecutor(
+                transaction,
+                0,
+                RskAddress.nullAddress(),
+                repository,
+                blockStore,
+                receiptStore,
+                new ProgramInvokeFactoryImpl(),
+                blockchain.getBestBlock(),
+                new EthereumListenerAdapter(),
+                0,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed());
         executor.init();
         executor.execute();
         executor.go();

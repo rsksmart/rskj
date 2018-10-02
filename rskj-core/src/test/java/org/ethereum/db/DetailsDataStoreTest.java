@@ -22,10 +22,13 @@ package org.ethereum.db;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
+import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import static org.ethereum.TestUtils.randomAddress;
 import static org.junit.Assert.assertEquals;
@@ -37,15 +40,23 @@ public class DetailsDataStoreTest {
 
     @Test
     public void test1(){
+        HashMapDB keyValueDataSource = new HashMapDB();
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        TrieStore.Factory trieStoreFactory = name -> new TrieStoreImpl(keyValueDataSource);
+        DetailsDataStore dds = new DetailsDataStore(db, trieStoreFactory, config.detailsInMemoryStorageLimit());
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl(config);
+        ContractDetails contractDetails = new ContractDetailsImpl(
+            null,
+            new TrieImpl(new TrieStoreImpl(keyValueDataSource), true),
+            null,
+            trieStoreFactory,
+            config.detailsInMemoryStorageLimit()
+        );
         contractDetails.setAddress(randomAddress().getBytes());
         contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
@@ -70,14 +81,21 @@ public class DetailsDataStoreTest {
     public void test2(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        TrieStore.Factory trieStoreFactory = name -> new TrieStoreImpl(new HashMapDB());
+        DetailsDataStore dds = new DetailsDataStore(db, trieStoreFactory, config.detailsInMemoryStorageLimit());
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl(config);
+        ContractDetails contractDetails = new ContractDetailsImpl(
+            null,
+            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+            null,
+            trieStoreFactory,
+            config.detailsInMemoryStorageLimit()
+        );
         contractDetails.setCode(code);
         contractDetails.setAddress(randomAddress().getBytes());
         contractDetails.put(new DataWord(key), new DataWord(value));
@@ -105,15 +123,23 @@ public class DetailsDataStoreTest {
     @Test
     public void test3(){
 
+        HashMapDB store = new HashMapDB();
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        TrieStore.Factory trieStoreFactory = name -> new TrieStoreImpl(store);
+        DetailsDataStore dds = new DetailsDataStore(db, trieStoreFactory, config.detailsInMemoryStorageLimit());
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl(config);
+        ContractDetails contractDetails = new ContractDetailsImpl(
+            null,
+            new TrieImpl(new TrieStoreImpl(store), true),
+            null,
+            trieStoreFactory,
+            config.detailsInMemoryStorageLimit()
+        );
         contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
 
@@ -144,7 +170,8 @@ public class DetailsDataStoreTest {
     public void test4() {
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(config, db);
+        TrieStore.Factory trieStoreFactory = name -> new TrieStoreImpl(new HashMapDB());
+        DetailsDataStore dds = new DetailsDataStore(db, trieStoreFactory, config.detailsInMemoryStorageLimit());
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
 

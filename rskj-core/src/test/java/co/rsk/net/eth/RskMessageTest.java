@@ -34,17 +34,15 @@ import org.junit.Test;
  */
 public class RskMessageTest {
 
-    private final TestSystemProperties config = new TestSystemProperties();
-
     @Test
     public void encodeDecodeGetBlockMessage() {
         Block block = new BlockGenerator().getBlock(1);
         GetBlockMessage message = new GetBlockMessage(block.getHash().getBytes());
-        RskMessage rskmessage = new RskMessage(config, message);
+        RskMessage rskmessage = new RskMessage(message);
 
         byte[] encoded = rskmessage.getEncoded();
 
-        Eth62MessageFactory factory = new Eth62MessageFactory(config);
+        Eth62MessageFactory factory = new Eth62MessageFactory();
 
         EthMessage ethmessage = (EthMessage)factory.create((byte)0x08, encoded);
 
@@ -66,11 +64,11 @@ public class RskMessageTest {
         Block block = new BlockGenerator().getBlock(1);
         Status status = new Status(block.getNumber(), block.getHash().getBytes());
         StatusMessage message = new StatusMessage(status);
-        RskMessage rskmessage = new RskMessage(config, message);
+        RskMessage rskmessage = new RskMessage(message);
 
         byte[] encoded = rskmessage.getEncoded();
 
-        Eth62MessageFactory factory = new Eth62MessageFactory(config);
+        Eth62MessageFactory factory = new Eth62MessageFactory();
 
         EthMessage ethmessage = (EthMessage)factory.create((byte)0x08, encoded);
 
@@ -92,11 +90,11 @@ public class RskMessageTest {
     public void encodeDecodeBlockMessage() {
         Block block = new BlockGenerator().getBlock(1);
         BlockMessage message = new BlockMessage(block);
-        RskMessage rskmessage = new RskMessage(config, message);
+        RskMessage rskmessage = new RskMessage(message);
 
         byte[] encoded = rskmessage.getEncoded();
 
-        Eth62MessageFactory factory = new Eth62MessageFactory(config);
+        Eth62MessageFactory factory = new Eth62MessageFactory();
 
         EthMessage ethmessage = (EthMessage)factory.create((byte)0x08, encoded);
 

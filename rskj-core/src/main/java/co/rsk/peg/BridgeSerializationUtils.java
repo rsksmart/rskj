@@ -21,9 +21,11 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.spongycastle.util.BigIntegers;
+import org.bouncycastle.util.BigIntegers;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -35,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Created by mario on 20/04/17.
@@ -293,20 +296,43 @@ public class BridgeSerializationUtils {
         return new ABICallElection(authorizer, votes);
     }
 
-    public static byte[] serializeLockWhitelist(LockWhitelist whitelist) {
-        List<Address> whitelistAddresses = whitelist.getAddresses();
-        int serializationSize = whitelistAddresses.size() * 2 + 1;
+    /**
+     * Serializes the data stored in the Tuple.
+     * @param data data MUST be composed of a list of {@link co.rsk.peg.whitelist.OneOffWhiteListEntry} and the value of disableBlockHeight obtained from {@link co.rsk.peg.whitelist.LockWhitelist}
+     * @return the serialized data
+     */
+    public static byte[] serializeOneOffLockWhitelist(Pair<List<OneOffWhiteListEntry>, Integer> data) {
+        List<OneOffWhiteListEntry> entries = data.getLeft();
+        Integer disableBlockHeight = data.getRight();
+        int serializationSize = entries.size() * 2 + 1;
         byte[][] serializedLockWhitelist = new byte[serializationSize][];
-        for (int i = 0; i < whitelistAddresses.size(); i++) {
-            Address address = whitelistAddresses.get(i);
-            serializedLockWhitelist[2 * i] = RLP.encodeElement(address.getHash160());
-            serializedLockWhitelist[2 * i + 1] = RLP.encodeBigInteger(BigInteger.valueOf(whitelist.getMaxTransferValue(address).longValue()));
+        for (int i = 0; i < entries.size(); i++) {
+            OneOffWhiteListEntry entry = entries.get(i);
+            serializedLockWhitelist[2 * i] = RLP.encodeElement(entry.address().getHash160());
+            serializedLockWhitelist[2 * i + 1] = RLP.encodeBigInteger(BigInteger.valueOf(entry.maxTransferValue().longValue()));
         }
-        serializedLockWhitelist[serializationSize - 1] = RLP.encodeBigInteger(BigInteger.valueOf(whitelist.getDisableBlockHeight()));
+        serializedLockWhitelist[serializationSize - 1] = RLP.encodeBigInteger(BigInteger.valueOf(disableBlockHeight));
         return RLP.encodeList(serializedLockWhitelist);
     }
 
-    public static LockWhitelist deserializeLockWhitelist(byte[] data, NetworkParameters parameters) {
+    /**
+     * Serializes the provided list of {@link co.rsk.peg.whitelist.UnlimitedWhiteListEntry}
+     * @param entries
+     * @return the serialized data
+     */
+    public static byte[] serializeUnlimitedLockWhitelist(List<UnlimitedWhiteListEntry> entries) {
+        int serializationSize = entries.size();
+        byte[][] serializedLockWhitelist = new byte[serializationSize][];
+        for (int i = 0; i < entries.size(); i++) {
+            serializedLockWhitelist[i] = RLP.encodeElement(entries.get(i).address().getHash160());
+        }
+        return RLP.encodeList(serializedLockWhitelist);
+    }
+
+    public static Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializeOneOffLockWhitelistAndDisableBlockHeight(byte[] data, NetworkParameters parameters) {
+        if (data == null || data.length == 0) {
+            return null;
+        }
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
         int serializedAddressesSize = rlpList.size() - 1;
 
@@ -315,17 +341,34 @@ public class BridgeSerializationUtils {
             throw new RuntimeException("deserializeLockWhitelist: expected an even number of addresses, but odd given");
         }
 
-        Map<Address, Coin> whitelist = new HashMap<>(serializedAddressesSize / 2);
+        HashMap<Address, OneOffWhiteListEntry> entries = new HashMap<>(serializedAddressesSize / 2);
         for (int i = 0; i < serializedAddressesSize; i = i + 2) {
             byte[] hash160 = rlpList.get(i).getRLPData();
-            byte[] maxValueData = rlpList.get(i + 1).getRLPData();
-            whitelist.put(
-                new Address(parameters, hash160),
-                Coin.valueOf(safeToBigInteger(maxValueData).longValueExact())
-            );
+            byte[] maxTransferValueData = rlpList.get(i + 1).getRLPData();
+            Address address = new Address(parameters, hash160);
+            entries.put(address, new OneOffWhiteListEntry(address, Coin.valueOf(safeToBigInteger(maxTransferValueData).longValueExact())));
         }
         int disableBlockHeight = safeToBigInteger(rlpList.get(serializedAddressesSize).getRLPData()).intValueExact();
-        return new LockWhitelist(whitelist, disableBlockHeight);
+        return Pair.of(entries, disableBlockHeight);
+    }
+
+    public static Map<Address, UnlimitedWhiteListEntry> deserializeUnlimitedLockWhitelistEntries(byte[] data, NetworkParameters parameters) {
+        if (data == null) {
+            return new HashMap<>();
+        }
+
+        RLPList unlimitedWhitelistEntriesRlpList = (RLPList)RLP.decode2(data).get(0);
+        int unlimitedWhitelistEntriesSerializedAddressesSize = unlimitedWhitelistEntriesRlpList.size();
+
+        Map<Address, UnlimitedWhiteListEntry> entries = new HashMap<>(unlimitedWhitelistEntriesSerializedAddressesSize);
+
+        for (int j = 0; j < unlimitedWhitelistEntriesSerializedAddressesSize; j++) {
+            byte[] hash160 = unlimitedWhitelistEntriesRlpList.get(j).getRLPData();
+            Address address = new Address(parameters, hash160);
+            entries.put(address, new UnlimitedWhiteListEntry(address));
+        }
+
+        return entries;
     }
 
     private static BigInteger safeToBigInteger(byte[] data) {

@@ -19,10 +19,10 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -32,7 +32,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -54,15 +54,16 @@ public class RepositoryTrack implements Repository {
     private final Map<RskAddress, AccountState> cacheAccounts = new HashMap<>();
     private final Map<RskAddress, ContractDetails> cacheDetails = new HashMap<>();
 
-    private final RskSystemProperties config;
     private final DetailsDataStore dds;
+    private final Repository repository;
+    private final TrieStore.Factory trieStoreFactory;
+    private final int memoryStorageLimit;
 
-    Repository repository;
-
-    public RepositoryTrack(RskSystemProperties config, Repository repository) {
-        this.config = config;
+    public RepositoryTrack(Repository repository, TrieStore.Factory trieStoreFactory, int memoryStorageLimit) {
         this.repository = repository;
-        dds = new DetailsDataStore(this.config, new DatabaseImpl(new HashMapDB()));
+        this.trieStoreFactory = trieStoreFactory;
+        this.memoryStorageLimit = memoryStorageLimit;
+        this.dds = new DetailsDataStore(new DatabaseImpl(new HashMapDB()), trieStoreFactory, memoryStorageLimit);
     }
 
     @Override
@@ -327,7 +328,7 @@ public class RepositoryTrack implements Repository {
     public Repository startTracking() {
         logger.debug("start tracking");
 
-        return new RepositoryTrack(config, this);
+        return new RepositoryTrack(this, trieStoreFactory, memoryStorageLimit);
     }
 
 
@@ -455,7 +456,9 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void updateContractDetails(RskAddress addr, ContractDetails contractDetails) {
+    public void updateContractDetails(
+            RskAddress addr,
+            ContractDetails contractDetails) {
         synchronized (repository) {
             logger.trace("updateContractDetails: [{}]", addr);
             ContractDetails contractDetailsCache = new ContractDetailsCacheImpl(null);

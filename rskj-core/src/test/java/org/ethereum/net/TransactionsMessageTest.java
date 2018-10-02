@@ -28,7 +28,7 @@ import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.util.ByteUtil;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Collections;
@@ -53,7 +53,7 @@ public class TransactionsMessageTest {
 
         byte[] payload = Hex.decode(txsPacketRaw);
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(config, payload);
+        TransactionsMessage transactionsMessage = new TransactionsMessage(payload);
         System.out.println(transactionsMessage);
 
         assertEquals(EthMessageCodes.TRANSACTIONS, transactionsMessage.getCommand());
@@ -100,7 +100,7 @@ public class TransactionsMessageTest {
 
         byte[] payload = Hex.decode(txsPacketRaw);
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(config, payload);
+        TransactionsMessage transactionsMessage = new TransactionsMessage(payload);
         System.out.println(transactionsMessage);
 
         assertEquals(EthMessageCodes.TRANSACTIONS, transactionsMessage.getCommand());
@@ -176,7 +176,7 @@ public class TransactionsMessageTest {
     public void test_3() throws Exception {
 
         String expected =
-                "f872f870808609184e72a0008242559479b08ad8787060333663d19704909ee7b1903e588b00d3c21bcecceda1000000801ca07c3f47d609d453737ddcf7c403190f67432c41e1f26051296b24e4e10a837083a0375fdb6d3b82dae7e1e78aa7d7413d0bfefeb05341058361d2b5a53d9c8783d6";
+                "f871f86f808609184e72a0008242559479b08ad8787060333663d19704909ee7b1903e588ad3c21bcecceda1000000801ba0c614666b4277ff9012b1421483b5869bf2e456a0864e36306f1e1e1d44a68855a00e5bdb8b4108cc3c0512357e76ecd398c106fe91747259683b3798398032a580";
 
         BigInteger value = new BigInteger("1000000000000000000000000");
 
@@ -192,7 +192,7 @@ public class TransactionsMessageTest {
         tx.sign(privKey);
         tx.getEncoded();
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(config, Collections.singletonList(tx));
+        TransactionsMessage transactionsMessage = new TransactionsMessage(Collections.singletonList(tx));
 
         assertEquals(expected, Hex.toHexString(transactionsMessage.getEncoded()));
     }
@@ -200,7 +200,7 @@ public class TransactionsMessageTest {
     @Test
     public void test_4() {
         String msg = "f872f87083011a6d850ba43b740083015f9094ec210ec3715d5918b37cfa4d344a45d177ed849f881b461c1416b9d000801ba023a3035235ca0a6f80f08a1d4bd760445d5b0f8a25c32678fe18a451a88d6377a0765dde224118bdb40a67f315583d542d93d17d8637302b1da26e1013518d3ae8";
-        TransactionsMessage tmsg = new TransactionsMessage(config, Hex.decode(msg));
+        TransactionsMessage tmsg = new TransactionsMessage(Hex.decode(msg));
         assertEquals(1, tmsg.getTransactions().size());
     }
 }

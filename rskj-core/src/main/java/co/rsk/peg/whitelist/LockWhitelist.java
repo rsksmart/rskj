@@ -16,13 +16,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.whitelist;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents a lock whitelist
@@ -37,16 +38,16 @@ public class LockWhitelist {
     private static final Comparator<Address> LEXICOGRAPHICAL_COMPARATOR
         = Comparator.comparing(Address::getHash160, UnsignedBytes.lexicographicalComparator());
 
-    private SortedMap<Address, Coin> whitelistedAddresses;
+    private SortedMap<Address, LockWhitelistEntry> whitelistedAddresses;
     private int disableBlockHeight;
 
-    public LockWhitelist(Map<Address, Coin> whitelistedAddresses) {
+    public LockWhitelist(Map<Address, LockWhitelistEntry> whitelistedAddresses) {
         this(whitelistedAddresses, Integer.MAX_VALUE);
     }
 
-    public LockWhitelist(Map<Address, Coin> whitelistedAddresses, int disableBlockHeight) {
+    public LockWhitelist(Map<Address, LockWhitelistEntry> whitelistedAddresses, int disableBlockHeight) {
         // Save a copy so that this can't be modified from the outside
-        SortedMap<Address, Coin> sortedWhitelistedAddresses = new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
+        SortedMap<Address, LockWhitelistEntry> sortedWhitelistedAddresses = new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
         sortedWhitelistedAddresses.putAll(whitelistedAddresses);
         this.whitelistedAddresses = sortedWhitelistedAddresses;
         this.disableBlockHeight = disableBlockHeight;
@@ -63,8 +64,13 @@ public class LockWhitelist {
     }
 
     public boolean isWhitelistedFor(Address address, Coin amount, int height) {
-        Coin maxTransferValue = getMaxTransferValue(address);
-        return height > disableBlockHeight || (isWhitelisted(address) && maxTransferValue !=null && (amount.isLessThan(maxTransferValue) || amount.equals(maxTransferValue)));
+        if (height > disableBlockHeight) {
+            // Whitelist disabled
+            return true;
+        }
+
+        LockWhitelistEntry entry = this.whitelistedAddresses.get(address);
+        return (entry != null && entry.canLock(amount));
     }
 
     public Integer getSize() {
@@ -76,21 +82,49 @@ public class LockWhitelist {
         return new ArrayList<>(whitelistedAddresses.keySet());
     }
 
-    public Coin getMaxTransferValue(Address address) {
-        return whitelistedAddresses.get(address);
+    public <T extends LockWhitelistEntry> List<T> getAll(Class<T> type) {
+        return whitelistedAddresses.values().stream()
+                .filter(e -> e.getClass() == type)
+                .map(type::cast)
+                .collect(Collectors.toList());
     }
 
-    public boolean put(Address address, Coin maxTransferValue) {
+    public List<LockWhitelistEntry> getAll() {
+        // Return a copy so that this can't be modified from the outside
+        return new ArrayList<>(whitelistedAddresses.values());
+    }
+
+    public LockWhitelistEntry get(Address address) {
+        return this.whitelistedAddresses.get(address);
+    }
+
+    public boolean put(Address address, LockWhitelistEntry entry) {
         if (whitelistedAddresses.containsKey(address)) {
             return false;
         }
 
-        whitelistedAddresses.put(address, maxTransferValue);
+        whitelistedAddresses.put(address, entry);
         return true;
     }
 
     public boolean remove(Address address) {
         return whitelistedAddresses.remove(address) != null;
+    }
+
+    /**
+     * Marks the whitelisted address as consumed. This will reduce the number of usages, and if it gets down to zero remaining usages it will remove the address
+     * @param address
+     */
+    public void consume(Address address) {
+        LockWhitelistEntry entry = whitelistedAddresses.get(address);
+        if (entry == null) {
+            return;
+        }
+        entry.consume();
+
+        if (entry.isConsumed()) {
+            this.remove(address);
+        }
     }
 
     public int getDisableBlockHeight() {

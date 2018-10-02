@@ -31,7 +31,7 @@ public class AbstractNetConfig implements BlockchainNetConfig {
     private BlockchainConfig[] configs = new BlockchainConfig[64];
     private int count;
 
-    public void add(long startBlockNumber, BlockchainConfig config) {
+    public final void add(long startBlockNumber, BlockchainConfig config) {
         if (count >= blockNumbers.length) {
             throw new RuntimeException();
         }

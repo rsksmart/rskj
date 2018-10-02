@@ -32,7 +32,7 @@ import org.ethereum.net.server.Channel;
 import org.ethereum.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -225,7 +225,7 @@ public class SyncPool implements Iterable<Channel> {
             String remoteId = Hex.toHexString(node.getId().getID());
             logger.info("Connecting to: {}:{}", ip, port);
             PeerClient peerClient = peerClientFactory.newInstance();
-            peerClient.connectAsync(ip, port, remoteId, false);
+            peerClient.connectAsync(ip, port, remoteId);
             pendingConnections.put(node.getHexId(), timeAfterMillis(CONNECTION_TIMEOUT));
         }
     }

@@ -4,9 +4,9 @@ import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
+import co.rsk.validators.BlockCompositeRule;
 import co.rsk.validators.BlockRootValidationRule;
 import co.rsk.validators.BlockUnclesHashValidationRule;
-import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -20,8 +20,7 @@ import java.util.stream.Collectors;
 public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     // validation rules for bodies
-    private final BlockValidationRule blockUnclesHashValidationRule;
-    private final BlockValidationRule blockTransactionsValidationRule;
+    private final BlockCompositeRule blockValidationRules;
 
     // responses on wait
     private final Map<Long, PendingBodyResponse> pendingBodyResponses;
@@ -61,8 +60,10 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
         super(syncInformation, syncEventsHandler, syncConfiguration);
         this.limit = syncConfiguration.getTimeoutWaitingRequest();
-        this.blockUnclesHashValidationRule = new BlockUnclesHashValidationRule();
-        this.blockTransactionsValidationRule = new BlockRootValidationRule();
+        this.blockValidationRules = new BlockCompositeRule(
+                new BlockUnclesHashValidationRule(),
+                new BlockRootValidationRule()
+        );
         this.pendingBodyResponses = new HashMap<>();
         this.pendingHeaders = pendingHeaders;
         this.skeletons = skeletons;
@@ -88,7 +89,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         // we already checked that this message was expected
         BlockHeader header = pendingBodyResponses.remove(message.getId()).header;
         Block block = Block.fromValidData(header, message.getTransactions(), message.getUncles());
-        if (!blockUnclesHashValidationRule.isValid(block) || !blockTransactionsValidationRule.isValid(block)) {
+        if (!blockValidationRules.isValid(block)) {
             handleInvalidMessage(peerId, header);
             return;
         }

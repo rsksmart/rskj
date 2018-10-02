@@ -19,6 +19,7 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -34,7 +35,6 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -46,22 +46,15 @@ import java.util.List;
  * Created by ajlopez on 8/6/2016.
  */
 public class BlockChainBuilder {
-    private final TestSystemProperties config = new TestSystemProperties();
     private boolean testing;
-
     private List<Block> blocks;
     private List<TransactionInfo> txinfos;
 
-    private AdminInfo adminInfo;
     private Repository repository;
     private BlockStore blockStore;
     private Genesis genesis;
     private ReceiptStore receiptStore;
-
-    public BlockChainBuilder setAdminInfo(AdminInfo adminInfo) {
-        this.adminInfo = adminInfo;
-        return this;
-    }
+    private RskSystemProperties config;
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -93,9 +86,18 @@ public class BlockChainBuilder {
         return this;
     }
 
+    public BlockChainBuilder setConfig(RskSystemProperties config) {
+        this.config = config;
+        return this;
+    }
+
     public BlockChainBuilder setReceiptStore(ReceiptStore receiptStore) {
         this.receiptStore = receiptStore;
         return this;
+    }
+
+    public RskSystemProperties getConfig() {
+        return config;
     }
 
     public BlockChainImpl build() {
@@ -103,8 +105,12 @@ public class BlockChainBuilder {
     }
 
     public BlockChainImpl build(boolean withoutCleaner) {
+        if (config == null){
+            config = new TestSystemProperties();
+        }
+
         if (repository == null)
-            repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
+            repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
 
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
@@ -129,10 +135,6 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
-        if (this.adminInfo == null)
-            this.adminInfo = new AdminInfo();
-
-
         TransactionPoolImpl transactionPool;
         if (withoutCleaner) {
             transactionPool = new TransactionPoolImplNoCleaner(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
@@ -140,7 +142,28 @@ public class BlockChainBuilder {
             transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
         }
 
-        BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, transactionPool, listener, this.adminInfo, blockValidator);
+        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(this.repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                tx1,
+                txindex1,
+                block1.getCoinbase(),
+                track1,
+                this.blockStore,
+                receiptStore,
+                programInvokeFactory,
+                block1,
+                listener,
+                totalGasUsed1,
+                config.getVmConfig(),
+                config.getBlockchainConfig(),
+                config.playVM(),
+                config.isRemascEnabled(),
+                config.vmTrace(),
+                new PrecompiledContracts(config),
+                config.databaseDir(),
+                config.vmTraceDir(),
+                config.vmTraceCompressed()
+        )));
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
@@ -165,7 +188,28 @@ public class BlockChainBuilder {
         }
 
         if (this.blocks != null) {
-            BlockExecutor blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
+            final ProgramInvokeFactoryImpl programInvokeFactory1 = new ProgramInvokeFactoryImpl();
+            BlockExecutor blockExecutor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                    tx1,
+                    txindex1,
+                    block1.getCoinbase(),
+                    track1,
+                    blockStore,
+                    receiptStore,
+                    programInvokeFactory1,
+                    block1,
+                    listener,
+                    totalGasUsed1,
+                    config.getVmConfig(),
+                    config.getBlockchainConfig(),
+                    config.playVM(),
+                    config.isRemascEnabled(),
+                    config.vmTrace(),
+                    new PrecompiledContracts(config),
+                    config.databaseDir(),
+                    config.vmTraceDir(),
+                    config.vmTraceCompressed()
+            ));
 
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock());

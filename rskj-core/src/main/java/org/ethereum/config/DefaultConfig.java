@@ -68,9 +68,11 @@ public class DefaultConfig {
 
     @Bean
     public BlockStore blockStore(RskSystemProperties config) {
-        String database = config.databaseDir();
+        return buildBlockStore(config.databaseDir());
+    }
 
-        File blockIndexDirectory = new File(database + "/blocks/");
+    public BlockStore buildBlockStore(String databaseDir) {
+        File blockIndexDirectory = new File(databaseDir + "/blocks/");
         File dbFile = new File(blockIndexDirectory, "index");
         if (!blockIndexDirectory.exists()) {
             boolean mkdirsSuccess = blockIndexDirectory.mkdirs();
@@ -89,17 +91,19 @@ public class DefaultConfig {
                 .counterEnable()
                 .makeOrGet();
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource(config, "blocks");
+        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", databaseDir);
         blocksDB.init();
 
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(indexMap, blocksDB, indexDB);
-
-        return indexedBlockStore;
+        return new IndexedBlockStore(indexMap, blocksDB, indexDB);
     }
 
     @Bean
     public ReceiptStore receiptStore(RskSystemProperties config) {
-        KeyValueDataSource ds = new LevelDbDataSource(config, "receipts");
+        return buildReceiptStore(config.databaseDir());
+    }
+
+    public ReceiptStore buildReceiptStore(String databaseDir) {
+        KeyValueDataSource ds = new LevelDbDataSource("receipts", databaseDir);
         ds.init();
         return new ReceiptStoreImpl(ds);
     }

@@ -29,7 +29,7 @@ import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.HashMap;
 import java.util.LinkedList;

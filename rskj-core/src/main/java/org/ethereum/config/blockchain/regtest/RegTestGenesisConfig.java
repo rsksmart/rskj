@@ -17,29 +17,28 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.config.blockchain;
+package org.ethereum.config.blockchain.regtest;
 
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeTestNetConstants;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.BlockDifficulty;
-import org.ethereum.config.Constants;
-import org.ethereum.core.BlockHeader;
+import org.ethereum.config.blockchain.GenesisConfig;
 
 import java.math.BigInteger;
 
+public class RegTestGenesisConfig extends GenesisConfig {
 
-public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
+    public static class RegTestConstants extends GenesisConstants {
 
+        private final BlockDifficulty minimumDifficulty = new BlockDifficulty(BigInteger.valueOf(1));
+        private static final byte CHAIN_ID = 33;
 
-    public static class TestNetConstants extends GenesisConstants {
-
-        private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
-        private static final byte CHAIN_ID = 31;
-        private final BlockDifficulty minimumDifficulty = new BlockDifficulty(BigInteger.valueOf(131072));
+        @Override
+        public BlockDifficulty getFallbackMiningDifficulty() { return BlockDifficulty.ZERO; }
 
         @Override
         public BridgeConstants getBridgeConstants() {
-            return BridgeTestNetConstants.getInstance();
+            return BridgeRegTestConstants.getInstance();
         }
 
         @Override
@@ -49,42 +48,26 @@ public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
 
         @Override
         public int getDurationLimit() {
-            return 14;
-        }
-
-        @Override
-        public BigInteger getDifficultyBoundDivisor() {
-            return DIFFICULTY_BOUND_DIVISOR;
+            return 10;
         }
 
         @Override
         public int getNewBlockMaxSecondsInTheFuture() {
-            return 540;
+            return 0;
         }
 
         @Override
         public byte getChainId() {
-            return TestNetConstants.CHAIN_ID;
+            return RegTestConstants.CHAIN_ID;
         }
-
     }
 
-    public TestNetAfterBridgeSyncConfig() {
-        super(new TestNetConstants());
+    public RegTestGenesisConfig() {
+        super(new RegTestConstants());
     }
-
-    protected TestNetAfterBridgeSyncConfig(Constants constants) {
-        super(constants);
-    }
-
 
     @Override
-    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
-        // If more than 10 minutes, reset to original difficulty 0x00100000
-        if (curBlock.getTimestamp() >= parent.getTimestamp() + 600) {
-            return getConstants().getMinimumDifficulty();
-        }
-
-        return super.calcDifficulty(curBlock, parent);
+    public boolean areBridgeTxsFree() {
+        return true;
     }
 }

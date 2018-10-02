@@ -35,7 +35,7 @@ import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -85,9 +85,9 @@ public class DoPrune {
         logger.info("Datasource Name {}", dataSourceName);
         logger.info("Blockchain height {}", height);
 
-        TrieImpl source = new TrieImpl(new TrieStoreImpl(levelDbByName(this.rskSystemProperties, dataSourceName)), true);
+        TrieImpl source = new TrieImpl(new TrieStoreImpl(levelDbByName(dataSourceName, this.rskSystemProperties.databaseDir())), true);
         String targetDataSourceName = dataSourceName + "B";
-        KeyValueDataSource targetDataSource = levelDbByName(this.rskSystemProperties, targetDataSourceName);
+        KeyValueDataSource targetDataSource = levelDbByName(targetDataSourceName, this.rskSystemProperties.databaseDir());
         TrieStore targetStore = new TrieStoreImpl(targetDataSource);
 
         this.processBlocks(height - blocksToProcess, source, contractAddress, targetStore);

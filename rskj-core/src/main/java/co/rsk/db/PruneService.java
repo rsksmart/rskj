@@ -96,8 +96,8 @@ public class PruneService {
         long to = this.blockchain.getBestBlock().getNumber() - this.pruneConfiguration.getNoBlocksToAvoidForks();
 
         String dataSourceName = getDataSourceName(contractAddress);
-        KeyValueDataSource sourceDataSource = levelDbByName(this.rskConfiguration, dataSourceName);
-        KeyValueDataSource targetDataSource = levelDbByName(this.rskConfiguration, dataSourceName + "B");
+        KeyValueDataSource sourceDataSource = levelDbByName(dataSourceName, this.rskConfiguration.databaseDir());
+        KeyValueDataSource targetDataSource = levelDbByName(dataSourceName + "B", this.rskConfiguration.databaseDir());
         TrieStore targetStore = new TrieStoreImpl(targetDataSource);
 
         TrieCopier.trieContractStateCopy(targetStore, blockchain, from, to, blockchain.getRepository(), this.contractAddress);
