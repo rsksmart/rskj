@@ -31,8 +31,11 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Repository;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -812,6 +815,6 @@ public class BridgeStorageProviderTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl(null, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
     }
 }

@@ -46,8 +46,8 @@ public class ContractDetailsMapper {
                 null,
                 new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
                 null,
-                config.detailsInMemoryStorageLimit(),
-                config.databaseDir()
+                null,
+                config.detailsInMemoryStorageLimit()
         );
 
         if (contract.getCode()!=null) {

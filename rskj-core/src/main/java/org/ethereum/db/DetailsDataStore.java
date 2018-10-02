@@ -21,6 +21,7 @@ package org.ethereum.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
+import co.rsk.trie.TrieStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,12 +44,16 @@ public class DetailsDataStore {
     private final Set<RskAddress> removes = new HashSet<>();
 
     private final DatabaseImpl db;
+    private final int memoryStorageLimit;
+    private TrieStore.Factory trieStoreFactory;
 
-    public DetailsDataStore(DatabaseImpl db) {
+    public DetailsDataStore(DatabaseImpl db, TrieStore.Factory trieStoreFactory, int memoryStorageLimit) {
         this.db = db;
+        this.trieStoreFactory = trieStoreFactory;
+        this.memoryStorageLimit = memoryStorageLimit;
     }
 
-    public synchronized ContractDetails get(RskAddress addr, int memoryStorageLimit, String databaseDir) {
+    public synchronized ContractDetails get(RskAddress addr) {
         ContractDetails details = cache.get(addr);
 
         if (details == null) {
@@ -61,7 +66,7 @@ public class DetailsDataStore {
                 return null;
             }
 
-            details = createContractDetails(data, memoryStorageLimit, databaseDir);
+            details = createContractDetails(data, trieStoreFactory, memoryStorageLimit);
             cache.put(addr, details);
 
             float out = ((float) data.length) / 1048576;
@@ -74,8 +79,11 @@ public class DetailsDataStore {
         return details;
     }
 
-    protected ContractDetails createContractDetails(byte[] data, int memoryStorageLimit, String databaseDir) {
-        return new ContractDetailsImpl(data, memoryStorageLimit, databaseDir);
+    protected ContractDetails createContractDetails(
+            byte[] data,
+            TrieStore.Factory trieStoreFactory,
+            int memoryStorageLimit) {
+        return new ContractDetailsImpl(data, trieStoreFactory, memoryStorageLimit);
     }
 
     public synchronized void update(RskAddress addr, ContractDetails contractDetails) {

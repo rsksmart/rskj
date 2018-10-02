@@ -21,10 +21,12 @@ package co.rsk.peg;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.trie.TrieStoreImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -304,6 +306,6 @@ public class SamplePrecompiledContractTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl(null, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
     }
 }
