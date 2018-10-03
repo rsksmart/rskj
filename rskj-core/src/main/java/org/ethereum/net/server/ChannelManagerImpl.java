@@ -100,7 +100,8 @@ public class ChannelManagerImpl implements ChannelManager {
         mainWorker.shutdown();
     }
 
-    private void tryProcessNewPeers() {
+    @VisibleForTesting
+    public void tryProcessNewPeers() {
         if (newPeers.isEmpty()) {
             return;
         }
