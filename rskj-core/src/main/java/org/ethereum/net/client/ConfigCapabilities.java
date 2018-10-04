@@ -19,6 +19,8 @@
 
 package org.ethereum.net.client;
 
+import org.ethereum.net.p2p.HelloMessage;
+
 import java.util.List;
 
 /**
@@ -32,4 +34,6 @@ public interface ConfigCapabilities {
      * sorted by their names.
      */
     List<Capability> getConfigCapabilities() ;
+
+    List<Capability> getSupportedCapabilities(HelloMessage hello);
 }
