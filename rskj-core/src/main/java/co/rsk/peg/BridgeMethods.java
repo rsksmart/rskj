@@ -147,6 +147,17 @@ public enum BridgeMethods {
             blockchainConfig -> blockchainConfig.isRskip89(),
             true
     ),
+    GET_BTC_TRANSACTION_CONFIRMATION(
+            CallTransaction.Function.fromSignature(
+                    "getBtcTransactionConfirmation",
+                    new String[]{"string", "string", "int256"},
+                    new String[]{"int64"}
+            ),
+            22000L, //TODO ESTIMATE GAS
+            (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmation,
+            blockchainConfig -> blockchainConfig.isRskip89(), //TODO CREATE A RSKIP AS THIS FUNCTION IS A NEW HARDFORK
+            true
+    ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
             CallTransaction.Function.fromSignature(
                     "getBtcTxHashProcessedHeight",

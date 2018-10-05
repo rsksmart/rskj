@@ -31,15 +31,16 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
-import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.BtcTransactionFormatUtils;
-import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -47,7 +48,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -71,6 +71,11 @@ public class BridgeSupport {
     public static final Integer LOCK_WHITELIST_UNKNOWN_ERROR_CODE = 0;
     public static final Integer LOCK_WHITELIST_SUCCESS_CODE = 1;
     public static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = -10;
+
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_TX_ERROR_CODE = -1;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_ERROR_CODE = -2;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_HEIGHT_ERROR_CODE = -3;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_OLDER_THAN_CACHE_ERROR_CODE = -4;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -1117,6 +1122,43 @@ public class BridgeSupport {
             currentDepth++;
         }
         return current.getHeader().getHash();
+    }
+
+    public Integer getBtcTransactionConfirmation(Sha256Hash btcTxHash, Sha256Hash btcBlockHash, int btcBlockHeight) throws BlockStoreException, IOException {
+        Context.propagate(btcContext);
+        this.ensureBtcBlockChain();
+
+        int bestChainHeight = btcBlockChain.getBestChainHeight();
+        if(bestChainHeight < btcBlockHeight){
+            return BTC_TRANSACTION_CONFIRMATION_INVALID_HEIGHT_ERROR_CODE;
+        }
+        int heightDifference = bestChainHeight - btcBlockHeight;
+        if(heightDifference > RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS) {
+            return BTC_TRANSACTION_CONFIRMATION_OLDER_THAN_CACHE_ERROR_CODE;
+        }
+
+        StoredBlock block = this.btcBlockStore.getFromCache(btcBlockHash);
+        if(block == null){
+            return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_ERROR_CODE;
+        }
+        if(block.getHeight() != btcBlockHeight){
+            return BTC_TRANSACTION_CONFIRMATION_INVALID_HEIGHT_ERROR_CODE;
+        }
+
+        BtcTransaction txOnBlock = null;
+        for (Iterator<BtcTransaction> i = block.getHeader().getTransactions().iterator(); i.hasNext();) {
+            BtcTransaction tx = i.next();
+            if(tx.getHash() == btcTxHash){
+                txOnBlock = tx;
+                break;
+            }
+        }
+        if(txOnBlock == null){
+            return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_TX_ERROR_CODE;
+        }
+        int confirmations = heightDifference + 1;
+        return confirmations;
+
     }
 
     private StoredBlock getPrevBlockAtHeight(StoredBlock cursor, int height) throws BlockStoreException {
