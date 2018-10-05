@@ -96,6 +96,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // (replacing the need for getBtcBlockchainBlockLocator).
     // The goal of this function is to help synchronize bridge and federators blockchains.
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH = BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH.getFunction();
+    // Returns the confirmations number of the block for the given transaction. If its not valid or its not part of the main chain it returns a negative number
+    // The goal of this function is to help contracts can use this to validate BTC transactions
+    public static final CallTransaction.Function GET_BTC_TRANSACTION_CONFIRMATION = BridgeMethods.GET_BTC_TRANSACTION_CONFIRMATION.getFunction();
     // Returns the minimum amount of satoshis a user should send to the federation.
     public static final CallTransaction.Function GET_MINIMUM_LOCK_TX_VALUE = BridgeMethods.GET_MINIMUM_LOCK_TX_VALUE.getFunction();
 
@@ -547,6 +550,20 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return blockHash.getBytes();
+    }
+
+    public int getBtcTransactionConfirmation(Object[] args)
+    {
+        logger.trace("getBtcTransactionConfirmation");
+        try {
+            Sha256Hash btcTxHash = Sha256Hash.wrap((String) args[0]);
+            Sha256Hash btcBlockHash = Sha256Hash.wrap((String) args[1]);
+            int btcBlockHeight = ((BigInteger) args[2]).intValue();
+            return  bridgeSupport.getBtcTransactionConfirmation(btcTxHash, btcBlockHash, btcBlockHeight);
+        } catch (Exception e) {
+            logger.warn("Exception in getBtcTransactionConfirmation", e);
+            throw new RuntimeException("Exception in getBtcTransactionConfirmation", e);
+        }
     }
 
     public Long getMinimumLockTxValue(Object[] args)
