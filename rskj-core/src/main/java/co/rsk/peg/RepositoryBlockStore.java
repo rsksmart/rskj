@@ -38,7 +38,7 @@ public class RepositoryBlockStore implements BtcBlockstoreWithCache {
     public static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
 
     // power of 2 size that contains enough hashes to handle one year of blocks
-    private static final int MAX_SIZE_MAP_STORED_BLOCKS = 65535;
+    public static final int MAX_SIZE_MAP_STORED_BLOCKS = 65535;
     private static Map<Sha256Hash, StoredBlock> knownBlocks = new MaxSizeHashMap<>(MAX_SIZE_MAP_STORED_BLOCKS, false);
 
     private final Repository repository;
