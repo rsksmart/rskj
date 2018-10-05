@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
@@ -30,12 +31,15 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
+import co.rsk.peg.exception.BlockHeightOlderThanCacheException;
+import co.rsk.peg.exception.InvalidBlockHashException;
+import co.rsk.peg.exception.InvalidBlockHeightException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.util.RskTestFactory;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,6 +76,264 @@ public class BridgeUtilsTest {
     @Before
     public void setupConfig(){
         config = new TestSystemProperties();
+        BridgeUtils.cleanStoredBlockCache();
+    }
+
+    @After
+    public void doYourOneTimeTeardown() {
+        BridgeUtils.cleanStoredBlockCache();
+    }
+
+    @Test
+    public void testGetStoredBlockAtHeight_ok() throws BlockStoreException {
+
+        int height = 50;
+        Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        BtcBlock blockHeader = mock(BtcBlock.class);
+        when(blockHeader.getHash()).thenReturn(blockHash);
+
+
+        StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), height);
+        BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
+        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+
+        int chainHeadHeight = height + 1;
+        Sha256Hash chainHeadBlockHash = Sha256Hash.of(Hex.decode("ddeeff"));
+        BtcBlock chainHeadBlockHeader = mock(BtcBlock.class);
+        when(chainHeadBlockHeader.getHash()).thenReturn(chainHeadBlockHash);
+        StoredBlock chainHeadBlock = new StoredBlock(chainHeadBlockHeader, new BigInteger("0"), chainHeadHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHeadBlock);
+        when(btcBlockStore.getFromCache(chainHeadBlockHash)).thenReturn(chainHeadBlock);
+
+        when(chainHeadBlockHeader.getPrevBlockHash()).thenReturn(blockHash);
+
+        StoredBlock resultBlock = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height);
+
+        Assert.assertEquals(resultBlock, block);
+
+    }
+
+    @Test
+    public void testGetStoredBlockAtHeight_BlockHeightDistinctFromExpected() throws BlockStoreException {
+
+        int height = 50;
+        Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        BtcBlock blockHeader = mock(BtcBlock.class);
+        when(blockHeader.getHash()).thenReturn(blockHash);
+
+        int otherHeigth = 33;
+        StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), otherHeigth);
+        BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
+        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+
+        int chainHeadHeight = height + 1;
+        Sha256Hash chainHeadBlockHash = Sha256Hash.of(Hex.decode("ddeeff"));
+        BtcBlock chainHeadBlockHeader = mock(BtcBlock.class);
+        when(chainHeadBlockHeader.getHash()).thenReturn(chainHeadBlockHash);
+        StoredBlock chainHeadBlock = new StoredBlock(chainHeadBlockHeader, new BigInteger("0"), chainHeadHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHeadBlock);
+        when(btcBlockStore.getFromCache(chainHeadBlockHash)).thenReturn(chainHeadBlock);
+
+        when(chainHeadBlockHeader.getPrevBlockHash()).thenReturn(blockHash);
+
+        try {
+            StoredBlock resultBlock = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height);
+            Assert.assertTrue(false);
+        } catch (InvalidBlockHeightException e) {
+            Assert.assertTrue(e.getMessage().contains("Distinct Block Height"));
+        }
+
+    }
+
+    @Test
+    public void testGetStoredBlockAtHeight_InvalidBlockHeight() throws BlockStoreException {
+
+        int height = 60;
+        Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
+
+
+        int chainHeadHeight = 50;
+        Sha256Hash chainHeadBlockHash = Sha256Hash.of(Hex.decode("ddeeff"));
+        BtcBlock chainHeadBlockHeader = mock(BtcBlock.class);
+        when(chainHeadBlockHeader.getHash()).thenReturn(chainHeadBlockHash);
+        StoredBlock chainHeadBlock = new StoredBlock(chainHeadBlockHeader, new BigInteger("0"), chainHeadHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHeadBlock);
+        when(btcBlockStore.getFromCache(chainHeadBlockHash)).thenReturn(chainHeadBlock);
+
+        when(chainHeadBlockHeader.getPrevBlockHash()).thenReturn(blockHash);
+
+        try {
+            StoredBlock resultBlock = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height);
+            Assert.assertTrue(false);
+        } catch (InvalidBlockHeightException e) {
+            Assert.assertTrue(e.getMessage().contains("bigger than Chain Height"));
+        }
+
+    }
+
+    @Test
+    public void testGetStoredBlockAtHeight_OlderThanCache() throws BlockStoreException {
+
+        int height = 1;
+        Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
+
+
+        int chainHeadHeight = RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS + height + 1;
+        Sha256Hash chainHeadBlockHash = Sha256Hash.of(Hex.decode("ddeeff"));
+        BtcBlock chainHeadBlockHeader = mock(BtcBlock.class);
+        when(chainHeadBlockHeader.getHash()).thenReturn(chainHeadBlockHash);
+        StoredBlock chainHeadBlock = new StoredBlock(chainHeadBlockHeader, new BigInteger("0"), chainHeadHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHeadBlock);
+        when(btcBlockStore.getFromCache(chainHeadBlockHash)).thenReturn(chainHeadBlock);
+
+        when(chainHeadBlockHeader.getPrevBlockHash()).thenReturn(blockHash);
+
+        try {
+            StoredBlock resultBlock = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height);
+            Assert.assertTrue(false);
+        } catch (BlockHeightOlderThanCacheException e) {
+            Assert.assertTrue(e.getMessage().contains("older than Cache"));
+        }
+
+    }
+
+    @Test
+    public void testGetStoredBlockAtHeight_InvalidBlockHash_NotInTheChain() throws BlockStoreException {
+
+        int height = 50;
+        Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        BtcBlock blockHeader = mock(BtcBlock.class);
+        when(blockHeader.getHash()).thenReturn(blockHash);
+
+
+        StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), height);
+        BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
+        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+
+        int chainHeadHeight = height + 1;
+        Sha256Hash chainHeadBlockHash = Sha256Hash.of(Hex.decode("ddeeff"));
+        BtcBlock chainHeadBlockHeader = mock(BtcBlock.class);
+        StoredBlock chainHeadBlock = new StoredBlock(chainHeadBlockHeader, new BigInteger("0"), chainHeadHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHeadBlock);
+        when(btcBlockStore.getFromCache(chainHeadBlockHash)).thenReturn(chainHeadBlock);
+
+        when(chainHeadBlockHeader.getHash()).thenReturn(chainHeadBlockHash);
+        //Case when we got to the end of the chain and didn't find the blockHash (inside the loop)
+        when(chainHeadBlockHeader.getPrevBlockHash()).thenReturn(null);
+
+        try {
+            StoredBlock resultBlock = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height);
+            Assert.assertTrue(false);
+        } catch (InvalidBlockHashException e) {
+            Assert.assertTrue(e.getMessage().contains("Couldn't find the block"));
+        }
+
+    }
+
+    @Test
+    public void testGetStoredBlockAtHeight_InvalidBlockHash_NotInTheChainAtExceptedHeight() throws BlockStoreException {
+
+        int height = 50;
+        Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        BtcBlock blockHeader = mock(BtcBlock.class);
+        when(blockHeader.getHash()).thenReturn(blockHash);
+
+
+        StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), height);
+        BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
+        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+
+        int chainHeadHeight = height + 1;
+        Sha256Hash chainHeadBlockHash = Sha256Hash.of(Hex.decode("ddeeff"));
+        BtcBlock chainHeadBlockHeader = mock(BtcBlock.class);
+        StoredBlock chainHeadBlock = new StoredBlock(chainHeadBlockHeader, new BigInteger("0"), chainHeadHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHeadBlock);
+        when(btcBlockStore.getFromCache(chainHeadBlockHash)).thenReturn(chainHeadBlock);
+
+        when(chainHeadBlockHeader.getHash()).thenReturn(chainHeadBlockHash);
+        //Case when the block hash for the heigth is  null (after the loop)
+        when(chainHeadBlockHeader.getPrevBlockHash()).thenReturn(null);
+
+        try {
+            StoredBlock resultBlock = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height);
+            Assert.assertTrue(false);
+        } catch (InvalidBlockHashException e) {
+            Assert.assertTrue(e.getMessage().contains("Couldn't find the block"));
+        }
+
+    }
+
+    @Test
+    public void testGetStoredBlockAtHeight_InvalidBlockHash_NotInTheRepository() throws BlockStoreException {
+
+        int height = 50;
+        Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        BtcBlock blockHeader = mock(BtcBlock.class);
+        when(blockHeader.getHash()).thenReturn(blockHash);
+
+
+        StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), height);
+        BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
+        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+
+        int chainHeadHeight = height + 1;
+        Sha256Hash chainHeadBlockHash = Sha256Hash.of(Hex.decode("ddeeff"));
+        BtcBlock chainHeadBlockHeader = mock(BtcBlock.class);
+        when(chainHeadBlockHeader.getHash()).thenReturn(chainHeadBlockHash);
+        StoredBlock chainHeadBlock = new StoredBlock(chainHeadBlockHeader, new BigInteger("0"), chainHeadHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHeadBlock);
+        when(btcBlockStore.getFromCache(chainHeadBlockHash)).thenReturn(chainHeadBlock);
+
+
+        Sha256Hash notInTheRepoHash = Sha256Hash.of(Hex.decode("ddeeff"));
+        when(chainHeadBlockHeader.getPrevBlockHash()).thenReturn(notInTheRepoHash);
+        //Case when the block hash is not in the repository inside the loop
+        when(btcBlockStore.getFromCache(notInTheRepoHash)).thenReturn(null);
+
+        try {
+            StoredBlock resultBlock = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height);
+            Assert.assertTrue(false);
+        } catch (InvalidBlockHashException e) {
+            Assert.assertTrue(e.getMessage().contains("Inexistent Block Hash"));
+        }
+
+    }
+
+    @Test
+    public void testGetStoredBlockAtHeight_InvalidBlockHash_NotInTheRepositoryAtExpectedHeight() throws BlockStoreException {
+
+        int height = 50;
+        Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        BtcBlock blockHeader = mock(BtcBlock.class);
+        when(blockHeader.getHash()).thenReturn(blockHash);
+
+
+        StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), height);
+        BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
+        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
+
+        int chainHeadHeight = height + 1;
+        Sha256Hash chainHeadBlockHash = Sha256Hash.of(Hex.decode("ddeeff"));
+        BtcBlock chainHeadBlockHeader = mock(BtcBlock.class);
+        when(chainHeadBlockHeader.getHash()).thenReturn(chainHeadBlockHash);
+        StoredBlock chainHeadBlock = new StoredBlock(chainHeadBlockHeader, new BigInteger("0"), chainHeadHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHeadBlock);
+        when(btcBlockStore.getFromCache(chainHeadBlockHash)).thenReturn(chainHeadBlock);
+
+
+        when(chainHeadBlockHeader.getPrevBlockHash()).thenReturn(blockHash);
+        //Case when the block hash is not in the repository after the loop
+        when(btcBlockStore.getFromCache(blockHash)).thenReturn(null);
+
+        try {
+            StoredBlock resultBlock = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height);
+            Assert.assertTrue(false);
+        } catch (InvalidBlockHashException e) {
+            Assert.assertTrue(e.getMessage().contains("Inexistent Block Hash"));
+        }
+
     }
 
     @Test

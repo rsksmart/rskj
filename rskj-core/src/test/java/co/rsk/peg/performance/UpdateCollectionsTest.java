@@ -39,6 +39,7 @@ import java.util.SortedMap;
 
 @Ignore
 public class UpdateCollectionsTest extends BridgePerformanceTestCase {
+
     @Test
     public void updateCollections() throws IOException {
         ExecutionStats stats = new ExecutionStats("updateCollections");
@@ -61,7 +62,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 numCases,
                 abiEncoder,
                 storageInitializer,
-                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
                 Helper.getRandomHeightProvider(10), stats
         );
     }
@@ -120,7 +121,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 numCases,
                 abiEncoder,
                 storageInitializer,
-                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats
         );
@@ -187,7 +188,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 numCases,
                 abiEncoder,
                 storageInitializer,
-                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
                 heightProvider,
                 stats
         );

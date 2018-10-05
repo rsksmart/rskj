@@ -31,15 +31,19 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.exception.BlockHeightOlderThanCacheException;
+import co.rsk.peg.exception.InvalidBlockHashException;
+import co.rsk.peg.exception.InvalidBlockHeightException;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
-import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.BtcTransactionFormatUtils;
-import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -48,7 +52,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -72,6 +75,12 @@ public class BridgeSupport {
     public static final Integer LOCK_WHITELIST_UNKNOWN_ERROR_CODE = 0;
     public static final Integer LOCK_WHITELIST_SUCCESS_CODE = 1;
     public static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = -10;
+
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_TX_ERROR_CODE = -1;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE = -2;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_BLOCK_HEIGHT_ERROR_CODE = -3;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_OLDER_THAN_CACHE_ERROR_CODE = -4;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_TREE_ERROR_CODE = -5;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -1114,6 +1123,61 @@ public class BridgeSupport {
             currentDepth++;
         }
         return current.getHeader().getHash();
+    }
+
+    /**
+     * @param btcTxHash The BTC transaction Hash
+     * @param btcBlockHash The BTC block hash
+     * @param btcBlockHeight The height of the BTC block that contains the tx
+     * @param pmtSerialized The raw partial Merkle tree
+     * @throws BlockStoreException
+     * @throws IOException
+     */
+    public Integer getBtcTransactionConfirmations(Sha256Hash btcTxHash, Sha256Hash btcBlockHash, int btcBlockHeight, byte[] pmtSerialized) throws BlockStoreException, IOException {
+        Context.propagate(btcContext);
+        this.ensureBtcBlockChain();
+
+        try {
+            if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
+                return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_TREE_ERROR_CODE;
+            }
+
+            Sha256Hash merkleRoot;
+            try {
+                PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(), pmtSerialized, 0);
+                List<Sha256Hash> hashesInPmt = new ArrayList<>();
+                merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
+                if (!hashesInPmt.contains(btcTxHash)) {
+                    return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_TX_ERROR_CODE;
+                }
+            } catch (VerificationException e) {
+                return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_TREE_ERROR_CODE;
+            }
+
+            //Get the block form the best chain
+            StoredBlock block = BridgeUtils.getStoredBlockAtHeight(this.btcBlockStore, btcBlockHeight);
+
+            BtcBlock blockHeader = block.getHeader();
+            if (blockHeader.getHash() != btcBlockHash) {
+                return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
+            }
+
+            // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
+            if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
+                return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_TREE_ERROR_CODE;
+            }
+
+            int confirmations = this.btcBlockChain.getBestChainHeight() - block.getHeight() + 1;
+            return confirmations;
+
+        } catch (InvalidBlockHashException e) {
+            return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
+        } catch (InvalidBlockHeightException e) {
+            return BTC_TRANSACTION_CONFIRMATION_INVALID_BLOCK_HEIGHT_ERROR_CODE;
+        } catch (BlockHeightOlderThanCacheException e) {
+            return BTC_TRANSACTION_CONFIRMATION_BLOCK_OLDER_THAN_CACHE_ERROR_CODE;
+        }
+
     }
 
     private StoredBlock getPrevBlockAtHeight(StoredBlock cursor, int height) throws BlockStoreException {

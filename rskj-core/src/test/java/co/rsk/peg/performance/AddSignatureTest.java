@@ -65,7 +65,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
                 times,
                 getABIEncoder(),
                 getInitializerFor(0),
-                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats
         );
@@ -77,7 +77,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
                 times,
                 getABIEncoder(),
                 getInitializerFor(bridgeConstants.getGenesisFederation().getNumberOfSignaturesRequired()-1),
-                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats
         );
@@ -177,4 +177,6 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
             input.setScriptSig(inputScript);
         }
     }
+
+
 }

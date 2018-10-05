@@ -2195,6 +2195,33 @@ public class BridgeTest {
     }
 
     @Test
+    public void getBtcTransactionConfirmations() throws BlockStoreException, IOException {
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, getGenesisBlock(), null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        Sha256Hash btcTxHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        hashes.add(btcTxHash);
+        Sha256Hash btcBlockHash = Sha256Hash.of(Hex.decode("ccddff"));
+
+        //Set the leaves that are going to be added, in this case all of them
+        byte[] bits = new byte[(int) Math.ceil(hashes.size() / 8.0)];
+        for(int i=0; i < hashes.size() ; i++) {
+            Utils.setBitLE(bits, i);
+        }
+
+        PartialMerkleTree pmt = PartialMerkleTree.buildFromLeaves(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams(), bits, hashes);
+        byte[] pmtSerialized = pmt.bitcoinSerialize();
+
+        int mockedResult = 8;
+        when(bridgeSupportMock.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, 45678, pmtSerialized)).thenReturn(mockedResult);
+
+        Assert.assertEquals(mockedResult, bridge.getBtcTransactionConfirmations(new Object[]{btcTxHash.toString(), btcBlockHash.toString(), BigInteger.valueOf(45678), pmtSerialized}));
+    }
+
+    @Test
     public void getBtcBlockchainBlockHashAtDepth() throws BlockStoreException, IOException {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
@@ -2205,6 +2232,7 @@ public class BridgeTest {
 
         Assert.assertEquals(mockedResult, Sha256Hash.wrap(bridge.getBtcBlockchainBlockHashAtDepth(new Object[]{BigInteger.valueOf(555)})));
     }
+
 
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();

@@ -44,7 +44,8 @@ import java.util.List;
         VoteFeePerKbChangeTest.class,
         GetFeePerKbTest.class,
         LockWhitelistTest.class,
-        StateForBtcReleaseClientTest.class
+        StateForBtcReleaseClientTest.class,
+        GetBtcTransactionConfirmations.class
 })
 @Ignore
 public class BridgePerformanceTest {
