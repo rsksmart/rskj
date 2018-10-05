@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
-import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -41,20 +40,12 @@ public class BridgeTestNetConstants extends BridgeConstants {
          BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9"));
          BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
          BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09"));
-         BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03bb42b0d32e781b88319dbc3aadc43c7a032c1931b641f5ae8340b8891bfdedbd"));
-         BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03dece3c5f5b7df1ae3f4542c38dd25932e332d9e960c2c1f24712657626498705"));
-         BtcECKey federator5PublicKey = BtcECKey.fromPublicOnly(Hex.decode("033965f98e9ec741fdd3281f5cf2a2a0ae89958f4bf4f6862ee73ac9bf2b49e0c7"));
-         BtcECKey federator6PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0297d72f4c58b62495adbd49398b39d8fca69c6714ecaec49bd09e9dfcd9dc35cf"));
+         BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85"));
 
-        List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
-                federator0PublicKey, federator1PublicKey, federator2PublicKey,
-                federator3PublicKey, federator4PublicKey, federator5PublicKey,
-                federator6PublicKey
-        );
+        List<BtcECKey> genesisFederationPublicKeys = Arrays.asList(federator0PublicKey, federator1PublicKey, federator2PublicKey, federator3PublicKey);
 
-        // Currently set to:
-        // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400l);
+        // Currently set to: Monday, October 8, 2018 12:00:00 AM GMT-03:00
+        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1538967600l);
 
         genesisFederation = new Federation(
                 genesisFederationPublicKeys,

@@ -20,10 +20,54 @@
 package org.ethereum.config.blockchain.testnet;
 
 
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeTestNetConstants;
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.blockchain.testnet.TestNetAfterBridgeSyncConfig;
+import org.ethereum.core.BlockHeader;
 
-public class TestNetBeforeBridgeSyncConfig extends TestNetAfterBridgeSyncConfig {
+import java.math.BigInteger;
+
+public class TestNetBeforeBridgeSyncConfig extends GenesisConfig {
+
+    public static class TestNetConstants extends GenesisConstants {
+
+        private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
+        private static final byte CHAIN_ID = 31;
+        private final BlockDifficulty minimumDifficulty = new BlockDifficulty(BigInteger.valueOf(131072));
+
+        @Override
+        public BridgeConstants getBridgeConstants() {
+            return BridgeTestNetConstants.getInstance();
+        }
+
+        @Override
+        public BlockDifficulty getMinimumDifficulty() {
+            return minimumDifficulty;
+        }
+
+        @Override
+        public int getDurationLimit() {
+            return 14;
+        }
+
+        @Override
+        public BigInteger getDifficultyBoundDivisor() {
+            return DIFFICULTY_BOUND_DIVISOR;
+        }
+
+        @Override
+        public int getNewBlockMaxSecondsInTheFuture() {
+            return 540;
+        }
+
+        @Override
+        public byte getChainId() {
+            return TestNetConstants.CHAIN_ID;
+        }
+    }
 
     public TestNetBeforeBridgeSyncConfig() {
         super(new TestNetConstants());
@@ -38,4 +82,54 @@ public class TestNetBeforeBridgeSyncConfig extends TestNetAfterBridgeSyncConfig 
         return true;
     }
 
+    @Override
+    public boolean isRskip85() { return true; }
+
+    @Override
+    public boolean isRskip87() { return true; }
+
+    @Override
+    public boolean isRskip88() {
+        return true;
+    }
+
+    @Override
+    public boolean isRskip89() {
+        return true;
+    }
+
+    @Override
+    public boolean isRskip90() {
+        return true;
+    }
+
+    @Override
+    public boolean isRskip91() {
+        return true;
+    }
+
+    @Override
+    public boolean isRskip92() {
+        return true;
+    }
+
+    @Override
+    public boolean isRskip93() {
+        return true;
+    }
+
+    @Override
+    public boolean isRskip94() {
+        return true;
+    }
+
+    @Override
+    public boolean isRskip98() {
+        return true;
+    }
+
+    @Override //Rskip97
+    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
+        return getBlockDifficulty(curBlock, parent, getConstants());
+    }
 }
