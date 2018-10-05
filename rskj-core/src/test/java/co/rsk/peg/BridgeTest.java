@@ -1945,6 +1945,20 @@ public class BridgeTest {
     }
 
     @Test
+    public void getBtcTransactionConfirmation() throws BlockStoreException, IOException {
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, getGenesisBlock(), null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        Sha256Hash btcTxHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        Sha256Hash btcBlockHash = Sha256Hash.of(Hex.decode("ccddff"));
+        int mockedResult = 8;
+        when(bridgeSupportMock.getBtcTransactionConfirmation(btcTxHash, btcBlockHash, 45678)).thenReturn(mockedResult);
+
+        Assert.assertEquals(mockedResult, bridge.getBtcTransactionConfirmation(new Object[]{btcTxHash.toString(), btcBlockHash.toString(), BigInteger.valueOf(45678)}));
+    }
+
+    @Test
     public void getBtcBlockchainBlockHashAtDepth() throws BlockStoreException, IOException {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
@@ -1955,6 +1969,7 @@ public class BridgeTest {
 
         Assert.assertEquals(mockedResult, Sha256Hash.wrap(bridge.getBtcBlockchainBlockHashAtDepth(new Object[]{BigInteger.valueOf(555)})));
     }
+
 
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();
