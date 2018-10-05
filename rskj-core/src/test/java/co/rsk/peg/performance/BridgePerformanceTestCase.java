@@ -67,6 +67,10 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             return Helper.FEDERATOR_ECKEYS.get(Helper.randomInRange(0, Helper.FEDERATOR_ECKEYS.size()-1));
         }
 
+        public static int randomInRange(int min, int max) {
+            return new Random().nextInt(max - min + 1) + min;
+        }
+
         public static Coin randomCoin(Coin base, int min, int max) {
             return base.multiply(randomInRange(min, max));
         }
@@ -120,6 +124,10 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
         public static TxBuilder getZeroValueRandomSenderTxBuilder() {
             return (int executionIndex) -> Helper.buildTx(new ECKey());
+        }
+
+        public static TxBuilder getZeroValueTxBuilder(ECKey sender) {
+            return (int executionIndex) -> Helper.buildTx(sender);
         }
 
         public static BridgeStorageProviderInitializer buildNoopInitializer() {

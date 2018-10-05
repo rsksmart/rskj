@@ -38,7 +38,8 @@ import org.junit.runners.Suite;
         VoteFeePerKbChangeTest.class,
         GetFeePerKbTest.class,
         LockWhitelistTest.class,
-        StateForBtcReleaseClientTest.class
+        StateForBtcReleaseClientTest.class,
+        GetBtcTransactionConfirmations.class
 })
 @Ignore
 public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {
