@@ -73,10 +73,6 @@ public class TestNetBeforeBridgeSyncConfig extends GenesisConfig {
         super(new TestNetConstants());
     }
 
-    protected TestNetBeforeBridgeSyncConfig(Constants constants) {
-        super(constants);
-    }
-
     @Override
     public boolean areBridgeTxsFree() {
         return true;
