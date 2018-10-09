@@ -399,4 +399,8 @@ public class RskSystemProperties extends SystemProperties {
     public int getPeerP2PPingInterval(){
         return configFromFiles.getInt("peer.p2p.pingInterval");
     }
+
+    public Integer getGasPriceBump() {
+        return configFromFiles.getInt("transaction.gasPriceBump");
+    }
 }
