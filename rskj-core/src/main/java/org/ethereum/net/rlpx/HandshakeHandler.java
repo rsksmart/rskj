@@ -22,24 +22,25 @@ package org.ethereum.net.rlpx;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import org.ethereum.config.SystemProperties;
-import org.ethereum.crypto.ECIESCoder;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.net.message.Message;
-import org.ethereum.net.p2p.DisconnectMessage;
-import org.ethereum.net.p2p.HelloMessage;
-import org.ethereum.net.p2p.P2pMessageCodes;
-import org.ethereum.net.p2p.P2pMessageFactory;
-import org.ethereum.net.server.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.SystemProperties;
+import org.ethereum.crypto.ECIESCoder;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.net.client.Capability;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.eth.EthVersion;
+import org.ethereum.net.message.Message;
+import org.ethereum.net.p2p.*;
+import org.ethereum.net.server.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -47,6 +48,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
 
+import static org.ethereum.net.eth.EthVersion.fromCode;
 import static org.ethereum.net.rlpx.FrameCodec.Frame;
 import static org.ethereum.util.ByteUtil.bigEndianToShort;
 
@@ -66,6 +68,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
     private final SystemProperties config;
     private final PeerScoringManager peerScoringManager;
+    private final P2pHandler p2pHandler;
+    private final MessageCodec messageCodec;
+    private final ConfigCapabilities configCapabilities;
 
     private static final Logger loggerWire = LoggerFactory.getLogger("wire");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
@@ -77,17 +82,29 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     private EncryptionHandshake handshake;
     private byte[] initiatePacket;
     private Channel channel;
-    private boolean isHandshakeDone;
 
-    public HandshakeHandler(SystemProperties config, PeerScoringManager peerScoringManager) {
+    public HandshakeHandler(
+            SystemProperties config,
+            PeerScoringManager peerScoringManager,
+            P2pHandler p2pHandler,
+            MessageCodec messageCodec,
+            ConfigCapabilities configCapabilities) {
         this.config = config;
         this.peerScoringManager = peerScoringManager;
+        this.p2pHandler = p2pHandler;
+        this.messageCodec = messageCodec;
+        this.configCapabilities = configCapabilities;
         this.myKey = config.getMyKey();
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         channel.setInetSocketAddress((InetSocketAddress) ctx.channel().remoteAddress());
+        internalChannelActive(ctx);
+    }
+
+    @VisibleForTesting
+    public void internalChannelActive(ChannelHandlerContext ctx) throws Exception {
         if (remoteId.length == 64) {
             channel.setNode(remoteId);
             initiate(ctx);
@@ -100,13 +117,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         loggerWire.debug("Decoding handshake... ({} bytes available)", in.readableBytes());
         decodeHandshake(ctx, in);
-        if (isHandshakeDone) {
-            loggerWire.debug("Handshake done, removing HandshakeHandler from pipeline.");
-            ctx.pipeline().remove(this);
-        }
     }
 
-    public void initiate(ChannelHandlerContext ctx) throws Exception {
+    private void initiate(ChannelHandlerContext ctx) throws Exception {
 
         loggerNet.trace("RLPX protocol activated");
 
@@ -187,9 +200,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                 if (frame.getType() == P2pMessageCodes.HELLO.asByte()) {
                     HelloMessage helloMessage = new HelloMessage(payload);
                     loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), helloMessage);
-                    isHandshakeDone = true;
-                    this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, helloMessage);
-                    recordSuccessfulHandshake(ctx);
+                    processHelloMessage(ctx, helloMessage);
                 } else {
                     DisconnectMessage message = new DisconnectMessage(payload);
                     loggerNet.trace("From: \t{} \tRecv: \t{}", channel, message);
@@ -287,9 +298,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
                 // Secret authentication finish here
                 channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), inboundHelloMessage);
-                isHandshakeDone = true;
-                this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, inboundHelloMessage);
-                recordSuccessfulHandshake(ctx);
+                processHelloMessage(ctx, inboundHelloMessage);
             }
         }
         channel.getNodeStatistics().rlpxInHello.add();
@@ -361,5 +370,48 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
             peerScoringManager.recordEvent(nodeID, address, event);
         }
+    }
+
+    private void processHelloMessage(ChannelHandlerContext ctx, HelloMessage helloMessage) {
+        List<Capability> capInCommon = configCapabilities.getSupportedCapabilities(helloMessage);
+        channel.initMessageCodes(capInCommon);
+        for (Capability capability : capInCommon) {
+            // It seems that the only supported capability is RSK, and everything else is ignored.
+            if (Capability.RSK.equals(capability.getName())) {
+                publicRLPxHandshakeFinished(ctx, helloMessage, fromCode(capability.getVersion()));
+                return;
+            }
+        }
+
+        throw new RuntimeException("The remote peer didn't support the RSK capability");
+    }
+
+    private void publicRLPxHandshakeFinished(ChannelHandlerContext ctx, HelloMessage helloRemote, EthVersion ethVersion) {
+        if (!P2pHandler.isProtocolVersionSupported(helloRemote.getP2PVersion())) {
+            throw new RuntimeException(String.format(
+                    "The remote peer protocol version %s isn't supported", helloRemote.getP2PVersion()
+            ));
+        }
+
+        loggerNet.debug("publicRLPxHandshakeFinished with {}", ctx.channel().remoteAddress());
+        if (helloRemote.getP2PVersion() < 5) {
+            messageCodec.setSupportChunkedFrames(false);
+        }
+
+        FrameCodecHandler frameCodecHandler = new FrameCodecHandler(frameCodec, channel);
+        ctx.pipeline().addLast("medianFrameCodec", frameCodecHandler);
+        ctx.pipeline().addLast("messageCodec", messageCodec);
+        ctx.pipeline().addLast(Capability.P2P, p2pHandler);
+
+        p2pHandler.setChannel(channel);
+        p2pHandler.setHandshake(helloRemote);
+        channel.activateEth(ctx, ethVersion);
+
+        channel.getNodeStatistics().rlpxHandshake.add();
+
+        recordSuccessfulHandshake(ctx);
+
+        loggerWire.debug("Handshake done, removing HandshakeHandler from pipeline.");
+        ctx.pipeline().remove(this);
     }
 }

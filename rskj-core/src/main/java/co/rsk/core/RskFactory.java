@@ -21,13 +21,13 @@ package co.rsk.core;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.rpc.*;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.mnr.MnrModule;
@@ -52,17 +52,16 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
-import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.eth.handler.EthHandlerFactory;
 import org.ethereum.net.eth.handler.EthHandlerFactoryImpl;
 import org.ethereum.net.message.StaticMessages;
-import org.ethereum.net.p2p.P2pHandler;
-import org.ethereum.net.rlpx.HandshakeHandler;
-import org.ethereum.net.rlpx.MessageCodec;
-import org.ethereum.net.server.*;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.EthereumChannelInitializer;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.net.server.PeerServerImpl;
 import org.ethereum.rpc.Web3;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.sync.SyncPool;
@@ -263,25 +262,26 @@ public class RskFactory {
     }
 
     @Bean
-    public EthereumChannelInitializerFactory getEthereumChannelInitializerFactory(ChannelManager channelManager, EthereumChannelInitializer.ChannelFactory channelFactory) {
-        return remoteId -> new EthereumChannelInitializer(remoteId, channelManager, channelFactory);
-    }
-
-    @Bean
-    public EthereumChannelInitializer.ChannelFactory getChannelFactory(RskSystemProperties config,
-                                                                       @Qualifier("compositeEthereumListener") EthereumListener ethereumListener,
-                                                                       ConfigCapabilities configCapabilities,
-                                                                       NodeManager nodeManager,
-                                                                       EthHandlerFactory ethHandlerFactory,
-                                                                       StaticMessages staticMessages,
-                                                                       PeerScoringManager peerScoringManager) {
-        return () -> {
-            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager);
-            MessageQueue messageQueue = new MessageQueue();
-            P2pHandler p2pHandler = new P2pHandler(config, ethereumListener, configCapabilities);
-            MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
-            return new Channel(config, messageQueue, p2pHandler, messageCodec, handshakeHandler, nodeManager, ethHandlerFactory, staticMessages);
-        };
+    public EthereumChannelInitializerFactory getEthereumChannelInitializerFactory(
+            ChannelManager channelManager,
+            RskSystemProperties config,
+            CompositeEthereumListener ethereumListener,
+            ConfigCapabilities configCapabilities,
+            NodeManager nodeManager,
+            EthHandlerFactory ethHandlerFactory,
+            StaticMessages staticMessages,
+            PeerScoringManager peerScoringManager) {
+        return remoteId -> new EthereumChannelInitializer(
+                remoteId,
+                config,
+                channelManager,
+                ethereumListener,
+                configCapabilities,
+                nodeManager,
+                ethHandlerFactory,
+                staticMessages,
+                peerScoringManager
+        );
     }
 
     @Bean
