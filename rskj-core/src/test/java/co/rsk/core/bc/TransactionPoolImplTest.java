@@ -514,6 +514,30 @@ public class TransactionPoolImplTest {
         Assert.assertEquals(DataWord.ONE, transactionPool.getPendingState().getStorageValue(tx.getContractAddress(), DataWord.ZERO));
     }
 
+    @Test
+    public void checkTxWithSameNonceIsRejected() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+        Transaction tx = createSampleTransaction(1, 0, 1000, 0);
+        Transaction tx2 = createSampleTransaction(1, 0, 2000, 0);
+
+        transactionPool.addTransaction(tx);
+        Assert.assertFalse(transactionPool.addTransaction(tx2));
+    }
+
+    @Test
+    public void checkTxWithSameNonceBumpedIsAccepted() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 0, 1000, 0, 1);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 0, 2000, 0, 2);
+
+        transactionPool.addTransaction(tx1);
+        Assert.assertTrue(transactionPool.addTransaction(tx2));
+        Assert.assertTrue(transactionPool.getPendingTransactions().stream().anyMatch(tx -> tx.getHash().equals(tx2.getHash())));
+        Assert.assertFalse(transactionPool.getPendingTransactions().stream().anyMatch(tx -> tx.getHash().equals(tx1.getHash())));
+    }
+
     private void createTestAccounts(int naccounts, Coin balance) {
         Repository repository = blockChain.getRepository();
 
