@@ -1,0 +1,20 @@
+{
+  "alloc": {
+    "0000000000000000000000000000000001000006": {
+      "balance": "21000000000000000000000000"
+    }
+  },
+
+  "nonce": "0xdeadfeeddeadfeed",
+  "mixhash": "0x00",
+  "bitcoinMergedMiningHeader": "0x00",
+  "bitcoinMergedMiningMerkleProof": "0x00",
+  "bitcoinMergedMiningCoinbaseTransaction": "0x00",
+  "timestamp": "0x00",
+  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "extraData": "0x434d272841",
+  "gasLimit": "0x4c4b40",
+  "difficulty": "0x0000100000",
+  "coinbase": "0x3333333333333333333333333333333333333333",
+  "minimumGasPrice": "0x00"
+}
