@@ -65,7 +65,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         updateBridgeExecutionPeriod = 1 * 15 * 1000; //15 seconds in millis
 
-        maxBtcHeadersPerRskBlock = 500;
+        maxBtcHeadersPerRskBlock = 4000;
 
         minimumLockTxValue = Coin.COIN;
         minimumReleaseTxValue = Coin.valueOf(500000);
