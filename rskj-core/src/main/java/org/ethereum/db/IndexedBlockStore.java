@@ -534,7 +534,10 @@ public class IndexedBlockStore extends AbstractBlockstore {
             byte[] hash = blockInfo.getHash().getBytes();
             Block block = getBlockByHash(hash);
 
-            result.add(block);
+            // TODO(mc) investigate and fix this, probably a cache invalidation problem
+            if (block != null) {
+                result.add(block);
+            }
         }
 
         return result;
