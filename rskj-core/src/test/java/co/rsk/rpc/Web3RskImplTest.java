@@ -74,7 +74,7 @@ public class Web3RskImplTest {
         Wallet wallet = WalletFactory.createWallet();
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
-        EthModule em = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
+        EthModule em = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null);
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         Web3RskImpl web3 = new Web3RskImpl(

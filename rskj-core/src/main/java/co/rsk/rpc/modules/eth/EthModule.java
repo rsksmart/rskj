@@ -55,6 +55,7 @@ public class EthModule
     private final ExecutionBlockRetriever executionBlockRetriever;
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
+    private final EthModuleTransaction ethModuleTransaction;
 
     @Autowired
     public EthModule(
@@ -63,13 +64,15 @@ public class EthModule
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
             EthModuleSolidity ethModuleSolidity,
-            EthModuleWallet ethModuleWallet) {
+            EthModuleWallet ethModuleWallet,
+            EthModuleTransaction ethModuleTransaction) {
         this.config = config;
         this.blockchain = blockchain;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
+        this.ethModuleTransaction = ethModuleTransaction;
     }
 
     @Override
@@ -121,9 +124,8 @@ public class EthModule
         }
     }
 
-    @Override
     public String sendTransaction(Web3.CallArguments args) {
-        return ethModuleWallet.sendTransaction(args);
+        return ethModuleTransaction.sendTransaction(args);
     }
 
     @Override
