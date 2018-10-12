@@ -882,23 +882,6 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processTransactionsMessageDoesNothingBecauseNodeIsSyncing() {
-        ChannelManager channelManager = mock(ChannelManager.class);
-        BlockProcessor blockProcessor = mock(BlockProcessor.class);
-        Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
-
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
-
-        Message message = mock(Message.class);
-        Mockito.when(message.getMessageType()).thenReturn(MessageType.TRANSACTIONS);
-
-        handler.processMessage(null, message);
-
-        verify(channelManager, never()).broadcastTransactionMessage(any(), any());
-    }
-
-    @Test
     public void processTransactionsMessageUsingTransactionPool() throws UnknownHostException {
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);

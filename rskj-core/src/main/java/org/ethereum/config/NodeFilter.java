@@ -38,21 +38,7 @@ public class NodeFilter {
     }
 
     public boolean accept(Node node) {
-        for (Entry entry : entries) {
-            if (entry.accept(node)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean accept(InetAddress nodeAddr) {
-        for (Entry entry : entries) {
-            if (entry.accept(nodeAddr)) {
-                return true;
-            }
-        }
-        return false;
+        return entries.stream().anyMatch(entry -> entry.accept(node));
     }
 
     private class Entry {

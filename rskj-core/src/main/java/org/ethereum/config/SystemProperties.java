@@ -104,6 +104,8 @@ public abstract class SystemProperties {
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
     private static final String DEFAULT_BLOCKS_LOADER = "";
 
+
+
     /**
      * Marks config accessor methods which need to be called (for value validation)
      * upon config creation or modification
@@ -501,6 +503,16 @@ public abstract class SystemProperties {
     @ValidateMe
     public int maxActivePeers() {
         return configFromFiles.getInt("peer.maxActivePeers");
+    }
+
+    @ValidateMe
+    public int maxConnectionsPerAddressBlock() {
+        return configFromFiles.getInt("peer.blockAddress.maxConnections");
+    }
+
+    @ValidateMe
+    public int blockAddressCIDR() {
+        return configFromFiles.getInt("peer.blockAddress.cidr");
     }
 
     @ValidateMe

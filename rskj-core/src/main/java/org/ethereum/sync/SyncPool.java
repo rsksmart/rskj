@@ -65,7 +65,7 @@ public class SyncPool implements Iterable<Channel> {
     private static final long CONNECTION_TIMEOUT = secondsToMillis(30);
 
     private final Map<NodeID, Channel> peers = new HashMap<>();
-    private final List<Channel> activePeers = Collections.synchronizedList(new ArrayList<Channel>());
+    private final List<Channel> activePeers = Collections.synchronizedList(new ArrayList<>());
     private final Map<String, Long> pendingConnections = new HashMap<>();
 
     private BlockDifficulty lowerUsefulDifficulty = BlockDifficulty.ZERO;
@@ -110,12 +110,8 @@ public class SyncPool implements Iterable<Channel> {
             return;
         }
 
-        if (logger.isTraceEnabled()) {
-            logger.trace(
-                "Peer {}: adding",
-                peer.getPeerIdShort()
-            );
-        }
+        String shortPeerId = peer.getPeerIdShort();
+        logger.trace("Peer {}: adding", shortPeerId);
 
         synchronized (peers) {
             peers.put(peer.getNodeId(), peer);
@@ -126,8 +122,7 @@ public class SyncPool implements Iterable<Channel> {
         }
 
         ethereumListener.onPeerAddedToSyncPool(peer);
-
-        logger.info("Peer {}: added to pool", Utils.getNodeIdShort(peer.getPeerId()));
+        logger.info("Peer {}: added to pool", shortPeerId);
     }
 
     public void remove(Channel peer) {
