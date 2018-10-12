@@ -26,7 +26,6 @@ import co.rsk.net.Status;
 import co.rsk.net.eth.RskMessage;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.InetAddressBlock;
-import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.NodeFilter;
 import org.ethereum.core.Block;
@@ -42,6 +41,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import java.net.InetAddress;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -57,8 +58,7 @@ public class ChannelManagerImpl implements ChannelManager {
     // If the inbound peer connection was dropped by us with a reason message
     // then we ban that peer IP on any connections for some time to protect from
     // too active peers
-    private static final int INBOUND_CONNECTION_BAN_TIMEOUT = 10 * 1000;
-    private static final int MAX_DISCONNECTED_SIZE = 500;
+    private static final Duration INBOUND_CONNECTION_BAN_TIMEOUT = Duration.ofSeconds(10);
     private final Object activePeersLock = new Object();
     private final Map<NodeID, Channel> activePeers;
 
@@ -68,8 +68,8 @@ public class ChannelManagerImpl implements ChannelManager {
     private final List<Channel> newPeers;
 
     private final ScheduledExecutorService mainWorker;
-    private final Map<InetAddress, Date> recentlyDisconnected;
-    private final Object recentlyDisconnectedLock = new Object();
+    private final Map<InetAddress, Instant> disconnectionsTimeouts;
+    private final Object disconnectionTimeoutsLock = new Object();
 
     private final SyncPool syncPool;
     private final NodeFilter trustedPeers;
@@ -83,7 +83,7 @@ public class ChannelManagerImpl implements ChannelManager {
         this.syncPool = syncPool;
         this.maxActivePeers = config.maxActivePeers();
         this.trustedPeers = config.peerTrusted();
-        this.recentlyDisconnected = new MaxSizeHashMap<>(MAX_DISCONNECTED_SIZE, true);
+        this.disconnectionsTimeouts = new HashMap<>();
         this.activePeers = new ConcurrentHashMap<>();
         this.newPeers = new CopyOnWriteArrayList<>();
         this.maxConnectionsPerBlock = config.maxConnectionsPerAddressBlock();
@@ -92,12 +92,17 @@ public class ChannelManagerImpl implements ChannelManager {
 
     @Override
     public void start() {
-        mainWorker.scheduleWithFixedDelay(this::tryProcessNewPeers, 0, 1, TimeUnit.SECONDS);
+        mainWorker.scheduleWithFixedDelay(this::handleNewPeersAndDisconnections, 0, 1, TimeUnit.SECONDS);
     }
 
     @Override
     public void stop() {
         mainWorker.shutdown();
+    }
+
+    private void handleNewPeersAndDisconnections(){
+        this.tryProcessNewPeers();
+        this.cleanDisconnections();
     }
 
     @VisibleForTesting
@@ -110,6 +115,13 @@ public class ChannelManagerImpl implements ChannelManager {
             processNewPeers();
         } catch (Exception e) {
             logger.error("Error", e);
+        }
+    }
+
+    private void cleanDisconnections() {
+        synchronized (disconnectionTimeoutsLock) {
+            Instant now = Instant.now();
+            disconnectionsTimeouts.values().removeIf(v -> !isRecent(v, now));
         }
     }
 
@@ -144,27 +156,20 @@ public class ChannelManagerImpl implements ChannelManager {
     private void disconnect(Channel peer, ReasonCode reason) {
         logger.debug("Disconnecting peer with reason {} : {}", reason, peer);
         peer.disconnect(reason);
-        synchronized (recentlyDisconnectedLock){
-            recentlyDisconnected.put(peer.getInetSocketAddress().getAddress(), new Date());
+        synchronized (disconnectionTimeoutsLock){
+            disconnectionsTimeouts.put(peer.getInetSocketAddress().getAddress(),
+                                       Instant.now().plus(INBOUND_CONNECTION_BAN_TIMEOUT));
         }
     }
 
-    public boolean isRecentlyDisconnected(InetAddress peerAddr) {
-        synchronized (recentlyDisconnectedLock) {
-            Date disconnectTime = recentlyDisconnected.get(peerAddr);
-            if (disconnectTime != null) {
-                boolean isRecently = isRecently(disconnectTime, System.currentTimeMillis());
-                if (!isRecently) {
-                    recentlyDisconnected.remove(peerAddr);
-                }
-                return isRecently;
-            }
-            return false;
+    public boolean isRecentlyDisconnected(InetAddress peerAddress) {
+        synchronized (disconnectionTimeoutsLock) {
+            return isRecent(disconnectionsTimeouts.getOrDefault(peerAddress, Instant.EPOCH), Instant.now());
         }
     }
 
-    private boolean isRecently(Date disconnectTime, long currentTime) {
-        return currentTime - disconnectTime.getTime() < INBOUND_CONNECTION_BAN_TIMEOUT;
+    private boolean isRecent(Instant disconnectionTimeout, Instant currentTime) {
+        return currentTime.isBefore(disconnectionTimeout);
     }
 
     private void addToActives(Channel peer) {
