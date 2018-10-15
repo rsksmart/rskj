@@ -458,7 +458,7 @@ public class RepositoryTrack implements Repository {
     @Override
     public void updateContractDetails(
             RskAddress addr,
-            ContractDetails contractDetails) {
+            ContractDetails contractDetails, ContractDetails storeDetails) {
         synchronized (repository) {
             logger.trace("updateContractDetails: [{}]", addr);
             ContractDetails contractDetailsCache = new ContractDetailsCacheImpl(null);

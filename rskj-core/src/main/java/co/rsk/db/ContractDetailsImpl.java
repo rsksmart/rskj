@@ -384,6 +384,11 @@ public class ContractDetailsImpl implements ContractDetails {
         return (code==null || code.length==0) && keys.isEmpty();
     }
 
+    @Override
+    public void mergeStoreWith(ContractDetails storeDetails) {
+        ((TrieStoreImpl)((TrieImpl)trie).getStore()).copyFrom(((TrieStoreImpl)((TrieImpl)((ContractDetailsImpl)storeDetails).getTrie()).getStore()));
+    }
+
     public Trie getTrie() {
         return this.trie;
     }

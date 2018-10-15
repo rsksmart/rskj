@@ -305,6 +305,11 @@ public class ContractDetailsCacheImpl implements ContractDetails {
         return origContract.isNullObject() && (MapUtils.isEmpty(storage));
     }
 
+    @Override
+    public void mergeStoreWith(ContractDetails storeDetails) {
+        throw new UnsupportedOperationException("No merge option during cache state");
+    }
+
     public ContractDetails getOriginalContractDetails() {
         return this.origContract;
     }

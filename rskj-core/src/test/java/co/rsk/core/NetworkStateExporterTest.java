@@ -135,7 +135,7 @@ public class NetworkStateExporterTest {
         contractDetails.setCode(new byte[] {1, 2, 3, 4});
         contractDetails.put(DataWord.ZERO, DataWord.ONE);
         contractDetails.putBytes(DataWord.ONE, new byte[] {5, 6, 7, 8});
-        repository.updateContractDetails(addr1, contractDetails);
+        repository.updateContractDetails(addr1, contractDetails, null);
         AccountState accountState = repository.getAccountState(addr1);
         accountState.setStateRoot(contractDetails.getStorageHash());
         repository.updateAccountState(addr1, accountState);

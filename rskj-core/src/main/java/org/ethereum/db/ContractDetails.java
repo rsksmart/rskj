@@ -78,4 +78,6 @@ public interface ContractDetails {
     ContractDetails getSnapshotTo(byte[] hash);
 
     boolean isNullObject();
+
+    void mergeStoreWith(ContractDetails storeDetails);
 }

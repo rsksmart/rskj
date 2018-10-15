@@ -199,7 +199,10 @@ public interface Repository extends AccountInformationProvider {
 
     DetailsDataStore getDetailsDataStore();
 
-    void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
+    void updateContractDetails(
+            RskAddress addr,
+            final ContractDetails contractDetails,
+            ContractDetails storeDetails);
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 

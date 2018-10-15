@@ -97,7 +97,7 @@ public class RepositoryImpl implements Repository {
                 null,
                 trieStoreFactory,
                 memoryStorageLimit
-        ));
+        ), null);
         return accountState;
     }
 
@@ -181,7 +181,7 @@ public class RepositoryImpl implements Repository {
         details.setCode(code);
         accountState.setCodeHash(Keccak256Helper.keccak256(code));
 
-        updateContractDetails(addr, details);
+        updateContractDetails(addr, details, null);
         updateAccountState(addr, accountState);
     }
 
@@ -217,7 +217,7 @@ public class RepositoryImpl implements Repository {
 
         details.put(key, value);
 
-        updateContractDetails(addr, details);
+        updateContractDetails(addr, details, null);
     }
 
     @Override
@@ -231,7 +231,7 @@ public class RepositoryImpl implements Repository {
 
         details.putBytes(key, value);
 
-        updateContractDetails(addr, details);
+        updateContractDetails(addr, details, null);
     }
 
     @Override
@@ -367,7 +367,8 @@ public class RepositoryImpl implements Repository {
 
                 contractDetails = contractDetailsCache.getOriginalContractDetails();
 
-                updateContractDetails(addr, contractDetails);
+                ContractDetails storeDetails = detailsDataStore.get(addr);
+                updateContractDetails(addr, contractDetails, storeDetails);
 
                 if (!Arrays.equals(accountState.getCodeHash(), EMPTY_TRIE_HASH)) {
                     accountState.setStateRoot(contractDetails.getStorageHash());
@@ -423,7 +424,13 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized void updateContractDetails(RskAddress addr, final ContractDetails contractDetails) {
+    public synchronized void updateContractDetails(
+            RskAddress addr,
+            final ContractDetails contractDetails,
+            ContractDetails storeDetails) {
+        if (storeDetails != null) {
+            contractDetails.mergeStoreWith(storeDetails);
+        }
         detailsDataStore.update(addr, contractDetails);
     }
 

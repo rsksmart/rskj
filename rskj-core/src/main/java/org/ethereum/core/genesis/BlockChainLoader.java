@@ -130,7 +130,7 @@ public class BlockChainLoader {
                 accountState.setNonce(initialAddressState.getAccountState().getNonce());
 
                 if (initialAddressState.getContractDetails()!=null) {
-                    repository.updateContractDetails(addr, initialAddressState.getContractDetails());
+                    repository.updateContractDetails(addr, initialAddressState.getContractDetails(), null);
                     accountState.setStateRoot(initialAddressState.getAccountState().getStateRoot());
                     accountState.setCodeHash(initialAddressState.getAccountState().getCodeHash());
                 }
