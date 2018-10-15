@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockStore;
 import co.rsk.net.BlockSyncService;
@@ -116,6 +117,16 @@ public class World {
 
     public Block getBlockByName(String name) {
         return blocks.get(name);
+    }
+
+    public Block getBlockByHash(Keccak256 hash) {
+        for (Block block : blocks.values()) {
+            if (block.getHash().equals(hash)) {
+                return block;
+            }
+        }
+
+        return null;
     }
 
     public void saveBlock(String name, Block block) {
