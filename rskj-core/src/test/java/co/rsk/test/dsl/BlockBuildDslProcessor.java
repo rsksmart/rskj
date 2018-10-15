@@ -20,6 +20,7 @@ package co.rsk.test.dsl;
 
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 
@@ -50,8 +51,10 @@ public class BlockBuildDslProcessor {
     private void processCommand(DslCommand cmd) throws DslProcessorException {
         if (cmd.isCommand("parent"))
             this.builder.parent(this.world.getBlockByName(cmd.getArgument(0)));
-        else if (cmd.isCommand("build"))
-            this.world.saveBlock(this.name, this.builder.build());
+        else if (cmd.isCommand("build")) {
+            Block block = this.builder.build();
+            this.world.saveBlock(this.name, block);
+        }
         else if (cmd.isCommand("uncles")) {
             List<BlockHeader> uncles = new ArrayList<>();
 
