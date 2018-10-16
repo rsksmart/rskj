@@ -115,7 +115,7 @@ public class DslFilesTest {
         Assert.assertEquals(0, repo1.getCode(addr1).length);
         Assert.assertTrue(Arrays.equals(repo1.getAccountState(addr1).getStateRoot(), EMPTY_TRIE_HASH));
 
-        // Contract account in branch 1
+        // Creator Contract account in branch 1
         Assert.assertNotNull(repo1.getCode(addr2));
         Assert.assertNotEquals(0, repo1.getCode(addr2).length);
 

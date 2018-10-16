@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.RepositoryBlockStore;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
@@ -41,6 +42,7 @@ import org.junit.Assert;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -55,6 +57,7 @@ public class BlockChainBuilder {
     private Genesis genesis;
     private ReceiptStore receiptStore;
     private RskSystemProperties config;
+    public static Map<String, HashMapDB> mapa = new HashMap<>();
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -110,7 +113,21 @@ public class BlockChainBuilder {
         }
 
         if (repository == null)
-            repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
+            repository = new RepositoryImpl(
+                    new TrieStoreImpl(new HashMapDB().setClearOnClose(false)),
+                    new TrieStore.Factory() {
+                        @Override
+                        public TrieStore newInstance(String name) {
+                            if (mapa.get(name) != null) {
+                                return new TrieStoreImpl(mapa.get(name));
+                            }
+                            HashMapDB store = new HashMapDB();
+                            mapa.put(name, store);
+                            return new TrieStoreImpl(store);
+                        }
+                    },
+                    config.detailsInMemoryStorageLimit()
+            );
 
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
@@ -143,7 +160,8 @@ public class BlockChainBuilder {
         }
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(this.repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, true, 20,
+                                                       new BlockExecutor(this.repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
                 block1.getCoinbase(),
