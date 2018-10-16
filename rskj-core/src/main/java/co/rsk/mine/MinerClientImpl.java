@@ -18,14 +18,11 @@
 
 package co.rsk.mine;
 
-import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Rsk;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.core.Rsk;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -39,8 +36,6 @@ import java.util.TimerTask;
  * uses MinerServer to build blocks to mine and publish blocks once a valid nonce was found.
  * @author Oscar Guindzberg
  */
-
-@Component("MinerClient")
 public class MinerClientImpl implements MinerClient {
     private long nextNonceToUse = 0;
 
@@ -61,12 +56,11 @@ public class MinerClientImpl implements MinerClient {
     private volatile MinerWork work;
     private Timer aTimer;
 
-    @Autowired
-    public MinerClientImpl(Rsk rsk, MinerServer minerServer, RskSystemProperties config) {
+    public MinerClientImpl(Rsk rsk, MinerServer minerServer, Duration delayBetweenBlocks, Duration delayBetweenRefreshes) {
         this.rsk = rsk;
         this.minerServer = minerServer;
-        this.delayBetweenBlocks = config.minerClientDelayBetweenBlocks();
-        this.delayBetweenRefreshes = config.minerClientDelayBetweenRefreshes();
+        this.delayBetweenBlocks = delayBetweenBlocks;
+        this.delayBetweenRefreshes = delayBetweenRefreshes;
     }
 
     public void mine() {

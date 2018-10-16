@@ -23,6 +23,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerClientImpl;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
@@ -339,6 +340,11 @@ public class RskFactory {
             logger.debug("Solidity compiler unavailable", e);
             return new EthModuleSolidityDisabled();
         }
+    }
+
+    @Bean
+    public MinerClient getMinerClient(RskSystemProperties config, Rsk rsk, MinerServer minerServer) {
+        return new MinerClientImpl(rsk, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
     }
 
     @Bean
