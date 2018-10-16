@@ -72,6 +72,10 @@ public class ContractDetailsImpl implements ContractDetails {
         this.code = ByteUtils.clone(code);
         this.trieStoreFactory = trieStoreFactory;
         this.memoryStorageLimit = memoryStorageLimit;
+
+        if (this.trie == null) {
+            this.trie = new TrieImpl(trieStoreFactory.newInstance(getDataSourceName()), true);
+        }
     }
 
     @Override

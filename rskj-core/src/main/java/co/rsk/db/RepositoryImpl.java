@@ -92,8 +92,8 @@ public class RepositoryImpl implements Repository {
         AccountState accountState = new AccountState();
         updateAccountState(addr, accountState);
         updateContractDetails(addr, new ContractDetailsImpl(
+                addr.getBytes(),
                 null,
-                new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
                 null,
                 trieStoreFactory,
                 memoryStorageLimit
@@ -354,8 +354,8 @@ public class RepositoryImpl implements Repository {
 
                 if (contractDetailsCache.getOriginalContractDetails() == null) {
                     ContractDetails originalContractDetails = new ContractDetailsImpl(
+                            addr.getBytes(),
                             null,
-                            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
                             null,
                             trieStoreFactory,
                             memoryStorageLimit
