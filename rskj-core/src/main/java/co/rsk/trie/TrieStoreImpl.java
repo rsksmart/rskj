@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * TrieStoreImpl store and retrieve Trie node by hash
@@ -185,6 +186,14 @@ public class TrieStoreImpl implements TrieStore {
             logger.error(ERROR_CREATING_STORE, ex);
             panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_STORE +": " + ex.getMessage());
             throw new TrieSerializationException(ERROR_CREATING_STORE, ex);
+        }
+    }
+
+    public void copyTo(TrieStoreImpl destination) {
+        Set<byte[]> keys = store.keys();
+
+        for (byte[] key : keys) {
+            destination.store.put(key, store.get(key));
         }
     }
 }

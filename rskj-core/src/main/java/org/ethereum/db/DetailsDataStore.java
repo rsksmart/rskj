@@ -21,14 +21,14 @@ package org.ethereum.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
@@ -88,6 +88,12 @@ public class DetailsDataStore {
 
     public synchronized void update(RskAddress addr, ContractDetails contractDetails) {
         contractDetails.setAddress(addr.getBytes());
+        if (cache.containsKey(addr)) {
+            ContractDetails cachedDetails = cache.get(addr);
+            TrieStoreImpl currentStore = (TrieStoreImpl)((TrieImpl)((ContractDetailsImpl) contractDetails).getTrie()).getStore();
+            TrieStoreImpl cachedStore = (TrieStoreImpl)((TrieImpl) ((ContractDetailsImpl) cachedDetails).getTrie()).getStore();
+            cachedStore.copyTo(currentStore);
+        }
         cache.put(addr, contractDetails);
         removes.remove(addr);
     }
