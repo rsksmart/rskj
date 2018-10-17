@@ -3103,14 +3103,11 @@ public class BridgeSupportTest {
 
     @Test
     public void getBtcTransactionConfirmation_ok() throws BlockStoreException, IOException {
-        BlockchainNetConfig blockchainNetConfigOriginal = config.getBlockchainConfig();
         config.setBlockchainConfig(new RegTestOrchidConfig());
-        NetworkParameters networkParameters = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
         BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
         BtcBlock blockheader = mock(BtcBlock.class);
         int height = 50;
@@ -3143,14 +3140,10 @@ public class BridgeSupportTest {
 
     @Test
     public void getBtcTransactionConfirmation_BiggerThanBestChainHeight() throws BlockStoreException, IOException {
-        BlockchainNetConfig blockchainNetConfigOriginal = config.getBlockchainConfig();
         config.setBlockchainConfig(new RegTestOrchidConfig());
-        NetworkParameters networkParameters = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
-
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
         BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
 
         int height = 70;
@@ -3173,14 +3166,10 @@ public class BridgeSupportTest {
 
     @Test
     public void getBtcTransactionConfirmation_olderThanCache() throws BlockStoreException, IOException {
-        BlockchainNetConfig blockchainNetConfigOriginal = config.getBlockchainConfig();
         config.setBlockchainConfig(new RegTestOrchidConfig());
-        NetworkParameters networkParameters = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
-
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
         BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
         int height = 50;
         Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
@@ -3202,14 +3191,10 @@ public class BridgeSupportTest {
 
     @Test
     public void getBtcTransactionConfirmation_inexistentBlock() throws BlockStoreException, IOException {
-        BlockchainNetConfig blockchainNetConfigOriginal = config.getBlockchainConfig();
         config.setBlockchainConfig(new RegTestOrchidConfig());
-        NetworkParameters networkParameters = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
-
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
         BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
         int height = 50;
         Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
@@ -3233,14 +3218,10 @@ public class BridgeSupportTest {
 
     @Test
     public void getBtcTransactionConfirmation_invalidHeight() throws BlockStoreException, IOException {
-        BlockchainNetConfig blockchainNetConfigOriginal = config.getBlockchainConfig();
         config.setBlockchainConfig(new RegTestOrchidConfig());
-        NetworkParameters networkParameters = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
-
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
         BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
         BtcBlock blockheader = mock(BtcBlock.class);
         int height = 50;
@@ -3265,14 +3246,10 @@ public class BridgeSupportTest {
 
     @Test
     public void getBtcTransactionConfirmation_inexistentTx() throws BlockStoreException, IOException {
-        BlockchainNetConfig blockchainNetConfigOriginal = config.getBlockchainConfig();
         config.setBlockchainConfig(new RegTestOrchidConfig());
-        NetworkParameters networkParameters = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
-
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
         BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
         BtcBlock blockheader = mock(BtcBlock.class);
         int height = 50;
