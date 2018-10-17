@@ -140,9 +140,32 @@ public class Web3ImplSnapshotTest {
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        web3.evm_mine();
+        web3.evm_mine(null);
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+    }
+
+    @Test
+    public void mine_with_timestamp() {
+        SimpleEthereum ethereum = new SimpleEthereum();
+        MinerServer minerServer = getMinerServerForTest(ethereum);
+        Web3Impl web3 = createWeb3(ethereum, minerServer);
+
+        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+
+        //Back to the past: Sunday, 17 October 2010 19:34:27
+        String timestamp = "1539804867";
+        web3.evm_mine(timestamp);
+
+        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(blockchain.getBestBlock().getHeader().getTimestamp(), Long.parseLong(timestamp));
+
+        //Go to the future: Saturday, 17 October 2020 19:34:27
+        timestamp = "1602963267";
+        web3.evm_mine(timestamp);
+
+        Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(blockchain.getBestBlock().getHeader().getTimestamp(), Long.parseLong(timestamp));
     }
 
     @Test

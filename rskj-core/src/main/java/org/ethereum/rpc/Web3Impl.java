@@ -1137,8 +1137,8 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public void evm_mine() {
-        minerManager.mineBlock(this.blockchain, minerClient, minerServer);
+    public void evm_mine(String timestampToJump) {
+        minerManager.mineBlock(this.blockchain, minerClient, minerServer, timestampToJump);
         if (logger.isDebugEnabled()) {
             logger.debug("evm_mine()");
         }

@@ -24,13 +24,13 @@ import org.ethereum.core.Blockchain;
  * Created by ajlopez on 15/04/2017.
  */
 public class MinerManager {
-    public void mineBlock(Blockchain blockchain, MinerClient minerClient, MinerServer minerServer) {
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+    public void mineBlock(Blockchain blockchain, MinerClient minerClient, MinerServer minerServer, String timestampToJump) {
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false, timestampToJump);
         minerClient.mineBlock();
     }
 
     public void fallbackMineBlock(Blockchain blockchain, MinerClient minerClient, MinerServer minerServer) {
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
         minerClient.fallbackMineBlock();
     }
 }
