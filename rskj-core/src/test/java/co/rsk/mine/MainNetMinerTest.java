@@ -208,7 +208,7 @@ public class MainNetMinerTest {
             // mine another
             // NOTE that is NOT using the next block (parity change) because of the blockchain mockito
             // to mine a subsequent block, use a real blockchain, not the mockito.
-            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
 
             //result = minerServer.generateFallbackBlock();
             //Assert.assertTrue(result);

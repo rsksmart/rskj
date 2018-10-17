@@ -193,7 +193,7 @@ public class MinerServerImpl implements MinerServer {
                 // Because the Refresh occurs only once every minute,
                 // we need to create at least one first block to mine
                 Block bestBlock = blockchain.getBestBlock();
-                buildBlockToMine(bestBlock, false);
+                buildBlockToMine(bestBlock, false, null);
             } else {
                 if (fallbackMiningTimer != null) {
                     fallbackMiningTimer.cancel();
@@ -262,7 +262,7 @@ public class MinerServerImpl implements MinerServer {
             started = true;
             blockListener = new NewBlockListener();
             ethereum.addListener(blockListener);
-            buildBlockToMine(blockchain.getBestBlock(), false);
+            buildBlockToMine(blockchain.getBestBlock(), false, null);
 
             if (refreshWorkTimer != null) {
                 refreshWorkTimer.cancel();
@@ -579,12 +579,12 @@ public class MinerServerImpl implements MinerServer {
 
     /**
      * buildBlockToMine creates a block to mine based on the given block as parent.
-     *
-     * @param newBlockParent         the new block parent.
+     *  @param newBlockParent         the new block parent.
      * @param createCompetitiveBlock used for testing.
+     * @param timestampToJump will be set in the block's header as a timestamp
      */
     @Override
-    public void buildBlockToMine(@Nonnull Block newBlockParent, boolean createCompetitiveBlock) {
+    public void buildBlockToMine(@Nonnull Block newBlockParent, boolean createCompetitiveBlock, String timestampToJump) {
         // See BlockChainImpl.calclBloom() if blocks has txs
         if (createCompetitiveBlock) {
             // Just for testing, mine on top of bestblock's parent
@@ -594,6 +594,11 @@ public class MinerServerImpl implements MinerServer {
         logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
 
         final Block newBlock = builder.build(newBlockParent, extraData);
+
+        if(timestampToJump != null){
+            long timeToJump = Long.valueOf(timestampToJump).longValue();
+            newBlock.getHeader().setTimestamp(timeToJump);
+        }
 
         if (autoSwitchBetweenNormalAndFallbackMining) {
             setFallbackMining(ProofOfWorkRule.isFallbackMiningPossible(config, newBlock.getHeader()));
@@ -686,7 +691,7 @@ public class MinerServerImpl implements MinerServer {
 
             if (!work.getParentBlockHash().equals(bestBlockHash)) {
                 logger.debug("There is a new best block: {}, number: {}", bestBlock.getShortHashForMergedMining(), bestBlock.getNumber());
-                buildBlockToMine(bestBlock, false);
+                buildBlockToMine(bestBlock, false, null);
             } else {
                 logger.debug("New block arrived but there is no need to build a new block to mine: {}", block.getShortHashForMergedMining());
             }
@@ -725,7 +730,7 @@ public class MinerServerImpl implements MinerServer {
         public void run() {
             Block bestBlock = blockchain.getBestBlock();
             try {
-                buildBlockToMine(bestBlock, false);
+                buildBlockToMine(bestBlock, false, null);
             } catch (Throwable th) {
                 logger.error("Unexpected error: {}", th);
                 panicProcessor.panic("mserror", th.getMessage());

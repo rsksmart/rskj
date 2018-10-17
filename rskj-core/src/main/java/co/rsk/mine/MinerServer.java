@@ -65,7 +65,7 @@ public interface MinerServer {
 
     MinerWork getWork();
 
-    void buildBlockToMine(@Nonnull Block newParent, boolean createCompetitiveBlock);
+    void buildBlockToMine(@Nonnull Block newParent, boolean createCompetitiveBlock, String timestampToJump);
 
     void setExtraData(byte[] extraData);
 

@@ -125,7 +125,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ConfigUtils.getDefaultMiningConfig()
         );
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
         Block blockAtHeightOne = minerServer.getBlocksWaitingforPoW().entrySet().iterator().next().getValue();
 
         List<Transaction> blockTransactions = blockAtHeightOne.getTransactionsList();
@@ -172,7 +172,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         extraData = ByteBuffer.allocate(4).putInt(2).array();
         minerServer.setExtraData(extraData);
-        minerServer.buildBlockToMine(bestBlock, false);
+        minerServer.buildBlockToMine(bestBlock, false, null);
         MinerWork work2 = minerServer.getWork(); // only the tag is used
         Assert.assertNotEquals(work2.getBlockHashForMergedMining(),work.getBlockHashForMergedMining());
 
@@ -610,7 +610,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         String hashForMergedMining = work.getBlockHashForMergedMining();
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
 
         work = minerServer.getWork();
         assertEquals(hashForMergedMining, work.getBlockHashForMergedMining());

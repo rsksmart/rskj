@@ -73,7 +73,7 @@ public class MinerManagerTest {
 
         Assert.assertNotNull(refreshWork);
         try {
-            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
             refreshWork.run();
             Assert.assertTrue(minerClient.mineBlock());
 
@@ -94,12 +94,12 @@ public class MinerManagerTest {
 
         Assert.assertNotNull(refreshWork);
         try {
-            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
             refreshWork.run();
 
             Assert.assertTrue(minerClient.mineBlock());
 
-            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
             refreshWork.run();
             Assert.assertTrue(minerClient.mineBlock());
 
@@ -116,7 +116,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
 
         MinerWork minerWork = minerServer.getWork();
 
@@ -154,7 +154,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
 
         Assert.assertFalse(minerClient.mineBlock());
 
@@ -179,7 +179,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
 
         Assert.assertFalse(minerClient.mineBlock());
 
@@ -193,7 +193,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
         minerClient.doWork();
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
@@ -206,7 +206,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(null);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
         minerClient.doWork();
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
@@ -219,7 +219,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false, null);
         Thread thread = minerClient.createDoWorkThread();
         thread.start();
         try {
@@ -247,7 +247,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
-        manager.mineBlock(blockchain, minerClient, minerServer);
+        manager.mineBlock(blockchain, minerClient, minerServer, null);
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
         Assert.assertFalse(blockchain.getBestBlock().getTransactionsList().isEmpty());
@@ -257,14 +257,14 @@ public class MinerManagerTest {
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        manager.mineBlock(blockchain, minerClient, minerServer);
-        manager.mineBlock(blockchain, minerClient, minerServer);
+        manager.mineBlock(blockchain, minerClient, minerServer, null);
+        manager.mineBlock(blockchain, minerClient, minerServer, null);
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
 
         snapshotManager.resetSnapshots();
         Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
 
-        manager.mineBlock(blockchain, minerClient, minerServer);
+        manager.mineBlock(blockchain, minerClient, minerServer, null);
 
         Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
     }
@@ -282,7 +282,7 @@ public class MinerManagerTest {
 
         minerServer.increaseTime(10);
 
-        manager.mineBlock(blockchain, minerClient, minerServer);
+        manager.mineBlock(blockchain, minerClient, minerServer, null);
 
         Block block = blockchain.getBestBlock();
         Assert.assertEquals(1, block.getNumber());
