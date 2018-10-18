@@ -29,20 +29,17 @@ import co.rsk.db.RepositoryImplForTesting;
 import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 
 import org.ethereum.config.blockchain.mainnet.MainNetAfterBridgeSyncConfig;
 import org.ethereum.config.blockchain.mainnet.MainNetOrchidConfig;
-import org.ethereum.config.blockchain.testnet.TestNetAfterBridgeSyncConfig;
 import org.ethereum.config.blockchain.testnet.TestNetBeforeBridgeSyncConfig;
-import org.ethereum.config.blockchain.testnet.TestNetOrchidConfig;
+import org.ethereum.config.blockchain.testnet.TestNetDifficultyDropEnabledConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -370,7 +367,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setSaveRetrieveAndGetSiblingsBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new TestNetAfterBridgeSyncConfig());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetBeforeBridgeSyncConfig());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(((TestNetBeforeBridgeSyncConfig) blockchainConfig).isRskip85()).thenReturn(false);
         long minerFee = 21000;
@@ -391,7 +388,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setSaveRetrieveAndGetSiblingsAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = new TestNetOrchidConfig();
+        BlockchainNetConfig blockchainConfig = new TestNetDifficultyDropEnabledConfig();
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         long minerFee = 21000;
         long txValue = 10000;
@@ -459,11 +456,11 @@ public class RemascStorageProviderTest {
     @Test
     public void alwaysPaysBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new TestNetAfterBridgeSyncConfig());
-        Constants constants = spy(new TestNetAfterBridgeSyncConfig.TestNetConstants());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetBeforeBridgeSyncConfig());
+        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
-        when(((TestNetAfterBridgeSyncConfig) blockchainConfig).isRskip85()).thenReturn(false);
+        when(((TestNetBeforeBridgeSyncConfig) blockchainConfig).isRskip85()).thenReturn(false);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
         when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn((BlockchainConfig)blockchainConfig);
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
@@ -486,11 +483,11 @@ public class RemascStorageProviderTest {
     @Test
     public void alwaysPaysFedBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new TestNetAfterBridgeSyncConfig());
-        Constants constants = spy(new TestNetAfterBridgeSyncConfig.TestNetConstants());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetBeforeBridgeSyncConfig());
+        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
-        when(((TestNetAfterBridgeSyncConfig) blockchainConfig).isRskip85()).thenReturn(false);
+        when(((TestNetBeforeBridgeSyncConfig) blockchainConfig).isRskip85()).thenReturn(false);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
         when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn((BlockchainConfig)blockchainConfig);
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
@@ -517,8 +514,8 @@ public class RemascStorageProviderTest {
     @Test
     public void doesntPayFedBelowMinimumRewardAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new TestNetOrchidConfig());
-        Constants constants = spy(new TestNetAfterBridgeSyncConfig.TestNetConstants());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetDifficultyDropEnabledConfig());
+        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
@@ -545,8 +542,8 @@ public class RemascStorageProviderTest {
     @Test
     public void doesntPayBelowMinimumRewardAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new TestNetOrchidConfig());
-        Constants constants = spy(new TestNetAfterBridgeSyncConfig.TestNetConstants());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetDifficultyDropEnabledConfig());
+        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
@@ -569,8 +566,8 @@ public class RemascStorageProviderTest {
     @Test
     public void paysFedWhenHigherThanMinimumRewardAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new TestNetOrchidConfig());
-        Constants constants = spy(new TestNetAfterBridgeSyncConfig.TestNetConstants());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetDifficultyDropEnabledConfig());
+        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
@@ -599,8 +596,8 @@ public class RemascStorageProviderTest {
     @Test
     public void paysWhenHigherThanMinimumRewardAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new TestNetOrchidConfig());
-        Constants constants = spy(new TestNetAfterBridgeSyncConfig.TestNetConstants());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetDifficultyDropEnabledConfig());
+        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
@@ -624,8 +621,8 @@ public class RemascStorageProviderTest {
     @Test
     public void paysOnlyBlocksWithEnoughBalanceAccumulatedAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new TestNetOrchidConfig());
-        Constants constants = spy(new TestNetAfterBridgeSyncConfig.TestNetConstants());
+        BlockchainNetConfig blockchainConfig = spy(new TestNetDifficultyDropEnabledConfig());
+        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
