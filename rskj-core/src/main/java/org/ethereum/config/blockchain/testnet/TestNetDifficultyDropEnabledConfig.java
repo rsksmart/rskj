@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,10 +19,24 @@
 
 package org.ethereum.config.blockchain.testnet;
 
-public class TestNetAfterBridgeSyncConfig extends TestNetBeforeBridgeSyncConfig {
+import co.rsk.core.BlockDifficulty;
+import org.ethereum.core.BlockHeader;
+
+public class TestNetDifficultyDropEnabledConfig extends TestNetBeforeBridgeSyncConfig {
 
     @Override
     public boolean areBridgeTxsFree() {
         return false;
+    }
+
+    @Override
+    public BlockDifficulty calcDifficulty(BlockHeader currentBlockHeader, BlockHeader parentBlockHeader) {
+        long tenMinutesInSeconds = 600;
+        // If more than 10 minutes, reset to minimum difficulty
+        if (currentBlockHeader.getTimestamp() >= parentBlockHeader.getTimestamp() + tenMinutesInSeconds) {
+            return getConstants().getMinimumDifficulty();
+        }
+
+        return getBlockDifficulty(currentBlockHeader, parentBlockHeader, getConstants());
     }
 }
