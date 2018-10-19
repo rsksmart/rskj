@@ -35,7 +35,7 @@ public class RepositoryImplForTesting extends RepositoryImpl {
     private static RskSystemProperties config = new TestSystemProperties();
 
     public RepositoryImplForTesting() {
-        super(null, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
+        super(null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 
     @Override

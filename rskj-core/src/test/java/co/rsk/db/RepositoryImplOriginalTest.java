@@ -779,7 +779,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void test20() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new RepositoryImpl(store, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(store, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
         byte[] root = repository.getRoot();
 
         DataWord cowKey1 = new DataWord("c1");
@@ -836,7 +836,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new RepositoryImpl(store, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
+        final Repository repository = new RepositoryImpl(store, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         final DataWord cowKey1 = new DataWord("c1");
         final DataWord cowKey2 = new DataWord("c2");
@@ -904,6 +904,6 @@ public class RepositoryImplOriginalTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl(null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }
