@@ -67,16 +67,13 @@ public class PendingState implements AccountInformationProvider {
     @Override
     public BigInteger getNonce(RskAddress addr) {
         BigInteger nextNonce = pendingRepository.getNonce(addr);
+        Optional<BigInteger> maxNonce = this.pendingTransactions.getTransactionsWithSender(addr).stream()
+                .map(Transaction::getNonceAsInteger)
+                .max(BigInteger::compareTo)
+                .map(nonce -> nonce.add(BigInteger.ONE))
+                .filter(nonce -> nonce.compareTo(nextNonce) >= 0);
 
-        for (Transaction tx : this.pendingTransactions.getTransactionsWithSender(addr)) {
-            BigInteger txNonce = tx.getNonceAsInteger();
-
-            if (txNonce.compareTo(nextNonce) >= 0) {
-                nextNonce = txNonce.add(BigInteger.ONE);
-            }
-        }
-
-        return nextNonce;
+        return maxNonce.orElse(nextNonce);
     }
 
     // sortByPriceTakingIntoAccountSenderAndNonce sorts the transactions by price, but
