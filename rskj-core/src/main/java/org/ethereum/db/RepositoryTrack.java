@@ -56,14 +56,14 @@ public class RepositoryTrack implements Repository {
 
     private final DetailsDataStore dds;
     private final Repository repository;
-    private final TrieStore.Factory trieStoreFactory;
+    private final TrieStore.Pool trieStorePool;
     private final int memoryStorageLimit;
 
-    public RepositoryTrack(Repository repository, TrieStore.Factory trieStoreFactory, int memoryStorageLimit) {
+    public RepositoryTrack(Repository repository, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
         this.repository = repository;
-        this.trieStoreFactory = trieStoreFactory;
+        this.trieStorePool = trieStorePool;
         this.memoryStorageLimit = memoryStorageLimit;
-        this.dds = new DetailsDataStore(new DatabaseImpl(new HashMapDB()), trieStoreFactory, memoryStorageLimit);
+        this.dds = new DetailsDataStore(new DatabaseImpl(new HashMapDB()), trieStorePool, memoryStorageLimit);
     }
 
     @Override
@@ -328,7 +328,7 @@ public class RepositoryTrack implements Repository {
     public Repository startTracking() {
         logger.debug("start tracking");
 
-        return new RepositoryTrack(this, trieStoreFactory, memoryStorageLimit);
+        return new RepositoryTrack(this, trieStorePool, memoryStorageLimit);
     }
 
 

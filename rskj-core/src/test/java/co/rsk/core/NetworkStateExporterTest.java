@@ -118,8 +118,8 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testContracts() throws Exception {
-        TrieStore.Factory trieStoreFactory = name -> new TrieStoreImpl(new HashMapDB());
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), trieStoreFactory, config.detailsInMemoryStorageLimit());
+        TrieStore.Pool trieStorePool = name -> new TrieStoreImpl(new HashMapDB());
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), trieStorePool, config.detailsInMemoryStorageLimit());
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
@@ -129,7 +129,7 @@ public class NetworkStateExporterTest {
             null,
             new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
             null,
-            trieStoreFactory,
+            trieStorePool,
             config.detailsInMemoryStorageLimit()
         );
         contractDetails.setCode(new byte[] {1, 2, 3, 4});
