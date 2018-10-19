@@ -27,6 +27,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -34,6 +35,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -50,6 +52,43 @@ public class RepositoryTest {
     public static final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
     public static final RskAddress HORSE = new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5F");
     private final TestSystemProperties config = new TestSystemProperties();
+
+    @Test
+    public void testStorageRoot() {
+        Repository repository = createRepositoryImpl(config);
+        repository.createAccount(COW);
+        repository.setupContract(COW);
+        byte[] stateRoot1 = repository.getStorageStateRoot(COW);
+
+        byte[] cow1Key = Hex.decode("A1A2A3");
+        byte[] cow1Value = Hex.decode("A4A5A6");
+        byte[] cow2Key = Hex.decode("B1B2B3");
+        byte[] cow2Value = Hex.decode("B4B5B6");
+
+        repository.addStorageBytes(COW, new DataWord(cow1Key), cow1Value);
+
+        byte[] stateRoot2 = repository.getStorageStateRoot(COW);
+        assertFalse(Arrays.equals(stateRoot1,stateRoot2));
+
+        repository.addStorageBytes(COW, new DataWord(cow2Key), cow2Value);
+
+        byte[] stateRoot3 = repository.getStorageStateRoot(COW);
+        assertFalse(Arrays.equals(stateRoot1,stateRoot3));
+        assertFalse(Arrays.equals(stateRoot2,stateRoot3));
+
+        // Now delete the last item
+        repository.addStorageBytes(COW, new DataWord(cow2Key), ByteUtil.EMPTY_BYTE_ARRAY );
+
+        byte[] stateRoot4 = repository.getStorageStateRoot(COW);
+        assertTrue(Arrays.equals(stateRoot2,stateRoot4));
+
+        // Now delete the last item
+        repository.addStorageBytes(COW, new DataWord(cow1Key), ByteUtil.EMPTY_BYTE_ARRAY );
+
+        byte[] stateRoot5 = repository.getStorageStateRoot(COW);
+        assertTrue(Arrays.equals(stateRoot1,stateRoot5));
+
+    }
 
     @Test
     public void test4() {

@@ -85,6 +85,7 @@ public class AccountBuilder {
                 track.getCode(account.getAddress());
             }
             track.commit();
+            track.save();
 
             // Check that code is there...
             repository.getCode(account.getAddress());

@@ -654,6 +654,45 @@ public class TrieImpl implements Trie {
     }
 
     @Nullable
+    public boolean hasDataWithPrefix(byte[] key) {
+        ExpandedKey keyBytes = bytesToExpandedKey(key);
+        boolean result = hasDataWithPrefix(keyBytes, keyBytes.length(), 0);
+        return result;
+    }
+
+    @Nullable
+    private boolean hasDataWithPrefix(ExpandedKey key, int length, int keyPosition) {
+        int position = keyPosition;
+
+        if (position >= length) {
+            return true;
+        }
+
+        if (this.encodedSharedPath != null) {
+            byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.sharedPathLength);
+
+            for (int k = 0; k < sharedPath.length; k++, position++) {
+                if (position == length) {
+                    return true;
+                }
+
+                if (key.get(position) != sharedPath[k]) {
+                    return false;
+                }
+            }
+        }
+
+        Trie node = this.retrieveNode(key.get(position));
+
+        // No child ?
+        if (node == null) {
+            return false;
+        }
+
+        return hasDataWithPrefix(key, length, position + 1);
+    }
+
+    @Nullable
     private TrieImpl find(ExpandedKey key, int length, int keyPosition) {
         int position = keyPosition;
 
@@ -1075,7 +1114,7 @@ public class TrieImpl implements Trie {
             newHashes[pos] = null;
         }
 
-        if (isEmptyTrie(value, newNodes, newHashes)) {
+        if (isEmptyTrie(this.value, newNodes, newHashes)) {
             return null;
         }
 

@@ -629,7 +629,7 @@ public class Program {
         if (!byTestingSuite()) {
             getStorage().increaseNonce(senderAddress);
         }
-
+        // Start tracking repository changes for the constructor of the contract
         Repository track = getStorage().startTracking();
 
         //In case of hashing collisions, check for any balance before createAccount()
@@ -639,7 +639,9 @@ public class Program {
             track.addBalance(newAddress, oldBalance);
         } else {
             track.createAccount(newAddress);
+
         }
+        track.setupContract(newAddress);
 
         // [4] TRANSFER THE BALANCE
         track.addBalance(senderAddress, endowment.negate());

@@ -109,11 +109,17 @@ public class MutableTrieImpl implements MutableTrie {
 
     @Override
     public MutableTrie getSnapshotTo(Keccak256 hash) {
+        // Since getSnapshotTo() does not modify the current trie (this.trie)
+        // then there is no need to save nodes.
         return new MutableTrieImpl(trie.getSnapshotTo(hash));
     }
 
     @Override
-    public void setSnapshotTo(Keccak256 hash) { this.trie = trie.getSnapshotTo(hash);}
+    public void setSnapshotTo(Keccak256 hash) {
+        // This changes the trie root node. Any other tree that has not been saved to
+        // disk will be automatically deleted.
+        this.trie = trie.getSnapshotTo(hash);
+    }
 
     @Override
     public byte[] serialize() {

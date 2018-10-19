@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.bouncycastle.util.BigIntegers;
@@ -32,7 +33,14 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class AccountState {
-    private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
+    // Why store a huge hash for an Account (not contract) when an empty hash occupies
+    // much less? So I changed it.
+    public static final byte[] EMPTY_CODE_HASH = ByteUtil.EMPTY_BYTE_ARRAY;
+
+    // This is the value that should be shown to EXTCODEHASH when the real value
+    // stored is EMPTY_CODE_HASH.
+    // Currently is not in use, but we're preparing to use it.
+    public static final byte[] EMPTY_CODE_HASH_AS_SEEN_BY_EXTCODEHASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
     static final int ACC_HIBERNATED_MASK = 1;
     private byte[] rlpEncoded;
@@ -45,18 +53,6 @@ public class AccountState {
     /* A scalar value equalBytes to the number of Wei owned by this address */
     private Coin balance;
 
-    /* A 256-bit hash of the root node of a trie structure
-     * that encodes the storage contents of the contract,
-     * itself a simple mapping between byte arrays of size 32.
-     * The hash is formally denoted σ[a] s .
-     *
-     * Since I typically wish to refer not to the trie’s root hash
-     * but to the underlying set of key/value pairs stored within,
-     * I define a convenient equivalence TRIE (σ[a] s ) ≡ σ[a] s .
-     * It shall be understood that σ[a] s is not a ‘physical’ member
-     * of the account and does not contribute to its later serialisation */
-    // State root will not be used anymore here
-    private byte[] stateRoot = EMPTY_TRIE_HASH;
 
     /* The hash of the EVM code of this contract—this is the code
      * that gets executed should this address receive a message call.
@@ -64,7 +60,7 @@ public class AccountState {
      * after construction. All such code fragments are contained in
      * the state database under their corresponding hashes for later
      * retrieval */
-    private byte[] codeHash = EMPTY_DATA_HASH;
+    private byte[] codeHash = EMPTY_CODE_HASH;
 
     /* Account state flags*/
     private int stateFlags;
@@ -88,8 +84,18 @@ public class AccountState {
         this.nonce = items.get(0).getRLPData() == null ? BigInteger.ZERO
                 : new BigInteger(1, items.get(0).getRLPData());
         this.balance = RLP.parseCoin(items.get(1).getRLPData());
-        this.stateRoot = items.get(2).getRLPData();
+
+        // To maintain compatibility with previous data base
+        // we simply ignore stateRoot. We won't save it anymore
+        items.get(2).getRLPData();
         this.codeHash = items.get(3).getRLPData();
+
+        // Empty array is converted by rlp to null, so we must convert it back to the
+        // empty array here.
+        // Ugly? blame RLP.
+        if (this.codeHash==null)
+            this.codeHash = EMPTY_CODE_HASH;
+
 
         if (items.size() > 4) {
             byte[] data = items.get(4).getRLPData();
@@ -115,15 +121,7 @@ public class AccountState {
         this.nonce = nonce;
     }
 
-    public byte[] getStateRoot() {
-        return stateRoot;
-    }
 
-    public void setStateRoot_deprecated(byte[] stateRoot) {
-        rlpEncoded = null;
-        this.stateRoot = stateRoot;
-        setDirty(true);
-    }
 
     public void incrementNonce() {
         rlpEncoded = null;
@@ -167,7 +165,7 @@ public class AccountState {
         if (rlpEncoded == null) {
             byte[] nonce = RLP.encodeBigInteger(this.nonce);
             byte[] balance = RLP.encodeCoin(this.balance);
-            byte[] stateRoot = RLP.encodeElement(this.stateRoot);
+            byte[] stateRoot = RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY );
             byte[] codeHash = RLP.encodeElement(this.codeHash);
             if (stateFlags != 0) {
                 byte[] stateFlags = RLP.encodeInt(this.stateFlags);
@@ -200,8 +198,14 @@ public class AccountState {
     public AccountState clone() {
         AccountState accountState = new AccountState(nonce, balance);
 
+        // There is no opcode to return the code hash, nor it's possible to use the
+        // codehash to prove anything, because of the exitence of Ethereum's constructors
+        // which can modify storage. See discussions about EXTCODEHASH opcode.
+        // However it seems Etherum developers have decided to implement it anyway,
+        // and we want to keep compatibility. Anything the EXTCODEHASH does can be done with CREATE2
+        // opcode and a fixed known constructor. A real pitty they are implementing it.
+
         accountState.setCodeHash(this.getCodeHash());
-        accountState.setStateRoot_deprecated(this.getStateRoot());
         accountState.setDirty(false);
         accountState.setStateFlags(this.stateFlags);
         return accountState;
@@ -211,7 +215,6 @@ public class AccountState {
         String ret = "  Nonce: " + this.getNonce().toString() + "\n" +
                 "  Balance: " + getBalance().asBigInteger() + "\n" +
                 "  StateFlags: " + getStateFlags() + "\n" +
-                "  State Root: " + Hex.toHexString(this.getStateRoot()) + "\n" +
                 "  Code Hash: " + Hex.toHexString(this.getCodeHash());
         return ret;
     }

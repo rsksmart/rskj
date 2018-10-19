@@ -98,4 +98,8 @@ public interface Trie {
     // find allows to explore a subtree
     Trie find(byte[] key);
 
+    // key can only be pointing to a real node, it cannot be a partial prefix betweeen
+    // two nodes. In that case it will return false.
+    boolean hasDataWithPrefix(byte[] key);
+
 }

@@ -45,9 +45,19 @@ public interface Repository extends AccountInformationProvider {
      *
      * @param addr of the contract
      * @return newly created account state
+     *
+     * This method creates an account, but is DOES NOT create a contract.
+     * To create a contract, internally the account node is extended with a root node
+     * for storage. To avoid creating the root node for storage each time a storage cell
+     * is added, we pre-create the storage node when we know the account will become a
+     * contract. This is done in setupContract().
+     * Note that we can't use the length or existence of the code node for this,
+     * because a contract's code can be empty!
+     *
      */
     AccountState createAccount(RskAddress addr);
 
+    void setupContract(RskAddress addr);
 
     /**
      * @param addr - account to check
@@ -104,7 +114,14 @@ public interface Repository extends AccountInformationProvider {
      */
     void saveCode(RskAddress addr, byte[] code);
 
-    byte[] getCode(RskAddress addr);
+    /**
+     * get the code associated with an account
+     *
+     * This method returns the empty array if there is no code (both for Accounts and
+     * for contracts that have installed zero code on construction.
+     * It should never return null.
+    */
+     byte[] getCode(RskAddress addr);
 
     /**
      * Put a value in storage of an account at a given key
@@ -119,6 +136,9 @@ public interface Repository extends AccountInformationProvider {
 
     byte[] getStorageBytes(RskAddress addr, DataWord key);
 
+    byte[] getStorageStateRoot(RskAddress addr);
+
+    boolean contractHasStorage(RskAddress addr);
     /**
      * Add value to the balance of an account
      *

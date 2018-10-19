@@ -69,6 +69,9 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public void setupContract(RskAddress addr) { repository.setupContract(addr); }
+
+    @Override
     public boolean isExist(RskAddress addr) {
         return repository.isExist(addr);
     }
@@ -99,6 +102,14 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void setNonce(RskAddress addr, BigInteger nonce) {
         repository.setNonce(addr,nonce);
+    }
+
+    @Override
+    public boolean contractHasStorage(RskAddress addr) { return repository.contractHasStorage(addr); }
+
+    @Override
+    public byte[] getStorageStateRoot(RskAddress addr) {
+        return repository.getStorageStateRoot(addr);
     }
 
     @Override

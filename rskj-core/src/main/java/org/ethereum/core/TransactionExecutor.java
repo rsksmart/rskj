@@ -80,6 +80,7 @@ public class TransactionExecutor {
     private Coin paidFees;
     private boolean readyToExecute = false;
 
+
     private final ProgramInvokeFactory programInvokeFactory;
     private final RskAddress coinbase;
 
@@ -310,10 +311,14 @@ public class TransactionExecutor {
 
     private void create() {
         RskAddress newContractAddress = tx.getContractAddress();
+        cacheTrack.createAccount(newContractAddress); // pre-created
+
         if (isEmpty(tx.getData())) {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
-            cacheTrack.createAccount(newContractAddress);
+            // If there is no data, then the account is created, but without code nor
+            // storage. It doesn't even call setupContract() to setup a storage root
         } else {
+            cacheTrack.setupContract(newContractAddress);
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
@@ -390,6 +395,7 @@ public class TransactionExecutor {
                 } else {
                     mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
                     program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
+
                     cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
                 }
             }
@@ -408,7 +414,7 @@ public class TransactionExecutor {
             }
 
         } catch (Throwable e) {
-
+            // NOTE: we really should about the node, shutdown everything, and fail safe.
             // TODO: catch whatever they will throw on you !!!
 //            https://github.com/ethereum/cpp-ethereum/blob/develop/libethereum/Executive.cpp#L241
             cacheTrack.rollback();

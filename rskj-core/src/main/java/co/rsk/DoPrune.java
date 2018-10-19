@@ -110,6 +110,7 @@ public class DoPrune {
                 break;
             }
 
+            /* -- This is just incompatible with Unitrie
             for (Block b: blocks) {
                 byte[] stateRoot = b.getStateRoot();
 
@@ -126,7 +127,7 @@ public class DoPrune {
                 contractStorage.copyTo(targetStore);
                 logger.info("Trie root {}", contractStorage.getHash());
             }
-
+            */
             n++;
         }
     }
