@@ -29,7 +29,7 @@ public class PeerScoringManager {
     private final InetAddressTable addressTable = new InetAddressTable();
 
     @GuardedBy("accessLock")
-    private final LinkedHashMap<NodeID, PeerScoring> peersByNodeID;
+    private final Map<NodeID, PeerScoring> peersByNodeID;
 
     @GuardedBy("accessLock")
     private final Map<InetAddress, PeerScoring> peersByAddress;
