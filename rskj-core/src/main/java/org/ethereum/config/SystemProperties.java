@@ -83,9 +83,7 @@ public abstract class SystemProperties {
     public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
     // TODO: define a proper name for this config setting
     public static final String PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME = "blockchain.config.hardforkActivationHeights";
-    public static final String PROPERTY_DB_DIR = "database.dir";
     public static final String PROPERTY_PEER_PORT = "peer.port";
-    public static final String PROPERTY_PEER_ACTIVE = "peer.active";
     public static final String PROPERTY_DB_RESET = "database.reset";
     // TODO review rpc properties
     public static final String PROPERTY_RPC_CORS = "rpc.providers.web.cors";
@@ -323,21 +321,17 @@ public abstract class SystemProperties {
     }
 
     @ValidateMe
-    public NodeFilter peerTrusted() {
+    public NodeFilter trustedPeers() {
         List<? extends ConfigObject> list = configFromFiles.getObjectList("peer.trusted");
         NodeFilter ret = new NodeFilter();
-
-        for (ConfigObject configObject : list) {
-            byte[] nodeId = null;
-            String ipMask = null;
-            if (configObject.get("nodeId") != null) {
-                nodeId = Hex.decode(configObject.toConfig().getString("nodeId").trim());
-            }
-            if (configObject.get("ip") != null) {
-                ipMask = configObject.toConfig().getString("ip").trim();
-            }
+        list.stream().map(ConfigObject::toConfig).forEach(config -> {
+            String nodeIdData = config.getString("nodeId");
+            String ipData = config.getString("ip");
+            byte[] nodeId = nodeIdData != null ? Hex.decode(nodeIdData.trim()) : null;
+            String ipMask = ipData != null ? ipData.trim() : null;
             ret.add(nodeId, ipMask);
-        }
+        });
+
         return ret;
     }
 
@@ -506,13 +500,13 @@ public abstract class SystemProperties {
     }
 
     @ValidateMe
-    public int maxConnectionsPerAddressBlock() {
-        return configFromFiles.getInt("peer.blockAddress.maxConnections");
+    public int maxConnectionsAllowed() {
+        return configFromFiles.getInt("peer.filter.maxConnections");
     }
 
     @ValidateMe
-    public int blockAddressCIDR() {
-        return configFromFiles.getInt("peer.blockAddress.cidr");
+    public int networkCIDR() {
+        return configFromFiles.getInt("peer.filter.networkCidr");
     }
 
     @ValidateMe
