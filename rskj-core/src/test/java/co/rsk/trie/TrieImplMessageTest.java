@@ -69,7 +69,7 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(38, message.length);
+        Assert.assertEquals(41, message.length); // 3 bytes for size now stored
         Assert.assertEquals(2, message[0]);
         Assert.assertEquals(2, message[1]);
         Assert.assertEquals(0, message[2]);

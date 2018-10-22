@@ -66,6 +66,7 @@ public class TrieImpl implements Trie {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final String PANIC_TOPIC = "newtrie";
     private static final String INVALID_ARITY = "Invalid arity";
+    private static final String INVALID_VALUE_LENGTH = "Invalid value length";
     private static final String ERROR_CREATING_TRIE = "Error creating trie from message";
     private static final String ERROR_NON_EXISTENT_TRIE_LOGGER = "Error non existent trie with hash {}";
     private static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash ";
@@ -94,6 +95,19 @@ public class TrieImpl implements Trie {
     // sha3 is applied to keys
     private boolean isSecure;
 
+    // valueLength enables lazy long value retrieval.
+    // The length of the data is now stored. This allows EXTCODESIZE to
+    // execute much faster without the need to actually retrieve the data.
+    // if valueLength>32 and value==null this means the value has not been retrieved yet.
+    // if valueLength==0, then there is no value AND no node.
+    // This trie structure does not distinguish between empty arrays
+    // and nulls. Storing an empty byte array has the same effect as removing the node.
+    //
+    private int valueLength;
+
+    // For lazy retrieval and also for cache.
+    private byte[] valueHash;
+
     // associated store, to store or retrieve nodes in the trie
     private TrieStore store;
 
@@ -103,33 +117,41 @@ public class TrieImpl implements Trie {
 
     // default constructor, no secure
     public TrieImpl() {
-        this(null, 0, null, null, null, null);
+        this(null, 0, null, null, null, null,0,null);
         this.isSecure = false;
     }
 
     public TrieImpl(boolean isSecure) {
-        this(null, 0, null, null, null, null);
+        this(null, 0, null, null, null, null,0,null);
         this.isSecure = isSecure;
     }
 
     public TrieImpl(TrieStore store, boolean isSecure) {
-        this(null, 0, null, null, null, store);
+        this(null, 0, null, null, null, store,0,null);
         this.isSecure = isSecure;
     }
 
-    private TrieImpl(TrieStore store, byte[] encodedSharedPath, int sharedPathLength, byte[] value, boolean isSecure) {
-        this(encodedSharedPath, sharedPathLength, value, null, null, store);
+    private TrieImpl(TrieStore store, byte[] encodedSharedPath, int sharedPathLength,
+                     byte[] value, boolean isSecure,
+                     int valueLength,byte[] valueHash) {
+        this(encodedSharedPath, sharedPathLength, value, null, null, store,valueLength,valueHash);
         this.isSecure = isSecure;
     }
 
     // full constructor
-    private TrieImpl(byte[] encodedSharedPath, int sharedPathLength, byte[] value, TrieImpl[] nodes, Keccak256[] hashes, TrieStore store) {
+    private TrieImpl(byte[] encodedSharedPath,
+                     int sharedPathLength, byte[] value, TrieImpl[] nodes,
+                     Keccak256[] hashes, TrieStore store,
+                     int valueLength,byte[] valueHash) {
         this.value = value;
         this.nodes = nodes;
         this.hashes = hashes;
         this.store = store;
         this.encodedSharedPath = encodedSharedPath;
         this.sharedPathLength = sharedPathLength;
+        this.valueLength = valueLength;
+        this.valueHash = valueHash;
+        checkValueLength();
     }
 
     private TrieImpl withSecure(boolean isSecure) {
@@ -144,12 +166,12 @@ public class TrieImpl implements Trie {
 
     @Override
     public Trie cloneTrie() {
-        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store).withSecure(this.isSecure);
+        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store,this.valueLength,this.valueHash).withSecure(this.isSecure);
     }
 
     @Override
     public Trie cloneTrie(byte[] newValue) {
-        TrieImpl trie = new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store).withSecure(this.isSecure);
+        TrieImpl trie = new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store,this.valueLength,this.valueHash).withSecure(this.isSecure);
         trie.setValue(newValue);
         return trie;
     }
@@ -172,6 +194,8 @@ public class TrieImpl implements Trie {
 
     private void setValue(byte[] value) {
         this.value = value;
+        this.valueLength = getDataLength(value);
+        this.valueHash = null; // delete hash cache
     }
 
     /**
@@ -188,6 +212,22 @@ public class TrieImpl implements Trie {
         }
 
         return fromMessage(message, 0, message.length, store);
+    }
+
+    private static final void encodeUInt24(ByteBuffer buffer,int len) {
+        buffer.put( (byte) ((len & 0x00FF0000) >> 16));
+        buffer.put( (byte) ((len & 0x0000FF00) >> 8));
+        buffer.put( (byte) ((len & 0X000000FF)));
+    }
+
+    private static final int readUInt24(DataInputStream in ) throws IOException {
+        // Big-Endigan
+        int ch1 = in.read();
+        int ch2 = in.read();
+        int ch3 = in.read();
+        if ((ch1 | ch2 | ch3) < 0) // detect -1 (EOF)
+            throw new EOFException();
+        return ((ch1 << 16) + (ch2 << 8) + (ch3 << 0));
     }
 
     private static TrieImpl fromMessage(byte[] message, int position, int msglength, TrieStore store) {
@@ -230,30 +270,38 @@ public class TrieImpl implements Trie {
                     continue;
                 }
 
-                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+                byte[] nodeHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
 
-                if (istream.read(valueHash) != Keccak256Helper.DEFAULT_SIZE_BYTES) {
+                if (istream.read(nodeHash) != Keccak256Helper.DEFAULT_SIZE_BYTES) {
                     throw new EOFException();
                 }
 
-                hashes[k] = new Keccak256(valueHash);
+                hashes[k] = new Keccak256(nodeHash);
                 nhashes++;
             }
 
             int offset = MESSAGE_HEADER_LENGTH + lencoded + nhashes * Keccak256Helper.DEFAULT_SIZE_BYTES;
             byte[] value = null;
+            int lvalue;
+            byte[] valueHash = null;
 
             if (hasLongVal) {
-                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+                valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
 
                 if (istream.read(valueHash) != Keccak256Helper.DEFAULT_SIZE_BYTES) {
                     throw new EOFException();
                 }
 
-                value = store.retrieveValue(valueHash);
+                // Now retrieve lvalue explicitely
+                lvalue = readUInt24(istream);
+
+                // This should be lazy: we don't need to retrieve the long value
+                // until it's used.
+                value = null;
+
             }
             else {
-                int lvalue = msglength - offset;
+                lvalue = msglength - offset;
 
                 if (lvalue > 0) {
                     value = new byte[lvalue];
@@ -263,7 +311,8 @@ public class TrieImpl implements Trie {
                 }
             }
 
-            TrieImpl trie = new TrieImpl(encodedSharedPath, lshared, value, null, hashes, store).withSecure(isSecure);
+            TrieImpl trie = new TrieImpl(encodedSharedPath, lshared, value, null,
+                    hashes, store,lvalue,valueHash).withSecure(isSecure);
 
             if (store != null) {
                 trie.saved = true;
@@ -296,7 +345,7 @@ public class TrieImpl implements Trie {
             return this.hash.copy();
         }
 
-        if (isEmptyTrie(this.value, this.nodes, this.hashes)) {
+        if (isEmptyTrie(this.valueLength, this.nodes, this.hashes)) {
             return emptyHash.copy();
         }
 
@@ -419,7 +468,7 @@ public class TrieImpl implements Trie {
      */
     @Override
     public byte[] toMessage() {
-        int lvalue = this.value == null ? 0 : this.value.length;
+        int lvalue = this.valueLength;
         int nnodes = this.getNodeCount();
         int lshared = this.sharedPathLength;
         int lencoded = getEncodedPathLength(lshared);
@@ -437,7 +486,9 @@ public class TrieImpl implements Trie {
             bits |= 1 << k;
         }
 
-        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES + (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue));
+        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded
+                + nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES
+                + (hasLongVal ? (Keccak256Helper.DEFAULT_SIZE_BYTES+3) : lvalue));
 
         buffer.put((byte) ARITY);
 
@@ -472,9 +523,10 @@ public class TrieImpl implements Trie {
         if (lvalue > 0) {
             if (hasLongVal) {
                 buffer.put(this.getValueHash());
+                encodeUInt24(buffer,this.valueLength);
             }
             else {
-                buffer.put(this.value);
+                buffer.put(this.getValue());
             }
         }
 
@@ -566,8 +618,8 @@ public class TrieImpl implements Trie {
         }
 
         // if the count is exact, and there is no prefix, then add
-        // and the value is not null
-        if (value!=null)
+        // and the there is some value
+        if (valueLength!=0)
             if ((collectKeyLen==Integer.MAX_VALUE) || (key.length() == collectKeyLen)) {
               // convert bit string into byte[]
               set.add(new ByteArrayWrapper(PathEncoder.encode(key.getData())));
@@ -643,7 +695,7 @@ public class TrieImpl implements Trie {
     private byte[] get(ExpandedKey key, int length, int keyPosition) {
         TrieImpl node = find(key,length,keyPosition);
         if (node==null) return null;
-        return node.value;
+        return node.getValue();
     }
 
     @Nullable
@@ -778,7 +830,7 @@ public class TrieImpl implements Trie {
             TrieImpl node = this.getNode(k);
             Keccak256 localHash = this.getHash(k);
 
-            if (node != null && !isEmptyTrie(node.value, node.nodes, node.hashes) || localHash != null) {
+            if (node != null && !isEmptyTrie(node.valueLength, node.nodes, node.hashes) || localHash != null) {
                 count++;
             }
         }
@@ -849,7 +901,7 @@ public class TrieImpl implements Trie {
 
         TrieImpl node = this.nodes[n];
 
-        if (isEmptyTrie(node.value, node.nodes, node.hashes)) {
+        if (isEmptyTrie(node.valueLength, node.nodes, node.hashes)) {
             return null;
         }
 
@@ -995,6 +1047,11 @@ public class TrieImpl implements Trie {
      *
      */
     private TrieImpl put(ExpandedKey key, int length, int keyPosition, byte[] value) {
+        // First of all, setting the value as an empty byte array is equivalent
+        // to removing the key/value. This is because other parts of the trie make
+        // this equivalent. Use always null to mark a node for deletion.
+        if ((value!=null) && (value.length==0))
+            value =null;
         TrieImpl trie = this.internalPut(key, length, keyPosition, value);
 
         // the following code coalesces nodes if needed for delete operation
@@ -1004,12 +1061,12 @@ public class TrieImpl implements Trie {
             return trie;
         }
 
-        if (isEmptyTrie(trie.value, trie.nodes, trie.hashes)) {
+        if (isEmptyTrie(trie.valueLength, trie.nodes, trie.hashes)) {
             return null;
         }
 
         // only coalesce if node has only one child and no value
-        if (trie.value != null || trie.getNodeCount() !=1) {
+        if ((trie.valueLength != 0) || (trie.getNodeCount() !=1)) {
             return trie;
         }
 
@@ -1052,6 +1109,12 @@ public class TrieImpl implements Trie {
         return newTrie;
     }
 
+    private static int getDataLength(byte[] value) {
+        if (value==null)
+            return 0;
+        return value.length;
+    }
+
     private TrieImpl internalPut(ExpandedKey key, int length, int keyPosition, byte[] value) {
         int position = keyPosition;
 
@@ -1069,25 +1132,33 @@ public class TrieImpl implements Trie {
         }
 
         if (position >= length) {
-            if (Arrays.equals(this.value, value)) {
-                return this;
+            // To compare values we need to retrieve the previous value
+            // if not already done so. We could also compare by hash, to avoid retrieval
+            // We do a small optimization here: if sizes are not equal, then values
+            // obviously are not.
+            if (this.valueLength == getDataLength(value)) {
+                if (Arrays.equals(this.getValue(), value)) {
+                    return this;
+                }
             }
 
             TrieImpl[] newNodes = cloneNodes(false);
             Keccak256[] newHashes = cloneHashes();
 
-            if (isEmptyTrie(value, newNodes, newHashes)) {
+            if (isEmptyTrie(getDataLength(value), newNodes, newHashes)) {
                 return null;
             }
 
-            return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, value, newNodes, newHashes, this.store).withSecure(this.isSecure);
+            return new TrieImpl(this.encodedSharedPath, this.sharedPathLength,
+                    value, newNodes, newHashes, this.store,
+                    getDataLength(value),null).withSecure(this.isSecure);
         }
 
-        if (isEmptyTrie(this.value, this.nodes, this.hashes)) {
+        if (isEmptyTrie(this.valueLength, this.nodes, this.hashes)) {
             int lshared = length - position;
             byte[] shared = new byte[lshared];
             key.copy(position,shared, 0, lshared);
-            return new TrieImpl(this.store, PathEncoder.encode(shared), lshared, value, this.isSecure);
+            return new TrieImpl(this.store, PathEncoder.encode(shared), lshared, value, this.isSecure,getDataLength(value),null);
         }
 
         TrieImpl[] newNodes = cloneNodes(true);
@@ -1114,11 +1185,11 @@ public class TrieImpl implements Trie {
             newHashes[pos] = null;
         }
 
-        if (isEmptyTrie(this.value, newNodes, newHashes)) {
+        if (isEmptyTrie(this.valueLength, newNodes, newHashes)) {
             return null;
         }
 
-        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, newNodes, newHashes, this.store).withSecure(this.isSecure);
+        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, newNodes, newHashes, this.store,this.valueLength,this.valueHash).withSecure(this.isSecure);
     }
 
     private int lengthOfCommonPath(ExpandedKey key, int length, int position, byte[] sharedPath) {
@@ -1137,7 +1208,7 @@ public class TrieImpl implements Trie {
         TrieImpl[] newChildNodes = this.cloneNodes(false);
         Keccak256[] newChildHashes = this.cloneHashes();
 
-        TrieImpl newChildTrie = new TrieImpl(null, 0, this.value, newChildNodes, newChildHashes, this.store).withSecure(this.isSecure);
+        TrieImpl newChildTrie = new TrieImpl(null, 0, this.value, newChildNodes, newChildHashes, this.store,this.valueLength,this.valueHash).withSecure(this.isSecure);
 
         byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.sharedPathLength);
 
@@ -1218,14 +1289,14 @@ public class TrieImpl implements Trie {
     /**
      * isEmptyTrie checks the existence of subnodes, subnodes hashes or value
      *
-     * @param value     current value
+     * @param valueLength     length of current value
      * @param nodes     list of subnodes
      * @param hashes    list of subnodes hashes
      *
      * @return true if no data
      */
-    private static boolean isEmptyTrie(byte[] value, TrieImpl[] nodes, Keccak256[] hashes) {
-        if (value != null && value.length != 0) {
+    private static boolean isEmptyTrie(int valueLength, TrieImpl[] nodes, Keccak256[] hashes) {
+        if (valueLength != 0) {
             return false;
         }
 
@@ -1306,18 +1377,44 @@ public class TrieImpl implements Trie {
     }
 
     public boolean hasLongValue() {
-        return this.value != null && this.value.length > 32;
+        return this.valueLength > 32;
     }
 
+    public int getValueLength() {
+        return this.valueLength;
+    }
+
+    // Now getValueHash() returns the hash of the value independently
+    // on it's size: use hasLongValue() to known what type of value it will store in
+    // the node.
     public byte[] getValueHash() {
-        if (this.hasLongValue()) {
-            return Keccak256Helper.keccak256(this.value);
+        if (valueHash==null) {
+            if (this.valueLength != 0) {
+                valueHash = Keccak256Helper.keccak256(this.value);
+            }
+            // For empty values (valueLength==0) we return the null hash because
+            // in this trie empty arrays cannot be stored.
         }
-
-        return null;
+        return valueHash;
     }
 
-    public byte[] getValue() { return this.value; }
+    protected byte[] retrieveLongValue() {
+        return store.retrieveValue(valueHash);
+    }
+
+    protected void checkValueLength() {
+        if ((value!=null) && (value.length != valueLength))
+            // Serious DB inconsistency here
+            throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
+    }
+
+    public byte[] getValue() {
+        if ((valueLength!=0) && (value==null)) {
+            this.value = retrieveLongValue();
+            checkValueLength();
+        }
+        return this.value;
+    }
 
     private static int getEncodedPathLength(int length) {
         return length / 8 + (length % 8 == 0 ? 0 : 1);

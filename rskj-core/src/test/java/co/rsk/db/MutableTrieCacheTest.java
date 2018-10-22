@@ -48,6 +48,12 @@ public class MutableTrieCacheTest {
 
         // First put some strings in the base
         baseMutableTrie.put("ALICE",toBytes("alice"));
+
+        String result;
+        result = getKeysFrom(baseMutableTrie);
+        Assert.assertEquals("ALICE;",result);
+
+
         baseMutableTrie.put("BOB",toBytes("bob"));
 
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
@@ -56,7 +62,7 @@ public class MutableTrieCacheTest {
         mtCache.put("CAROL",toBytes("carol"));
         mtCache.put("ROBERT",toBytes("robert"));
 
-        String result = getKeysFrom(baseMutableTrie);
+        result = getKeysFrom(baseMutableTrie);
         Assert.assertEquals("ALICE;BOB;",result);
 
         result = getKeysFrom(mtCache);

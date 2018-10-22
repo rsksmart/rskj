@@ -93,6 +93,8 @@ public interface Trie {
 
     byte[] getValueHash();
 
+    int getValueLength();
+
     byte[] getValue();
 
     // find allows to explore a subtree
