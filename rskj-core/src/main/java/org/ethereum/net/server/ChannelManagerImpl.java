@@ -74,20 +74,20 @@ public class ChannelManagerImpl implements ChannelManager {
     private final SyncPool syncPool;
     private final NodeFilter trustedPeers;
     private final int maxActivePeers;
-    private final int maxConnectionsPerBlock;
-    private final int blockAddressCIDR;
+    private final int maxConnectionsAllowed;
+    private final int networkCIDR;
 
     @Autowired
     public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool) {
         this.mainWorker = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "newPeersProcessor"));
         this.syncPool = syncPool;
         this.maxActivePeers = config.maxActivePeers();
-        this.trustedPeers = config.peerTrusted();
+        this.trustedPeers = config.trustedPeers();
         this.disconnectionsTimeouts = new HashMap<>();
         this.activePeers = new ConcurrentHashMap<>();
         this.newPeers = new CopyOnWriteArrayList<>();
-        this.maxConnectionsPerBlock = config.maxConnectionsPerAddressBlock();
-        this.blockAddressCIDR = config.blockAddressCIDR();
+        this.maxConnectionsAllowed = config.maxConnectionsAllowed();
+        this.networkCIDR = config.networkCIDR();
     }
 
     @Override
@@ -330,11 +330,11 @@ public class ChannelManagerImpl implements ChannelManager {
     public boolean isAddressBlockAvailable(InetAddress inetAddress) {
         synchronized (activePeersLock) {
             //TODO(lsebrie): save block address in a data structure and keep updated on each channel add/remove
-            //TODO(lsebrie): check if we need to use a different blockAddressCIDR for ipv6
+            //TODO(lsebrie): check if we need to use a different networkCIDR for ipv6
             return activePeers.values().stream()
-                    .map(ch -> new InetAddressBlock(ch.getInetSocketAddress().getAddress(), blockAddressCIDR))
+                    .map(ch -> new InetAddressBlock(ch.getInetSocketAddress().getAddress(), networkCIDR))
                     .filter(block -> block.contains(inetAddress))
-                    .count() < maxConnectionsPerBlock;
+                    .count() < maxConnectionsAllowed;
         }
     }
 

@@ -69,8 +69,8 @@ public class ChannelManagerImplTest {
     @Test
     public void blockAddressIsNotAvailable() throws UnknownHostException {
         TestSystemProperties config = mock(TestSystemProperties.class);
-        when(config.maxConnectionsPerAddressBlock()).thenReturn(1);
-        when(config.blockAddressCIDR()).thenReturn(32);
+        when(config.maxConnectionsAllowed()).thenReturn(1);
+        when(config.networkCIDR()).thenReturn(32);
 
         SyncPool syncPool = mock(SyncPool.class);
         ChannelManagerImpl channelManager = new ChannelManagerImpl(config, syncPool);
