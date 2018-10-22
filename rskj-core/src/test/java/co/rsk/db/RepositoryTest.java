@@ -25,6 +25,7 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ByteUtil;
@@ -613,7 +614,61 @@ public class RepositoryTest {
         }
     }
 
+    @Test
+    public void testCode() {
+        TrieStoreImpl astore = new TrieStoreImpl(new HashMapDB());
+        Repository repository = createRepositoryImplWithStore(config,astore);
+        Repository track = repository.startTracking();
+        byte[] codeLongerThan32bytes = "this-is-code-because-I-say-it-man".getBytes();
+        assertTrue(codeLongerThan32bytes.length>32);
+
+        track.saveCode(COW, codeLongerThan32bytes );
+        byte[] returnedCode = track.getCode(COW);
+        assertArrayEquals(codeLongerThan32bytes,returnedCode);
+        track.commit();
+
+
+        // Now try to get the size
+        int codeSize = repository.getCodeLength(COW);
+        assertEquals(codeLongerThan32bytes.length,codeSize);
+
+        // Now try to get the hash
+        byte[] codeHash = repository.getCodeHash(COW);
+        assertArrayEquals(Keccak256Helper.keccak256(codeLongerThan32bytes),codeHash);
+
+
+        byte[] returnedCode2 = repository.getCode(COW);
+        assertArrayEquals(codeLongerThan32bytes,returnedCode2);
+
+        repository.save();
+        byte[] prevRoot = repository.getRoot();
+        repository.close();
+
+        // Use the same store
+        // Now we'll create a new repository based on the same store and force
+        // this new repository to read all nodes from the store. The results must
+        // be the same: lazy evaluation of the value must work.
+
+        Repository repository2 = createRepositoryImplWithStore(config,astore);
+        repository2.setSnapshotTo(prevRoot);
+        // Now try to get the size
+        codeSize = repository2.getCodeLength(COW);
+        assertEquals(codeLongerThan32bytes.length,codeSize);
+
+        // Now try to get the hash
+        codeHash = repository2.getCodeHash(COW);
+        assertArrayEquals(Keccak256Helper.keccak256(codeLongerThan32bytes),codeHash);
+
+
+        returnedCode2 = repository2.getCode(COW);
+        assertArrayEquals(codeLongerThan32bytes,returnedCode2);
+    }
+
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
         return new RepositoryImpl();
+    }
+
+    public static RepositoryImpl createRepositoryImplWithStore(RskSystemProperties config,TrieStore store) {
+        return new RepositoryImpl(store,true);
     }
 }

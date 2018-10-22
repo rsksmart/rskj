@@ -238,6 +238,29 @@ public class MutableRepository implements Repository {
     }
 
     @Override
+    public synchronized byte[] getCodeHash(RskAddress addr) {
+        AccountState  account = getAccountState(addr);
+        if ((account==null) || (account.isHibernated())) {
+            return null;
+        }
+
+        byte[] key = getCodeKey(addr);
+        return this.trie.getValueHash(key);
+    }
+
+    @Override
+    public synchronized int getCodeLength(RskAddress addr) {
+        AccountState  account = getAccountState(addr);
+        if ((account==null) || (account.isHibernated())) {
+            return 0;
+        }
+
+        byte[] key = getCodeKey(addr);
+        return this.trie.getValueLength(key);
+    }
+
+
+    @Override
     public synchronized byte[] getCode(RskAddress addr) {
         if (!isExist(addr)) {
             return EMPTY_BYTE_ARRAY;

@@ -123,6 +123,13 @@ public interface Repository extends AccountInformationProvider {
     */
      byte[] getCode(RskAddress addr);
 
+     // This method can retrieve the code size without actually retrieving the code
+    // in some cases.
+    int getCodeLength(RskAddress addr);
+
+
+    byte[] getCodeHash(RskAddress addr);
+
     /**
      * Put a value in storage of an account at a given key
      *

@@ -3,6 +3,7 @@ package co.rsk.db;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 
@@ -282,4 +283,38 @@ public class MutableTrieCache implements MutableTrie {
         return trie.hasStore();
     }
 
+    @Override
+    public int getValueLength(byte[] key) {
+        ByteArrayWrapper wrap = new ByteArrayWrapper(key);
+
+        if (cache.containsKey(wrap)) {
+            // Contains key
+            byte[] value = cache.get(wrap);
+
+            if (value == null)
+                return 0; // erased
+
+            return value.length;
+        }
+        else
+        return trie.getValueLength(key);
+    }
+
+    @Override
+    public byte[] getValueHash(byte[] key) {
+        ByteArrayWrapper wrap = new ByteArrayWrapper(key);
+
+        if (cache.containsKey(wrap)) {
+            // Contains key
+            byte[] value = cache.get(wrap);
+
+            if (value == null)
+                return null; // erased
+
+            // Note that is is inefficient because the hash is not cached
+            return Keccak256Helper.keccak256(value);
+        }
+        else
+        return trie.getValueHash(key);
+    }
 }

@@ -272,5 +272,14 @@ public class Storage implements Repository, ProgramListenerAware {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public int getCodeLength(RskAddress addr) {
+        return repository.getCodeLength(addr);
+    }
+
+    @Override
+    public byte[] getCodeHash(RskAddress addr) {
+        return repository.getCodeHash(addr);
+    }
 
 }

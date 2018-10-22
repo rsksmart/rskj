@@ -713,6 +713,8 @@ public class Program {
             }
 
             track.commit();
+
+
             getResult().addDeleteAccounts(programResult.getDeleteAccounts());
             getResult().addLogInfos(programResult.getLogInfoList());
 
@@ -1036,6 +1038,19 @@ public class Program {
         return ops;
     }
 
+    public byte[]  getCodeHashAt(RskAddress addr) {
+        return invoke.getRepository().getCodeHash(addr);
+    }
+
+    public int  getCodeLengthAt(RskAddress addr) {
+        return invoke.getRepository().getCodeLength(addr);
+    }
+
+
+    public int getCodeLengthAt(DataWord address) {
+        return getCodeLengthAt(new RskAddress(address));
+
+    }
     public byte[] getCodeAt(DataWord address) {
         return getCodeAt(new RskAddress(address));
     }

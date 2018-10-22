@@ -62,6 +62,20 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
+    public int getValueLength(byte[] key) {
+        Trie atrie = trie.find(key);
+        if (atrie==null) return 0;
+        return atrie.getValueLength();
+    }
+
+    @Override
+    public byte[] getValueHash(byte[] key) {
+        Trie atrie = trie.find(key);
+        if (atrie==null) return null;
+        return atrie.getValueHash();
+    }
+
+    @Override
     public void deleteRecursive(byte[] key) { trie = trie.deleteRecursive(key); }
 
     @Override

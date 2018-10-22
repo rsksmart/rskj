@@ -120,4 +120,13 @@ public class MutableSubtrie implements MutableTrie {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public int getValueLength(byte[] key) {
+        return mutableTrie.getValueLength(computeKey(key));
+    }
+
+    @Override
+    public byte[] getValueHash(byte[] key) {
+        return mutableTrie.getValueHash(computeKey(key));
+    }
 }
