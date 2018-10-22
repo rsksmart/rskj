@@ -31,6 +31,9 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.exception.BlockHeightOlderThanCacheException;
+import co.rsk.peg.exception.InvalidBlockHashException;
+import co.rsk.peg.exception.InvalidBlockHeightException;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
@@ -73,9 +76,9 @@ public class BridgeSupport {
     public static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = -10;
 
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_TX_ERROR_CODE = -1;
-    public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_ERROR_CODE = -2;
-    public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_HEIGHT_ERROR_CODE = -3;
-    public static final Integer BTC_TRANSACTION_CONFIRMATION_OLDER_THAN_CACHE_ERROR_CODE = -4;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE = -2;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_BLOCK_HEIGHT_ERROR_CODE = -3;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_OLDER_THAN_CACHE_ERROR_CODE = -4;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -1128,36 +1131,34 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         this.ensureBtcBlockChain();
 
-        int bestChainHeight = btcBlockChain.getBestChainHeight();
-        if(bestChainHeight < btcBlockHeight){
-            return BTC_TRANSACTION_CONFIRMATION_INVALID_HEIGHT_ERROR_CODE;
-        }
-        int heightDifference = bestChainHeight - btcBlockHeight;
-        if(heightDifference > RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS) {
-            return BTC_TRANSACTION_CONFIRMATION_OLDER_THAN_CACHE_ERROR_CODE;
-        }
-
-        StoredBlock block = this.btcBlockStore.getFromCache(btcBlockHash);
-        if(block == null){
-            return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_ERROR_CODE;
-        }
-        if(block.getHeight() != btcBlockHeight){
-            return BTC_TRANSACTION_CONFIRMATION_INVALID_HEIGHT_ERROR_CODE;
-        }
-
-        BtcTransaction txOnBlock = null;
-        for (Iterator<BtcTransaction> i = block.getHeader().getTransactions().iterator(); i.hasNext();) {
-            BtcTransaction tx = i.next();
-            if(tx.getHash() == btcTxHash){
-                txOnBlock = tx;
-                break;
+        try {
+            StoredBlock block = BridgeUtils.getStoredBlockAtHeight(this.btcBlockStore, btcBlockHeight);
+            if (block.getHeader().getHash() != btcBlockHash) {
+                return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
             }
+
+            BtcTransaction txOnBlock = null;
+            for (Iterator<BtcTransaction> i = block.getHeader().getTransactions().iterator(); i.hasNext(); ) {
+                BtcTransaction tx = i.next();
+                if (tx.getHash() == btcTxHash) {
+                    txOnBlock = tx;
+                    break;
+                }
+            }
+            if (txOnBlock == null) {
+                return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_TX_ERROR_CODE;
+            }
+
+            int confirmations = this.btcBlockChain.getBestChainHeight() - block.getHeight() + 1;
+            return confirmations;
+
+        } catch (InvalidBlockHashException e) {
+            return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
+        } catch (InvalidBlockHeightException e) {
+            return BTC_TRANSACTION_CONFIRMATION_INVALID_BLOCK_HEIGHT_ERROR_CODE;
+        } catch (BlockHeightOlderThanCacheException e) {
+            return BTC_TRANSACTION_CONFIRMATION_BLOCK_OLDER_THAN_CACHE_ERROR_CODE;
         }
-        if(txOnBlock == null){
-            return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_TX_ERROR_CODE;
-        }
-        int confirmations = heightDifference + 1;
-        return confirmations;
 
     }
 
