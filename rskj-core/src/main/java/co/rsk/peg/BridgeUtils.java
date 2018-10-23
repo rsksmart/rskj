@@ -43,8 +43,7 @@ public class BridgeUtils {
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
     // power of 2 size that contains enough hashes to handle one year of hashes
-    private static final int MAX_MAP_PARENTS_SIZE = 65535;
-    private static Map<Sha256Hash, Sha256Hash> parentMap = new MaxSizeHashMap<>(MAX_MAP_PARENTS_SIZE, false);
+    private static Map<Sha256Hash, Sha256Hash> parentMap = new MaxSizeHashMap<>(RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS, false);
 
     public static StoredBlock getStoredBlockAtHeight(BtcBlockstoreWithCache blockStore, int height) throws BlockStoreException {
         StoredBlock storedBlock = blockStore.getChainHead();
@@ -53,12 +52,12 @@ public class BridgeUtils {
         int headHeight = storedBlock.getHeight();
 
         if (height > headHeight) {
-            throw new InvalidBlockHeightException(String.format("Block Height: %d bigger than Chain Height: %d", height,headHeight));
+            throw new InvalidBlockHeightException(String.format("Block Height: %d bigger than Chain Height: %d", height, headHeight));
         }
 
         int distanceToHead = headHeight - height;
-        if (distanceToHead > MAX_MAP_PARENTS_SIZE) {
-            throw new BlockHeightOlderThanCacheException(String.format("Block Height: %d older than Cache: %d", height, headHeight - MAX_MAP_PARENTS_SIZE));
+        if (distanceToHead > RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS) {
+            throw new BlockHeightOlderThanCacheException(String.format("Block Height: %d older than Cache: %d", height, headHeight - RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS));
         }
 
         for (int i = 0; i < distanceToHead; i++) {
@@ -93,9 +92,13 @@ public class BridgeUtils {
         }
 
         if (storedBlock.getHeight() != height) {
-            throw new InvalidBlockHeightException(String.format("Block height is %d but should be %d",storedBlock.getHeight(), headHeight));
+            throw new InvalidBlockHeightException(String.format("Distinct Block Height, expected: %d actual: %d", headHeight, storedBlock.getHeight()));
         }
         return storedBlock;
+    }
+
+    public static void cleanStoredBlockCache() {
+        parentMap = new MaxSizeHashMap<>(RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS, false);
     }
 
     public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
