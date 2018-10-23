@@ -1,6 +1,15 @@
 wrapper.gradleVersion = '4.1.0'
 
 subprojects {
+
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven {
+            url "https://deps.rsklabs.io"
+        }
+    }
+
     def config = new ConfigSlurper().parse(new File("$projectDir/src/main/resources/version.properties").toURI().toURL())
     group = 'co.rsk'
     version = config.modifier?.trim() ? config.versionNumber + "-" + config.modifier : config.versionNumber
