@@ -48,6 +48,33 @@ public class RepositoryPerformanceTest {
 
     }
 
+    @Ignore
+    @Test
+    public void testStorageRowsCreation() {
+        PerformanceTestHelper pth = new PerformanceTestHelper();
+
+        int createCount = 1000*1000;
+        Repository repository = createRepositoryImpl(config,true);
+        Repository track = repository.startTracking();
+        pth.setup();
+
+        pth.startMeasure();
+
+        RskAddress addr = TestUtils.randomAddress();
+
+        track.createAccount(addr);
+        track.setupContract(addr);
+
+        for(int t=0;t<createCount;t++) {
+            track.addStorageRow(addr,TestUtils.randomDataWord(),TestUtils.randomDataWord());
+        }
+
+        pth.endMeasure("Storage rows added"); // partial result
+        track.commit();
+        pth.endMeasure("Storage rows committed"); // final result
+
+    }
+
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config, boolean isSecure) {
         return new RepositoryImpl(isSecure);
     }
