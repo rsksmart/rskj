@@ -33,13 +33,10 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(6, message.length);
-        Assert.assertEquals(2, message[0]);
+        Assert.assertEquals(3, message.length);
+        Assert.assertEquals(0, message[0]);
         Assert.assertEquals(0, message[1]);
         Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(0, message[5]);
     }
 
     @Test
@@ -49,17 +46,14 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(10, message.length);
-        Assert.assertEquals(2, message[0]);
+        Assert.assertEquals(7, message.length);
+        Assert.assertEquals(0, message[0]);
         Assert.assertEquals(0, message[1]);
         Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(0, message[5]);
-        Assert.assertEquals(1, message[6]);
-        Assert.assertEquals(2, message[7]);
-        Assert.assertEquals(3, message[8]);
-        Assert.assertEquals(4, message[9]);
+        Assert.assertEquals(1, message[3]);
+        Assert.assertEquals(2, message[4]);
+        Assert.assertEquals(3, message[5]);
+        Assert.assertEquals(4, message[6]);
     }
 
     @Test
@@ -69,19 +63,21 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(41, message.length); // 3 bytes for size now stored
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(2, message[1]);
+        Assert.assertEquals(38, message.length); // 3 bytes for size now stored
+        Assert.assertEquals(32, message[0]);
+        Assert.assertEquals(0, message[1]);
         Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(0, message[5]);
 
         byte[] valueHash = trie.getValueHash();
 
         for (int k = 0; k < valueHash.length; k++) {
-            Assert.assertEquals(valueHash[k], message[k + 6]);
+            Assert.assertEquals(valueHash[k], message[k + 3]);
         }
+        // Now check length
+        Assert.assertEquals(0, message[35]);
+        Assert.assertEquals(0, message[36]);
+        Assert.assertEquals(33, message[37]);
+
     }
 
     @Test
@@ -91,38 +87,33 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(11, message.length);
-        Assert.assertEquals(2, message[0]);
+        Assert.assertEquals(8, message.length);
+        Assert.assertEquals(0, message[0]);
         Assert.assertEquals(0, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(8, message[5]);
-
-        Assert.assertEquals(2, message[6]);
-
-        Assert.assertEquals(1, message[7]);
-        Assert.assertEquals(2, message[8]);
-        Assert.assertEquals(3, message[9]);
-        Assert.assertEquals(4, message[10]);
+        Assert.assertEquals(8, message[2]);
+        Assert.assertEquals(2, message[3]);
+        Assert.assertEquals(1, message[4]);
+        Assert.assertEquals(2, message[5]);
+        Assert.assertEquals(3, message[6]);
+        Assert.assertEquals(4, message[7]);
     }
 
     @Test
     public void trieWithSubtriesAndNoValueToMessage() {
-        Trie trie = new TrieImpl().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
-                .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new TrieImpl().put(
+                new byte[] { 0x2 }, // key
+                    new byte[] { 1, 2, 3, 4 }) // value
+                .put(new byte[] { 0x12 },  // key
+                        new byte[] { 1, 2, 3, 4 }); //value
 
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(6 + 1 + 2 * Keccak256Helper.DEFAULT_SIZE_BYTES, message.length);
-        Assert.assertEquals(2, message[0]);
+        Assert.assertEquals(3 + 1 + 2 * Keccak256Helper.DEFAULT_SIZE_BYTES, message.length);
+        Assert.assertEquals(3, message[0]);
         Assert.assertEquals(0, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(3, message[3]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(3, message[5]);
-        Assert.assertEquals(0, message[6]);
+        Assert.assertEquals(3, message[2]);
+        Assert.assertEquals(0, message[3]);
+
     }
 }

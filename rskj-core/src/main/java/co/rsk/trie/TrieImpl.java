@@ -71,8 +71,10 @@ public class TrieImpl implements Trie {
     private static final String ERROR_NON_EXISTENT_TRIE_LOGGER = "Error non existent trie with hash {}";
     private static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash ";
 
-    private static final int MESSAGE_HEADER_LENGTH = 2 + Short.BYTES * 2;
+    private static final int MESSAGE_HEADER_LENGTH = 1 + Short.BYTES ;
     private static final int SERIALIZATION_HEADER_LENGTH = Short.BYTES * 2 + Integer.BYTES * 2;
+    private static final int ISSECURE_MASK = 64;
+    private static final int LONGVAL_MASK = 32;
 
     // all zeroed, default hash for empty nodes
     private static Keccak256 emptyHash = makeEmptyHash();
@@ -239,16 +241,10 @@ public class TrieImpl implements Trie {
         DataInputStream istream = new DataInputStream(bstream);
 
         try {
-            int arity = istream.readByte();
-
-            if (arity != ARITY) {
-                throw new IllegalArgumentException(INVALID_ARITY);
-            }
-
             int flags = istream.readByte();
-            boolean isSecure = (flags & 0x01) == 1;
-            boolean hasLongVal = (flags & 0x02) == 2;
-            int bhashes = istream.readShort();
+            boolean isSecure = (flags & ISSECURE_MASK) !=0;
+            boolean hasLongVal = (flags & LONGVAL_MASK) !=0;
+            int bhashes = flags;
             int lshared = istream.readShort();
 
             int nhashes = 0;
@@ -263,9 +259,9 @@ public class TrieImpl implements Trie {
                 }
             }
 
-            Keccak256[] hashes = new Keccak256[arity];
+            Keccak256[] hashes = new Keccak256[ARITY];
 
-            for (int k = 0; k < arity; k++) {
+            for (int k = 0; k < ARITY; k++) {
                 if ((bhashes & (1 << k)) == 0) {
                     continue;
                 }
@@ -494,20 +490,17 @@ public class TrieImpl implements Trie {
                 + nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES
                 + (hasLongVal ? (Keccak256Helper.DEFAULT_SIZE_BYTES+3) : lvalue));
 
-        buffer.put((byte) ARITY);
-
         byte flags = 0;
 
         if (this.isSecure) {
-            flags |= 1;
+            flags |= ISSECURE_MASK;
         }
 
         if (hasLongVal) {
-            flags |= 2;
+            flags |= LONGVAL_MASK;
         }
-
+        flags |=bits;
         buffer.put(flags);
-        buffer.putShort((short) bits);
         buffer.putShort((short) lshared);
 
         if (lshared > 0) {
