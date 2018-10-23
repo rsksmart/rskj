@@ -34,14 +34,6 @@ tasks.withType(Javadoc) {
     options.addStringOption('Xdoclint:none', '-quiet')
 }
 
-repositories {
-    mavenCentral()
-    jcenter()
-    maven {
-        url "https://deps.rsklabs.io"
-    }
-}
-
 sourceCompatibility = 1.8
 
 mainClassName = 'co.rsk.Start'
@@ -72,6 +64,7 @@ ext {
 }
 
 dependencies {
+    implementation project(":rskj-db")
     compile "com.madgag.spongycastle:core:1.52.0.0"
     compile "io.netty:netty-codec-http:$nettyVersion"
     compile "org.bouncycastle:bclcrypto-jdk15on:1.59"
