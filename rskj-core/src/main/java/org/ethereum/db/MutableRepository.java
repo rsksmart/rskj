@@ -64,8 +64,21 @@ public class MutableRepository implements Repository {
         return this.trie.get(getAccountKey(addr));
     }
 
-    private byte[] getAccountKey(RskAddress addr) {
-        return getAccountKey(addr, trie.isSecure());
+    // This is a performance enhancement. When multiple storage rows for the same
+    // contract are stored, the same RskAddress is hashed over and over.
+    // We don't need to re-hash it if was hashed last time.
+    // The reduction we get is about 50% (2x efficiency)
+    private RskAddress lastAddr;
+    private byte[] lastAccountKey;
+
+    synchronized private byte[] getAccountKey(RskAddress addr) {
+        if (addr.equals(lastAddr)) {
+            return lastAccountKey;
+        }
+
+        lastAccountKey = getAccountKey(addr, trie.isSecure());
+        lastAddr = addr;
+        return lastAccountKey;
     }
 
     private static byte[] getAccountKey(RskAddress addr, boolean isSecure) {
@@ -82,7 +95,8 @@ public class MutableRepository implements Repository {
     }
 
     private byte[] getAccountKeyChildKey(RskAddress addr, byte[] child) {
-        return getAccountKeyChildKey(addr, child, trie.isSecure());
+        // try to use cache. not a static : return getAccountKeyChildKey(addr,child,trie.isSecure());
+        return concat(getAccountKey(addr), child);
     }
 
     private static byte[] getAccountKeyChildKey(RskAddress addr, byte[] child, boolean isSecure) {
@@ -172,6 +186,11 @@ public class MutableRepository implements Repository {
         return getAccountKeyChildKey(addr, STORAGE_PREFIX, isSecure);
     }
 
+    // Use a cache
+    private byte[] getAccountStoragePrefixKey(RskAddress addr) {
+        return getAccountKeyChildKey(addr, STORAGE_PREFIX);
+    }
+
     public static byte[] getStorageTailKey(byte[] subkey, boolean isSecure) {
         byte[] secureSubKey;
         if (isSecure) {
@@ -185,7 +204,7 @@ public class MutableRepository implements Repository {
 
     private byte[] getAccountStorageKey(RskAddress addr, byte[] subkey) {
         byte[] secureSubKey = getStorageTailKey(subkey, trie.isSecure());
-        return concat(getAccountStoragePrefixKey(addr, trie.isSecure()), secureSubKey);
+        return concat(getAccountStoragePrefixKey(addr), secureSubKey);
     }
 
     @Override
