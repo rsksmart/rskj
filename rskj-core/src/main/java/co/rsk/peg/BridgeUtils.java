@@ -91,6 +91,10 @@ public class BridgeUtils {
         }
     }
 
+    public static void cleanStoredBlockCache() {
+        parentMap = new MaxSizeHashMap<>(RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS, false);
+    }
+
     public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
         return getFederationsNoSpendWallet(btcContext, Arrays.asList(federation));
     }

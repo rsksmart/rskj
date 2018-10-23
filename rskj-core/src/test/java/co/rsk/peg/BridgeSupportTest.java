@@ -3920,6 +3920,8 @@ public class BridgeSupportTest {
         Assert.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE.intValue(), confirmations);
     }
 
+
+
     @Test
     public void getBtcBlockchainBlockHashAtDepth() throws Exception {
         BlockchainNetConfig blockchainNetConfigOriginal = config.getBlockchainConfig();
