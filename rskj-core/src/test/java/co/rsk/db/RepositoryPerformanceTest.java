@@ -10,6 +10,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.management.GarbageCollectorMXBean;
@@ -43,6 +44,32 @@ public class RepositoryPerformanceTest {
         pth.endMeasure(); // partial result
         track.commit();
         pth.endMeasure(); // final result
+
+    }
+
+    @Ignore
+    @Test
+    public void testStorageRowsCreation() {
+        PerformanceTestHelper pth = new PerformanceTestHelper();
+
+        int createCount = 1000*1000;
+        Repository repository = createRepositoryImpl(config,true);
+        Repository track = repository.startTracking();
+        pth.setup();
+
+        pth.startMeasure();
+
+        RskAddress addr = TestUtils.randomAddress();
+
+        track.createAccount(addr);
+
+        for(int t=0;t<createCount;t++) {
+            track.addStorageRow(addr,TestUtils.randomDataWord(),TestUtils.randomDataWord());
+        }
+
+        pth.endMeasure("Storage rows added"); // partial result
+        track.commit();
+        pth.endMeasure("Storage rows committed"); // final result
 
     }
 
