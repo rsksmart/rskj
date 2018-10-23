@@ -34,7 +34,7 @@ public interface TrieStore {
 
     byte[] retrieveValue(byte[] hash);
 
-    interface Factory {
-        TrieStore newInstance(String name);
+    interface Pool {
+        TrieStore getInstanceFor(String name);
     }
 }

@@ -28,6 +28,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.BlockchainConfig;
@@ -635,6 +636,6 @@ public class TestRunner {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl(null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }

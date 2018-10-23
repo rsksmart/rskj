@@ -32,6 +32,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
@@ -2052,6 +2053,6 @@ public class BridgeTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl(null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }

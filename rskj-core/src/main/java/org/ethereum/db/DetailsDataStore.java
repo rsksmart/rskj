@@ -45,11 +45,11 @@ public class DetailsDataStore {
 
     private final DatabaseImpl db;
     private final int memoryStorageLimit;
-    private TrieStore.Factory trieStoreFactory;
+    private TrieStore.Pool trieStorePool;
 
-    public DetailsDataStore(DatabaseImpl db, TrieStore.Factory trieStoreFactory, int memoryStorageLimit) {
+    public DetailsDataStore(DatabaseImpl db, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
         this.db = db;
-        this.trieStoreFactory = trieStoreFactory;
+        this.trieStorePool = trieStorePool;
         this.memoryStorageLimit = memoryStorageLimit;
     }
 
@@ -66,7 +66,7 @@ public class DetailsDataStore {
                 return null;
             }
 
-            details = createContractDetails(data, trieStoreFactory, memoryStorageLimit);
+            details = createContractDetails(data, trieStorePool, memoryStorageLimit);
             cache.put(addr, details);
 
             float out = ((float) data.length) / 1048576;
@@ -81,9 +81,9 @@ public class DetailsDataStore {
 
     protected ContractDetails createContractDetails(
             byte[] data,
-            TrieStore.Factory trieStoreFactory,
+            TrieStore.Pool trieStorePool,
             int memoryStorageLimit) {
-        return new ContractDetailsImpl(data, trieStoreFactory, memoryStorageLimit);
+        return new ContractDetailsImpl(data, trieStorePool, memoryStorageLimit);
     }
 
     public synchronized void update(RskAddress addr, ContractDetails contractDetails) {

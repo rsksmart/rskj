@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.TrieStoreImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.config.BlockchainConfig;
@@ -306,6 +307,6 @@ public class SamplePrecompiledContractTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl(null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }
