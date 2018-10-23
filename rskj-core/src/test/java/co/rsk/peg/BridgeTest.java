@@ -1945,17 +1945,26 @@ public class BridgeTest {
     }
 
     @Test
-    public void getBtcTransactionConfirmation() throws BlockStoreException, IOException {
+    public void getBtcTransactionConfirmations() throws BlockStoreException, IOException {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        Sha256Hash btcTxHash = Sha256Hash.of(Hex.decode("aabbcc"));
-        Sha256Hash btcBlockHash = Sha256Hash.of(Hex.decode("ccddff"));
-        int mockedResult = 8;
-        when(bridgeSupportMock.getBtcTransactionConfirmation(btcTxHash, btcBlockHash, 45678)).thenReturn(mockedResult);
 
-        Assert.assertEquals(mockedResult, bridge.getBtcTransactionConfirmation(new Object[]{btcTxHash.toString(), btcBlockHash.toString(), BigInteger.valueOf(45678)}));
+        List<Sha256Hash> hashes = new ArrayList<>();
+        Sha256Hash btcTxHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        hashes.add(btcTxHash);
+        Sha256Hash btcBlockHash = Sha256Hash.of(Hex.decode("ccddff"));
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+        PartialMerkleTree pmt = new PartialMerkleTree(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams(), bits, hashes, hashes.size());
+        byte[] pmtSerialized = pmt.bitcoinSerialize();
+
+        int mockedResult = 8;
+        when(bridgeSupportMock.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, 45678, pmtSerialized)).thenReturn(mockedResult);
+
+        Assert.assertEquals(mockedResult, bridge.getBtcTransactionConfirmations(new Object[]{btcTxHash.toString(), btcBlockHash.toString(), BigInteger.valueOf(45678), pmtSerialized}));
     }
 
     @Test
