@@ -50,6 +50,10 @@ public class MutableSubtrie implements MutableTrie {
         throw new UnsupportedOperationException();
     }
 
+    public void put(ByteArrayWrapper key, byte[] value) {
+        mutableTrie.put(computeKey(key.getData()),value);
+    }
+
     public void deleteRecursive(byte[] key) {
         mutableTrie.deleteRecursive(computeKey(key));
     }

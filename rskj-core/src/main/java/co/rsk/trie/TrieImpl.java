@@ -398,6 +398,10 @@ public class TrieImpl implements Trie {
         return trie == null ? new TrieImpl(this.store, this.isSecure) : trie;
     }
 
+    @Override
+    public Trie put(ByteArrayWrapper key, byte[] value) {
+        return put(key.getData(),value);
+    }
     /**
      * put string key to value, the key is converted to byte array
      * utility method to be used from testing

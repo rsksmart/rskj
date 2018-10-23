@@ -91,6 +91,12 @@ public class MutableTrieCache implements MutableTrie {
         return;
     }
 
+    // This method optimizes cache-to-cache transfers
+    @Override
+    public void put(ByteArrayWrapper key, byte[] value) {
+        cache.put(key,value);
+    }
+
     @Override
     public void put(String key, byte[] value) {
         byte[] keybytes =key.getBytes(StandardCharsets.UTF_8);
@@ -207,7 +213,7 @@ public class MutableTrieCache implements MutableTrie {
         // all cached items must be transferred to parent
         // some items will represend deletions (null values)
         for (ByteArrayWrapper item : cache.keySet()) {
-            this.trie.put(item.getData(),cache.get(item));
+            this.trie.put(item,cache.get(item));
         }
 
         // now remove all elements recursively

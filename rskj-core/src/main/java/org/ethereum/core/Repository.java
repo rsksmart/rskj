@@ -117,9 +117,10 @@ public interface Repository extends AccountInformationProvider {
     /**
      * get the code associated with an account
      *
-     * This method returns the empty array if there is no code (both for Accounts and
-     * for contracts that have installed zero code on construction.
-     * It should never return null.
+     * This method returns the NULL if there is no code in account.
+     * It may return the empty array for contracts that have installed zero code on construction.
+     * (not checked)
+     * It CAN return null.
     */
      byte[] getCode(RskAddress addr);
 

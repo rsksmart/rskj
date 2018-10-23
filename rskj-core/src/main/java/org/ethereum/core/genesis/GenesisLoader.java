@@ -104,10 +104,6 @@ public class GenesisLoader {
 
                 if (contract != null) {
                     contractDetails = detailsMapper.mapFromContract(contract);
-
-                    if (contractDetails.getCode() != null) {
-                        acctState.setCodeHash(Keccak256Helper.keccak256(contractDetails.getCode()));
-                    }
                 }
                 premine.put(new RskAddress(accountEntry.getKey()), new InitialAddressState(acctState, contractDetails));
             }

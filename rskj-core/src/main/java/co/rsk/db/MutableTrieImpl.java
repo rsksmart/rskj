@@ -52,6 +52,11 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
+    public void put(ByteArrayWrapper key, byte[] value) {
+        trie = trie.put(key,value);
+    }
+
+    @Override
     public void put(String key, byte[] value) {
         trie = trie.put(key,value);
     }

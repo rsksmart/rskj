@@ -33,9 +33,6 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class AccountState {
-    // Why store a huge hash for an Account (not contract) when an empty hash occupies
-    // much less? So I changed it.
-    public static final byte[] EMPTY_CODE_HASH = ByteUtil.EMPTY_BYTE_ARRAY;
 
     // This is the value that should be shown to EXTCODEHASH when the real value
     // stored is EMPTY_CODE_HASH.
@@ -53,14 +50,6 @@ public class AccountState {
     /* A scalar value equalBytes to the number of Wei owned by this address */
     private Coin balance;
 
-
-    /* The hash of the EVM code of this contract—this is the code
-     * that gets executed should this address receive a message call.
-     * It is immutable and thus, unlike all other fields, cannot be changed
-     * after construction. All such code fragments are contained in
-     * the state database under their corresponding hashes for later
-     * retrieval */
-    private byte[] codeHash = EMPTY_CODE_HASH;
 
     /* Account state flags*/
     private int stateFlags;
@@ -85,20 +74,8 @@ public class AccountState {
                 : new BigInteger(1, items.get(0).getRLPData());
         this.balance = RLP.parseCoin(items.get(1).getRLPData());
 
-        // To maintain compatibility with previous data base
-        // we simply ignore stateRoot. We won't save it anymore
-        items.get(2).getRLPData();
-        this.codeHash = items.get(3).getRLPData();
-
-        // Empty array is converted by rlp to null, so we must convert it back to the
-        // empty array here.
-        // Ugly? blame RLP.
-        if (this.codeHash==null)
-            this.codeHash = EMPTY_CODE_HASH;
-
-
-        if (items.size() > 4) {
-            byte[] data = items.get(4).getRLPData();
+        if (items.size() > 2) {
+            byte[] data = items.get(2).getRLPData();
 
             this.stateFlags = data == null ? 0 : BigIntegers.fromUnsignedByteArray(data).intValue();
         }
@@ -129,15 +106,6 @@ public class AccountState {
         setDirty(true);
     }
 
-    public byte[] getCodeHash() {
-        return codeHash;
-    }
-
-    public void setCodeHash(byte[] codeHash) {
-        rlpEncoded = null;
-        this.codeHash = codeHash;
-    }
-
     public Coin getBalance() {
         return balance;
     }
@@ -165,15 +133,13 @@ public class AccountState {
         if (rlpEncoded == null) {
             byte[] nonce = RLP.encodeBigInteger(this.nonce);
             byte[] balance = RLP.encodeCoin(this.balance);
-            byte[] stateRoot = RLP.encodeElement(ByteUtil.EMPTY_BYTE_ARRAY );
-            byte[] codeHash = RLP.encodeElement(this.codeHash);
             if (stateFlags != 0) {
                 byte[] stateFlags = RLP.encodeInt(this.stateFlags);
-                this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, stateFlags);
+                this.rlpEncoded = RLP.encodeList(nonce, balance, stateFlags);
             } else
                 // do not serialize if zero to keep compatibility
             {
-                this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash);
+                this.rlpEncoded = RLP.encodeList(nonce, balance);
             }
         }
         return rlpEncoded;
@@ -197,15 +163,6 @@ public class AccountState {
 
     public AccountState clone() {
         AccountState accountState = new AccountState(nonce, balance);
-
-        // There is no opcode to return the code hash, nor it's possible to use the
-        // codehash to prove anything, because of the exitence of Ethereum's constructors
-        // which can modify storage. See discussions about EXTCODEHASH opcode.
-        // However it seems Etherum developers have decided to implement it anyway,
-        // and we want to keep compatibility. Anything the EXTCODEHASH does can be done with CREATE2
-        // opcode and a fixed known constructor. A real pitty they are implementing it.
-
-        accountState.setCodeHash(this.getCodeHash());
         accountState.setDirty(false);
         accountState.setStateFlags(this.stateFlags);
         return accountState;
@@ -214,8 +171,7 @@ public class AccountState {
     public String toString() {
         String ret = "  Nonce: " + this.getNonce().toString() + "\n" +
                 "  Balance: " + getBalance().asBigInteger() + "\n" +
-                "  StateFlags: " + getStateFlags() + "\n" +
-                "  Code Hash: " + Hex.toHexString(this.getCodeHash());
+                "  StateFlags: " + getStateFlags();
         return ret;
     }
 

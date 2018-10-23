@@ -831,6 +831,7 @@ public class Program {
 
         // FETCH THE CODE
         byte[] programCode = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
+        // programCode  can be null
 
         // Always first remove funds from sender
         track.addBalance(senderAddress, endowment.negate());

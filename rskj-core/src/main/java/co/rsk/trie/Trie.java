@@ -44,6 +44,9 @@ public interface Trie {
 
     Trie put(String key, byte[] value);
 
+    // This method optimizes cache-to-cache transfers
+    Trie put(ByteArrayWrapper key, byte[] value);
+
     //FutureFeature: Trie delete(ExpandedKey key);
 
     Trie delete(byte[] key);

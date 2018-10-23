@@ -109,12 +109,8 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized boolean isExist(RskAddress addr) {
-        byte[] accountData = getAccountData(addr);
-        if (accountData != null && accountData.length != 0) {
-            return true;
-        }
-        return false;
-
+        // Here we assume size !=0 means the account exists
+        return this.trie.getValueLength(getAccountKey(addr))>0;
     }
 
     @Override
@@ -122,6 +118,7 @@ public class MutableRepository implements Repository {
         AccountState result = null;
         byte[] accountData = getAccountData(addr);
 
+        // If there is no account it returns null
         if (accountData != null && accountData.length != 0) {
             result = new AccountState(accountData);
         }
@@ -224,16 +221,6 @@ public class MutableRepository implements Repository {
         if (accountState ==null)
             accountState  = createAccount(addr);
 
-        if (code!=null) {
-            if (code.length==0)
-                accountState.setCodeHash(AccountState.EMPTY_CODE_HASH);
-            else
-                accountState.setCodeHash(Keccak256Helper.keccak256(code));
-        }
-        else {
-            // This is only used in tests. We can either use the hash of empty code or do nothing
-            accountState.setCodeHash(AccountState.EMPTY_CODE_HASH);
-        }
         updateAccountState(addr, accountState);
     }
 
@@ -269,12 +256,6 @@ public class MutableRepository implements Repository {
         AccountState  account = getAccountState(addr);
 
         if (account.isHibernated()) {
-            return EMPTY_BYTE_ARRAY;
-        }
-
-        byte[] codeHash = account.getCodeHash();
-
-        if (Arrays.equals(codeHash, AccountState.EMPTY_CODE_HASH)) {
             return EMPTY_BYTE_ARRAY;
         }
         byte[] key = getCodeKey(addr);

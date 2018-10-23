@@ -10,6 +10,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.management.GarbageCollectorMXBean;
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertArrayEquals;
 public class RepositoryPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
 
+    @Ignore
     @Test
     public void testAccountCreation() {
         PerformanceTestHelper pth = new PerformanceTestHelper();
@@ -40,9 +42,9 @@ public class RepositoryPerformanceTest {
             RskAddress addr = TestUtils.randomAddress();
             track.createAccount(addr);
         }
-        pth.endMeasure(); // partial result
+        pth.endMeasure("Accounts added"); // partial result
         track.commit();
-        pth.endMeasure(); // final result
+        pth.endMeasure("Accounts committed"); // final result
 
     }
 

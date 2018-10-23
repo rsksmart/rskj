@@ -21,6 +21,9 @@ public interface MutableTrie {
 
         void put(String key, byte[] value);
 
+        // This method optimizes cache-to-cache transfers
+        void put(ByteArrayWrapper key, byte[] value);
+
         /////////////////////////////////////////////////////////////////////////////////
         // deleteRecursive()
         // The semantic of deleteRecursive() is special, and not the same of delete()

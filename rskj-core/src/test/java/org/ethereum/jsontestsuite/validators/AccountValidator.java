@@ -38,8 +38,13 @@ public class AccountValidator {
 
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
-    public static List<String> valid(RskAddress addr, AccountState expectedState, ContractDetails expectedDetails,
-                                     AccountState currentState, ContractDetails currentDetails){
+    public static List<String> valid(RskAddress addr,
+                                     AccountState expectedState,
+                                     ContractDetails expectedDetails,
+                                     byte[] expectedCodeHash,
+                                     AccountState currentState,
+                                     ContractDetails currentDetails,
+                                     byte[] currentCodeHash) {
 
         List<String> results = new ArrayList<>();
 
@@ -72,9 +77,10 @@ public class AccountValidator {
             results.add(formattedString);
         }
 
-        byte[] code = Arrays.equals(currentState.getCodeHash(), EMPTY_DATA_HASH) ?
-                new byte[0] : currentDetails.getCode();
-        if (!Arrays.equals(expectedDetails.getCode(), code)) {
+       //Arrays.equals(currentState.getCodeHash(), EMPTY_DATA_HASH) ?
+        //        new byte[0] : currentDetails.getCode();
+
+        if (!Arrays.equals(expectedDetails.getCode(), currentDetails.getCode())) {
             String formattedString = String.format("Account: %s: has unexpected code, expected code: %s found code: %s",
                     addr, Hex.toHexString(expectedDetails.getCode()), Hex.toHexString(currentDetails.getCode()));
             results.add(formattedString);

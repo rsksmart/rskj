@@ -244,8 +244,10 @@ public class RepositoryImplTest {
 
         byte[] code = repository.getCode(accAddress);
 
-        Assert.assertNotNull(code);
-        Assert.assertEquals(0, code.length);
+        // From now on null represents no code, because the code node is not even
+        // created
+        Assert.assertNull(code);
+
     }
 
     @Test

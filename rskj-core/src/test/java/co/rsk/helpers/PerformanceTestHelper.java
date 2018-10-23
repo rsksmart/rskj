@@ -42,12 +42,11 @@ public class PerformanceTestHelper {
         startGCTime = getGarbageCollectorTimeMillis();
     }
 
-    public long getGarbageCollectorTimeMillis()
-    {
-        long t=0;
+    public long getGarbageCollectorTimeMillis() {
+        long t = 0;
         List<GarbageCollectorMXBean> gcs = ManagementFactory.getGarbageCollectorMXBeans();
-        for (GarbageCollectorMXBean gc :gcs) {
-            t +=gc.getCollectionTime();
+        for (GarbageCollectorMXBean gc : gcs) {
+            t += gc.getCollectionTime();
         }
         return t;
     }
@@ -55,10 +54,21 @@ public class PerformanceTestHelper {
     public static String padLeft(long v) {
         return String.format("%1$8s", Long.toString(v));
     }
-    final int nsToMs = 1000*1000;
-    final int nsToS  = 1000*1000*1000;
-    public void endMeasure() {
+
+    final int nsToMs = 1000 * 1000;
+    final int nsToS = 1000 * 1000 * 1000;
+
+    public void endMeasure(String midstate) {
+        System.out.println("End: " + midstate);
+        endMeasure();
+    }
+
+    public void line() {
         System.out.println("---------------------------------------------------------------");
+    }
+
+    public void endMeasure() {
+        line();
         if (startTime != 0) {
             long endTime = thread.getCurrentThreadCpuTime();
             deltaTime = (endTime - startTime); // nano
@@ -73,6 +83,6 @@ public class PerformanceTestHelper {
         long endGCTime = getGarbageCollectorTimeMillis();
         long deltaGCTime = (endGCTime - startGCTime);
         System.out.println("GCTime elapsed [ms]:   " + padLeft(deltaGCTime)+" [s]:"+ padLeft(deltaGCTime/1000));
-
+        line();
     }
 }

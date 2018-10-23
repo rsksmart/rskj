@@ -290,6 +290,7 @@ public class TransactionExecutor {
             }
         } else {
             byte[] code = track.getCode(targetAddress);
+            // Code can be null
             if (isEmpty(code)) {
                 mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
                 result.spendGas(basicTxCost);

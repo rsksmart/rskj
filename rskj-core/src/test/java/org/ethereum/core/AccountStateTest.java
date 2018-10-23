@@ -32,7 +32,7 @@ public class AccountStateTest {
 
     @Test
     public void testGetEncoded() {
-        String expected = "de809a01000000000000000000000000000000000000000000000000008080";
+        String expected = "dc809a0100000000000000000000000000000000000000000000000000";
         AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         assertEquals(expected, Hex.toHexString(acct.getEncoded()));
     }

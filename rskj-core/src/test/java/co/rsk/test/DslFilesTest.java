@@ -122,8 +122,8 @@ public class DslFilesTest {
         RskAddress addr3 = new RskAddress("8bdb1bf28586425b976b06a3079bd2c09a6f8e8b");
 
         // Sender account in branch 1
-        Assert.assertNotNull(repo1.getCode(addr1));
-        Assert.assertEquals(0, repo1.getCode(addr1).length);
+        // Null means no code
+        Assert.assertNull(repo1.getCode(addr1));
         Assert.assertFalse(repo1.contractHasStorage(addr1));
 
 
@@ -139,8 +139,7 @@ public class DslFilesTest {
         Assert.assertNotEquals(0, repo1.getCode(addr3).length);
 
         // Sender account in branch 2
-        Assert.assertNotNull(repo2.getCode(addr1));
-        Assert.assertEquals(0, repo2.getCode(addr1).length);
+        Assert.assertNull(repo2.getCode(addr1));
         Assert.assertFalse(repo2.contractHasStorage(addr1));
 
         // "Creator" Contract account in branch 2

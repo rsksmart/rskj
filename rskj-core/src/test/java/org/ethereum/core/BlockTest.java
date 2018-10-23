@@ -61,7 +61,7 @@ public class BlockTest {
                     "'e4157b34ea9615cfbde6b4fda419828124b70c78': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
                     "}";
 
-    private Keccak256 GENESIS_STATE_ROOT = new Keccak256("1286a0dedf80ec57c3788ada8ff32e58f4aecb35266913afac7c6d9e1b34c7f6");
+    private Keccak256 GENESIS_STATE_ROOT = new Keccak256("53e6153aca120147697cfeb5e6769996f747af9a216b98072996d56cf73297a4");
 
     static {
         TEST_GENESIS = TEST_GENESIS.replace("'", "\"");
