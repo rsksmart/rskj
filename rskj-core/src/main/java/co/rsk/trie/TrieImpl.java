@@ -20,7 +20,7 @@ package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import javafx.util.Pair;
+import co.rsk.util.Pair;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ByteArrayWrapper;
