@@ -31,6 +31,8 @@ import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.xml.crypto.Data;
@@ -45,6 +47,12 @@ import java.util.Set;
 public class RepositoryImplTest {
     private static Keccak256 emptyHash = TrieImplHashTest.makeEmptyHash();
     private final TestSystemProperties config = new TestSystemProperties();
+
+    @Before
+    public void setupTest() {
+        GlobalKeyMap.clear();
+        GlobalKeyMap.enabled = true;
+    }
 
     @Test
     public void getNonceUnknownAccount() {
@@ -427,21 +435,27 @@ public class RepositoryImplTest {
     }
 
     @Test
-    public void getAccountsKeys()
+    public void getAccountsKeys() {
+        getAccountsKeys(false);
+        getAccountsKeys(true);
+    }
+
+    public void getAccountsKeys(boolean isSecure)
     {
         RskAddress accAddress1 = randomAccountAddress();
         RskAddress accAddress2 = randomAccountAddress();
 
-        RepositoryImpl repository = createRepositoryImpl(config);
+        RepositoryImpl repository = createRepositoryImpl(config,isSecure);
 
         repository.createAccount(accAddress1);
         repository.createAccount(accAddress2);
 
         Set<RskAddress> keys = repository.getAccountsKeys();
-
         Assert.assertNotNull(keys);
         Assert.assertFalse(keys.isEmpty());
         Assert.assertEquals(2, keys.size());
+        Assert.assertTrue(keys.contains(accAddress1));
+        Assert.assertTrue(keys.contains(accAddress2));
     }
 
     @Test
@@ -492,6 +506,10 @@ public class RepositoryImplTest {
         return new RskAddress(bytes);
     }
 
+
+    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config,boolean isSecure) {
+        return new RepositoryImpl(isSecure);
+    }
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
         return new RepositoryImpl(false);
     }

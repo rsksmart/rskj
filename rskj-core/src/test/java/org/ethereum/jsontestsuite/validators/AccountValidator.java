@@ -33,6 +33,9 @@ import java.util.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class AccountValidator {
+    // This class must be used with GlobalKeyMap.enabled == true. If not, a NullPointerException
+    // will be thrown in getStorage()
+
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
     public static List<String> valid(RskAddress addr, AccountState expectedState, ContractDetails expectedDetails,

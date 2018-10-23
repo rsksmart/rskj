@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.db.GlobalKeyMap;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
@@ -75,6 +76,8 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testNoContracts() throws Exception {
+        // This test will work on a non-secured Trie. To make it work with a secured-trie
+        // you have to do GlobalKeyMap.enabled = true first.
         Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()),false);
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
@@ -126,9 +129,11 @@ public class NetworkStateExporterTest {
         Assert.assertEquals("10",remascValue.get("balance"));
         Assert.assertEquals("1",remascValue.get("nonce"));
     }
-
     @Test
     public void testContracts() throws Exception {
+        GlobalKeyMap.clear();
+        GlobalKeyMap.enabled = true;
+        try {
         // it must not be secure, because
         Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()),false);
         String address1String = "1000000000000000000000000000000000000000";
@@ -164,6 +169,9 @@ public class NetworkStateExporterTest {
         // A value expanded with leading zeros requires testing in expanded form.
         Assert.assertEquals("01",data.get(addrStr));
         Assert.assertEquals("05060708", data.get(Hex.toHexString(DataWord.ONE.getData())));
+        } finally {
+            GlobalKeyMap.enabled = false;
+        }
     }
 
 

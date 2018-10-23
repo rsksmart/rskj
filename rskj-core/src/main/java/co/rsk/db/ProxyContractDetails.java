@@ -1,12 +1,9 @@
 package co.rsk.db;
 
-import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.MutableSubtrie;
-import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
@@ -16,9 +13,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 
-import static org.ethereum.util.ByteUtil.toHexString;
-import static org.ethereum.util.ByteUtil.wrap;
-
 /**
  * Created by SerAdmin on 9/25/2018.
  */
@@ -26,7 +20,7 @@ public class ProxyContractDetails implements ContractDetails {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final Logger logger = LoggerFactory.getLogger("proxycontractdetails");
 
-    private MutableTrie trie;
+    private MutableSubtrie trie;
     private byte[] code;
     private byte[] address;
     private boolean dirty;
@@ -54,7 +48,7 @@ public class ProxyContractDetails implements ContractDetails {
             this.trie.delete(keyBytes);
         }
         else {
-            GlobalKeyMap.globalKeyMap.add(key);
+            GlobalKeyMap.globalStorageKeyMap.put(new ByteArrayWrapper(keyBytes),key);
             this.trie.put(keyBytes, value.getByteArrayForStorage());
         }
 
@@ -71,7 +65,7 @@ public class ProxyContractDetails implements ContractDetails {
             this.trie.delete(keyBytes);
         }
         else {
-            GlobalKeyMap.globalKeyMap.add(key);
+            GlobalKeyMap.globalStorageKeyMap.put(new ByteArrayWrapper(keyBytes),key);
             this.trie.put(keyBytes, bytes);
         }
 
@@ -142,13 +136,14 @@ public class ProxyContractDetails implements ContractDetails {
 
         Set<DataWord> result = new HashSet<>();
 
-        Set<DataWord> keys =GlobalKeyMap.globalKeyMap;
-
-        for (DataWord key : keys) {
-            DataWord value = get(key);
+        // This could be done much more efficiently by using trie.collectKeys
+        // and then mapping each secured-key into the plain key.
+        for (Map.Entry<ByteArrayWrapper,DataWord> entry : GlobalKeyMap.globalStorageKeyMap.entrySet()) {
+            DataWord plainKey = entry.getValue();
+            DataWord value = get(plainKey);
 
             if (value != null) {
-                result.add(key);
+                result.add(plainKey);
             }
         }
         return result;
@@ -161,8 +156,17 @@ public class ProxyContractDetails implements ContractDetails {
         // Currently we don't store the keys, so we return an empty map.
         // To tweak it, we've a global map of possible keys, and we try them all!
         if (keys==null) {
-            keys =GlobalKeyMap.globalKeyMap;
+            for (Map.Entry<ByteArrayWrapper,DataWord> entry : GlobalKeyMap.globalStorageKeyMap.entrySet()) {
+                DataWord plainKey = entry.getValue();
+                byte[] value = getBytes(plainKey);
+
+                if (value != null) {
+                    storage.put(plainKey, value);
+                }
+            }
+            return storage;
         }
+
         for (DataWord key : keys) {
             byte[] value = getBytes(key);
 

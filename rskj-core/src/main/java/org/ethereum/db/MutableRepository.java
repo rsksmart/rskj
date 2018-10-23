@@ -332,8 +332,10 @@ public class MutableRepository implements Repository {
             createAccount(addr);
             setupContract(addr);
         }
-        GlobalKeyMap.globalKeyMap.add(key);
+
         byte[] triekey = getAccountStorageKey(addr,key.getData());
+
+        GlobalKeyMap.addStorageKey(triekey,key);
 
         // Special case: if the value is an empty vector, we pass "null" which
         // commands the trie to remove the item. Note that if the call comes
@@ -389,6 +391,8 @@ public class MutableRepository implements Repository {
         return Arrays.copyOfRange(str,1,str.length);
     }
 
+    // This method should be used only for testing. It will retrieve the
+    // account keys only in testing mode.
     @Override
     public synchronized Set<RskAddress> getAccountsKeys() {
         // This method would do two different things for a secure trie
@@ -402,9 +406,17 @@ public class MutableRepository implements Repository {
 
         Set<ByteArrayWrapper>  r = trie.collectKeys(keySize );
         Set<RskAddress> result = new HashSet<>();
-        for (ByteArrayWrapper b: r
-                ) {
-            result.add(new RskAddress(stripFirstByte(b.getData())));
+
+        if (trie.isSecure()) {
+            // For each key, pass it through the inverse map
+            for (ByteArrayWrapper b: r) {
+                RskAddress addr = GlobalKeyMap.getGlobalAddressMap().get(b);
+                result.add(addr);
+            }
+        } else {
+            for (ByteArrayWrapper b : r) {
+                result.add(new RskAddress(stripFirstByte(b.getData())));
+            }
         }
         return result;
 
@@ -558,7 +570,9 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
-        this.trie.put(getAccountKey(addr), accountState.getEncoded());
+        byte[] accountKey = getAccountKey(addr);
+        this.trie.put(accountKey, accountState.getEncoded());
+        GlobalKeyMap.addAddress(accountKey,addr);
     }
 
     @Nonnull
