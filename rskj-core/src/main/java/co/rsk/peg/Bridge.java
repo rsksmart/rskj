@@ -552,17 +552,18 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return blockHash.getBytes();
     }
 
-    public int getBtcTransactionConfirmation(Object[] args)
+    public int getBtcTransactionConfirmations(Object[] args)
     {
-        logger.trace("getBtcTransactionConfirmation");
+        logger.trace("getBtcTransactionConfirmations");
         try {
             Sha256Hash btcTxHash = Sha256Hash.wrap((String) args[0]);
             Sha256Hash btcBlockHash = Sha256Hash.wrap((String) args[1]);
             int btcBlockHeight = ((BigInteger) args[2]).intValue();
-            return  bridgeSupport.getBtcTransactionConfirmation(btcTxHash, btcBlockHash, btcBlockHeight);
+            byte[] pmtSerialized = (byte[]) args[3];
+            return  bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, btcBlockHeight, pmtSerialized);
         } catch (Exception e) {
-            logger.warn("Exception in getBtcTransactionConfirmation", e);
-            throw new RuntimeException("Exception in getBtcTransactionConfirmation", e);
+            logger.warn("Exception in getBtcTransactionConfirmations", e);
+            throw new RuntimeException("Exception in getBtcTransactionConfirmations", e);
         }
     }
 
