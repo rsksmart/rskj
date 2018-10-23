@@ -46,9 +46,21 @@ public final class TestUtils {
     private TestUtils() {
     }
 
+
+    // Fix the Random object to make tests more deterministic. Each new Random object
+    // created gets a seed xores with system nanoTime.
+    // Alse it reduces the time to get the random in performance tests
+    static Random aRandom;
+
+    static Random getRandom() {
+        if (aRandom==null)
+            aRandom = new Random();
+        return aRandom;
+    }
+
     public static byte[] randomBytes(int length) {
         byte[] result = new byte[length];
-        new Random().nextBytes(result);
+        getRandom().nextBytes(result);
         return result;
     }
 

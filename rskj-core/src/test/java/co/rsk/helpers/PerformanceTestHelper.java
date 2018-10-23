@@ -57,6 +57,12 @@ public class PerformanceTestHelper {
     }
     final int nsToMs = 1000*1000;
     final int nsToS  = 1000*1000*1000;
+
+    public void endMeasure(String msg) {
+        System.out.println(msg);
+        endMeasure();
+    }
+
     public void endMeasure() {
         System.out.println("---------------------------------------------------------------");
         if (startTime != 0) {
