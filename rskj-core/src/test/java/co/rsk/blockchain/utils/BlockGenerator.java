@@ -183,7 +183,7 @@ public class BlockGenerator {
                 EMPTY_BYTE_ARRAY,   // mixHash
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
+                BlockChainImpl.calcTxTrie(txs,Block.isHardFork9999(parent.getNumber() + 1)),  // transaction root
                 ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 uncles,        // uncle list
@@ -218,7 +218,7 @@ public class BlockGenerator {
                 EMPTY_BYTE_ARRAY,   // mixHash
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
+                BlockChainImpl.calcTxTrie(txs,Block.isHardFork9999(parent.getNumber() + 1)),  // transaction root
                 stateRoot, //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
@@ -288,7 +288,7 @@ public class BlockGenerator {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
+        newHeader.setTransactionsRoot(Block.getTxTrieRoot(txs,Block.isHardFork9999(newHeader.getNumber())));
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
@@ -379,7 +379,7 @@ public class BlockGenerator {
                 EMPTY_BYTE_ARRAY,   // mixHash
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
+                BlockChainImpl.calcTxTrie(txs,Block.isHardFork9999(parent.getNumber() + 1)),  // transaction root
                 ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list

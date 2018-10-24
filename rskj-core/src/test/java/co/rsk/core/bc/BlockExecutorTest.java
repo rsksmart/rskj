@@ -165,7 +165,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
 
         Assert.assertNotNull(result.getReceiptsRoot());
-        Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
+        Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts(),Block.isHardFork9999(block.getNumber() )), result.getReceiptsRoot());
 
         Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
 
@@ -272,7 +272,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(42000, result.getPaidFees().asBigInteger().intValueExact());
 
         Assert.assertNotNull(result.getReceiptsRoot());
-        Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
+        Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts(),Block.isHardFork9999(block.getNumber())), result.getReceiptsRoot());
 
         //here is the problem: in the prior code repository root would never be overwritten by childs
         //while the new code does overwrite the root.
@@ -396,7 +396,8 @@ public class BlockExecutorTest {
         // Check tx2 was excluded
         Assert.assertEquals(1, block.getTransactionsList().size());
         Assert.assertEquals(tx, block.getTransactionsList().get(0));
-        Assert.assertArrayEquals(Block.getTxTrie(Lists.newArrayList(tx)).getHash().getBytes(), block.getTxTrieRoot());
+        Assert.assertArrayEquals(Block.getTxTrieRoot(Lists.newArrayList(tx),Block.isHardFork9999(block.getNumber())),
+                block.getTxTrieRoot());
         
         Assert.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }
@@ -822,7 +823,8 @@ public class BlockExecutorTest {
         Assert.assertEquals(Coin.valueOf(21000), result.getPaidFees());
 
         Assert.assertNotNull(result.getReceiptsRoot());
-        Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
+        Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts(),Block.isHardFork9999(block.getNumber())),
+                result.getReceiptsRoot());
 
         Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
 

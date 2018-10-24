@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
+import co.rsk.trie.OldTrieImpl;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.core.Bloom;
@@ -34,7 +35,7 @@ import java.util.List;
  * Created by ajlopez on 01/08/2016.
  */
 public class BlockResult {
-    public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new InterruptedExecutionBlockResult();
+    public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT  = new InterruptedExecutionBlockResult();
 
     private final List<Transaction> executedTransactions;
     private final List<TransactionReceipt> transactionReceipts;
@@ -44,15 +45,21 @@ public class BlockResult {
     private final Coin paidFees;
     private final byte[] logsBloom;
 
+
+
     public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts,
-                       byte[] stateRoot, long gasUsed, Coin paidFees) {
+                       byte[] stateRoot, long gasUsed, Coin paidFees,boolean hardfork9999) {
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
         this.stateRoot = stateRoot;
         this.gasUsed = gasUsed;
         this.paidFees = paidFees;
 
-        this.receiptsRoot = calculateReceiptsTrie(transactionReceipts);
+        if (hardfork9999)
+            this.receiptsRoot = calculateReceiptsTrieRootNew(transactionReceipts);
+        else
+            this.receiptsRoot = calculateReceiptsTrieRootOld(transactionReceipts);
+
         this.logsBloom = calculateLogsBloom(transactionReceipts);
     }
 
@@ -80,10 +87,31 @@ public class BlockResult {
         return this.paidFees;
     }
 
-    // from original BlockchainImpl
-    private static byte[] calculateReceiptsTrie(List<TransactionReceipt> receipts) {
-        //TODO Fix Trie hash for receipts - doesnt match cpp
+    public static byte[] calculateReceiptsTrieRoot(List<TransactionReceipt> receipts,boolean hardfork9999) {
+        if (hardfork9999)
+            return calculateReceiptsTrieRootNew(receipts);
+        else
+            return calculateReceiptsTrieRootOld(receipts);
+
+    }
+
+    public static byte[] calculateReceiptsTrieRootNew(List<TransactionReceipt> receipts) {
         Trie receiptsTrie = new TrieImpl();
+
+        if (receipts.isEmpty()) {
+            return HashUtil.EMPTY_TRIE_HASH;
+        }
+
+        for (int i = 0; i < receipts.size(); i++) {
+            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
+        }
+
+        return receiptsTrie.getHash().getBytes();
+    }
+
+    // from original BlockchainImpl
+    public static byte[] calculateReceiptsTrieRootOld(List<TransactionReceipt> receipts) {
+        OldTrieImpl receiptsTrie = new OldTrieImpl();
 
         if (receipts.isEmpty()) {
             return HashUtil.EMPTY_TRIE_HASH;
@@ -108,7 +136,8 @@ public class BlockResult {
 
     private static class InterruptedExecutionBlockResult extends BlockResult {
         public InterruptedExecutionBlockResult() {
-            super(Collections.emptyList(), Collections.emptyList(), null, 0, Coin.ZERO);
+            // it doesn't matter if it's pre or post HF9999
+            super(Collections.emptyList(), Collections.emptyList(), null, 0, Coin.ZERO,false);
         }
     }
 }

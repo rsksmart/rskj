@@ -76,7 +76,12 @@ public class BlockExecutor {
     private void fill(Block block, BlockResult result) {
         block.setTransactionsList(result.getExecutedTransactions());
         BlockHeader header = block.getHeader();
-        header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash().getBytes());
+
+        if (Block.isHardFork9999(block.getNumber())) { // test hardfork
+            header.setTransactionsRoot(Block.getTxTrieNew(block.getTransactionsList()).getHash().getBytes());
+        } else
+            header.setTransactionsRoot(Block.getTxTrieOld(block.getTransactionsList()).getHash().getBytes());
+
         header.setReceiptsRoot(result.getReceiptsRoot());
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
@@ -277,7 +282,8 @@ public class BlockExecutor {
 
 
         lastStateRootHash = initialRepository.getRoot();
-        return new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees);
+        boolean hardfork9999 = Block.isHardFork9999(block.getNumber());
+        return new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees,hardfork9999);
     }
 
     public interface TransactionExecutorFactory {

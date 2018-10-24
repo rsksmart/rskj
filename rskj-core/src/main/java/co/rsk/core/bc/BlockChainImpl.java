@@ -576,11 +576,15 @@ public class BlockChainImpl implements Blockchain {
         nFlush = nFlush % flushNumberOfBlocks;
     }
 
-    public static byte[] calcTxTrie(List<Transaction> transactions) {
-        return Block.getTxTrie(transactions).getHash().getBytes();
+    public static byte[] calcTxTrie(List<Transaction> transactions,boolean hardfork9999) {
+        return Block.getTxTrieRoot(transactions,hardfork9999);
     }
 
-    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
+    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts,boolean hardfork9999) {
+        return BlockResult.calculateReceiptsTrieRoot(receipts,hardfork9999);
+    }
+
+    public static byte[] calcReceiptsTrieNew(List<TransactionReceipt> receipts) {
         Trie receiptsTrie = new TrieImpl();
 
         if (receipts == null || receipts.isEmpty()) {

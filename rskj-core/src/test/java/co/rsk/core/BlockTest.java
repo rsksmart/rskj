@@ -83,7 +83,7 @@ public class BlockTest {
                 new byte[0],                    // mixHash
                 new byte[]{0},         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                BlockChainImpl.calcTxTrie(txs), // transaction root
+                BlockChainImpl.calcTxTrie(txs,Block.isHardFork9999(1)), // transaction root
                 HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 null,  // uncle list
@@ -437,7 +437,7 @@ public class BlockTest {
     public void checkTxTrieShouldBeEqualForHeaderAndBody() {
         Block block = new BlockGenerator().createBlock(10, 5);
         Keccak256 trieHash = new Keccak256(block.getTxTrieRoot());
-        Keccak256 trieListHash = Block.getTxTrie(block.getTransactionsList()).getHash();
-        Assert.assertEquals(trieHash, trieListHash);
+        byte[] trieListHash = Block.getTxTrieRoot(block.getTransactionsList(),Block.isHardFork9999(block.getNumber()));
+        Assert.assertArrayEquals(trieHash.getBytes(), trieListHash);
     }
 }
