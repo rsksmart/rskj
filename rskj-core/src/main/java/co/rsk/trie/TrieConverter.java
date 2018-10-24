@@ -10,6 +10,12 @@ import org.ethereum.datasource.HashMapDB;
 public class TrieConverter {
     HashMapDB store;
 
+    public static byte[] computeOldTrieRoot(TrieImpl src) {
+        TrieConverter tc = new TrieConverter();
+        tc.init();
+        return tc.getOldTrieRoot(src);
+    }
+
     public void init() {
         store = new HashMapDB();
     }

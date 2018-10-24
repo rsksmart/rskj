@@ -20,6 +20,8 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieImpl;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,8 +119,17 @@ public class BlockExecutor {
             logger.error("Block's execution was interrupted because of an invalid transaction: {} {}.", block.getNumber(), block.getShortHash());
             return false;
         }
+        byte[] computedStateRoot;
 
-        if (!Arrays.equals(result.getStateRoot(), block.getStateRoot()))  {
+        if (Block.isHardFork9999(block.getNumber()))
+            computedStateRoot =result.getStateRoot();
+        else {
+            // Here we need the repository caches to be fully commited
+            // TrieImpl aTrie =(TrieImpl) repository.getMutableTrie().getTrie();
+            // computedStateRoot = TrieConverter.computeOldTrieRoot(aTrie);
+            computedStateRoot =result.getStateRoot();
+        }
+        if (!Arrays.equals(computedStateRoot, block.getStateRoot()))  {
             logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot()));
             return false;
         }

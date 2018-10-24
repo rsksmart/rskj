@@ -49,12 +49,16 @@ public class TrieImplTest {
         for (int k = 0; k < max; k++)
             trie = trie.put(randomKey(rand), TrieImplValueTest.makeValue(rand.nextInt(64)+1));
 
-        //Assert.assertEquals(trie.getHash().toHexString(),"");
-        System.out.println(trie.getHash().toHexString());
+        Assert.assertEquals(trie.getHash().toHexString(),"bc0ca2a266e8873085c45e9c31d107a1c9f5dc53c8e4c1231259538151248ca3");
+        //System.out.println(trie.getHash().toHexString());
         TrieConverter tc = new TrieConverter();
         tc.init();
         byte[] oldRoot = tc.getOldTrieRoot((TrieImpl) trie);
-        System.out.println(Hex.toHexString(oldRoot));
+        //System.out.println(Hex.toHexString(oldRoot));
+        Assert.assertEquals(Hex.toHexString(oldRoot),"f3fce1726e8bc33ea68a9ed40ddd075ced0a1076269d4dab8bec8aacd4ba8dc2");
+
+
+
     }
 }
 
