@@ -843,7 +843,7 @@ public class TrieImpl implements Trie {
      *
      * @return  the node or null if no subnode at position
      */
-    private Trie retrieveNode(int n) {
+    protected Trie retrieveNode(int n) {
         Trie node = this.getNode(n);
 
         if (node != null) {
@@ -1425,4 +1425,13 @@ public class TrieImpl implements Trie {
     private static Keccak256 makeEmptyHash() {
         return new Keccak256(Keccak256Helper.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
     }
+
+    // These two functions are for converting the trie to the old format
+    protected byte[] getEncodedSharedPath() {
+        return encodedSharedPath;
+    }
+    protected int getSharedPathLength() {
+        return sharedPathLength;
+    }
+
 }

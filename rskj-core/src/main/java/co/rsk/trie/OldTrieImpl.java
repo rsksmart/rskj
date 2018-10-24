@@ -106,33 +106,33 @@ public class OldTrieImpl  {
 
     // default constructor, no secure
     public OldTrieImpl() {
-        this(null, 0, null, null, null, null);
-        this.isSecure = false;
+        this(null, 0, null, null, null, null,false);
+
     }
 
     public OldTrieImpl(boolean isSecure) {
-        this(null, 0, null, null, null, null);
-        this.isSecure = isSecure;
+        this(null, 0, null, null, null, null,isSecure);
     }
 
     public OldTrieImpl(HashMapDB store, boolean isSecure) {
-        this(null, 0, null, null, null, store);
-        this.isSecure = isSecure;
+        this(null, 0, null, null, null, store,isSecure);
     }
 
-    private OldTrieImpl(HashMapDB store, byte[] encodedSharedPath, int sharedPathLength, byte[] value, boolean isSecure) {
-        this(encodedSharedPath, sharedPathLength, value, null, null, store);
-        this.isSecure = isSecure;
+    protected OldTrieImpl(HashMapDB store, byte[] encodedSharedPath, int sharedPathLength, byte[] value, boolean isSecure) {
+        this(encodedSharedPath, sharedPathLength, value, null, null, store,isSecure);
     }
 
     // full constructor
-    private OldTrieImpl(byte[] encodedSharedPath, int sharedPathLength, byte[] value, OldTrieImpl[] nodes, Keccak256[] hashes, HashMapDB store) {
+    protected OldTrieImpl(byte[] encodedSharedPath, int sharedPathLength,
+                        byte[] value, OldTrieImpl[] nodes, Keccak256[] hashes,
+                        HashMapDB store,boolean isSecure) {
         this.value = value;
         this.nodes = nodes;
         this.hashes = hashes;
         this.store = store;
         this.encodedSharedPath = encodedSharedPath;
         this.sharedPathLength = sharedPathLength;
+        this.isSecure = isSecure;
     }
 
     private OldTrieImpl withSecure(boolean isSecure) {
@@ -141,11 +141,11 @@ public class OldTrieImpl  {
     }
 
     public OldTrieImpl cloneTrie() {
-        return new OldTrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store).withSecure(this.isSecure);
+        return new OldTrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store,this.isSecure);
     }
 
     public OldTrieImpl cloneTrie(byte[] newValue) {
-        OldTrieImpl trie = new OldTrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store).withSecure(this.isSecure);
+        OldTrieImpl trie = new OldTrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store,this.isSecure);
         trie.setValue(newValue);
         return trie;
     }
@@ -258,7 +258,7 @@ public class OldTrieImpl  {
                 }
             }
 
-            OldTrieImpl trie = new OldTrieImpl(encodedSharedPath, lshared, value, null, hashes, store).withSecure(isSecure);
+            OldTrieImpl trie = new OldTrieImpl(encodedSharedPath, lshared, value, null, hashes, store,isSecure);
 
             if (store != null) {
                 trie.saved = true;
@@ -756,7 +756,7 @@ public class OldTrieImpl  {
                 return null;
             }
 
-            return new OldTrieImpl(this.encodedSharedPath, this.sharedPathLength, value, newNodes, newHashes, this.store).withSecure(this.isSecure);
+            return new OldTrieImpl(this.encodedSharedPath, this.sharedPathLength, value, newNodes, newHashes, this.store,this.isSecure);
         }
 
         if (isEmptyTrie(this.value, this.nodes, this.hashes)) {
@@ -794,7 +794,7 @@ public class OldTrieImpl  {
             return null;
         }
 
-        return new OldTrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, newNodes, newHashes, this.store).withSecure(this.isSecure);
+        return new OldTrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, newNodes, newHashes, this.store,this.isSecure);
     }
 
     private int lengthOfCommonPath(byte[] key, int length, int position, byte[] sharedPath) {
@@ -813,7 +813,7 @@ public class OldTrieImpl  {
         OldTrieImpl[] newChildNodes = this.cloneNodes(false);
         Keccak256[] newChildHashes = this.cloneHashes();
 
-        OldTrieImpl newChildTrie = new OldTrieImpl(null, 0, this.value, newChildNodes, newChildHashes, this.store).withSecure(this.isSecure);
+        OldTrieImpl newChildTrie = new OldTrieImpl(null, 0, this.value, newChildNodes, newChildHashes, this.store,this.isSecure);
 
         byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.sharedPathLength);
 
