@@ -72,7 +72,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         };
 
         ExecutionStats stats = new ExecutionStats("receiveHeaders");
-        executeAndAverage("receiveHeaders", 200, abiEncoder, storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("receiveHeaders", 200, abiEncoder, storageInitializer, Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()), Helper.getRandomHeightProvider(10), stats);
 
         BridgePerformanceTest.addStats(stats);
     }
