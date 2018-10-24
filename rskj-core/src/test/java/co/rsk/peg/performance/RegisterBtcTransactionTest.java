@@ -61,7 +61,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 false
         );
 
-        executeAndAverage("registerBtcTransaction-lockSuccess", times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("registerBtcTransaction-lockSuccess", times, getABIEncoder(), storageInitializer, Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()), Helper.getRandomHeightProvider(10), stats);
 
     }
 
@@ -73,7 +73,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 true
         );
 
-        executeAndAverage("registerBtcTransaction-alreadyProcessed", times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("registerBtcTransaction-alreadyProcessed", times, getABIEncoder(), storageInitializer, Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()), Helper.getRandomHeightProvider(10), stats);
     }
 
     private void registerBtcTransaction_notEnoughConfirmations(int times, ExecutionStats stats) {
@@ -84,7 +84,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 false
         );
 
-        executeAndAverage("registerBtcTransaction-notEnoughConfirmations", times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("registerBtcTransaction-notEnoughConfirmations", times, getABIEncoder(), storageInitializer, Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()), Helper.getRandomHeightProvider(10), stats);
     }
 
     private ABIEncoder getABIEncoder() {

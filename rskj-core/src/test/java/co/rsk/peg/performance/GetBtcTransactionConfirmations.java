@@ -14,6 +14,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,18 +29,26 @@ public class GetBtcTransactionConfirmations extends BridgePerformanceTestCase {
     @Test
     public void getBtcTransactionConfirmations() {
         ExecutionStats stats = new ExecutionStats("getBtcTransactionConfirmations");
-        getBtcTransactionConfirmations_success(10, stats, 0); //Minimum value
-        getBtcTransactionConfirmations_success(300, stats, 120); //One day in BTC Blocks
-        getBtcTransactionConfirmations_success(10, stats, RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS); //Maximum value
+        //Minimum value
+        getBtcTransactionConfirmations_success(10, stats, 0,1,1);
+        //One day in BTC Blocks
+        //Avarage Btc block from https://www.blockchain.com/charts/n-transactions-per-block
+        getBtcTransactionConfirmations_success(300, stats, 144, 750, 3000);
+        //Maximum value
+        //6000 transactions in a block. This value comes from considering the smallest transactions  giving an output of 10 tx/s
+        getBtcTransactionConfirmations_success(10, stats, RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS, 6000, 6000);
 
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void getBtcTransactionConfirmations_success(int times, ExecutionStats stats, int confirmations) {
+    private void getBtcTransactionConfirmations_success(int times, ExecutionStats stats, int confirmations, int  minTransactions, int maxTransactions) {
         BridgeStorageProviderInitializer storageInitializer = generateBlockChainInitializer(
                 1000,
                 2000,
-                confirmations
+                confirmations,
+                minTransactions,
+                maxTransactions
+
         );
 
         executeAndAverage(String.format("getBtcTransactionConfirmations-success-confirmations-%d",confirmations), times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
@@ -58,7 +67,7 @@ public class GetBtcTransactionConfirmations extends BridgePerformanceTestCase {
                 });
     }
 
-    private BridgeStorageProviderInitializer generateBlockChainInitializer(int minBtcBlocks, int maxBtcBlocks, int numberOfConfirmations) {
+    private BridgeStorageProviderInitializer generateBlockChainInitializer(int minBtcBlocks, int maxBtcBlocks, int numberOfConfirmations, int minNumberOfTransactions, int maxNumberOfTransactions) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             BtcBlockStore btcBlockStore = new RepositoryBlockStore(new TestSystemProperties(), repository, PrecompiledContracts.BRIDGE_ADDR);
             Context btcContext = new Context(networkParameters);
@@ -97,7 +106,20 @@ public class GetBtcTransactionConfirmations extends BridgePerformanceTestCase {
             Script scriptSig = new Script(Script.createInputScript(from.sign(hashForSig).encodeToDER(), from.getPubKey()));
             txToSearch.getInput(0).setScriptSig(scriptSig);
 
-            pmtOfTx = PartialMerkleTree.buildFromLeaves(networkParameters, new byte[]{(byte) 0xff}, Arrays.asList(txToSearch.getHash()));
+            int numberOfTransactions = Helper.randomInRange(minNumberOfTransactions, maxNumberOfTransactions);
+            List<Sha256Hash> allLeafHashes = new ArrayList<>();
+            allLeafHashes.add(txToSearch.getHash());
+            for(int i=1; i < numberOfTransactions ; i++) {
+                allLeafHashes.add( Sha256Hash.of(BigInteger.valueOf(i).toByteArray()));
+            }
+
+            //Set the leaves that are going to be added, in this case all of them
+            byte[] bits = new byte[(int) Math.ceil(allLeafHashes.size() / 8.0)];
+            for(int i=0; i < numberOfTransactions ; i++) {
+                Utils.setBitLE(bits, i);
+            }
+
+            pmtOfTx = PartialMerkleTree.buildFromLeaves(networkParameters, bits, allLeafHashes);
             List<Sha256Hash> hashes = new ArrayList<>();
             Sha256Hash merkleRoot = pmtOfTx.getTxnHashAndMerkleRoot(hashes);
 
