@@ -141,6 +141,82 @@ public class DslFilesTest {
     }
 
     @Test
+    public void runCreate03Resource() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/create03.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("g00").getHash().getBytes()));
+        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01").getHash().getBytes()));
+        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01b").getHash().getBytes()));
+
+        Block top1 = world.getBlockByName("b01");
+        Block top2 = world.getBlockByName("b01b");
+
+        Repository repo1 = world.getRepository().getSnapshotTo(top1.getStateRoot());
+        Repository repo2 = world.getRepository().getSnapshotTo(top2.getStateRoot());
+
+        RskAddress addr1 = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
+        RskAddress addr2 = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
+
+        // Sender account in branch 1
+        Assert.assertNotNull(repo1.getCode(addr1));
+        Assert.assertEquals(0, repo1.getCode(addr1).length);
+
+        // Contract account in branch 1
+        byte[] code1 = repo1.getCode(addr2);
+        Assert.assertNotNull(code1);
+        Assert.assertNotEquals(0, code1.length);
+
+        // Sender account in branch 2
+        byte[] code2 = repo2.getCode(addr2);
+        Assert.assertNotNull(code2);
+        Assert.assertNotEquals(0, code2.length);
+
+        // code 1 != code 2
+        Assert.assertFalse(Arrays.equals(code1, code2));
+    }
+
+    @Test
+    public void runCreate04Resource() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/create04.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("g00").getHash().getBytes()));
+        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01").getHash().getBytes()));
+        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01b").getHash().getBytes()));
+
+        Block top1 = world.getBlockByName("b01");
+        Block top2 = world.getBlockByName("b01b");
+
+        Repository repo1 = world.getRepository().getSnapshotTo(top1.getStateRoot());
+        Repository repo2 = world.getRepository().getSnapshotTo(top2.getStateRoot());
+
+        RskAddress addr1 = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
+        RskAddress addr2 = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
+
+        // Sender account in branch 1
+        Assert.assertNotNull(repo1.getCode(addr1));
+        Assert.assertEquals(0, repo1.getCode(addr1).length);
+
+        // Contract account in branch 1
+        byte[] code1 = repo1.getCode(addr2);
+        Assert.assertNotNull(code1);
+        Assert.assertNotEquals(0, code1.length);
+
+        // Sender account in branch 2
+        byte[] code2 = repo2.getCode(addr2);
+        Assert.assertNotNull(code2);
+        Assert.assertEquals(0, code2.length);
+
+        // code 1 != code 2
+        Assert.assertFalse(Arrays.equals(code1, code2));
+    }
+
+    @Test
     public void runContracts01Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/contracts01.txt");
         World world = new World();
