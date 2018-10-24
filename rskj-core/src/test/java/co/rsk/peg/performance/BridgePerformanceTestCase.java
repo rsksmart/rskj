@@ -49,10 +49,9 @@ import org.bouncycastle.util.encoders.Hex;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class BridgePerformanceTestCase {
     protected static NetworkParameters networkParameters;
@@ -161,6 +160,17 @@ public abstract class BridgePerformanceTestCase {
             return tx;
         }
 
+        // Federates for bridge regtest constants
+        public static final List<ECKey> FEDERATOR_ECKEYS = Arrays.stream(new String[]{
+                "federator1",
+                "federator2",
+                "federator3"
+        }).map(generator -> ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)))).collect(Collectors.toList());
+
+        public static ECKey getRandomFederatorECKey() {
+            return Helper.FEDERATOR_ECKEYS.get(Helper.randomInRange(0, Helper.FEDERATOR_ECKEYS.size()-1));
+        }
+
         public static int randomInRange(int min, int max) {
             return new Random().nextInt(max - min + 1) + min;
         }
@@ -221,7 +231,11 @@ public abstract class BridgePerformanceTestCase {
         }
 
         public static TxBuilder getZeroValueRandomSenderTxBuilder() {
-            return (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
+            return (int executionIndex) -> Helper.buildTx(new ECKey());
+        }
+
+        public static TxBuilder getZeroValueTxBuilder(ECKey sender) {
+            return (int executionIndex) -> Helper.buildTx(sender);
         }
 
         public static BridgeStorageProviderInitializer buildNoopInitializer() {
