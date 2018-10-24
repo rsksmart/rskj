@@ -21,6 +21,7 @@ package co.rsk.db;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
@@ -37,6 +38,7 @@ import org.bouncycastle.util.encoders.Hex;
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static org.ethereum.core.AccountState.EMPTY_DATA_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.util.ByteUtil.wrap;
@@ -59,6 +61,7 @@ public class ContractDetailsImpl implements ContractDetails {
     private Set<ByteArrayWrapper> keys = new HashSet<>();
     private final TrieStore.Pool trieStorePool;
     private final int memoryStorageLimit;
+    private byte[] codeHash;
 
     public ContractDetailsImpl(byte[] encoded, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
         this.trieStorePool = trieStorePool;
@@ -70,12 +73,17 @@ public class ContractDetailsImpl implements ContractDetails {
         this.address = ByteUtils.clone(address);
         this.trie = trie;
         this.code = ByteUtils.clone(code);
+        this.codeHash = getCodeHash(code);
         this.trieStorePool = trieStorePool;
         this.memoryStorageLimit = memoryStorageLimit;
 
         if (this.trie == null) {
             this.trie = new TrieImpl(trieStorePool.getInstanceFor(getDataSourceName()), true);
         }
+    }
+
+    private byte[] getCodeHash(byte[] code) {
+        return code == null ? EMPTY_DATA_HASH : Keccak256Helper.keccak256(code);
     }
 
     @Override
@@ -162,6 +170,7 @@ public class ContractDetailsImpl implements ContractDetails {
     @Override
     public void setCode(byte[] code) {
         this.code = ByteUtils.clone(code);
+        this.codeHash = getCodeHash(code);
     }
 
     @Override
@@ -174,8 +183,7 @@ public class ContractDetailsImpl implements ContractDetails {
         return trieHash;
     }
 
-    @Override
-    public final void decode(byte[] rlpBytes) {
+    private final void decode(byte[] rlpBytes) {
         ArrayList<RLPElement> rlpData = RLP.decode2(rlpBytes);
         RLPList rlpList = (RLPList) rlpData.get(0);
 
@@ -197,7 +205,7 @@ public class ContractDetailsImpl implements ContractDetails {
         }
 
         this.code = (rlpCode.getRLPData() == null) ? EMPTY_BYTE_ARRAY : rlpCode.getRLPData();
-
+        this.codeHash = Keccak256Helper.keccak256(code);
         for (RLPElement key : rlpKeys) {
             addKey(key.getRLPData());
         }
@@ -388,6 +396,11 @@ public class ContractDetailsImpl implements ContractDetails {
         return (code==null || code.length==0) && keys.isEmpty();
     }
 
+    @Override
+    public byte[] getCodeHash() {
+        return this.codeHash;
+    }
+
     public Trie getTrie() {
         return this.trie;
     }
@@ -408,7 +421,7 @@ public class ContractDetailsImpl implements ContractDetails {
         this.externalStorage = true;
     }
 
-    private String getDataSourceName() {
+    public String getDataSourceName() {
         return "details-storage/" + toHexString(address);
     }
 
@@ -448,5 +461,10 @@ public class ContractDetailsImpl implements ContractDetails {
         }
 
         return Hex.toHexString(hash);
+    }
+
+    public void fixCodeBy(byte[] otherCodeHash) {
+        this.code = trieStorePool.getInstanceFor(getDataSourceName()).retrieveValue(otherCodeHash);
+        this.codeHash = otherCodeHash;
     }
 }

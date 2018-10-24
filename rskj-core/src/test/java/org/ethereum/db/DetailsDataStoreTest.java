@@ -25,13 +25,13 @@ import co.rsk.db.ContractDetailsImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.bouncycastle.util.encoders.Hex;
 
 import static org.ethereum.TestUtils.randomAddress;
+import static org.ethereum.core.AccountState.EMPTY_DATA_HASH;
 import static org.ethereum.util.ByteUtil.toHexString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -65,7 +65,7 @@ public class DetailsDataStoreTest {
 
         dds.update(c_key, contractDetails);
 
-        ContractDetails contractDetails_ = dds.get(c_key);
+        ContractDetails contractDetails_ = dds.get(c_key, EMPTY_DATA_HASH);
 
         String encoded1 = Hex.toHexString(contractDetails.getEncoded());
         String encoded2 = Hex.toHexString(contractDetails_.getEncoded());
@@ -74,7 +74,7 @@ public class DetailsDataStoreTest {
 
         dds.flush();
 
-        contractDetails_ = dds.get(c_key);
+        contractDetails_ = dds.get(c_key, EMPTY_DATA_HASH);
         encoded2 = Hex.toHexString(contractDetails_.getEncoded());
         assertEquals(encoded1, encoded2);
     }
@@ -105,7 +105,7 @@ public class DetailsDataStoreTest {
 
         dds.update(c_key, contractDetails);
 
-        ContractDetails contractDetails_ = dds.get(c_key);
+        ContractDetails contractDetails_ = dds.get(c_key, EMPTY_DATA_HASH);
 
         String encoded1 = Hex.toHexString(contractDetails.getEncoded());
         String encoded2 = Hex.toHexString(contractDetails_.getEncoded());
@@ -114,12 +114,12 @@ public class DetailsDataStoreTest {
 
         dds.remove(c_key);
 
-        contractDetails_ = dds.get(c_key);
+        contractDetails_ = dds.get(c_key, EMPTY_DATA_HASH);
         assertNull(contractDetails_);
 
         dds.flush();
 
-        contractDetails_ = dds.get(c_key);
+        contractDetails_ = dds.get(c_key, EMPTY_DATA_HASH);
         assertNull(contractDetails_);
     }
 
@@ -150,7 +150,7 @@ public class DetailsDataStoreTest {
 
         dds.update(c_key, contractDetails);
 
-        ContractDetails contractDetails_ = dds.get(c_key);
+        ContractDetails contractDetails_ = dds.get(c_key, EMPTY_DATA_HASH);
 
         String encoded1 = Hex.toHexString(contractDetails.getEncoded());
         String encoded2 = Hex.toHexString(contractDetails_.getEncoded());
@@ -160,13 +160,13 @@ public class DetailsDataStoreTest {
         dds.remove(c_key);
         dds.update(c_key, contractDetails);
 
-        contractDetails_ = dds.get(c_key);
+        contractDetails_ = dds.get(c_key, EMPTY_DATA_HASH);
         encoded2 = Hex.toHexString(contractDetails_.getEncoded());
         assertEquals(encoded1, encoded2);
 
         dds.flush();
 
-        contractDetails_ = dds.get(c_key);
+        contractDetails_ = dds.get(c_key, EMPTY_DATA_HASH);
         encoded2 = Hex.toHexString(contractDetails_.getEncoded());
         assertEquals(encoded1, encoded2);
     }
@@ -178,7 +178,7 @@ public class DetailsDataStoreTest {
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
 
-        ContractDetails contractDetails = dds.get(c_key);
+        ContractDetails contractDetails = dds.get(c_key, EMPTY_DATA_HASH);
         assertNull(contractDetails);
     }
 }
