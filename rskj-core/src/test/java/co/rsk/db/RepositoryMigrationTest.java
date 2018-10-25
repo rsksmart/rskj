@@ -3,6 +3,7 @@ package co.rsk.db;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -39,8 +40,8 @@ public class RepositoryMigrationTest {
         Repository track = repository.startTracking();
 
         TestUtils.getRandom().setSeed(0);
-        int maxAccounts = 1000;
-        int maxStorageRows = 50;
+        int maxAccounts = 10;
+        int maxStorageRows = 5;
         for(int i=0;i<maxAccounts ;i++) {
             // Create random accounts/contracts
             RskAddress addr = TestUtils.randomAddress();
@@ -51,7 +52,7 @@ public class RepositoryMigrationTest {
             // Balance between 1 and 100 SBTC
             a.addToBalance(TestUtils.randomCoin(18, 1000));
             track.updateAccountState(addr,a);
-            if (i>maxAccounts/2) {
+            if (i>=maxAccounts/2) {
                 // half of them are contracts
                 for (int s = 0; s < maxStorageRows; s++) {
                     track.addStorageBytes(addr, TestUtils.randomDataWord(), TestUtils.randomBytes(TestUtils.getRandom().nextInt(40) + 1));
@@ -61,11 +62,13 @@ public class RepositoryMigrationTest {
         }
 
         track.commit();
+        Trie t = ((RepositoryImpl) repository).getTrie();
+        System.out.println(Hex.toHexString(t.serialize()));
         System.out.println(Hex.toHexString(repository.getRoot()));
     }
 
     public static RepositoryImpl createRepositoryImplWithStore(RskSystemProperties config,TrieStore store) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit(), config.databaseDir());
 
     }
 }
