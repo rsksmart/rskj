@@ -40,7 +40,7 @@ public class RepositoryMigrationTest {
         Repository track = repository.startTracking();
 
         TestUtils.getRandom().setSeed(0);
-        int maxAccounts = 1000;
+        int maxAccounts = 1;
         int maxStorageRows = 50;
         for(int i=0;i<maxAccounts ;i++) {
             // Create random accounts/contracts
@@ -52,13 +52,13 @@ public class RepositoryMigrationTest {
             // Balance between 1 and 100 SBTC
             a.addToBalance(TestUtils.randomCoin(18, 1000));
             track.updateAccountState(addr,a);
-            if (i>maxAccounts/2) {
+            if (i>=0) { //maxAccounts/2) {
                 // half of them are contracts
                 track.setupContract(addr);
                 for (int s = 0; s < maxStorageRows; s++) {
                     track.addStorageBytes(addr, TestUtils.randomDataWord(), TestUtils.randomBytes(TestUtils.getRandom().nextInt(40) + 1));
                 }
-                track.saveCode(addr,randomCode(60));
+                //track.saveCode(addr,randomCode(60));
             }
         }
 

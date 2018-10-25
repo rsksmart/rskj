@@ -56,14 +56,16 @@ public class TrieConverter {
         hashes[0] = child0Hash==null?null:new Keccak256(child0Hash);
         hashes[1] = child1Hash==null?null:new Keccak256(child1Hash);
 
+        byte[] value =src.getValue();
         if (removeFirstNodePrefix) {
             encodedSharedPath =null;
             sharedPathLength =0;
+            value = null; // also remove value
         }
 
         OldTrieImpl newNode = new OldTrieImpl(
                 encodedSharedPath, sharedPathLength,
-                src.getValue(), null, hashes,store,src.isSecure());
+                value, null, hashes,store,src.isSecure());
 
         return newNode.getHash().getBytes();
     }
