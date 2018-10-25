@@ -429,4 +429,8 @@ public class RepositoryImpl implements Repository {
         AccountState account = getAccountState(addr);
         return (account == null) ? createAccount(addr) : account;
     }
+
+    public Trie getTrie() {
+      return trie;
+    }
 }

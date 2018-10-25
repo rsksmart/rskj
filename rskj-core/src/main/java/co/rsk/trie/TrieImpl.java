@@ -478,8 +478,8 @@ public class TrieImpl implements Trie {
                 }
             }
         }
-
-        this.store.save(this);
+        if (this.store!=null)
+            this.store.save(this);
         this.saved = true;
     }
 
