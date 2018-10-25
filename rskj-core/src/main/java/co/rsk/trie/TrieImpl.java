@@ -60,16 +60,16 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * Created by ajlopez on 22/08/2016.
  */
 public class TrieImpl implements Trie {
-    private static final int ARITY = 2;
+    protected static final int ARITY = 2;
 
-    private static final Logger logger = LoggerFactory.getLogger("newtrie");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private static final String PANIC_TOPIC = "newtrie";
-    private static final String INVALID_ARITY = "Invalid arity";
-    private static final String INVALID_VALUE_LENGTH = "Invalid value length";
-    private static final String ERROR_CREATING_TRIE = "Error creating trie from message";
-    private static final String ERROR_NON_EXISTENT_TRIE_LOGGER = "Error non existent trie with hash {}";
-    private static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash ";
+    protected static final Logger logger = LoggerFactory.getLogger("newtrie");
+    protected static final PanicProcessor panicProcessor = new PanicProcessor();
+    protected static final String PANIC_TOPIC = "newtrie";
+    protected static final String INVALID_ARITY = "Invalid arity";
+    protected static final String INVALID_VALUE_LENGTH = "Invalid value length";
+    protected static final String ERROR_CREATING_TRIE = "Error creating trie from message";
+    protected static final String ERROR_NON_EXISTENT_TRIE_LOGGER = "Error non existent trie with hash {}";
+    protected static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash ";
 
     private static final int MESSAGE_HEADER_LENGTH = 1 + Short.BYTES ;
     private static final int SERIALIZATION_HEADER_LENGTH = Short.BYTES * 2 + Integer.BYTES * 2;
@@ -80,22 +80,22 @@ public class TrieImpl implements Trie {
     private static Keccak256 emptyHash = makeEmptyHash();
 
     // this node associated value, if any
-    private byte[] value;
+    protected byte[] value;
 
     // the list of subnodes
-    private TrieImpl[] nodes;
+    protected TrieImpl[] nodes;
 
     // the list of subnode hashes
-    private Keccak256[] hashes;
+    protected Keccak256[] hashes;
 
     // this node hash value
-    private Keccak256 hash;
+    protected Keccak256 hash;
 
     // it is saved to store
-    private boolean saved;
+    protected boolean saved;
 
     // sha3 is applied to keys
-    private boolean isSecure;
+    protected boolean isSecure;
 
     // valueLength enables lazy long value retrieval.
     // The length of the data is now stored. This allows EXTCODESIZE to
@@ -105,17 +105,17 @@ public class TrieImpl implements Trie {
     // This trie structure does not distinguish between empty arrays
     // and nulls. Storing an empty byte array has the same effect as removing the node.
     //
-    private int valueLength;
+    protected int valueLength;
 
     // For lazy retrieval and also for cache.
-    private byte[] valueHash;
+    protected byte[] valueHash;
 
     // associated store, to store or retrieve nodes in the trie
-    private TrieStore store;
+    protected TrieStore store;
 
     // shared Path
-    private byte[] encodedSharedPath;
-    private int sharedPathLength;
+    protected byte[] encodedSharedPath;
+    protected int sharedPathLength;
 
     // default constructor, no secure
     public TrieImpl() {
@@ -133,7 +133,7 @@ public class TrieImpl implements Trie {
         this.isSecure = isSecure;
     }
 
-    private TrieImpl(TrieStore store, byte[] encodedSharedPath, int sharedPathLength,
+    protected TrieImpl(TrieStore store, byte[] encodedSharedPath, int sharedPathLength,
                      byte[] value, boolean isSecure,
                      int valueLength,byte[] valueHash) {
         this(encodedSharedPath, sharedPathLength, value, null, null, store,valueLength,valueHash);
@@ -141,7 +141,7 @@ public class TrieImpl implements Trie {
     }
 
     // full constructor
-    private TrieImpl(byte[] encodedSharedPath,
+    protected TrieImpl(byte[] encodedSharedPath,
                      int sharedPathLength, byte[] value, TrieImpl[] nodes,
                      Keccak256[] hashes, TrieStore store,
                      int valueLength,byte[] valueHash) {
@@ -156,7 +156,7 @@ public class TrieImpl implements Trie {
         checkValueLength();
     }
 
-    private TrieImpl withSecure(boolean isSecure) {
+    protected TrieImpl withSecure(boolean isSecure) {
         this.isSecure = isSecure;
         return this;
     }
@@ -820,7 +820,7 @@ public class TrieImpl implements Trie {
      * Takes into account that a node could be not present as an object and
      * only be referenced via its unique hash
      */
-    private int getNodeCount() {
+    protected int getNodeCount() {
         int count = 0;
 
         for (int k = 0; k < ARITY; k++) {
@@ -887,7 +887,7 @@ public class TrieImpl implements Trie {
      * @return  node hash or null if no node is present
      */
     @Nullable
-    private Keccak256 getHash(int n) {
+    protected Keccak256 getHash(int n) {
         if (this.hashes != null && this.hashes[n] != null) {
             return this.hashes[n];
         }
@@ -1403,6 +1403,10 @@ public class TrieImpl implements Trie {
         if ((value!=null) && (value.length != valueLength))
             // Serious DB inconsistency here
             throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
+
+        if ((value==null) && (valueLength != 0))
+            // Serious DB inconsistency here
+            throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
     }
 
     public byte[] getValue() {
@@ -1413,7 +1417,7 @@ public class TrieImpl implements Trie {
         return this.value;
     }
 
-    private static int getEncodedPathLength(int length) {
+    protected static int getEncodedPathLength(int length) {
         return length / 8 + (length % 8 == 0 ? 0 : 1);
     }
 

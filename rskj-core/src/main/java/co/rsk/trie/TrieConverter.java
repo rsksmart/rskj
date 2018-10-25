@@ -11,7 +11,8 @@ import java.util.Arrays;
  * Created by SerAdmin on 10/23/2018.
  */
 public class TrieConverter {
-    HashMapDB store;
+    //HashMapDB store;
+    TrieStoreImpl store;
 
     // This method converts and new trie into an old trie hash, but it works for tx tries
     // or receipt tries. It dosn't work for the account trie because it doesn't translate
@@ -30,7 +31,7 @@ public class TrieConverter {
 
 
     public void init() {
-        store = new HashMapDB();
+        store = new TrieStoreImpl(new HashMapDB());
     }
 
     public byte[] getOldTrieRoot(TrieImpl src,boolean removeFirstNodePrefix) {
@@ -57,15 +58,21 @@ public class TrieConverter {
         hashes[1] = child1Hash==null?null:new Keccak256(child1Hash);
 
         byte[] value =src.getValue();
+        int valueLength = src.valueLength;
+        byte[] valueHash = src.getValueHash();
+
         if (removeFirstNodePrefix) {
             encodedSharedPath =null;
             sharedPathLength =0;
             value = null; // also remove value
+            valueLength = 0;
+            valueHash = null;
         }
 
-        OldTrieImpl newNode = new OldTrieImpl(
+        OldTrieImpl newNode = (OldTrieImpl) new OldTrieImpl(
                 encodedSharedPath, sharedPathLength,
-                value, null, hashes,store,src.isSecure());
+                value, null, hashes,store,
+                valueLength,valueHash).withSecure(src.isSecure());
 
         return newNode.getHash().getBytes();
     }
@@ -114,9 +121,11 @@ public class TrieConverter {
                 oldState.setStateRoot(stateRoot);
             }
 
-            OldTrieImpl newNode = new OldTrieImpl(
+            byte[] avalue =oldState.getEncoded();
+            OldTrieImpl newNode = (OldTrieImpl) new OldTrieImpl(
                     encodedSharedPath, sharedPathLength,
-                    oldState.getEncoded(), null, null,store,src.isSecure());
+                    avalue, null, null,store,
+                    avalue.length,null).withSecure(src.isSecure());///src.isSecure()
 
             return newNode.getHash().getBytes();
         }
@@ -133,9 +142,10 @@ public class TrieConverter {
         hashes[0] = child0Hash==null?null:new Keccak256(child0Hash);
         hashes[1] = child1Hash==null?null:new Keccak256(child1Hash);
 
-        OldTrieImpl newNode = new OldTrieImpl(
+        OldTrieImpl newNode = (OldTrieImpl) new OldTrieImpl(
                 encodedSharedPath, sharedPathLength,
-                src.getValue(), null, hashes,store,src.isSecure());
+                src.getValue(), null, hashes,store,src.valueLength,
+                src.getValueHash()).withSecure(src.isSecure());
 
         return newNode.getHash().getBytes();
     }

@@ -92,27 +92,18 @@ public class BlockResult {
             return calculateReceiptsTrieRootNew(receipts);
         else
             return calculateReceiptsTrieRootOld(receipts);
-
     }
 
     public static byte[] calculateReceiptsTrieRootNew(List<TransactionReceipt> receipts) {
-        Trie receiptsTrie = new TrieImpl();
-
-        if (receipts.isEmpty()) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
-        }
-
-        return receiptsTrie.getHash().getBytes();
+        return calculateReceiptsTrieRootFor(receipts,new TrieImpl());
     }
 
     // from original BlockchainImpl
     public static byte[] calculateReceiptsTrieRootOld(List<TransactionReceipt> receipts) {
-        OldTrieImpl receiptsTrie = new OldTrieImpl();
+     return(calculateReceiptsTrieRootFor(receipts,new OldTrieImpl()));
+    }
 
+    public static byte[] calculateReceiptsTrieRootFor(List<TransactionReceipt> receipts,Trie receiptsTrie) {
         if (receipts.isEmpty()) {
             return HashUtil.EMPTY_TRIE_HASH;
         }

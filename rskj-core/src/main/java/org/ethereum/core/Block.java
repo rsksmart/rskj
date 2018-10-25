@@ -733,26 +733,19 @@ public class Block {
         rlpEncoded = null;
     }
 
-    public static OldTrieImpl getTxTrieOld(List<Transaction> transactions){
-        if (transactions == null) {
-            return new OldTrieImpl();
-        }
-
-        OldTrieImpl txsState = new OldTrieImpl();
-        for (int i = 0; i < transactions.size(); i++) {
-            Transaction transaction = transactions.get(i);
-            txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());
-        }
-
-        return txsState;
+    public static Trie getTxTrieOld(List<Transaction> transactions){
+        return getTxTrieFor(transactions,new OldTrieImpl());
     }
 
     public static Trie getTxTrieNew(List<Transaction> transactions){
+        return getTxTrieFor(transactions,new TrieImpl());
+    }
+
+    public static Trie getTxTrieFor(List<Transaction> transactions,Trie txsState){
         if (transactions == null) {
-            return new TrieImpl();
+            return txsState;
         }
 
-        Trie txsState = new TrieImpl();
         for (int i = 0; i < transactions.size(); i++) {
             Transaction transaction = transactions.get(i);
             txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());
@@ -762,10 +755,13 @@ public class Block {
     }
 
     public static byte[] getTxTrieRoot(List<Transaction> transactions,boolean hardfork9999){
+     Trie trie;
      if (hardfork9999)
-          return getTxTrieNew(transactions).getHash().getBytes();
+         trie =getTxTrieNew(transactions);
      else
-         return getTxTrieOld(transactions).getHash().getBytes();
+         trie = getTxTrieOld(transactions);
+
+     return trie.getHash().getBytes();
 
     }
 
