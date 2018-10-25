@@ -10,6 +10,7 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -64,11 +65,15 @@ public class RepositoryMigrationTest {
 
         track.commit();
         System.out.println(Hex.toHexString(repository.getRoot()));
-        System.out.println(Hex.toHexString(TrieConverter.computeOldAccountTrieRoot(
-                (TrieImpl) repository.getMutableTrie().getTrie())));
+
+        byte[] oldRoot = TrieConverter.computeOldAccountTrieRoot(
+                (TrieImpl) repository.getMutableTrie().getTrie());
+
+        System.out.println(Hex.toHexString(oldRoot ));
 
         Trie atrie = OldTrieImpl.deserialize(oldTrie10_5);
         System.out.println(atrie.getHash().toHexString());
+        Assert.assertEquals(atrie.getHash().toHexString(),Hex.toHexString(oldRoot ));
 
     }
 
