@@ -30,6 +30,10 @@ import java.util.Set;
 public class MutableRepository implements Repository {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final byte[] ONE_BYTE_ARRAY = getOneByteArray();
+    private static final byte[] DOMAIN_PREFIX = new byte[]{0};
+    private static final byte CODE_PREFIX = (byte) 0x80; // This makes the MSB 1 be branching
+    private static final byte STORAGE_PREFIX = (byte) 0x00; // This makes the MSB 0 be branching
+
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
@@ -103,7 +107,7 @@ public class MutableRepository implements Repository {
             secureKey = addr.getBytes();
 
         // a zero prefix allows us to extend the namespace in the future
-        return concat(new byte[]{0},secureKey);
+        return concat(DOMAIN_PREFIX,secureKey);
     }
 
 
@@ -200,17 +204,17 @@ public class MutableRepository implements Repository {
     }
 
     public byte[] getCodeKey(RskAddress addr) {
-        return getAccountKeyChildKey(addr,(byte) 1);
+        return getAccountKeyChildKey(addr,CODE_PREFIX);
     }
 
 
     static byte[] getAccountStoragePrefixKey(RskAddress addr,boolean isSecure) {
-        return getAccountKeyChildKey(addr,(byte) 0,isSecure);
+        return getAccountKeyChildKey(addr,STORAGE_PREFIX,isSecure);
     }
 
     // Use a cache
     byte[] getAccountStoragePrefixKey(RskAddress addr) {
-        return getAccountKeyChildKey(addr,(byte) 0);
+        return getAccountKeyChildKey(addr,STORAGE_PREFIX);
     }
 
     public static byte[] GetStorageTailKey(byte[] subkey,boolean isSecure) {
@@ -233,15 +237,14 @@ public class MutableRepository implements Repository {
         byte[] key = getCodeKey(addr);
         this.trie.put(key,code);
 
-        AccountState  accountState = getAccountState(addr);
+        boolean accountExists = isExist(addr);
         if ((code==null) || code.length==0)
-            if (accountState ==null)
+            if (!accountExists)
                 return;
 
-        if (accountState ==null)
-            accountState  = createAccount(addr);
-
-        updateAccountState(addr, accountState);
+        if (!accountExists) {
+            createAccount(addr);
+        }
     }
 
     @Override

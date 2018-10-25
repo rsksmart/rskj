@@ -33,10 +33,7 @@ import org.mapdb.Serializer;
 
 import java.io.File;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
@@ -51,7 +48,7 @@ public final class TestUtils {
     // Alse it reduces the time to get the random in performance tests
     static Random aRandom;
 
-    static Random getRandom() {
+    static public Random getRandom() {
         if (aRandom==null)
             aRandom = new Random();
         return aRandom;
@@ -61,6 +58,15 @@ public final class TestUtils {
         byte[] result = new byte[length];
         getRandom().nextBytes(result);
         return result;
+    }
+
+    public static BigInteger randomBigInteger(int maxSizeBytes) {
+        return new BigInteger(maxSizeBytes*8,getRandom());
+    }
+
+    public static Coin randomCoin(int decimalZeros,int maxValue) {
+        return new Coin(BigInteger.TEN.pow(decimalZeros).multiply(
+                BigInteger.valueOf(getRandom().nextInt(maxValue))));
     }
 
     public static DataWord randomDataWord() {
@@ -134,5 +140,11 @@ public final class TestUtils {
 
     public static String padZeroesLeft(String s, int n) {
         return StringUtils.leftPad(s, n, '0');
+    }
+
+    public static byte[] concat(byte[] first, byte[] second) {
+        byte[] result = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, result, first.length, second.length);
+        return result;
     }
 }

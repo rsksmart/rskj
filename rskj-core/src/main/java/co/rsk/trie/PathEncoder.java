@@ -45,6 +45,7 @@ class PathEncoder {
     }
 
     @Nonnull
+    // First bit is MOST SIGNIFICANT
     private static byte[] encodeBinaryPath(byte[] path) {
         int lpath = path.length;
         int lencoded = lpath / 8 + (lpath % 8 == 0 ? 0 : 1);
@@ -70,6 +71,7 @@ class PathEncoder {
 
     @Nonnull
     // length is the length in bits. For example ({1},8) is fine
+    // First bit is MOST SIGNIFICANT
     private static byte[] decodeBinaryPath(byte[] encoded, int bitlength) {
         byte[] path = new byte[bitlength];
 

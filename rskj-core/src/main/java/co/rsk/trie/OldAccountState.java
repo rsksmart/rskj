@@ -1,3 +1,4 @@
+package co.rsk.trie;
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
@@ -17,27 +18,21 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.core;
 
-import co.rsk.core.Coin;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
+        import co.rsk.core.Coin;
+        import org.ethereum.crypto.HashUtil;
+        import org.ethereum.util.RLP;
+        import org.ethereum.util.RLPList;
+        import org.bouncycastle.util.BigIntegers;
+        import org.bouncycastle.util.encoders.Hex;
 
-import java.math.BigInteger;
+        import java.math.BigInteger;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+        import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+        import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
-public class AccountState {
-
-    // This is the value that should be shown to EXTCODEHASH when the real value
-    // stored is EMPTY_CODE_HASH.
-    // Currently is not in use, but we're preparing to use it.
-    public static final byte[] EMPTY_CODE_HASH_AS_SEEN_BY_EXTCODEHASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
+public class OldAccountState {
+    private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
     static final int ACC_HIBERNATED_MASK = 1;
     private byte[] rlpEncoded;
@@ -50,6 +45,25 @@ public class AccountState {
     /* A scalar value equalBytes to the number of Wei owned by this address */
     private Coin balance;
 
+    /* A 256-bit hash of the root node of a trie structure
+     * that encodes the storage contents of the contract,
+     * itself a simple mapping between byte arrays of size 32.
+     * The hash is formally denoted σ[a] s .
+     *
+     * Since I typically wish to refer not to the trie’s root hash
+     * but to the underlying set of key/value pairs stored within,
+     * I define a convenient equivalence TRIE (σ[a] s ) ≡ σ[a] s .
+     * It shall be understood that σ[a] s is not a ‘physical’ member
+     * of the account and does not contribute to its later serialisation */
+    private byte[] stateRoot = EMPTY_TRIE_HASH;
+
+    /* The hash of the EVM code of this contract—this is the code
+     * that gets executed should this address receive a message call.
+     * It is immutable and thus, unlike all other fields, cannot be changed
+     * after construction. All such code fragments are contained in
+     * the state database under their corresponding hashes for later
+     * retrieval */
+    private byte[] codeHash = EMPTY_DATA_HASH;
 
     /* Account state flags*/
     private int stateFlags;
@@ -57,25 +71,27 @@ public class AccountState {
     private boolean dirty = false;
     private boolean deleted = false;
 
-    public AccountState() {
+    public OldAccountState() {
         this(BigInteger.ZERO, Coin.ZERO);
     }
 
-    public AccountState(BigInteger nonce, Coin balance) {
+    public OldAccountState(BigInteger nonce, Coin balance) {
         this.nonce = nonce;
         this.balance = balance;
     }
 
-    public AccountState(byte[] rlpData) {
+    public OldAccountState(byte[] rlpData) {
         this.rlpEncoded = rlpData;
 
         RLPList items = (RLPList) RLP.decode2(rlpEncoded).get(0);
         this.nonce = items.get(0).getRLPData() == null ? BigInteger.ZERO
                 : new BigInteger(1, items.get(0).getRLPData());
         this.balance = RLP.parseCoin(items.get(1).getRLPData());
+        this.stateRoot = items.get(2).getRLPData();
+        this.codeHash = items.get(3).getRLPData();
 
-        if (items.size() > 2) {
-            byte[] data = items.get(2).getRLPData();
+        if (items.size() > 4) {
+            byte[] data = items.get(4).getRLPData();
 
             this.stateFlags = data == null ? 0 : BigIntegers.fromUnsignedByteArray(data).intValue();
         }
@@ -98,7 +114,15 @@ public class AccountState {
         this.nonce = nonce;
     }
 
+    public byte[] getStateRoot() {
+        return stateRoot;
+    }
 
+    public void setStateRoot(byte[] stateRoot) {
+        rlpEncoded = null;
+        this.stateRoot = stateRoot;
+        setDirty(true);
+    }
 
     public void incrementNonce() {
         rlpEncoded = null;
@@ -106,16 +130,24 @@ public class AccountState {
         setDirty(true);
     }
 
+    public byte[] getCodeHash() {
+        return codeHash;
+    }
+
+    public void setCodeHash(byte[] codeHash) {
+        rlpEncoded = null;
+        this.codeHash = codeHash;
+    }
+
     public Coin getBalance() {
         return balance;
     }
 
     public Coin addToBalance(Coin value) {
-        if (value.equals(Coin.ZERO)) {
-            return this.balance;
+        if (!value.equals(Coin.ZERO)) {
+            rlpEncoded = null;
         }
 
-        rlpEncoded = null;
         this.balance = balance.add(value);
         setDirty(true);
         return this.balance;
@@ -125,22 +157,24 @@ public class AccountState {
         if (!value.equals(Coin.ZERO)) {
             rlpEncoded = null;
         }
-        
+
         this.balance = balance.subtract(value);
         setDirty(true);
     }
 
     public byte[] getEncoded() {
         if (rlpEncoded == null) {
-            byte[] anonce = RLP.encodeBigInteger(this.nonce);
-            byte[] abalance = RLP.encodeCoin(this.balance);
+            byte[] nonce = RLP.encodeBigInteger(this.nonce);
+            byte[] balance = RLP.encodeCoin(this.balance);
+            byte[] stateRoot = RLP.encodeElement(this.stateRoot);
+            byte[] codeHash = RLP.encodeElement(this.codeHash);
             if (stateFlags != 0) {
-                byte[] astateFlags = RLP.encodeInt(this.stateFlags);
-                this.rlpEncoded = RLP.encodeList(anonce, abalance, astateFlags);
+                byte[] stateFlags = RLP.encodeInt(this.stateFlags);
+                this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, stateFlags);
             } else
-                // do not serialize if zero to keep compatibility
+            // do not serialize if zero to keep compatibility
             {
-                this.rlpEncoded = RLP.encodeList(anonce, abalance);
+                this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash);
             }
         }
         return rlpEncoded;
@@ -162,17 +196,22 @@ public class AccountState {
         return deleted;
     }
 
-    public AccountState clone() {
-        AccountState accountState = new AccountState(nonce, balance);
-        accountState.setDirty(false);
-        accountState.setStateFlags(this.stateFlags);
-        return accountState;
+    public OldAccountState clone() {
+        OldAccountState OldAccountState = new OldAccountState(nonce, balance);
+
+        OldAccountState.setCodeHash(this.getCodeHash());
+        OldAccountState.setStateRoot(this.getStateRoot());
+        OldAccountState.setDirty(false);
+        OldAccountState.setStateFlags(this.stateFlags);
+        return OldAccountState;
     }
 
     public String toString() {
         String ret = "  Nonce: " + this.getNonce().toString() + "\n" +
                 "  Balance: " + getBalance().asBigInteger() + "\n" +
-                "  StateFlags: " + getStateFlags();
+                "  StateFlags: " + getStateFlags() + "\n" +
+                "  State Root: " + Hex.toHexString(this.getStateRoot()) + "\n" +
+                "  Code Hash: " + Hex.toHexString(this.getCodeHash());
         return ret;
     }
 
