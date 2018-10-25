@@ -5,6 +5,8 @@ import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 
+import java.util.Arrays;
+
 /**
  * Created by SerAdmin on 10/23/2018.
  */
@@ -23,7 +25,7 @@ public class TrieConverter {
     public static byte[] computeOldAccountTrieRoot(TrieImpl src) {
         TrieConverter tc = new TrieConverter();
         tc.init();
-        return tc.getOldAccountTrieRoot(new ExpandedKeyImpl(),src);
+        return tc.getOldAccountTrieRoot(new ExpandedKeyImpl(),src,true);
     }
 
 
@@ -66,7 +68,7 @@ public class TrieConverter {
         return newNode.getHash().getBytes();
     }
 
-    public byte[] getOldAccountTrieRoot(ExpandedKey key,TrieImpl src) {
+    public byte[] getOldAccountTrieRoot(ExpandedKey key,TrieImpl src,boolean removeFirst8bits) {
         if (src==null)
             return HashUtil.EMPTY_TRIE_HASH;
 
@@ -80,7 +82,11 @@ public class TrieConverter {
             byte[] sharedPath = PathEncoder.decode(encodedSharedPath, sharedPathLength);
             key = key.append(new ExpandedKeyImpl(sharedPath));
         }
-
+        if (removeFirst8bits) {
+            assert (sharedPathLength >=8);
+            sharedPathLength -=8;
+            encodedSharedPath = Arrays.copyOfRange(encodedSharedPath,1,encodedSharedPath.length);
+        }
         TrieImpl child0 = (TrieImpl) src.retrieveNode(0);
         byte[] child0Hash =null;
         TrieImpl child1 = (TrieImpl) src.retrieveNode(1);
@@ -105,6 +111,7 @@ public class TrieConverter {
                 byte[] stateRoot = computeOldTrieRoot(child0,true);
                 oldState.setStateRoot(stateRoot);
             }
+
             OldTrieImpl newNode = new OldTrieImpl(
                     encodedSharedPath, sharedPathLength,
                     oldState.getEncoded(), null, null,store,src.isSecure());
@@ -113,11 +120,11 @@ public class TrieConverter {
         }
 
         if (child0!=null)
-            child0Hash = getOldAccountTrieRoot(key.append( (byte)0),child0);
+            child0Hash = getOldAccountTrieRoot(key.append( (byte)0),child0,false);
 
 
         if (child1!=null)
-            child1Hash = getOldAccountTrieRoot(key.append( (byte)1),child1);
+            child1Hash = getOldAccountTrieRoot(key.append( (byte)1),child1,false);
 
 
         Keccak256[] hashes = new Keccak256[2];
