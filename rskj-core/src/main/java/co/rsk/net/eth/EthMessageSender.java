@@ -75,4 +75,11 @@ public class EthMessageSender implements MessageChannel {
 
     @Override
     public void setAddress(InetAddress address) { this.address = address; }
+
+    @Override
+    public String toString() {
+        return "EthMessageSender{" +
+                "nodeID=" + nodeID +
+                '}';
+    }
 }
