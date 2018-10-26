@@ -50,7 +50,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
                         logger.warn("Wildcard address is not allowed on rpc host property {}", hostAddress);
                     }
                 } catch (UnknownHostException e) {
-                    logger.info("Invalid Host defined on rpc.host", e);
+                    logger.warn("Invalid Host defined on rpc.host", e);
                 }
             }
         }
@@ -70,7 +70,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         String parsedHeader = parseHostHeader(hostHeader);
 
         if (!acceptedHosts.contains(parsedHeader)) {
-            logger.trace("Invalid header HOST {}", hostHeader);
+            logger.debug("Invalid header HOST {}", hostHeader);
             response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
             return;
@@ -83,13 +83,13 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
             String referer = headers.get(HttpHeaders.Names.REFERER);
 
             if (!"application/json".equals(mimeType) && !"application/json-rpc".equals(mimeType)) {
-                logger.error("Unsupported content type");
+                logger.debug("Unsupported content type");
                 response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
             } else if (origin != null && !this.originValidator.isValidOrigin(origin)) {
-                logger.error("Invalid origin");
+                logger.debug("Invalid origin");
                 response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
             } else if (referer != null && !this.originValidator.isValidReferer(referer)) {
-                logger.error("Invalid referer");
+                logger.debug("Invalid referer");
                 response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
             }
             else {
