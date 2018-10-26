@@ -65,6 +65,7 @@ public class SyncProcessor implements SyncEventsHandler {
         this.pendingMessages = new LinkedHashMap<Long, MessageType>() {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Long, MessageType> eldest) {
+                logger.trace("Pending {}@{} DISCARDED", eldest.getValue(), eldest.getKey());
                 return size() > MAX_PENDING_MESSAGES;
             }
         };
@@ -88,8 +89,9 @@ public class SyncProcessor implements SyncEventsHandler {
         peerStatuses.getOrRegisterPeer(peer.getPeerNodeID());
 
         long messageId = message.getId();
-        if (isPending(messageId, message.getMessageType())) {
-            pendingMessages.remove(messageId);
+        MessageType messageType = message.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
             syncState.newSkeleton(message.getBlockIdentifiers(), peer);
         } else {
             peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
@@ -102,8 +104,9 @@ public class SyncProcessor implements SyncEventsHandler {
         peerStatuses.getOrRegisterPeer(nodeID);
 
         long messageId = message.getId();
-        if (isPending(messageId, message.getMessageType())) {
-            pendingMessages.remove(messageId);
+        MessageType messageType = message.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
             syncState.newConnectionPointData(message.getHash());
         } else {
             peerScoringManager.recordEvent(nodeID, null, EventType.UNEXPECTED_MESSAGE);
@@ -115,8 +118,9 @@ public class SyncProcessor implements SyncEventsHandler {
         peerStatuses.getOrRegisterPeer(peer.getPeerNodeID());
 
         long messageId = message.getId();
-        if (isPending(messageId, message.getMessageType())) {
-            pendingMessages.remove(messageId);
+        MessageType messageType = message.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
             syncState.newBlockHeaders(message.getBlockHeaders());
         } else {
             peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
@@ -128,8 +132,9 @@ public class SyncProcessor implements SyncEventsHandler {
         peerStatuses.getOrRegisterPeer(peer.getPeerNodeID());
 
         long messageId = message.getId();
-        if (isPending(messageId, message.getMessageType())) {
-            pendingMessages.remove(messageId);
+        MessageType messageType = message.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
             syncState.newBody(message, peer);
         } else {
             peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
@@ -153,8 +158,9 @@ public class SyncProcessor implements SyncEventsHandler {
         peerStatuses.getOrRegisterPeer(nodeID);
 
         long messageId = message.getId();
-        if (isPending(messageId, message.getMessageType())) {
-            pendingMessages.remove(messageId);
+        MessageType messageType = message.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
             blockSyncService.processBlock(message.getBlock(), peer, false);
         } else {
             peerScoringManager.recordEvent(nodeID, null, EventType.UNEXPECTED_MESSAGE);
@@ -244,7 +250,9 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void stopSyncing() {
         selectedPeerId = null;
+        int pendingMessagesCount = pendingMessages.size();
         pendingMessages.clear();
+        logger.trace("Pending {} CLEAR", pendingMessagesCount);
         // always that a syncing process ends unexpectedly the best block number is reset
         blockSyncService.setLastKnownBlockNumber(blockchain.getBestBlock().getNumber());
         clearOldFailureEntries();
@@ -274,7 +282,10 @@ public class SyncProcessor implements SyncEventsHandler {
     private boolean sendMessage(NodeID nodeID, MessageWithId message) {
         boolean sent = sendMessageTo(nodeID, message);
         if (sent){
-            pendingMessages.put(message.getId(), message.getResponseMessageType());
+            MessageType messageType = message.getResponseMessageType();
+            long messageId = message.getId();
+            pendingMessages.put(messageId, messageType);
+            logger.trace("Pending {}@{} ADDED for {}", messageType, messageId, nodeID);
         }
         return sent;
     }
@@ -340,6 +351,11 @@ public class SyncProcessor implements SyncEventsHandler {
 
     private boolean isPending(long messageId, MessageType messageType) {
         return pendingMessages.containsKey(messageId) && pendingMessages.get(messageId) == messageType;
+    }
+
+    private void removePendingMessage(long messageId, MessageType messageType) {
+        pendingMessages.remove(messageId);
+        logger.trace("Pending {}@{} REMOVED", messageType, messageId);
     }
 
     private class SyncInformationImpl implements SyncInformation {
