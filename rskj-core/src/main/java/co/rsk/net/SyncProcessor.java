@@ -35,7 +35,6 @@ public class SyncProcessor implements SyncEventsHandler {
     private static final int TIME_LIMIT_FAILURE_RECORD = 600;
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
-    private final RskSystemProperties config;
     private final Blockchain blockchain;
     private final BlockSyncService blockSyncService;
     private final PeerScoringManager peerScoringManager;
@@ -49,15 +48,13 @@ public class SyncProcessor implements SyncEventsHandler {
     private SyncState syncState;
     private NodeID selectedPeerId;
 
-    public SyncProcessor(RskSystemProperties config,
-                         Blockchain blockchain,
+    public SyncProcessor(Blockchain blockchain,
                          BlockSyncService blockSyncService,
                          PeerScoringManager peerScoringManager,
                          ChannelManager channelManager,
                          SyncConfiguration syncConfiguration,
                          BlockHeaderValidationRule blockHeaderValidationRule,
                          DifficultyCalculator difficultyCalculator) {
-        this.config = config;
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
         this.peerScoringManager = peerScoringManager;
