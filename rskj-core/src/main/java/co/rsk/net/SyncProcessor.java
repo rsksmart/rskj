@@ -31,8 +31,8 @@ import java.util.*;
  * This class' methods are executed one at a time because NodeMessageHandler is synchronized.
  */
 public class SyncProcessor implements SyncEventsHandler {
-    public static final int MAX_SIZE_FAILURE_RECORDS = 10;
-    public static final int TIME_LIMIT_FAILURE_RECORD = 600;
+    private static final int MAX_SIZE_FAILURE_RECORDS = 10;
+    private static final int TIME_LIMIT_FAILURE_RECORD = 600;
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     private final RskSystemProperties config;
