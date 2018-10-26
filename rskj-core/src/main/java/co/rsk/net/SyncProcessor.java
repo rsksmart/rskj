@@ -1,6 +1,5 @@
 package co.rsk.net;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
@@ -27,15 +26,14 @@ import java.time.Instant;
 import java.util.*;
 
 /**
- * Created by ajlopez on 29/08/2017.
  * This class' methods are executed one at a time because NodeMessageHandler is synchronized.
  */
 public class SyncProcessor implements SyncEventsHandler {
-    public static final int MAX_SIZE_FAILURE_RECORDS = 10;
-    public static final int TIME_LIMIT_FAILURE_RECORD = 600;
+    private static final int MAX_SIZE_FAILURE_RECORDS = 10;
+    private static final int TIME_LIMIT_FAILURE_RECORD = 600;
+    private static final int MAX_PENDING_MESSAGES = 100_000;
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
-    private final RskSystemProperties config;
     private final Blockchain blockchain;
     private final BlockSyncService blockSyncService;
     private final PeerScoringManager peerScoringManager;
@@ -43,21 +41,20 @@ public class SyncProcessor implements SyncEventsHandler {
     private final SyncConfiguration syncConfiguration;
     private final PeersInformation peerStatuses;
 
-    private final PendingMessages pendingMessages;
+    private final Map<Long, MessageType> pendingMessages;
     private final SyncInformationImpl syncInformation;
     private final Map<NodeID, Instant> failedPeers;
     private SyncState syncState;
     private NodeID selectedPeerId;
+    private long lastRequestId;
 
-    public SyncProcessor(RskSystemProperties config,
-                         Blockchain blockchain,
+    public SyncProcessor(Blockchain blockchain,
                          BlockSyncService blockSyncService,
                          PeerScoringManager peerScoringManager,
                          ChannelManager channelManager,
                          SyncConfiguration syncConfiguration,
                          BlockHeaderValidationRule blockHeaderValidationRule,
                          DifficultyCalculator difficultyCalculator) {
-        this.config = config;
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
         this.peerScoringManager = peerScoringManager;
@@ -65,7 +62,13 @@ public class SyncProcessor implements SyncEventsHandler {
         this.syncConfiguration = syncConfiguration;
         this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule, difficultyCalculator);
         this.peerStatuses = new PeersInformation(syncInformation, channelManager, syncConfiguration);
-        this.pendingMessages = new PendingMessages();
+        this.pendingMessages = new LinkedHashMap<Long, MessageType>() {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Long, MessageType> eldest) {
+                logger.trace("Pending {}@{} DISCARDED", eldest.getValue(), eldest.getKey());
+                return size() > MAX_PENDING_MESSAGES;
+            }
+        };
         this.failedPeers = new LinkedHashMap<NodeID, Instant>(MAX_SIZE_FAILURE_RECORDS, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<NodeID, Instant> eldest) {
@@ -76,111 +79,121 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     public void processStatus(MessageChannel sender, Status status) {
-        logger.trace("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.shortHash(status.getBestBlockHash()), status.getBestBlockHash());
+        logger.debug("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.shortHash(status.getBestBlockHash()));
         peerStatuses.registerPeer(sender.getPeerNodeID()).setStatus(status);
         syncState.newPeerStatus();
     }
 
     public void processSkeletonResponse(MessageChannel peer, SkeletonResponseMessage message) {
-        logger.trace("Process skeleton response from node {}", peer.getPeerNodeID());
+        logger.debug("Process skeleton response from node {}", peer.getPeerNodeID());
         peerStatuses.getOrRegisterPeer(peer.getPeerNodeID());
 
-        if (!pendingMessages.isPending(message)){
+        long messageId = message.getId();
+        MessageType messageType = message.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
+            syncState.newSkeleton(message.getBlockIdentifiers(), peer);
+        } else {
             peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
-            return;
         }
-
-        syncState.newSkeleton(message.getBlockIdentifiers(), peer);
     }
 
     public void processBlockHashResponse(MessageChannel peer, BlockHashResponseMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
-        logger.trace("Process block hash response from node {} hash {}", nodeID, HashUtil.shortHash(message.getHash()));
+        logger.debug("Process block hash response from node {} hash {}", nodeID, HashUtil.shortHash(message.getHash()));
         peerStatuses.getOrRegisterPeer(nodeID);
 
-        if (!pendingMessages.isPending(message)){
+        long messageId = message.getId();
+        MessageType messageType = message.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
+            syncState.newConnectionPointData(message.getHash());
+        } else {
             peerScoringManager.recordEvent(nodeID, null, EventType.UNEXPECTED_MESSAGE);
-            return;
         }
-
-        syncState.newConnectionPointData(message.getHash());
     }
 
     public void processBlockHeadersResponse(MessageChannel peer, BlockHeadersResponseMessage message) {
-        logger.trace("Process block headers response from node {}", peer.getPeerNodeID());
+        logger.debug("Process block headers response from node {}", peer.getPeerNodeID());
         peerStatuses.getOrRegisterPeer(peer.getPeerNodeID());
 
-        if (!pendingMessages.isPending(message)){
+        long messageId = message.getId();
+        MessageType messageType = message.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
+            syncState.newBlockHeaders(message.getBlockHeaders());
+        } else {
             peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
-            return;
         }
-
-        syncState.newBlockHeaders(message.getBlockHeaders());
     }
 
     public void processBodyResponse(MessageChannel peer, BodyResponseMessage message) {
-        logger.trace("Process body response from node {}", peer.getPeerNodeID());
+        logger.debug("Process body response from node {}", peer.getPeerNodeID());
         peerStatuses.getOrRegisterPeer(peer.getPeerNodeID());
 
-        if (!pendingMessages.isPending(message)){
+        long messageId = message.getId();
+        MessageType messageType = message.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
+            syncState.newBody(message, peer);
+        } else {
             peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
-            return;
         }
-
-        this.syncState.newBody(message, peer);
     }
 
     public void processNewBlockHash(MessageChannel peer, NewBlockHashMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
-        logger.trace("Process new block hash from node {} hash {}", nodeID, HashUtil.shortHash(message.getBlockHash()));
+        logger.debug("Process new block hash from node {} hash {}", nodeID, HashUtil.shortHash(message.getBlockHash()));
         byte[] hash = message.getBlockHash();
 
         if (syncState instanceof DecidingSyncState && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
             peerStatuses.getOrRegisterPeer(nodeID);
-            sendMessage(nodeID, new BlockRequestMessage(pendingMessages.getNextRequestId(), hash));
+            sendMessage(nodeID, new BlockRequestMessage(++lastRequestId, hash));
         }
     }
 
     public void processBlockResponse(MessageChannel peer, BlockResponseMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
-        logger.trace("Process block response from node {} block {} {}", nodeID, message.getBlock().getNumber(), message.getBlock().getShortHash());
+        logger.debug("Process block response from node {} block {} {}", nodeID, message.getBlock().getNumber(), message.getBlock().getShortHash());
         peerStatuses.getOrRegisterPeer(nodeID);
 
-        if (!pendingMessages.isPending(message)){
+        long messageId = message.getId();
+        MessageType messageType = message.getMessageType();
+        if (isPending(messageId, messageType)) {
+            removePendingMessage(messageId, messageType);
+            blockSyncService.processBlock(message.getBlock(), peer, false);
+        } else {
             peerScoringManager.recordEvent(nodeID, null, EventType.UNEXPECTED_MESSAGE);
-            return;
         }
-
-        blockSyncService.processBlock(message.getBlock(), peer, false);
     }
 
     @Override
     public boolean sendSkeletonRequest(NodeID nodeID, long height) {
-        logger.trace("Send skeleton request to node {} height {}", nodeID, height);
-        MessageWithId message = new SkeletonRequestMessage(pendingMessages.getNextRequestId(), height);
+        logger.debug("Send skeleton request to node {} height {}", nodeID, height);
+        MessageWithId message = new SkeletonRequestMessage(++lastRequestId, height);
         return sendMessage(nodeID, message);
     }
 
     @Override
     public boolean sendBlockHashRequest(long height) {
-        logger.trace("Send hash request to node {} height {}", selectedPeerId, height);
-        BlockHashRequestMessage message = new BlockHashRequestMessage(pendingMessages.getNextRequestId(), height);
+        logger.debug("Send hash request to node {} height {}", selectedPeerId, height);
+        BlockHashRequestMessage message = new BlockHashRequestMessage(++lastRequestId, height);
         return sendMessage(selectedPeerId, message);
     }
 
     @Override
     public boolean sendBlockHeadersRequest(ChunkDescriptor chunk) {
-        logger.trace("Send headers request to node {}", selectedPeerId);
+        logger.debug("Send headers request to node {}", selectedPeerId);
 
-        BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(pendingMessages.getNextRequestId(), chunk.getHash(), chunk.getCount());
+        BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(++lastRequestId, chunk.getHash(), chunk.getCount());
         return sendMessage(selectedPeerId, message);
     }
 
     @Override
     public Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) {
-        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash().getBytes()), peerId);
+        logger.debug("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash().getBytes()), peerId);
 
-        BodyRequestMessage message = new BodyRequestMessage(pendingMessages.getNextRequestId(), header.getHash().getBytes());
+        BodyRequestMessage message = new BodyRequestMessage(++lastRequestId, header.getHash().getBytes());
         if (!sendMessage(peerId, message)){
             return null;
         }
@@ -199,7 +212,7 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void startSyncing(NodeID nodeID) {
         selectedPeerId = nodeID;
-        logger.trace("Start syncing with node {}", nodeID);
+        logger.info("Start syncing with node {}", nodeID);
         byte[] bestBlockHash = syncInformation.getPeerStatus(selectedPeerId).getStatus().getBestBlockHash();
         setSyncState(new CheckingBestHeaderSyncState(this.syncConfiguration, this, syncInformation, bestBlockHash));
     }
@@ -229,7 +242,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void startFindingConnectionPoint() {
-        logger.trace("Find connection point with node {}", selectedPeerId);
+        logger.debug("Find connection point with node {}", selectedPeerId);
         long bestBlockNumber = syncInformation.getPeerStatus(selectedPeerId).getStatus().getBestBlockNumber();
         setSyncState(new FindingConnectionPointSyncState(this.syncConfiguration, this, syncInformation, bestBlockNumber));
     }
@@ -237,7 +250,9 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void stopSyncing() {
         selectedPeerId = null;
-        this.pendingMessages.clear();
+        int pendingMessagesCount = pendingMessages.size();
+        pendingMessages.clear();
+        logger.trace("Pending {} CLEAR", pendingMessagesCount);
         // always that a syncing process ends unexpectedly the best block number is reset
         blockSyncService.setLastKnownBlockNumber(blockchain.getBestBlock().getNumber());
         clearOldFailureEntries();
@@ -260,14 +275,17 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void onCompletedSyncing() {
-        logger.trace("Completed syncing phase with node {}", selectedPeerId);
+        logger.info("Completed syncing phase with node {}", selectedPeerId);
         stopSyncing();
     }
 
     private boolean sendMessage(NodeID nodeID, MessageWithId message) {
         boolean sent = sendMessageTo(nodeID, message);
         if (sent){
-            pendingMessages.register(message);
+            MessageType messageType = message.getResponseMessageType();
+            long messageId = message.getId();
+            pendingMessages.put(messageId, messageType);
+            logger.trace("Pending {}@{} ADDED for {}", messageType, messageId, nodeID);
         }
         return sent;
     }
@@ -304,7 +322,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @VisibleForTesting
     public void registerExpectedMessage(MessageWithId message) {
-        pendingMessages.registerExpectedMessage(message);
+        pendingMessages.put(message.getId(), message.getMessageType());
     }
 
     @VisibleForTesting
@@ -328,8 +346,18 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @VisibleForTesting
     public Map<Long, MessageType> getExpectedResponses() {
-        return this.pendingMessages.getExpectedMessages();
+        return pendingMessages;
     }
+
+    private boolean isPending(long messageId, MessageType messageType) {
+        return pendingMessages.containsKey(messageId) && pendingMessages.get(messageId) == messageType;
+    }
+
+    private void removePendingMessage(long messageId, MessageType messageType) {
+        pendingMessages.remove(messageId);
+        logger.trace("Pending {}@{} REMOVED", messageType, messageId);
+    }
+
     private class SyncInformationImpl implements SyncInformation {
 
         private final DependentBlockHeaderRule blockParentValidationRule;
