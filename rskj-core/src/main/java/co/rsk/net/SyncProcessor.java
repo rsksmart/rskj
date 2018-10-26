@@ -31,6 +31,7 @@ import java.util.*;
 public class SyncProcessor implements SyncEventsHandler {
     private static final int MAX_SIZE_FAILURE_RECORDS = 10;
     private static final int TIME_LIMIT_FAILURE_RECORD = 600;
+    private static final int MAX_PENDING_MESSAGES = 100_000;
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     private final Blockchain blockchain;
@@ -61,7 +62,12 @@ public class SyncProcessor implements SyncEventsHandler {
         this.syncConfiguration = syncConfiguration;
         this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule, difficultyCalculator);
         this.peerStatuses = new PeersInformation(syncInformation, channelManager, syncConfiguration);
-        this.pendingMessages = new HashMap<>();
+        this.pendingMessages = new LinkedHashMap<Long, MessageType>() {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Long, MessageType> eldest) {
+                return size() > MAX_PENDING_MESSAGES;
+            }
+        };
         this.failedPeers = new LinkedHashMap<NodeID, Instant>(MAX_SIZE_FAILURE_RECORDS, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<NodeID, Instant> eldest) {
