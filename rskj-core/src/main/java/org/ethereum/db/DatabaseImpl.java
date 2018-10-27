@@ -87,7 +87,7 @@ public class DatabaseImpl implements Database {
         keyValueDataSource.close();
     }
 
-    public <T> List<T> dumpKeys(Function<byte[], T> mapper) {
+    public <T> List<T> dumpKeys(Function<ByteArrayWrapper, T> mapper) {
         return keyValueDataSource.keys()
                 .stream()
                 .map(mapper)

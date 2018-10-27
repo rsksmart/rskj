@@ -75,6 +75,10 @@ public class MutableSubtrie implements MutableTrie {
         mutableTrie.save();
     }
 
+    public void flush() {
+        mutableTrie.flush();
+    }
+
     public void commit() {
         mutableTrie.commit();
 

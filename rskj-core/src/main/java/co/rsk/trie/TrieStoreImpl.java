@@ -21,6 +21,7 @@ package co.rsk.trie;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +89,12 @@ public class TrieStoreImpl implements TrieStore {
     }
 
     @Override
+    public void flush(){
+        this.store.flush();
+    }
+
+
+    @Override
     public int getSaveCount() { return this.saveCount; }
 
     /**
@@ -121,17 +128,17 @@ public class TrieStoreImpl implements TrieStore {
         int lkeys = 0;
         int lvalues = 0;
 
-        for (byte[] key : this.store.keys()) {
-            byte[] value = this.store.get(key);
+        for (ByteArrayWrapper key : this.store.keys()) {
+            byte[] value = this.store.get(key.getData());
 
             if (value == null || value.length == 0) {
                 continue;
             }
 
-            keys.add(key);
+            keys.add(key.getData());
             values.add(value);
 
-            lkeys += key.length;
+            lkeys += key.getData().length;
             lvalues += value.length;
         }
 
@@ -159,8 +166,8 @@ public class TrieStoreImpl implements TrieStore {
     public void copyFrom(TrieStoreImpl originalTrieStore) {
         KeyValueDataSource ds = originalTrieStore.store;
 
-        for (byte[] key : ds.keys()) {
-            this.store.put(key, ds.get(key));
+        for (ByteArrayWrapper key : ds.keys()) {
+            this.store.put(key.getData(), ds.get(key.getData()));
         }
     }
 

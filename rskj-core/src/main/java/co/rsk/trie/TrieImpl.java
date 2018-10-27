@@ -530,6 +530,16 @@ public class TrieImpl implements Trie {
         return buffer.array();
     }
 
+    // sends all data to disk. This applies to the store and all keys saved into the
+    // store, not only to this node.
+    @Override
+    public void flush() {
+        if (this.store==null) {
+            return;
+        }
+        this.store.flush();
+    }
+
     /**
      * save saves the unsaved current trie and subnodes to their associated store
      *
@@ -1399,12 +1409,22 @@ public class TrieImpl implements Trie {
         return store.retrieveValue(valueHash);
     }
 
+    protected void checkValueLengthAfterRetrieve() {
+        // At this time value==null and value.length!=null is really bad.
+        if ((value==null) && (valueLength != 0))
+            // Serious DB inconsistency here
+            throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
+
+        checkValueLength();
+
+    }
+
     protected void checkValueLength() {
         if ((value!=null) && (value.length != valueLength))
             // Serious DB inconsistency here
             throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
 
-        if ((value==null) && (valueLength != 0))
+        if ((value==null) && (valueLength != 0) && ((valueHash==null) || (valueHash.length==0)))
             // Serious DB inconsistency here
             throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
     }
@@ -1412,7 +1432,7 @@ public class TrieImpl implements Trie {
     public byte[] getValue() {
         if ((valueLength!=0) && (value==null)) {
             this.value = retrieveLongValue();
-            checkValueLength();
+            checkValueLengthAfterRetrieve();
         }
         return this.value;
     }

@@ -25,6 +25,7 @@ import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.rpc.TypeConverter;
 import org.bouncycastle.crypto.params.KeyParameter;
 
@@ -59,8 +60,8 @@ public class Wallet {
                 addresses.add(addr.getBytes());
             }
 
-            for (byte[] address: keyDS.keys()) {
-                keys.add(new RskAddress(address));
+            for (ByteArrayWrapper address: keyDS.keys()) {
+                keys.add(new RskAddress(address.getData()));
             }
 
             keys.addAll(accounts.keySet());

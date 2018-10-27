@@ -99,6 +99,11 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
+    public void flush() {
+        trie.flush();
+    }
+
+    @Override
     public void commit() {
 
     }

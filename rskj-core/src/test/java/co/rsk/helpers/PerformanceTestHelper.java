@@ -12,11 +12,27 @@ public class PerformanceTestHelper {
 
 
     long deltaTime; // in nanoseconds
-    long deltaRealTime;
+    long deltaRealTimeMillis;
+    long deltaGCTime;
+
     long startTime;
     long startRealTime;
     long startGCTime;
+
     ThreadMXBean thread;
+
+    public long getDeltaTime() {
+        // in nanoseconds
+        return deltaTime;
+    }
+
+    public long getDeltaRealTimeMillis() {
+        return deltaRealTimeMillis;
+    }
+
+    public long getDeltaGCTime() {
+        return deltaGCTime;
+    }
 
     public void setup() {
         thread = ManagementFactory.getThreadMXBean();
@@ -55,8 +71,9 @@ public class PerformanceTestHelper {
         return String.format("%1$8s", Long.toString(v));
     }
 
-    final int nsToMs = 1000 * 1000;
-    final int nsToS = 1000 * 1000 * 1000;
+    public static final int nsToUs = 1000 ;
+    public static final int nsToMs = 1000 * 1000;
+    public static final int nsToS = 1000 * 1000 * 1000;
 
     public void endMeasure(String midstate) {
         System.out.println("End: " + midstate);
@@ -77,11 +94,11 @@ public class PerformanceTestHelper {
 
         if (startRealTime!=0) {
             long endRealTime =System.currentTimeMillis();
-            deltaRealTime = (endRealTime - startRealTime);
-            System.out.println("RealTime elapsed [ms]: " + padLeft(deltaRealTime)+" [s]:"+ padLeft(deltaRealTime/1000));
+            deltaRealTimeMillis = (endRealTime - startRealTime);
+            System.out.println("RealTime elapsed [ms]: " + padLeft(deltaRealTimeMillis)+" [s]:"+ padLeft(deltaRealTimeMillis /1000));
         }
         long endGCTime = getGarbageCollectorTimeMillis();
-        long deltaGCTime = (endGCTime - startGCTime);
+        deltaGCTime = (endGCTime - startGCTime);
         System.out.println("GCTime elapsed [ms]:   " + padLeft(deltaGCTime)+" [s]:"+ padLeft(deltaGCTime/1000));
         line();
     }

@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.peg.ReleaseRequestQueue;
 import org.ethereum.db.ByteArrayWrapper;
 import org.iq80.leveldb.DBException;
 
@@ -32,6 +33,10 @@ public class HashMapDB implements KeyValueDataSource {
 
     private final Map<ByteArrayWrapper, byte[]> storage = new ConcurrentHashMap<>();
     private boolean clearOnClose = true;
+
+    public Map<ByteArrayWrapper, byte[]> getStorageMap() {
+        return storage;
+    }
 
     @Override
     public void delete(byte[] arg0) throws DBException {
@@ -52,7 +57,7 @@ public class HashMapDB implements KeyValueDataSource {
 
     @Override
     public void init() {
-
+        clear();
     }
 
     @Override
@@ -66,16 +71,25 @@ public class HashMapDB implements KeyValueDataSource {
     }
 
     @Override
-    public synchronized Set<byte[]> keys() {
-        return storage.keySet().stream()
-                .map(ByteArrayWrapper::getData)
-                .collect(Collectors.toSet());
+    public synchronized Set<ByteArrayWrapper> keys() {
+        return storage.keySet();
     }
 
     @Override
-    public synchronized void updateBatch(Map<byte[], byte[]> rows) {
-        rows.entrySet().stream().
-                forEach(entry -> storage.put(wrap(entry.getKey()), entry.getValue()));
+    public synchronized void updateBatch(Map<ByteArrayWrapper, byte[]> rows) {
+        // Hashmap does not handle null values. If there are empty values, remove them
+        for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
+            byte[] key = entry.getValue();
+            byte[] value = entry.getValue();
+            // Make this check explicit so that users know very clearly what to expect
+            if (key == null || value == null) throw new NullPointerException();
+            if (key.length != 0)
+                put(key, value);
+            else
+                delete(key);
+        }
+        //storage.putAll(rows);
+
     }
 
     public synchronized HashMapDB setClearOnClose(boolean clearOnClose) {
@@ -83,10 +97,20 @@ public class HashMapDB implements KeyValueDataSource {
         return this;
     }
 
+    public void clear() {
+        this.storage.clear();
+    }
+
     @Override
     public synchronized void close() {
         if (clearOnClose) {
             this.storage.clear();
         }
+    }
+
+    // HashMapDB has no flush: everything is kept in memory.
+    @Override
+    public void flush(){
+
     }
 }
