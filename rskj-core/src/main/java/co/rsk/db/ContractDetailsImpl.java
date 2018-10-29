@@ -55,8 +55,6 @@ public class ContractDetailsImpl implements ContractDetails {
     private byte[] address;
     private boolean dirty;
     private boolean deleted;
-    private boolean originalExternalStorage;
-    private boolean externalStorage;
     private boolean closed;
     private Set<ByteArrayWrapper> keys = new HashSet<>();
     private final TrieStore.Pool trieStorePool;
@@ -104,7 +102,6 @@ public class ContractDetailsImpl implements ContractDetails {
         }
 
         this.setDirty(true);
-        this.checkExternalStorage();
     }
 
     @Override
@@ -125,7 +122,6 @@ public class ContractDetailsImpl implements ContractDetails {
         }
 
         this.setDirty(true);
-        this.checkExternalStorage();
     }
 
     @Override
@@ -194,15 +190,9 @@ public class ContractDetailsImpl implements ContractDetails {
         RLPList rlpKeys = (RLPList) rlpList.get(4);
 
         this.address = rlpAddress.getRLPData();
-        this.externalStorage = rlpIsExternalStorage.getRLPData() != null;
-        this.originalExternalStorage = this.externalStorage;
 
-        if (this.externalStorage) {
-            Keccak256 snapshotHash = new Keccak256(rlpStorage.getRLPData());
-            this.trie = new TrieImpl(trieStorePool.getInstanceFor(getDataSourceName()), true).getSnapshotTo(snapshotHash);
-        } else {
-            this.trie = TrieImpl.deserialize(rlpStorage.getRLPData());
-        }
+        Keccak256 snapshotHash = new Keccak256(rlpStorage.getRLPData());
+        this.trie = new TrieImpl(trieStorePool.getInstanceFor(getDataSourceName()), true).getSnapshotTo(snapshotHash);
 
         this.code = (rlpCode.getRLPData() == null) ? EMPTY_BYTE_ARRAY : rlpCode.getRLPData();
         this.codeHash = Keccak256Helper.keccak256(code);
@@ -335,34 +325,9 @@ public class ContractDetailsImpl implements ContractDetails {
 
             this.trie.save();
 
-            if (this.externalStorage && !this.originalExternalStorage) {
-                // switching to data source
-
-                logger.trace("switching to data source, hash {}, address {}", hashString, addressString);
-                TrieStoreImpl newStore = (TrieStoreImpl) trieStorePool.getInstanceFor(getDataSourceName());
-                TrieStoreImpl originalStore = (TrieStoreImpl)((TrieImpl) this.trie).getStore();
-                newStore.copyFrom(originalStore);
-                Trie newTrie = newStore.retrieve(this.trie.getHash().getBytes());
-                this.trie = newTrie;
-
-                // checking the trie it's OK
-
-                if (newTrie == null) {
-                    logger.error("error switching to data source, hash {}, address {}", hashString, addressString);
-                    String message = "error switching to data source, hash " + hashString + ", address " + addressString;
-                    panicProcessor.panic("newcontractdetails", message);
-                    throw new TrieSerializationException(message, null);
-                }
-
-                // to avoid re switching to data source
-                this.originalExternalStorage = true;
-            }
-
-            if (this.externalStorage) {
-                logger.trace("closing contract details data source, hash {}, address {}", hashString, addressString);
-                DataSourcePool.closeDataSource(getDataSourceName());
-                this.closed = true;
-            }
+            logger.trace("closing contract details data source, hash {}, address {}", hashString, addressString);
+            DataSourcePool.closeDataSource(getDataSourceName());
+            this.closed = true;
         }
     }
 
@@ -379,12 +344,8 @@ public class ContractDetailsImpl implements ContractDetails {
                                                               this.memoryStorageLimit);
         details.keys = new HashSet<>();
         details.keys.addAll(this.keys);
-        details.externalStorage = this.externalStorage;
-        details.originalExternalStorage = this.originalExternalStorage;
 
-        if (this.externalStorage) {
-            DataSourcePool.reserve(getDataSourceName());
-        }
+        DataSourcePool.reserve(getDataSourceName());
 
         logger.trace("getting contract details snapshot hash {}, address {}, storage size {}, has external storage {}", details.getStorageHashAsString(), details.getAddressAsString(), details.getStorageSize(), details.hasExternalStorage());
 
@@ -406,7 +367,7 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     public boolean hasExternalStorage() {
-        return this.externalStorage;
+        return true;
     }
 
     private void addKey(byte[] key) {
@@ -415,10 +376,6 @@ public class ContractDetailsImpl implements ContractDetails {
 
     private void removeKey(byte[] key) {
         keys.remove(wrap(key));
-    }
-
-    private void checkExternalStorage() {
-        this.externalStorage = true;
     }
 
     public String getDataSourceName() {
@@ -437,10 +394,6 @@ public class ContractDetailsImpl implements ContractDetails {
 
     private void checkDataSourceIsOpened() {
         if (!this.closed) {
-            return;
-        }
-
-        if (!this.externalStorage) {
             return;
         }
 
