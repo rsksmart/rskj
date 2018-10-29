@@ -20,8 +20,9 @@
 package org.ethereum.config.net;
 
 import org.ethereum.config.blockchain.HardForkActivationConfig;
-import org.ethereum.config.blockchain.devnet.DevNetOrchidConfig;
 import org.ethereum.config.blockchain.devnet.DevNetGenesisConfig;
+import org.ethereum.config.blockchain.devnet.DevNetOrchidConfig;
+import org.ethereum.config.blockchain.devnet.DevNetSecondForkConfig;
 
 
 /**
@@ -36,7 +37,7 @@ public class DevNetConfig extends AbstractNetConfig {
     public static DevNetConfig getDefaultDevNetConfig() {
         DevNetConfig config = new DevNetConfig();
 
-        config.add(0, new DevNetOrchidConfig());
+        config.add(0, new DevNetSecondForkConfig());
         return config;
     }
 
@@ -45,11 +46,19 @@ public class DevNetConfig extends AbstractNetConfig {
             return getDefaultDevNetConfig();
         }
         DevNetConfig customConfig = new DevNetConfig();
-        if (hardForkActivationConfig.getOrchidActivationHeight() != 0) {
-            // Only add genesis config if the fork configs are set
-            customConfig.add(0, new DevNetGenesisConfig());
+
+        if (hardForkActivationConfig.getSecondForkActivationHeight() > 0) {
+            if (hardForkActivationConfig.getOrchidActivationHeight() > 0) {
+                // Only add genesis config if orchid config is set
+                customConfig.add(0, new DevNetGenesisConfig());
+            }
+
+            // Only add orchid config if second fork config is set
+            customConfig.add(hardForkActivationConfig.getOrchidActivationHeight(), new DevNetOrchidConfig());
         }
-        customConfig.add(hardForkActivationConfig.getOrchidActivationHeight(), new DevNetOrchidConfig());
+
+        customConfig.add(hardForkActivationConfig.getSecondForkActivationHeight(), new DevNetSecondForkConfig());
+
         return customConfig;
     }
 }

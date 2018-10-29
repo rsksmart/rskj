@@ -21,20 +21,29 @@ import com.typesafe.config.Config;
 
 public class HardForkActivationConfig {
     private final int orchidActivationHeight;
+    private final int secondForkActivationHeight;
 
     private static final String PROPERTY_ORCHID_NAME = "orchid";
+    private static final String PROPERTY_SECOND_FORK_NAME = "secondFork";
 
     public HardForkActivationConfig(Config config) {
-        // If I don't have any config for orchidActivationHeight I will set it to 0
-        this(config.hasPath(PROPERTY_ORCHID_NAME) ? config.getInt(PROPERTY_ORCHID_NAME) : 0);
+        // Default values for activation heights is zero
+        this(
+                config.hasPath(PROPERTY_ORCHID_NAME) ? config.getInt(PROPERTY_ORCHID_NAME) : 0,
+                config.hasPath(PROPERTY_SECOND_FORK_NAME) ? config.getInt(PROPERTY_SECOND_FORK_NAME) : 0
+        );
     }
 
-    public HardForkActivationConfig(int orchidActivationHeight) {
+    public HardForkActivationConfig(int orchidActivationHeight, int secondForkActivationHeight) {
         this.orchidActivationHeight = orchidActivationHeight;
+        this.secondForkActivationHeight = secondForkActivationHeight;
     }
 
     public int getOrchidActivationHeight() {
         return orchidActivationHeight;
     }
 
+    public int getSecondForkActivationHeight() {
+        return secondForkActivationHeight;
+    }
 }
