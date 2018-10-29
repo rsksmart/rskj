@@ -93,6 +93,13 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
     }
 
+    public void logLockBtc(BtcTransaction btcTx) {
+        List<DataWord> topics = Collections.singletonList(Bridge.LOCK_BTC_TOPIC);
+        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()), RLP.encodeElement(btcTx.bitcoinSerialize()));
+
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
+    }
+
     private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
         List<byte[]> pubKeys = keys.stream()
                                     .map(k -> RLP.encodeElement(k.getPubKey()))

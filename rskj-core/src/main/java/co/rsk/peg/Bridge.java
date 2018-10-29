@@ -185,6 +185,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
     public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
+    public static final DataWord LOCK_BTC_TOPIC = DataWord.fromString("lock_btc_topic");
 
     private final BridgeConstants bridgeConstants;
 
@@ -413,7 +414,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         byte[] pmtSerialized = (byte[]) args[2];
         try {
-            bridgeSupport.registerBtcTransaction(rskTx, btcTxSerialized, height, pmtSerialized);
+            bridgeSupport.registerBtcTransaction(rskTx, btcTxSerialized, height, pmtSerialized, blockchainConfig.isRskip121());
         } catch (IOException | BlockStoreException e) {
             logger.warn("Exception in registerBtcTransaction", e);
             throw new RuntimeException("Exception in registerBtcTransaction", e);

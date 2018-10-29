@@ -785,6 +785,66 @@ public class BridgeTest {
     }
 
     @Test
+    public void registerBtcTransactionBeforeRskip121Fork() throws Exception {
+        BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
+        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
+        when(blockchainConfigForBlock.isRskip121()).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+
+        Repository repository = createRepositoryImpl();
+        Repository track = repository.startTracking();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
+
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
+        PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
+
+        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
+
+        spiedBridge.init(rskTx, getGenesisBlock(), track, null, null, null);
+
+        byte[] mockedBtcTx = new byte[0];
+        BigInteger mockedHeight = BigInteger.valueOf(1);
+        byte[] mockedPmt = new byte[0];
+        spiedBridge.execute(Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{ mockedBtcTx, mockedHeight, mockedPmt }));
+
+        verify(bridgeSupportMock, times(1))
+                .registerBtcTransaction(rskTx, mockedBtcTx, 1, mockedPmt, false);
+    }
+
+    @Test
+    public void registerBtcTransactionAfterRskip121Fork() throws Exception {
+        BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
+        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
+        when(blockchainConfigForBlock.isRskip121()).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+
+        Repository repository = createRepositoryImpl();
+        Repository track = repository.startTracking();
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
+
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
+        PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
+
+        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
+
+        spiedBridge.init(rskTx, getGenesisBlock(), track, null, null, null);
+
+        byte[] mockedBtcTx = new byte[0];
+        BigInteger mockedHeight = BigInteger.valueOf(1);
+        byte[] mockedPmt = new byte[0];
+        spiedBridge.execute(Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{ mockedBtcTx, mockedHeight, mockedPmt }));
+
+        verify(bridgeSupportMock, times(1))
+                .registerBtcTransaction(rskTx, mockedBtcTx, 1, mockedPmt, true);
+    }
+
+    @Test
     public void getFederationAddress() throws Exception {
         // Case with genesis federation
         Federation federation = bridgeConstants.getGenesisFederation();
