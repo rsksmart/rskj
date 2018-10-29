@@ -22,21 +22,25 @@ import com.typesafe.config.Config;
 public class HardForkActivationConfig {
     private final int orchidActivationHeight;
     private final int orchid060ActivationHeight;
+    private final int secondForkActivationHeight;
 
     private static final String PROPERTY_ORCHID_NAME = "orchid";
     private static final String PROPERTY_ORCHID_060_NAME = "orchid060";
+    private static final String PROPERTY_SECOND_FORK_NAME = "secondFork";
 
     public HardForkActivationConfig(Config config) {
-        // If I don't have any config for orchidActivationHeight I will set it to 0
+        // Default values for activation heights is zero
         this(
                 config.hasPath(PROPERTY_ORCHID_NAME) ? config.getInt(PROPERTY_ORCHID_NAME) : 0,
-                config.hasPath(PROPERTY_ORCHID_060_NAME) ? config.getInt(PROPERTY_ORCHID_060_NAME) : 0
+                config.hasPath(PROPERTY_ORCHID_060_NAME) ? config.getInt(PROPERTY_ORCHID_060_NAME) : 0,
+                config.hasPath(PROPERTY_SECOND_FORK_NAME) ? config.getInt(PROPERTY_SECOND_FORK_NAME) : 0
         );
     }
 
-    public HardForkActivationConfig(int orchidActivationHeight, int orchid060ActivationHeight) {
+    public HardForkActivationConfig(int orchidActivationHeight, int orchid060ActivationHeight, int secondForkActivationHeight) {
         this.orchidActivationHeight = orchidActivationHeight;
         this.orchid060ActivationHeight = orchid060ActivationHeight;
+        this.secondForkActivationHeight = secondForkActivationHeight;
     }
 
     public int getOrchidActivationHeight() {
@@ -50,5 +54,9 @@ public class HardForkActivationConfig {
      */
     public int getOrchid060ActivationHeight() {
         return orchid060ActivationHeight;
+    }
+
+    public int getSecondForkActivationHeight() {
+        return secondForkActivationHeight;
     }
 }

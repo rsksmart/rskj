@@ -43,7 +43,7 @@ public abstract class ParameterizedNetworkUpgradeTest {
         TestSystemProperties bambooConfig = new TestSystemProperties() {
             @Override
             protected BlockchainNetConfig buildBlockchainConfig() {
-                return RegTestConfig.getFromConfig(new HardForkActivationConfig(Integer.MAX_VALUE, Integer.MAX_VALUE), null);
+                return RegTestConfig.getFromConfig(new HardForkActivationConfig(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE), null);
             }
 
             @Override
@@ -55,7 +55,8 @@ public abstract class ParameterizedNetworkUpgradeTest {
             @Override
             protected BlockchainNetConfig buildBlockchainConfig() {
                 // this method ignores the orchid060 activation height configuration
-                return RegTestConfig.getFromConfig(new HardForkActivationConfig(0, Integer.MAX_VALUE), null);
+                return RegTestConfig.getFromConfig(new HardForkActivationConfig(0, Integer.MAX_VALUE, 0), null);
+
             }
 
             @Override

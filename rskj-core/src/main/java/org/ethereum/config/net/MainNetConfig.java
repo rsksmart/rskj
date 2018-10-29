@@ -23,6 +23,7 @@ import org.ethereum.config.blockchain.mainnet.MainNetAfterBridgeSyncConfig;
 import org.ethereum.config.blockchain.mainnet.MainNetBeforeBridgeSyncConfig;
 import org.ethereum.config.blockchain.mainnet.MainNetOrchid060Config;
 import org.ethereum.config.blockchain.mainnet.MainNetOrchidConfig;
+import org.ethereum.config.blockchain.mainnet.MainNetSecondForkConfig;
 
 
 /**
@@ -36,5 +37,7 @@ public class MainNetConfig extends AbstractNetConfig {
         add(370_000, new MainNetAfterBridgeSyncConfig());
         add(729_000, new MainNetOrchidConfig());
         add(1_052_700, new MainNetOrchid060Config());
+        // TODO: define the second fork activation height
+        add(2_000_000, new MainNetSecondForkConfig());
     }
 }
