@@ -24,6 +24,7 @@ import co.rsk.db.ContractDetailsImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.DataSourcePool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,6 +149,7 @@ public class DetailsDataStore {
         }
 
         db.getDb().updateBatch(batch);
+        DataSourcePool.clear();
 
         for (RskAddress key : removes) {
             db.delete(key.getBytes());

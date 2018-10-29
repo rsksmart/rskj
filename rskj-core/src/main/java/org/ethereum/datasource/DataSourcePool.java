@@ -21,6 +21,8 @@ package org.ethereum.datasource;
 
 import org.slf4j.Logger;
 
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -76,16 +78,30 @@ public class DataSourcePool {
 
         dataSourceEx.release();
 
-        if (dataSourceEx.getUseCounter() > 0) {
-            return;
-        }
-
+        /*
+            All references to current dataSource should be destroyed after each flush.
+            We don't check count reference anymore. The only cleanup point is flush.
+            This method will be called for each contract referenced in DetailsDataStore
+        */
         pool.remove(name);
 
         synchronized (dataSource) {
             dataSource.close();
 
             logger.debug("Data source '{}' closed and removed from pool.\n", dataSource.getName());
+        }
+    }
+
+    public static void clear() {
+        Iterator<Map.Entry<String, DataSourceEx>> iterator = pool.entrySet().iterator();
+        while (iterator.hasNext()){
+            Map.Entry<String, DataSourceEx> next = iterator.next();
+            DataSource dataSource = next.getValue().getDataSource();
+            synchronized (dataSource) {
+                dataSource.close();
+                iterator.remove();
+                logger.debug("Data source '{}' closed and removed from pool.\n", dataSource.getName());
+            }
         }
     }
 

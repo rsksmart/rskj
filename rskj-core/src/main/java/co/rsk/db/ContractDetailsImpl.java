@@ -360,7 +360,7 @@ public class ContractDetailsImpl implements ContractDetails {
 
             if (this.externalStorage) {
                 logger.trace("closing contract details data source, hash {}, address {}", hashString, addressString);
-                DataSourcePool.closeDataSource(getDataSourceName());
+                //DataSourcePool.closeDataSource(getDataSourceName());
                 this.closed = true;
             }
         }
