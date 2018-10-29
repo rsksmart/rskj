@@ -326,10 +326,11 @@ public class BridgeSupport {
      * @param btcTxSerialized The raw BTC tx
      * @param height The height of the BTC block that contains the tx
      * @param pmtSerialized The raw partial Merkle tree
+     * @param logSuccessfulLock Whether to log an event if the lock succeeds
      * @throws BlockStoreException
      * @throws IOException
      */
-    public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized) throws IOException, BlockStoreException {
+    public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized, boolean logSuccessfulLock) throws IOException, BlockStoreException {
         Context.propagate(btcContext);
 
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
@@ -478,8 +479,13 @@ public class BridgeSupport {
                         sender,
                         co.rsk.core.Coin.fromBitcoin(totalAmount)
                 );
+
                 // Consume this whitelisted address
                 lockWhitelist.consume(senderBtcAddress);
+
+                if (logSuccessfulLock) {
+                    eventLogger.logLockBtc(btcTx);
+                }
             }
         } else if (BridgeUtils.isReleaseTx(btcTx, getLiveFederations())) {
             logger.debug("This is a release tx {}", btcTx);

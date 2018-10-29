@@ -41,4 +41,6 @@ public interface BridgeEventLogger {
     void logReleaseBtc(BtcTransaction btcTx);
 
     void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation);
+
+    void logLockBtc(BtcTransaction btcTx);
 }
