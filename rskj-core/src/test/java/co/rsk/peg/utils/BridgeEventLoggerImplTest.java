@@ -19,9 +19,11 @@
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
@@ -50,7 +52,6 @@ import static org.mockito.Mockito.when;
  * @author martin.medina
  */
 public class BridgeEventLoggerImplTest {
-
     @Test
     public void logCommitFederation() {
         // Setup event logger
@@ -122,5 +123,31 @@ public class BridgeEventLoggerImplTest {
 
         // Assert new federation activation block number
         Assert.assertEquals(15L + BridgeRegTestConstants.getInstance().getFederationActivationAge(), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
+    }
+
+    @Test
+    public void logLockBtc() {
+        // Setup event logger
+        List<LogInfo> eventLogs = new LinkedList<>();
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+
+        // Mock btc transaction
+        BtcTransaction mockedTx = mock(BtcTransaction.class);
+        when(mockedTx.getHashAsString()).thenReturn("a-tx-hash");
+        when(mockedTx.bitcoinSerialize()).thenReturn(Hex.decode("1122334455"));
+
+        eventLogger.logLockBtc(mockedTx);
+
+        Assert.assertEquals(1, eventLogs.size());
+        LogInfo entry = eventLogs.get(0);
+
+        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
+
+        Assert.assertEquals(1, entry.getTopics().size());
+        Assert.assertEquals(Bridge.LOCK_BTC_TOPIC, entry.getTopics().get(0));
+
+        byte[] data = entry.getData();
+        byte[] expectedData = RLP.encodeList(RLP.encodeString("a-tx-hash"), RLP.encodeElement(Hex.decode("1122334455")));
+        Assert.assertTrue(Arrays.equals(data, expectedData));
     }
 }
