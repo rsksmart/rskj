@@ -212,7 +212,7 @@ public class RskSystemProperties extends SystemProperties {
 
     public int flushNumberOfBlocks() {
         return configFromFiles.hasPath("blockchain.flushNumberOfBlocks") && configFromFiles.getInt("blockchain.flushNumberOfBlocks") > 0 ?
-                configFromFiles.getInt("blockchain.flushNumberOfBlocks") : 20;
+                configFromFiles.getInt("blockchain.flushNumberOfBlocks") : 1;
     }
 
     public int soLingerTime() {
