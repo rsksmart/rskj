@@ -50,7 +50,6 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
