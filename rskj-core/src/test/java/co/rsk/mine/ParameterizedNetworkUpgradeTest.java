@@ -54,7 +54,8 @@ public abstract class ParameterizedNetworkUpgradeTest {
             @Override
             protected BlockchainNetConfig buildBlockchainConfig() {
                 // this method ignores the orchid060 activation height configuration
-                return RegTestConfig.getFromConfig(new HardForkActivationConfig(0, Integer.MAX_VALUE), null);
+                return RegTestConfig.getFromConfig(new HardForkActivationConfig(0, Integer.MAX_VALUE, 0), null);
+
             }
 
             @Override

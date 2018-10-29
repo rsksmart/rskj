@@ -23,6 +23,7 @@ package org.ethereum.config.net;
 import org.ethereum.config.blockchain.testnet.TestNetBeforeBridgeSyncConfig;
 import org.ethereum.config.blockchain.testnet.TestNetDifficultyDropEnabledConfig;
 import org.ethereum.config.blockchain.testnet.TestNetOrchid060Config;
+import org.ethereum.config.blockchain.testnet.TestNetSecondForkConfig;
 
 public class TestNetConfig extends AbstractNetConfig {
 
@@ -33,5 +34,7 @@ public class TestNetConfig extends AbstractNetConfig {
         add(114_000, new TestNetDifficultyDropEnabledConfig());
         // Static call fix.
         add(233_000, new TestNetOrchid060Config());
+        // TODO: define the second fork activation height
+        add(1_000_000, new TestNetSecondForkConfig());
     }
 }

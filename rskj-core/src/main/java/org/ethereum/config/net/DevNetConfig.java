@@ -24,8 +24,11 @@ import org.ethereum.config.blockchain.HardForkActivationConfig;
 import org.ethereum.config.blockchain.devnet.DevNetGenesisConfig;
 import org.ethereum.config.blockchain.devnet.DevNetOrchid060Config;
 import org.ethereum.config.blockchain.devnet.DevNetOrchidConfig;
+import org.ethereum.config.blockchain.devnet.DevNetSecondForkConfig;
 
 import java.util.List;
+
+
 
 
 /**
@@ -40,6 +43,7 @@ public class DevNetConfig extends AbstractNetConfig {
     public static DevNetConfig getDefaultDevNetConfig() {
         DevNetConfig config = new DevNetConfig();
         config.add(0, new DevNetOrchidConfig());
+        config.add(0, new DevNetSecondForkConfig());
         return config;
     }
 
@@ -54,15 +58,22 @@ public class DevNetConfig extends AbstractNetConfig {
             return getDefaultDevNetConfig();
         }
         DevNetConfig customConfig = new DevNetConfig();
-        if (hardForkActivationConfig.getOrchid060ActivationHeight() != 0) {
-            if (hardForkActivationConfig.getOrchidActivationHeight() != 0) {
-                customConfig.add(0, new DevNetGenesisConfig());
+
+        if (hardForkActivationConfig.getSecondForkActivationHeight() > 0) {
+            if (hardForkActivationConfig.getOrchidActivationHeight() > 0) {
+                if (hardForkActivationConfig.getOrchidActivationHeight() > 0) {
+                    // Only add genesis config if orchid config is set
+                    customConfig.add(0, new DevNetGenesisConfig());
+                }
+
+                customConfig.add(hardForkActivationConfig.getOrchid060ActivationHeight(), new DevNetOrchid060Config());
             }
 
+            // Only add orchid config if second fork config is set
             customConfig.add(hardForkActivationConfig.getOrchidActivationHeight(), new DevNetOrchidConfig());
         }
 
-        customConfig.add(hardForkActivationConfig.getOrchid060ActivationHeight(), new DevNetOrchid060Config());
+        customConfig.add(hardForkActivationConfig.getSecondForkActivationHeight(), new DevNetSecondForkConfig());
         return customConfig;
     }
 }
