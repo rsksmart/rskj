@@ -1216,7 +1216,7 @@ public class BridgeSupportTest {
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 0, null);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 0, null, false);
         bridgeSupport.save();
 
         track.commit();
@@ -1247,7 +1247,7 @@ public class BridgeSupportTest {
 
         PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 0, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 0, pmt.bitcoinSerialize(), false);
         bridgeSupport.save();
 
         track.commit();
@@ -1278,7 +1278,7 @@ public class BridgeSupportTest {
 
         PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), -1, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), -1, pmt.bitcoinSerialize(), false);
         bridgeSupport.save();
 
         track.commit();
@@ -1311,7 +1311,7 @@ public class BridgeSupportTest {
 
         PartialMerkleTree pmt = new PartialMerkleTree(_networkParameters, bits, hashes, 1);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 1, pmt.bitcoinSerialize(), false);
         bridgeSupport.save();
 
         track.commit();
@@ -1358,7 +1358,7 @@ public class BridgeSupportTest {
                 null
         );
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), noInputsTx.bitcoinSerialize(), btcTxHeight, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), noInputsTx.bitcoinSerialize(), btcTxHeight, pmt.bitcoinSerialize(), false);
     }
 
     @Test
@@ -1395,7 +1395,7 @@ public class BridgeSupportTest {
 
         btcBlockChain.add(block);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 1, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 1, pmt.bitcoinSerialize(), false);
         bridgeSupport.save();
 
         track.commit();
@@ -1456,7 +1456,9 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
+        BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mockedEventLogger, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1473,7 +1475,7 @@ public class BridgeSupportTest {
         // so that the blockchain can be iterated and the block found
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, 30);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 30, pmt.bitcoinSerialize(), false);
         bridgeSupport.save();
 
         track.commit();
@@ -1489,6 +1491,8 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertEquals(1, provider2.getBtcTxHashesAlreadyProcessed().size());
+
+        verify(mockedEventLogger, never()).logLockBtc(any(BtcTransaction.class));
     }
 
     @Test
@@ -1548,7 +1552,10 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
         provider.setNewFederation(activeFederation);
         provider.setOldFederation(retiringFederation);
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
+
+        BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mockedEventLogger, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
 
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -1565,7 +1572,7 @@ public class BridgeSupportTest {
         // so that the blockchain can be iterated and the block found
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, 30);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), 30, pmt.bitcoinSerialize(), false);
         bridgeSupport.save();
 
         track.commit();
@@ -1574,6 +1581,8 @@ public class BridgeSupportTest {
         List<Coin> activeFederationBtcCoins = activeFederationBtcUTXOs.stream().map(UTXO::getValue).collect(Collectors.toList());
         assertThat(activeFederationBtcUTXOs, hasSize(1));
         assertThat(activeFederationBtcCoins, hasItem(Coin.COIN));
+
+        verify(mockedEventLogger, never()).logLockBtc(any(BtcTransaction.class));
     }
 
     @Test
@@ -1630,20 +1639,22 @@ public class BridgeSupportTest {
         PowerMockito.doReturn(false).when(BridgeUtils.class, "isLockTx", any(BtcTransaction.class), anyListOf(Federation.class), any(Context.class), any(BridgeConstants.class));
         PowerMockito.doReturn(true).when(BridgeUtils.class, "isReleaseTx", any(BtcTransaction.class), anyListOf(Federation.class));
 
+        BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
+
         BridgeSupport bridgeSupport = new BridgeSupport(
                 mock(Repository.class),
                 mockBridgeStorageProvider,
                 mock(Block.class),
                 config,
                 bridgeConstants,
-                mock(BridgeEventLogger.class),
+                mockedEventLogger,
                 btcContext,
                 mockFederationSupport,
                 mockBtcBlockStore,
                 mock(BtcBlockChain.class)
         );
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize(), false);
 
         assertThat(retiringFederationUtxos, hasSize(1));
         UTXO changeUtxo = retiringFederationUtxos.get(0);
@@ -1657,6 +1668,8 @@ public class BridgeSupportTest {
 
         assertThat(releasedBtcTxCaptor.getValue(), is(releaseWithChangeTx));
         assertThat(fedListCaptor.getValue(), IsIterableContainingInOrder.contains(activeFederation, retiringFederation));
+
+        verify(mockedEventLogger, never()).logLockBtc(any(BtcTransaction.class));
     }
 
     @Test
@@ -1721,7 +1734,9 @@ public class BridgeSupportTest {
         whitelist.put(address2, new OneOffWhiteListEntry(address2, Coin.COIN.multiply(10)));
         whitelist.put(address3, new OneOffWhiteListEntry(address3, Coin.COIN.multiply(2).add(Coin.COIN.multiply(3))));
 
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
+        BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mockedEventLogger, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
 
@@ -1739,9 +1754,9 @@ public class BridgeSupportTest {
         // so that the blockchain can be iterated and the block found
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, 30);
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx2.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx3.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), 30, pmt.bitcoinSerialize(), false);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx2.bitcoinSerialize(), 30, pmt.bitcoinSerialize(), false);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx3.bitcoinSerialize(), 30, pmt.bitcoinSerialize(), false);
         bridgeSupport.save();
 
         track.commit();
@@ -1777,6 +1792,67 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertEquals(3, provider2.getBtcTxHashesAlreadyProcessed().size());
+
+        verify(mockedEventLogger, never()).logLockBtc(any(BtcTransaction.class));
+    }
+
+    @Test
+    public void registerBtcTransactionLockTxLogsLock() throws Exception {
+        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        NetworkParameters parameters = bridgeConstants.getBtcParams();
+
+        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")),
+        });
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), 0L, parameters);
+
+        Repository repository = createRepositoryImpl(config);
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
+        Block executionBlock = Mockito.mock(Block.class);
+        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
+
+        Repository track = repository.startTracking();
+
+        BtcTransaction tx1 = new BtcTransaction(this.btcParams);
+        tx1.addOutput(Coin.COIN.multiply(5), federation.getAddress());
+        BtcECKey srcKey1 = new BtcECKey();
+        tx1.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey1));
+
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        provider.setNewFederation(federation);
+
+        // Whitelist the addresses
+        LockWhitelist whitelist = provider.getLockWhitelist();
+        Address address1 = srcKey1.toAddress(parameters);
+        whitelist.put(address1, new OneOffWhiteListEntry(address1, Coin.COIN.multiply(5)));
+
+        BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mockedEventLogger, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx1.getHash());
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
+        List<Sha256Hash> hashlist = new ArrayList<>();
+        Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+
+        // Simulate that the block is in there but that there is a chain of blocks on top of it,
+        // so that the blockchain can be iterated and the block found
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, 30);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), 30, pmt.bitcoinSerialize(), true);
+        bridgeSupport.save();
+
+        track.commit();
+
+        verify(mockedEventLogger, times(1)).logLockBtc(tx1);
     }
 
     @Test
@@ -1832,7 +1908,9 @@ public class BridgeSupportTest {
         provider.setNewFederation(federation1);
         provider.setOldFederation(federation2);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(config, track, null, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
+        BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(config, track, mockedEventLogger, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), provider, btcBlockStore, null, executionBlock);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
 
@@ -1854,9 +1932,9 @@ public class BridgeSupportTest {
         Transaction rskTx2 = getMockedRskTxWithHash("bb");
         Transaction rskTx3 = getMockedRskTxWithHash("cc");
 
-        bridgeSupport.registerBtcTransaction(rskTx1, tx1.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
-        bridgeSupport.registerBtcTransaction(rskTx2, tx2.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
-        bridgeSupport.registerBtcTransaction(rskTx3, tx3.bitcoinSerialize(), 30, pmt.bitcoinSerialize());
+        bridgeSupport.registerBtcTransaction(rskTx1, tx1.bitcoinSerialize(), 30, pmt.bitcoinSerialize(), false);
+        bridgeSupport.registerBtcTransaction(rskTx2, tx2.bitcoinSerialize(), 30, pmt.bitcoinSerialize(), false);
+        bridgeSupport.registerBtcTransaction(rskTx3, tx3.bitcoinSerialize(), 30, pmt.bitcoinSerialize(), false);
         bridgeSupport.save();
 
         track.commit();
@@ -1916,6 +1994,8 @@ public class BridgeSupportTest {
 
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertEquals(3, provider2.getBtcTxHashesAlreadyProcessed().size());
+
+        verify(mockedEventLogger, never()).logLockBtc(any(BtcTransaction.class));
     }
 
     @Test
