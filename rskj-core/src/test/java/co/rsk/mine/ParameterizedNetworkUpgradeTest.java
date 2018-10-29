@@ -44,7 +44,6 @@ public abstract class ParameterizedNetworkUpgradeTest {
             @Override
             protected BlockchainNetConfig buildBlockchainConfig() {
                 return RegTestConfig.getFromConfig(new HardForkActivationConfig(Integer.MAX_VALUE, Integer.MAX_VALUE), null);
-
             }
 
             @Override
