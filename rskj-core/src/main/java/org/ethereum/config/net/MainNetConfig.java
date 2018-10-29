@@ -22,6 +22,7 @@ package org.ethereum.config.net;
 import org.ethereum.config.blockchain.mainnet.MainNetAfterBridgeSyncConfig;
 import org.ethereum.config.blockchain.mainnet.MainNetBeforeBridgeSyncConfig;
 import org.ethereum.config.blockchain.mainnet.MainNetOrchidConfig;
+import org.ethereum.config.blockchain.mainnet.MainNetSecondForkConfig;
 
 
 /**
@@ -34,5 +35,7 @@ public class MainNetConfig extends AbstractNetConfig {
         // On blockchain launch blocks will be faster until difficulty is adjusted to available hashing power.
         add(370_000, new MainNetAfterBridgeSyncConfig());
         add(729_000, new MainNetOrchidConfig());
+        // TODO: define the second fork activation height
+        add(1_000_000, new MainNetSecondForkConfig());
     }
 }

@@ -22,6 +22,7 @@ package org.ethereum.config.net;
 
 import org.ethereum.config.blockchain.testnet.TestNetBeforeBridgeSyncConfig;
 import org.ethereum.config.blockchain.testnet.TestNetDifficultyDropEnabledConfig;
+import org.ethereum.config.blockchain.testnet.TestNetSecondForkConfig;
 
 public class TestNetConfig extends AbstractNetConfig {
 
@@ -30,5 +31,8 @@ public class TestNetConfig extends AbstractNetConfig {
         // 21 days of 1 block every 14 seconds.
         // On blockchain launch blocks will be faster until difficulty is adjusted to available hashing power.
         add(114_000, new TestNetDifficultyDropEnabledConfig());
+        add(129600, new TestNetAfterBridgeSyncConfig());
+        // TODO: define the second fork activation height
+        add(1_000_000, new TestNetSecondForkConfig());
     }
 }

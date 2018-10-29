@@ -22,6 +22,7 @@ package org.ethereum.config.net;
 import co.rsk.bitcoinj.core.BtcECKey;
 import org.ethereum.config.blockchain.HardForkActivationConfig;
 import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
+import org.ethereum.config.blockchain.regtest.RegTestSecondForkConfig;
 
 import java.util.List;
 
@@ -37,6 +38,7 @@ public class RegTestConfig extends AbstractNetConfig {
     public static RegTestConfig getDefaultRegTestConfig() {
         RegTestConfig config = new RegTestConfig();
         config.add(0, new RegTestOrchidConfig());
+        config.add(0, new RegTestSecondForkConfig());
         return config;
     }
 
@@ -52,11 +54,18 @@ public class RegTestConfig extends AbstractNetConfig {
             return getDefaultRegTestConfig();
         }
         RegTestConfig customConfig = new RegTestConfig();
-        if (hardForkActivationConfig.getOrchidActivationHeight() != 0) {
-            // Only add genesis config if the fork configs are set
-            customConfig.add(0, new org.ethereum.config.blockchain.regtest.RegTestGenesisConfig());
+
+        if (hardForkActivationConfig.getSecondForkActivationHeight() > 0) {
+            if (hardForkActivationConfig.getOrchidActivationHeight() > 0) {
+                // Only add genesis config if orchid config is set
+                customConfig.add(0, new org.ethereum.config.blockchain.regtest.RegTestGenesisConfig());
+            }
+
+            // Only add orchid config if second fork config is set
+            customConfig.add(hardForkActivationConfig.getOrchidActivationHeight(), new RegTestOrchidConfig());
         }
-        customConfig.add(hardForkActivationConfig.getOrchidActivationHeight(), new RegTestOrchidConfig());
+
+        customConfig.add(hardForkActivationConfig.getSecondForkActivationHeight(), new RegTestSecondForkConfig());
         return customConfig;
     }
 }
