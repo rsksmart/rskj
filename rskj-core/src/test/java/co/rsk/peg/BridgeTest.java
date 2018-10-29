@@ -37,7 +37,6 @@ import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
-import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
@@ -45,7 +44,6 @@ import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -1956,9 +1954,13 @@ public class BridgeTest {
         hashes.add(btcTxHash);
         Sha256Hash btcBlockHash = Sha256Hash.of(Hex.decode("ccddff"));
 
-        byte[] bits = new byte[1];
-        bits[0] = 0x3f;
-        PartialMerkleTree pmt = new PartialMerkleTree(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams(), bits, hashes, hashes.size());
+        //Set the leaves that are going to be added, in this case all of them
+        byte[] bits = new byte[(int) Math.ceil(hashes.size() / 8.0)];
+        for(int i=0; i < hashes.size() ; i++) {
+            Utils.setBitLE(bits, i);
+        }
+
+        PartialMerkleTree pmt = PartialMerkleTree.buildFromLeaves(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams(), bits, hashes);
         byte[] pmtSerialized = pmt.bitcoinSerialize();
 
         int mockedResult = 8;
