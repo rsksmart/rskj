@@ -379,7 +379,7 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     public String getDataSourceName() {
-        return "details-storage/" + toHexString(address);
+        return "contracts-storage";
     }
 
     private String getAddressAsString() {
