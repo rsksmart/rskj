@@ -20,4 +20,8 @@
 package org.ethereum.config.blockchain.devnet;
 
 public class DevNetSecondForkConfig extends DevNetOrchid060Config {
+    @Override
+    public boolean isRfs122() {
+        return true;
+    }
 }
