@@ -20,4 +20,8 @@
 package org.ethereum.config.blockchain.testnet;
 
 public class TestNetSecondForkConfig extends TestNetOrchidConfig {
+    @Override
+    public boolean isRfs122() {
+        return true;
+    }
 }
