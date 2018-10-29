@@ -27,9 +27,6 @@ import org.ethereum.config.blockchain.devnet.DevNetSecondForkConfig;
 
 import java.util.List;
 
-
-
-
 /**
  * Created by Anton Nashatyrev on 25.02.2016.
  */
@@ -41,7 +38,6 @@ public class DevNetConfig extends AbstractNetConfig {
      */
     public static DevNetConfig getDefaultDevNetConfig() {
         DevNetConfig config = new DevNetConfig();
-        config.add(0, new DevNetOrchidConfig());
         config.add(0, new DevNetSecondForkConfig());
         return config;
     }
