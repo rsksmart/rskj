@@ -20,4 +20,8 @@
 package org.ethereum.config.blockchain.mainnet;
 
 public class MainNetSecondForkConfig extends MainNetOrchid060Config {
+    @Override
+    public boolean isRfs122() {
+        return true;
+    }
 }
