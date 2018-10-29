@@ -76,10 +76,6 @@ public class DataSourcePool {
 
         dataSourceEx.release();
 
-        if (dataSourceEx.getUseCounter() > 0) {
-            return;
-        }
-
         pool.remove(name);
 
         synchronized (dataSource) {
