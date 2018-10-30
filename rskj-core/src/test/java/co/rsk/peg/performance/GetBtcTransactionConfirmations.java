@@ -59,7 +59,7 @@ public class GetBtcTransactionConfirmations extends BridgePerformanceTestCase {
 
     private ABIEncoder getABIEncoder() {
         return (int executionIndex) ->
-                Bridge.GET_BTC_TRANSACTION_CONFIRMATION.encode(new Object[]{
+                Bridge.GET_BTC_TRANSACTION_CONFIRMATIONS.encode(new Object[]{
                         txToSearch.getHash().toString(),
                         blockWithTx.getHash().toString(),
                         blockWithTxHeight,

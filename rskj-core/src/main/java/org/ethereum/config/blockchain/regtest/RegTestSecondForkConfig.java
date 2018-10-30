@@ -24,4 +24,9 @@ public class RegTestSecondForkConfig extends RegTestOrchidConfig {
     public boolean isRfs122() {
         return true;
     }
+
+    @Override
+    public boolean isRskipGetBtcTransactionConfirmations() {
+        return true;
+    }
 }
