@@ -2212,13 +2212,81 @@ public class BridgeTest {
             Utils.setBitLE(bits, i);
         }
 
-        PartialMerkleTree pmt = PartialMerkleTree.buildFromLeaves(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams(), bits, hashes);
+        PartialMerkleTree pmt = PartialMerkleTree.buildFromLeaves(networkParameters, bits, hashes);
         byte[] pmtSerialized = pmt.bitcoinSerialize();
 
         int mockedResult = 8;
         when(bridgeSupportMock.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, 45678, pmtSerialized)).thenReturn(mockedResult);
 
         Assert.assertEquals(mockedResult, bridge.getBtcTransactionConfirmations(new Object[]{btcTxHash.toString(), btcBlockHash.toString(), BigInteger.valueOf(45678), pmtSerialized}));
+    }
+
+    @Test
+    //TODO RENAME when SecondFork is renamed
+    public void getBtcTransactionConfirmationsBeforeSecondFork() throws IOException {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = createRepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction mockedTransaction = mock(Transaction.class);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        Sha256Hash btcTxHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        hashes.add(btcTxHash);
+        //Set the leaves that are going to be added, in this case all of them
+        byte[] bits = new byte[(int) Math.ceil(hashes.size() / 8.0)];
+        for(int i=0; i < hashes.size() ; i++) {
+            Utils.setBitLE(bits, i);
+        }
+
+        PartialMerkleTree pmt = PartialMerkleTree.buildFromLeaves(networkParameters, bits, hashes);
+        byte[] pmtSerialized = pmt.bitcoinSerialize();
+
+        Object[] params = new Object[]{ btcTxHash.toString(), Sha256Hash.of(Hex.decode("bbccdd")).toString(), BigInteger.valueOf(45678), pmtSerialized};
+        Assert.assertNull(bridge.execute(Bridge.GET_BTC_TRANSACTION_CONFIRMATIONS.encode(params)));
+    }
+
+    @Test
+    //TODO RENAME when SecondFork is renamed
+    public void getBtcTransactionConfirmationsAfterSecondFork() throws IOException {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Repository repository = createRepositoryImpl(config);
+        Repository track = repository.startTracking();
+
+        Transaction mockedTransaction = mock(Transaction.class);
+        // Just setting a random address as the sender
+        RskAddress sender = new RskAddress(fedECPrivateKey.getAddress());
+        when(mockedTransaction.getSender()).thenReturn(sender);
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        Sha256Hash btcTxHash = Sha256Hash.of(Hex.decode("aabbcc"));
+        hashes.add(btcTxHash);
+        //Set the leaves that are going to be added, in this case all of them
+        byte[] bits = new byte[(int) Math.ceil(hashes.size() / 8.0)];
+        for(int i=0; i < hashes.size() ; i++) {
+            Utils.setBitLE(bits, i);
+        }
+
+        PartialMerkleTree pmt = PartialMerkleTree.buildFromLeaves(networkParameters, bits, hashes);
+        byte[] pmtSerialized = pmt.bitcoinSerialize();
+
+        Object[] params = new Object[]{ btcTxHash.toString(), Sha256Hash.of(Hex.decode("bbccdd")).toString(), BigInteger.valueOf(45678), pmtSerialized};
+        byte[] result = bridge.execute(Bridge.GET_BTC_TRANSACTION_CONFIRMATIONS.encode(params));
+
+        BigInteger decodedResult = (BigInteger) BridgeMethods.GET_BTC_TRANSACTION_CONFIRMATIONS.getFunction().decodeResult(result)[0];
+
+        Assert.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_BLOCK_OLDER_THAN_CACHE_ERROR_CODE.intValue(), decodedResult.intValue());
     }
 
     @Test

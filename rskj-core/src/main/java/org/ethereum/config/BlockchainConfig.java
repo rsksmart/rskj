@@ -42,7 +42,7 @@ public interface BlockchainConfig {
     boolean areBridgeTxsFree();
 
     boolean isRskip90();
-    
+
     boolean isRskip85();
 
     boolean isRskip89();
@@ -64,4 +64,6 @@ public interface BlockchainConfig {
     boolean isRskip98();
 
     boolean isRskip123();
+
+    boolean isRskipGetBtcTransactionConfirmations();//TODO set the correct name for the RskIp
 }

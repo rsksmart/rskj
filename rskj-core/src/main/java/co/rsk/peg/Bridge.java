@@ -97,7 +97,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH = BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH.getFunction();
     // Returns the confirmations number of the block for the given transaction. If its not valid or its not part of the main chain it returns a negative number
     // The goal of this function is to help contracts can use this to validate BTC transactions
-    public static final CallTransaction.Function GET_BTC_TRANSACTION_CONFIRMATION = BridgeMethods.GET_BTC_TRANSACTION_CONFIRMATION.getFunction();
+    public static final CallTransaction.Function GET_BTC_TRANSACTION_CONFIRMATIONS = BridgeMethods.GET_BTC_TRANSACTION_CONFIRMATIONS.getFunction();
     // Returns the minimum amount of satoshis a user should send to the federation.
     public static final CallTransaction.Function GET_MINIMUM_LOCK_TX_VALUE = BridgeMethods.GET_MINIMUM_LOCK_TX_VALUE.getFunction();
 

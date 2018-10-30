@@ -25,4 +25,9 @@ public class DevNetSecondForkConfig extends DevNetOrchid060Config {
     public boolean isRskip123() {
         return true;
     }
+
+    @Override
+    public boolean isRskipGetBtcTransactionConfirmations() {
+        return true;
+    }
 }

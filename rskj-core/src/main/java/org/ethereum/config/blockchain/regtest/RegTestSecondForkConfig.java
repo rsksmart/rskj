@@ -20,8 +20,14 @@
 package org.ethereum.config.blockchain.regtest;
 
 public class RegTestSecondForkConfig extends RegTestOrchidConfig {
+
     @Override
     public boolean isRskip123() {
+        return true;
+    }
+
+    @Override
+    public boolean isRskipGetBtcTransactionConfirmations() {
         return true;
     }
 }
