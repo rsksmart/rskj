@@ -24,4 +24,9 @@ public class TestNetSecondForkConfig extends TestNetOrchid060Config {
     public boolean isRfs122() {
         return true;
     }
+
+    @Override
+    public boolean isRskipGetBtcTransactionConfirmations() {
+        return true;
+    }
 }
