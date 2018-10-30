@@ -24,4 +24,9 @@ public class MainNetSecondForkConfig extends MainNetOrchidConfig {
     public boolean isRfs122() {
         return true;
     }
+
+    @Override
+    public boolean isRskipGetBtcTransactionConfirmations() {
+        return true;
+    }
 }
