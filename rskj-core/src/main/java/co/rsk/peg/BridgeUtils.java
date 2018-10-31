@@ -25,7 +25,6 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
-import co.rsk.peg.exception.*;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -54,17 +53,12 @@ public class BridgeUtils {
         int headHeight = storedBlock.getHeight();
 
         if (height > headHeight) {
-            throw new InvalidBlockHeightException(String.format("Block Height: %d bigger than Chain Height: %d", height, headHeight));
+            return null;
         }
 
-        int distanceToHead = headHeight - height;
-        if (distanceToHead > RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS) {
-            throw new BlockHeightOlderThanCacheException(String.format("Block Height: %d older than Cache: %d", height, headHeight - RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS));
-        }
-
-        for (int i = 0; i < distanceToHead; i++) {
+        for (int i = 0; i < (headHeight - height); i++) {
             if (blockHash == null) {
-                throw new InvalidBlockHashException("Couldn't find the block ");
+                return null;
             }
 
             Sha256Hash prevBlockHash = parentMap.get(blockHash);
@@ -73,7 +67,7 @@ public class BridgeUtils {
                 StoredBlock currentBlock = blockStore.getFromCache(blockHash);
 
                 if (currentBlock == null) {
-                    throw new InvalidBlockHashException(String.format("Inexistent Block Hash: %s ", blockHash));
+                    return null;
                 }
 
                 prevBlockHash = currentBlock.getHeader().getPrevBlockHash();
@@ -84,23 +78,19 @@ public class BridgeUtils {
         }
 
         if (blockHash == null) {
-            throw new InvalidBlockHashException("Couldn't find the block ");
+            return null;
         }
 
         storedBlock = blockStore.getFromCache(blockHash);
 
-        if (storedBlock == null) {
-            throw new InvalidBlockHashException(String.format("Inexistent Block Hash: %s ", blockHash));
+        if (storedBlock != null) {
+            if (storedBlock.getHeight() != height) {
+                throw new IllegalStateException("Block height is " + storedBlock.getHeight() + " but should be " + headHeight);
+            }
+            return storedBlock;
+        } else {
+            return null;
         }
-
-        if (storedBlock.getHeight() != height) {
-            throw new InvalidBlockHeightException(String.format("Distinct Block Height, expected: %d actual: %d", headHeight, storedBlock.getHeight()));
-        }
-        return storedBlock;
-    }
-
-    public static void cleanStoredBlockCache() {
-        parentMap = new MaxSizeHashMap<>(RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS, false);
     }
 
     public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
