@@ -19,6 +19,8 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.metrics.profilers.impl.DummyProfiler;
+import co.rsk.metrics.profilers.Profiler;
 import co.rsk.panic.PanicProcessor;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
@@ -52,6 +54,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private final String name;
     private DB db;
     private boolean alive;
+    private Profiler profiler;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -61,14 +64,24 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
+
+    public LevelDbDataSource(String name, String databaseDir, Profiler profiler) {
+        this(name, databaseDir);
+        this.profiler = profiler;
+    }
+
     public LevelDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
         this.name = name;
         logger.debug("New LevelDbDataSource: {}", name);
+        this.profiler = new DummyProfiler();
     }
 
     @Override
     public void init() {
+
+        //Profiling of DB initialization is not desired as is not part of the block execution time
+        //int id = profiler.start(Profiler.PROFILING_TYPE.DISK_READ);
         resetDbLock.writeLock().lock();
         try {
             logger.debug("~> LevelDbDataSource.init(): {}", name);
@@ -113,6 +126,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             }
             logger.debug("<~ LevelDbDataSource.init(): " + name);
         } finally {
+            //profiler.stop(id);
             resetDbLock.writeLock().unlock();
         }
     }
@@ -150,6 +164,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public byte[] get(byte[] key) {
+        int id = profiler.start(Profiler.PROFILING_TYPE.DISK_READ);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -180,6 +195,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             }
         } finally {
             resetDbLock.readLock().unlock();
+            profiler.stop(id);
         }
     }
 
@@ -253,7 +269,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
             for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
                 batch.put(entry.getKey(), entry.getValue());
             }
+            int id =  profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
             db.write(batch);
+            profiler.stop(id);
         }
     }
 

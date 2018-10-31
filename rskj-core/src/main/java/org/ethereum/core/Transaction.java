@@ -23,6 +23,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.impl.DummyProfiler;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -67,6 +69,23 @@ public class Transaction {
 
     public static final int DATAWORD_LENGTH = 32;
 
+    // There was a bug that allowed the TestNet block 170541 to include a transaction with a padded s value.
+    // These are here as an exception to allow making the code stricter.
+    private static final Keccak256 TESTNET_TX_170541_WRONG_HASH = new Keccak256("bfd306ea4c30ad4432f5553b050e5a92b9169d81bac3edfa6cdeb22b83c8ba11");
+    private static final byte[] TESTNET_TX_170541_ENCODED = Hex.decode(
+            "f901a50a8082d8649480006ac02bf828aca0bca6bc1e8ef04508b121da80b90144203eaf27000000000000000000000000000000000" +
+            "00000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000100000000000000" +
+            "0000000000000000000000000000000000000000000000000084b9a527b4000000000000000000000000d1c744ac0657c6043840981" +
+            "bd1a43a5d223de4bc000000000000000000000000c1d53cfe0b737df315a1e920b236f1df2de96e0300000000000000000000000000" +
+            "000000000000000000000000000000000044ce000000000000000000000000000000000000000000000000000000000000000100000" +
+            "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+            "00000009677565737444617461000000000000000000000000000000000000000000000062a00e47af4460ef08c22217a24efe423e3" +
+            "49acc4bacf0c4a7e95dc8219023b15b85a00028fa9206ace53d9a90c1864d7908e50b5c8a1b1394f575986592d6e3d0dfbe"
+    );
+
+    /* profiler*/
+    private Profiler profiler;
+
     /* whether this is a local call transaction */
     private boolean isLocalCall;
 
@@ -95,6 +114,8 @@ public class Transaction {
      * Initialization code for a new contract */
     private byte[] data;
 
+
+
     /**
      * Since EIP-155, we could encode chainId in V
      */
@@ -120,6 +141,7 @@ public class Transaction {
         rlpParse();
         // clear it so we always reencode the received data
         this.rlpEncoded = null;
+        this.profiler = new DummyProfiler();
     }
 
     /* creation contract tx
@@ -147,7 +169,7 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
-
+        this.profiler = new DummyProfiler();
         parsed = true;
     }
 
@@ -425,7 +447,9 @@ public class Transaction {
     }
 
     public synchronized RskAddress getSender() {
+        int id = profiler.start(Profiler.PROFILING_TYPE.SIG_VALIDATION);
         if (sender != null) {
+            profiler.stop(id);
             return sender;
         }
 
@@ -436,8 +460,10 @@ public class Transaction {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("transaction", e.getMessage());
             sender = RskAddress.nullAddress();
+            profiler.stop(id);
         }
 
+        profiler.stop(id);
         return sender;
     }
 
@@ -446,6 +472,10 @@ public class Transaction {
             rlpParse();
         }
         return chainId;
+    }
+
+    public void setProfiler(Profiler profiler){
+        this.profiler = profiler;
     }
 
     @Override

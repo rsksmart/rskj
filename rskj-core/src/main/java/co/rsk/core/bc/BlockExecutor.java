@@ -20,6 +20,8 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.metrics.profilers.impl.DummyProfiler;
+import co.rsk.metrics.profilers.Profiler;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +44,18 @@ public class BlockExecutor {
 
     private final Repository repository;
     private final TransactionExecutorFactory transactionExecutorFactory;
+    private Profiler profiler;
+
+
+    public BlockExecutor(Repository repository, TransactionExecutorFactory transactionExecutorFactory, Profiler profiler) {
+        this(repository, transactionExecutorFactory);
+        this.profiler = profiler;
+    }
 
     public BlockExecutor(Repository repository, TransactionExecutorFactory transactionExecutorFactory) {
         this.repository = repository;
         this.transactionExecutorFactory = transactionExecutorFactory;
+        this.profiler = new DummyProfiler();
     }
 
     /**
@@ -72,6 +82,7 @@ public class BlockExecutor {
     }
 
     private void fill(Block block, BlockResult result) {
+        int id = profiler.start(Profiler.PROFILING_TYPE.FILLING_EXECUTED_BLOCK);
         block.setTransactionsList(result.getExecutedTransactions());
         BlockHeader header = block.getHeader();
         header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash().getBytes());
@@ -83,6 +94,8 @@ public class BlockExecutor {
         header.setLogsBloom(result.getLogsBloom());
 
         block.flushRLP();
+        profiler.stop(id);
+
     }
 
     /**
@@ -106,18 +119,22 @@ public class BlockExecutor {
      * @return true if the block final state is equalBytes to the calculated final state.
      */
     public boolean validate(Block block, BlockResult result) {
+        int id = profiler.start(Profiler.PROFILING_TYPE.BLOCK_FINAL_STATE_VALIDATION);
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             logger.error("Block's execution was interrupted because of an invalid transaction: {} {}.", block.getNumber(), block.getShortHash());
+            profiler.stop(id);
             return false;
         }
 
         if (!Arrays.equals(result.getStateRoot(), block.getStateRoot()))  {
             logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot()));
+            profiler.stop(id);
             return false;
         }
 
         if (!Arrays.equals(result.getReceiptsRoot(), block.getReceiptsRoot())) {
             logger.error("Block's given Receipt Hash doesn't match: {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(result.getReceiptsRoot()));
+            profiler.stop(id);
             return false;
         }
 
@@ -129,11 +146,13 @@ public class BlockExecutor {
             String blockLogsBloomString = Hex.toHexString(blockLogsBloom);
 
             logger.error("Block's given logBloom Hash doesn't match: {} != {} Block {} {}", resultLogsBloomString, blockLogsBloomString, block.getNumber(), block.getShortHash());
+            profiler.stop(id);
             return false;
         }
 
         if (result.getGasUsed() != block.getGasUsed()) {
             logger.error("Block's given gasUsed doesn't match: {} != {} Block {} {}", block.getGasUsed(), result.getGasUsed(), block.getNumber(), block.getShortHash());
+            profiler.stop(id);
             return false;
         }
 
@@ -142,6 +161,7 @@ public class BlockExecutor {
 
         if (!paidFees.equals(feesPaidToMiner))  {
             logger.error("Block's given paidFees doesn't match: {} != {} Block {} {}", feesPaidToMiner, paidFees, block.getNumber(), block.getShortHash());
+            profiler.stop(id);
             return false;
         }
 
@@ -150,9 +170,11 @@ public class BlockExecutor {
 
         if (!executedTransactions.equals(transactionsList))  {
             logger.error("Block's given txs doesn't match: {} != {} Block {} {}", transactionsList, executedTransactions, block.getNumber(), block.getShortHash());
+            profiler.stop(id);
             return false;
         }
 
+        profiler.stop(id);
         return true;
     }
 
@@ -218,8 +240,9 @@ public class BlockExecutor {
 
             logger.trace("tx executed");
 
+            int id = profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
             track.commit();
-
+            profiler.stop(id);
             logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
