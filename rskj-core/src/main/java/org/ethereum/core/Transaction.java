@@ -23,6 +23,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.impl.DummyProfiler;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -81,6 +83,9 @@ public class Transaction {
             "49acc4bacf0c4a7e95dc8219023b15b85a00028fa9206ace53d9a90c1864d7908e50b5c8a1b1394f575986592d6e3d0dfbe"
     );
 
+    /* profiler*/
+    private Profiler profiler;
+
     /* whether this is a local call transaction */
     private boolean isLocalCall;
 
@@ -109,6 +114,8 @@ public class Transaction {
      * Initialization code for a new contract */
     private byte[] data;
 
+
+
     /**
      * Since EIP-155, we could encode chainId in V
      */
@@ -134,6 +141,7 @@ public class Transaction {
         rlpParse();
         // clear it so we always reencode the received data
         this.rlpEncoded = null;
+        this.profiler = new DummyProfiler();
     }
 
     /* creation contract tx
@@ -161,7 +169,7 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
-
+        this.profiler = new DummyProfiler();
         parsed = true;
     }
 
@@ -439,7 +447,9 @@ public class Transaction {
     }
 
     public synchronized RskAddress getSender() {
+        int id = profiler.start(Profiler.PROFILING_TYPE.SIG_VALIDATION);
         if (sender != null) {
+            profiler.stop(id);
             return sender;
         }
 
@@ -450,8 +460,10 @@ public class Transaction {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("transaction", e.getMessage());
             sender = RskAddress.nullAddress();
+            profiler.stop(id);
         }
 
+        profiler.stop(id);
         return sender;
     }
 
@@ -460,6 +472,10 @@ public class Transaction {
             rlpParse();
         }
         return chainId;
+    }
+
+    public void setProfiler(Profiler profiler){
+        this.profiler = profiler;
     }
 
     @Override

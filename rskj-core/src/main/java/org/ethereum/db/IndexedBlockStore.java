@@ -21,6 +21,8 @@ package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.impl.DummyProfiler;
+import co.rsk.metrics.profilers.Profiler;
 import co.rsk.net.BlockCache;
 import co.rsk.remasc.Sibling;
 import co.rsk.util.MaxSizeHashMap;
@@ -54,6 +56,13 @@ public class IndexedBlockStore extends AbstractBlockstore {
     private final Map<Long, List<BlockInfo>> index;
     private final DB indexDB;
     private final KeyValueDataSource blocks;
+    private Profiler profiler;
+
+    public IndexedBlockStore(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB, Profiler profiler) {
+        this(index,blocks, indexDB);
+        this.profiler = profiler;
+    }
+
 
     public IndexedBlockStore(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB) {
         this.index = index;
@@ -63,6 +72,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         // remascCache should be an external component and not be inside blockstore
         this.blockCache = new BlockCache(5000);
         this.remascCache = new MaxSizeHashMap<>(50000, true);
+        this.profiler = new DummyProfiler();
     }
 
     @Override
@@ -130,7 +140,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
         long t1 = System.nanoTime();
 
         if (indexDB != null) {
+            int id = profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
             indexDB.commit();
+            profiler.stop(id);
         }
 
         long t2 = System.nanoTime();

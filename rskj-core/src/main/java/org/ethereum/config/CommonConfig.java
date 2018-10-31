@@ -22,6 +22,7 @@ package org.ethereum.config;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.metrics.profilers.Profiler;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -68,6 +69,22 @@ public class CommonConfig {
                                   name -> new TrieStoreImpl(levelDbByName(name, databaseDir)),
                                   memoryStorageLimit
         );
+    }
+
+    public Repository buildRepository(String databaseDir, int memoryStorageLimit, Profiler profiler) {
+        KeyValueDataSource ds = makeDataSource("state", databaseDir, profiler);
+        KeyValueDataSource detailsDS = makeDataSource("details", databaseDir, profiler);
+
+        return new RepositoryImpl(new TrieStoreImpl(ds), detailsDS,
+                name -> new TrieStoreImpl(levelDbByName(name, databaseDir)),
+                memoryStorageLimit
+        );
+    }
+
+    private KeyValueDataSource makeDataSource(String name, String databaseDir, Profiler profiler) {
+        KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir, profiler);
+        ds.init();
+        return ds;
     }
 
     private KeyValueDataSource makeDataSource(String name, String databaseDir) {
