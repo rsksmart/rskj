@@ -18,7 +18,6 @@
 
 package co.rsk.peg.performance;
 
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;

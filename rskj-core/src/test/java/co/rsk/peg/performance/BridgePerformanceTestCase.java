@@ -50,7 +50,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
     protected static BridgeConstants bridgeConstants;
 
     @BeforeClass
-    public static void setupB() throws Exception {
+    public static void setupB() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
     }
@@ -65,10 +65,6 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
         public static ECKey getRandomFederatorECKey() {
             return Helper.FEDERATOR_ECKEYS.get(Helper.randomInRange(0, Helper.FEDERATOR_ECKEYS.size()-1));
-        }
-
-        public static int randomInRange(int min, int max) {
-            return new Random().nextInt(max - min + 1) + min;
         }
 
         public static Coin randomCoin(Coin base, int min, int max) {
@@ -126,10 +122,6 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             return (int executionIndex) -> Helper.buildTx(new ECKey());
         }
 
-        public static TxBuilder getZeroValueTxBuilder(ECKey sender) {
-            return (int executionIndex) -> Helper.buildTx(sender);
-        }
-
         public static BridgeStorageProviderInitializer buildNoopInitializer() {
             return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {};
         }
@@ -137,20 +129,6 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
     protected interface BridgeStorageProviderInitializer {
         void initialize(BridgeStorageProvider provider, Repository repository, int executionIndex);
-    }
-
-    protected ExecutionStats executeAndAverage(
-            String name,
-            int times,
-            ABIEncoder abiEncoder,
-            BridgeStorageProviderInitializer storageInitializer,
-            TxBuilder txBuilder,
-            HeightProvider heightProvider,
-            ExecutionStats stats) {
-        return executeAndAverage(
-                name, times, abiEncoder, storageInitializer,
-                txBuilder, heightProvider, stats, null
-        );
     }
 
     protected ExecutionStats executeAndAverage(

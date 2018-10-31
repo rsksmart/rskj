@@ -259,4 +259,13 @@ public class Utils {
             throw new IllegalArgumentException(String.format("Invalid hexadecimal number: %s", s), e);
         }
     }
+
+    public static int significantBitCount(int number) {
+        int result = 0;
+        while (number > 0) {
+            result++;
+            number >>= 1;
+        }
+        return result;
+    }
 }
