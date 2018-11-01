@@ -8,6 +8,7 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.peg.Federation;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -162,6 +163,11 @@ public class MainNetMinerTest {
                                 return privateMiningKey1.getPubKey();
                             }
                         };
+                    }
+
+                    @Override
+                    public Federation getGenesisFederation() {
+                        return blockchainNetConfig.getGenesisFederation();
                     }
                 };
             }

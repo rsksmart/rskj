@@ -37,6 +37,7 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public abstract class ParameterizedNetworkUpgradeTest {
 
+
     @Parameterized.Parameters(name = "Network version: {0}")
     public static Object[] data() {
         TestSystemProperties bambooConfig = new TestSystemProperties() {
