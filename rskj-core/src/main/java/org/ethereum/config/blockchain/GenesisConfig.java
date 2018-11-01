@@ -20,6 +20,7 @@
 package org.ethereum.config.blockchain;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.peg.Federation;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockHeader;
 
@@ -29,13 +30,6 @@ import java.math.BigInteger;
  * Created by Anton Nashatyrev on 25.02.2016.
  */
 public class GenesisConfig extends AbstractConfig {
-
-    public static class GenesisConstants extends Constants {
-        @Override
-        public int getDurationLimit() {
-            return 13;
-        }
-    };
 
     // IMPORTANT NOTICE
     // This class contains two methods "NEW_*" containing the latest hard-forks in Ethereum
@@ -47,6 +41,18 @@ public class GenesisConfig extends AbstractConfig {
 
     public GenesisConfig(Constants constants) {
         super(constants);
+    }
+
+    public static class GenesisConstants extends Constants {
+        @Override
+        public int getDurationLimit() {
+            return 13;
+        }
+    }
+
+    @Override
+    public Federation getGenesisFederation() {
+        return getConstants().getBridgeConstants().getGenesisFederation();
     }
 
     @Override

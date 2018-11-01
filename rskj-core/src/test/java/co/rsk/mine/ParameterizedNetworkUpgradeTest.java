@@ -37,12 +37,13 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public abstract class ParameterizedNetworkUpgradeTest {
 
+
     @Parameterized.Parameters(name = "Network version: {0}")
     public static Object[] data() {
         TestSystemProperties bambooConfig = new TestSystemProperties() {
             @Override
             protected BlockchainNetConfig buildBlockchainConfig() {
-                return RegTestConfig.getFromConfig(new HardForkActivationConfig(Integer.MAX_VALUE));
+                return RegTestConfig.getFromConfig(new HardForkActivationConfig(Integer.MAX_VALUE), null);
             }
 
             @Override
@@ -53,7 +54,7 @@ public abstract class ParameterizedNetworkUpgradeTest {
         TestSystemProperties orchidConfig = new TestSystemProperties() {
             @Override
             protected BlockchainNetConfig buildBlockchainConfig() {
-                return RegTestConfig.getFromConfig(new HardForkActivationConfig(0));
+                return RegTestConfig.getFromConfig(new HardForkActivationConfig(0), null);
             }
 
             @Override

@@ -19,17 +19,24 @@
 
 package org.ethereum.config.net;
 
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.config.BridgeConstants;
+import co.rsk.peg.Federation;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
+
+import java.util.List;
 
 /**
  * Created by Anton Nashatyrev on 25.02.2016.
  */
 public class AbstractNetConfig implements BlockchainNetConfig {
     private long[] blockNumbers = new long[64];
+    protected Federation genesisFederation;
     private BlockchainConfig[] configs = new BlockchainConfig[64];
     private int count;
+
 
     public final void add(long startBlockNumber, BlockchainConfig config) {
         if (count >= blockNumbers.length) {
@@ -61,5 +68,27 @@ public class AbstractNetConfig implements BlockchainNetConfig {
     public Constants getCommonConstants() {
         // TODO make a guard wrapper which throws exception if the requested constant differs among configs
         return configs[0].getConstants();
+    }
+
+    @Override
+    public Federation getGenesisFederation() {
+        if(genesisFederation == null) {
+            genesisFederation = getCommonConstants().getBridgeConstants().getGenesisFederation();
+        }
+        return genesisFederation;
+    }
+
+    protected void setGenesisFederationPublicKeys(List<BtcECKey> configFederationPublicKeys) {
+        BridgeConstants bridgeConstants = getCommonConstants().getBridgeConstants();
+        if(configFederationPublicKeys == null || configFederationPublicKeys.isEmpty()) {
+            genesisFederation = bridgeConstants.getGenesisFederation();
+        } else{
+            genesisFederation = new Federation(
+                    configFederationPublicKeys,
+                    bridgeConstants.getGenesisFederation().getCreationTime(),
+                    1L,
+                    bridgeConstants.getBtcParams()
+            );
+        }
     }
 }

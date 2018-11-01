@@ -24,7 +24,6 @@ import org.ethereum.config.blockchain.testnet.TestNetBeforeBridgeSyncConfig;
 import org.ethereum.config.blockchain.testnet.TestNetDifficultyDropEnabledConfig;
 
 public class TestNetConfig extends AbstractNetConfig {
-    public static final TestNetConfig INSTANCE = new TestNetConfig();
 
     public TestNetConfig() {
         add(0, new TestNetBeforeBridgeSyncConfig());
