@@ -31,103 +31,53 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class DataSourcePool {
 
     private static final Logger logger = getLogger("db");
-    private static ConcurrentMap<String, DataSourceEx> pool = new ConcurrentHashMap<>();
+    private static ConcurrentMap<String, DataSource> pool = new ConcurrentHashMap<>();
 
     public static KeyValueDataSource levelDbByName(String name, String databaseDir) {
-        DataSource dataSource = new LevelDbDataSource(name, databaseDir);
-        DataSourceEx dataSourceEx = new DataSourceEx(dataSource);
-        DataSourceEx result = pool.putIfAbsent(name, dataSourceEx);
+        KeyValueDataSource dataSource = new LevelDbDataSource(name, databaseDir);
+        DataSource result = pool.putIfAbsent(name, dataSource);
         if (result == null) {
-            result = dataSourceEx;
+            result = dataSource;
             logger.debug("Data source '{}' created and added to pool.", name);
         } else {
             logger.debug("Data source '{}' returned from pool.", name);
         }
 
         synchronized (result) {
-            result.reserve();
-            if (!result.getDataSource().isAlive()) {
-                result.getDataSource().init();
+            if (!result.isAlive()) {
+                result.init();
             }
         }
 
-        return (KeyValueDataSource) result.getDataSource();
-    }
-
-    public static void reserve(String name) {
-        DataSourceEx dataSourceEx = pool.get(name);
-        if (dataSourceEx != null) {
-            synchronized (dataSourceEx) {
-                dataSourceEx.reserve();
-            }
-        }
+        return (KeyValueDataSource) result;
     }
 
     public static void closeDataSource(String name){
-        DataSourceEx dataSourceEx = pool.get(name);
-
-        if (dataSourceEx == null) {
+        DataSource dataSource = pool.get(name);
+        if (dataSource == null) {
             return;
         }
-
-        DataSource dataSource = dataSourceEx.getDataSource();
-
-        if (dataSource instanceof HashMapDB) {
-            return;
-        }
-
-        dataSourceEx.release();
-
-        /*
-            All references to current dataSource should be destroyed after each flush.
-            We don't check count reference anymore. The only cleanup point is flush.
-            This method will be called for each contract referenced in DetailsDataStore
-        */
-        pool.remove(name);
-
+        
         synchronized (dataSource) {
+            pool.remove(name);
             dataSource.close();
-
             logger.debug("Data source '{}' closed and removed from pool.\n", dataSource.getName());
         }
     }
 
     public static void clear() {
-        Iterator<Map.Entry<String, DataSourceEx>> iterator = pool.entrySet().iterator();
+         // All references to current dataSource should be destroyed after each flush.
+         // We don't check count reference anymore. The only cleanup point is flush.
+         // This method will be called for each contract referenced in DetailsDataStore
+        Iterator<Map.Entry<String, DataSource>> iterator = pool.entrySet().iterator();
         while (iterator.hasNext()){
-            Map.Entry<String, DataSourceEx> next = iterator.next();
-            DataSource dataSource = next.getValue().getDataSource();
+            Map.Entry<String, DataSource> next = iterator.next();
+            DataSource dataSource = next.getValue();
             synchronized (dataSource) {
-                dataSource.close();
                 iterator.remove();
+                dataSource.close();
                 logger.debug("Data source '{}' closed and removed from pool.\n", dataSource.getName());
             }
-        }
-    }
-
-    private static class DataSourceEx {
-        private DataSource dataSource;
-        private int counter;
-
-        public DataSourceEx(DataSource dataSource) {
-            this.dataSource = dataSource;
-            this.counter = 0;
-        }
-
-        public DataSource getDataSource() {
-            return this.dataSource;
-        }
-
-        public synchronized int getUseCounter() {
-            return this.counter;
-        }
-
-        public synchronized void reserve() {
-            this.counter++;
-        }
-
-        public synchronized void release() {
-            this.counter--;
         }
     }
 }

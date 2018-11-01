@@ -22,7 +22,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.RLP;
@@ -360,7 +359,6 @@ public class ContractDetailsImpl implements ContractDetails {
 
             if (this.externalStorage) {
                 logger.trace("closing contract details data source, hash {}, address {}", hashString, addressString);
-                //DataSourcePool.closeDataSource(getDataSourceName());
                 this.closed = true;
             }
         }
@@ -381,10 +379,6 @@ public class ContractDetailsImpl implements ContractDetails {
         details.keys.addAll(this.keys);
         details.externalStorage = this.externalStorage;
         details.originalExternalStorage = this.originalExternalStorage;
-
-        if (this.externalStorage) {
-            DataSourcePool.reserve(getDataSourceName());
-        }
 
         logger.trace("getting contract details snapshot hash {}, address {}, storage size {}, has external storage {}", details.getStorageHashAsString(), details.getAddressAsString(), details.getStorageSize(), details.hasExternalStorage());
 
