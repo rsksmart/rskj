@@ -38,10 +38,6 @@ import static org.ethereum.util.BIUtil.max;
 public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetConfig {
     protected Constants constants;
 
-    public AbstractConfig() {
-        this(new Constants());
-    }
-
     public AbstractConfig(Constants constants) {
         this.constants = constants;
     }

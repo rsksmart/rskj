@@ -18,6 +18,8 @@
 package co.rsk.peg;
 
 import co.rsk.config.BridgeConstants;
+import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,16 +32,23 @@ import static org.mockito.Mockito.when;
 public class FederationSupportTest {
 
     private FederationSupport federationSupport;
+    private BlockchainNetConfig blockchainNetConfig;
+    private Constants commonConstants;
     private BridgeConstants bridgeConstants;
     private BridgeStorageProvider provider;
     private Block executionBlock;
 
+
     @Before
     public void setUp() {
         provider = mock(BridgeStorageProvider.class);
+        blockchainNetConfig = mock(BlockchainNetConfig.class);
+        commonConstants = mock(Constants.class);
+        when(blockchainNetConfig.getCommonConstants()).thenReturn(commonConstants);
         bridgeConstants = mock(BridgeConstants.class);
+        when(commonConstants.getBridgeConstants()).thenReturn(bridgeConstants);
         executionBlock = mock(Block.class);
-        federationSupport = new FederationSupport(provider, bridgeConstants, executionBlock);
+        federationSupport = new FederationSupport(provider, blockchainNetConfig, executionBlock);
     }
 
     @Test
@@ -47,7 +56,7 @@ public class FederationSupportTest {
         Federation genesisFederation = mock(Federation.class);
         when(provider.getNewFederation())
                 .thenReturn(null);
-        when(bridgeConstants.getGenesisFederation())
+        when(blockchainNetConfig.getGenesisFederation())
                 .thenReturn(genesisFederation);
 
         assertThat(federationSupport.getActiveFederation(), is(genesisFederation));
