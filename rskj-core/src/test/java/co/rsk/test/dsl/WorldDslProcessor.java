@@ -182,8 +182,16 @@ public class WorldDslProcessor {
             String name = cmd.getArgument(k);
             Block block = world.getBlockByName(name);
             BlockExecutor executor = world.getBlockExecutor();
-            executor.executeAndFill(block, blockChain.getBestBlock());
+
+            if (block.getParentHash().equals(blockChain.getBestBlock().getHash())) {
+                executor.executeAndFill(block, blockChain.getBestBlock());
+            }
+            else {
+                executor.executeAndFill(block, world.getBlockByHash(block.getParentHash()));
+            }
+
             block.seal();
+
             latestImportResult = blockChain.tryToConnect(block);
         }
     }
