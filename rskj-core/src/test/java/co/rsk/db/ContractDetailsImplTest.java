@@ -555,10 +555,11 @@ public class ContractDetailsImplTest {
 
     @Test
     public void syncStorageWithExternalStorage() {
-        HashMapDB store = new HashMapDB();
-        Trie trie = new TrieImpl(new TrieStoreImpl(store), false);
+        TrieStorePoolOnMemory trieStorePool = new TrieStorePoolOnMemory();
         byte[] accountAddress = randomAddress();
-        ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, name -> new TrieStoreImpl(store), config.detailsInMemoryStorageLimit());
+        String storeName = "details-storage/" + toHexString(accountAddress);
+        Trie trie = new TrieImpl(trieStorePool.getInstanceFor(storeName), false);
+        ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, trieStorePool, config.detailsInMemoryStorageLimit());
 
         int nkeys = IN_MEMORY_STORAGE_LIMIT;
 
@@ -571,14 +572,14 @@ public class ContractDetailsImplTest {
 
         int ssize = details.getStorageSize();
 
-        details = new ContractDetailsImpl(details.getEncoded(), name -> new TrieStoreImpl(store), config.detailsInMemoryStorageLimit());
+        details = new ContractDetailsImpl(details.getEncoded(), trieStorePool, config.detailsInMemoryStorageLimit());
 
         Assert.assertEquals(ssize, details.getStorageSize());
 
         for (int k = 1; k <= nkeys + 1; k++)
             Assert.assertNotNull(details.get(new DataWord(k)));
 
-        ContractDetailsImpl clone = new ContractDetailsImpl(details.getEncoded(), name -> new TrieStoreImpl(store), config.detailsInMemoryStorageLimit());
+        ContractDetailsImpl clone = new ContractDetailsImpl(details.getEncoded(), trieStorePool, config.detailsInMemoryStorageLimit());
 
         Assert.assertNotNull(clone);
         Assert.assertTrue(clone.hasExternalStorage());
@@ -645,7 +646,7 @@ public class ContractDetailsImplTest {
 
         HashMapDB externalStorage = new HashMapDB();
 
-        ContractDetailsImpl original = new ContractDetailsImpl(address, new TrieImpl(new TrieStoreImpl(externalStorage), true), code, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit(
+        ContractDetailsImpl original = new ContractDetailsImpl(address, new TrieImpl(new TrieStoreImpl(externalStorage), true), code, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit(
         ));
 
         for (int i = 0; i < IN_MEMORY_STORAGE_LIMIT + 10; i++) {
@@ -660,7 +661,7 @@ public class ContractDetailsImplTest {
 
         byte[] rlp = original.getEncoded();
 
-        ContractDetailsImpl deserialized = new ContractDetailsImpl(rlp, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
+        ContractDetailsImpl deserialized = new ContractDetailsImpl(rlp, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         Assert.assertEquals(toHexString(address), toHexString(deserialized.getAddress()));
         Assert.assertEquals(toHexString(code), toHexString(deserialized.getCode()));
@@ -685,7 +686,7 @@ public class ContractDetailsImplTest {
 
         HashMapDB externalStorage = new HashMapDB();
 
-        ContractDetailsImpl original = new ContractDetailsImpl(address, new TrieImpl(new TrieStoreImpl(externalStorage), true), code, name -> new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit());
+        ContractDetailsImpl original = new ContractDetailsImpl(address, new TrieImpl(new TrieStoreImpl(externalStorage), true), code, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         for (int i = 0; i < IN_MEMORY_STORAGE_LIMIT - 1; i++) {
             DataWord key = randomDataWord();
@@ -892,7 +893,7 @@ public class ContractDetailsImplTest {
                 null,
                 new TrieImpl(new TrieStoreImpl(store), true),
                 null,
-                name -> new TrieStoreImpl(store),
+                new TrieStorePoolOnMemory(),
                 config.detailsInMemoryStorageLimit()
         );
     }

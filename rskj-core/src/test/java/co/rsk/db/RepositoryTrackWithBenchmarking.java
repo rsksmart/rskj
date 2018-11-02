@@ -63,8 +63,8 @@ public class RepositoryTrackWithBenchmarking extends RepositoryTrack {
 
     private final Statistics statistics;
 
-    public RepositoryTrackWithBenchmarking(Repository repository, TrieStore.Factory trieStoreFactory, int memoryStorageLimit) {
-        super(repository, trieStoreFactory, memoryStorageLimit);
+    public RepositoryTrackWithBenchmarking(Repository repository, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
+        super(repository, trieStorePool, memoryStorageLimit);
         statistics = new Statistics();
     }
 

@@ -23,26 +23,24 @@ public class TransactionFactoryHelper {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
-        Transaction tx = new TransactionBuilder()
-                .nonce(nonce)
-                .sender(sender)
-                .receiver(receiver)
-                .value(BigInteger.TEN)
-                .build();
+        Transaction tx = getBuilder(sender, receiver, nonce, 10).build();
 
         return tx;
+    }
+
+    private static TransactionBuilder getBuilder(Account sender, Account receiver, long nonce, long value) {
+        return new TransactionBuilder()
+                .sender(sender)
+                .receiver(receiver)
+                .nonce(nonce)
+                .value(BigInteger.valueOf(value));
     }
 
     public static Transaction createSampleTransaction(int from, int to, long value, int nonce) {
         Account sender = createAccount(from);
         Account receiver = createAccount(to);
 
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .nonce(nonce)
-                .value(BigInteger.valueOf(value))
-                .build();
+        Transaction tx = getBuilder(sender, receiver, nonce, value).build();
 
         return tx;
     }
@@ -51,12 +49,19 @@ public class TransactionFactoryHelper {
         Account sender = createAccount(from);
         Account receiver = createAccount(to);
 
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .nonce(nonce)
-                .value(BigInteger.valueOf(value))
+        Transaction tx = getBuilder(sender, receiver, nonce, value)
                 .gasLimit(gasLimit)
+                .build();
+
+        return tx;
+    }
+
+    public static Transaction createSampleTransactionWithGasPrice(int from, int to, long value, int nonce, long gasPrice) {
+        Account sender = createAccount(from);
+        Account receiver = createAccount(to);
+
+        Transaction tx = getBuilder(sender, receiver, nonce, value)
+                .gasPrice(BigInteger.valueOf(gasPrice))
                 .build();
 
         return tx;

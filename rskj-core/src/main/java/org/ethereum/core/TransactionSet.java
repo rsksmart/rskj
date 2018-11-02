@@ -57,6 +57,16 @@ public class TransactionSet {
         if (txs == null) {
             txs = new ArrayList<>();
             this.transactionsByAddress.put(senderAddress, txs);
+        } else {
+            Optional<Transaction> optTxToRemove = txs.stream()
+                    .filter(tx -> tx.getNonceAsInteger().equals(transaction.getNonceAsInteger()))
+                    .findFirst();
+
+            if (optTxToRemove.isPresent()) {
+                Transaction txToRemove = optTxToRemove.get();
+                txs.remove(txToRemove);
+                this.transactionsByHash.remove(txToRemove.getHash());
+            }
         }
 
         txs.add(transaction);
