@@ -43,8 +43,6 @@ public interface ContractDetails {
 
     byte[] getStorageHash();
 
-    void decode(byte[] rlpCode);
-
     void setDirty(boolean dirty);
 
     void setDeleted(boolean deleted);
@@ -78,4 +76,6 @@ public interface ContractDetails {
     ContractDetails getSnapshotTo(byte[] hash);
 
     boolean isNullObject();
+
+    byte [] getCodeHash();
 }
