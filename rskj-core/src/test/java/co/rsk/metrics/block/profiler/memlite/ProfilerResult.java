@@ -1,5 +1,6 @@
-package co.rsk.metrics.profilers.impl;
+package co.rsk.metrics.block.profiler.memlite;
 
+import co.rsk.metrics.block.profiler.ProfilingException;
 import co.rsk.metrics.profilers.Profiler;
 
 import java.util.Vector;
@@ -18,7 +19,7 @@ public class ProfilerResult {
         this(new Vector<>());
     }
 
-    public  ProfilerResult(Vector<BlockProfilingInfo> blocksInfo){
+    public ProfilerResult(Vector<BlockProfilingInfo> blocksInfo){
         this.blocksInfo = blocksInfo;
         blockExecutionTime = -1.0F;
         this.reportName = "";
@@ -58,7 +59,7 @@ public class ProfilerResult {
                     throw new ProfilingException("Blocks not in order");
                 }
 
-                Vector<Metric> currentMetrics = blocksInfo.get(i).getMetrics();
+              /*  Vector<Metric> currentMetrics = blocksInfo.get(i).getMetrics();
                 Vector<Metric> newMetrics = playerRun.blocksInfo.get(i).getMetrics();
 
                 for(int j = 0; j < newMetrics.size(); j++){
@@ -71,7 +72,7 @@ public class ProfilerResult {
                     }
                     long time = currentMetric.getTime() + newMetric.getTime()/runs;
                     currentMetric.setTime(time);
-                }
+                }*/
             }
         }
 
@@ -81,12 +82,12 @@ public class ProfilerResult {
         blockExecutionTime = 0.0F;
 
         for(BlockProfilingInfo blockInfo : this.blocksInfo){
-            for(Metric metric : blockInfo.getMetrics()){
+            /*for(Metric metric : blockInfo.getMetrics()){
                 if(metric.getType().equals(Profiler.PROFILING_TYPE.BLOCK_EXECUTE)){
                     blockExecutionTime+= metric.getTime();
                     break;
                 }
-            }
+            }*/
         }
 
         averageBlockExecutionTime = blockExecutionTime/this.blocksInfo.size();

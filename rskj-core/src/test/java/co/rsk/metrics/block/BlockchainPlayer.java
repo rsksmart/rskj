@@ -34,6 +34,8 @@ public class BlockchainPlayer {
     public static void playBlockchain(BlockStore blockStore, String replayDir, int playFromBlock, TestSystemProperties config, Profiler profiler, boolean includesRemasc) throws InvalidGenesisFileException {
 
 
+        //Any pre-blockchain load profile metric is stored at "block" -3
+        profiler.newBlock(-3,0);
         DefaultConfig defaultConfig = new DefaultConfig();
         CommonConfig commonConfig = new CommonConfig();
         BlockStore sourceBlockStore = blockStore;

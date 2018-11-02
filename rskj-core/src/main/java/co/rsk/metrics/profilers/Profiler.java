@@ -15,7 +15,9 @@ public interface Profiler {
         FILLING_EXECUTED_BLOCK,
         BLOCK_MINING,
         BLOCK_FINAL_STATE_VALIDATION,
-        PRECOMPILED_CONTRACT_EXECUTE
+        PRECOMPILED_CONTRACT_EXECUTE,
+        LEVEL_DB_INIT,
+        LEVEL_DB_CLOSE
     }
 
     int start (PROFILING_TYPE type);
