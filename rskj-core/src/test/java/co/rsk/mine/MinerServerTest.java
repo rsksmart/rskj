@@ -731,7 +731,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         return new BlockToMineBuilder(
                 ConfigUtils.getDefaultMiningConfig(),
                 Mockito.mock(Repository.class),
-                Mockito.mock(BlockStore.class),
+                blockStore,
                 Mockito.mock(TransactionPool.class),
                 difficultyCalculator,
                 new GasLimitCalculator(config),

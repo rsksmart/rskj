@@ -475,6 +475,8 @@ public class MinerServerImpl implements MinerServer {
             logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getShortHash(), newBlock.getShortHashForMergedMining(), newBlock.getNumber());
             SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash().getBytes(), newBlock.getNumber());
 
+            builder.clearIncreaseTime();
+
             return new SubmitBlockResult("OK", "OK", blockInfo);
         }
     }

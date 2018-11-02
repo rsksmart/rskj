@@ -128,7 +128,7 @@ public class MinerUtils {
 
     public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(co.rsk.bitcoinj.core.NetworkParameters params, List<BtcTransaction> transactions) {
         co.rsk.bitcoinj.core.Sha256Hash prevBlockHash = co.rsk.bitcoinj.core.Sha256Hash.ZERO_HASH;
-        long time = System.currentTimeMillis() / 1000;
+        long time = System.currentTimeMillis() / 1000L;
         long difficultyTarget = co.rsk.bitcoinj.core.Utils.encodeCompactBits(params.getMaxTarget());
         return new co.rsk.bitcoinj.core.BtcBlock(params, params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT), prevBlockHash, null, time, difficultyTarget, 0, transactions);
     }
