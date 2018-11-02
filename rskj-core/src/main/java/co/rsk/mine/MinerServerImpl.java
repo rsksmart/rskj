@@ -594,6 +594,7 @@ public class MinerServerImpl implements MinerServer {
         logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
 
         final Block newBlock = builder.build(newBlockParent, extraData);
+        builder.clearIncreaseTime();
 
         if (autoSwitchBetweenNormalAndFallbackMining) {
             setFallbackMining(ProofOfWorkRule.isFallbackMiningPossible(config, newBlock.getHeader()));
