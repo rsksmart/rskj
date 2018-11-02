@@ -375,11 +375,15 @@ public class SyncProcessor implements SyncEventsHandler {
         @Override
         public boolean hasLowerDifficulty(NodeID nodeID) {
             Status status = getPeerStatus(nodeID).getStatus();
+            if (status == null) {
+                return false;
+            }
 
             boolean hasTotalDifficulty = status.getTotalDifficulty() != null;
-            return  (hasTotalDifficulty && blockchain.getStatus().hasLowerTotalDifficultyThan(status)) ||
-                    // this works only for testing purposes, real status without difficulty dont reach this far
-                    (!hasTotalDifficulty && blockchain.getStatus().getBestBlockNumber() < status.getBestBlockNumber());
+            BlockChainStatus nodeStatus = blockchain.getStatus();
+            // this works only for testing purposes, real status without difficulty don't reach this far
+            return  (hasTotalDifficulty && nodeStatus.hasLowerTotalDifficultyThan(status)) ||
+                (!hasTotalDifficulty && nodeStatus.getBestBlockNumber() < status.getBestBlockNumber());
         }
 
         @Override
