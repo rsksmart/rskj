@@ -622,7 +622,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void getCurrentTimeInMilliseconds() {
-        long current = System.currentTimeMillis() / 1000;
+        long current = blockStore.getBestBlock().getTimestamp();
 
         MinerServer server = getMinerServerWithMocks();
 
@@ -634,7 +634,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void increaseTime() {
-        long current = System.currentTimeMillis() / 1000;
+        long current = blockStore.getBestBlock().getTimestamp();
 
         MinerServer server = getMinerServerWithMocks();
 
@@ -648,7 +648,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void increaseTimeUsingNegativeNumberHasNoEffect() {
-        long current = System.currentTimeMillis() / 1000;
+        long current = blockStore.getBestBlock().getTimestamp();
 
         MinerServer server = getMinerServerWithMocks();
 
@@ -661,7 +661,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void increaseTimeTwice() {
-        long current = System.currentTimeMillis() / 1000;
+        long current = blockStore.getBestBlock().getTimestamp();
 
         MinerServer server = getMinerServerWithMocks();
 
@@ -731,7 +731,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         return new BlockToMineBuilder(
                 ConfigUtils.getDefaultMiningConfig(),
                 Mockito.mock(Repository.class),
-                Mockito.mock(BlockStore.class),
+                blockStore,
                 Mockito.mock(TransactionPool.class),
                 difficultyCalculator,
                 new GasLimitCalculator(config),

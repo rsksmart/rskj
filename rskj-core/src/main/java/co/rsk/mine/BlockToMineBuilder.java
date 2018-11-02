@@ -28,6 +28,7 @@ import co.rsk.core.bc.FamilyUtils;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
 import org.apache.commons.collections4.CollectionUtils;
+import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -66,10 +67,10 @@ public class BlockToMineBuilder {
     private final MinerUtils minerUtils;
     private final BlockExecutor executor;
 
+    private final boolean isRegtest;
     private final Coin minerMinGasPriceTarget;
 
     private long timeAdjustment;
-    private long minimumAcceptableTime;
 
     @Autowired
     public BlockToMineBuilder(
@@ -89,7 +90,7 @@ public class BlockToMineBuilder {
         this.difficultyCalculator = Objects.requireNonNull(difficultyCalculator);
         this.gasLimitCalculator = Objects.requireNonNull(gasLimitCalculator);
         this.validationRules = Objects.requireNonNull(validationRules);
-
+        this.isRegtest = config.getBlockchainConfig() instanceof RegTestConfig;
         this.clock = Clock.systemUTC();
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
@@ -145,8 +146,6 @@ public class BlockToMineBuilder {
 
         final List<Transaction> txsToRemove = new ArrayList<>();
         final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
-        minimumAcceptableTime = newBlockParent.getTimestamp() + 1;
-
         final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice);
 
         newBlock.setExtraData(extraData);
@@ -191,7 +190,7 @@ public class BlockToMineBuilder {
             Coin minimumGasPrice) {
         final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        final long timestampSeconds = this.getCurrentTimeInSeconds();
+        final long timestampSeconds = this.getCurrentTimeInSeconds(newBlockParent);
 
         // Set gas limit before executing block
         BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getMininimum());
@@ -224,10 +223,18 @@ public class BlockToMineBuilder {
         return newHeader;
     }
 
-    // Note that this needs to be refactored.
     public long getCurrentTimeInSeconds() {
-        long ret = clock.millis() / 1000 + timeAdjustment;
-        return Long.max(ret, minimumAcceptableTime);
+        return getCurrentTimeInSeconds(blockStore.getBestBlock());
+    }
+
+    private long getCurrentTimeInSeconds(Block parent) {
+        long previousTimestamp = parent.getTimestamp();
+        if (isRegtest) {
+            return previousTimestamp + timeAdjustment;
+        }
+
+        long ret = clock.instant().plusSeconds(timeAdjustment).getEpochSecond();
+        return Long.max(ret, previousTimestamp + 1);
     }
 
     // Note that this needs to be refactored.
@@ -238,5 +245,9 @@ public class BlockToMineBuilder {
 
         timeAdjustment += seconds;
         return timeAdjustment;
+    }
+
+    public void clearIncreaseTime() {
+        timeAdjustment = 0;
     }
 }
