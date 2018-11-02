@@ -79,7 +79,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void init() {
-
         //Profiling of DB initialization is not desired as is not part of the block execution time
         //int id = profiler.start(Profiler.PROFILING_TYPE.DISK_READ);
         resetDbLock.writeLock().lock();
@@ -116,8 +115,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 Files.createDirectories(dbPath.getParent());
 
                 logger.debug("Initializing new or existing database: '{}'", name);
+                int id = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_INIT);
                 db = factory.open(dbPath.toFile(), options);
-
+                profiler.stop(id);
                 alive = true;
             } catch (IOException ioe) {
                 logger.error(ioe.getMessage(), ioe);
@@ -319,8 +319,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
             try {
                 logger.debug("Close db: {}", name);
+                int id = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_CLOSE);
                 db.close();
-
+                profiler.stop(id);
                 alive = false;
             } catch (IOException e) {
                 logger.error("Failed to find the db file on the close: {} ", name);

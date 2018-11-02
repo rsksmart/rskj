@@ -1,4 +1,4 @@
-package co.rsk.metrics.profilers.impl;
+package co.rsk.metrics.block.profiler.detailed;
 
 import java.util.Vector;
 

@@ -1,4 +1,4 @@
-package co.rsk.metrics.profilers.impl;
+package co.rsk.metrics.block.profiler.simple;
 
 import co.rsk.metrics.profilers.Profiler;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -87,8 +87,6 @@ public class ExecutionProfiler implements Profiler {
                 return;
             }
         }
-
-        //stephanielelaurin@lelaurin.com martes 30 a las 12hs
 
         ProfilerResult result = new ProfilerResult(profilePerBlock);
 

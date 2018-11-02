@@ -1,4 +1,4 @@
-package co.rsk.metrics.profilers.impl;
+package co.rsk.metrics.block.profiler;
 
 public class ProfilingException extends Exception {
 

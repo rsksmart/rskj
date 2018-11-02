@@ -1,4 +1,4 @@
-package co.rsk.metrics.profilers.impl;
+package co.rsk.metrics.block.profiler.simple;
 
 import co.rsk.metrics.profilers.Profiler;
 
@@ -14,6 +14,7 @@ public class Metric {
 
     public Metric(Profiler.PROFILING_TYPE type){
         this.type = type;
+
         time = System.nanoTime();
     }
 
@@ -36,6 +37,10 @@ public class Metric {
 
     public long getTime(){
         return this.time;
+    }
+
+    public void aggregate(Metric newMetric){
+        this.time+=newMetric.getTime();
     }
 
 }
