@@ -30,6 +30,7 @@ import com.google.common.io.ByteStreams;
 import org.apache.commons.io.FileUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
@@ -127,16 +128,16 @@ public class NetworkStateExporterTest {
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
         ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(
-            null,
+            addr1.getBytes(),
             new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
-            null,
+            new byte[] {1, 2, 3, 4},
             trieStorePool,
             config.detailsInMemoryStorageLimit()
         );
-        contractDetails.setCode(new byte[] {1, 2, 3, 4});
         contractDetails.put(DataWord.ZERO, DataWord.ONE);
         contractDetails.putBytes(DataWord.ONE, new byte[] {5, 6, 7, 8});
         repository.updateContractDetails(addr1, contractDetails);
+        repository.saveCode(addr1, new byte[] {1, 2, 3, 4});
         AccountState accountState = repository.getAccountState(addr1);
         accountState.setStateRoot(contractDetails.getStorageHash());
         repository.updateAccountState(addr1, accountState);

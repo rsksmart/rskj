@@ -160,7 +160,12 @@ public class RepositoryImpl implements Repository {
             storageRoot = getAccountState(addr).getStateRoot();
         }
 
-        ContractDetails details =  detailsDataStore.get(addr);
+        byte[] codeHash = EMPTY_DATA_HASH;
+        if (accountState != null) {
+            codeHash = getAccountState(addr).getCodeHash();
+        }
+
+        ContractDetails details =  detailsDataStore.get(addr, codeHash);
         if (details != null) {
             details = details.getSnapshotTo(storageRoot);
         }
