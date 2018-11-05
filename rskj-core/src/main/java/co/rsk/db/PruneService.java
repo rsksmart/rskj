@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.ethereum.datasource.DataSourcePool.levelDbByName;
-import static org.ethereum.datasource.DataSourcePool.closeDataSource;
 
 /**
  * Created by ajlopez on 21/03/2018.
@@ -105,7 +104,9 @@ public class PruneService {
         long to = this.blockchain.getBestBlock().getNumber() - this.pruneConfiguration.getNoBlocksToAvoidForks();
 
         String dataSourceName = getDataSourceName(contractAddress);
+        // this is here because TrieCopier would fail otherwise
         KeyValueDataSource sourceDataSource = levelDbByName(dataSourceName, this.rskConfiguration.databaseDir());
+        sourceDataSource.init();
         KeyValueDataSource targetDataSource = levelDbByName(dataSourceName + "B", this.rskConfiguration.databaseDir());
         TrieStore targetStore = new TrieStoreImpl(targetDataSource);
 
@@ -122,10 +123,6 @@ public class PruneService {
         try {
             TrieCopier.trieContractStateCopy(targetStore, blockchain, to2, 0, blockchain.getRepository(), this.contractAddress);
 
-            closeDataSource(dataSourceName);
-            targetDataSource.close();
-            sourceDataSource.close();
-
             String contractDirectoryName = getDatabaseDirectory(rskConfiguration, dataSourceName);
 
             removeDirectory(contractDirectoryName);
@@ -135,9 +132,6 @@ public class PruneService {
             if (!result) {
                 logger.error("Unable to rename contract storage");
             }
-
-            sourceDataSource.init();
-            //levelDbByName(this.rskConfiguration, dataSourceName);
         }
         finally {
             blockchain.resumeProcess();
