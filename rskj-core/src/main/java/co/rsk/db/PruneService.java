@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieCopier;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Blockchain;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.util.FileUtil;
@@ -77,6 +78,14 @@ public class PruneService {
                 logger.info("Prune done");
 
                 nextBlockNumber = this.blockchain.getStatus().getBestBlockNumber() + this.pruneConfiguration.getNoBlocksToWait();
+            }
+
+            BlockchainConfig configForBlock = rskConfiguration.getBlockchainConfig().getConfigForBlock(bestBlockNumber);
+            if (configForBlock.isRskip85()) {
+                logger.info("RSKIP85 activated, prune is not necessary anymore");
+                stop();
+                // returning will stop the thread
+                return;
             }
 
             try {
