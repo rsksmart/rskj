@@ -27,6 +27,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.db.TrieStorePoolOnDisk;
 import org.ethereum.util.FileUtil;
 import org.ethereum.validator.*;
 import org.slf4j.Logger;
@@ -65,7 +66,7 @@ public class CommonConfig {
         KeyValueDataSource detailsDS = makeDataSource("details", databaseDir);
 
         return new RepositoryImpl(new TrieStoreImpl(ds), detailsDS,
-                                  name -> new TrieStoreImpl(levelDbByName(name, databaseDir)),
+                                  new TrieStorePoolOnDisk(databaseDir),
                                   memoryStorageLimit
         );
     }
