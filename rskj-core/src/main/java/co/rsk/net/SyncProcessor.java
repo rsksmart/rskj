@@ -65,8 +65,11 @@ public class SyncProcessor implements SyncEventsHandler {
         this.pendingMessages = new LinkedHashMap<Long, MessageType>() {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Long, MessageType> eldest) {
-                logger.trace("Pending {}@{} DISCARDED", eldest.getValue(), eldest.getKey());
-                return size() > MAX_PENDING_MESSAGES;
+                boolean shouldDiscard = size() > MAX_PENDING_MESSAGES;
+                if (shouldDiscard) {
+                    logger.trace("Pending {}@{} DISCARDED", eldest.getValue(), eldest.getKey());
+                }
+                return shouldDiscard;
             }
         };
         this.failedPeers = new LinkedHashMap<NodeID, Instant>(MAX_SIZE_FAILURE_RECORDS, 0.75f, true) {
