@@ -23,6 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.remasc.RemascTransaction;
@@ -151,8 +152,15 @@ public class BlockToMineBuilder {
 
         newBlock.setExtraData(extraData);
         removePendingTransactions(txsToRemove);
-        executor.executeAndFill(newBlock, newBlockParent);
-        return newBlock;
+
+        BlockChainImpl.executionLock.lock();
+        try {
+            executor.executeAndFill(newBlock, newBlockParent);
+            return newBlock;
+        }
+        finally {
+            BlockChainImpl.executionLock.unlock();
+        }
     }
 
     private List<Transaction> getTransactions(List<Transaction> txsToRemove, Block parent, Coin minGasPrice) {

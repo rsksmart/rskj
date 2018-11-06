@@ -39,6 +39,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -90,6 +92,7 @@ public class BlockChainImpl implements Blockchain {
     private final Object connectLock = new Object();
     private final Object accessLock = new Object();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    public static final Lock executionLock = new ReentrantLock();
 
     private final boolean flushEnabled;
     private final int flushNumberOfBlocks;
@@ -153,42 +156,56 @@ public class BlockChainImpl implements Blockchain {
      */
     @Override
     public ImportResult tryToConnect(Block block) {
-        this.lock.readLock().lock();
-
+        executionLock.lock();
         try {
-            if (block == null) {
-                return ImportResult.INVALID_BLOCK;
-            }
-
-            if (!block.isSealed()) {
-                panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
-                block.seal();
-            }
-
-            if (blockRecorder != null) {
-                blockRecorder.writeBlock(block);
-            }
-
+            this.lock.readLock().lock();
             try {
-                logger.trace("Try connect block hash: {}, number: {}",
-                             block.getShortHash(),
-                             block.getNumber());
-
-                synchronized (connectLock) {
-                    logger.trace("Start try connect");
-                    long saveTime = System.nanoTime();
-                    ImportResult result = internalTryToConnect(block);
-                    long totalTime = System.nanoTime() - saveTime;
-                    logger.info("block: num: [{}] hash: [{}], processed after: [{}]nano, result {}", block.getNumber(), block.getShortHash(), totalTime, result);
-                    return result;
+                if (block == null) {
+                    return ImportResult.INVALID_BLOCK;
                 }
-            } catch (Throwable t) {
-                logger.error("Unexpected error: ", t);
-                return ImportResult.INVALID_BLOCK;
+
+                if (!block.isSealed()) {
+                    panicProcessor.panic(
+                            "unsealedblock",
+                            String.format("Unsealed block %s %s", block.getNumber(), block.getHash())
+                    );
+                    block.seal();
+                }
+
+                if (blockRecorder != null) {
+                    blockRecorder.writeBlock(block);
+                }
+
+                try {
+                    logger.trace(
+                            "Try connect block hash: {}, number: {}",
+                            block.getShortHash(),
+                            block.getNumber()
+                    );
+
+                    synchronized (connectLock) {
+                        logger.trace("Start try connect");
+                        long saveTime = System.nanoTime();
+                        ImportResult result = internalTryToConnect(block);
+                        long totalTime = System.nanoTime() - saveTime;
+                        logger.info(
+                                "block: num: [{}] hash: [{}], processed after: [{}]nano, result {}",
+                                block.getNumber(),
+                                block.getShortHash(),
+                                totalTime,
+                                result
+                        );
+                        return result;
+                    }
+                } catch (Throwable t) {
+                    logger.error("Unexpected error: ", t);
+                    return ImportResult.INVALID_BLOCK;
+                }
+            } finally {
+                this.lock.readLock().unlock();
             }
-        }
-        finally {
-            this.lock.readLock().unlock();
+        } finally {
+            executionLock.unlock();
         }
     }
 

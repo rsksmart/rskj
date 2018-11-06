@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.toHexString;
 
 /**
  * A store for contract details.
@@ -149,7 +148,6 @@ public class DetailsDataStore {
         }
 
         db.getDb().updateBatch(batch);
-        DataSourcePool.clear();
 
         for (RskAddress key : removes) {
             db.delete(key.getBytes());
@@ -157,6 +155,7 @@ public class DetailsDataStore {
 
         cache.clear();
         removes.clear();
+        DataSourcePool.clear();
 
         return totalSize;
     }
