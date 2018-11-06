@@ -40,7 +40,6 @@ import java.util.*;
 
 import static org.ethereum.core.AccountState.EMPTY_DATA_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.util.ByteUtil.wrap;
 
 /**
@@ -76,12 +75,17 @@ public class ContractDetailsImpl implements ContractDetails {
         this.memoryStorageLimit = memoryStorageLimit;
 
         if (this.trie == null) {
-            this.trie = new TrieImpl(trieStorePool.getInstanceFor(getDataSourceName()), true);
+            this.trie = this.newTrie();
         }
     }
 
     private byte[] getCodeHash(byte[] code) {
         return code == null ? EMPTY_DATA_HASH : Keccak256Helper.keccak256(code);
+    }
+
+    private Trie newTrie() {
+        TrieStore store = new ContractStorageStoreFactory(this.trieStorePool).getTrieStore(this.address);
+        return new TrieImpl(store, true);
     }
 
     @Override
@@ -192,7 +196,7 @@ public class ContractDetailsImpl implements ContractDetails {
         this.address = rlpAddress.getRLPData();
 
         Keccak256 snapshotHash = new Keccak256(rlpStorage.getRLPData());
-        this.trie = new TrieImpl(trieStorePool.getInstanceFor(getDataSourceName()), true).getSnapshotTo(snapshotHash);
+        this.trie = this.newTrie().getSnapshotTo(snapshotHash);
 
         this.code = (rlpCode.getRLPData() == null) ? EMPTY_BYTE_ARRAY : rlpCode.getRLPData();
         this.codeHash = Keccak256Helper.keccak256(code);
