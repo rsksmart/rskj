@@ -21,6 +21,7 @@ package org.ethereum.datasource;
 
 import org.slf4j.Logger;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +38,11 @@ public class DataSourcePool {
         Path path = LevelDbDataSource.getPathForName(name, databaseDir);
 
         return Files.exists(path);
+    }
+
+    public static void levelDbDestroy(String name, String databaseDir) {
+        Path path = LevelDbDataSource.getPathForName(name, databaseDir);
+        LevelDbDataSource.destroyDB(path.toFile());
     }
 
     public static KeyValueDataSource levelDbByName(String name, String databaseDir) {
