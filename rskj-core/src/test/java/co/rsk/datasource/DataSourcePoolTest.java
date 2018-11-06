@@ -90,4 +90,11 @@ public class DataSourcePoolTest {
             DataSourcePool.closeDataSource("test4");
         }
     }
+
+    @Test
+    public void openDataSourceAndCheckIfExist() {
+        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test5", config.databaseDir());
+        Assert.assertTrue(DataSourcePool.levelDbExists("test5", config.databaseDir()));
+        dataSource.close();
+    }
 }
