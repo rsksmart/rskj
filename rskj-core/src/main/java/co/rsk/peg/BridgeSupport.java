@@ -478,6 +478,9 @@ public class BridgeSupport {
                         sender,
                         co.rsk.core.Coin.fromBitcoin(totalAmount)
                 );
+
+                logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, sender);
+
                 // Consume this whitelisted address
                 lockWhitelist.consume(senderBtcAddress);
             }
