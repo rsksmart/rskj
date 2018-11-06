@@ -21,6 +21,8 @@ package org.ethereum.datasource;
 
 import org.slf4j.Logger;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -30,6 +32,12 @@ public class DataSourcePool {
 
     private static final Logger logger = getLogger("db");
     private static ConcurrentMap<String, DataSourceEx> pool = new ConcurrentHashMap<>();
+
+    public static boolean levelDbExists(String name, String databaseDir) {
+        Path path = LevelDbDataSource.getPathForName(name, databaseDir);
+
+        return Files.exists(path);
+    }
 
     public static KeyValueDataSource levelDbByName(String name, String databaseDir) {
         DataSource dataSource = new LevelDbDataSource(name, databaseDir);

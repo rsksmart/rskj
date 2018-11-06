@@ -92,13 +92,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
             try {
                 logger.debug("Opening database");
-                Path dbPath;
-
-                if (Paths.get(databaseDir).isAbsolute()) {
-                    dbPath = Paths.get(databaseDir, name);
-                } else {
-                    dbPath = Paths.get(getProperty("user.dir"), databaseDir, name);
-                }
+                Path dbPath = getPathForName(name, databaseDir);
 
                 Files.createDirectories(dbPath.getParent());
 
@@ -114,6 +108,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
             logger.debug("<~ LevelDbDataSource.init(): " + name);
         } finally {
             resetDbLock.writeLock().unlock();
+        }
+    }
+
+    public static Path getPathForName(String name, String databaseDir) {
+        if (Paths.get(databaseDir).isAbsolute()) {
+            return Paths.get(databaseDir, name);
+        } else {
+            return Paths.get(getProperty("user.dir"), databaseDir, name);
         }
     }
 
