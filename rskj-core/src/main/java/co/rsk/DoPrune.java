@@ -25,6 +25,7 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -35,7 +36,6 @@ import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -93,7 +93,6 @@ public class DoPrune {
         this.processBlocks(height - blocksToProcess, source, contractAddress, targetStore);
 
         closeDataSource(targetDataSourceName);
-        targetDataSource.close();
     }
 
     private void processBlocks(long from, TrieImpl sourceTrie, RskAddress contractAddress, TrieStore targetStore) {
