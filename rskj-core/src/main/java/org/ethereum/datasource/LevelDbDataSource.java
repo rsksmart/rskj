@@ -129,19 +129,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
-    public void destroyDB(File fileLocation) {
-        resetDbLock.writeLock().lock();
+    public static void destroyDB(File fileLocation) {
+        logger.debug("Destroying existing database: " + fileLocation);
+        Options options = new Options();
         try {
-            logger.debug("Destroying existing database: " + fileLocation);
-            Options options = new Options();
-            try {
-                factory.destroy(fileLocation, options);
-            } catch (IOException e) {
-                logger.error(e.getMessage(), e);
-                panicProcessor.panic("leveldb", e.getMessage());
-            }
-        } finally {
-            resetDbLock.writeLock().unlock();
+            factory.destroy(fileLocation, options);
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+            panicProcessor.panic("leveldb", e.getMessage());
         }
     }
 

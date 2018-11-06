@@ -92,9 +92,18 @@ public class DataSourcePoolTest {
     }
 
     @Test
-    public void openDataSourceAndCheckIfExist() {
+    public void openDataSourceAndCheckIfExists() {
         KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test5", config.databaseDir());
         Assert.assertTrue(DataSourcePool.levelDbExists("test5", config.databaseDir()));
         dataSource.close();
+    }
+
+    @Test
+    public void openAndDestroyDataSourceAndCheckItDoesNotExist() {
+        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test6", config.databaseDir());
+        Assert.assertTrue(DataSourcePool.levelDbExists("test6", config.databaseDir()));
+        dataSource.close();
+        DataSourcePool.levelDbDestroy("test6", config.databaseDir());
+        Assert.assertFalse(DataSourcePool.levelDbExists("test6", config.databaseDir()));
     }
 }
