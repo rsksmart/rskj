@@ -509,7 +509,7 @@ public class RepositoryTest {
     public void testMultiThread() throws InterruptedException {
         HashMapDB store = new HashMapDB();
         final Repository repository = new RepositoryImpl(new TrieStoreImpl(store),
-                                                         name -> new TrieStoreImpl(store),
+                                                         new TrieStorePoolOnMemory(() -> store),
                                                          config.detailsInMemoryStorageLimit());
 
         final DataWord cowKey1 = new DataWord("c1");
