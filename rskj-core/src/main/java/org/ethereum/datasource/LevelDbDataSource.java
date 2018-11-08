@@ -92,13 +92,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
             try {
                 logger.debug("Opening database");
-                Path dbPath;
-
-                if (Paths.get(databaseDir).isAbsolute()) {
-                    dbPath = Paths.get(databaseDir, name);
-                } else {
-                    dbPath = Paths.get(getProperty("user.dir"), databaseDir, name);
-                }
+                Path dbPath = getPathForName(name, databaseDir);
 
                 Files.createDirectories(dbPath.getParent());
 
@@ -117,6 +111,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
+    public static Path getPathForName(String name, String databaseDir) {
+        if (Paths.get(databaseDir).isAbsolute()) {
+            return Paths.get(databaseDir, name);
+        } else {
+            return Paths.get(getProperty("user.dir"), databaseDir, name);
+        }
+    }
+
     @Override
     public boolean isAlive() {
         try {
@@ -127,19 +129,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
-    public void destroyDB(File fileLocation) {
-        resetDbLock.writeLock().lock();
+    public static void destroyDB(File fileLocation) {
+        logger.debug("Destroying existing database: " + fileLocation);
+        Options options = new Options();
         try {
-            logger.debug("Destroying existing database: " + fileLocation);
-            Options options = new Options();
-            try {
-                factory.destroy(fileLocation, options);
-            } catch (IOException e) {
-                logger.error(e.getMessage(), e);
-                panicProcessor.panic("leveldb", e.getMessage());
-            }
-        } finally {
-            resetDbLock.writeLock().unlock();
+            factory.destroy(fileLocation, options);
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+            panicProcessor.panic("leveldb", e.getMessage());
         }
     }
 

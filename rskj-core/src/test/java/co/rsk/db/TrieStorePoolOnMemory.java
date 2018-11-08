@@ -26,6 +26,24 @@ public class TrieStorePoolOnMemory implements TrieStore.Pool {
         return pool.computeIfAbsent(name, trieStoreName -> new TrieStoreImpl(storeProvider.getInstance()));
     }
 
+    @Override
+    public boolean existsInstanceFor(String name) {
+        return pool.containsKey(name);
+    }
+
+    public void closeInstanceFor(String name) {
+
+    }
+
+    @Override
+    public void destroyInstanceFor(String name) {
+        if (!pool.containsKey(name)) {
+            return;
+        }
+
+        pool.remove(name);
+    }
+
     public interface StoreProvider {
         KeyValueDataSource getInstance();
     }

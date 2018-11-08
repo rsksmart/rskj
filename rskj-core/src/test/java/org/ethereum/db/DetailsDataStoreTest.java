@@ -52,7 +52,7 @@ public class DetailsDataStoreTest {
         byte[] value =  Hex.decode("aa");
 
         byte[] contractAddress = randomAddress().getBytes();
-        String storeName = "details-storage/" + toHexString(contractAddress);
+        String storeName = "contracts-storage";
         ContractDetails contractDetails = new ContractDetailsImpl(
             contractAddress,
             new TrieImpl(trieStorePool.getInstanceFor(storeName), true),
@@ -137,7 +137,7 @@ public class DetailsDataStoreTest {
         byte[] value =  Hex.decode("aa");
 
         byte[] contractAddress = randomAddress().getBytes();
-        String storeName = "details-storage/" + toHexString(contractAddress);
+        String storeName = "contracts-storage";
         ContractDetails contractDetails = new ContractDetailsImpl(
             contractAddress,
             new TrieImpl(trieStorePool.getInstanceFor(storeName), true),
