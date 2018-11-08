@@ -328,10 +328,6 @@ public class ContractDetailsImpl implements ContractDetails {
             logger.trace("syncing to storage, hash {}, address {}, storage size {}", hashString, addressString, this.getStorageSize());
 
             this.trie.save();
-
-            logger.trace("closing contract details data source, hash {}, address {}", hashString, addressString);
-            DataSourcePool.closeDataSource(getDataSourceName());
-            this.closed = true;
         }
     }
 
