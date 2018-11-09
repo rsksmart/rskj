@@ -28,7 +28,6 @@ import co.rsk.core.bc.FamilyUtils;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
 import org.apache.commons.collections4.CollectionUtils;
-import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -42,7 +41,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
-import java.time.Clock;
 import java.util.*;
 
 /**
@@ -61,16 +59,13 @@ public class BlockToMineBuilder {
     private final DifficultyCalculator difficultyCalculator;
     private final GasLimitCalculator gasLimitCalculator;
     private final BlockValidationRule validationRules;
+    private final MinerClock clock;
 
-    private final Clock clock;
     private final MinimumGasPriceCalculator minimumGasPriceCalculator;
     private final MinerUtils minerUtils;
     private final BlockExecutor executor;
 
-    private final boolean isRegtest;
     private final Coin minerMinGasPriceTarget;
-
-    private long timeAdjustment;
 
     @Autowired
     public BlockToMineBuilder(
@@ -82,7 +77,8 @@ public class BlockToMineBuilder {
             GasLimitCalculator gasLimitCalculator,
             @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
             RskSystemProperties config,
-            ReceiptStore receiptStore) {
+            ReceiptStore receiptStore,
+            MinerClock clock) {
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
         this.blockStore = Objects.requireNonNull(blockStore);
@@ -90,8 +86,7 @@ public class BlockToMineBuilder {
         this.difficultyCalculator = Objects.requireNonNull(difficultyCalculator);
         this.gasLimitCalculator = Objects.requireNonNull(gasLimitCalculator);
         this.validationRules = Objects.requireNonNull(validationRules);
-        this.isRegtest = config.getBlockchainConfig() instanceof RegTestConfig;
-        this.clock = Clock.systemUTC();
+        this.clock = Objects.requireNonNull(clock);
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
@@ -190,7 +185,7 @@ public class BlockToMineBuilder {
             Coin minimumGasPrice) {
         final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        final long timestampSeconds = this.getCurrentTimeInSeconds(newBlockParent);
+        final long timestampSeconds = clock.calculateTimestampForChild(newBlockParent);
 
         // Set gas limit before executing block
         BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getMininimum());
@@ -221,33 +216,5 @@ public class BlockToMineBuilder {
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
         return newHeader;
-    }
-
-    public long getCurrentTimeInSeconds() {
-        return getCurrentTimeInSeconds(blockStore.getBestBlock());
-    }
-
-    private long getCurrentTimeInSeconds(Block parent) {
-        long previousTimestamp = parent.getTimestamp();
-        if (isRegtest) {
-            return previousTimestamp + timeAdjustment;
-        }
-
-        long ret = clock.instant().plusSeconds(timeAdjustment).getEpochSecond();
-        return Long.max(ret, previousTimestamp + 1);
-    }
-
-    // Note that this needs to be refactored.
-    public long increaseTime(long seconds) {
-        if (seconds <= 0) {
-            return timeAdjustment;
-        }
-
-        timeAdjustment += seconds;
-        return timeAdjustment;
-    }
-
-    public void clearIncreaseTime() {
-        timeAdjustment = 0;
     }
 }

@@ -255,6 +255,7 @@ public class TransactionModuleTest {
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
         CompositeEthereumListener compositeEthereumListener = new CompositeEthereumListener();
         Ethereum eth = new EthereumImpl(new ChannelManagerImpl(config, new SyncPool(compositeEthereumListener, blockchain, config, null)), transactionPool, compositeEthereumListener, blockchain);
+        MinerClock minerClock = new MinerClock(blockchain, config);
 
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -272,8 +273,10 @@ public class TransactionModuleTest {
                         new GasLimitCalculator(config),
                         Mockito.mock(BlockUnclesValidationRule.class),
                         config,
-                        receiptStore
+                        receiptStore,
+                        minerClock
                 ),
+                minerClock,
                 ConfigUtils.getDefaultMiningConfig()
         );
 

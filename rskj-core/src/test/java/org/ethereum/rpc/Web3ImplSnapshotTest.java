@@ -236,6 +236,7 @@ public class Web3ImplSnapshotTest {
     private MinerServer getMinerServerForTest(SimpleEthereum ethereum) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
+        MinerClock clock = new MinerClock(blockchain, config);
         return new MinerServerImpl(
                 config,
                 ethereum,
@@ -252,8 +253,10 @@ public class Web3ImplSnapshotTest {
                         new GasLimitCalculator(config),
                         rule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
     }
