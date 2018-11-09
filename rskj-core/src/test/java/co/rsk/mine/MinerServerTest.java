@@ -104,6 +104,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServerImpl minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -120,8 +121,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -143,6 +146,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -159,8 +163,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -206,6 +212,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -222,8 +229,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -254,6 +263,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -270,8 +280,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -305,6 +317,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -321,8 +334,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -363,6 +378,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -379,8 +395,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -413,6 +431,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -429,8 +448,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -468,6 +489,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -484,8 +506,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -505,6 +529,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -521,8 +546,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -542,6 +569,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -558,8 +586,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -583,6 +613,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(blockchain, config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -599,8 +630,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         new GasLimitCalculator(config),
                         unclesValidationRule,
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -718,11 +751,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         return new MinerServerImpl(
                 config,
                 Mockito.mock(Ethereum.class),
-                Mockito.mock(Blockchain.class),
+                blockchain,
                 null,
                 difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 getBuilderWithMocks(),
+                new MinerClock(blockchain, config),
                 ConfigUtils.getDefaultMiningConfig()
         );
     }
@@ -737,7 +771,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new GasLimitCalculator(config),
                 Mockito.mock(BlockValidationRule.class),
                 config,
-                Mockito.mock(ReceiptStore.class)
+                Mockito.mock(ReceiptStore.class),
+                Mockito.mock(MinerClock.class)
         );
     }
 }
