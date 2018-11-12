@@ -134,6 +134,8 @@ public class BlockChainLoader {
 
                 for (long k = bestBlock.getNumber() + 1; k < bestBlock.getNumber() + 2000; k++)
                     blockchain.removeBlocksByNumber(k);
+
+                blockchain.getBlockStore().flush();
             }
 
             BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
