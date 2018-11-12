@@ -196,17 +196,13 @@ public class ContractDetailsImpl implements ContractDetails {
 
         this.address = rlpAddress.getRLPData();
 
-        this.code = (rlpCode.getRLPData() == null) ? EMPTY_BYTE_ARRAY : rlpCode.getRLPData();
-
         byte[] root = rlpStorage.getRLPData();
-
         byte[] external = rlpIsExternalStorage.getRLPData();
 
         if (external != null && external.length > 0 && external[0] == 1) {
             Keccak256 snapshotHash = new Keccak256(root);
             this.trie = this.newTrie().getSnapshotTo(snapshotHash);
-        }
-        else {
+        } else {
             TrieImpl newTrie = this.newTrie();
             Trie tempTrie = TrieImpl.deserialize(root);
             tempTrie.copyTo(newTrie.getStore());
