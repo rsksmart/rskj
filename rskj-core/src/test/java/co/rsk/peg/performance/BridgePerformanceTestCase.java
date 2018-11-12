@@ -24,6 +24,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
+import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeStorageProvider;
@@ -267,7 +268,7 @@ public abstract class BridgePerformanceTestCase {
 
         List<LogInfo> logs = new ArrayList<>();
 
-        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
+        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         Blockchain blockchain = BlockChainBuilder.ofSizeWithNoTransactionPoolCleaner(heightProvider.getHeight(executionIndex));
@@ -323,6 +324,6 @@ public abstract class BridgePerformanceTestCase {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl(null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }

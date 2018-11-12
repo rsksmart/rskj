@@ -18,6 +18,7 @@
 
 package co.rsk.net.discovery.message;
 
+import co.rsk.net.discovery.PeerDiscoveryException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
@@ -39,6 +40,7 @@ import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
  * Created by mario on 16/02/17.
  */
 public class NeighborsPeerMessage extends PeerDiscoveryMessage {
+    public static final String MORE_DATA = "NeighborsPeerMessage needs more data";
     private List<Node> nodes;
     private String messageId;
 
@@ -53,6 +55,10 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
     @Override
     public final void parse(byte[] data) {
         RLPList list = (RLPList) RLP.decode2OneItem(data, 0);
+
+        if (list.size() < 2) {
+            throw new PeerDiscoveryException(MORE_DATA);
+        }
 
         RLPList nodesRLP = (RLPList) list.get(0);
         nodes = new ArrayList<>();

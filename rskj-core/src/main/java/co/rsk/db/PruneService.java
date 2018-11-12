@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieCopier;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Blockchain;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.util.FileUtil;
@@ -30,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.ethereum.datasource.DataSourcePool.levelDbByName;
-import static org.ethereum.datasource.DataSourcePool.closeDataSource;
 
 /**
  * Created by ajlopez on 21/03/2018.
@@ -79,6 +79,14 @@ public class PruneService {
                 nextBlockNumber = this.blockchain.getStatus().getBestBlockNumber() + this.pruneConfiguration.getNoBlocksToWait();
             }
 
+            BlockchainConfig configForBlock = rskConfiguration.getBlockchainConfig().getConfigForBlock(bestBlockNumber);
+            if (configForBlock.isRskip85()) {
+                logger.info("RSKIP85 activated, prune is not necessary anymore");
+                stop();
+                // returning will stop the thread
+                return;
+            }
+
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
@@ -96,7 +104,9 @@ public class PruneService {
         long to = this.blockchain.getBestBlock().getNumber() - this.pruneConfiguration.getNoBlocksToAvoidForks();
 
         String dataSourceName = getDataSourceName(contractAddress);
+        // this is here because TrieCopier would fail otherwise
         KeyValueDataSource sourceDataSource = levelDbByName(dataSourceName, this.rskConfiguration.databaseDir());
+        sourceDataSource.init();
         KeyValueDataSource targetDataSource = levelDbByName(dataSourceName + "B", this.rskConfiguration.databaseDir());
         TrieStore targetStore = new TrieStoreImpl(targetDataSource);
 
@@ -113,10 +123,6 @@ public class PruneService {
         try {
             TrieCopier.trieContractStateCopy(targetStore, blockchain, to2, 0, blockchain.getRepository(), this.contractAddress);
 
-            closeDataSource(dataSourceName);
-            targetDataSource.close();
-            sourceDataSource.close();
-
             String contractDirectoryName = getDatabaseDirectory(rskConfiguration, dataSourceName);
 
             removeDirectory(contractDirectoryName);
@@ -126,9 +132,6 @@ public class PruneService {
             if (!result) {
                 logger.error("Unable to rename contract storage");
             }
-
-            sourceDataSource.init();
-            //levelDbByName(this.rskConfiguration, dataSourceName);
         }
         finally {
             blockchain.resumeProcess();

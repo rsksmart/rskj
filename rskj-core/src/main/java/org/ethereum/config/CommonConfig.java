@@ -27,6 +27,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.db.TrieStorePoolOnDisk;
 import org.ethereum.util.FileUtil;
 import org.ethereum.validator.*;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static org.ethereum.datasource.DataSourcePool.levelDbByName;
 
 @Configuration
 @ComponentScan(
@@ -56,15 +58,21 @@ public class CommonConfig {
             FileUtil.recursiveDelete(databaseDir);
             logger.info("Database reset done");
         }
-
-        KeyValueDataSource ds = makeDataSource(config, "state");
-        KeyValueDataSource detailsDS = makeDataSource(config, "details");
-
-        return new RepositoryImpl(new TrieStoreImpl(ds), detailsDS, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return buildRepository(databaseDir, config.detailsInMemoryStorageLimit());
     }
 
-    private KeyValueDataSource makeDataSource(RskSystemProperties config, String name) {
-        KeyValueDataSource ds = new LevelDbDataSource(name, config.databaseDir());
+    public Repository buildRepository(String databaseDir, int memoryStorageLimit) {
+        KeyValueDataSource ds = makeDataSource("state", databaseDir);
+        KeyValueDataSource detailsDS = makeDataSource("details", databaseDir);
+
+        return new RepositoryImpl(new TrieStoreImpl(ds), detailsDS,
+                                  new TrieStorePoolOnDisk(databaseDir),
+                                  memoryStorageLimit
+        );
+    }
+
+    private KeyValueDataSource makeDataSource(String name, String databaseDir) {
+        KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir);
         ds.init();
         return ds;
     }

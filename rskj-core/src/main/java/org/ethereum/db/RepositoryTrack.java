@@ -22,6 +22,7 @@ package org.ethereum.db;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -55,10 +56,14 @@ public class RepositoryTrack implements Repository {
 
     private final DetailsDataStore dds;
     private final Repository repository;
+    private final TrieStore.Pool trieStorePool;
+    private final int memoryStorageLimit;
 
-    public RepositoryTrack(Repository repository) {
+    public RepositoryTrack(Repository repository, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
         this.repository = repository;
-        this.dds = new DetailsDataStore(new DatabaseImpl(new HashMapDB()));
+        this.trieStorePool = trieStorePool;
+        this.memoryStorageLimit = memoryStorageLimit;
+        this.dds = new DetailsDataStore(new DatabaseImpl(new HashMapDB()), trieStorePool, memoryStorageLimit);
     }
 
     @Override
@@ -323,7 +328,7 @@ public class RepositoryTrack implements Repository {
     public Repository startTracking() {
         logger.debug("start tracking");
 
-        return new RepositoryTrack(this);
+        return new RepositoryTrack(this, trieStorePool, memoryStorageLimit);
     }
 
 
@@ -451,7 +456,9 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void updateContractDetails(RskAddress addr, ContractDetails contractDetails) {
+    public void updateContractDetails(
+            RskAddress addr,
+            ContractDetails contractDetails) {
         synchronized (repository) {
             logger.trace("updateContractDetails: [{}]", addr);
             ContractDetails contractDetailsCache = new ContractDetailsCacheImpl(null);

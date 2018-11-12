@@ -76,6 +76,8 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.is;
+
 /**
  * Created by Ruben Altman on 09/06/2016.
  */
@@ -422,6 +424,10 @@ public class Web3ImplTest {
 
         org.junit.Assert.assertEquals("0x00", tr.input);
         org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
+
+        Assert.assertArrayEquals(new byte[] {tx.getSignature().v}, TypeConverter.stringHexToByteArray(tr.v));
+        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.s), is(tx.getSignature().s));
+        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.r), is(tx.getSignature().r));
     }
 
     @Test

@@ -24,7 +24,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -56,27 +55,36 @@ public class RepositoryImpl implements Repository {
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
-    private final int memoryStorageLimit;
-    private final String databaseDir;
     private TrieStore store;
     private Trie trie;
     private DetailsDataStore detailsDataStore;
     private boolean closed;
+    private TrieStore.Pool trieStorePool;
+    private int memoryStorageLimit;
 
-    public RepositoryImpl(TrieStore store, int memoryStorageLimit, String databaseDir) {
-        this(store, new HashMapDB(), memoryStorageLimit, databaseDir);
+    public RepositoryImpl(TrieStore store, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
+        this(store, new HashMapDB(), trieStorePool, memoryStorageLimit);
     }
 
-    public RepositoryImpl(TrieStore store, KeyValueDataSource detailsDS, int memoryStorageLimit, String databaseDir) {
-        this(store, new DetailsDataStore(new DatabaseImpl(detailsDS)), memoryStorageLimit, databaseDir);
+    public RepositoryImpl(
+            TrieStore store,
+            KeyValueDataSource detailsDS,
+            TrieStore.Pool trieStorePool,
+            int memoryStorageLimit) {
+        this(store, new DetailsDataStore(new DatabaseImpl(detailsDS), trieStorePool, memoryStorageLimit),
+             trieStorePool, memoryStorageLimit);
     }
 
-    private RepositoryImpl(TrieStore store, DetailsDataStore detailsDataStore, int memoryStorageLimit, String databaseDir) {
+    private RepositoryImpl(
+            TrieStore store,
+            DetailsDataStore detailsDataStore,
+            TrieStore.Pool trieStorePool,
+            int memoryStorageLimit) {
         this.store = store;
         this.trie = new TrieImpl(store, true);
         this.detailsDataStore = detailsDataStore;
+        this.trieStorePool = trieStorePool;
         this.memoryStorageLimit = memoryStorageLimit;
-        this.databaseDir = databaseDir;
     }
 
     @Override
@@ -84,11 +92,11 @@ public class RepositoryImpl implements Repository {
         AccountState accountState = new AccountState();
         updateAccountState(addr, accountState);
         updateContractDetails(addr, new ContractDetailsImpl(
+                addr.getBytes(),
                 null,
-                new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
                 null,
-                memoryStorageLimit,
-                databaseDir
+                trieStorePool,
+                memoryStorageLimit
         ));
         return accountState;
     }
@@ -152,7 +160,12 @@ public class RepositoryImpl implements Repository {
             storageRoot = getAccountState(addr).getStateRoot();
         }
 
-        ContractDetails details =  detailsDataStore.get(addr, memoryStorageLimit, databaseDir);
+        byte[] codeHash = EMPTY_DATA_HASH;
+        if (accountState != null) {
+            codeHash = getAccountState(addr).getCodeHash();
+        }
+
+        ContractDetails details =  detailsDataStore.get(addr, codeHash);
         if (details != null) {
             details = details.getSnapshotTo(storageRoot);
         }
@@ -274,7 +287,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository startTracking() {
-        return new RepositoryTrack(this);
+        return new RepositoryTrack(this, trieStorePool, memoryStorageLimit);
     }
 
     @Override
@@ -346,11 +359,11 @@ public class RepositoryImpl implements Repository {
 
                 if (contractDetailsCache.getOriginalContractDetails() == null) {
                     ContractDetails originalContractDetails = new ContractDetailsImpl(
+                            addr.getBytes(),
                             null,
-                            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
                             null,
-                            memoryStorageLimit,
-                            databaseDir
+                            trieStorePool,
+                            memoryStorageLimit
                     );
                     originalContractDetails.setAddress(addr.getBytes());
                     contractDetailsCache.setOriginalContractDetails(originalContractDetails);
@@ -404,7 +417,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository getSnapshotTo(byte[] root) {
-        RepositoryImpl snapshotRepository = new RepositoryImpl(this.store, this.detailsDataStore, memoryStorageLimit, databaseDir);
+        RepositoryImpl snapshotRepository = new RepositoryImpl(this.store, this.detailsDataStore, this.trieStorePool, this.memoryStorageLimit);
         snapshotRepository.syncToRoot(root);
         return snapshotRepository;
     }

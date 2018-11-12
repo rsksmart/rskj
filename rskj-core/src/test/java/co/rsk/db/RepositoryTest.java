@@ -133,7 +133,7 @@ public class RepositoryTest {
 
     @Test
     public void test16() {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit(), config.databaseDir());
+        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -507,10 +507,10 @@ public class RepositoryTest {
 
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new RepositoryImpl(store, config.detailsInMemoryStorageLimit(), config.databaseDir());
-
-        final byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
+        HashMapDB store = new HashMapDB();
+        final Repository repository = new RepositoryImpl(new TrieStoreImpl(store),
+                                                         new TrieStorePoolOnMemory(() -> store),
+                                                         config.detailsInMemoryStorageLimit());
 
         final DataWord cowKey1 = new DataWord("c1");
         final DataWord cowKey2 = new DataWord("c2");
@@ -524,7 +524,7 @@ public class RepositoryTest {
         ContractDetails cowDetails = repository.getContractDetails(COW);
         assertArrayEquals(cowVal0, cowDetails.getBytes(cowKey2));
 
-        final CountDownLatch failSema = new CountDownLatch(1);
+        final CountDownLatch failSema = new CountDownLatch(2);
 
         new Thread(() -> {
             try {
@@ -569,12 +569,12 @@ public class RepositoryTest {
 
         failSema.await(10, TimeUnit.SECONDS);
 
-        if (failSema.getCount() == 0) {
+        if (failSema.getCount() < 2) {
             throw new RuntimeException("Test failed.");
         }
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl(null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }

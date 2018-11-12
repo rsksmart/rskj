@@ -320,7 +320,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, new DummyBlockValidationRule(), null);
+        final SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, new DummyBlockValidationRule(), null);
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, syncProcessor, null, null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
@@ -879,23 +879,6 @@ public class NodeMessageHandlerTest {
         // besides this
         Assert.assertEquals(1, pscoring.getTotalEventCounter());
         Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
-    }
-
-    @Test
-    public void processTransactionsMessageDoesNothingBecauseNodeIsSyncing() {
-        ChannelManager channelManager = mock(ChannelManager.class);
-        BlockProcessor blockProcessor = mock(BlockProcessor.class);
-        Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
-
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
-
-        Message message = mock(Message.class);
-        Mockito.when(message.getMessageType()).thenReturn(MessageType.TRANSACTIONS);
-
-        handler.processMessage(null, message);
-
-        verify(channelManager, never()).broadcastTransactionMessage(any(), any());
     }
 
     @Test

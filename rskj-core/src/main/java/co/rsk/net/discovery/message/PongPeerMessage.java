@@ -18,6 +18,7 @@
 
 package co.rsk.net.discovery.message;
 
+import co.rsk.net.discovery.PeerDiscoveryException;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -37,6 +38,8 @@ import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
  * Created by mario on 16/02/17.
  */
 public class PongPeerMessage extends PeerDiscoveryMessage {
+    public static final String MORE_DATA = "PongPeerMessage needs more data";
+    public static final String MORE_FROM_DATA = "PongPeerMessage needs more data in the from";
     private String host;
     private int port;
     private String messageId;
@@ -93,7 +96,14 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
     @Override
     public final void parse(byte[] data) {
         RLPList dataList = (RLPList) RLP.decode2OneItem(data, 0);
+        if (dataList.size() < 3) {
+            throw new PeerDiscoveryException(MORE_DATA);
+        }
         RLPList fromList = (RLPList) dataList.get(1);
+
+        if (fromList.size() != 3) {
+            throw new PeerDiscoveryException(MORE_FROM_DATA);
+        }
 
         byte[] ipB = fromList.get(0).getRLPData();
         this.host = new String(ipB, Charset.forName("UTF-8"));

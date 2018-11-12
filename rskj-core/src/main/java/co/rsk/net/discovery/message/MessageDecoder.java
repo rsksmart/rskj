@@ -29,11 +29,14 @@ import static org.ethereum.crypto.HashUtil.keccak256;
  */
 public class MessageDecoder {
 
+    public static final String MDC_CHECK_FAILED = "MDC check failed";
+    public static final String BAD_MESSAGE = "Bad message";
+
     private MessageDecoder() {}
 
     public static PeerDiscoveryMessage decode(byte[] wire) {
         if (wire.length < 98) {
-            throw new PeerDiscoveryException("Bad message");
+            throw new PeerDiscoveryException(BAD_MESSAGE);
         }
 
         byte[] mdc = new byte[32];
@@ -48,14 +51,24 @@ public class MessageDecoder {
         byte[] data = new byte[wire.length - 98];
         System.arraycopy(wire, 98, data, 0, data.length);
 
-        byte[] mdcCheck = keccak256(wire, 32, wire.length - 32);
-
-        int check = FastByteComparisons.compareTo(mdc, 0, mdc.length, mdcCheck, 0, mdcCheck.length);
+        int check = check(wire, mdc);
 
         if (check != 0) {
-            throw new PeerDiscoveryException("MDC check failed");
+            throw new PeerDiscoveryException(MDC_CHECK_FAILED);
         }
 
         return PeerDiscoveryMessageFactory.createMessage(wire, mdc, signature, type, data);
+  }
+
+  public static int check(byte[] wire, byte[] mdc) {
+      byte[] mdcCheck = keccak256(wire, 32, wire.length - 32);
+
+      return FastByteComparisons.compareTo(
+              mdc,
+              0,
+              mdc.length,
+              mdcCheck,
+              0,
+              mdcCheck.length);
   }
 }

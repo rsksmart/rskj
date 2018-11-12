@@ -17,6 +17,7 @@
  */
 package co.rsk;
 
+import co.rsk.blocks.BlockPlayer;
 import co.rsk.blocks.FileBlockPlayer;
 import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
@@ -307,11 +308,11 @@ public class FullNodeRunner implements NodeRunner {
         }).start();
     }
 
-    private void connectBlocks(FileBlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
+    private void connectBlocks(BlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
         for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
             ImportResult tryToConnectResult = bc.tryToConnect(block);
             if (BlockProcessResult.importOk(tryToConnectResult)) {
-                cm.broadcastBlock(block, null);
+                cm.broadcastBlock(block);
             }
         }
     }

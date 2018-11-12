@@ -21,6 +21,9 @@ package org.ethereum.datasource;
 
 import org.slf4j.Logger;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -30,6 +33,17 @@ public class DataSourcePool {
 
     private static final Logger logger = getLogger("db");
     private static ConcurrentMap<String, DataSourceEx> pool = new ConcurrentHashMap<>();
+
+    public static boolean levelDbExists(String name, String databaseDir) {
+        Path path = LevelDbDataSource.getPathForName(name, databaseDir);
+
+        return Files.exists(path);
+    }
+
+    public static void levelDbDestroy(String name, String databaseDir) {
+        Path path = LevelDbDataSource.getPathForName(name, databaseDir);
+        LevelDbDataSource.destroyDB(path.toFile());
+    }
 
     public static KeyValueDataSource levelDbByName(String name, String databaseDir) {
         DataSource dataSource = new LevelDbDataSource(name, databaseDir);
@@ -50,6 +64,15 @@ public class DataSourcePool {
         }
 
         return (KeyValueDataSource) result.getDataSource();
+    }
+
+    public static void reserve(String name) {
+        DataSourceEx dataSourceEx = pool.get(name);
+        if (dataSourceEx != null) {
+            synchronized (dataSourceEx) {
+                dataSourceEx.reserve();
+            }
+        }
     }
 
     public static void closeDataSource(String name){
