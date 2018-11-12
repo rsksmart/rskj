@@ -21,6 +21,7 @@ package co.rsk.db;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.db.ByteArrayWrapper;
@@ -83,7 +84,7 @@ public class ContractDetailsImpl implements ContractDetails {
         return code == null ? EMPTY_DATA_HASH : Keccak256Helper.keccak256(code);
     }
 
-    private Trie newTrie() {
+    private TrieImpl newTrie() {
         TrieStore store = new ContractStorageStoreFactory(this.trieStorePool).getTrieStore(this.address);
         return new TrieImpl(store, true);
     }
@@ -195,18 +196,19 @@ public class ContractDetailsImpl implements ContractDetails {
 
         this.address = rlpAddress.getRLPData();
 
-
         this.code = (rlpCode.getRLPData() == null) ? EMPTY_BYTE_ARRAY : rlpCode.getRLPData();
 
         byte[] root = rlpStorage.getRLPData();
 
-        // fix old data
         if (root.length == 32) {
             Keccak256 snapshotHash = new Keccak256(root);
             this.trie = this.newTrie().getSnapshotTo(snapshotHash);
         }
         else {
-            this.trie = TrieImpl.deserialize(root);
+            TrieImpl newTrie = this.newTrie();
+            Trie tempTrie = TrieImpl.deserialize(root);
+            tempTrie.copyTo(newTrie.getStore());
+            this.trie = newTrie.getSnapshotTo(tempTrie.getHash());
         }
 
         this.codeHash = Keccak256Helper.keccak256(code);
@@ -244,8 +246,24 @@ public class ContractDetailsImpl implements ContractDetails {
         byte[] rlpAddress = RLP.encodeElement(address);
         byte[] rlpIsExternalStorage = RLP.encodeByte((byte) 1);
 
-        // Serialize the full trie, or only the root hash if external storage is used
+        // Serialize the root hash
         byte[] rlpStorage = RLP.encodeElement(this.trie.getHash().getBytes());
+
+        byte[] rlpCode = RLP.encodeElement(this.code);
+        byte[] rlpKeys = RLP.encodeSet(this.keys);
+
+        return RLP.encodeList(rlpAddress, rlpIsExternalStorage, rlpStorage, rlpCode, rlpKeys);
+    }
+
+    @VisibleForTesting
+    public byte[] getEncodedOldFormat() {
+        logger.trace("getting contract details as bytes, hash {}, address {}, storage size {}, has external storage {}", this.getStorageHashAsString(), this.getAddressAsString(), this.getStorageSize(), this.hasExternalStorage());
+
+        byte[] rlpAddress = RLP.encodeElement(address);
+        byte[] rlpIsExternalStorage = RLP.encodeByte((byte) 0);
+
+        // Serialize the full trie
+        byte[] rlpStorage = RLP.encodeElement(this.trie.serialize());
 
         byte[] rlpCode = RLP.encodeElement(this.code);
         byte[] rlpKeys = RLP.encodeSet(this.keys);

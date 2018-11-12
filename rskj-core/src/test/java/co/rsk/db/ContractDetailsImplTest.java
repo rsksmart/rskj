@@ -499,6 +499,78 @@ public class ContractDetailsImplTest {
         Assert.assertEquals(new DataWord(144), result.get(DataWord.ONE));
         Assert.assertEquals(null, result.get(new DataWord(2)));
         Assert.assertEquals(null, result.get(new DataWord(3)));
+
+        Assert.assertArrayEquals(details.getStorageHash(), result.getStorageHash());
+    }
+
+    @Test
+    public void getOldEncodedAndCreateClone() {
+        HashMapDB store = new HashMapDB();
+        ContractDetailsImpl details = buildContractDetails(store);
+
+        List<DataWord> keys = new ArrayList<>();
+
+        keys.add(DataWord.ZERO);
+        keys.add(DataWord.ONE);
+
+        List<DataWord> values = new ArrayList<>();
+
+        values.add(new DataWord(42));
+        values.add(new DataWord(144));
+
+        details.setStorage(keys, values);
+
+        byte[] encoded = details.getEncodedOldFormat();
+
+        Assert.assertNotNull(encoded);
+
+        ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+
+        Assert.assertEquals(new DataWord(42), result.get(DataWord.ZERO));
+        Assert.assertEquals(new DataWord(144), result.get(DataWord.ONE));
+        Assert.assertEquals(null, result.get(new DataWord(2)));
+        Assert.assertEquals(null, result.get(new DataWord(3)));
+
+        Assert.assertArrayEquals(details.getStorageHash(), result.getStorageHash());
+    }
+
+    @Test
+    public void getOldEncodedWithEmptyStorageAndCreateClone() {
+        HashMapDB store = new HashMapDB();
+        ContractDetailsImpl details = buildContractDetails(store);
+
+        byte[] encoded = details.getEncodedOldFormat();
+
+        Assert.assertNotNull(encoded);
+
+        ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+
+        Assert.assertArrayEquals(details.getStorageHash(), result.getStorageHash());
+    }
+
+    @Test
+    public void getOldEncodedAndCreateCloneSettingStorage() {
+        HashMapDB store = new HashMapDB();
+        ContractDetailsImpl details = buildContractDetails(store);
+
+        DataWord value0 = new DataWord(42);
+        DataWord value1 = new DataWord(144);
+
+        details.put(DataWord.ZERO, value0);
+        details.put(DataWord.ONE, value1);
+
+        byte[] encoded = details.getEncodedOldFormat();
+
+        Assert.assertNotNull(encoded);
+
+        ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+
+        Assert.assertEquals(new DataWord(42), result.get(DataWord.ZERO));
+        Assert.assertEquals(new DataWord(144), result.get(DataWord.ONE));
+        Assert.assertEquals(null, result.get(new DataWord(2)));
+        Assert.assertEquals(null, result.get(new DataWord(3)));
+
+        Assert.assertArrayEquals(details.getStorageHash(), result.getStorageHash());
     }
 
     @Test
