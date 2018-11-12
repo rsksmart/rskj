@@ -200,7 +200,9 @@ public class ContractDetailsImpl implements ContractDetails {
 
         byte[] root = rlpStorage.getRLPData();
 
-        if (root.length == 32) {
+        byte[] external = rlpIsExternalStorage.getRLPData();
+
+        if (external != null && external.length > 0 && external[0] == 1) {
             Keccak256 snapshotHash = new Keccak256(root);
             this.trie = this.newTrie().getSnapshotTo(snapshotHash);
         }
