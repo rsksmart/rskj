@@ -83,7 +83,7 @@ public class ContractDetailsImpl implements ContractDetails {
         return code == null ? EMPTY_DATA_HASH : Keccak256Helper.keccak256(code);
     }
 
-    private Trie newTrie() {
+    private TrieImpl newTrie() {
         TrieStore store = new ContractStorageStoreFactory(this.trieStorePool).getTrieStore(this.address);
         return new TrieImpl(store, true);
     }
@@ -195,8 +195,22 @@ public class ContractDetailsImpl implements ContractDetails {
 
         this.address = rlpAddress.getRLPData();
 
-        Keccak256 snapshotHash = new Keccak256(rlpStorage.getRLPData());
-        this.trie = this.newTrie().getSnapshotTo(snapshotHash);
+        this.code = (rlpCode.getRLPData() == null) ? EMPTY_BYTE_ARRAY : rlpCode.getRLPData();
+
+        byte[] root = rlpStorage.getRLPData();
+
+        byte[] external = rlpIsExternalStorage.getRLPData();
+
+        if (external != null && external.length > 0 && external[0] == 1) {
+            Keccak256 snapshotHash = new Keccak256(root);
+            this.trie = this.newTrie().getSnapshotTo(snapshotHash);
+        }
+        else {
+            TrieImpl newTrie = this.newTrie();
+            Trie tempTrie = TrieImpl.deserialize(root);
+            tempTrie.copyTo(newTrie.getStore());
+            this.trie = newTrie.getSnapshotTo(tempTrie.getHash());
+        }
 
         this.code = (rlpCode.getRLPData() == null) ? EMPTY_BYTE_ARRAY : rlpCode.getRLPData();
         this.codeHash = Keccak256Helper.keccak256(code);
