@@ -195,10 +195,20 @@ public class ContractDetailsImpl implements ContractDetails {
 
         this.address = rlpAddress.getRLPData();
 
-        Keccak256 snapshotHash = new Keccak256(rlpStorage.getRLPData());
-        this.trie = this.newTrie().getSnapshotTo(snapshotHash);
 
         this.code = (rlpCode.getRLPData() == null) ? EMPTY_BYTE_ARRAY : rlpCode.getRLPData();
+
+        byte[] root = rlpStorage.getRLPData();
+
+        // fix old data
+        if (root.length == 32) {
+            Keccak256 snapshotHash = new Keccak256(root);
+            this.trie = this.newTrie().getSnapshotTo(snapshotHash);
+        }
+        else {
+            this.trie = TrieImpl.deserialize(root);
+        }
+
         this.codeHash = Keccak256Helper.keccak256(code);
         for (RLPElement key : rlpKeys) {
             addKey(key.getRLPData());
