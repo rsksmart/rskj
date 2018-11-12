@@ -133,6 +133,10 @@ public class PruneService {
         try {
             TrieCopier.trieContractStateCopy(targetStore, blockchain, to2, 0, blockchain.getRepository(), this.contractAddress);
 
+            // we close both datasources to release LevelDB resources before renaming and deleting directories
+            targetDataSource.close();
+            sourceDataSource.close();
+
             String contractDirectoryName = getDatabaseDirectory(rskConfiguration, dataSourceName);
 
             removeDirectory(contractDirectoryName);
@@ -142,6 +146,9 @@ public class PruneService {
             if (!result) {
                 logger.error("Unable to rename contract storage");
             }
+
+            // re-init this datasource since it is managed by the DataSourcePool, and other parts of the code assume it will be open
+            sourceDataSource.init();
         }
         finally {
             blockchain.resumeProcess();
