@@ -21,6 +21,7 @@ package co.rsk.db;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
@@ -230,6 +231,22 @@ public class ContractDetailsImpl implements ContractDetails {
 
         // Serialize the full trie, or only the root hash if external storage is used
         byte[] rlpStorage = RLP.encodeElement(this.trie.getHash().getBytes());
+
+        byte[] rlpCode = RLP.encodeElement(this.code);
+        byte[] rlpKeys = RLP.encodeSet(this.keys);
+
+        return RLP.encodeList(rlpAddress, rlpIsExternalStorage, rlpStorage, rlpCode, rlpKeys);
+    }
+
+    @VisibleForTesting
+    public byte[] getEncodedOldFormat() {
+        logger.trace("getting contract details as bytes, hash {}, address {}, storage size {}, has external storage {}", this.getStorageHashAsString(), this.getAddressAsString(), this.getStorageSize(), this.hasExternalStorage());
+
+        byte[] rlpAddress = RLP.encodeElement(address);
+        byte[] rlpIsExternalStorage = RLP.encodeByte((byte) 0);
+
+        // Serialize the full trie
+        byte[] rlpStorage = RLP.encodeElement(this.trie.serialize());
 
         byte[] rlpCode = RLP.encodeElement(this.code);
         byte[] rlpKeys = RLP.encodeSet(this.keys);
