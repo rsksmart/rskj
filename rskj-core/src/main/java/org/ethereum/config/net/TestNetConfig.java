@@ -30,6 +30,6 @@ public class TestNetConfig extends AbstractNetConfig {
         add(0, new TestNetBeforeBridgeSyncConfig());
         // 21 days of 1 block every 14 seconds.
         // On blockchain launch blocks will be faster until difficulty is adjusted to available hashing power.
-        add(104_500, new TestNetDifficultyDropEnabledConfig());
+        add(114_000, new TestNetDifficultyDropEnabledConfig());
     }
 }
