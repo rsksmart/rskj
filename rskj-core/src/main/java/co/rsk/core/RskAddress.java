@@ -68,6 +68,9 @@ public class RskAddress {
      * @param bytes the 20 bytes long raw address bytes.
      */
     public RskAddress(byte[] bytes) {
+        if ((bytes.length == 1) && (bytes[0]==0)) {
+         // Special zero address.
+        } else
         if (bytes.length != LENGTH_IN_BYTES) {
             throw new RuntimeException(String.format("An RSK address must be %d bytes long", LENGTH_IN_BYTES));
         }

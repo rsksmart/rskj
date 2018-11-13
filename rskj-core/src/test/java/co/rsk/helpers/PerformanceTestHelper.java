@@ -17,6 +17,7 @@ public class PerformanceTestHelper {
     long startRealTime;
     long startGCTime;
     ThreadMXBean thread;
+    public boolean shortFormat = false;
 
     public void setup() {
         thread = ManagementFactory.getThreadMXBean();
@@ -64,21 +65,33 @@ public class PerformanceTestHelper {
     }
 
     public void endMeasure() {
+        String  s="";
         System.out.println("---------------------------------------------------------------");
         if (startTime != 0) {
             long endTime = thread.getCurrentThreadCpuTime();
             deltaTime = (endTime - startTime); // nano
-            System.out.println("Time elapsed [ms]:     " + padLeft(deltaTime/nsToMs)+" [s]:"+ padLeft(deltaTime/nsToS));
+            if (shortFormat)
+                s = s+ " CPUTime[s]: "+padLeft(deltaTime/nsToS);
+            else
+                System.out.println("Time elapsed [ms]:     " + padLeft(deltaTime/nsToMs)+" [s]:"+ padLeft(deltaTime/nsToS));
         }
 
         if (startRealTime!=0) {
             long endRealTime =System.currentTimeMillis();
             deltaRealTime = (endRealTime - startRealTime);
-            System.out.println("RealTime elapsed [ms]: " + padLeft(deltaRealTime)+" [s]:"+ padLeft(deltaRealTime/1000));
+            if (shortFormat)
+                s = s+ " RealTime[s]: "+padLeft(deltaRealTime/1000);
+            else
+                System.out.println("RealTime elapsed [ms]: " + padLeft(deltaRealTime)+" [s]:"+ padLeft(deltaRealTime/1000));
         }
         long endGCTime = getGarbageCollectorTimeMillis();
         long deltaGCTime = (endGCTime - startGCTime);
-        System.out.println("GCTime elapsed [ms]:   " + padLeft(deltaGCTime)+" [s]:"+ padLeft(deltaGCTime/1000));
+        if (shortFormat) {
+            s = s + " GCTime[s]: " + padLeft(deltaGCTime / 1000);
+            System.out.println(s);
+        }
+        else
+            System.out.println("GCTime elapsed [ms]:   " + padLeft(deltaGCTime)+" [s]:"+ padLeft(deltaGCTime/1000));
 
     }
 }

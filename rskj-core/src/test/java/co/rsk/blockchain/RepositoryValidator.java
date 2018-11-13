@@ -9,6 +9,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.ContractDetailsImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
+import co.rsk.helpers.PerformanceTestHelper;
 import co.rsk.trie.*;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.AccountState;
@@ -113,16 +114,17 @@ public class RepositoryValidator  implements TrieIteratorListener {
     }
 
 
-    void addPRecompiledContracts() {
+    void addPrecompiledContracts() {
+        addRef("00","zeroAccount",false,false);
         //addRef("0000000000000000000000000000000001000000","Precomp");
         //addRef("0000000000000000000000000000000001000001","Precomp");
         //addRef("0000000000000000000000000000000001000002","Precomp");
         //addRef("0000000000000000000000000000000001000003","Precomp");
         //addRef("0000000000000000000000000000000001000004","Precomp");
         //addRef("0000000000000000000000000000000001000005","Precomp");
-        addRef("0000000000000000000000000000000001000006","Precomp");
+        addRef("0000000000000000000000000000000001000006","Precomp",true,false);
         //addRef("0000000000000000000000000000000001000007","Precomp");
-        addRef("0000000000000000000000000000000001000008","Precomp");
+        addRef("0000000000000000000000000000000001000008","Precomp",true,false);
     }
 
     void collectDetailsStoreKeys() {
@@ -131,7 +133,7 @@ public class RepositoryValidator  implements TrieIteratorListener {
         for (RskAddress a : historicalContractAddresses) {
 
             if (a == null) continue;
-            byte[] hashedAddr = Keccak256Helper.keccak256(a.getBytes());
+            byte[] hashedAddr = getAddressHash(a.getBytes());
             ByteArrayWrapper b = new ByteArrayWrapper(hashedAddr);
             AddressAttributes aa;
             // now don't pay attention to code hash, we just need to extract addresses
@@ -168,28 +170,50 @@ public class RepositoryValidator  implements TrieIteratorListener {
                 addressAttributes.put(dir, aa);
                 aa.address = Hex.decode(dir);
                 aa.hasDetailsDB = true;
-            } else
+            } else if (dir.equals("00")) {
+                // This is a special smart-contract for the address 0x00. I really
+                // don't know why the platform makes an exception for this address.
+                // I think is simply a mistake and sometime in the future everything is going
+                // to blow up because of this little thing.
+                    AddressAttributes aa = new AddressAttributes();
+                addressAttributes.put(dir, aa);
+                aa.address = new byte[1]; // filled with zeros
+                aa.hasDetailsDB = true;
+
+            }else
                 System.out.println("Strange directory entry: "+dir);
         }
     }
 
+    public byte[] getAddressHash(byte[] b) {
+        //  Special case
+        //if ((b.length==1) && (b[0]==0))
+        return Keccak256Helper.keccak256(b);
+    }
+
     public void computeHashedAddresses() {
         for (Map.Entry<String,AddressAttributes> e : addressAttributes.entrySet()) {
-            e.getValue().hashedAddress =Keccak256Helper.keccak256(e.getValue().address);
+            e.getValue().hashedAddress =getAddressHash(e.getValue().address);
             hashedAddresses.put(new ByteArrayWrapper(e.getValue().hashedAddress),e.getValue());
         }
     }
 
+    public void showState(String s ) {
+        System.out.println();
+        System.out.println(s);
+    }
+
     public void collectInfo() {
+        showState("Collecting static info...");
         collectDetailsDBs();
         computeHashedAddresses();
         config.getBlockchainConfig();
         collectDetailsStoreKeys();
-        addPRecompiledContracts();
     }
 
 
     void openDBs() {
+        System.out.println("Opening DBs");
         blockStore = buildBlockStore(databaseDir);
 
         //
@@ -208,34 +232,37 @@ public class RepositoryValidator  implements TrieIteratorListener {
 
     }
 
-    void addRef(String addr,String name) {
-        System.out.println("Adding "+addr);
+    void addRef(String addr,String name,boolean isPrecompiled,boolean isPure) {
+        System.out.println("Adding "+addr+" "+name);
         RskAddress a = new RskAddress(addr);
-        checkAddress(a,true);
+        checkAddress(a,isPrecompiled,isPure);
 
     }
 
     @Ignore
     @Test
     public void validateRepository() {
-        //String databaseDir = "/Base/";
+
+        PerformanceTestHelper pth = new PerformanceTestHelper();
+        pth.setup();
+        pth.shortFormat = true;
+        pth.startMeasure();
         init();
         openDBs();
+        pth.endMeasure(); // partial result
         collectInfo();
+        pth.endMeasure(); // partial result
+        showState("Scanning the worldstate trie...");
         byte[] worldStateRoot = blockStore.getBestBlock().getStateRoot();
 
 
         scanWorldTrieFor(worldStateRoot);
         //printAllAccounts();
-        /*Block block1 = blockStore.getBlockByHash(blockStore.getBlockHashByNumber(133));
-        System.out.println();
+        //Block block1 = blockStore.getBlockByHash(blockStore.getBlockHashByNumber(1));
+        //System.out.println();
         //collectAddressesFromBlocks(1,1);
-        scanWorldTrieFor(block1.getStateRoot());
-        */
-
-
-
-        //checkSomeSpecificContracts();
+        //scanWorldTrieFor(block1.getStateRoot());
+        pth.endMeasure(); // partial result
     }
 
     public void checkSomeSpecificContracts() {
@@ -247,9 +274,9 @@ public class RepositoryValidator  implements TrieIteratorListener {
 
         for(int i=0; i<16;i++) {
             RskAddress c = getContractAddress(base, i);
-            byte[] hashedAddress = Keccak256Helper.keccak256(c.getBytes());
+            byte[] hashedAddress = getAddressHash(c.getBytes());
             System.out.println("Testing address: " + c + " for nonce " + i);
-            checkAddress(c,false);
+            checkAddress(c,false,false);
         }
     }
     public void printAllAccounts() {
@@ -260,23 +287,25 @@ public class RepositoryValidator  implements TrieIteratorListener {
 
     }
 
-    public int  checkAddress(RskAddress base,boolean isPrecompiled) {
-
-        byte[] hashedAddress = Keccak256Helper.keccak256(base.getBytes());
-
+    public int  checkAddress(RskAddress base,boolean isPrecompiled,boolean isPure) {
+        byte[] hashedAddress = getAddressHash(base.getBytes());
         AddressAttributes aa = hashedAddresses.get(new ByteArrayWrapper(hashedAddress));
         if (aa == null) {
             System.out.println("Inexistent address in details DBs: " + base);
+            System.out.println("Manually adding "+base);
+            aa = new AddressAttributes();
+            hashedAddresses.put(new ByteArrayWrapper(hashedAddress),aa);
+            aa.hashedAddress = hashedAddress;
         }
         byte[] accountValue = worldStateTrie.get(base.getBytes());
 
-        if ((accountValue==null) && (!isPrecompiled)) {
-            System.out.println("Address " + base + "  not in trie");
+        if ((accountValue==null) && (!isPure)) {
+            System.out.println("Address " + base + "  not in trie, but should be.");
             return 100;
         }
 
-        if ((accountValue!=null) && (isPrecompiled)) {
-            System.out.println("Address " + base + "  is a precompiled contract and should not not be in trie");
+        if ((accountValue!=null) && (isPure)) {
+            System.out.println("Address " + base + "  is a pure precompiled contract and should not not be in trie");
             return 101;
         }
         if (accountValue==null) return 0;
@@ -301,7 +330,7 @@ public class RepositoryValidator  implements TrieIteratorListener {
         for (Transaction t : txList) {
             RskAddress a = t.getReceiveAddress();
             if (a.getBytes().length == 0) continue;
-            byte[] hashedAddress = Keccak256Helper.keccak256(a.getBytes());
+            byte[] hashedAddress = getAddressHash(a.getBytes());
             AddressAttributes aa = hashedAddresses.get(new ByteArrayWrapper(hashedAddress));
             if (aa == null) {
                 System.out.println("Found " + a + " is not on the trie. Why?");
@@ -340,8 +369,11 @@ public class RepositoryValidator  implements TrieIteratorListener {
     }
 
    public void scanWorldTrieFor(byte[] stateRoot) {
-       worldStateTrie = (TrieImpl) worldStateTrie.getSnapshotTo(new Keccak256(stateRoot));
 
+       worldStateTrie = (TrieImpl) worldStateTrie.getSnapshotTo(new Keccak256(stateRoot));
+       // addPrecompiledContracts will look into the current account trie
+       // that's why it needs to be executed after modifying the trie root.
+       addPrecompiledContracts();
        TrieAccountScanner tas = new TrieAccountScanner();
        try {
            int ret = tas.scanTrie(new ExpandedKeyImpl(), worldStateTrie, this, 8 * 32);
@@ -379,6 +411,7 @@ public class RepositoryValidator  implements TrieIteratorListener {
         AccountState astate = new AccountState(value);
         return processAccount(hashedAddress, null, astate);
     }
+    byte[] zeroAddr = Hex.decode("bc36789e7a1e281436464229828f817d6612f7b477d66591ff96a9e064bcc98a");
 
     public int processAccount(byte[] hashedAddress, byte[] optionalAddress,AccountState astate) {
         // Now we can get the data from the details db
@@ -389,6 +422,11 @@ public class RepositoryValidator  implements TrieIteratorListener {
         boolean emptyCodeHash =astate.getCodeHash().equals(AccountState.EMPTY_DATA_HASH);
         boolean emptyStorage = astate.getStateRoot().equals(HashUtil.EMPTY_TRIE_HASH);
 
+
+        if (Arrays.equals(hashedAddress,zeroAddr)) {
+            // this is the zero address
+            //System.out.println("found zero");
+        }
         if (aa==null) {
             // it seems that there is no independant Details storage
             // there still may be an internal contract details, but we can't find it because
@@ -423,9 +461,13 @@ public class RepositoryValidator  implements TrieIteratorListener {
 
         aa.foundInAccountTrie = true;
 
-        if (aa.address.length==1) {
-            return 0;
+        if ((aa.address.length==1) && (aa.address[0]==0)) {
+            // this is also the zero address
+            // is is a special case because you can't create an RskAddress of a single
+            // zero byte. Well, I modified RskAddress to allow it. And it should be.
+            // System.out.println("found zero1");
         }
+
         RskAddress addr = new RskAddress(aa.address);
         ContractDetails details;
         try {
