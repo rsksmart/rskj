@@ -23,11 +23,11 @@ import javax.annotation.Nonnull;
 /**
  * Created by martin.medina on 5/04/17.
  */
-class PathEncoder {
-    private PathEncoder() { }
+public class PathEncoder {
+    public  PathEncoder() { }
 
     @Nonnull
-    static byte[] encode(byte[] path) {
+    static public byte[] encode(byte[] path) {
         if (path == null) {
             throw new IllegalArgumentException("path");
         }
@@ -36,7 +36,7 @@ class PathEncoder {
     }
 
     @Nonnull
-    static byte[] decode(byte[] encoded, int length) {
+    static public byte[] decode(byte[] encoded, int length) {
         if (encoded == null) {
             throw new IllegalArgumentException("encoded");
         }
