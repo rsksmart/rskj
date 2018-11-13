@@ -302,7 +302,16 @@ public class RepositoryValidator  implements TrieIteratorListener {
             hashedAddresses.put(new ByteArrayWrapper(hashedAddress),aa);
             aa.hashedAddress = hashedAddress;
         }
-        byte[] accountValue = worldStateTrie.get(base.getBytes());
+        byte[] accountValue;
+        try {
+            accountValue = worldStateTrie.get(base.getBytes());
+        } catch (Exception e) {
+            errors.add("Invalid account trie: " + e.getClass().getCanonicalName() + " " +
+                    e.getMessage());
+            //e.printStackTrace();
+            return 102;
+        }
+
 
         if ((accountValue==null) && (!isPure)) {
             System.out.println("Address " + base + "  not in trie, but should be.");
@@ -387,7 +396,7 @@ public class RepositoryValidator  implements TrieIteratorListener {
        } catch (Exception e) {
            errors.add("Invalid account trie: " + e.getClass().getCanonicalName() + " " +
                    e.getMessage());
-           e.printStackTrace();
+           //e.printStackTrace();
        }
 
        for (Map.Entry<ByteArrayWrapper, AddressAttributes> e : hashedAddresses.entrySet()) {
@@ -539,7 +548,9 @@ public class RepositoryValidator  implements TrieIteratorListener {
         TrieAccountScanner tas = new TrieAccountScanner();
         // Do not call any processor
         try {
+            //TrieImpl.enableErrors = true;
             int ret = tas.scanTrie(new ExpandedKeyImpl(), contractStorageTrie, null, 8 * 32);
+            //TrieImpl.enableErrors = false;
             if (ret!=0)
                 errors.add("Contract "+addr+":processing error code: "+ret);
         } catch (Exception e) {

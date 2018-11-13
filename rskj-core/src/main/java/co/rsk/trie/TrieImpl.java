@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -600,6 +601,9 @@ public class TrieImpl implements Trie {
      *
      * @return  the node or null if no subnode at position
      */
+    // To test storage errors, uncomment this line
+    // static public boolean enableErrors = false;
+
     protected Trie retrieveNode(int n) {
         Trie node = this.getNode(n);
 
@@ -618,6 +622,11 @@ public class TrieImpl implements Trie {
         }
 
         node = this.store.retrieve(localHash.getBytes());
+
+        // uncomment this line to enable storage errors injection
+        // if (enableErrors)
+        //     if (new Random().nextInt(100)==1 )
+        //         node = null;
 
         if (node == null) {
             String strHash = localHash.toHexString();
