@@ -34,6 +34,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
 
 public class RepositoryValidator  implements TrieIteratorListener {
@@ -45,6 +46,7 @@ public class RepositoryValidator  implements TrieIteratorListener {
     Map<ByteArrayWrapper,AddressAttributes> hashedAddresses;
     List<String> errors;
     List<String> warnings;
+    long blockNumber;
     Set<RskAddress> historicalContractAddresses;
     private static final TestSystemProperties config = new TestSystemProperties();
 
@@ -60,6 +62,7 @@ public class RepositoryValidator  implements TrieIteratorListener {
         boolean canRetrieveDetails;
         boolean isAccount;
         boolean foundInAccountTrie;
+        boolean isRemascSender;
         byte[] hashedAddress;
         byte[] address;
     }
@@ -253,7 +256,9 @@ public class RepositoryValidator  implements TrieIteratorListener {
         collectInfo();
         pth.endMeasure(); // partial result
         showState("Scanning the worldstate trie...");
-        byte[] worldStateRoot = blockStore.getBestBlock().getStateRoot();
+        Block best =blockStore.getBestBlock();
+        blockNumber = best.getNumber();
+        byte[] worldStateRoot = best.getStateRoot();
 
 
         scanWorldTrieFor(worldStateRoot);
@@ -466,6 +471,7 @@ public class RepositoryValidator  implements TrieIteratorListener {
             // is is a special case because you can't create an RskAddress of a single
             // zero byte. Well, I modified RskAddress to allow it. And it should be.
             // System.out.println("found zero1");
+            aa.isRemascSender = true;
         }
 
         RskAddress addr = new RskAddress(aa.address);
@@ -484,6 +490,22 @@ public class RepositoryValidator  implements TrieIteratorListener {
             return 0;
         }
         aa.canRetrieveDetails = true;
+
+        if (aa.isRemascSender) {
+            if (!Arrays.equals(astate.getStateRoot(),HashUtil.EMPTY_TRIE_HASH)) {
+                errors.add("RemascSender should have no storage");
+            }
+            if (!Arrays.equals(astate.getCodeHash(),AccountState.EMPTY_DATA_HASH)) {
+                errors.add("RemascSender should have no code");
+            }
+            if (!astate.getBalance().asBigInteger().equals(BigInteger.ZERO)) {
+                errors.add("RemascSender should have zero balance");
+            }
+            if (!astate.getNonce().equals(BigInteger.valueOf(blockNumber))) {
+                errors.add("RemascSender should match the block number");
+            }
+
+        }
         try {
 
             byte[] code = details.getCode();
