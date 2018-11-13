@@ -427,15 +427,23 @@ public class RepositoryValidator  implements TrieIteratorListener {
             return 0;
         }
         RskAddress addr = new RskAddress(aa.address);
-        ContractDetails details = detailsDataStore.get(addr,astate.getCodeHash());
-        if (details==null) {
-            errors.add("Contract " + addr + ": cannot retrieve details");
+        ContractDetails details;
+        try {
+            details = detailsDataStore.get(addr, astate.getCodeHash());
+
+            if (details==null) {
+                System.out.println("ADDRESS:" + addr);
+                errors.add("Contract " + addr + ": cannot retrieve details");
+                return 0;
+            }
+        } catch (Exception e) {
+            System.out.println("ADDRESS:" + addr);
+            errors.add("Contract " + addr + " throws when tries to retrieve details");
             return 0;
         }
-
         aa.canRetrieveDetails = true;
-
         try {
+
             byte[] code = details.getCode();
             if (code==null)
                 errors.add("Contract "+addr+": has null code");
