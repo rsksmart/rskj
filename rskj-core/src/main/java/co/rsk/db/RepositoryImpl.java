@@ -373,11 +373,7 @@ public class RepositoryImpl implements Repository {
                 contractDetails = contractDetailsCache.getOriginalContractDetails();
 
                 updateContractDetails(addr, contractDetails);
-
-                if (!Arrays.equals(accountState.getCodeHash(), EMPTY_TRIE_HASH)) {
-                    accountState.setStateRoot(contractDetails.getStorageHash());
-                }
-
+                accountState.setStateRoot(contractDetails.getStorageHash());
                 updateAccountState(addr, accountState);
             }
         }
