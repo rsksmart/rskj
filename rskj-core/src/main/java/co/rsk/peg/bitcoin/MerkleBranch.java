@@ -24,26 +24,25 @@ import static co.rsk.bitcoinj.core.Utils.reverseBytes;
  */
 public class MerkleBranch {
     private List<byte[]> hashes;
-    private int branch;
+    private int path;
 
-    // TODO: Need a method to build one of these
-    // TODO: from an actual bitcoin merkle branch
-    // TODO: message.
     // TODO: It is very important that this method
     // TODO: performs good validations on the input
     // TODO: to prevent corrupted input attacks.
-
-    public MerkleBranch(List<byte[]> hashes, int branch) {
+    // TODO: That means that we should validate:
+    // TODO: 1 - Number of bits in the path matches the number of hashes
+    // TODO: 2 - Each hash is 32 bytes long
+    public MerkleBranch(List<byte[]> hashes, int path) {
         this.hashes = Collections.unmodifiableList(hashes);
-        this.branch = branch;
+        this.path = path;
     }
 
     public List<byte[]> getHashes() {
         return hashes;
     }
 
-    public int getBranch() {
-        return branch;
+    public int getPath() {
+        return path;
     }
 
     /**
@@ -71,7 +70,7 @@ public class MerkleBranch {
         Sha256Hash current = tx.getHash();
         byte index = 0;
         while (index < hashes.size()) {
-            boolean currentRight = ((branch >> index) & 1) == 1;
+            boolean currentRight = ((path >> index) & 1) == 1;
             if (currentRight) {
                 current = combineLeftRight(hashes.get(index), current.getBytes());
             } else {
@@ -79,6 +78,7 @@ public class MerkleBranch {
             }
             index++;
         }
+
         return current;
     }
 
