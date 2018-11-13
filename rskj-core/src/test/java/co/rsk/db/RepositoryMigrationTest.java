@@ -68,7 +68,7 @@ public class RepositoryMigrationTest {
     }
 
     public static RepositoryImpl createRepositoryImplWithStore(RskSystemProperties config,TrieStore store) {
-        return new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), config.detailsInMemoryStorageLimit(), config.databaseDir());
+        return new RepositoryImpl(new TrieStoreImpl(new HashMapDB()), new TrieStorePoolOnMemory(),config.detailsInMemoryStorageLimit());
 
     }
 }

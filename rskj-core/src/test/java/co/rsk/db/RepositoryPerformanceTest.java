@@ -74,6 +74,6 @@ public class RepositoryPerformanceTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config, boolean isSecure) {
-        return new RepositoryImpl(null,1024,"");
+        return new RepositoryImpl(null,new TrieStorePoolOnMemory(),1024);
     }
 }

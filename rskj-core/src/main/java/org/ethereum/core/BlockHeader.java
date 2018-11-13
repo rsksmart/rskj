@@ -404,6 +404,7 @@ public class BlockHeader {
     }
 
     public Keccak256 getHash() {
+
         return new Keccak256(HashUtil.keccak256(getEncoded(
                 true,
                 !SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(getNumber()).isRskip92()

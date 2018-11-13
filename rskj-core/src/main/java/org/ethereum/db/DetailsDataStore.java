@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.core.Rsk;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import co.rsk.trie.TrieStore;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -160,10 +162,20 @@ public class DetailsDataStore {
     }
 
 
+
+    //Function<byte[], T> mapper
+    public static RskAddress createRskAddress(byte[] bytes) {
+        if (bytes.length == 20) {
+            return new RskAddress(bytes);
+        } else {
+            // There is a single byte key. It may be a version of somting
+            return null;
+        }
+    }
     public synchronized Set<RskAddress> keys() {
         Set<RskAddress> keys = new HashSet<>();
         keys.addAll(cache.keySet());
-        keys.addAll(db.dumpKeys(RskAddress::new));
+        keys.addAll(db.dumpKeys(DetailsDataStore::createRskAddress));
 
         return keys;
     }
