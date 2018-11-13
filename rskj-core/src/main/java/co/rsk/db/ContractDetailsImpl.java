@@ -204,8 +204,8 @@ public class ContractDetailsImpl implements ContractDetails {
             this.trie = this.newTrie().getSnapshotTo(snapshotHash);
         } else {
             TrieImpl newTrie = this.newTrie();
-            Trie tempTrie = TrieImpl.deserialize(root);
-            tempTrie.copyTo(newTrie.getStore());
+            TrieImpl tempTrie = (TrieImpl)TrieImpl.deserialize(root);
+            newTrie.getStore().copyFrom(tempTrie.getStore());
             this.trie = newTrie.getSnapshotTo(tempTrie.getHash());
         }
 

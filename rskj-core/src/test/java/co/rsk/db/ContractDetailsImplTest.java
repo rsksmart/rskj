@@ -559,18 +559,28 @@ public class ContractDetailsImplTest {
         details.put(DataWord.ZERO, value0);
         details.put(DataWord.ONE, value1);
 
+        byte[] hash1 = details.getStorageHash();
+
+        details.put(new DataWord(10), value0);
+        details.put(new DataWord(11), value1);
+
+        byte[] hash2 = details.getStorageHash();
+
         byte[] encoded = details.getEncodedOldFormat();
 
         Assert.assertNotNull(encoded);
 
         ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
-        Assert.assertEquals(new DataWord(42), result.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), result.get(DataWord.ONE));
-        Assert.assertEquals(null, result.get(new DataWord(2)));
-        Assert.assertEquals(null, result.get(new DataWord(3)));
+        ContractDetails result1 = result.getSnapshotTo(hash1);
 
-        Assert.assertArrayEquals(details.getStorageHash(), result.getStorageHash());
+        Assert.assertNotNull(result1);
+        Assert.assertArrayEquals(hash1, result1.getStorageHash());
+
+        ContractDetails result2 = result.getSnapshotTo(hash2);
+
+        Assert.assertNotNull(result2);
+        Assert.assertArrayEquals(hash2, result2.getStorageHash());
     }
 
     @Test
