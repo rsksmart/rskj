@@ -523,6 +523,50 @@ public class ContractDetailsImplTest {
     }
 
     @Test
+    public void getOldEncodedAndCreateCloneSettingStorage() {
+        HashMapDB store = new HashMapDB();
+        ContractDetailsImpl details = buildContractDetails(store);
+
+        details.put(DataWord.ZERO, new DataWord(1));
+        byte[] hash1 = details.getStorageHash();
+
+        details.put(DataWord.ZERO, new DataWord(2));
+        byte[] hash2 = details.getStorageHash();
+
+        details.put(DataWord.ZERO, new DataWord(3));
+        byte[] hash3 = details.getStorageHash();
+
+        byte[] encoded = details.getEncodedOldFormat();
+
+        Assert.assertNotNull(encoded);
+
+        HashMapDB store2 = new HashMapDB();
+        ContractDetailsImpl result = new ContractDetailsImpl(encoded,  name -> new TrieStoreImpl(store2), config.detailsInMemoryStorageLimit());
+
+        Assert.assertFalse(result.hasExternalStorage());
+        result.syncStorage();
+        Assert.assertFalse(result.hasExternalStorage());
+
+        byte[] newencoded = result.getEncoded();
+
+        ContractDetailsImpl newresult = new ContractDetailsImpl(newencoded,  name -> new TrieStoreImpl(store2), config.detailsInMemoryStorageLimit());
+
+        ContractDetails result1 = newresult.getSnapshotTo(hash1);
+        Assert.assertNotNull(result1);
+        Assert.assertArrayEquals(hash1, result1.getStorageHash());
+
+        ContractDetails result2 = newresult.getSnapshotTo(hash2);
+
+        Assert.assertNotNull(result2);
+        Assert.assertArrayEquals(hash2, result2.getStorageHash());
+
+        ContractDetails result3 = newresult.getSnapshotTo(hash2);
+
+        Assert.assertNotNull(result3);
+        Assert.assertArrayEquals(hash3, result3.getStorageHash());
+    }
+
+    @Test
     public void usingSameExternalStorage() {
         HashMapDB store = new HashMapDB();
         Trie trie = new TrieImpl(new TrieStoreImpl(store), false);
