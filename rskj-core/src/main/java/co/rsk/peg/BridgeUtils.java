@@ -55,6 +55,10 @@ public class BridgeUtils {
             throw new InvalidBlockHeightException(String.format("Block Height: %d bigger than Chain Height: %d", height, headHeight));
         }
 
+        if (height < 0) {
+            throw new InvalidBlockHeightException(String.format("Block Height: %d must be positive or zero", height, headHeight));
+        }
+
         int distanceToHead = headHeight - height;
         if (distanceToHead > RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS) {
             throw new BlockHeightOlderThanCacheException(String.format("Block Height: %d older than Cache: %d", height, headHeight - RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS));
