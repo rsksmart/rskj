@@ -51,6 +51,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Precompiled contract that manages the 2 way peg between bitcoin and RSK.
@@ -558,9 +559,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             Sha256Hash btcTxHash = Sha256Hash.wrap((String) args[0]);
             Sha256Hash btcBlockHash = Sha256Hash.wrap((String) args[1]);
-            int btcBlockHeight = ((BigInteger) args[2]).intValue();
-            byte[] pmtSerialized = (byte[]) args[3];
-            return  bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, btcBlockHeight, pmtSerialized);
+            int merkleBranchBits = ((BigInteger) args[2]).intValue();
+
+            byte[][] merkleBranchHashesArray = (byte[][]) args[3];
+            List<Sha256Hash> merkleBranchHashes = Arrays.stream(merkleBranchHashesArray)
+                    .map(hash -> Sha256Hash.wrap(hash)).collect(Collectors.toList());
+
+            return bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, merkleBranchBits, merkleBranchHashes);
         } catch (Exception e) {
             logger.warn("Exception in getBtcTransactionConfirmations", e);
             throw new RuntimeException("Exception in getBtcTransactionConfirmations", e);
