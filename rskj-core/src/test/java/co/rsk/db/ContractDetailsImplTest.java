@@ -502,6 +502,86 @@ public class ContractDetailsImplTest {
     }
 
     @Test
+    public void getOldEncodedAndCreateClone() {
+        HashMapDB store = new HashMapDB();
+        ContractDetailsImpl details = buildContractDetails(store);
+
+        List<DataWord> keys = new ArrayList<>();
+
+        keys.add(DataWord.ZERO);
+        keys.add(DataWord.ONE);
+
+        List<DataWord> values = new ArrayList<>();
+
+        values.add(new DataWord(42));
+        values.add(new DataWord(144));
+
+        details.setStorage(keys, values);
+
+        byte[] encoded = details.getEncodedOldFormat();
+
+        Assert.assertNotNull(encoded);
+
+        ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+
+        Assert.assertEquals(new DataWord(42), result.get(DataWord.ZERO));
+        Assert.assertEquals(new DataWord(144), result.get(DataWord.ONE));
+        Assert.assertEquals(null, result.get(new DataWord(2)));
+        Assert.assertEquals(null, result.get(new DataWord(3)));
+
+        Assert.assertArrayEquals(details.getStorageHash(), result.getStorageHash());
+    }
+
+    @Test
+    public void getOldEncodedWithEmptyStorageAndCreateClone() {
+        HashMapDB store = new HashMapDB();
+        ContractDetailsImpl details = buildContractDetails(store);
+
+        byte[] encoded = details.getEncodedOldFormat();
+
+        Assert.assertNotNull(encoded);
+
+        ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+
+        Assert.assertArrayEquals(details.getStorageHash(), result.getStorageHash());
+    }
+
+    @Test
+    public void getOldEncodedAndCreateCloneSettingStorage() {
+        HashMapDB store = new HashMapDB();
+        ContractDetailsImpl details = buildContractDetails(store);
+
+        DataWord value0 = new DataWord(42);
+        DataWord value1 = new DataWord(144);
+
+        details.put(DataWord.ZERO, value0);
+        details.put(DataWord.ONE, value1);
+
+        byte[] hash1 = details.getStorageHash();
+
+        details.put(new DataWord(10), value0);
+        details.put(new DataWord(11), value1);
+
+        byte[] hash2 = details.getStorageHash();
+
+        byte[] encoded = details.getEncodedOldFormat();
+
+        Assert.assertNotNull(encoded);
+
+        ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+
+        ContractDetails result1 = result.getSnapshotTo(hash1);
+
+        Assert.assertNotNull(result1);
+        Assert.assertArrayEquals(hash1, result1.getStorageHash());
+
+        ContractDetails result2 = result.getSnapshotTo(hash2);
+
+        Assert.assertNotNull(result2);
+        Assert.assertArrayEquals(hash2, result2.getStorageHash());
+    }
+
+    @Test
     public void syncStorageInEmptyDetails() {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
