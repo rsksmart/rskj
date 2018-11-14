@@ -1829,7 +1829,7 @@ public class BridgeSupport {
         }
         int disableBlockDelay = disableBlockDelayBI.intValueExact();
         int bestChainHeight = getBtcBlockchainBestChainHeight();
-        if (bestChainHeight < 0 || Integer.MAX_VALUE - disableBlockDelay < bestChainHeight) {
+        if (disableBlockDelay < 0 || Integer.MAX_VALUE - disableBlockDelay < bestChainHeight) {
             return -2;
         }
         lockWhitelist.setDisableBlockHeight(bestChainHeight + disableBlockDelay);
