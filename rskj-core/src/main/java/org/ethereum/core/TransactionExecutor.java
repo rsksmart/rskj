@@ -22,9 +22,10 @@ package org.ethereum.core;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.metrics.profilers.impl.DummyProfiler;
 import co.rsk.metrics.profilers.Profiler;
-import co.rsk.metrics.profilers.impl.ExecutionProfiler;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
@@ -62,6 +63,7 @@ public class TransactionExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger("execute");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final Transaction tx;
     private final int txindex;
@@ -102,17 +104,6 @@ public class TransactionExecutor {
     private List<LogInfo> logs = null;
 
     private boolean localCall = false;
-    private Profiler profiler;
-
-
-    public TransactionExecutor(Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
-                               ProgramInvokeFactory programInvokeFactory, Block executionBlock, EthereumListener listener, long gasUsedInTheBlock,
-                               VmConfig vmConfig, BlockchainNetConfig blockchainConfig, boolean playVm, boolean remascEnabled,
-                               boolean vmTrace, PrecompiledContracts precompiledContracts, String databaseDir, String vmTraceDir, boolean vmTraceCompressed, Profiler profiler){
-        this(tx, txindex, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, listener, gasUsedInTheBlock,
-        vmConfig, blockchainConfig, playVm, remascEnabled, vmTrace, precompiledContracts, databaseDir, vmTraceDir, vmTraceCompressed);
-        this.profiler = profiler;
-    }
 
     public TransactionExecutor(Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock, EthereumListener listener, long gasUsedInTheBlock,
@@ -138,7 +129,6 @@ public class TransactionExecutor {
         this.databaseDir = databaseDir;
         this.vmTraceDir = vmTraceDir;
         this.vmTraceCompressed = vmTraceCompressed;
-        this.profiler = new DummyProfiler();
     }
 
 
@@ -187,6 +177,7 @@ public class TransactionExecutor {
             return false;
         }
 
+
         Coin totalCost = Coin.ZERO;
         if (basicTxCost > 0 ) {
             // Estimate transaction cost only if is not a free trx
@@ -217,10 +208,7 @@ public class TransactionExecutor {
             return false;
         }
 
-
-        boolean acceptTrxSignature = tx.acceptTransactionSignature(netConfig.getCommonConstants().getChainId());
-
-        if (!acceptTrxSignature) {
+        if (!tx.acceptTransactionSignature(netConfig.getCommonConstants().getChainId())) {
             logger.warn("Transaction {} signature not accepted: {}", tx.getHash(), tx.getSignature());
             logger.warn("Transaction Data: {}", tx);
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
@@ -282,7 +270,7 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             logger.trace("Precompiled contract execution");
-            int id = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
+            Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             BigInteger txGasLimit = toBI(tx.getGasLimit());
@@ -293,6 +281,7 @@ public class TransactionExecutor {
                 execError(String.format("Out of Gas calling precompiled contract 0x%s, required: %d, left: %s ",
                         targetAddress.toString(), (requiredGas + basicTxCost), mEndGas));
                 mEndGas = BigInteger.ZERO;
+                profiler.stop(metric);
                 return;
             } else {
                 long gasUsed = requiredGas + basicTxCost;
@@ -307,14 +296,13 @@ public class TransactionExecutor {
                 }
 
                 result.spendGas(gasUsed);
-                profiler.stop(id);
+
             }
+            profiler.stop(metric);
         } else {
             logger.trace("Code execution from track");
             byte[] code = track.getCode(targetAddress);
             if (isEmpty(code)) {
-                logger.trace("CODE IS EMPTY");
-                logger.trace("Data is" + tx.getData());
                 mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
                 result.spendGas(basicTxCost);
             } else {
@@ -322,8 +310,6 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
-
-                logger.trace("CALL: VM STATUS:"+this.vm);
                 BlockchainConfig configForBlock = netConfig.getConfigForBlock(executionBlock.getNumber());
                 this.program = new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
             }
@@ -331,8 +317,7 @@ public class TransactionExecutor {
 
         if (result.getException() == null) {
             Coin endowment = tx.getValue();
-            RskAddress sender = tx.getSender();
-            cacheTrack.transfer(sender, targetAddress, endowment);
+            cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
         }
     }
 
@@ -345,8 +330,6 @@ public class TransactionExecutor {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
-
-            logger.trace("CREATE - VM is" + this.vm);
             BlockchainConfig configForBlock = netConfig.getConfigForBlock(executionBlock.getNumber());
             this.program = new Program(vmConfig, precompiledContracts, configForBlock, tx.getData(), programInvoke, tx);
 
@@ -359,8 +342,7 @@ public class TransactionExecutor {
         }
 
         Coin endowment = tx.getValue();
-        RskAddress sender = tx.getSender();
-        cacheTrack.transfer(sender, newContractAddress, endowment);
+        cacheTrack.transfer(tx.getSender(), newContractAddress, endowment);
     }
 
     private void execError(Throwable err) {
@@ -375,13 +357,11 @@ public class TransactionExecutor {
 
     public void go() {
         if (!readyToExecute) {
-            logger.trace("GO: Not ready to execute");
             return;
         }
 
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
-            logger.trace("VM Is NULL");
             cacheTrack.commit();
             return;
         }
@@ -394,9 +374,9 @@ public class TransactionExecutor {
             program.spendGas(tx.transactionCost(executionBlock, netConfig), "TRANSACTION COST");
 
             if (playVm) {
-                int id = profiler.start(Profiler.PROFILING_TYPE.VM_EXECUTE);
+                Metric metric = profiler.start(Profiler.PROFILING_TYPE.VM_EXECUTE);
                 vm.play(program);
-                profiler.stop(id);
+                profiler.stop(metric);
             }
 
             result = program.getResult();
@@ -516,8 +496,7 @@ public class TransactionExecutor {
         TransactionExecutionSummary summary = summaryBuilder.build();
 
         // Refund for gas leftover
-        RskAddress sender = tx.getSender();
-        track.addBalance(sender, summary.getLeftover().add(summary.getRefund()));
+        track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
         logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
         // Transfer fees to miner

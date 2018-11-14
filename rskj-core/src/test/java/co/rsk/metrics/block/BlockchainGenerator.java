@@ -2,6 +2,7 @@ package co.rsk.metrics.block;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.metrics.block.builder.*;
 import co.rsk.metrics.block.builder.metadata.MetadataWriter;
@@ -40,9 +41,9 @@ public class BlockchainGenerator {
     private long trxPerBlock;
     private ValueGenerator datasource;
     private Vector<AccountStatus> regularAccounts;
-    private Vector<AccountStatus> tokenContracts;
     private AccountStatus tokensOwner;
     private boolean includeRemasc;
+    private Transaction angelCreator;
 
 
     public BlockchainGenerator(String generationDir, BigInteger minGasPrice, BigInteger txGasLimit, BigInteger tokenGasLimit, BigInteger blockGasLimit, String genesisRoot, int numOfBlocks, long trxPerBlock, ValueGenerator datasource, BigInteger blockDifficulty, TestSystemProperties config, MetadataWriter metadataWriter, boolean includeRemasc) throws IOException, InvalidGenesisFileException {
@@ -77,7 +78,7 @@ public class BlockchainGenerator {
 
         GenesisLoader genesisLoader = GenesisLoader.newGenesisLoader(config, genesisRoot); //Loads an already generated genesis file
         regularAccounts = genesisLoader.getRegularAccounts();
-        tokenContracts = genesisLoader.getTokenContracts();
+        //tokenContracts = genesisLoader.getTokenContracts();
         this.tokensOwner = genesisLoader.getTokensOwner();
 
 
@@ -94,7 +95,6 @@ public class BlockchainGenerator {
         metadataWriter.write("\"hash\": \"" + genesis.getHashJsonString() + "\"},");
 
 
-
         List<BlockInfo> blocks = generateBlockList(genesis, metadataWriter);
 
         BlockChainBuilder builder = new BlockChainBuilder(includeRemasc);
@@ -105,7 +105,7 @@ public class BlockchainGenerator {
         builder.setBlocks(blocks);
         builder.setConfig(this.config);
 
-        BlockChainImpl blockChain = builder.build();
+        builder.build();
 
         metadataWriter.write("}");
         metadataWriter.close();
@@ -121,26 +121,95 @@ public class BlockchainGenerator {
         return this.config;
     }
 
-    private List<BlockInfo> generateBlockList(Genesis genesis, MetadataWriter writer){
+    private BlockInfo tokenContractsInstantiationBlock(Genesis genesis, MetadataWriter writer, MockTransactionsBuilder trxBuilder){
 
-        logger.info("Generating {} blocks", numOfBlocks);
+        logger.info("Generating token instantiation transactions");
 
-        List<BlockInfo> blocks = new ArrayList<>();
+        BlockInfo block = null;
         Block parent = genesis;
         List<BlockHeader> uncles = null;
 
-        logger.info("Genesis block info: Block number {}, Block hash {}",parent.getHeader().getNumber(), parent.getHash().toString());
+
+        logger.info("block info: Block number {}, Block hash {}",parent.getHeader().getNumber(), parent.getHash().toString());
+
+        //First block
+        writer.write("\"blocks\":[{ \"token-create-transactions\":[");
+
+        List<Transaction> tokenContractCreation = trxBuilder.generateTokenCreationTransactions("TokenCreatorAccount");
+
+        Vector<RskAddress> contractAddresses = new Vector<>(5);
+
+        for(Transaction contract : tokenContractCreation){
+            contractAddresses.add(contract.getContractAddress());
+        }
+        trxBuilder.setTokenContracts(contractAddresses);
+
+        for(Transaction contractTrx : tokenContractCreation){
+            System.out.println("Contract"+ contractTrx.getNonceAsInteger());
+            System.out.println("Address:["+contractTrx.getContractAddress()+"]");
+        }
+
+
+        //TODO REMOVE ANGEL CONTRACT BEFORE COMITTING
+        List<Transaction> angelTrx = trxBuilder.generateAngelContractTransaction("TokenCreatorAccount");
+        tokenContractCreation.addAll(angelTrx);
+        this.angelCreator = angelTrx.get(1);
+
+        writer.write("{\"trx\":{\"end\": \"true\"}}]");
+
+        long parentNum = parent.getNumber();
+
+        logger.info("Building Token assignment blocks");
+
+        if(includeRemasc){
+            //Include REMASC transaction
+            Transaction remascTx = new RemascTransaction(parentNum+1);
+            tokenContractCreation.add(remascTx);
+        }
+
+
+        Coin paidFees = Coin.ZERO;
+
+        for(Transaction trx : tokenContractCreation){
+            BigInteger gasLimit = new BigInteger(1, trx.getGasLimit());
+            Coin gasPrice = trx.getGasPrice();
+            paidFees = paidFees.add(gasPrice.multiply(gasLimit));
+        }
+
+
+
+        block = new BlockInfo(tokenContractCreation, paidFees, blockDifficulty, parentNum+1,blockGasLimit, uncles);
+
+        writer.write(", \"block-number\": \"" + block.getBlockNumber() + "\"}");
+        logger.info("Block info: Block number {}",block.getBlockNumber());
+
+        writer.write("]");
+        return block;
+    }
+
+    private List<BlockInfo> generateBlockList(Genesis genesis, MetadataWriter writer){
+        logger.info("Genesis block info: Block number {}, Block hash {}",genesis.getHeader().getNumber(), genesis.getHash().toString());
+
+        logger.info("Generating {} blocks", numOfBlocks);
+
+
+        MockTransactionsBuilder trxBuilder = new MockTransactionsBuilder(trxPerBlock, minGasPrice, txGasLimit, tokenGasLimit,  datasource, regularAccounts, config, tokensOwner, writer);
+
+        List<BlockInfo> blocks = new ArrayList<>();
+        BlockInfo firstBlock = tokenContractsInstantiationBlock(genesis, writer, trxBuilder);
+        blocks.add(firstBlock);
+
+        List<BlockHeader> uncles = null;
+
 
         //First block
         writer.write("\"blocks\":[{ \"token-assignment-transactions\":[");
-
-        MockTransactionsBuilder trxBuilder = new MockTransactionsBuilder(trxPerBlock, minGasPrice, txGasLimit, tokenGasLimit,  datasource, regularAccounts, tokenContracts, config, tokensOwner, writer);
 
         List<List<Transaction>> tokenAssignments = trxBuilder.generateTokenPreAssignmentTransactions(regularAccounts);
 
         writer.write("{\"trx\":{\"end\": \"true\"}}]");
 
-        long parentNum = parent.getNumber();
+        long parentNum = firstBlock.getBlockNumber();
 
         logger.info("Building Token assignment blocks");
 
@@ -168,14 +237,14 @@ public class BlockchainGenerator {
 
             writer.write(", \"block-number\": \"" + block.getBlockNumber() + "\"}");
             blocks.add(block);
-            logger.info("Block info: Block number {}",block.getBlockNumber());
+            logger.info("PREASSIGNMENT BLOCK info: Block number {}",block.getBlockNumber());
         }
 
         logger.info("Building transfer transactions blocks");
 
         for(int i = 0; i<numOfBlocks; i++){
             writer.write(",{ \"transactions\":[");
-            List<Transaction> trxs =  trxBuilder.generateTransactions();
+            List<Transaction> trxs =  trxBuilder.generateTransactions(i+1>=numOfBlocks?this.angelCreator:null);
 
             if(includeRemasc){
                 //Include REMASC Transaction
@@ -195,10 +264,15 @@ public class BlockchainGenerator {
             writer.write("{\"trx\":{\"end\": \"true\"}}");
 
             BlockInfo block = new BlockInfo(trxs ,paidFees, blockDifficulty, parentNum+1,TestContext.BLOCK_GAS_LIMIT,uncles);
+
+            if(i+1>=numOfBlocks){
+                logger.info("ANGEL TRX ADDED IN BLOCK {}", block.getBlockNumber());
+            }
+
             parentNum++;
             blocks.add(block);
             writer.write(", \"block-number\": \"" + block.getBlockNumber() + "\"}");
-            logger.info("Block info: Block number {}",block.getBlockNumber());
+            logger.info("Transfer TRX Block info: Block number {}",block.getBlockNumber());
         }
 
         writer.write("]");
