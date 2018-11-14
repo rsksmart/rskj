@@ -1964,7 +1964,7 @@ public class BridgeTest {
         byte[] pmtSerialized = pmt.bitcoinSerialize();
 
         int mockedResult = 8;
-        when(bridgeSupportMock.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, 45678, pmtSerialized)).thenReturn(mockedResult);
+//        when(bridgeSupportMock.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, 45678, pmtSerialized)).thenReturn(mockedResult);
 
         Assert.assertEquals(mockedResult, bridge.getBtcTransactionConfirmations(new Object[]{btcTxHash.toString(), btcBlockHash.toString(), BigInteger.valueOf(45678), pmtSerialized}));
     }

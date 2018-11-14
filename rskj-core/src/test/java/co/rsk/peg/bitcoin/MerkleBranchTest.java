@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -114,16 +115,13 @@ public class MerkleBranchTest {
     }
 
     private void assertBranchCorrectlyProves(List<byte[]> hashes, int path, byte[] txHash, byte[] expectedMerkleRoot) {
-        BtcTransaction mockTx = mock(BtcTransaction.class);
-        when(mockTx.getHash()).thenReturn(Sha256Hash.wrap(txHash));
-
         BtcBlock mockBlock = mock(BtcBlock.class);
         when(mockBlock.getMerkleRoot()).thenReturn(Sha256Hash.wrap(expectedMerkleRoot));
 
-        MerkleBranch merkleBranch = new MerkleBranch(hashes, path);
+        MerkleBranch merkleBranch = new MerkleBranch(hashes.stream().map(h -> Sha256Hash.wrap(h)).collect(Collectors.toList()), path);
 
-        Assert.assertEquals(Sha256Hash.wrap(expectedMerkleRoot), merkleBranch.reduceFrom(mockTx));
-        Assert.assertTrue(merkleBranch.proves(mockTx, mockBlock));
+        Assert.assertEquals(Sha256Hash.wrap(expectedMerkleRoot), merkleBranch.reduceFrom(Sha256Hash.wrap(txHash)));
+        Assert.assertTrue(merkleBranch.proves(Sha256Hash.wrap(txHash), mockBlock));
     }
 
     private void assertBranchDoesntProve(List<byte[]> hashes, int path, byte[] txHash, byte[] expectedMerkleRoot) {
@@ -133,9 +131,9 @@ public class MerkleBranchTest {
         BtcBlock mockBlock = mock(BtcBlock.class);
         when(mockBlock.getMerkleRoot()).thenReturn(Sha256Hash.wrap(expectedMerkleRoot));
 
-        MerkleBranch merkleBranch = new MerkleBranch(hashes, path);
+        MerkleBranch merkleBranch = new MerkleBranch(hashes.stream().map(h -> Sha256Hash.wrap(h)).collect(Collectors.toList()), path);
 
-        Assert.assertNotEquals(Sha256Hash.wrap(expectedMerkleRoot), merkleBranch.reduceFrom(mockTx));
-        Assert.assertFalse(merkleBranch.proves(mockTx, mockBlock));
+        Assert.assertNotEquals(Sha256Hash.wrap(expectedMerkleRoot), merkleBranch.reduceFrom(Sha256Hash.wrap(txHash)));
+        Assert.assertFalse(merkleBranch.proves(Sha256Hash.wrap(txHash), mockBlock));
     }
 }
