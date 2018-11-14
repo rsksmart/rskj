@@ -236,7 +236,6 @@ public class Transaction {
 
     public void rlpParse() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRX_RLP_PARSE);
-
         List<RLPElement> transaction = RLP.decodeList(rlpEncoded);
         if (transaction.size() != 9) {
             profiler.stop(metric);
@@ -266,7 +265,6 @@ public class Transaction {
         }
         this.parsed = true;
         profiler.stop(metric);
-        
         this.hash = getHash().getBytes();
     }
 
