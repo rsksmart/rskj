@@ -9,6 +9,9 @@ import co.rsk.metrics.block.builder.InvalidGenesisFileException;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.core.Account;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,6 +32,25 @@ public class GenesisBuilderTests {
         System.out.println("Tokens owner address:" + genesisLoader.getTokensOwner().getAddress());
 
     }
+
+
+    @Test
+    public void getAngelGenerator(){
+        String accountName = "TokenCreatorAccount";
+        byte[] privateKeyBytes = HashUtil.keccak256(accountName.getBytes());
+        ECKey key = ECKey.fromPrivate(privateKeyBytes);
+        Account contratoAngelAcc = new Account(key);
+        System.out.println(contratoAngelAcc.getAddress());
+    }
+    @Test
+    public void getContratoAngelAddress(){
+        //03e76cbc0a9d9fb2554144280722a5cb02c2824a
+        byte[] privateKeyBytes = HashUtil.keccak256("ContratoDeAngel".getBytes());
+        ECKey key = ECKey.fromPrivate(privateKeyBytes);
+        Account contratoAngelAcc = new Account(key);
+        System.out.println(contratoAngelAcc.getAddress());
+    }
+
     @Test
     public void testGenerateGenesisFile() throws IOException, ClassNotFoundException {
         GenesisBuilder.generateGenesis(TestContext.ACCOUNTS_TO_GENERATE, TestContext.ACCOUNT_BALANCE, TestContext.GENESIS_FILE_ROOT);
@@ -42,9 +64,12 @@ public class GenesisBuilderTests {
 
         int i = 0;
         BigInteger nonce = TestContext.INITIAL_TRX_NONCE;
+        boolean firstAccount = true;
         for(AccountStatus accountStatus: genesisInfo.getRegularAccounts()){
+
             Assert.assertEquals("ACC_"+i, accountStatus.getAccountName());
             i++;
+
             Assert.assertEquals(40, accountStatus.getAddress().toCharArray().length);
 
             try{
@@ -70,7 +95,7 @@ public class GenesisBuilderTests {
             }
             i++;
         }
-        Assert.assertEquals(TestContext.contracts.length, i);
+        Assert.assertEquals(0, i);
 
     }
 

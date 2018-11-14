@@ -1,6 +1,7 @@
 package co.rsk.metrics.block.profiler.memlite;
 
 import co.rsk.metrics.block.profiler.ProfilingException;
+import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -25,18 +26,19 @@ public class ExecutionProfiler implements Profiler {
 
 
     @Override
-    public synchronized int start(PROFILING_TYPE type) {
+    public synchronized Metric start(PROFILING_TYPE type) {
         //currentBlock.getMetrics().add(new Metric(type, thread));
        // return currentBlock.getMetrics().size() - 1;//Index of added element
-        return 0;
+        return null;
 
     }
+
 
     @Override
-    public synchronized void stop(int id) {
+    public void stop(Metric metric) {
 
-        //currentBlock.getMetrics().get(id).setDelta(thread);
     }
+
 
 
     @Override

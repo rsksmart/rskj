@@ -19,6 +19,8 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.metrics.profilers.impl.DummyProfiler;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.panic.PanicProcessor;
@@ -49,12 +51,12 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final String databaseDir;
     private final String name;
     private DB db;
     private boolean alive;
-    private Profiler profiler;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -65,16 +67,10 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
 
-    public LevelDbDataSource(String name, String databaseDir, Profiler profiler) {
-        this(name, databaseDir);
-        this.profiler = profiler;
-    }
-
     public LevelDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
         this.name = name;
         logger.debug("New LevelDbDataSource: {}", name);
-        this.profiler = new DummyProfiler();
     }
 
     @Override
@@ -115,9 +111,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 Files.createDirectories(dbPath.getParent());
 
                 logger.debug("Initializing new or existing database: '{}'", name);
-                int id = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_INIT);
+                Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_INIT);
                 db = factory.open(dbPath.toFile(), options);
-                profiler.stop(id);
+                profiler.stop(metric);
                 alive = true;
             } catch (IOException ioe) {
                 logger.error(ioe.getMessage(), ioe);
@@ -126,7 +122,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
             }
             logger.debug("<~ LevelDbDataSource.init(): " + name);
         } finally {
-            //profiler.stop(id);
             resetDbLock.writeLock().unlock();
         }
     }
@@ -164,7 +159,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public byte[] get(byte[] key) {
-        int id = profiler.start(Profiler.PROFILING_TYPE.DISK_READ);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DISK_READ);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -176,7 +171,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 if (logger.isTraceEnabled()) {
                     logger.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key) + ", " + (ret == null ? "null" : ret.length));
                 }
-
                 return ret;
             } catch (DBException e) {
                 logger.error("Exception. Retrying again...", e);
@@ -185,7 +179,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
                     if (logger.isTraceEnabled()) {
                         logger.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key) + ", " + (ret == null ? "null" : ret.length));
                     }
-
                     return ret;
                 } catch (DBException e2) {
                     logger.error("Exception. Not retrying.", e2);
@@ -194,8 +187,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 }
             }
         } finally {
+            profiler.stop(metric);
             resetDbLock.readLock().unlock();
-            profiler.stop(id);
         }
     }
 
@@ -269,9 +262,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
             for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
                 batch.put(entry.getKey(), entry.getValue());
             }
-            int id =  profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
+            Metric metric =  profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
             db.write(batch);
-            profiler.stop(id);
+            profiler.stop(metric);
         }
     }
 
@@ -319,9 +312,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
             try {
                 logger.debug("Close db: {}", name);
-                int id = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_CLOSE);
+                Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_CLOSE);
                 db.close();
-                profiler.stop(id);
+                profiler.stop(metric);
                 alive = false;
             } catch (IOException e) {
                 logger.error("Failed to find the db file on the close: {} ", name);

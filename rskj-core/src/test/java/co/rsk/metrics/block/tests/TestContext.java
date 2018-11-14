@@ -7,7 +7,7 @@ import java.math.BigInteger;
 public abstract class TestContext {
 
     public static final BigInteger BLOCK_DIFFICULTY = BigInteger.ONE;
-    public static final int MAX_TRX_PER_BLOCK = 149;
+    public static final int MAX_TRX_PER_BLOCK = 149;//10;//149;
     public static final int BLOCKS_TO_GENERATE = 100;
     public static final int ACCOUNTS_TO_GENERATE = 1000;
     public static final int TRX_MAX_RND_AMOUNT = 4;

@@ -27,6 +27,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.metrics.block.tests.TestContext;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.metrics.profilers.impl.DummyProfiler;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.trie.TrieStoreImpl;
@@ -57,6 +59,7 @@ import java.util.List;
  * Based on ajlopez's BlockchainBuilder, by rlaprida on October 10/1/2018
  */
 public class BlockChainBuilder {
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     private List<BlockInfo> blocks;
     private List<Block> processedBlocks;
     private List<TransactionInfo> txinfos;
@@ -66,22 +69,12 @@ public class BlockChainBuilder {
     private Genesis genesis;
     private ReceiptStore receiptStore;
     private TestSystemProperties config;
-    private Profiler profiler;
     private boolean includeRemasc;
-
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
 
     public BlockChainBuilder(boolean includeRemasc){
-        profiler = new DummyProfiler();
         this.includeRemasc = includeRemasc;
     }
-
-    public BlockChainBuilder(Profiler profiler, boolean includeRemasc){
-        this.profiler = profiler;
-        this.includeRemasc = includeRemasc;
-    }
-
 
     public BlockChainBuilder setBlocks(List<BlockInfo> blocks) {
         this.blocks = blocks;
@@ -184,12 +177,11 @@ public class BlockChainBuilder {
                 new PrecompiledContracts(config),
                 config.databaseDir(),
                 config.vmTraceDir(),
-                config.vmTraceCompressed(),
-                profiler
-        ), profiler);
+                config.vmTraceCompressed()
+        ));
 
 
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, blockExecutor);
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, true, 20, blockExecutor);
 
 
         blockChain.setBlockValidator(blockValidator);
@@ -204,9 +196,7 @@ public class BlockChainBuilder {
             track.commit();*/
 
             profiler.newBlock(this.genesis.getNumber(), this.genesis.getTransactionsList().size());
-            int id = profiler.start(Profiler.PROFILING_TYPE.GENESIS_GENERATION);
-
-
+            Metric metric = profiler.start(Profiler.PROFILING_TYPE.GENESIS_GENERATION);
             Repository track = this.repository.startTracking();
             for (RskAddress addr : genesis.getPremine().keySet()) {
                 repository.createAccount(addr);
@@ -231,9 +221,13 @@ public class BlockChainBuilder {
             if(result != ImportResult.IMPORTED_BEST){
                 System.out.println("ERROR GENESIS BLOCK IS NOT BEST");
                 System.out.println(result);
+                profiler.stop(metric);
                 return null;
             }
+            profiler.stop(metric);
+
         }
+
 
         if (this.blocks != null) {
 
@@ -250,33 +244,38 @@ public class BlockChainBuilder {
 
                Block block = blockGenerator.createChildBlock(lastBlock, b.getTransactions(),null, b.getBlockDifficulty().longValue(), TestContext.MIN_GAS_PRICE, b.getBlockGasLimit().toByteArray());
 
-               int id = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
-               blockExecutor.executeAndFillAll(block, blockChain.getBestBlock());
-               profiler.stop(id);
+                Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+               blockExecutor.executeAndFillAll(block, lastBlock);
+                profiler.stop(metric);
 
-               id = profiler.start(Profiler.PROFILING_TYPE.BLOCK_MINING);
+
+                metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_MINING);
                block = miner.mineBlock(block);
-               profiler.stop(id);
+               profiler.stop(metric);
 
                block.seal();
 
-               id = profiler.start(Profiler.PROFILING_TYPE.BLOCK_CONNECTION);
+               System.out.println("Connecting block "+block.getNumber());
 
+               metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_CONNECTION);
                 ImportResult result = blockChain.tryToConnect(block);
                 if(result != ImportResult.IMPORTED_BEST){
                     System.out.println("ERROR BLOCK IS NOT BEST");
                     System.out.println(result);
+                    profiler.stop(metric);
                     return null;
                 }
-                profiler.stop(id);
-
+                profiler.stop(metric);
                 lastBlock = blockChain.getBestBlock();
             }
         }
 
-        int id = profiler.start(Profiler.PROFILING_TYPE.FINAL_BLOCKCHAIN_FLUSH);
+        //Uncomment if flushEnabled = false
+        profiler.newBlock(-2, -1);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.FINAL_BLOCKCHAIN_FLUSH);
         blockStore.flush();
-        profiler.stop(id);
+        repository.flush();
+        profiler.stop(metric);
         return blockChain;
     }
 
@@ -320,12 +319,11 @@ public class BlockChainBuilder {
                 new PrecompiledContracts(config),
                 config.databaseDir(),
                 config.vmTraceDir(),
-                config.vmTraceCompressed(),
-                profiler
-        ), profiler);
+                config.vmTraceCompressed()
+        ));
 
 
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, blockExecutor);
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, true, 20, blockExecutor);
 
 
         blockChain.setBlockValidator(blockValidator);
@@ -334,8 +332,7 @@ public class BlockChainBuilder {
         if (this.genesis != null) {
 
             profiler.newBlock(this.genesis.getNumber(), this.genesis.getTransactionsList().size());
-            int id = profiler.start(Profiler.PROFILING_TYPE.GENESIS_GENERATION);
-
+            Metric metric = profiler.start(Profiler.PROFILING_TYPE.GENESIS_GENERATION);
 
             Repository track = this.repository.startTracking();
             for (RskAddress addr : genesis.getPremine().keySet()) {
@@ -361,9 +358,10 @@ public class BlockChainBuilder {
             if(result != ImportResult.IMPORTED_BEST){
                 System.out.println("ERROR GENESIS BLOCK IS NOT BEST");
                 System.out.println(result);
+                profiler.stop(metric);
                 return;
             }
-            profiler.stop(id);
+            profiler.stop(metric);
         }
 
         if (this.processedBlocks != null) {
@@ -371,188 +369,25 @@ public class BlockChainBuilder {
             for (Block b : this.processedBlocks) {
 
                 profiler.newBlock(b.getNumber(), b.getTransactionsList().size());
-
-                int id = profiler.start(Profiler.PROFILING_TYPE.BLOCK_CONNECTION);
-
+                Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_CONNECTION);
                 ImportResult result = blockChain.tryToConnect(b);
+                profiler.stop(metric);
                 if(result != ImportResult.IMPORTED_BEST){
                     System.out.println("ERROR BLOCK IS NOT BEST");
                     System.out.println(result);
                     return;
                 }
-                profiler.stop(id);
             }
         }
 
-        profiler.newBlock(-2, 0); //We don't want to associate the last flush with the last block
+        //Activate if flush is disabled (flushEnabled = false)
+        profiler.newBlock(-2, -1);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.FINAL_BLOCKCHAIN_FLUSH);
         blockStore.flush();
+        repository.flush();
+        profiler.stop(metric);
+
+
     }
 
 }
-
-
-
-///////////////
-
-
-    /*public BlockChainImpl build(boolean withoutCleaner) {
-
-        if (txinfos != null && !txinfos.isEmpty())
-            for (TransactionInfo txinfo : txinfos)
-                receiptStore.add(txinfo.getBlockHash(), txinfo.getIndex(), txinfo.getReceipt());
-
-        EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
-
-        BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
-
-        if(includeRemasc){
-            validatorBuilder.addRemascValidationRule();
-        }
-
-        validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
-                .addBlockTxsValidationRule(repository).blockStore(blockStore);
-
-
-        BlockValidator blockValidator = validatorBuilder.build();
-
-        TransactionPoolImpl transactionPool;
-        if (withoutCleaner) {
-            transactionPool = new TransactionPoolImplNoCleaner(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
-        } else {
-            transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
-        }
-
-
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-
-        BlockExecutor blockExecutor = new BlockExecutor(this.repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                this.blockStore,
-                receiptStore,
-                programInvokeFactory,
-                block1,
-                listener,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed(),
-                profiler
-        ), profiler);
-
-
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, blockExecutor);
-
-
-        blockChain.setBlockValidator(blockValidator);
-        blockChain.setNoValidation(false);
-        //blockChain.setBlockValidator(new DummyBlockValidator());
-        //blockChain.setNoValidation(true);
-
-        if (this.genesis != null) {
-
-
-            profiler.newBlock(this.genesis.getNumber(), this.genesis.getTransactionsList().size());
-            int id = profiler.start(Profiler.PROFILING_TYPE.GENESIS_GENERATION);
-
-
-            Repository track = this.repository.startTracking();
-            for (RskAddress addr : genesis.getPremine().keySet()) {
-                repository.createAccount(addr);
-                InitialAddressState initialAddressState = genesis.getPremine().get(addr);
-                repository.addBalance(addr, initialAddressState.getAccountState().getBalance());
-                AccountState accountState = repository.getAccountState(addr);
-                accountState.setNonce(initialAddressState.getAccountState().getNonce());
-
-                if (initialAddressState.getContractDetails()!=null) {
-                    repository.updateContractDetails(addr, initialAddressState.getContractDetails());
-                    accountState.setStateRoot(initialAddressState.getAccountState().getStateRoot());
-                    accountState.setCodeHash(initialAddressState.getAccountState().getCodeHash());
-                }
-
-                repository.updateAccountState(addr, accountState);
-            }
-            track.commit();
-            genesis.setStateRoot(repository.getRoot());
-            genesis.flushRLP();
-            genesis.seal();
-            ImportResult result = blockChain.tryToConnect(genesis);
-            if(result != ImportResult.IMPORTED_BEST){
-                System.out.println("ERROR GENESIS BLOCK IS NOT BEST");
-                System.out.println(result);
-                return null;
-            }
-
-        }
-
-        if (this.blocks != null) {
-
-            Block lastBlock = blockChain.getBestBlock();
-
-            int count = 0;
-
-            for (BlockInfo b : this.blocks) {
-
-                //Generate actual block using the last connected best-block's hash
-
-               Block block =  new Block(lastBlock.getHash().getBytes(),           // parent hash
-                        HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(new ArrayList<>())), // uncle hash
-                         ByteUtils.clone(lastBlock.getCoinbase().getBytes()),                        // Coinbase
-                        new Bloom().getData(),                                     // logs bloom
-                         b.getBlockDifficulty().toByteArray(),                      // difficulty
-                         lastBlock.getNumber()+1,
-                         b.getBlockGasLimit().toByteArray(),
-                         lastBlock.getGasUsed(),
-                         lastBlock.getTimestamp() + ++count,
-                         new byte[0],                                               // extraData
-                         new byte[0],                                               // mixHash
-                         BigInteger.ZERO.toByteArray(),                             // provisory nonce
-                         ByteUtils.clone(lastBlock.getReceiptsRoot()),                                  // receipts root
-                         BlockChainImpl.calcTxTrie(b.getTransactions()),            // transaction root
-                         ByteUtils.clone(lastBlock.getStateRoot()),         //EMPTY_TRIE_HASH,       // state root
-                         b.getTransactions(),                                       // transaction list
-                         null,                                             // uncle list
-                         TestContext.MIN_GAS_PRICE.toByteArray(),
-                         b.getPaidFees());
-
-                 System.out.println("executing block: "+block.getNumber() + " with hash " + block.getHashJsonString() + "and with parent "+block.getParentHashJsonString());
-                 System.out.println("parent's state root: "+ Hex.toHexString(lastBlock.getStateRoot()));
-                profiler.newBlock(block.getNumber(), block.getTransactionsList().size());
-                int id = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
-                blockExecutor.executeAndFillAll(block, blockChain.getBestBlock());
-                profiler.stop(id);
-
-                block.seal();
-
-
-                id = profiler.start(Profiler.PROFILING_TYPE.BLOCK_CONNECTION);
-
-                ImportResult result = blockChain.tryToConnect(block);
-                if(result != ImportResult.IMPORTED_BEST){
-                    System.out.println("ERROR BLOCK IS NOT BEST");
-                    System.out.println(result);
-                    return null;
-                }
-                profiler.stop(id);
-
-                lastBlock = blockChain.getBestBlock();
-
-                //Force new best block
-                //blockChain.setStatus(b, b.getCumulativeDifficulty());
-            }
-        }
-
-        int id = profiler.start(Profiler.PROFILING_TYPE.FINAL_BLOCKCHAIN_FLUSH);
-        blockStore.flush();
-        profiler.stop(id);
-        return blockChain;
-    }*/
-////////////////////////

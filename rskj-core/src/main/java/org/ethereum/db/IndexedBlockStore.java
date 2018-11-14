@@ -21,6 +21,8 @@ package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.metrics.profilers.impl.DummyProfiler;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.net.BlockCache;
@@ -49,6 +51,7 @@ import static org.bouncycastle.util.Arrays.areEqual;
 public class IndexedBlockStore extends AbstractBlockstore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final BlockCache blockCache;
     private final MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache;
@@ -56,13 +59,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
     private final Map<Long, List<BlockInfo>> index;
     private final DB indexDB;
     private final KeyValueDataSource blocks;
-    private Profiler profiler;
-
-    public IndexedBlockStore(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB, Profiler profiler) {
-        this(index,blocks, indexDB);
-        this.profiler = profiler;
-    }
-
 
     public IndexedBlockStore(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB) {
         this.index = index;
@@ -72,7 +68,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
         // remascCache should be an external component and not be inside blockstore
         this.blockCache = new BlockCache(5000);
         this.remascCache = new MaxSizeHashMap<>(50000, true);
-        this.profiler = new DummyProfiler();
     }
 
     @Override
@@ -140,9 +135,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
         long t1 = System.nanoTime();
 
         if (indexDB != null) {
-            int id = profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
+            Metric metric = profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
             indexDB.commit();
-            profiler.stop(id);
+            profiler.stop(metric);
         }
 
         long t2 = System.nanoTime();
@@ -152,6 +147,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public synchronized void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCKSTORE_SAVE_BLOCK);
         List<BlockInfo> blockInfos = index.get(block.getNumber());
         if (blockInfos == null) {
             blockInfos = new ArrayList<>();
@@ -180,6 +176,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         index.put(block.getNumber(), blockInfos);
         blockCache.addBlock(block);
         remascCache.put(block.getHash(), getSiblingsFromBlock(block));
+        profiler.stop(metric);
     }
 
     @Override
@@ -337,7 +334,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public synchronized void reBranch(Block forkBlock){
-
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_REBRANCH);
         Block bestBlock = getBestBlock();
         long maxLevel = Math.max(bestBlock.getNumber(), forkBlock.getNumber());
 
@@ -403,6 +400,8 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
             --currentLevel;
         }
+
+        profiler.stop(metric);
     }
 
     @VisibleForTesting

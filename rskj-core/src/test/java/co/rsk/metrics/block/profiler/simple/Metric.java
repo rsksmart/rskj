@@ -2,7 +2,9 @@ package co.rsk.metrics.block.profiler.simple;
 
 import co.rsk.metrics.profilers.Profiler;
 
-public class Metric {
+import java.lang.management.ThreadMXBean;
+
+public class Metric implements co.rsk.metrics.profilers.Metric {
 
     private Profiler.PROFILING_TYPE type;
     private long time; //Value in nanoseconds
@@ -19,7 +21,7 @@ public class Metric {
     }
 
 
-    public void setDelta(){
+    public void setDelta(ThreadMXBean thread){
         this.time = System.nanoTime() - this.time;
     }
 

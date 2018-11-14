@@ -1,11 +1,11 @@
 package co.rsk.metrics.block.profiler.detailed;
 
-import java.util.Vector;
+import java.util.ArrayList;
 
 public class BlockProfilingInfo {
 
     private long blockId;
-    private Vector<Metric> metrics;
+    private ArrayList<Metric> metrics;
     private int trxs;
 
     public BlockProfilingInfo(){
@@ -14,14 +14,14 @@ public class BlockProfilingInfo {
 
     public BlockProfilingInfo(long blockId, int trxs){
         this.blockId = blockId;
-        this.metrics = new Vector<>();
+        this.metrics = new ArrayList<>();
         this.trxs = trxs;
     }
 
-    public Vector<Metric> getMetrics(){
+    public ArrayList<Metric> getMetrics(){
         return  this.metrics;
     }
-    public void setMetrics(Vector<Metric> metrics) {
+    public void setMetrics(ArrayList<Metric> metrics) {
         this.metrics = metrics;
     }
 

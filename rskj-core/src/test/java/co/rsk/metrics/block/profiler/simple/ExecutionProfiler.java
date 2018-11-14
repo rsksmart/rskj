@@ -21,15 +21,16 @@ public class ExecutionProfiler implements Profiler {
 
 
     @Override
-    public synchronized int start(PROFILING_TYPE type) {
-        currentBlock.getMetrics().add(new Metric(type));
-        return currentBlock.getMetrics().size() - 1;//Index of added element
-
+    public synchronized co.rsk.metrics.profilers.Metric start(PROFILING_TYPE type) {
+        Metric newMetric = new Metric(type);
+        currentBlock.getMetrics().add(newMetric);
+        return  newMetric;
     }
 
+
     @Override
-    public synchronized void stop(int id) {
-        currentBlock.getMetrics().get(id).setDelta();
+    public void stop(co.rsk.metrics.profilers.Metric metric) {
+        metric.setDelta(null);
     }
 
 
@@ -42,6 +43,7 @@ public class ExecutionProfiler implements Profiler {
 
         this.currentBlock = new BlockProfilingInfo(blockId, trxQty);
     }
+
 
 
     public synchronized void clean() {

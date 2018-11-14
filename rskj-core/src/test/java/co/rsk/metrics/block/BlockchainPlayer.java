@@ -7,6 +7,7 @@ import co.rsk.metrics.block.builder.GenesisLoader;
 import co.rsk.metrics.block.builder.InvalidGenesisFileException;
 import co.rsk.metrics.block.tests.TestContext;
 import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import org.ethereum.config.CommonConfig;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.Block;
@@ -27,25 +28,27 @@ import java.util.List;
 public class BlockchainPlayer {
 
 
-    private static Logger logger = LoggerFactory.getLogger("BlockchainPlayer");
+    private static final Logger logger = LoggerFactory.getLogger("BlockchainPlayer");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
 
 
-    public static void playBlockchain(BlockStore blockStore, String replayDir, int playFromBlock, TestSystemProperties config, Profiler profiler, boolean includesRemasc) throws InvalidGenesisFileException {
+    public static void playBlockchain(BlockStore blockStore, String replayDir, int playFromBlock, TestSystemProperties config, boolean includesRemasc) throws InvalidGenesisFileException {
 
 
         //Any pre-blockchain load profile metric is stored at "block" -3
         profiler.newBlock(-3,0);
+
         DefaultConfig defaultConfig = new DefaultConfig();
         CommonConfig commonConfig = new CommonConfig();
         BlockStore sourceBlockStore = blockStore;
 
 
-        BlockStore destinationBlockStore = defaultConfig.buildBlockStore(replayDir, profiler);
-        ReceiptStore receiptStore = defaultConfig.buildReceiptStore(replayDir, profiler);
-        Repository repository = commonConfig.buildRepository(replayDir, 1024, profiler);
+        BlockStore destinationBlockStore = defaultConfig.buildBlockStore(replayDir);
+        ReceiptStore receiptStore = defaultConfig.buildReceiptStore(replayDir);
+        Repository repository = commonConfig.buildRepository(replayDir, 1024);
 
-        BlockChainBuilder builder = new BlockChainBuilder(profiler, includesRemasc );
+        BlockChainBuilder builder = new BlockChainBuilder(includesRemasc);
         builder.setBlockStore(destinationBlockStore);
         builder.setReceiptStore(receiptStore);
         builder.setRepository(repository);
@@ -53,6 +56,7 @@ public class BlockchainPlayer {
 
 
         GenesisLoader genesisLoader = GenesisLoader.newGenesisLoader(config, TestContext.GENESIS_FILE_ROOT);
+
         builder.setGenesis(genesisLoader.loadGenesis());
 
 
@@ -60,10 +64,11 @@ public class BlockchainPlayer {
         logger.info("Starting building block information list from source block store");
         List<Block> blocks = new ArrayList<>();
 
+
         long maxSourceBlock = sourceBlockStore.getMaxNumber();
 
         logger.info("Max source block is {}", maxSourceBlock);
-        for (long height = playFromBlock ; height < maxSourceBlock; height++) {
+        for (long height = playFromBlock ; height <= maxSourceBlock; height++) {
             List<BlockInformation> blocksInformation = sourceBlockStore.getBlocksInformationByNumber(height);
             for (BlockInformation blockInformation : blocksInformation) {
                 Block block = sourceBlockStore.getBlockByHash(blockInformation.getHash());
@@ -72,9 +77,8 @@ public class BlockchainPlayer {
                     //Keeping track of sig validation resulted to be easier by adding the profiler right in the
                     //Transaction instead of just the TransactionExecutor, for example, trx.validate() interally gets
                     //the sender and it's the first call to getSender.
-                    for(Transaction trx: block.getTransactionsList()){
-                        trx.setProfiler(profiler);
-                    }
+                    logger.info("transactions in block {} are {}", block.getNumber(), block.getTransactionsList().size());
+
                     blocks.add(block);
                 }
                 else

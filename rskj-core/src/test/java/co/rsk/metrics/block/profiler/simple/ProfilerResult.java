@@ -8,8 +8,6 @@ import java.util.*;
 public class ProfilerResult {
 
     Vector<BlockProfilingInfo> blocksInfo;
-    Float blockExecutionTime;
-    Float averageBlockExecutionTime;
     String reportName;
 
 
@@ -21,7 +19,6 @@ public class ProfilerResult {
 
     public  ProfilerResult(Vector<BlockProfilingInfo> blocksInfo){
         this.blocksInfo = blocksInfo;
-        blockExecutionTime = -1.0F;
         this.reportName = "";
 
     }
@@ -94,43 +91,4 @@ public class ProfilerResult {
 
     }
 
-    private void updateBlockExecutionTime() throws ProfilingException {
-        blockExecutionTime = 0.0F;
-
-        for(BlockProfilingInfo blockInfo : this.blocksInfo){
-            for(Metric metric : blockInfo.getMetrics()){
-                if(metric.getType().equals(Profiler.PROFILING_TYPE.BLOCK_EXECUTE)){
-                    blockExecutionTime+= metric.getTime();
-                    break;
-                }
-            }
-        }
-
-        averageBlockExecutionTime = blockExecutionTime/this.blocksInfo.size();
-    }
-
-    public Float getBlockExecutionTime() throws ProfilingException {
-
-        if(blockExecutionTime == -1.0F){
-            updateBlockExecutionTime();
-        }
-
-        return blockExecutionTime;
-    }
-
-
-    public void setBlockExecutionTime(Float blockExecutionTime) {
-        this.blockExecutionTime = blockExecutionTime;
-    }
-
-    public Float getAverageBlockExecutionTime() throws ProfilingException {
-        if(blockExecutionTime == -1.0F){
-            updateBlockExecutionTime();
-        }
-        return averageBlockExecutionTime;
-    }
-
-    public void setAverageBlockExecutionTime(Float averageBlockExecutionTime) {
-        this.averageBlockExecutionTime = averageBlockExecutionTime;
-    }
 }

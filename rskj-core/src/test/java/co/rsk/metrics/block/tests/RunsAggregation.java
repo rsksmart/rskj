@@ -5,7 +5,6 @@ import co.rsk.metrics.block.profiler.ProfilingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.FileInputStream;
@@ -24,8 +23,8 @@ public class RunsAggregation {
 
     @Test
     public void aggregateDetailedValues() throws IOException, ProfilingException {
-        generateAggregatedDetailedFile("playRun", "aggregatedRun.json", "No Remasc", 10);
-        generateAggregatedDetailedFile("playRunRemasc", "aggregatedRunRemasc.json", "With Remasc", 10);
+        generateAggregatedDetailedFile("playRun", "aggregatedRun.json", "No Remasc", 11);
+        generateAggregatedDetailedFile("playRunRemasc", "aggregatedRunRemasc.json", "With Remasc", 11);
     }
 
 
@@ -55,7 +54,7 @@ public class RunsAggregation {
 
 
         co.rsk.metrics.block.profiler.detailed.ProfilerResult aggregatedRun = new co.rsk.metrics.block.profiler.detailed.ProfilerResult();
-        for(int i = 0; i < runs; i++){
+        for(int i = 1; i < runs; i++){
             String json = new String(ByteStreams.toByteArray(new FileInputStream(path+"/"+sourceName+"_"+i+".json")));
             co.rsk.metrics.block.profiler.detailed.ProfilerResult playerRun  = mapper.readValue(json, type);
             aggregatedRun.aggregate(playerRun, runs);

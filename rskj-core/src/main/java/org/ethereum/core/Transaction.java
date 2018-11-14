@@ -23,7 +23,9 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.metrics.profilers.impl.DummyProfiler;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
@@ -64,27 +66,11 @@ public class Transaction {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
     public static final int DATAWORD_LENGTH = 32;
-
-    // There was a bug that allowed the TestNet block 170541 to include a transaction with a padded s value.
-    // These are here as an exception to allow making the code stricter.
-    private static final Keccak256 TESTNET_TX_170541_WRONG_HASH = new Keccak256("bfd306ea4c30ad4432f5553b050e5a92b9169d81bac3edfa6cdeb22b83c8ba11");
-    private static final byte[] TESTNET_TX_170541_ENCODED = Hex.decode(
-            "f901a50a8082d8649480006ac02bf828aca0bca6bc1e8ef04508b121da80b90144203eaf27000000000000000000000000000000000" +
-            "00000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000100000000000000" +
-            "0000000000000000000000000000000000000000000000000084b9a527b4000000000000000000000000d1c744ac0657c6043840981" +
-            "bd1a43a5d223de4bc000000000000000000000000c1d53cfe0b737df315a1e920b236f1df2de96e0300000000000000000000000000" +
-            "000000000000000000000000000000000044ce000000000000000000000000000000000000000000000000000000000000000100000" +
-            "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
-            "00000009677565737444617461000000000000000000000000000000000000000000000062a00e47af4460ef08c22217a24efe423e3" +
-            "49acc4bacf0c4a7e95dc8219023b15b85a00028fa9206ace53d9a90c1864d7908e50b5c8a1b1394f575986592d6e3d0dfbe"
-    );
-
-    /* profiler*/
-    private Profiler profiler;
 
     /* whether this is a local call transaction */
     private boolean isLocalCall;
@@ -141,7 +127,6 @@ public class Transaction {
         rlpParse();
         // clear it so we always reencode the received data
         this.rlpEncoded = null;
-        this.profiler = new DummyProfiler();
     }
 
     /* creation contract tx
@@ -169,7 +154,6 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
-        this.profiler = new DummyProfiler();
         parsed = true;
     }
 
@@ -236,6 +220,7 @@ public class Transaction {
         if (value.getBytes().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Value is not valid");
         }
+
         if (getSignature() != null) {
             if (BigIntegers.asUnsignedByteArray(signature.r).length > DATAWORD_LENGTH) {
                 throw new RuntimeException("Signature R is not valid");
@@ -250,8 +235,10 @@ public class Transaction {
     }
 
     public void rlpParse() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRX_RLP_PARSE);
         List<RLPElement> transaction = RLP.decodeList(rlpEncoded);
         if (transaction.size() != 9) {
+            profiler.stop(metric);
             throw new IllegalArgumentException("A transaction must have exactly 9 elements");
         }
 
@@ -265,6 +252,7 @@ public class Transaction {
         if (transaction.get(6).getRLPData() != null) {
             byte[] vData =  transaction.get(6).getRLPData();
             if (vData.length != 1 ) {
+                profiler.stop(metric);
                 throw new TransactionException("Signature V is invalid");
             }
             byte v = vData[0];
@@ -276,6 +264,7 @@ public class Transaction {
             logger.trace("RLP encoded tx is not signed!");
         }
         this.parsed = true;
+        profiler.stop(metric);
         this.hash = getHash().getBytes();
     }
 
@@ -287,18 +276,23 @@ public class Transaction {
         if (!parsed) {
             rlpParse();
         }
-
         byte[] plainMsg = this.getEncoded();
-        return new Keccak256(HashUtil.keccak256(plainMsg));
+
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRX_GET_HASH);
+        Keccak256 hash = new Keccak256(HashUtil.keccak256(plainMsg));
+        profiler.stop(metric);
+        return hash;
     }
 
     public Keccak256 getRawHash() {
         if (!parsed) {
             rlpParse();
         }
-
         byte[] plainMsg = this.getEncodedRaw();
-        return new Keccak256(HashUtil.keccak256(plainMsg));
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRX_GET_HASH);
+        Keccak256 hash = new Keccak256(HashUtil.keccak256(plainMsg));
+        profiler.stop(metric);
+        return hash;
     }
 
     public byte[] getNonce() {
@@ -447,9 +441,9 @@ public class Transaction {
     }
 
     public synchronized RskAddress getSender() {
-        int id = profiler.start(Profiler.PROFILING_TYPE.SIG_VALIDATION);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.SIG_VALIDATION);
         if (sender != null) {
-            profiler.stop(id);
+            profiler.stop(metric);
             return sender;
         }
 
@@ -460,10 +454,9 @@ public class Transaction {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("transaction", e.getMessage());
             sender = RskAddress.nullAddress();
-            profiler.stop(id);
         }
 
-        profiler.stop(id);
+        profiler.stop(metric);
         return sender;
     }
 
@@ -472,10 +465,6 @@ public class Transaction {
             rlpParse();
         }
         return chainId;
-    }
-
-    public void setProfiler(Profiler profiler){
-        this.profiler = profiler;
     }
 
     @Override
@@ -540,9 +529,14 @@ public class Transaction {
         }
         return rlpRaw;
     }
+    
 
     public byte[] getEncoded() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.GET_ENCODED_TRX);
+
         if (rlpEncoded != null) {
+            profiler.stop(metric);
+
             return rlpEncoded;
         }
 
@@ -583,6 +577,8 @@ public class Transaction {
 
         this.rlpEncoded = RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
                 toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
+        profiler.stop(metric);
+
 
         Keccak256 hash = this.getHash();
 

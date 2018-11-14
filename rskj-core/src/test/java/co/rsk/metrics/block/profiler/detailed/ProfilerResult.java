@@ -3,11 +3,12 @@ package co.rsk.metrics.block.profiler.detailed;
 import co.rsk.metrics.block.profiler.ProfilingException;
 import co.rsk.metrics.profilers.Profiler;
 
+import java.util.ArrayList;
 import java.util.Vector;
 
 public class ProfilerResult {
 
-    Vector<BlockProfilingInfo> blocksInfo;
+    ArrayList<BlockProfilingInfo> blocksInfo;
     Float blockExecutionTime;
     Float averageBlockExecutionTime;
     String reportName;
@@ -16,21 +17,21 @@ public class ProfilerResult {
 
 
     public ProfilerResult(){
-        this(new Vector<>());
+        this(new ArrayList<>());
     }
 
-    public ProfilerResult(Vector<BlockProfilingInfo> blocksInfo){
+    public ProfilerResult(ArrayList<BlockProfilingInfo> blocksInfo){
         this.blocksInfo = blocksInfo;
         blockExecutionTime = -1.0F;
         this.reportName = "";
 
     }
 
-    public Vector<BlockProfilingInfo> getBlocksInfo() {
+    public ArrayList<BlockProfilingInfo> getBlocksInfo() {
         return blocksInfo;
     }
 
-    public void setBlocksInfo(Vector<BlockProfilingInfo> blocksInfo) {
+    public void setBlocksInfo(ArrayList<BlockProfilingInfo> blocksInfo) {
         this.blocksInfo = blocksInfo;
     }
 
@@ -47,6 +48,19 @@ public class ProfilerResult {
 
         if(this.blocksInfo.size() == 0){
             this.blocksInfo = playerRun.blocksInfo;
+
+            for(BlockProfilingInfo currentBlockinfo : blocksInfo){
+                for(Metric currentMetric : currentBlockinfo.getMetrics()){
+                    long time = currentMetric.getSt()/runs;
+                    currentMetric.setSt(time);
+
+                    time = currentMetric.getgCt()/runs;
+                    currentMetric.setgCt(time);
+
+                    time = currentMetric.getThCPUt()/runs;
+                    currentMetric.setThCPUt(time);
+                }
+            }
         }
         else{
             //Blocks are ordered in ascending block Number
@@ -59,19 +73,27 @@ public class ProfilerResult {
                     throw new ProfilingException("Blocks not in order");
                 }
 
-                Vector<Metric> currentMetrics = blocksInfo.get(i).getMetrics();
-                Vector<Metric> newMetrics = playerRun.blocksInfo.get(i).getMetrics();
+                ArrayList<Metric> currentMetrics = blocksInfo.get(i).getMetrics();
+                ArrayList<Metric> newMetrics = playerRun.blocksInfo.get(i).getMetrics();
 
                 for(int j = 0; j < newMetrics.size(); j++){
                     Metric currentMetric = currentMetrics.get(j);
                     Metric newMetric = newMetrics.get(j);
 
                     //Metrics must be in order
-                    if(!currentMetric.getType().equals(newMetric.getType())){
+                    if(currentMetric.getType() != newMetric.getType()){
                         throw new ProfilingException("Metric types don't match");
                     }
-                    long time = currentMetric.getTime() + newMetric.getTime()/runs;
-                    currentMetric.setTime(time);
+                    long time = currentMetric.getSt() + newMetric.getSt()/runs;
+                    currentMetric.setSt(time);
+
+                    time = currentMetric.getgCt() + newMetric.getgCt()/runs;
+                    currentMetric.setgCt(time);
+
+                    time = currentMetric.getThCPUt() + newMetric.getThCPUt()/runs;
+                    currentMetric.setThCPUt(time);
+
+
                 }
             }
         }
@@ -83,8 +105,8 @@ public class ProfilerResult {
 
         for(BlockProfilingInfo blockInfo : this.blocksInfo){
             for(Metric metric : blockInfo.getMetrics()){
-                if(metric.getType().equals(Profiler.PROFILING_TYPE.BLOCK_EXECUTE)){
-                    blockExecutionTime+= metric.getTime();
+                if(metric.getType() == Profiler.PROFILING_TYPE.BLOCK_EXECUTE.ordinal()){
+                    blockExecutionTime+= metric.getSt();
                     break;
                 }
             }

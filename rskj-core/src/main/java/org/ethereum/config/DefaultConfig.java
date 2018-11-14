@@ -24,8 +24,10 @@ import co.rsk.config.*;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.crypto.Keccak256;
-import co.rsk.metrics.*;
-import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.BlockHeaderElement;
+import co.rsk.metrics.HashRateCalculator;
+import co.rsk.metrics.HashRateCalculatorMining;
+import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.net.discovery.PeerExplorer;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
@@ -69,37 +71,6 @@ public class DefaultConfig {
         return buildBlockStore(config.databaseDir());
     }
 
-    public BlockStore buildBlockStore(String databaseDir, Profiler profiler){
-        File blockIndexDirectory = new File(databaseDir + "/blocks/");
-        File dbFile = new File(blockIndexDirectory, "index");
-        if (!blockIndexDirectory.exists()) {
-            boolean mkdirsSuccess = blockIndexDirectory.mkdirs();
-            if (!mkdirsSuccess) {
-                logger.error("Unable to create blocks directory: {}", blockIndexDirectory);
-            }
-        }
-
-        //Generation of blockstore is not desired to be part of block time, since it only happens when generating
-        //the blockchain test
-        //int id = profiler.start(Profiler.PROFILING_TYPE.DISK_READ);
-        DB indexDB = DBMaker.fileDB(dbFile)
-                .closeOnJvmShutdown()
-                .make();
-
-
-        Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = indexDB.hashMapCreate("index")
-                .keySerializer(Serializer.LONG)
-                .valueSerializer(BLOCK_INFO_SERIALIZER)
-                .counterEnable()
-                .makeOrGet();
-
-        //profiler.stop(id);
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", databaseDir, profiler);
-        blocksDB.init();
-
-        return new IndexedBlockStore(indexMap, blocksDB, indexDB, profiler);
-    }
-
     public BlockStore buildBlockStore(String databaseDir) {
         File blockIndexDirectory = new File(databaseDir + "/blocks/");
         File dbFile = new File(blockIndexDirectory, "index");
@@ -133,12 +104,6 @@ public class DefaultConfig {
 
     public ReceiptStore buildReceiptStore(String databaseDir) {
         KeyValueDataSource ds = new LevelDbDataSource("receipts", databaseDir);
-        ds.init();
-        return new ReceiptStoreImpl(ds);
-    }
-
-    public ReceiptStore buildReceiptStore(String databaseDir, Profiler profiler) {
-        KeyValueDataSource ds = new LevelDbDataSource("receipts", databaseDir, profiler);
         ds.init();
         return new ReceiptStoreImpl(ds);
     }
