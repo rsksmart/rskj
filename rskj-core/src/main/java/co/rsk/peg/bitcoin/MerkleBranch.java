@@ -1,8 +1,9 @@
 package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.peg.exception.InvalidMerkleBranchException;
+import org.ethereum.util.Utils;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,21 +24,23 @@ import static co.rsk.bitcoinj.core.Utils.reverseBytes;
  * @author Ariel Mendelzon
  */
 public class MerkleBranch {
-    private List<byte[]> hashes;
+    private List<Sha256Hash> hashes;
     private int path;
 
-    // TODO: It is very important that this method
-    // TODO: performs good validations on the input
-    // TODO: to prevent corrupted input attacks.
-    // TODO: That means that we should validate:
-    // TODO: 1 - Number of bits in the path matches the number of hashes
-    // TODO: 2 - Each hash is 32 bytes long
-    public MerkleBranch(List<byte[]> hashes, int path) {
+    public MerkleBranch(List<Sha256Hash> hashes, int path) {
         this.hashes = Collections.unmodifiableList(hashes);
         this.path = path;
+
+        // We validate here that there are no more bits in the
+        // path than those needed to reduce the branch to the
+        // merkle root. That is, that the number of significant
+        // bits is lower of equal to the number of hashes
+        if (Utils.significantBitCount(path) > hashes.size()) {
+            throw new InvalidMerkleBranchException("The number of significant bits must be lower or equal to the number of hashes");
+        }
     }
 
-    public List<byte[]> getHashes() {
+    public List<Sha256Hash> getHashes() {
         return hashes;
     }
 
@@ -48,33 +51,33 @@ public class MerkleBranch {
     /**
      * Returns true if and only if this
      * merkle branch successfully proves
-     * that tx is included in block.
+     * that tx hash is included in block.
      *
-     * @param tx The BTC transaction
+     * @param txHash The transaction hash
      * @param block The BTC block
      * @return Whether this branch proves inclusion of tx in block.
      */
-    public boolean proves(BtcTransaction tx, BtcBlock block) {
-        return block.getMerkleRoot().equals(reduceFrom(tx));
+    public boolean proves(Sha256Hash txHash, BtcBlock block) {
+        return block.getMerkleRoot().equals(reduceFrom(txHash));
     }
 
     /**
-     * Given a BTC transaction, traverses the path, calculating
+     * Given a transaction hash, this method traverses the path, calculating
      * the intermediate hashes and ultimately arriving at
      * the merkle root.
      *
-     * @param tx The BTC transaction
+     * @param txHash The transaction hash
      * @return The merkle root obtained from the traversal
      */
-    public Sha256Hash reduceFrom(BtcTransaction tx) {
-        Sha256Hash current = tx.getHash();
+    public Sha256Hash reduceFrom(Sha256Hash txHash) {
+        Sha256Hash current = txHash;
         byte index = 0;
         while (index < hashes.size()) {
             boolean currentRight = ((path >> index) & 1) == 1;
             if (currentRight) {
-                current = combineLeftRight(hashes.get(index), current.getBytes());
+                current = combineLeftRight(hashes.get(index), current);
             } else {
-                current = combineLeftRight(current.getBytes(), hashes.get(index));
+                current = combineLeftRight(current, hashes.get(index));
             }
             index++;
         }
@@ -90,9 +93,9 @@ public class MerkleBranch {
      * @param right The right hand side node bytes
      * @return
      */
-    private static Sha256Hash combineLeftRight(byte[] left, byte[] right) {
+    private static Sha256Hash combineLeftRight(Sha256Hash left, Sha256Hash right) {
         return Sha256Hash.wrapReversed(Sha256Hash.hashTwice(
-                reverseBytes(left), 0, 32,
-                reverseBytes(right), 0, 32));
+                reverseBytes(left.getBytes()), 0, 32,
+                reverseBytes(right.getBytes()), 0, 32));
     }
 }
