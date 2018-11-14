@@ -269,7 +269,6 @@ public class TransactionExecutor {
         precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
-            logger.trace("Precompiled contract execution");
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
             long requiredGas = precompiledContract.getGasForData(tx.getData());
@@ -300,7 +299,6 @@ public class TransactionExecutor {
             }
             profiler.stop(metric);
         } else {
-            logger.trace("Code execution from track");
             byte[] code = track.getCode(targetAddress);
             if (isEmpty(code)) {
                 mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
