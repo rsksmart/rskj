@@ -21,6 +21,7 @@ package co.rsk.peg.bitcoin;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.peg.exception.InvalidMerkleBranchException;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,10 +34,38 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MerkleBranchTest {
-    // Examples here were generated with bitcoind on regtest
+    @Test
+    public void moreSignificantBitsThanHashes() {
+        try {
+            new MerkleBranch(Arrays.asList(
+                    Sha256Hash.of(Hex.decode("aa")),
+                    Sha256Hash.of(Hex.decode("bb"))
+            ), 0b111);
+            Assert.fail();
+        } catch (InvalidMerkleBranchException e) {
+            Assert.assertTrue(e.getMessage().contains("significant bits"));
+        }
+    }
 
     @Test
-    public void OneHashBranch() {
+    public void moreSignificantBitsThanHashesBis() {
+        try {
+            new MerkleBranch(Arrays.asList(
+                    Sha256Hash.of(Hex.decode("aa")),
+                    Sha256Hash.of(Hex.decode("bb")),
+                    Sha256Hash.of(Hex.decode("cc")),
+                    Sha256Hash.of(Hex.decode("dd"))
+            ), 0b000010000);
+            Assert.fail();
+        } catch (InvalidMerkleBranchException e) {
+            Assert.assertTrue(e.getMessage().contains("significant bits"));
+        }
+    }
+
+    // Examples here were generated with bitcoind on regtest. Reason for not generating cases here
+    // is to give some meaningfulness to tests, although it could potentially be done.
+    @Test
+    public void oneHashBranch() {
         assertBranchCorrectlyProves(
                 Arrays.asList(Hex.decode("3709934297f8bfd8a1cfcf82514bbfdcc910cf4d934e0eabd58b6eb955954b45")),
                 1,
@@ -46,7 +75,7 @@ public class MerkleBranchTest {
     }
 
     @Test
-    public void TwoHashesBranch() {
+    public void twoHashesBranch() {
         assertBranchCorrectlyProves(
                 Arrays.asList(
                         Hex.decode("bfc0770be0c8bc9d06714b00c89cc769286968c28632aa7768f9525a0287d5e6"),
@@ -59,7 +88,7 @@ public class MerkleBranchTest {
     }
 
     @Test
-    public void ThreeHashesBranch() {
+    public void threeHashesBranch() {
         assertBranchCorrectlyProves(
                 Arrays.asList(
                         Hex.decode("81aa2c77c201daab3868da9a4c2e29bc1e42bdc804c7c8a4d84c5e7f3866fb3f"),
@@ -73,7 +102,7 @@ public class MerkleBranchTest {
     }
 
     @Test
-    public void ThreeHashesBranchBis() {
+    public void threeHashesBranchBis() {
         assertBranchCorrectlyProves(
                 Arrays.asList(
                         Hex.decode("807d74e37d9c39a315eb74955889c9be83ba33eaaf9735a9617211870cde22b2"),
@@ -87,7 +116,7 @@ public class MerkleBranchTest {
     }
 
     @Test
-    public void ThreeHashesBranchFailsIfPathIsWrong() {
+    public void threeHashesBranchFailsIfPathIsWrong() {
         assertBranchDoesntProve(
                 Arrays.asList(
                         Hex.decode("807d74e37d9c39a315eb74955889c9be83ba33eaaf9735a9617211870cde22b2"),
@@ -101,7 +130,7 @@ public class MerkleBranchTest {
     }
 
     @Test
-    public void ThreeHashesBranchFailsIfOneHashIsWrong() {
+    public void threeHashesBranchFailsIfOneHashIsWrong() {
         assertBranchDoesntProve(
                 Arrays.asList(
                         Hex.decode("907d74e37d9c39a315eb74955889c9be83ba33eaaf9735a9617211870cde22b2"),

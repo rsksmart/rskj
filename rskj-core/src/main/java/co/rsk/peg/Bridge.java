@@ -24,6 +24,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -557,15 +558,18 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     {
         logger.trace("getBtcTransactionConfirmations");
         try {
-            Sha256Hash btcTxHash = Sha256Hash.wrap((String) args[0]);
-            Sha256Hash btcBlockHash = Sha256Hash.wrap((String) args[1]);
+            Sha256Hash btcTxHash = Sha256Hash.wrap((byte[]) args[0]);
+            Sha256Hash btcBlockHash = Sha256Hash.wrap((byte[]) args[1]);
+
             int merkleBranchBits = ((BigInteger) args[2]).intValue();
 
             byte[][] merkleBranchHashesArray = (byte[][]) args[3];
             List<Sha256Hash> merkleBranchHashes = Arrays.stream(merkleBranchHashesArray)
                     .map(hash -> Sha256Hash.wrap(hash)).collect(Collectors.toList());
 
-            return bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, merkleBranchBits, merkleBranchHashes);
+            MerkleBranch merkleBranch = new MerkleBranch(merkleBranchHashes, merkleBranchBits);
+
+            return bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, merkleBranch);
         } catch (Exception e) {
             logger.warn("Exception in getBtcTransactionConfirmations", e);
             throw new RuntimeException("Exception in getBtcTransactionConfirmations", e);

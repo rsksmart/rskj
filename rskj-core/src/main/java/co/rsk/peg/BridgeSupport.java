@@ -76,12 +76,11 @@ public class BridgeSupport {
     public static final Integer LOCK_WHITELIST_SUCCESS_CODE = 1;
     public static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = -10;
 
-    public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_TX_ERROR_CODE = -1;
-    public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE = -2;
-    public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE = -3;
-    public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_BLOCK_HEIGHT_ERROR_CODE = -4;
-    public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_OLDER_THAN_CACHE_ERROR_CODE = -5;
-    public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_TREE_ERROR_CODE = -6;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE = -1;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE = -2;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE = -3;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE = -4;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE = -5;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -1133,12 +1132,11 @@ public class BridgeSupport {
     /**
      * @param btcTxHash The BTC transaction Hash
      * @param btcBlockHash The BTC block hash
-     * @param btcBlockHeight The height of the BTC block that contains the tx
-     * @param pmtSerialized The raw partial Merkle tree
+     * @param merkleBranch The merkle branch
      * @throws BlockStoreException
      * @throws IOException
      */
-    public Integer getBtcTransactionConfirmations(Sha256Hash btcTxHash, Sha256Hash btcBlockHash, int merkleBranchBits, List<Sha256Hash> merkleBranchHashes) throws BlockStoreException, IOException {
+    public Integer getBtcTransactionConfirmations(Sha256Hash btcTxHash, Sha256Hash btcBlockHash, MerkleBranch merkleBranch) throws BlockStoreException, IOException {
         Context.propagate(btcContext);
         this.ensureBtcBlockChain();
 
@@ -1155,21 +1153,15 @@ public class BridgeSupport {
                 return BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE;
             }
 
-            // Build a merkle branch from the given data
-            // and verify it proves the transaction is in the block
-            MerkleBranch merkleBranch = new MerkleBranch(merkleBranchHashes, merkleBranchBits);
-
             if (!merkleBranch.proves(btcTxHash, block.getHeader())) {
-                return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_TREE_ERROR_CODE;
+                return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE;
             }
 
             return this.btcBlockChain.getBestChainHeight() - block.getHeight() + 1;
-        } catch (InvalidBlockHashException e) {
-            return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
-        } catch (InvalidBlockHeightException e) {
-            return BTC_TRANSACTION_CONFIRMATION_INVALID_BLOCK_HEIGHT_ERROR_CODE;
+        } catch (InvalidBlockHeightException | InvalidBlockHashException e) {
+            return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
         } catch (BlockHeightOlderThanCacheException e) {
-            return BTC_TRANSACTION_CONFIRMATION_BLOCK_OLDER_THAN_CACHE_ERROR_CODE;
+            return BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE;
         }
 
     }

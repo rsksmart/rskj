@@ -19,6 +19,7 @@ package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.peg.utils.MerkleTreeUtils;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -41,7 +42,7 @@ public class Rskip92MerkleProofValidator implements MerkleProofValidator {
 
     @Override
     public boolean isValid(Sha256Hash expectedRoot, Sha256Hash coinbaseHash) {
-        Sha256Hash root = streamHashes().reduce(coinbaseHash, Rskip92MerkleProofValidator::combineLeftRight);
+        Sha256Hash root = streamHashes().reduce(coinbaseHash, MerkleTreeUtils::combineLeftRight);
         return root.equals(expectedRoot);
     }
 
@@ -55,17 +56,5 @@ public class Rskip92MerkleProofValidator implements MerkleProofValidator {
         int end = (index + 1) * Sha256Hash.LENGTH;
         byte[] hash = Arrays.copyOfRange(pmtSerialized, start, end);
         return Sha256Hash.wrap(hash);
-    }
-
-    /**
-     * See {@link PartialMerkleTree#combineLeftRight(byte[], byte[])}
-     */
-    private static Sha256Hash combineLeftRight(Sha256Hash left, Sha256Hash right) {
-        return Sha256Hash.wrapReversed(
-                Sha256Hash.hashTwice(
-                        left.getReversedBytes(), 0, 32,
-                        right.getReversedBytes(), 0, 32
-                )
-        );
     }
 }

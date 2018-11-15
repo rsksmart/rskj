@@ -3,12 +3,11 @@ package co.rsk.peg.bitcoin;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.peg.exception.InvalidMerkleBranchException;
+import co.rsk.peg.utils.MerkleTreeUtils;
 import org.ethereum.util.Utils;
 
 import java.util.Collections;
 import java.util.List;
-
-import static co.rsk.bitcoinj.core.Utils.reverseBytes;
 
 /**
  * Represents a branch of a merkle tree. Can be used
@@ -75,27 +74,13 @@ public class MerkleBranch {
         while (index < hashes.size()) {
             boolean currentRight = ((path >> index) & 1) == 1;
             if (currentRight) {
-                current = combineLeftRight(hashes.get(index), current);
+                current = MerkleTreeUtils.combineLeftRight(hashes.get(index), current);
             } else {
-                current = combineLeftRight(current, hashes.get(index));
+                current = MerkleTreeUtils.combineLeftRight(current, hashes.get(index));
             }
             index++;
         }
 
         return current;
-    }
-
-    /**
-     * Combines two hashes (representing nodes in a merkle tree) to produce a single hash
-     * that would be the parent of these two nodes.
-     *
-     * @param left The left hand side node bytes
-     * @param right The right hand side node bytes
-     * @return
-     */
-    private static Sha256Hash combineLeftRight(Sha256Hash left, Sha256Hash right) {
-        return Sha256Hash.wrapReversed(Sha256Hash.hashTwice(
-                reverseBytes(left.getBytes()), 0, 32,
-                reverseBytes(right.getBytes()), 0, 32));
     }
 }
