@@ -371,8 +371,10 @@ public class ContractDetailsImpl implements ContractDetails {
                                                               this.memoryStorageLimit);
         details.keys = new HashSet<>();
         details.keys.addAll(this.keys);
-
-        DataSourcePool.reserve(getDataSourceName(),this.trieStorePool.getDatabaseDir());
+        if (this.trieStorePool!=null)
+            DataSourcePool.reserve(getDataSourceName(),this.trieStorePool.getDatabaseDir());
+        else
+            DataSourcePool.reserve(getDataSourceName(),"");
 
         logger.trace("getting contract details snapshot hash {}, address {}, storage size {}, has external storage {}", details.getStorageHashAsString(), details.getAddressAsString(), details.getStorageSize(), details.hasExternalStorage());
 

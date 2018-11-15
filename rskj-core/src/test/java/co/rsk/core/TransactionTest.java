@@ -313,6 +313,7 @@ public class TransactionTest {
     }
 
     @Test(expected = RuntimeException.class)
+    // This test now fails because we made 0x00 a valid RskAddress.
     public void isContractCreationWhenReceiveAddressIs00() {
         Transaction.create(config, "00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
     }
