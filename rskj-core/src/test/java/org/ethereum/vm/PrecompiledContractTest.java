@@ -19,14 +19,41 @@
 
 package org.ethereum.vm;
 
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.blockchain.utils.BlockMiner;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.RskMiningConstants;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryImpl;
+import co.rsk.db.TrieStorePoolOnMemory;
+import co.rsk.mine.MinerUtils;
+import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeStorageConfiguration;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.bitcoin.SimpleBtcTransaction;
+import co.rsk.test.World;
+import co.rsk.util.DifficultyUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.Arrays;
+import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
+import org.junit.Assert;
 import org.junit.Test;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.util.LinkedList;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.Assert.*;
@@ -227,5 +254,4 @@ public class PrecompiledContractTest {
         assertEquals(0, contract.getGasForData(null));
         assertArrayEquals(EMPTY_BYTE_ARRAY, contract.execute(null));
     }
-
 }

@@ -1582,6 +1582,11 @@ public class Program {
             contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
         }
 
+        // initialization for BlockHeaderContract
+        if (contract instanceof BlockHeaderContract) {
+            contract.init(null, null, track, this.invoke.getBlockStore(), null, null);
+        }
+
         long requiredGas = contract.getGasForData(data);
         if (requiredGas > msg.getGas().longValue()) {
 
