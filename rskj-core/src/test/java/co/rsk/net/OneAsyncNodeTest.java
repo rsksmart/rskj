@@ -51,7 +51,7 @@ public class OneAsyncNodeTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         SimpleChannelManager channelManager = new SimpleChannelManager();
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager, syncConfiguration, new DummyBlockValidationRule(), new DifficultyCalculator(config));
+        SyncProcessorImpl syncProcessor = new SyncProcessorImpl(blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager, syncConfiguration, new DummyBlockValidationRule(), new DifficultyCalculator(config));
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
 
         return new SimpleAsyncNode(handler, syncProcessor, channelManager);

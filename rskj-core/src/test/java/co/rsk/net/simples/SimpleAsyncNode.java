@@ -41,14 +41,14 @@ public class SimpleAsyncNode extends SimpleNode {
     private static final TestSystemProperties config = new TestSystemProperties();
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(5000);
-    private SyncProcessor syncProcessor;
+    private SyncProcessorImpl syncProcessor;
     private SimpleChannelManager simpleChannelManager;
 
     public SimpleAsyncNode(MessageHandler handler) {
         super(handler);
     }
 
-    public SimpleAsyncNode(MessageHandler handler, SyncProcessor syncProcessor, SimpleChannelManager simpleChannelManager) {
+    public SimpleAsyncNode(MessageHandler handler, SyncProcessorImpl syncProcessor, SimpleChannelManager simpleChannelManager) {
         super(handler);
         this.syncProcessor = syncProcessor;
         this.simpleChannelManager = simpleChannelManager;
@@ -97,7 +97,7 @@ public class SimpleAsyncNode extends SimpleNode {
         this.futures.clear();
     }
 
-    public SyncProcessor getSyncProcessor() {
+    public SyncProcessorImpl getSyncProcessor() {
         return this.syncProcessor;
     }
 
@@ -116,7 +116,7 @@ public class SimpleAsyncNode extends SimpleNode {
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
         SimpleChannelManager channelManager = new SimpleChannelManager();
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config));
+        SyncProcessorImpl syncProcessor = new SyncProcessorImpl(blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config));
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }

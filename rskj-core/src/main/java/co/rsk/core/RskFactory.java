@@ -117,7 +117,7 @@ public class RskFactory {
                                           ProofOfWorkRule proofOfWorkRule) {
 
         // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
-        return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, channelManager,
+        return new SyncProcessorImpl(blockchain, blockSyncService, peerScoringManager, channelManager,
                 syncConfiguration, proofOfWorkRule, difficultyCalculator);
     }
 
