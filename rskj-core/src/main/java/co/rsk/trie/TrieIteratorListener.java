@@ -8,5 +8,5 @@ import org.ethereum.core.AccountState;
 public interface TrieIteratorListener {
     // 0 = no error
     // !=0 = abourt
-    public int process(byte[] hashedKey, byte[] value);
+    public int processKey(byte[] hashedKey, byte[] value);
 }

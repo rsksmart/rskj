@@ -372,7 +372,7 @@ public class ContractDetailsImpl implements ContractDetails {
         details.keys = new HashSet<>();
         details.keys.addAll(this.keys);
 
-        DataSourcePool.reserve(getDataSourceName());
+        DataSourcePool.reserve(getDataSourceName(),this.trieStorePool.getDatabaseDir());
 
         logger.trace("getting contract details snapshot hash {}, address {}, storage size {}, has external storage {}", details.getStorageHashAsString(), details.getAddressAsString(), details.getStorageSize(), details.hasExternalStorage());
 

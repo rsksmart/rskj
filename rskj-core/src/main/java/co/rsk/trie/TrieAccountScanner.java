@@ -1,7 +1,5 @@
 package co.rsk.trie;
 
-import org.ethereum.core.AccountState;
-
 /**
  * Created by SerAdmin on 11/12/2018.
  */
@@ -16,9 +14,38 @@ public class TrieAccountScanner {
     public void init() {
     }
 
-    //AccountState astate
+    public int scanTrieNodes(ExpandedKey key, TrieImpl src,NodeIteratorListener nil) {
+        if (src==null)
+            return 0;
 
-    public int scanTrie(ExpandedKey key, TrieImpl src, TrieIteratorListener ite, int depth) {
+        // shared Path
+        byte[] encodedSharedPath =src.getEncodedSharedPath();
+        int sharedPathLength = src.getSharedPathLength();
+        if (encodedSharedPath != null) {
+            byte[] sharedPath = PathEncoder.decode(encodedSharedPath, sharedPathLength);
+            key = key.append(new ExpandedKeyImpl(sharedPath));
+        }
+        TrieImpl child0 = (TrieImpl) src.retrieveNode(0);
+        TrieImpl child1 = (TrieImpl) src.retrieveNode(1);
+
+        int ret = 0;
+        if (nil!=null) {
+            ret = nil.processNode(key, src);
+            if (ret != 0) return (ret);
+        }
+
+        if (child0!=null)
+            ret = scanTrieNodes(key.append( (byte)0),child0,nil);
+
+        if (ret!=0) return ret;
+
+        if (child1!=null)
+            ret = scanTrieNodes(key.append( (byte)1),child1,nil);
+
+        return ret;
+    }
+
+    public int scanTrieKeys(ExpandedKey key, TrieImpl src, TrieIteratorListener ite, int depth) {
         if (src==null)
             return 0;
 
@@ -43,7 +70,7 @@ public class TrieAccountScanner {
         byte[] value = src.getValue();
 
         if (depth==-1) { // process all
-            int ret = ite.process(key.getData(),value);
+            int ret = ite.processKey(key.getData(),value);
             if (ret!=0) return (ret);
         }
         else
@@ -52,7 +79,7 @@ public class TrieAccountScanner {
             if ((child0!=null) || (child1!=null))
                 return ERR_UNEXPECTED_CHILDREN;
             if (ite!=null)
-                return ite.process(key.getData(),value);
+                return ite.processKey(key.getData(),value);
             return 0;
         } else
             if (src.getValueLength()!=0) {
@@ -62,13 +89,13 @@ public class TrieAccountScanner {
         int ret = 0;
 
         if (child0!=null)
-            ret = scanTrie(key.append( (byte)0),child0,ite,depth);
+            ret = scanTrieKeys(key.append( (byte)0),child0,ite,depth);
 
 
         if (ret!=0) return ret;
 
         if (child1!=null)
-            ret = scanTrie(key.append( (byte)1),child1,ite,depth);
+            ret = scanTrieKeys(key.append( (byte)1),child1,ite,depth);
 
         return ret;
     }

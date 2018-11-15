@@ -1116,6 +1116,12 @@ public class TrieImpl implements Trie {
         return newTrie;
     }
 
+    // setStore is only used for migration of the store
+    public void setStore(TrieStore astore) {
+        saved = false;
+        store = astore;
+    }
+
     public TrieStore getStore() {
         return this.store;
     }

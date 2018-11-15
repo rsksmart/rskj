@@ -15,6 +15,9 @@ public class TrieStorePoolOnDisk implements TrieStore.Pool {
         this.databaseDir = databaseDir;
     }
 
+    public String getDatabaseDir() {
+        return databaseDir;
+    }
     public TrieStore getInstanceFor(String name) {
         return new TrieStoreImpl(DataSourcePool.levelDbByName(name, this.databaseDir));
     }
@@ -28,6 +31,6 @@ public class TrieStorePoolOnDisk implements TrieStore.Pool {
     }
 
     public void closeInstanceFor(String name) {
-        DataSourcePool.closeDataSource(name);
+        DataSourcePool.closeDataSource(name,this.databaseDir);
     }
 }

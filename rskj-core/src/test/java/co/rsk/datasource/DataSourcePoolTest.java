@@ -64,14 +64,14 @@ public class DataSourcePoolTest {
         Assert.assertSame(dataSource, dataSource2);
 
         dataSource.put(new byte[] { 0x01 }, new byte[] { 0x02 });
-        DataSourcePool.closeDataSource("test3");
+        DataSourcePool.closeDataSource("test3",config.databaseDir());
 
         byte[] result = dataSource2.get(new byte[] { 0x01 });
 
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.length);
         Assert.assertEquals(0x02, result[0]);
-        DataSourcePool.closeDataSource("test3");
+        DataSourcePool.closeDataSource("test3",config.databaseDir());
     }
 
     @Test
@@ -87,7 +87,7 @@ public class DataSourcePoolTest {
         }
 
         for (int k = 0; k < 10; k++) {
-            DataSourcePool.closeDataSource("test4");
+            DataSourcePool.closeDataSource("test4",config.databaseDir());
         }
     }
 

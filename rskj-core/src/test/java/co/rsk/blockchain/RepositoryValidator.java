@@ -8,6 +8,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.ContractDetailsImpl;
+import co.rsk.db.ContractStorageStoreFactory;
 import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.helpers.PerformanceTestHelper;
 import co.rsk.trie.*;
@@ -18,9 +19,11 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.*;
+import org.ethereum.util.RLP;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mapdb.DB;
@@ -37,7 +40,7 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
 
-public class RepositoryValidator  implements TrieIteratorListener {
+public class RepositoryValidator  implements TrieIteratorListener,NodeIteratorListener {
 
     TrieImpl worldStateTrie;
     BlockStore blockStore;
@@ -50,12 +53,15 @@ public class RepositoryValidator  implements TrieIteratorListener {
     Set<RskAddress> historicalContractAddresses;
     private static final TestSystemProperties config = new TestSystemProperties();
 
-    String databaseDir = "C:/Base/database-test-resmac";
+    String databaseDir = "C:/Base/database/mainnet";
+    String dest_databaseDir = "C:/Base/database/migrate";
+
     //String details_storage_dir = "C:/Base/details-storage";
     //String details_storage_dir = "C:\\Base\\details-storage";
     String details_storage_dir = databaseDir+"/details-storage";
 
-    String state_dir = databaseDir+"/state";
+    //String state_dir = databaseDir+"/state";
+    boolean migrate;
 
     private class AddressAttributes {
         boolean hasDetailsDB;
@@ -214,6 +220,28 @@ public class RepositoryValidator  implements TrieIteratorListener {
         collectDetailsStoreKeys();
     }
 
+    TrieStore dest_trieDataStore;
+    DatabaseImpl dest_db;
+    LevelDbDataSource dest_detailsDB;
+    DetailsDataStore dest_detailsDataStore;
+    TrieStore.Pool  dest_trieStorePool;
+
+    void createMigrationDBs() {
+        System.out.println("Creating Migration DBs");
+
+        //
+        LevelDbDataSource dest_stateDB = new LevelDbDataSource("state",dest_databaseDir);
+        dest_stateDB.init();
+        dest_trieDataStore = new TrieStoreImpl(dest_stateDB);
+
+        dest_detailsDB =new LevelDbDataSource("details",dest_databaseDir);
+        dest_detailsDB.init();
+        dest_db = new DatabaseImpl(dest_detailsDB);
+
+        dest_trieStorePool = new TrieStorePoolOnDisk(dest_databaseDir);
+        dest_detailsDataStore = new DetailsDataStore(dest_db, dest_trieStorePool, 0);
+
+    }
 
     void openDBs() {
         System.out.println("Opening DBs");
@@ -245,23 +273,35 @@ public class RepositoryValidator  implements TrieIteratorListener {
     @Ignore
     @Test
     public void validateRepository() {
-
+        migrate = false;
         PerformanceTestHelper pth = new PerformanceTestHelper();
         pth.setup();
         pth.shortFormat = true;
         pth.startMeasure();
         init();
         openDBs();
+        if (migrate)
+            createMigrationDBs();
+
         pth.endMeasure(); // partial result
         collectInfo();
         pth.endMeasure(); // partial result
         showState("Scanning the worldstate trie...");
-        Block best =blockStore.getBestBlock();
+        Block best = blockStore.getBestBlock();
         blockNumber = best.getNumber();
         byte[] worldStateRoot = best.getStateRoot();
 
 
         scanWorldTrieFor(worldStateRoot);
+        if (migrate) {
+            // Comment the line you want not to migrate
+            migrateWorldStateTrie();
+            migrateContractDetails();
+            migrateCodeAndContractStorage();
+        }
+
+        DataSourcePool.closeAll();
+
         //printAllAccounts();
         //Block block1 = blockStore.getBlockByHash(blockStore.getBlockHashByNumber(1));
         //System.out.println();
@@ -381,6 +421,79 @@ public class RepositoryValidator  implements TrieIteratorListener {
             bestHash = b.getParentHash().getBytes();
         }
     }
+    boolean isMigrating;
+    boolean isMigratingContractDetails;
+    boolean isMigratingContractStorage;
+
+    public int processNode(ExpandedKey key,TrieImpl node) {
+        node.setStore(dest_trieDataStore);
+        return 0;
+    }
+
+    public void migrateWorldStateTrie() {
+        System.out.println("Migrating worldstate...");
+        TrieAccountScanner tas = new TrieAccountScanner();
+        try {
+            isMigrating = true;
+
+            try {
+                int ret = tas.scanTrieNodes(new ExpandedKeyImpl(), worldStateTrie, this);
+                if (ret != 0)
+                    errors.add("Account trie processing error code: " + ret);
+            } catch (Exception e) {
+                errors.add("Invalid account trie: " + e.getClass().getCanonicalName() + " " +
+                        e.getMessage());
+            }
+        } finally { isMigrating = false; }
+
+        // Now save the trie (into the new store)
+        worldStateTrie.save();
+        // closed on CloseAll(): dest_trieDataStore.getDataSource().close(); // forced close: afterwars the trie cannot be saved
+        System.out.println("Migration of worldstate finished.");
+    }
+
+    public void migrateCodeAndContractStorage() {
+        System.out.println("Migrating code and contract storage...");
+        TrieAccountScanner tas = new TrieAccountScanner();
+        try {
+            isMigratingContractStorage = true;
+
+            try {
+                int ret = tas.scanTrieKeys(new ExpandedKeyImpl(), worldStateTrie, this,8*32);
+                if (ret != 0)
+                    errors.add("Account trie processing error code: " + ret);
+            } catch (Exception e) {
+                errors.add("Invalid account trie: " + e.getClass().getCanonicalName() + " " +
+                        e.getMessage());
+            }
+        } finally { isMigratingContractStorage = false; }
+
+        // Now save the trie (into the new store)
+        worldStateTrie.save();
+        // closed on CloseAll(): dest_trieDataStore.getDataSource().close(); // forced close: afterwars the trie cannot be saved
+        System.out.println("Migration of contract storage finished.");
+
+    }
+
+    public void migrateContractDetails() {
+
+        System.out.println("Migrating contractdetails...");
+        TrieAccountScanner tas = new TrieAccountScanner();
+        try {
+            isMigratingContractDetails = true;
+
+            try {
+                int ret = tas.scanTrieKeys(new ExpandedKeyImpl(), worldStateTrie, this,8 * 32);
+                if (ret != 0)
+                    errors.add("Account trie processing error code: " + ret);
+            } catch (Exception e) {
+                errors.add("Invalid account trie: " + e.getClass().getCanonicalName() + " " +
+                        e.getMessage());
+            }
+        } finally { isMigratingContractDetails = false; }
+         dest_detailsDataStore.flush();
+         System.out.println("Migration of worldstate finished.");
+    }
 
    public void scanWorldTrieFor(byte[] stateRoot) {
 
@@ -390,7 +503,7 @@ public class RepositoryValidator  implements TrieIteratorListener {
        addPrecompiledContracts();
        TrieAccountScanner tas = new TrieAccountScanner();
        try {
-           int ret = tas.scanTrie(new ExpandedKeyImpl(), worldStateTrie, this, 8 * 32);
+           int ret = tas.scanTrieKeys(new ExpandedKeyImpl(), worldStateTrie, this, 8 * 32);
            if (ret != 0)
                errors.add("Account trie processing error code: " + ret);
        } catch (Exception e) {
@@ -414,10 +527,14 @@ public class RepositoryValidator  implements TrieIteratorListener {
         System.out.println();
         System.out.println("Errors:");
         errors.forEach(System.out::println);
+        System.out.println("wordStateKeysProcessed: "+wordStateKeysProcessed);
+
     }
 
+    int wordStateKeysProcessed =0;
 
-    public int process(byte[] hashedKey, byte[] value) {
+    public int processKey(byte[] hashedKey, byte[] value) {
+        wordStateKeysProcessed++;
         // The hashed address is returned in binary format.
         // Must reencode.
         byte[] hashedAddress = PathEncoder.encode(hashedKey);
@@ -425,6 +542,7 @@ public class RepositoryValidator  implements TrieIteratorListener {
         AccountState astate = new AccountState(value);
         return processAccount(hashedAddress, null, astate);
     }
+
     byte[] zeroAddr = Hex.decode("bc36789e7a1e281436464229828f817d6612f7b477d66591ff96a9e064bcc98a");
 
     public int processAccount(byte[] hashedAddress, byte[] optionalAddress,AccountState astate) {
@@ -435,6 +553,7 @@ public class RepositoryValidator  implements TrieIteratorListener {
 
         boolean emptyCodeHash =astate.getCodeHash().equals(AccountState.EMPTY_DATA_HASH);
         boolean emptyStorage = astate.getStateRoot().equals(HashUtil.EMPTY_TRIE_HASH);
+
 
 
         if (Arrays.equals(hashedAddress,zeroAddr)) {
@@ -484,6 +603,10 @@ public class RepositoryValidator  implements TrieIteratorListener {
         }
 
         RskAddress addr = new RskAddress(aa.address);
+        if (astate.getCodeHash().equals(HashUtil.EMPTY_TRIE_HASH)) {
+            errors.add("Contract " +addr  + ": EMPTY_TRIE_HASH ");
+            System.out.println("Contract " +addr  + ": EMPTY_TRIE_HASH ");
+        }
         ContractDetails details;
         try {
             details = detailsDataStore.get(addr, astate.getCodeHash());
@@ -493,6 +616,19 @@ public class RepositoryValidator  implements TrieIteratorListener {
                 errors.add("Contract " + addr + ": cannot retrieve details");
                 return 0;
             }
+            if (isMigratingContractDetails) {
+                /*details.getEncoded()
+                String dataSourceName = ((ContractDetailsImpl) details).getDataSourceName();
+                TrieStoreImpl trieStore = (TrieStoreImpl) dest_trieStorePool.getInstanceFor(dataSourceName);
+                trieStore.storeValue(Keccak256Helper.keccak256(oldCode), oldCode);
+                dest_detailsDB*/
+                dest_detailsDataStore.update(addr,details);
+                // Code is automatically migrated into contract details object because a single
+                // copy of the code exists.
+            }
+
+
+
         } catch (Exception e) {
             System.out.println("ADDRESS:" + addr);
             errors.add("Contract " + addr + " throws when tries to retrieve details");
@@ -546,13 +682,37 @@ public class RepositoryValidator  implements TrieIteratorListener {
 
 
         TrieAccountScanner tas = new TrieAccountScanner();
+        TrieStore dest_store;
+        TrieProcessor tp = null;
+
+        if (isMigratingContractStorage) {
+            dest_store = new ContractStorageStoreFactory(dest_trieStorePool).getTrieStore(addr.getBytes());
+
+            tp = new TrieProcessor() {
+                @Override
+                public int processNode(ExpandedKey key, TrieImpl node) {
+                    node.setStore(dest_store);
+                    return 0;
+                }
+
+                @Override
+                public int processKey(byte[] hashedKey, byte[] value) {
+                    return 0;
+                }
+            };
+        }
         // Do not call any processor
         try {
             //TrieImpl.enableErrors = true;
-            int ret = tas.scanTrie(new ExpandedKeyImpl(), contractStorageTrie, null, 8 * 32);
+            int ret = tas.scanTrieNodes(new ExpandedKeyImpl(), contractStorageTrie,         tp);
             //TrieImpl.enableErrors = false;
             if (ret!=0)
                 errors.add("Contract "+addr+":processing error code: "+ret);
+            else {
+                if (isMigratingContractStorage)
+                    contractStorageTrie.save();
+            }
+
         } catch (Exception e) {
           errors.add("Contract "+addr+": invalid storage: "+e.getClass().getCanonicalName()+" "+
                   e.getMessage());
@@ -562,6 +722,17 @@ public class RepositoryValidator  implements TrieIteratorListener {
                     toHexString(details.getAddress()));
         }
         return 0;
+    }
+
+    class TrieProcessor implements TrieIteratorListener,NodeIteratorListener {
+
+        public int processKey(byte[] hashedKey, byte[] value) {
+            return 0;
+        }
+
+        public int processNode(ExpandedKey key,TrieImpl node) {
+            return 0;
+        }
     }
 
 

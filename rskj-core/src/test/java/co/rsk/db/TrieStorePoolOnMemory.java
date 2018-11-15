@@ -17,6 +17,10 @@ public class TrieStorePoolOnMemory implements TrieStore.Pool {
         this (HashMapDB::new);
     }
 
+    public String getDatabaseDir() {
+        return "";
+    }
+
     public TrieStorePoolOnMemory(StoreProvider storeProvider) {
         this.storeProvider = storeProvider;
     }

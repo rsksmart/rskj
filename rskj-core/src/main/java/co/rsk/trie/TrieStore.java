@@ -47,5 +47,6 @@ public interface TrieStore {
         boolean existsInstanceFor(String name);
         void destroyInstanceFor(String name);
         void closeInstanceFor(String name);
+        String getDatabaseDir();
     }
 }

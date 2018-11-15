@@ -92,7 +92,7 @@ public class DoPrune {
 
         this.processBlocks(height - blocksToProcess, source, contractAddress, targetStore);
 
-        closeDataSource(targetDataSourceName);
+        closeDataSource(targetDataSourceName,this.rskSystemProperties.databaseDir());
     }
 
     private void processBlocks(long from, TrieImpl sourceTrie, RskAddress contractAddress, TrieStore targetStore) {

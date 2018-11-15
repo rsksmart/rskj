@@ -27,6 +27,8 @@ public interface DataSource {
 
     String getName();
 
+    //String getDatabase();
+
     void init();
 
     boolean isAlive();

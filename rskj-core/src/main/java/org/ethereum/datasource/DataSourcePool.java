@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -48,7 +49,7 @@ public class DataSourcePool {
     public static KeyValueDataSource levelDbByName(String name, String databaseDir) {
         DataSource dataSource = new LevelDbDataSource(name, databaseDir);
         DataSourceEx dataSourceEx = new DataSourceEx(dataSource);
-        DataSourceEx result = pool.putIfAbsent(name, dataSourceEx);
+        DataSourceEx result = pool.putIfAbsent(getId(name,databaseDir), dataSourceEx);
         if (result == null) {
             result = dataSourceEx;
             logger.debug("Data source '{}' created and added to pool.", name);
@@ -66,17 +67,51 @@ public class DataSourcePool {
         return (KeyValueDataSource) result.getDataSource();
     }
 
-    public static void reserve(String name) {
-        DataSourceEx dataSourceEx = pool.get(name);
+    public static void reserve(String name, String databaseDir) {
+        DataSourceEx dataSourceEx = pool.get(getId(name,databaseDir));
         if (dataSourceEx != null) {
             synchronized (dataSourceEx) {
                 dataSourceEx.reserve();
             }
         }
     }
+    public static void closeAll() {
+        for  (Map.Entry<String, DataSourceEx> e : pool.entrySet() ) {
+            DataSourceEx dataSourceEx =e.getValue();
+            if (dataSourceEx == null) {
+                return;
+            }
 
-    public static void closeDataSource(String name){
-        DataSourceEx dataSourceEx = pool.get(name);
+            DataSource dataSource = dataSourceEx.getDataSource();
+
+            if (dataSource instanceof HashMapDB) {
+                return;
+            }
+
+            dataSourceEx.release();
+
+            if (dataSourceEx.getUseCounter() > 0) {
+                return;
+            }
+
+            pool.remove(e.getKey());
+
+            synchronized (dataSource) {
+                dataSource.close();
+
+                logger.debug("Data source '{}' closed and removed from pool.\n", dataSource.getName());
+            }
+
+        }
+    }
+
+    public static String getId(String name, String databaseDir) {
+        return name+"|"+databaseDir;
+    }
+
+    public static void closeDataSource(String name, String databaseDir){
+
+        DataSourceEx dataSourceEx = pool.get(getId(name,databaseDir));
 
         if (dataSourceEx == null) {
             return;
@@ -94,7 +129,7 @@ public class DataSourcePool {
             return;
         }
 
-        pool.remove(name);
+        pool.remove(getId(name,databaseDir));
 
         synchronized (dataSource) {
             dataSource.close();
