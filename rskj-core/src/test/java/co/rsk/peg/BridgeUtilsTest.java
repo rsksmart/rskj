@@ -173,6 +173,25 @@ public class BridgeUtilsTest {
     }
 
     @Test
+    public void testGetStoredBlockAtHeight_NegativeBlockHeight() throws BlockStoreException {
+        BtcBlockstoreWithCache btcBlockStore = mock(RepositoryBlockStore.class);
+
+        int chainHeadHeight = 50;
+        Sha256Hash chainHeadBlockHash = Sha256Hash.of(Hex.decode("ddeeff"));
+        BtcBlock chainHeadBlockHeader = mock(BtcBlock.class);
+        when(chainHeadBlockHeader.getHash()).thenReturn(chainHeadBlockHash);
+        StoredBlock chainHeadBlock = new StoredBlock(chainHeadBlockHeader, new BigInteger("0"), chainHeadHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHeadBlock);
+
+        try {
+            BridgeUtils.getStoredBlockAtHeight(btcBlockStore, -1);
+            Assert.fail();
+        } catch (InvalidBlockHeightException e) {
+            Assert.assertTrue(e.getMessage().contains("must be positive or zero"));
+        }
+    }
+
+    @Test
     public void testGetStoredBlockAtHeight_OlderThanCache() throws BlockStoreException {
 
         int height = 1;
