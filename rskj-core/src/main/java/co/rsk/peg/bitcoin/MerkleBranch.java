@@ -74,9 +74,9 @@ public class MerkleBranch {
         while (index < hashes.size()) {
             boolean currentRight = ((path >> index) & 1) == 1;
             if (currentRight) {
-                current = MerkleTreeUtils.combineLeftRight(hashes.get(index), current);
+                current = MerkleTreeUtils.getInstance().combineLeftRight(hashes.get(index), current);
             } else {
-                current = MerkleTreeUtils.combineLeftRight(current, hashes.get(index));
+                current = MerkleTreeUtils.getInstance().combineLeftRight(current, hashes.get(index));
             }
             index++;
         }

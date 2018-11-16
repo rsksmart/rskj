@@ -17,7 +17,6 @@
  */
 package co.rsk.validators;
 
-import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.peg.utils.MerkleTreeUtils;
 
@@ -42,7 +41,7 @@ public class Rskip92MerkleProofValidator implements MerkleProofValidator {
 
     @Override
     public boolean isValid(Sha256Hash expectedRoot, Sha256Hash coinbaseHash) {
-        Sha256Hash root = streamHashes().reduce(coinbaseHash, MerkleTreeUtils::combineLeftRight);
+        Sha256Hash root = streamHashes().reduce(coinbaseHash, MerkleTreeUtils.getInstance()::combineLeftRight);
         return root.equals(expectedRoot);
     }
 
