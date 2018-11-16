@@ -528,7 +528,7 @@ public class Transaction {
         }
         return rlpRaw;
     }
-    
+
 
     public byte[] getEncoded() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.GET_ENCODED_TRX);
