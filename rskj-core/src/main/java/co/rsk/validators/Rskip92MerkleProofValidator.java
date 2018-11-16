@@ -17,7 +17,6 @@
  */
 package co.rsk.validators;
 
-import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.peg.utils.MerkleTreeUtils;
 

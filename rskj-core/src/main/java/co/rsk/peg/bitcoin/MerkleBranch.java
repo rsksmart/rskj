@@ -33,7 +33,7 @@ public class MerkleBranch {
         // We validate here that there are no more bits in the
         // path than those needed to reduce the branch to the
         // merkle root. That is, that the number of significant
-        // bits is lower of equal to the number of hashes
+        // bits is lower or equal to the number of hashes
         if (Utils.significantBitCount(path) > hashes.size()) {
             throw new InvalidMerkleBranchException("The number of significant bits must be lower or equal to the number of hashes");
         }

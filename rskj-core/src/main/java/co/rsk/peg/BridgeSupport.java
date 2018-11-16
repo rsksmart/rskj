@@ -32,9 +32,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
-import co.rsk.peg.exception.BlockHeightOlderThanCacheException;
-import co.rsk.peg.exception.InvalidBlockHashException;
-import co.rsk.peg.exception.InvalidBlockHeightException;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
@@ -82,6 +79,9 @@ public class BridgeSupport {
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE = -3;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE = -4;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE = -5;
+
+    // Enough depth to be able to search backwards at least one year of blocks
+    private static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 65535;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -1137,30 +1137,40 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         this.ensureBtcBlockChain();
 
-        try {
-            // Get the block using the given block hash
-            StoredBlock block = btcBlockStore.getFromCache(btcBlockHash);
-            if (block == null) {
-                return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
-            }
+        // Get the block using the given block hash
+        StoredBlock block = btcBlockStore.getFromCache(btcBlockHash);
+        if (block == null) {
+            return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
+        }
 
-            // Make sure it belongs to the best chain by diving to its height from the current best block
-            StoredBlock blockAtHeight = BridgeUtils.getStoredBlockAtHeight(this.btcBlockStore, block.getHeight());
-            if (!blockAtHeight.getHeader().getHash().equals(btcBlockHash)) {
-                return BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE;
-            }
-
-            if (!merkleBranch.proves(btcTxHash, block.getHeader())) {
-                return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE;
-            }
-
-            return this.btcBlockChain.getBestChainHeight() - block.getHeight() + 1;
-        } catch (InvalidBlockHeightException | InvalidBlockHashException e) {
-            return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
-        } catch (BlockHeightOlderThanCacheException e) {
+        // Prevent diving too deep in the blockchain to avoid high processing costs
+        int blockDepth = getBtcBlockchainBestChainHeight() - block.getHeight();
+        if (blockDepth > BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH) {
             return BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE;
         }
 
+        // Make sure it belongs to the best chain by diving to its height from the current best block
+        StoredBlock blockAtHeight;
+        try {
+            blockAtHeight = BridgeUtils.getStoredBlockAtHeight(this.btcBlockStore, block.getHeight());
+        } catch (IllegalStateException e) {
+            logger.warn(String.format(
+                    "Illegal state trying to get block at height %d with hash %s",
+                    block.getHeight(),
+                    Hex.toHexString(block.getHeader().getHash().getBytes())
+            ), e);
+            return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
+        }
+
+        if (blockAtHeight == null || !blockAtHeight.getHeader().getHash().equals(btcBlockHash)) {
+            return BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE;
+        }
+
+        if (!merkleBranch.proves(btcTxHash, block.getHeader())) {
+            return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE;
+        }
+
+        return this.btcBlockChain.getBestChainHeight() - block.getHeight() + 1;
     }
 
     private StoredBlock getPrevBlockAtHeight(StoredBlock cursor, int height) throws BlockStoreException {
