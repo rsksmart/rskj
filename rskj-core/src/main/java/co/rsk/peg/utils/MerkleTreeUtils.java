@@ -5,6 +5,18 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import static co.rsk.bitcoinj.core.Utils.reverseBytes;
 
 public class MerkleTreeUtils {
+    private static MerkleTreeUtils INSTANCE = null;
+
+    public synchronized static MerkleTreeUtils getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new MerkleTreeUtils();
+        }
+
+        return INSTANCE;
+    }
+
+    private MerkleTreeUtils() {}
+
     /**
      * Combines two hashes (representing nodes in a merkle tree) to produce a single hash
      * that would be the parent of these two nodes.
@@ -13,7 +25,7 @@ public class MerkleTreeUtils {
      * @param right The right hand side node bytes
      * @return
      */
-    public static Sha256Hash combineLeftRight(Sha256Hash left, Sha256Hash right) {
+    public Sha256Hash combineLeftRight(Sha256Hash left, Sha256Hash right) {
         return Sha256Hash.wrapReversed(
                 Sha256Hash.hashTwice(
                     reverseBytes(left.getBytes()), 0, 32,

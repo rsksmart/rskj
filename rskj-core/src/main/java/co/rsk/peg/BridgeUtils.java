@@ -56,7 +56,7 @@ public class BridgeUtils {
         }
 
         if (height < 0) {
-            throw new InvalidBlockHeightException(String.format("Block Height: %d must be positive or zero", height, headHeight));
+            throw new InvalidBlockHeightException(String.format("Block Height: %d must be positive or zero", height));
         }
 
         int distanceToHead = headHeight - height;
