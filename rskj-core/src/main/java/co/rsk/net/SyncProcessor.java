@@ -27,7 +27,4 @@ public interface SyncProcessor {
     void onTimePassed(Duration timePassed);
 
     void stopSyncing();
-
-    @VisibleForTesting
-    SyncState getSyncState();
 }

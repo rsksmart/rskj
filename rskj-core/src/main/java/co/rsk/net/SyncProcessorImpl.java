@@ -346,7 +346,6 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         this.syncState = newState;
     }
 
-    @Override
     @VisibleForTesting
     public SyncState getSyncState() {
         return this.syncState;

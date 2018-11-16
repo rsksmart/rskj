@@ -317,7 +317,7 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     @Override
-    public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
+    public boolean sendMessageTo(NodeID nodeID, Message message) {
         Channel channel = activePeers.get(nodeID);
         if (channel == null){
             return false;
