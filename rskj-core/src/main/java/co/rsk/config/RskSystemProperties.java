@@ -164,6 +164,10 @@ public class RskSystemProperties extends SystemProperties {
         return getString("simulateTxsEx.accountSeed", "this is a seed");
     }
 
+    public boolean alternativeSync() {
+        return getBoolean("sync.alternative", false);
+    }
+
     public boolean waitForSync() {
         return getBoolean("sync.waitForSync", false);
     }

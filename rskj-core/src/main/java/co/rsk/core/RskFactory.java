@@ -26,6 +26,7 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
+import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -108,17 +109,24 @@ public class RskFactory {
     }
 
     @Bean
-    public SyncProcessor getSyncProcessor(Blockchain blockchain,
+    public SyncProcessor getSyncProcessor(RskSystemProperties config,
+                                          Blockchain blockchain,
                                           BlockSyncService blockSyncService,
                                           PeerScoringManager peerScoringManager,
                                           ChannelManager channelManager,
                                           SyncConfiguration syncConfiguration,
                                           DifficultyCalculator difficultyCalculator,
                                           ProofOfWorkRule proofOfWorkRule) {
+        if (config.alternativeSync()) {
+            PeersInformation peerInformation = new PeersInformation(null, channelManager, syncConfiguration);
 
-        // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
-        return new SyncProcessorImpl(blockchain, blockSyncService, peerScoringManager, channelManager,
-                syncConfiguration, proofOfWorkRule, difficultyCalculator);
+            return new AlternativeSyncProcessor(blockchain, syncConfiguration, channelManager, peerInformation);
+        }
+        else {
+            // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
+            return new SyncProcessorImpl(blockchain, blockSyncService, peerScoringManager, channelManager,
+                    syncConfiguration, proofOfWorkRule, difficultyCalculator);
+        }
     }
 
     @Bean

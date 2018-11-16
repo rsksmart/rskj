@@ -4,7 +4,6 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.net.sync.SyncState;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
@@ -53,7 +52,7 @@ public class AlternativeSyncProcessor implements SyncProcessor {
 
         long number = currentStatus.getBestBlockNumber();
 
-        MessageWithId message = new SkeletonRequestMessage(messageId++, number);
+        MessageWithId message = new SkeletonRequestMessage(messageId++, Math.max(1, number - syncConfiguration.getChunkSize()));
 
         this.channelManager.sendMessageTo(sender.getPeerNodeID(), message);
     }
