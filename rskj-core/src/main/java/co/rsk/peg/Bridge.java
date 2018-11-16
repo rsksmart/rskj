@@ -561,13 +561,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             Sha256Hash btcTxHash = Sha256Hash.wrap((byte[]) args[0]);
             Sha256Hash btcBlockHash = Sha256Hash.wrap((byte[]) args[1]);
 
-            int merkleBranchBits = ((BigInteger) args[2]).intValue();
+            int merkleBranchPath = ((BigInteger) args[2]).intValue();
 
-            byte[][] merkleBranchHashesArray = (byte[][]) args[3];
+            Object[] merkleBranchHashesArray = (Object[]) args[3];
             List<Sha256Hash> merkleBranchHashes = Arrays.stream(merkleBranchHashesArray)
-                    .map(hash -> Sha256Hash.wrap(hash)).collect(Collectors.toList());
+                    .map(hash -> Sha256Hash.wrap((byte[]) hash)).collect(Collectors.toList());
 
-            MerkleBranch merkleBranch = new MerkleBranch(merkleBranchHashes, merkleBranchBits);
+            MerkleBranch merkleBranch = new MerkleBranch(merkleBranchHashes, merkleBranchPath);
 
             return bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, merkleBranch);
         } catch (Exception e) {
