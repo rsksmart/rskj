@@ -61,7 +61,6 @@ public class BridgeStorageProvider {
     private final Repository repository;
     private final RskAddress contractAddress;
     private final NetworkParameters networkParameters;
-    private final Context btcContext;
     private final BridgeStorageConfiguration bridgeStorageConfiguration;
 
     private Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed;
@@ -96,7 +95,6 @@ public class BridgeStorageProvider {
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
-        this.btcContext = new Context(networkParameters);
         this.bridgeStorageConfiguration = bridgeStorageConfiguration;
     }
 
@@ -222,7 +220,7 @@ public class BridgeStorageProvider {
                 data ->
                         data == null
                         ? null
-                        : BridgeSerializationUtils.deserializeFederation(data, btcContext)
+                        : BridgeSerializationUtils.deserializeFederation(data, networkParameters)
         );
         return newFederation;
     }
@@ -251,7 +249,7 @@ public class BridgeStorageProvider {
         oldFederation = safeGetFromRepository(OLD_FEDERATION_KEY,
                 data -> data == null
                         ? null
-                        : BridgeSerializationUtils.deserializeFederation(data, btcContext)
+                        : BridgeSerializationUtils.deserializeFederation(data, networkParameters)
         );
         return oldFederation;
     }
@@ -341,7 +339,7 @@ public class BridgeStorageProvider {
 
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData =
                 safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY,
-                        data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, btcContext.getParams()));
+                        data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters));
         if (oneOffWhitelistAndDisableBlockHeightData == null) {
             lockWhitelist = new LockWhitelist(new HashMap<>());
             return lockWhitelist;
@@ -353,7 +351,7 @@ public class BridgeStorageProvider {
 
         if (this.bridgeStorageConfiguration.getUnlimitedWhitelistEnabled()) {
             whitelistedAddresses.putAll(safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY,
-                    data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, btcContext.getParams())));
+                    data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)));
         }
 
         lockWhitelist = new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());

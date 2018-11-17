@@ -280,6 +280,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public byte[] execute(byte[] data) {
+        logger.info("execute");
         try
         {
             // Preliminary validation: the transaction on which we execute cannot be null
@@ -308,7 +309,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 throw new BridgeIllegalArgumentException(errorMessage);
             }
 
+            logger.info("Starting setup");
             this.bridgeSupport = setup();
+            logger.info("Setup done");
 
             Optional<?> result;
             try {

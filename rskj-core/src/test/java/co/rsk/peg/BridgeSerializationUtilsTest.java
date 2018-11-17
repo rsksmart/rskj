@@ -184,7 +184,7 @@ public class BridgeSerializationUtilsTest {
         }
         byte[] sample = Hex.decode(sampleBuilder.toString());
 
-        Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+        Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(sample, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
 
         Assert.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
         Assert.assertEquals(4, deserializedFederation.getNumberOfSignaturesRequired());
@@ -215,7 +215,7 @@ public class BridgeSerializationUtilsTest {
 
         boolean thrown = false;
         try {
-            BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+            BridgeSerializationUtils.deserializeFederation(sample, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Expected 3 elements"));
             thrown = true;
@@ -641,7 +641,7 @@ public class BridgeSerializationUtilsTest {
         );
 
         byte[] result = BridgeSerializationUtils.serializeFederation(federation);
-        Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(result, new Context(networkParms));
+        Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(result, networkParms);
         Assert.assertThat(federation, is(deserializedFederation));
     }
 
