@@ -82,6 +82,11 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
     }
 
     @Override
+    public void processQueueSize(int qsize) {
+
+    }
+
+    @Override
     public void processStatus(MessageChannel sender, Status status) {
         logger.debug("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.shortHash(status.getBestBlockHash()));
         peerStatuses.registerPeer(sender.getPeerNodeID()).setStatus(status);

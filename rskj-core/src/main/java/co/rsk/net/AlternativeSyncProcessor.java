@@ -1,9 +1,11 @@
 package co.rsk.net;
 
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
+import io.netty.util.internal.ConcurrentSet;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
@@ -27,7 +29,10 @@ public class AlternativeSyncProcessor implements SyncProcessor {
     private final ChannelManager channelManager;
     private final SyncConfiguration syncConfiguration;
 
+    private Set<Keccak256> sent = new ConcurrentSet<>();
+
     private long messageId;
+    private boolean paused;
 
     public AlternativeSyncProcessor(Blockchain blockchain,
                                     SyncConfiguration syncConfiguration,
@@ -37,6 +42,17 @@ public class AlternativeSyncProcessor implements SyncProcessor {
         this.syncConfiguration = syncConfiguration;
         this.peersInformation = peersInformation;
         this.channelManager = channelManager;
+    }
+
+    @Override
+    public void processQueueSize(int qsize) {
+        if (qsize > 300 && !paused) {
+            paused = true;
+        }
+
+        if (qsize < 20 && paused) {
+            paused = false;
+        }
     }
 
     @Override
@@ -50,6 +66,10 @@ public class AlternativeSyncProcessor implements SyncProcessor {
             return;
         }
 
+        if (paused) {
+            return;
+        }
+
         long number = currentStatus.getBestBlockNumber();
 
         MessageWithId message = new SkeletonRequestMessage(messageId++, Math.max(1, number - syncConfiguration.getChunkSize()));
@@ -59,18 +79,32 @@ public class AlternativeSyncProcessor implements SyncProcessor {
 
     @Override
     public void processSkeletonResponse(MessageChannel peer, SkeletonResponseMessage skeletonResponse) {
+        if (paused) {
+            return;
+        }
+
+        int nsent = 0;
+
         List<BlockIdentifier> blockIdentifiers = skeletonResponse.getBlockIdentifiers();
+        long number = this.blockchain.getStatus().getBestBlock().getNumber();
 
         for (BlockIdentifier blockIdentifier: blockIdentifiers) {
             byte[] blockHash = blockIdentifier.getHash();
+            Keccak256 hash = new Keccak256(blockHash);
 
-            if (this.blockchain.isBlockExist(blockHash)) {
+            if (blockIdentifier.getNumber() < number && this.blockchain.isBlockExist(blockHash)) {
                 continue;
             }
 
             Message message = new BlockHeadersRequestMessage(this.messageId++, blockHash, this.syncConfiguration.getChunkSize());
 
             this.channelManager.sendMessageTo(peer.getPeerNodeID(), message);
+
+            nsent++;
+
+            if (nsent >= 3) {
+                break;
+            }
         }
     }
 
@@ -81,14 +115,17 @@ public class AlternativeSyncProcessor implements SyncProcessor {
 
     @Override
     public void processBlockHeadersResponse(MessageChannel peer, BlockHeadersResponseMessage blockHeadersResponse) {
+        long number = this.blockchain.getStatus().getBestBlock().getNumber();
         List<BlockHeader> headers = blockHeadersResponse.getBlockHeaders();
 
         for (int k = headers.size(); k-- > 0;) {
             BlockHeader header = headers.get(k);
 
-            byte[] blockHash = header.getHash().getBytes();
+            Keccak256 hash = header.getHash();
 
-            if (this.blockchain.isBlockExist(blockHash)) {
+            byte[] blockHash = hash.getBytes();
+
+            if (header.getNumber() < number && this.blockchain.isBlockExist(blockHash)) {
                 continue;
             }
 

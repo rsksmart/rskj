@@ -95,6 +95,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
      * @param message the message to be processed.
      */
     public synchronized void processMessage(final MessageChannel sender, @Nonnull final Message message) {
+        this.syncProcessor.processQueueSize(this.queue.size());
         long start = System.nanoTime();
         logger.trace("Process message type: {}", message.getMessageType());
 

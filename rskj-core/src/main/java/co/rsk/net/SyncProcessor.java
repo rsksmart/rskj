@@ -8,6 +8,8 @@ import java.time.Duration;
 import java.util.Set;
 
 public interface SyncProcessor {
+    void processQueueSize(int qsize);
+
     void processStatus(MessageChannel sender, Status status);
 
     void processSkeletonResponse(MessageChannel peer, SkeletonResponseMessage message);
