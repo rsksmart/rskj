@@ -96,6 +96,7 @@ public class Remasc {
         BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(blockNbr);
         boolean isRskip85Enabled = configForBlock.isRskip85();
 
+        logger.info("processing siblings");
         if (!isRskip85Enabled) {
             this.addNewSiblings();
         } else {
@@ -113,13 +114,19 @@ public class Remasc {
         int uncleGenerationLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
         Deque<Map<Long, List<Sibling>>> descendantsBlocks = new LinkedList<>();
 
+        logger.info("get current block");
         // this search can be optimized if have certainty that the execution block is not in a fork
         // larger than depth
+        /*
         Block currentBlock = blockStore.getBlockByHashAndDepth(
                 executionBlock.getParentHash().getBytes(),
                 remascConstants.getMaturity() - 1 - uncleGenerationLimit
-        );
+        );*/
+        Block currentBlock = blockStore.getChainBlockByNumber(blockNbr - (remascConstants.getMaturity() - uncleGenerationLimit));
+        logger.info("get current block done");
+
         descendantsBlocks.push(blockStore.getSiblingsFromBlockByHash(currentBlock.getHash()));
+        logger.info("get siblings done");
 
         // descendants are stored in reverse order because the original order to pay siblings is defined in the way
         // blocks are ordered in the blockchain (the same as were stored in remasc contract)
@@ -127,6 +134,7 @@ public class Remasc {
             currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
             descendantsBlocks.push(blockStore.getSiblingsFromBlockByHash(currentBlock.getHash()));
         }
+        logger.info("get descendants done");
 
         Block processingBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
         BlockHeader processingBlockHeader = processingBlock.getHeader();
