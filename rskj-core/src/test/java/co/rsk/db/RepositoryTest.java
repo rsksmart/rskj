@@ -509,7 +509,7 @@ public class RepositoryTest {
     public void testMultiThread() throws InterruptedException {
         HashMapDB store = new HashMapDB();
         final Repository repository = new RepositoryImpl(new TrieStoreImpl(store),
-                                                         name -> new TrieStoreImpl(store),
+                                                         new TrieStorePoolOnMemory(() -> store),
                                                          config.detailsInMemoryStorageLimit());
 
         final DataWord cowKey1 = new DataWord("c1");
@@ -524,7 +524,7 @@ public class RepositoryTest {
         ContractDetails cowDetails = repository.getContractDetails(COW);
         assertArrayEquals(cowVal0, cowDetails.getBytes(cowKey2));
 
-        final CountDownLatch failSema = new CountDownLatch(1);
+        final CountDownLatch failSema = new CountDownLatch(2);
 
         new Thread(() -> {
             try {
@@ -569,7 +569,7 @@ public class RepositoryTest {
 
         failSema.await(10, TimeUnit.SECONDS);
 
-        if (failSema.getCount() == 0) {
+        if (failSema.getCount() < 2) {
             throw new RuntimeException("Test failed.");
         }
     }

@@ -96,6 +96,10 @@ public class TrieStoreImpl implements TrieStore {
         return this.store.get(hash);
     }
 
+    public byte[] storeValue(byte[] key, byte[] value) {
+        return this.store.put(key, value);
+    }
+
     @Override
     public int getRetrieveCount() { return this.retrieveCount; }
 
@@ -142,12 +146,8 @@ public class TrieStoreImpl implements TrieStore {
         return buffer.array();
     }
 
-    public void copyFrom(TrieStoreImpl originalTrieStore) {
-        KeyValueDataSource ds = originalTrieStore.store;
-
-        for (byte[] key : ds.keys()) {
-            this.store.put(key, ds.get(key));
-        }
+    public KeyValueDataSource getDataSource() {
+        return this.store;
     }
 
     public static TrieStoreImpl deserialize(byte[] bytes) {

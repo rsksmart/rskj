@@ -145,12 +145,6 @@ public class ContractDetailsCacheImpl implements ContractDetails {
     }
 
     @Override
-    public void decode(byte[] rlpCode) {
-        panicProcessor.panic("contractdetailscacheimpl", "Decode method should not be invoked.");
-        throw new UnsupportedOperationException("No decode option during cache state");
-    }
-
-    @Override
     public void setDirty(boolean dirty) {
         this.dirty = dirty;
     }
@@ -303,6 +297,11 @@ public class ContractDetailsCacheImpl implements ContractDetails {
     @Override
     public boolean isNullObject() {
         return origContract.isNullObject() && (MapUtils.isEmpty(storage));
+    }
+
+    @Override
+    public byte[] getCodeHash() {
+        throw new UnsupportedOperationException("codeHash option during cache state");
     }
 
     public ContractDetails getOriginalContractDetails() {

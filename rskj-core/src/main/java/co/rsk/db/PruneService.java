@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieCopier;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Blockchain;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.util.FileUtil;
@@ -30,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.ethereum.datasource.DataSourcePool.levelDbByName;
-import static org.ethereum.datasource.DataSourcePool.closeDataSource;
 
 /**
  * Created by ajlopez on 21/03/2018.
@@ -55,6 +55,12 @@ public class PruneService {
     }
 
     public void start() {
+        long bestBlockNumber = this.blockchain.getStatus().getBestBlockNumber();
+        if (shouldStopPruning(bestBlockNumber)) {
+            logger.info("Prune is not starting because we're already past RSKIP85 at height {}", bestBlockNumber);
+            return;
+        }
+
         this.stopped = false;
         new Thread(this::run).start();
         logger.info("launched");
@@ -79,12 +85,24 @@ public class PruneService {
                 nextBlockNumber = this.blockchain.getStatus().getBestBlockNumber() + this.pruneConfiguration.getNoBlocksToWait();
             }
 
+            if (shouldStopPruning(bestBlockNumber)) {
+                logger.info("RSKIP85 activated, prune is not necessary anymore");
+                stop();
+                // returning will stop the thread
+                return;
+            }
+
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
                 logger.error("Interrupted {}", e.getMessage());
             }
         }
+    }
+
+    private boolean shouldStopPruning(long bestBlockNumber) {
+        BlockchainConfig configForBlock = this.rskConfiguration.getBlockchainConfig().getConfigForBlock(bestBlockNumber);
+        return configForBlock.isRskip85();
     }
 
     public void stop() {
@@ -96,7 +114,9 @@ public class PruneService {
         long to = this.blockchain.getBestBlock().getNumber() - this.pruneConfiguration.getNoBlocksToAvoidForks();
 
         String dataSourceName = getDataSourceName(contractAddress);
+        // this is here because TrieCopier would fail otherwise
         KeyValueDataSource sourceDataSource = levelDbByName(dataSourceName, this.rskConfiguration.databaseDir());
+        sourceDataSource.init();
         KeyValueDataSource targetDataSource = levelDbByName(dataSourceName + "B", this.rskConfiguration.databaseDir());
         TrieStore targetStore = new TrieStoreImpl(targetDataSource);
 
@@ -113,7 +133,7 @@ public class PruneService {
         try {
             TrieCopier.trieContractStateCopy(targetStore, blockchain, to2, 0, blockchain.getRepository(), this.contractAddress);
 
-            closeDataSource(dataSourceName);
+            // we close both datasources to release LevelDB resources before renaming and deleting directories
             targetDataSource.close();
             sourceDataSource.close();
 
@@ -127,8 +147,8 @@ public class PruneService {
                 logger.error("Unable to rename contract storage");
             }
 
+            // re-init this datasource since it is managed by the DataSourcePool, and other parts of the code assume it will be open
             sourceDataSource.init();
-            //levelDbByName(this.rskConfiguration, dataSourceName);
         }
         finally {
             blockchain.resumeProcess();

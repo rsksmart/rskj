@@ -65,8 +65,11 @@ public class SyncProcessor implements SyncEventsHandler {
         this.pendingMessages = new LinkedHashMap<Long, MessageType>() {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Long, MessageType> eldest) {
-                logger.trace("Pending {}@{} DISCARDED", eldest.getValue(), eldest.getKey());
-                return size() > MAX_PENDING_MESSAGES;
+                boolean shouldDiscard = size() > MAX_PENDING_MESSAGES;
+                if (shouldDiscard) {
+                    logger.trace("Pending {}@{} DISCARDED", eldest.getValue(), eldest.getKey());
+                }
+                return shouldDiscard;
             }
         };
         this.failedPeers = new LinkedHashMap<NodeID, Instant>(MAX_SIZE_FAILURE_RECORDS, 0.75f, true) {
@@ -375,11 +378,15 @@ public class SyncProcessor implements SyncEventsHandler {
         @Override
         public boolean hasLowerDifficulty(NodeID nodeID) {
             Status status = getPeerStatus(nodeID).getStatus();
+            if (status == null) {
+                return false;
+            }
 
             boolean hasTotalDifficulty = status.getTotalDifficulty() != null;
-            return  (hasTotalDifficulty && blockchain.getStatus().hasLowerTotalDifficultyThan(status)) ||
-                    // this works only for testing purposes, real status without difficulty dont reach this far
-                    (!hasTotalDifficulty && blockchain.getStatus().getBestBlockNumber() < status.getBestBlockNumber());
+            BlockChainStatus nodeStatus = blockchain.getStatus();
+            // this works only for testing purposes, real status without difficulty don't reach this far
+            return  (hasTotalDifficulty && nodeStatus.hasLowerTotalDifficultyThan(status)) ||
+                (!hasTotalDifficulty && nodeStatus.getBestBlockNumber() < status.getBestBlockNumber());
         }
 
         @Override

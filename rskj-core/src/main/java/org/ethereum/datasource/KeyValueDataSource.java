@@ -37,4 +37,10 @@ public interface KeyValueDataSource extends DataSource {
     Set<byte[]> keys();
 
     void updateBatch(Map<byte[], byte[]> rows);
+
+    default void copyFrom(KeyValueDataSource ds) {
+        for (byte[] key : ds.keys()) {
+            this.put(key, ds.get(key));
+        }
+    }
 }
