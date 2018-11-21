@@ -47,7 +47,7 @@ public class RemascFederationProvider {
         );
         this.federationSupport = new FederationSupport(
                 bridgeStorageProvider,
-                bridgeConstants,
+                config.getBlockchainConfig(),
                 processingBlock
         );
     }
