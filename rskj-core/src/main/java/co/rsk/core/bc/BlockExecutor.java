@@ -22,7 +22,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.metrics.profilers.impl.DummyProfiler;
 import co.rsk.metrics.profilers.Profiler;
 import org.ethereum.core.*;
 import org.slf4j.Logger;

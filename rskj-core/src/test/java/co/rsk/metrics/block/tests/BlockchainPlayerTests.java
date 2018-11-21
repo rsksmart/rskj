@@ -114,7 +114,7 @@ public class BlockchainPlayerTests {
     private void playBlockchain_DetailedProfiler(BlockStore blockStore, String destinationBlockchain, String profileOutput, TestSystemProperties config, boolean includesRemasc) throws InvalidGenesisFileException, IOException, ProfilingException {
         ExecutionProfiler.singleton().clean();
 
-        BlockchainPlayer.playBlockchain(blockStore, destinationBlockchain, 1, config, includesRemasc);
+        BlockchainPlayer.playBlockchain(blockStore, destinationBlockchain, 1, config, includesRemasc, true);
         List<Metric> nonstopped = ExecutionProfiler.singleton().isAllStopped();
         if(nonstopped.size()>0){
             System.out.println("NO SE PARARON TODOS LOS METRICS!!");

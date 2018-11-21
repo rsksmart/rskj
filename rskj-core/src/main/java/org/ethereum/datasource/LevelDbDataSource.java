@@ -21,7 +21,6 @@ package org.ethereum.datasource;
 
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.metrics.profilers.impl.DummyProfiler;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.panic.PanicProcessor;
 import org.iq80.leveldb.*;
@@ -75,8 +74,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void init() {
-        //Profiling of DB initialization is not desired as is not part of the block execution time
-        //int id = profiler.start(Profiler.PROFILING_TYPE.DISK_READ);
         resetDbLock.writeLock().lock();
         try {
             logger.debug("~> LevelDbDataSource.init(): {}", name);
@@ -171,6 +168,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 if (logger.isTraceEnabled()) {
                     logger.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key) + ", " + (ret == null ? "null" : ret.length));
                 }
+
                 return ret;
             } catch (DBException e) {
                 logger.error("Exception. Retrying again...", e);
@@ -179,6 +177,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                     if (logger.isTraceEnabled()) {
                         logger.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key) + ", " + (ret == null ? "null" : ret.length));
                     }
+
                     return ret;
                 } catch (DBException e2) {
                     logger.error("Exception. Not retrying.", e2);

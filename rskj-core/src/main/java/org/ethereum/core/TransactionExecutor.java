@@ -24,7 +24,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.metrics.profilers.impl.DummyProfiler;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.BlockchainConfig;
@@ -162,8 +161,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        RskAddress sender = tx.getSender();
-        BigInteger reqNonce = track.getNonce(sender);
+        BigInteger reqNonce = track.getNonce(tx.getSender());
         BigInteger txNonce = toBI(tx.getNonce());
         if (isNotEqual(reqNonce, txNonce)) {
 
@@ -235,8 +233,7 @@ public class TransactionExecutor {
 
         if (!localCall) {
 
-            RskAddress sender = tx.getSender();
-            track.increaseNonce(sender);
+            track.increaseNonce(tx.getSender());
 
             BigInteger txGasLimit = toBI(tx.getGasLimit());
             Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
@@ -295,7 +292,6 @@ public class TransactionExecutor {
                 }
 
                 result.spendGas(gasUsed);
-
             }
             profiler.stop(metric);
         } else {
@@ -401,6 +397,7 @@ public class TransactionExecutor {
                 } else {
                     mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
                     program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
+
                     cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
                 }
             }

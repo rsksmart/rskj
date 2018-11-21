@@ -99,8 +99,6 @@ public class Transaction {
      * Initialization code for a new contract */
     private byte[] data;
 
-
-
     /**
      * Since EIP-155, we could encode chainId in V
      */
@@ -275,6 +273,7 @@ public class Transaction {
         if (!parsed) {
             rlpParse();
         }
+
         byte[] plainMsg = this.getEncoded();
 
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRX_GET_HASH);
@@ -287,6 +286,7 @@ public class Transaction {
         if (!parsed) {
             rlpParse();
         }
+
         byte[] plainMsg = this.getEncodedRaw();
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRX_GET_HASH);
         Keccak256 hash = new Keccak256(HashUtil.keccak256(plainMsg));

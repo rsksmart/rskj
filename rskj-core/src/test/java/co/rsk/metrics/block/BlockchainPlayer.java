@@ -12,6 +12,7 @@ import org.ethereum.config.CommonConfig;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -33,7 +34,7 @@ public class BlockchainPlayer {
 
 
 
-    public static void playBlockchain(BlockStore blockStore, String replayDir, int playFromBlock, TestSystemProperties config, boolean includesRemasc) throws InvalidGenesisFileException {
+    public static void playBlockchain(BlockStore blockStore, String replayDir, int playFromBlock, TestSystemProperties config, boolean includesRemasc, boolean cachedTrxs) throws InvalidGenesisFileException {
 
 
         //Any pre-blockchain load profile metric is stored at "block" -3
@@ -68,11 +69,21 @@ public class BlockchainPlayer {
         long maxSourceBlock = sourceBlockStore.getMaxNumber();
 
         logger.info("Max source block is {}", maxSourceBlock);
+
         for (long height = playFromBlock ; height <= maxSourceBlock; height++) {
             List<BlockInformation> blocksInformation = sourceBlockStore.getBlocksInformationByNumber(height);
             for (BlockInformation blockInformation : blocksInformation) {
                 Block block = sourceBlockStore.getBlockByHash(blockInformation.getHash());
                 if (blockInformation.isInMainChain()) {
+
+                    //Fill cache:
+                    //TODO RAUL: REMOVE WHEN CACHE IS REMOVED
+                    if(cachedTrxs){
+                        for(Transaction trx : block.getTransactionsList()){
+                            trx.getSender();
+                        }
+                    }
+
 
                     //Keeping track of sig validation resulted to be easier by adding the profiler right in the
                     //Transaction instead of just the TransactionExecutor, for example, trx.validate() interally gets
