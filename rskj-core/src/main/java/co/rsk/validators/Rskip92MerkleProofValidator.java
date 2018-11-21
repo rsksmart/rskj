@@ -41,7 +41,7 @@ public class Rskip92MerkleProofValidator implements MerkleProofValidator {
 
     @Override
     public boolean isValid(Sha256Hash expectedRoot, Sha256Hash coinbaseHash) {
-        Sha256Hash root = streamHashes().reduce(coinbaseHash, MerkleTreeUtils.getInstance()::combineLeftRight);
+        Sha256Hash root = streamHashes().reduce(coinbaseHash, MerkleTreeUtils::combineLeftRight);
         return root.equals(expectedRoot);
     }
 
