@@ -20,6 +20,8 @@ package co.rsk.core.bc;
 
 import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
@@ -203,12 +205,12 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private ImportResult internalTryToConnect(Block block) {
+
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
                 !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                          block.getShortHash(),
                          block.getNumber());
-
             return ImportResult.EXIST;
         }
 
@@ -235,7 +237,6 @@ public class BlockChainImpl implements Blockchain {
         else {
             logger.trace("get parent and total difficulty");
             parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
-
             if (parent == null) {
                 return ImportResult.NO_PARENT;
             }

@@ -38,9 +38,10 @@ public class SimpleRskTransaction extends Transaction {
         this.sender = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
     }
 
+    /*
     @Override
     public Keccak256 getHash() { return hash; }
-
+*/
     @Override
     public Coin getValue() {
         return Coin.valueOf(10000000);

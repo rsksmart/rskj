@@ -127,7 +127,7 @@ public class BridgeTest {
 
         track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         World world = new World();
@@ -161,7 +161,7 @@ public class BridgeTest {
         track.commit();
 
         track = repository.startTracking();
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -205,7 +205,7 @@ public class BridgeTest {
         List<Block> blocks = new BlockGenerator().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
 
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         world.getBlockChain().getBlockStore().saveBlock(blocks.get(1), new BlockDifficulty(BigInteger.ONE), true);
@@ -246,7 +246,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -262,7 +262,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -348,7 +348,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -368,7 +368,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -388,7 +388,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -440,7 +440,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -512,7 +512,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -534,7 +534,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -580,7 +580,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -624,7 +624,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -699,7 +699,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -720,7 +720,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -741,7 +741,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -818,7 +818,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -842,7 +842,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -861,7 +861,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -880,7 +880,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -899,7 +899,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -1762,7 +1762,7 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         // Setup bridge

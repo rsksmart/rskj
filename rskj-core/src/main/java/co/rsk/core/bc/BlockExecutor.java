@@ -22,6 +22,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieImpl;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.metrics.profilers.Profiler;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +44,7 @@ import java.util.List;
  */
 public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
-
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     // This is the parent's repository
     private final Repository repository;
     private  Repository initialRepository;
@@ -76,6 +79,7 @@ public class BlockExecutor {
     }
 
     private void fill(Block block, BlockResult result) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.FILLING_EXECUTED_BLOCK);
         block.setTransactionsList(result.getExecutedTransactions());
         BlockHeader header = block.getHeader();
 
@@ -92,6 +96,8 @@ public class BlockExecutor {
         header.setLogsBloom(result.getLogsBloom());
 
         block.flushRLP();
+        profiler.stop(metric);
+
     }
 
     /**
@@ -115,8 +121,10 @@ public class BlockExecutor {
      * @return true if the block final state is equalBytes to the calculated final state.
      */
     public boolean validate(Block block, BlockResult result) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_FINAL_STATE_VALIDATION);
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             logger.error("Block's execution was interrupted because of an invalid transaction: {} {}.", block.getNumber(), block.getShortHash());
+            profiler.stop(metric);
             return false;
         }
         byte[] computedStateRoot;
@@ -131,11 +139,13 @@ public class BlockExecutor {
         }
         if (!Arrays.equals(computedStateRoot, block.getStateRoot()))  {
             logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot()));
+            profiler.stop(metric);
             return false;
         }
 
         if (!Arrays.equals(result.getReceiptsRoot(), block.getReceiptsRoot())) {
             logger.error("Block's given Receipt Hash doesn't match: {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(result.getReceiptsRoot()));
+            profiler.stop(metric);
             return false;
         }
 
@@ -147,11 +157,13 @@ public class BlockExecutor {
             String blockLogsBloomString = Hex.toHexString(blockLogsBloom);
 
             logger.error("Block's given logBloom Hash doesn't match: {} != {} Block {} {}", resultLogsBloomString, blockLogsBloomString, block.getNumber(), block.getShortHash());
+            profiler.stop(metric);
             return false;
         }
 
         if (result.getGasUsed() != block.getGasUsed()) {
             logger.error("Block's given gasUsed doesn't match: {} != {} Block {} {}", block.getGasUsed(), result.getGasUsed(), block.getNumber(), block.getShortHash());
+            profiler.stop(metric);
             return false;
         }
 
@@ -160,6 +172,7 @@ public class BlockExecutor {
 
         if (!paidFees.equals(feesPaidToMiner))  {
             logger.error("Block's given paidFees doesn't match: {} != {} Block {} {}", feesPaidToMiner, paidFees, block.getNumber(), block.getShortHash());
+            profiler.stop(metric);
             return false;
         }
 
@@ -168,9 +181,11 @@ public class BlockExecutor {
 
         if (!executedTransactions.equals(transactionsList))  {
             logger.error("Block's given txs doesn't match: {} != {} Block {} {}", transactionsList, executedTransactions, block.getNumber(), block.getShortHash());
+            profiler.stop(metric);
             return false;
         }
 
+        profiler.stop(metric);
         return true;
     }
 
@@ -203,8 +218,9 @@ public class BlockExecutor {
         // to conect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.GET_REPOSITORY_SNAPSHOT);
         Repository initialRepository = repository.getSnapshotTo(stateRoot);
-
+        profiler.stop(metric);
         //Repository initialRepository = repository;
         // Changes the repo
         //repository.setSnapshotTo(stateRoot);
@@ -232,6 +248,7 @@ public class BlockExecutor {
                     block,
                     totalGasUsed
             );
+
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {
                 if (discardInvalidTxs) {
@@ -286,8 +303,9 @@ public class BlockExecutor {
         // This commitment changes the initialRepository's view of the state
         // This does not affect the parent's (repository) view or state, but it DOES
         // affect the storage of the parent.
+        metric = profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
         track.commit();
-
+        profiler.stop(metric);
         // All data saved to disk
         initialRepository.save();
 

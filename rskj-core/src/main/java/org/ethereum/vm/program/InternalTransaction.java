@@ -78,10 +78,6 @@ public class InternalTransaction extends Transaction {
 
     @Override
     public byte[] getEncoded() {
-        if (rlpEncoded != null) {
-            return rlpEncoded;
-        }
-
         byte[] nonce = getNonce();
         if (isEmpty(nonce) || getLength(nonce) == 1 && nonce[0] == 0) {
             nonce = RLP.encodeElement((byte[]) null);
@@ -100,7 +96,7 @@ public class InternalTransaction extends Transaction {
         byte[] index = RLP.encodeInt(this.index);
         byte[] rejected = RLP.encodeInt(this.rejected ? 1 : 0);
 
-        this.rlpEncoded = RLP.encodeList(nonce, parentHash, senderAddress, receiveAddress, value,
+        byte[] rlpEncoded = RLP.encodeList(nonce, parentHash, senderAddress, receiveAddress, value,
                 gasPrice, gasLimit, data, type, deep, index, rejected);
 
         return rlpEncoded;
@@ -109,11 +105,6 @@ public class InternalTransaction extends Transaction {
     @Override
     public byte[] getEncodedRaw() {
         return getEncoded();
-    }
-
-    @Override
-    public void rlpParse() {
-        // Internal transaction not uses as encoded data
     }
 
     @Override

@@ -19,6 +19,9 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.metrics.profilers.Profiler;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.db.ByteArrayWrapper;
 import org.iq80.leveldb.*;
@@ -48,6 +51,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final String databaseDir;
     private final String name;
@@ -61,6 +65,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // This ReadWriteLock still permits concurrent execution of insert/delete/update operations
     // however blocks them on init/close/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
+
 
     public LevelDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
@@ -104,8 +109,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 Files.createDirectories(dbPath.getParent());
 
                 logger.debug("Initializing new or existing database: '{}'", name);
+                Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_INIT);
                 db = factory.open(dbPath.toFile(), options);
-
+                profiler.stop(metric);
                 alive = true;
             } catch (IOException ioe) {
                 logger.error(ioe.getMessage(), ioe);
@@ -151,6 +157,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public byte[] get(byte[] key) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DISK_READ);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -180,6 +187,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 }
             }
         } finally {
+            profiler.stop(metric);
             resetDbLock.readLock().unlock();
         }
     }
@@ -269,7 +277,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 else
                     db.delete(key);
             }
+            Metric metric =  profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
             db.write(batch);
+            profiler.stop(metric);
         }
     }
 
@@ -317,8 +327,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
             try {
                 logger.debug("Close db: {}", name);
+                Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_CLOSE);
                 db.close();
-
+                profiler.stop(metric);
                 alive = false;
             } catch (IOException e) {
                 logger.error("Failed to find the db file on the close: {} ", name);

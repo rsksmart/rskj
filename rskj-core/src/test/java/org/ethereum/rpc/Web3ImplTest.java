@@ -1126,7 +1126,7 @@ public class Web3ImplTest {
         }
 
         // ***** Verifies tx hash
-        Transaction tx = Transaction.create(config, toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
+        Transaction tx = new Transaction(config, toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
         Account account = wallet.getAccount(new RskAddress(addr1), "passphrase1");
         tx.sign(account.getEcKey().getPrivKeyBytes());
 
@@ -1230,7 +1230,7 @@ public class Web3ImplTest {
         }
 
         // ***** Verifies tx hash
-        Transaction tx = Transaction.create(config, toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
+        Transaction tx = new Transaction(config, toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
         tx.sign(wallet.getAccount(new RskAddress(addr1)).getEcKey().getPrivKeyBytes());
 
         String expectedHash = tx.getHash().toJsonString();

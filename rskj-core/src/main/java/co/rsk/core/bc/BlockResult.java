@@ -45,8 +45,6 @@ public class BlockResult {
     private final Coin paidFees;
     private final byte[] logsBloom;
 
-
-
     public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts,
                        byte[] stateRoot, long gasUsed, Coin paidFees,boolean hardfork9999) {
         this.executedTransactions = executedTransactions;

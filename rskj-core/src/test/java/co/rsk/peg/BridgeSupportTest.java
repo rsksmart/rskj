@@ -318,7 +318,7 @@ public class BridgeSupportTest {
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
 
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         ECKey key = new ECKey();
         tx.sign(key.getPrivKeyBytes());
 
@@ -372,7 +372,7 @@ public class BridgeSupportTest {
         List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
@@ -433,7 +433,7 @@ public class BridgeSupportTest {
             blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
@@ -494,7 +494,7 @@ public class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = null;
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
@@ -541,7 +541,7 @@ public class BridgeSupportTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 35
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(35, 1);
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
@@ -623,7 +623,7 @@ public class BridgeSupportTest {
         track.commit();
 
         track = repository.startTracking();
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
@@ -697,7 +697,7 @@ public class BridgeSupportTest {
             blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction rskTx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, rskCurrentBlock);
@@ -1129,7 +1129,7 @@ public class BridgeSupportTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction (config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 
@@ -1153,7 +1153,7 @@ public class BridgeSupportTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 

@@ -319,36 +319,36 @@ public class TransactionTest {
 
     @Test
     public void isContractCreationWhenReceiveAddressIsNull() {
-        Transaction tx = Transaction.create(config, null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction(config, null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsEmptyString() {
-        Transaction tx = Transaction.create(config, "", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction(config, "", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test(expected = RuntimeException.class)
     public void isContractCreationWhenReceiveAddressIs00() {
-        Transaction.create(config, "00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        new Transaction(config, "00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
-        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction(config, "0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsCowAddress() {
-        Transaction tx = Transaction.create(config, "cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction(config, "cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
-        Transaction tx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertFalse(tx.isContractCreation());
     }
 

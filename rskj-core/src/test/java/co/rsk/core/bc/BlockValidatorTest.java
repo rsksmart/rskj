@@ -643,7 +643,7 @@ public class BlockValidatorTest {
                 .parent(new BlockGenerator().getGenesisBlock()).build();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN);
+        Transaction tx = new Transaction(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN);
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
         Block block = new BlockBuilder().minGasPrice(BigInteger.TEN).transactions(txs)
@@ -695,7 +695,7 @@ public class BlockValidatorTest {
                 .parent(new BlockGenerator().getGenesisBlock()).build();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
+        Transaction tx = new Transaction(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
@@ -738,7 +738,7 @@ public class BlockValidatorTest {
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.TEN, BigInteger.valueOf(12L), BigInteger.TEN);
+        Transaction tx = new Transaction(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.TEN, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{});
         txs.add(tx);
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
@@ -757,7 +757,7 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
+        Transaction tx = new Transaction(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{});
         txs.add(tx);
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
@@ -781,7 +781,7 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
+        Transaction tx = new Transaction(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{});
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         txs.add(tx);
@@ -801,7 +801,7 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
+        Transaction tx = new Transaction(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{});
         txs.add(tx);
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));

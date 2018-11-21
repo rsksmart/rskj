@@ -191,7 +191,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
             args.data = args.data.substring(2);
         }
 
-        Transaction tx = Transaction.create(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
+        Transaction tx = new Transaction(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
 
         tx.sign(account.getEcKey().getPrivKeyBytes());
 

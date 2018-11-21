@@ -22,6 +22,9 @@ package org.ethereum.core;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.metrics.profilers.Profiler;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
@@ -59,6 +62,7 @@ public class TransactionExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger("execute");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final Transaction tx;
     private final int txindex;
@@ -79,7 +83,6 @@ public class TransactionExecutor {
     private final long gasUsedInTheBlock;
     private Coin paidFees;
     private boolean readyToExecute = false;
-
 
     private final ProgramInvokeFactory programInvokeFactory;
     private final RskAddress coinbase;
@@ -263,6 +266,7 @@ public class TransactionExecutor {
         precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
+            Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             BigInteger txGasLimit = toBI(tx.getGasLimit());
@@ -273,6 +277,7 @@ public class TransactionExecutor {
                 execError(String.format("Out of Gas calling precompiled contract 0x%s, required: %d, left: %s ",
                         targetAddress.toString(), (requiredGas + basicTxCost), mEndGas));
                 mEndGas = BigInteger.ZERO;
+                profiler.stop(metric);
                 return;
             } else {
                 long gasUsed = requiredGas + basicTxCost;
@@ -288,6 +293,7 @@ public class TransactionExecutor {
 
                 result.spendGas(gasUsed);
             }
+            profiler.stop(metric);
         } else {
             byte[] code = track.getCode(targetAddress);
             // Code can be null
@@ -369,7 +375,9 @@ public class TransactionExecutor {
             program.spendGas(tx.transactionCost(executionBlock, netConfig), "TRANSACTION COST");
 
             if (playVm) {
+                Metric metric = profiler.start(Profiler.PROFILING_TYPE.VM_EXECUTE);
                 vm.play(program);
+                profiler.stop(metric);
             }
 
             result = program.getResult();
