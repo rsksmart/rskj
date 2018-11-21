@@ -33,9 +33,11 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Transaction;
 import org.ethereum.util.RskTestFactory;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.After;
 import org.junit.Assert;
@@ -331,7 +333,6 @@ public class BridgeUtilsTest {
         } catch (InvalidBlockHashException e) {
             Assert.assertTrue(e.getMessage().contains("Inexistent Block Hash"));
         }
-
     }
 
     @Test
