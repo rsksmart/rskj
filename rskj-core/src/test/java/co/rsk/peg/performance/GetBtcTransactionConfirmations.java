@@ -13,7 +13,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +47,6 @@ public class GetBtcTransactionConfirmations extends BridgePerformanceTestCase {
                 confirmations,
                 minTransactions,
                 maxTransactions
-
         );
 
         executeAndAverage(String.format("getBtcTransactionConfirmations-success-confirmations-%d",confirmations), times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);

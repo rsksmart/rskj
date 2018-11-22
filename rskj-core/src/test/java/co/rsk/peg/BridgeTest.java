@@ -2273,56 +2273,6 @@ public class BridgeTest {
     }
 
     @Test
-    public void getBtcTransactionConfirmationsAfterSecondFork_merkleBranchConstructionError() throws Exception {
-        GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
-        config.setBlockchainConfig(mockedConfig);
-
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, getGenesisBlock(), null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-
-        byte[] btcTxHash = Sha256Hash.of(Hex.decode("aabbcc")).getBytes();
-        byte[] btcBlockHash = Sha256Hash.of(Hex.decode("ddeeff")).getBytes();
-        byte[][] merkleBranchHashes = new byte[][] {
-                Sha256Hash.of(Hex.decode("11")).getBytes(),
-                Sha256Hash.of(Hex.decode("22")).getBytes(),
-                Sha256Hash.of(Hex.decode("33")).getBytes(),
-        };
-        BigInteger merkleBranchBits = BigInteger.valueOf(123);
-
-        MerkleBranch merkleBranch = mock(MerkleBranch.class);
-        PowerMockito.whenNew(MerkleBranch.class).withArguments(any(List.class), any(Integer.class)).then((Answer<MerkleBranch>) invocation -> {
-            // Check constructor parameters are correct
-
-            List<Sha256Hash> hashes = invocation.getArgument(0);
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[0], hashes.get(0).getBytes()));
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[1], hashes.get(1).getBytes()));
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[2], hashes.get(2).getBytes()));
-
-            Integer bits = invocation.getArgument(1);
-            Assert.assertEquals(123, bits.intValue());
-
-            throw new InvalidMerkleBranchException("blabla");
-        });
-
-        try {
-            bridge.getBtcTransactionConfirmations(new Object[]{
-                    btcTxHash,
-                    btcBlockHash,
-                    merkleBranchBits,
-                    merkleBranchHashes
-            });
-            Assert.fail();
-        } catch (RuntimeException e) {
-            Assert.assertTrue(e.getMessage().contains("in getBtcTransactionConfirmations"));
-            Assert.assertEquals(InvalidMerkleBranchException.class, e.getCause().getClass());
-            verify(bridgeSupportMock, never()).getBtcTransactionConfirmations(any(), any(), any());
-        }
-    }
-
-    @Test
     public void getBtcTransactionConfirmationsAfterSecondFork_errorInBridgeSupport() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
         when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
@@ -2387,6 +2337,56 @@ public class BridgeTest {
     }
 
     @Test
+    public void getBtcTransactionConfirmationsAfterSecondFork_merkleBranchConstructionError() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, getGenesisBlock(), null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+
+        byte[] btcTxHash = Sha256Hash.of(Hex.decode("aabbcc")).getBytes();
+        byte[] btcBlockHash = Sha256Hash.of(Hex.decode("ddeeff")).getBytes();
+        byte[][] merkleBranchHashes = new byte[][] {
+                Sha256Hash.of(Hex.decode("11")).getBytes(),
+                Sha256Hash.of(Hex.decode("22")).getBytes(),
+                Sha256Hash.of(Hex.decode("33")).getBytes(),
+        };
+        BigInteger merkleBranchBits = BigInteger.valueOf(123);
+
+        MerkleBranch merkleBranch = mock(MerkleBranch.class);
+        PowerMockito.whenNew(MerkleBranch.class).withArguments(any(List.class), any(Integer.class)).then((Answer<MerkleBranch>) invocation -> {
+            // Check constructor parameters are correct
+
+            List<Sha256Hash> hashes = invocation.getArgument(0);
+            Assert.assertTrue(Arrays.equals(merkleBranchHashes[0], hashes.get(0).getBytes()));
+            Assert.assertTrue(Arrays.equals(merkleBranchHashes[1], hashes.get(1).getBytes()));
+            Assert.assertTrue(Arrays.equals(merkleBranchHashes[2], hashes.get(2).getBytes()));
+
+            Integer bits = invocation.getArgument(1);
+            Assert.assertEquals(123, bits.intValue());
+
+            throw new InvalidMerkleBranchException("blabla");
+        });
+
+        try {
+            bridge.getBtcTransactionConfirmations(new Object[]{
+                    btcTxHash,
+                    btcBlockHash,
+                    merkleBranchBits,
+                    merkleBranchHashes
+            });
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("in getBtcTransactionConfirmations"));
+            Assert.assertEquals(InvalidMerkleBranchException.class, e.getCause().getClass());
+            verify(bridgeSupportMock, never()).getBtcTransactionConfirmations(any(), any(), any());
+        }
+    }
+
+    @Test
     public void getBtcBlockchainBlockHashAtDepth() throws BlockStoreException, IOException {
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
@@ -2397,7 +2397,6 @@ public class BridgeTest {
 
         Assert.assertEquals(mockedResult, Sha256Hash.wrap(bridge.getBtcBlockchainBlockHashAtDepth(new Object[]{BigInteger.valueOf(555)})));
     }
-
 
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();

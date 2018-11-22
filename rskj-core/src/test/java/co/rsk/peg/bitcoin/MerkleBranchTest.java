@@ -76,6 +76,7 @@ public class MerkleBranchTest {
 
     @Test
     public void twoHashesBranch() {
+
         assertBranchCorrectlyProves(
                 Arrays.asList(
                         Hex.decode("bfc0770be0c8bc9d06714b00c89cc769286968c28632aa7768f9525a0287d5e6"),

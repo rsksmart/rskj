@@ -28,9 +28,6 @@ import org.ethereum.config.blockchain.devnet.DevNetSecondForkConfig;
 
 import java.util.List;
 
-
-
-
 /**
  * Created by Anton Nashatyrev on 25.02.2016.
  */

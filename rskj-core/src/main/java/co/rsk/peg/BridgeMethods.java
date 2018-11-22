@@ -163,7 +163,7 @@ public enum BridgeMethods {
             CallTransaction.Function.fromSignature(
                     "getBtcTransactionConfirmations",
                     new String[]{"bytes32", "bytes32", "uint256", "bytes32[]"},
-                    new String[]{"int64"}
+                    new String[]{"int256"}
             ),
             22000L, //TODO ESTIMATE GAS
             (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,

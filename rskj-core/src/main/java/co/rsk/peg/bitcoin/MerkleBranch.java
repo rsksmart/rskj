@@ -46,7 +46,7 @@ public class MerkleBranch {
     public int getPath() {
         return path;
     }
-
+    
     /**
      * Returns true if and only if this
      * merkle branch successfully proves
@@ -80,7 +80,6 @@ public class MerkleBranch {
             }
             index++;
         }
-
         return current;
     }
 }

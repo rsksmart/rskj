@@ -80,8 +80,9 @@ public class BridgeSupport {
     public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE = -4;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE = -5;
 
-    // Enough depth to be able to search backwards at least one year of blocks
-    private static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 65535;
+    // Enough depth to be able to search backwards one month worth of blocks
+    // (6 blocks/hour, 24 hours/day, 30 days/month)
+    private static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -1143,8 +1144,10 @@ public class BridgeSupport {
             return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
         }
 
+        final int bestChainHeight = getBtcBlockchainBestChainHeight();
+
         // Prevent diving too deep in the blockchain to avoid high processing costs
-        int blockDepth = getBtcBlockchainBestChainHeight() - block.getHeight();
+        int blockDepth = bestChainHeight - block.getHeight();
         if (blockDepth > BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH) {
             return BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE;
         }
@@ -1170,7 +1173,7 @@ public class BridgeSupport {
             return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE;
         }
 
-        return this.btcBlockChain.getBestChainHeight() - block.getHeight() + 1;
+        return bestChainHeight - block.getHeight() + 1;
     }
 
     private StoredBlock getPrevBlockAtHeight(StoredBlock cursor, int height) throws BlockStoreException {

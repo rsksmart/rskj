@@ -171,5 +171,5 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
     @Override
     public boolean isRskipGetBtcTransactionConfirmations() {
         return false;
-    }
+    } //TODO set the correct name for the RskIp
 }

@@ -5,6 +5,8 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import static co.rsk.bitcoinj.core.Utils.reverseBytes;
 
 public class MerkleTreeUtils {
+    private MerkleTreeUtils() {}
+
     /**
      * Combines two hashes (representing nodes in a merkle tree) to produce a single hash
      * that would be the parent of these two nodes.
