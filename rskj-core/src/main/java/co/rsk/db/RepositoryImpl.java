@@ -58,7 +58,6 @@ public class RepositoryImpl implements Repository {
     private TrieStore store;
     private Trie trie;
     protected DetailsDataStore detailsDataStore;
-    private boolean closed;
     private TrieStore.Pool trieStorePool;
     private int memoryStorageLimit;
 
@@ -319,16 +318,6 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized void syncToRoot(byte[] root) {
         this.trie = this.trie.getSnapshotTo(new Keccak256(root));
-    }
-
-    @Override
-    public synchronized boolean isClosed() {
-        return this.closed;
-    }
-
-    @Override
-    public synchronized void close() {
-        this.closed = true;
     }
 
     @Override

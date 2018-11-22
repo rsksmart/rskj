@@ -190,16 +190,6 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public boolean isClosed() {
-        return repository.isClosed();
-    }
-
-    @Override
-    public void close() {
-        repository.close();
-    }
-
-    @Override
     public void reset() {
         repository.reset();
     }
