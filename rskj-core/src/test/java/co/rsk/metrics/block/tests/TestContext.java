@@ -19,7 +19,7 @@ public abstract class TestContext {
     //2976000
 
 
-    public static final String ROOT = "/home/raul/RSKWorkspace/unitrieAndTrxRef/rskj/rskj-core";
+    public static final String ROOT = "/s/RSK/Repos/rskj/rskj-core";
     public static final String BLOCK_DB_NAME = "database-test";
     public static final String BLOCK_DB_DIR = ROOT + "/"+BLOCK_DB_NAME;
     public static final String BLOCK_REPLAY_DIR = ROOT + "/src/test/resources/performance/player-runs";

@@ -34,7 +34,7 @@ import java.util.Map;
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
  * @author Oscar Guindzberg
  */
-public class RepositoryBlockStore implements BtcBlockstoreWithCache {
+    public class RepositoryBlockStore implements BtcBlockstoreWithCache {
 
     public static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
 
