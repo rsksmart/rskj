@@ -113,19 +113,6 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized byte[] getBlockHashByNumber(long blockNumber){
-        List<BlockInfo> infos = this.index.get(blockNumber);
-        if (infos != null) {
-            Optional<BlockInfo> info =  infos.stream().filter(BlockInfo::isMainChain).findAny();
-            if (info.isPresent()) {
-                return info.get().getHash().getBytes();
-            }
-
-        }
-        return getChainBlockByNumber(blockNumber).getHash().getBytes();
-    }
-
-    @Override
     public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
         Block branchBlock = getBlockByHash(branchBlockHash);
         if (branchBlock.getNumber() < blockNumber) {
