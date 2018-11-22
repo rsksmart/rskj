@@ -24,7 +24,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.remasc.Sibling;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockParentDependantValidationRule;
@@ -33,7 +32,6 @@ import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
@@ -41,7 +39,10 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by ajlopez on 04/08/2016.
@@ -114,9 +115,11 @@ public class BlockValidatorTest {
         Block block = new BlockGenerator().createChildBlock(genesis);
         block.getHeader().setDifficulty(BlockDifficulty.ZERO);
 
+        BlockStore blockStore = Mockito.mock(BlockStore.class);
+        Mockito.when(blockStore.getBestBlock()).thenReturn(block);
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addDifficultyRule()
-                .blockStore(new SimpleBlockStore(block))
+                .blockStore(blockStore)
                 .build();
 
         // If the parent difficulty is zero, the child difficulty will always be zero
@@ -874,92 +877,6 @@ public class BlockValidatorTest {
                 .blockStore(blockStore);
 
         return validatorBuilder.build();
-    }
-
-    private static class SimpleBlockStore implements BlockStore {
-        private Block block;
-
-        public SimpleBlockStore(Block block) {
-            this.block = block;
-        }
-
-        @Override
-        public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
-            return new byte[0];
-        }
-
-        @Override
-        public Block getChainBlockByNumber(long blockNumber) {
-            return null;
-        }
-
-        @Override
-        public List<Block> getChainBlocksByNumber(long blockNumber) {
-            return new ArrayList<>();
-        }
-
-        @Override
-        public Block getBlockByHash(byte[] hash) {
-            return block;
-        }
-
-        @Override
-        public Block getBlockByHashAndDepth(byte[] hash, long depth) {
-            return null;
-        }
-
-        @Override
-        public boolean isBlockExist(byte[] hash) {
-            return false;
-        }
-
-        @Override
-        public List<byte[]> getListHashesEndWith(byte[] hash, long qty) {
-            return null;
-        }
-
-        @Override
-        public void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain) {
-
-        }
-
-        @Override
-        public BlockDifficulty getTotalDifficultyForHash(byte[] hash) {
-            return null;
-        }
-
-        @Override
-        public Block getBestBlock() {
-            return null;
-        }
-
-        @Override
-        public long getMaxNumber() {
-            return 0;
-        }
-
-        @Override
-        public void flush() {
-
-        }
-
-        @Override
-        public void reBranch(Block forkBlock) {
-
-        }
-
-        @Override
-        public void removeBlock(Block block) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
-
-        @Override
-        public Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
-            return null;
-        }
     }
 }
 
