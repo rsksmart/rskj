@@ -167,11 +167,6 @@ public interface Repository extends AccountInformationProvider {
      */
     void syncToRoot(byte[] root);
 
-    /**
-     * Reset
-     */
-    void reset();
-
     void updateBatch(Map<RskAddress, AccountState> accountStates,
                      Map<RskAddress, ContractDetails> contractDetailes);
 
