@@ -57,7 +57,7 @@ public class RepositoryImpl implements Repository {
 
     private TrieStore store;
     private Trie trie;
-    private DetailsDataStore detailsDataStore;
+    protected DetailsDataStore detailsDataStore;
     private boolean closed;
     private TrieStore.Pool trieStorePool;
     private int memoryStorageLimit;
@@ -420,11 +420,6 @@ public class RepositoryImpl implements Repository {
         RepositoryImpl snapshotRepository = new RepositoryImpl(this.store, this.detailsDataStore, this.trieStorePool, this.memoryStorageLimit);
         snapshotRepository.syncToRoot(root);
         return snapshotRepository;
-    }
-
-    @Override
-    public synchronized DetailsDataStore getDetailsDataStore() {
-        return this.detailsDataStore;
     }
 
     @Override

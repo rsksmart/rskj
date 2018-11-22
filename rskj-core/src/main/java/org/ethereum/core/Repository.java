@@ -23,7 +23,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
@@ -196,8 +195,6 @@ public interface Repository extends AccountInformationProvider {
                      Map<RskAddress, ContractDetails> cacheDetails);
 
     Repository getSnapshotTo(byte[] root);
-
-    DetailsDataStore getDetailsDataStore();
 
     void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
 

@@ -25,7 +25,6 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
@@ -237,11 +236,6 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public Repository getSnapshotTo(byte[] root) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public DetailsDataStore getDetailsDataStore() {
-        return this.repository.getDetailsDataStore();
     }
 
     @Override
