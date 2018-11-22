@@ -44,7 +44,7 @@ import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.crypto.HashUtil.shortHash;
 import static org.bouncycastle.util.Arrays.areEqual;
 
-public class IndexedBlockStore extends AbstractBlockstore {
+public class IndexedBlockStore implements BlockStore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
@@ -123,6 +123,29 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         }
         return getChainBlockByNumber(blockNumber).getHash().getBytes();
+    }
+
+    @Override
+    public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
+        Block branchBlock = getBlockByHash(branchBlockHash);
+        if (branchBlock.getNumber() < blockNumber) {
+            throw new IllegalArgumentException("Requested block number > branch hash number: " + blockNumber + " < " + branchBlock.getNumber());
+        }
+        while(branchBlock.getNumber() > blockNumber) {
+            branchBlock = getBlockByHash(branchBlock.getParentHash().getBytes());
+        }
+        return branchBlock.getHash().getBytes();
+    }
+
+    @Override
+    public Block getBlockByHashAndDepth(byte[] hash, long depth) {
+        Block block = this.getBlockByHash(hash);
+
+        for (long i = 0; i < depth; i++) {
+            block = this.getBlockByHash(block.getParentHash().getBytes());
+        }
+
+        return block;
     }
 
     @Override
