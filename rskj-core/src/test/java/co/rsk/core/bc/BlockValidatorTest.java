@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.remasc.Sibling;
@@ -34,9 +35,7 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
-import co.rsk.crypto.Keccak256;
 import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -882,11 +881,6 @@ public class BlockValidatorTest {
 
         public SimpleBlockStore(Block block) {
             this.block = block;
-        }
-
-        @Override
-        public byte[] getBlockHashByNumber(long blockNumber) {
-            return new byte[0];
         }
 
         @Override
