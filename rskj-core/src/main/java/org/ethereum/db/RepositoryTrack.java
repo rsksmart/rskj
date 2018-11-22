@@ -421,16 +421,6 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public boolean isClosed() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void close() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void reset() {
         throw new UnsupportedOperationException();
     }
