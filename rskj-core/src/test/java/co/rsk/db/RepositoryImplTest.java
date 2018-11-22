@@ -466,13 +466,6 @@ public class RepositoryImplTest {
     }
 
     @Test
-    public void getDetailsDataStore() {
-        RepositoryImpl repository = createRepositoryImpl(config);
-
-        Assert.assertNotNull(repository.getDetailsDataStore());
-    }
-
-    @Test
     public void flushNoReconnect() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
         RepositoryImpl repository = new RepositoryImpl(store, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
