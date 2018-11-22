@@ -66,8 +66,6 @@ public class RepositoryImplOriginalTest {
         assertEquals(BigInteger.ONE, repository.getNonce(COW));
 
         repository.increaseNonce(COW);
-
-        repository.close();
     }
 
     @Test
@@ -79,8 +77,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(BigInteger.TEN, repository.getBalance(COW).asBigInteger());
         assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
-
-        repository.close();
     }
 
     @Test
@@ -95,8 +91,6 @@ public class RepositoryImplOriginalTest {
 
         assertArrayEquals(cowCode, repository.getCode(COW));
         assertArrayEquals(horseCode, repository.getCode(HORSE));
-
-        repository.close();
     }
 
     @Test
@@ -116,8 +110,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(new DataWord(cowValue), repository.getStorageValue(COW, new DataWord(cowKey)));
         assertEquals(new DataWord(horseValue), repository.getStorageValue(HORSE, new DataWord(horseKey)));
-
-        repository.close();
     }
 
     @Test
@@ -143,8 +135,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(BigInteger.TEN, repository.getNonce(COW));
         assertEquals(BigInteger.ONE, repository.getNonce(HORSE));
-
-        repository.close();
     }
 
     @Test
@@ -172,8 +162,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(BigInteger.ZERO, repository.getNonce(COW));
         assertEquals(BigInteger.ZERO, repository.getNonce(HORSE));
-
-        repository.close();
     }
 
     @Test
@@ -191,8 +179,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(BigInteger.TEN, repository.getBalance(COW).asBigInteger());
         assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
-
-        repository.close();
     }
 
     @Test
@@ -210,8 +196,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(BigInteger.ZERO, repository.getBalance(COW).asBigInteger());
         assertEquals(BigInteger.ZERO, repository.getBalance(HORSE).asBigInteger());
-
-        repository.close();
     }
 
     @Test
@@ -240,8 +224,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(new BigInteger("40"), repository.getBalance(COW).asBigInteger());
         assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
-
-        repository.close();
     }
 
     @Test
@@ -270,8 +252,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(BigInteger.ZERO, repository.getBalance(COW).asBigInteger());
         assertEquals(BigInteger.ZERO, repository.getBalance(HORSE).asBigInteger());
-
-        repository.close();
     }
 
     @Test
@@ -295,8 +275,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(cowValue, repository.getStorageValue(COW, cowKey));
         assertEquals(horseValue, repository.getStorageValue(HORSE, horseKey));
-
-        repository.close();
     }
 
     @Test
@@ -320,8 +298,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(null, repository.getStorageValue(COW, cowKey));
         assertEquals(null, repository.getStorageValue(HORSE, horseKey));
-
-        repository.close();
     }
 
 
@@ -343,8 +319,6 @@ public class RepositoryImplOriginalTest {
 
         assertArrayEquals(cowCode, repository.getCode(COW));
         assertArrayEquals(horseCode, repository.getCode(HORSE));
-
-        repository.close();
     }
 
     @Test
@@ -365,8 +339,6 @@ public class RepositoryImplOriginalTest {
 
         assertArrayEquals(EMPTY_BYTE_ARRAY, repository.getCode(COW));
         assertArrayEquals(EMPTY_BYTE_ARRAY, repository.getCode(HORSE));
-
-        repository.close();
     }
 
     @Test  // Let's upload genesis pre-mine just like in the real world
@@ -384,8 +356,6 @@ public class RepositoryImplOriginalTest {
 
         // To Review: config Genesis should have an State Root according to the new trie algorithm
         // assertArrayEquals(Genesis.getInstance(SystemProperties.CONFIG).getStateRoot(), repository.getRoot());
-
-        repository.close();
     }
 
     @Test
@@ -417,8 +387,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(ELEVEN, repository.getBalance(COW).asBigInteger());
         assertEquals(ELEVEN, repository.getBalance(HORSE).asBigInteger());
-
-        repository.close();
     }
 
     @Test
@@ -449,8 +417,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(BigInteger.TEN, repository.getBalance(COW).asBigInteger());
         assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
-
-        repository.close();
     }
 
     @Test
@@ -505,8 +471,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(new DataWord(cowValue2), repository.getStorageValue(COW, new DataWord(cowKey2)));
         assertEquals(new DataWord(horseValue2), repository.getStorageValue(HORSE, new DataWord(horseKey2)));
-
-        repository.close();
     }
 
     @Test
@@ -556,8 +520,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(new DataWord(cowValue2), repository.getStorageValue(COW, new DataWord(cowKey2)));
         assertEquals(new DataWord(horseValue2), repository.getStorageValue(HORSE, new DataWord(horseKey2)));
-
-        repository.close();
     }
 
     @Test
@@ -607,8 +569,6 @@ public class RepositoryImplOriginalTest {
 
         assertNull(track1.getStorageValue(COW, new DataWord(cowKey2)));
         assertNull(track1.getStorageValue(HORSE, new DataWord(horseKey2)));
-
-        repository.close();
     }
 
     @Test
@@ -646,9 +606,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(new DataWord(cowValue1), track1.getStorageValue(COW, new DataWord(cowKey1)));
         assertEquals(new DataWord(cowValue2), track1.getStorageValue(COW, new DataWord(cowKey2)));
-
-
-        repository.close();
     }
 
 
@@ -685,8 +642,6 @@ public class RepositoryImplOriginalTest {
 
         assertEquals(new DataWord(cowValue2), track1.getStorageValue(COW, new DataWord(cowKey2)));
         assertNull(track1.getStorageValue(COW, new DataWord(cowKey1)));
-
-        repository.close();
     }
 
     @Test
@@ -710,7 +665,6 @@ public class RepositoryImplOriginalTest {
         // leaving level_1
 
         Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), Hex.toHexString(repository.getRoot()));
-        repository.close();
     }
 
     @Test
