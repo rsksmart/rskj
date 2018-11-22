@@ -54,13 +54,6 @@ public class RepositoryImplTest {
     }
 
     @Test
-    public void isNotClosedWhenCreated() {
-        RepositoryImpl repository = createRepositoryImpl(config);
-
-        Assert.assertFalse(repository.isClosed());
-    }
-
-    @Test
     public void hasEmptyHashAsRootWhenCreated() {
         RepositoryImpl repository = createRepositoryImpl(config);
 

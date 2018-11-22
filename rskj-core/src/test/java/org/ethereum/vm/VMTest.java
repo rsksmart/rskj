@@ -73,11 +73,6 @@ public class VMTest {
         invoke = new ProgramInvokeMockImpl();
     }
 
-    @After
-    public void tearDown() {
-        invoke.getRepository().close();
-    }
-
     @Test
     public void testSTATICCALLWithStatusZeroUsingSStore() {
         testSTATICCALLWithStatusZeroUsingOpCode("SSTORE");
