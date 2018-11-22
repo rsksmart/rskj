@@ -421,11 +421,6 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void reset() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Repository getSnapshotTo(byte[] root) {
         throw new UnsupportedOperationException();
     }
