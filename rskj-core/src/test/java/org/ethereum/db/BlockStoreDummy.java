@@ -38,15 +38,9 @@ import java.util.Map;
 public class BlockStoreDummy implements BlockStore {
 
     @Override
-    public byte[] getBlockHashByNumber(long blockNumber) {
-
+    public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
         byte[] data = String.valueOf(blockNumber).getBytes(StandardCharsets.UTF_8);
         return HashUtil.keccak256(data);
-    }
-
-    @Override
-    public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
-        return getBlockHashByNumber(blockNumber);
     }
 
     @Override

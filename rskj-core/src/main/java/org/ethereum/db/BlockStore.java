@@ -33,8 +33,6 @@ import java.util.List;
  */
 public interface BlockStore extends RemascCache {
 
-    byte[] getBlockHashByNumber(long blockNumber);
-
     /**
      * Gets the block hash by its index.
      * When more than one block with the specified index exists (forks)
