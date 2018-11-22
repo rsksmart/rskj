@@ -374,25 +374,6 @@ public class RepositoryTrack implements Repository {
         cacheDetails.clear();
     }
 
-    public void dumpChanges() {
-        HashMap<RskAddress, AccountState> accountStates = new HashMap<>();
-        HashMap<RskAddress, ContractDetails> contractDetails= new HashMap<>();
-        updateBatch(accountStates,contractDetails);
-
-        StringBuilder buf = new StringBuilder();
-        buf.append("accountStates:\n");
-        for (HashMap.Entry<RskAddress, AccountState> entry : accountStates.entrySet()) {
-            buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
-        }
-
-        buf.append("contractDetails:\n");
-        for (HashMap.Entry<RskAddress, ContractDetails> entry : contractDetails.entrySet()) {
-            buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
-        }
-
-        logger.debug(buf.toString());
-    }
-
     @Override
     public void updateBatch(Map<RskAddress, AccountState> accountStates,
                             Map<RskAddress, ContractDetails> contractDetails) {
@@ -417,21 +398,6 @@ public class RepositoryTrack implements Repository {
 
     @Override // that's the idea track is here not for root calculations
     public byte[] getRoot() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isClosed() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void close() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void reset() {
         throw new UnsupportedOperationException();
     }
 
