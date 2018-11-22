@@ -253,12 +253,9 @@ public class RskTestFactory {
         if (rskImpl == null) {
             rskImpl = new RskImpl(
                     null,
-                    null,
                     getTransactionPool(),
-                    config,
                     getCompositeEthereumListener(),
                     getBlockProcessor(),
-                    getReversibleTransactionExecutor(),
                     getBlockchain()
             );
         }
