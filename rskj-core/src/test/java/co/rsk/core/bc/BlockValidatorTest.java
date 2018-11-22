@@ -919,11 +919,6 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty) {
-            return null;
-        }
-
-        @Override
         public List<Block> getListBlocksEndWith(byte[] hash, long qty) {
             return null;
         }
