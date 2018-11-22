@@ -62,11 +62,6 @@ public class VMCustomTest {
         invoke.getRepository().addBalance(ownerAddress, Coin.valueOf(1000L));
     }
 
-    @After
-    public void tearDown() {
-        invoke.getRepository().close();
-    }
-
     @Test // CALLDATASIZE OP
     public void testCALLDATASIZE_1() {
 
@@ -290,7 +285,6 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        program.getStorage().close();
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
     }
 
