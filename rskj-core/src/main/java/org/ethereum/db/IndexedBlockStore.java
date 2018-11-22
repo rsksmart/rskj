@@ -299,19 +299,6 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty) {
-
-        List<Block> blocks = getListBlocksEndWith(hash, qty);
-        List<BlockHeader> headers = new ArrayList<>(blocks.size());
-
-        for (Block b : blocks) {
-            headers.add(b.getHeader());
-        }
-
-        return headers;
-    }
-
-    @Override
     public synchronized List<Block> getListBlocksEndWith(byte[] hash, long qty) {
         Block block = getBlockByHash(hash);
 

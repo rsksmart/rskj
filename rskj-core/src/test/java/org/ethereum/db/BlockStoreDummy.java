@@ -23,7 +23,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.Sibling;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -65,11 +64,6 @@ public class BlockStoreDummy implements BlockStore {
 
     @Override
     public List<byte[]> getListHashesEndWith(byte[] hash, long qty) {
-        return null;
-    }
-
-    @Override
-    public List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty) {
         return null;
     }
 
