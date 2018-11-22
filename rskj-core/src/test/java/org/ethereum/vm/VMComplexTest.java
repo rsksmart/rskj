@@ -125,7 +125,6 @@ public class VMComplexTest {
 
         // todo: assert caller balance after contract exec
 
-        repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
@@ -212,7 +211,6 @@ public class VMComplexTest {
         DataWord value_2 = repository.getStorageValue(contractA_addr, new DataWord(01));
 
 
-        repository.close();
         assertEquals(expectedVal_1, value_1.longValue());
         assertEquals(expectedVal_2, value_2.longValue());
 
@@ -300,8 +298,6 @@ public class VMComplexTest {
         DataWord value5 = program.memoryLoad(new DataWord(160));
         DataWord value6 = program.memoryLoad(new DataWord(192));
 
-        repository.close();
-
         assertEquals(expectedVal_1, value1.longValue());
         assertEquals(expectedVal_2, value2.longValue());
         assertEquals(expectedVal_3, value3.longValue());
@@ -371,7 +367,6 @@ public class VMComplexTest {
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         // TODO: check that the value pushed after exec is the new address
-        repository.close();
     }
 
     @Test // CALL contract with too much gas
@@ -450,8 +445,6 @@ public class VMComplexTest {
 
         DataWord storeValue1 = repository.getStorageValue(contractB_addr, new DataWord(00));
 
-        repository.close();
-
         assertEquals("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", memValue1.toString());
         assertEquals("aaffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaa", memValue2.toString());
 
@@ -516,7 +509,6 @@ public class VMComplexTest {
 
         // todo: assert caller balance after contract exec
 
-        repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
@@ -576,7 +568,6 @@ public class VMComplexTest {
 
         // todo: assert caller balance after contract exec
 
-        repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
@@ -636,7 +627,6 @@ public class VMComplexTest {
 
         // todo: assert caller balance after contract exec
 
-        repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
@@ -696,7 +686,6 @@ public class VMComplexTest {
 
         // todo: assert caller balance after contract exec
 
-        repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 

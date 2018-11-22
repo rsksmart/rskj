@@ -190,21 +190,6 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public boolean isClosed() {
-        return repository.isClosed();
-    }
-
-    @Override
-    public void close() {
-        repository.close();
-    }
-
-    @Override
-    public void reset() {
-        repository.reset();
-    }
-
-    @Override
     public void updateBatch(Map<RskAddress, AccountState> accountStates, Map<RskAddress, ContractDetails> contractDetails) {
         for (RskAddress addr : contractDetails.keySet()) {
             if (!canListenTrace(addr)) {

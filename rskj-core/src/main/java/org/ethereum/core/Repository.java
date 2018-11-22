@@ -167,23 +167,6 @@ public interface Repository extends AccountInformationProvider {
      */
     void syncToRoot(byte[] root);
 
-    /**
-     * Check to see if the current repository has an open connection to the database
-     *
-     * @return <tt>true</tt> if connection to database is open
-     */
-    boolean isClosed();
-
-    /**
-     * Close the database
-     */
-    void close();
-
-    /**
-     * Reset
-     */
-    void reset();
-
     void updateBatch(Map<RskAddress, AccountState> accountStates,
                      Map<RskAddress, ContractDetails> contractDetailes);
 

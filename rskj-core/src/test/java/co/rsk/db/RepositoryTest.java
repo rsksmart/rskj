@@ -21,8 +21,8 @@ package co.rsk.db;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
@@ -32,7 +32,6 @@ import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -69,8 +68,6 @@ public class RepositoryTest {
 
         assertArrayEquals(cowValue, repository.getStorageBytes(COW, new DataWord(cowKey)));
         assertArrayEquals(horseValue, repository.getStorageBytes(HORSE, new DataWord(horseKey)));
-
-        repository.close();
     }
 
     @Test
@@ -98,8 +95,6 @@ public class RepositoryTest {
 
         assertArrayEquals(cowValue, repository.getStorageBytes(COW, cowKey));
         assertArrayEquals(horseValue, repository.getStorageBytes(HORSE, horseKey));
-
-        repository.close();
     }
 
     @Test
@@ -127,8 +122,6 @@ public class RepositoryTest {
 
         assertEquals(null, repository.getStorageBytes(COW, cowKey));
         assertEquals(null, repository.getStorageBytes(HORSE, horseKey));
-
-        repository.close();
     }
 
     @Test
@@ -186,8 +179,6 @@ public class RepositoryTest {
 
         assertArrayEquals(cowValue2, repository.getStorageBytes(COW, new DataWord(cowKey2)));
         assertArrayEquals(horseValue2, repository.getStorageBytes(HORSE, new DataWord(horseKey2)));
-
-        repository.close();
     }
 
     @Test
@@ -251,8 +242,6 @@ public class RepositoryTest {
 
         assertArrayEquals(cowValue2, repository.getStorageBytes(COW, new DataWord(cowKey2)));
         assertArrayEquals(horseValue2, repository.getStorageBytes(HORSE, new DataWord(horseKey2)));
-
-        repository.close();
     }
 
     @Test
@@ -305,8 +294,6 @@ public class RepositoryTest {
 
         assertNull(track1.getStorageBytes(COW, new DataWord(cowKey2)));
         assertNull(track1.getStorageBytes(HORSE, new DataWord(horseKey2)));
-
-        repository.close();
     }
 
     @Test
@@ -347,8 +334,6 @@ public class RepositoryTest {
 
         assertArrayEquals(cowValue1, track1.getStorageBytes(COW, new DataWord(cowKey1)));
         assertArrayEquals(cowValue2, track1.getStorageBytes(COW, new DataWord(cowKey2)));
-
-        repository.close();
     }
 
     @Test
@@ -387,8 +372,6 @@ public class RepositoryTest {
 
         assertArrayEquals(cowValue2, track1.getStorageBytes(COW, new DataWord(cowKey2)));
         assertNull(track1.getStorageBytes(COW, new DataWord(cowKey1)));
-
-        repository.close();
     }
 
     @Test
@@ -414,7 +397,6 @@ public class RepositoryTest {
         // leaving level_1
 
         Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), Hex.toHexString(repository.getRoot()));
-        repository.close();
     }
 
     @Test
