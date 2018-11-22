@@ -68,7 +68,6 @@ public class AccountState {
     /* Account state flags*/
     private int stateFlags;
 
-    private boolean dirty = false;
     private boolean deleted = false;
 
     public AccountState() {
@@ -97,14 +96,6 @@ public class AccountState {
         }
     }
 
-    public int getStateFlags() {
-        return stateFlags;
-    }
-
-    public void setStateFlags(int s) {
-        stateFlags = s;
-    }
-
     public BigInteger getNonce() {
         return nonce;
     }
@@ -121,13 +112,11 @@ public class AccountState {
     public void setStateRoot(byte[] stateRoot) {
         rlpEncoded = null;
         this.stateRoot = stateRoot;
-        setDirty(true);
     }
 
     public void incrementNonce() {
         rlpEncoded = null;
         this.nonce = nonce.add(BigInteger.ONE);
-        setDirty(true);
     }
 
     public byte[] getCodeHash() {
@@ -149,17 +138,7 @@ public class AccountState {
         }
 
         this.balance = balance.add(value);
-        setDirty(true);
         return this.balance;
-    }
-
-    public void subFromBalance(Coin value) {
-        if (!value.equals(Coin.ZERO)) {
-            rlpEncoded = null;
-        }
-        
-        this.balance = balance.subtract(value);
-        setDirty(true);
     }
 
     public byte[] getEncoded() {
@@ -180,16 +159,8 @@ public class AccountState {
         return rlpEncoded;
     }
 
-    public void setDirty(boolean dirty) {
-        this.dirty = dirty;
-    }
-
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
-    }
-
-    public boolean isDirty() {
-        return dirty;
     }
 
     public boolean isDeleted() {
@@ -201,7 +172,6 @@ public class AccountState {
 
         accountState.setCodeHash(this.getCodeHash());
         accountState.setStateRoot(this.getStateRoot());
-        accountState.setDirty(false);
         accountState.setStateFlags(this.stateFlags);
         return accountState;
     }
@@ -215,13 +185,25 @@ public class AccountState {
         return ret;
     }
 
+    /*
+     * Below are methods for hibernating an account that aren't used at the moment (only from tests).
+     * TODO(mc) we should decide whether to finish this feature or delete unused code
+     */
+
+    public int getStateFlags() {
+        return stateFlags;
+    }
+
+    public void setStateFlags(int s) {
+        stateFlags = s;
+    }
+
     public Boolean isHibernated() {
         return ((stateFlags & ACC_HIBERNATED_MASK) != 0);
     }
 
     public void hibernate() {
         stateFlags = stateFlags | ACC_HIBERNATED_MASK;
-        setDirty(true);
         rlpEncoded = null;
     }
 
