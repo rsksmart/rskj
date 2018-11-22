@@ -298,8 +298,7 @@ public class IndexedBlockStore implements BlockStore {
         return hashes;
     }
 
-    @Override
-    public synchronized List<Block> getListBlocksEndWith(byte[] hash, long qty) {
+    private synchronized List<Block> getListBlocksEndWith(byte[] hash, long qty) {
         Block block = getBlockByHash(hash);
 
         if (block == null) {
