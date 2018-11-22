@@ -321,11 +321,6 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public void reset() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public synchronized void updateBatch(Map<RskAddress, AccountState> stateCache,
                                          Map<RskAddress, ContractDetails> detailsCache) {
         logger.debug("updatingBatch: detailsCache.size: {}", detailsCache.size());
