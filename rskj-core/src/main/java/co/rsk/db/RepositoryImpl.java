@@ -70,7 +70,7 @@ public class RepositoryImpl implements Repository {
             KeyValueDataSource detailsDS,
             TrieStore.Pool trieStorePool,
             int memoryStorageLimit) {
-        this(store, new DetailsDataStore(new DatabaseImpl(detailsDS), trieStorePool, memoryStorageLimit),
+        this(store, new DetailsDataStore(detailsDS, trieStorePool, memoryStorageLimit),
              trieStorePool, memoryStorageLimit);
     }
 

@@ -42,7 +42,7 @@ public class DetailsDataStoreTest {
 
     @Test
     public void test1(){
-        DatabaseImpl db = new DatabaseImpl(new HashMapDB());
+        HashMapDB db = new HashMapDB();
         TrieStorePoolOnMemory trieStorePool = new TrieStorePoolOnMemory();
         DetailsDataStore dds = new DetailsDataStore(db, trieStorePool, config.detailsInMemoryStorageLimit());
 
@@ -82,7 +82,7 @@ public class DetailsDataStoreTest {
     @Test
     public void test2(){
 
-        DatabaseImpl db = new DatabaseImpl(new HashMapDB());
+        HashMapDB db = new HashMapDB();
         TrieStore.Pool trieStorePool = new TrieStorePoolOnMemory();
         DetailsDataStore dds = new DetailsDataStore(db, trieStorePool, config.detailsInMemoryStorageLimit());
 
@@ -127,7 +127,7 @@ public class DetailsDataStoreTest {
     public void test3(){
 
         HashMapDB store = new HashMapDB();
-        DatabaseImpl db = new DatabaseImpl(new HashMapDB());
+        HashMapDB db = new HashMapDB();
         TrieStore.Pool trieStorePool = new TrieStorePoolOnMemory();
         DetailsDataStore dds = new DetailsDataStore(db, trieStorePool, config.detailsInMemoryStorageLimit());
 
@@ -173,7 +173,7 @@ public class DetailsDataStoreTest {
 
     @Test
     public void test4() {
-        DatabaseImpl db = new DatabaseImpl(new HashMapDB());
+        HashMapDB db = new HashMapDB();
         DetailsDataStore dds = new DetailsDataStore(db, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
