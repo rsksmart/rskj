@@ -33,16 +33,16 @@ import org.mapdb.DataIO;
 import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
-import static org.ethereum.crypto.HashUtil.shortHash;
-import static org.bouncycastle.util.Arrays.areEqual;
 
 public class IndexedBlockStore implements BlockStore {
 
@@ -191,7 +191,7 @@ public class IndexedBlockStore implements BlockStore {
         }
 
         for (BlockInfo blockInfo : blockInfos) {
-            byte[] hash = ByteUtils.clone(blockInfo.getHash().getBytes());
+            byte[] hash = blockInfo.getHash().copy().getBytes();
             BlockDifficulty totalDifficulty = blockInfo.getCummDifficulty();
             boolean isInBlockChain = blockInfo.isMainChain();
 
@@ -248,6 +248,7 @@ public class IndexedBlockStore implements BlockStore {
         return new Block(blockRlp);
     }
 
+    @Override
     public synchronized Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
         return this.remascCache.computeIfAbsent(hash, key -> getSiblingsFromBlock(getBlock(key.getBytes())));
     }
@@ -272,7 +273,7 @@ public class IndexedBlockStore implements BlockStore {
         }
 
         for (BlockInfo blockInfo : blockInfos) {
-            if (areEqual(blockInfo.getHash().getBytes(), hash)) {
+            if (Arrays.equals(blockInfo.getHash().getBytes(), hash)) {
                 return blockInfo.getCummDifficulty();
             }
         }
@@ -480,34 +481,13 @@ public class IndexedBlockStore implements BlockStore {
         }
     };
 
-    public synchronized void printChain() {
-        Long number = getMaxNumber();
-
-        for (long i = 0; i < number; ++i){
-            List<BlockInfo> levelInfos = index.get(i);
-
-            if (levelInfos != null) {
-                System.out.print(i);
-                for (BlockInfo blockInfo : levelInfos){
-                    if (blockInfo.isMainChain()) {
-                        System.out.print(" [" + shortHash(blockInfo.getHash().getBytes()) + "] ");
-                    } else {
-                        System.out.print(" " + shortHash(blockInfo.getHash().getBytes()) + " ");
-                    }
-                }
-                System.out.println();
-            }
-
-        }
-    }
-
     private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, byte[] hash){
         if (blocks == null) {
             return null;
         }
 
         for (BlockInfo blockInfo : blocks) {
-            if (areEqual(hash, blockInfo.getHash().getBytes())) {
+            if (Arrays.equals(hash, blockInfo.getHash().getBytes())) {
                 return blockInfo;
             }
         }
