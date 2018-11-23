@@ -974,9 +974,4 @@ public class IndexedBlockStoreTest {
         assertEquals(block2.getCumulativeDifficulty(), indexedBlockStore.getTotalDifficultyForHash(block2.getHash().getBytes()));
     }
 
-
-// todo: test this
-
-//    public byte[] getBlockHashByNumber(long blockNumber)
-
 }
