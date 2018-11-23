@@ -24,14 +24,16 @@ import co.rsk.db.ContractDetailsImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.toHexString;
 
 /**
  * A store for contract details.
@@ -43,11 +45,11 @@ public class DetailsDataStore {
     private final Map<RskAddress, ContractDetails> cache = new ConcurrentHashMap<>();
     private final Set<RskAddress> removes = new HashSet<>();
 
-    private final DatabaseImpl db;
+    private final KeyValueDataSource db;
     private final int memoryStorageLimit;
     private TrieStore.Pool trieStorePool;
 
-    public DetailsDataStore(DatabaseImpl db, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
+    public DetailsDataStore(KeyValueDataSource db, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
         this.db = db;
         this.trieStorePool = trieStorePool;
         this.memoryStorageLimit = memoryStorageLimit;
@@ -93,7 +95,7 @@ public class DetailsDataStore {
         return details;
     }
 
-    protected ContractDetails createContractDetails(
+    private ContractDetails createContractDetails(
             byte[] data,
             TrieStore.Pool trieStorePool,
             int memoryStorageLimit) {
@@ -147,7 +149,7 @@ public class DetailsDataStore {
             totalSize += value.length;
         }
 
-        db.getDb().updateBatch(batch);
+        db.updateBatch(batch);
 
         for (RskAddress key : removes) {
             db.delete(key.getBytes());
@@ -161,11 +163,11 @@ public class DetailsDataStore {
 
 
     public synchronized Set<RskAddress> keys() {
-        Set<RskAddress> keys = new HashSet<>();
-        keys.addAll(cache.keySet());
-        keys.addAll(db.dumpKeys(RskAddress::new));
-
-        return keys;
+        Stream<RskAddress> keys = Stream.concat(
+                cache.keySet().stream(),
+                db.keys().stream().map(RskAddress::new)
+        );
+        return keys.collect(Collectors.toSet());
     }
 
 }
