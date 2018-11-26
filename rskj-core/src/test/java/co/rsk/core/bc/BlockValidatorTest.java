@@ -88,7 +88,7 @@ public class BlockValidatorTest {
 
     @Test
     public void validateBlockWithTransaction() {
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
+        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain(new BlockExecutorTest.SimpleEthereumListener());
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
         genesis.seal();
@@ -735,7 +735,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidTxNonce() {
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
+        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain(new BlockExecutorTest.SimpleEthereumListener());
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
 

@@ -115,7 +115,7 @@ public class BlockBuilder {
                     null,
                     programInvokeFactory,
                     block1,
-                    blockChain.getListener(),
+                    null,
                     totalGasUsed1,
                     config.getVmConfig(),
                     config.getBlockchainConfig(),
