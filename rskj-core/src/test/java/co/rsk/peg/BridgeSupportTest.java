@@ -52,7 +52,10 @@ import com.google.common.collect.Lists;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
@@ -1597,14 +1600,20 @@ public class BridgeSupportTest {
                 .map(BtcECKey::fromPrivate)
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .collect(Collectors.toList());
-        Federation activeFederation = new Federation(activeFederationKeys, Instant.ofEpochMilli(1000L), 0L, params);
+        Federation activeFederation = new Federation(
+                FederationMember.getFederationMembersFromKeys(activeFederationKeys),
+                Instant.ofEpochMilli(1000L), 0L, params
+        );
 
         List<BtcECKey> retiringFederationKeys = Stream.of("fb01", "fb02", "fb03")
                 .map(Hex::decode)
                 .map(BtcECKey::fromPrivate)
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .collect(Collectors.toList());
-        Federation retiringFederation = new Federation(retiringFederationKeys, Instant.ofEpochMilli(2000L), 0L, params);
+        Federation retiringFederation = new Federation(
+                FederationMember.getFederationMembersFromKeys(retiringFederationKeys),
+                Instant.ofEpochMilli(2000L), 0L, params
+        );
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class, Mockito.RETURNS_DEEP_STUBS);
         when(mockBridgeStorageProvider.getBtcTxHashesAlreadyProcessed().keySet().contains(any(Sha256Hash.class))).thenReturn(false);
@@ -1808,7 +1817,10 @@ public class BridgeSupportTest {
                 BtcECKey.fromPrivate(Hex.decode("fa02")),
         });
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), 0L, parameters);
+        Federation federation = new Federation(
+                FederationMember.getFederationMembersFromKeys(federation1Keys),
+                Instant.ofEpochMilli(1000L), 0L, parameters
+        );
 
         Repository repository = createRepositoryImpl(config);
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);

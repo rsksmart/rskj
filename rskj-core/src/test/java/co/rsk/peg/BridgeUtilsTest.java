@@ -436,14 +436,20 @@ public class BridgeUtilsTest {
                 .map(BtcECKey::fromPrivate)
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .collect(Collectors.toList());
-        Federation federation1 = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), 0L, params);
+        Federation federation1 = new Federation(
+                FederationMember.getFederationMembersFromKeys(federation1Keys),
+                Instant.ofEpochMilli(1000L), 0L, params
+        );
 
         List<BtcECKey> federation2Keys = Stream.of("fb01", "fb02", "fb03")
                 .map(Hex::decode)
                 .map(BtcECKey::fromPrivate)
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .collect(Collectors.toList());
-        Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, params);
+        Federation federation2 = new Federation(
+                FederationMember.getFederationMembersFromKeys(federation2Keys),
+                Instant.ofEpochMilli(2000L), 0L, params
+        );
 
         Address federation2Address = federation2.getAddress();
 
