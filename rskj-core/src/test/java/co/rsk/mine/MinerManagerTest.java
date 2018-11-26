@@ -252,7 +252,7 @@ public class MinerManagerTest {
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
         Assert.assertFalse(blockchain.getBestBlock().getTransactionsList().isEmpty());
 
-        SnapshotManager snapshotManager = new SnapshotManager(blockchain, transactionPool);
+        SnapshotManager snapshotManager = new SnapshotManager(blockchain, transactionPool, minerServer);
         snapshotManager.resetSnapshots();
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
@@ -306,7 +306,7 @@ public class MinerManagerTest {
     }
 
     private static MinerClientImpl getMinerClient(RskImplForTest rsk, MinerServerImpl minerServer) {
-        return new MinerClientImpl(rsk, minerServer, config);
+        return new MinerClientImpl(rsk, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
     }
 
     private MinerServerImpl getMinerServer() {

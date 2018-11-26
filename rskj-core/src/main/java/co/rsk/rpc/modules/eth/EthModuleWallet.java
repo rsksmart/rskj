@@ -18,13 +18,9 @@
 
 package co.rsk.rpc.modules.eth;
 
-import org.ethereum.rpc.Web3;
-
 public interface EthModuleWallet {
 
     String[] accounts();
-
-    String sendTransaction(Web3.CallArguments args);
 
     String sign(String addr, String data);
 }

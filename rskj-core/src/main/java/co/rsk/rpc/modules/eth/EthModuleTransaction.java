@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,26 +18,10 @@
 
 package co.rsk.rpc.modules.eth;
 
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.ethereum.rpc.Web3;
 
-import java.util.Arrays;
+public interface EthModuleTransaction {
+    String sendTransaction(Web3.CallArguments args);
 
-public class EthModuleWalletDisabled implements EthModuleWallet {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("web3");
-
-    @Override
-    public String[] accounts() {
-        String[] accounts = {};
-        LOGGER.debug("eth_accounts(): {}", Arrays.toString(accounts));
-        return accounts;
-    }
-
-    @Override
-    public String sign(String addr, String data) {
-        LOGGER.debug("eth_sign({}, {}): {}", addr, data, null);
-        throw new JsonRpcInvalidParamException("Local wallet is disabled in this node");
-    }
+    String sendRawTransaction(String rawData);
 }
