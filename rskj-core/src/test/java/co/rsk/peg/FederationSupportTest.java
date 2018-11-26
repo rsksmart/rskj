@@ -17,12 +17,16 @@
  */
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.time.Instant;
+import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -53,7 +57,7 @@ public class FederationSupportTest {
 
     @Test
     public void whenNewFederationIsNullThenActiveFederationIsGenesisFederation() {
-        Federation genesisFederation = mock(Federation.class);
+        Federation genesisFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
                 .thenReturn(null);
         when(blockchainNetConfig.getGenesisFederation())
@@ -64,7 +68,7 @@ public class FederationSupportTest {
 
     @Test
     public void whenOldFederationIsNullThenActiveFederationIsNewFederation() {
-        Federation newFederation = mock(Federation.class);
+        Federation newFederation = getNewFakeFederation(100);
         when(provider.getNewFederation())
                 .thenReturn(newFederation);
         when(provider.getOldFederation())
@@ -75,8 +79,8 @@ public class FederationSupportTest {
 
     @Test
     public void whenOldAndNewFederationArePresentReturnOldFederationByActivationAge() {
-        Federation newFederation = mock(Federation.class);
-        Federation oldFederation = mock(Federation.class);
+        Federation newFederation = getNewFakeFederation(75);
+        Federation oldFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
                 .thenReturn(newFederation);
         when(provider.getOldFederation())
@@ -85,16 +89,14 @@ public class FederationSupportTest {
                 .thenReturn(80L);
         when(bridgeConstants.getFederationActivationAge())
                 .thenReturn(10L);
-        when(newFederation.getCreationBlockNumber())
-                .thenReturn(75L);
 
         assertThat(federationSupport.getActiveFederation(), is(oldFederation));
     }
 
     @Test
     public void whenOldAndNewFederationArePresentReturnNewFederationByActivationAge() {
-        Federation newFederation = mock(Federation.class);
-        Federation oldFederation = mock(Federation.class);
+        Federation newFederation = getNewFakeFederation(65);
+        Federation oldFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
                 .thenReturn(newFederation);
         when(provider.getOldFederation())
@@ -103,9 +105,14 @@ public class FederationSupportTest {
                 .thenReturn(80L);
         when(bridgeConstants.getFederationActivationAge())
                 .thenReturn(10L);
-        when(newFederation.getCreationBlockNumber())
-                .thenReturn(65L);
 
         assertThat(federationSupport.getActiveFederation(), is(newFederation));
+    }
+
+    private Federation getNewFakeFederation(long creationBlockNumber) {
+        return new Federation(
+                Collections.emptyList(), Instant.ofEpochMilli(123),
+                creationBlockNumber, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
     }
 }
