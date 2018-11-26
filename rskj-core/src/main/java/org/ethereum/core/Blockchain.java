@@ -71,19 +71,9 @@ public interface Blockchain {
 
     TransactionInfo getTransactionInfo(byte[] hash);
 
-    void close();
-
     void setTotalDifficulty(BlockDifficulty totalDifficulty);
 
     byte[] getBestBlockHash();
-
-    void setExitOn(long exitOn);
-
-    boolean isBlockExist(byte[] hash);
-
-    List<BlockHeader> getListOfHeadersStartFrom(BlockIdentifier identifier, int skip, int limit, boolean reverse);
-
-    List<byte[]> getListOfBodiesByHashes(List<byte[]> hashes);
 
     List<Block> getBlocksByNumber(long blockNr);
 

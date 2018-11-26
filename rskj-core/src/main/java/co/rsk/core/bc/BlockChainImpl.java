@@ -82,7 +82,7 @@ public class BlockChainImpl implements Blockchain {
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
-    private EthereumListener listener;
+    private final EthereumListener listener;
     private BlockValidator blockValidator;
 
     private volatile BlockChainStatus status = new BlockChainStatus(null, BlockDifficulty.ZERO);
@@ -124,12 +124,6 @@ public class BlockChainImpl implements Blockchain {
 
     @Override
     public BlockStore getBlockStore() { return blockStore; }
-
-    public EthereumListener getListener() { return listener; }
-
-    public void setListener(EthereumListener listener) { this.listener = listener; }
-
-    public BlockValidator getBlockValidator() { return blockValidator; }
 
     @VisibleForTesting
     public void setBlockValidator(BlockValidator validator) {
@@ -372,26 +366,6 @@ public class BlockChainImpl implements Blockchain {
     }
 
     @Override
-    public void setExitOn(long exitOn) {
-
-    }
-
-    @Override
-    public boolean isBlockExist(byte[] hash) {
-        return blockStore.isBlockExist(hash);
-    }
-
-    @Override
-    public List<BlockHeader> getListOfHeadersStartFrom(BlockIdentifier identifier, int skip, int limit, boolean reverse) {
-        return null;
-    }
-
-    @Override
-    public List<byte[]> getListOfBodiesByHashes(List<byte[]> hashes) {
-        return null;
-    }
-
-    @Override
     public List<Block> getBlocksByNumber(long number) {
         return blockStore.getChainBlocksByNumber(number);
     }
@@ -473,11 +447,6 @@ public class BlockChainImpl implements Blockchain {
         txInfo.setTransaction(tx);
 
         return txInfo;
-    }
-
-    @Override
-    public void close() {
-
     }
 
     @Override
