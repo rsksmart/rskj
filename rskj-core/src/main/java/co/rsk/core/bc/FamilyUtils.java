@@ -156,11 +156,6 @@ public class FamilyUtils {
             List<Block> uncles = store.getChainBlocksByNumber(ancestor.getNumber());
 
             for (Block uncle : uncles) {
-                // TODO quick fix, the block storage should be reviewed
-                if (uncle == null) {
-                    continue;
-                }
-
                 if (!ancestorParent.getHash().equals(uncle.getParentHash())) {
                     continue;
                 }
