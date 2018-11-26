@@ -56,6 +56,7 @@ public class BlockChainBuilder {
     private Genesis genesis;
     private ReceiptStore receiptStore;
     private RskSystemProperties config;
+    private EthereumListener listener;
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -97,6 +98,11 @@ public class BlockChainBuilder {
         return this;
     }
 
+    public BlockChainBuilder setListener(EthereumListener listener) {
+        this.listener = listener;
+        return this;
+    }
+
     public RskSystemProperties getConfig() {
         return config;
     }
@@ -127,7 +133,9 @@ public class BlockChainBuilder {
             for (TransactionInfo txinfo : txinfos)
                 receiptStore.add(txinfo.getBlockHash(), txinfo.getIndex(), txinfo.getReceipt());
 
-        EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
+        if (listener == null) {
+            listener = new BlockExecutorTest.SimpleEthereumListener();
+        }
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
 

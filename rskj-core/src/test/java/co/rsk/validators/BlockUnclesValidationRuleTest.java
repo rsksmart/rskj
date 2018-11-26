@@ -5,6 +5,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
+import co.rsk.core.bc.BlockExecutorTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
@@ -34,7 +35,7 @@ public class BlockUnclesValidationRuleTest {
 
         Block block = blockGenerator.createChildBlock(block1, null, uncles, 1, null);
 
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
+        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain(new BlockExecutorTest.SimpleEthereumListener());
         BlockStore store = blockChain.getBlockStore();
 
         store.saveBlock(genesis, new BlockDifficulty(BigInteger.valueOf(1)), true);
@@ -58,7 +59,7 @@ public class BlockUnclesValidationRuleTest {
 
         Block block = blockGenerator.createChildBlock(block1, null, uncles, 1, null);
 
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
+        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain(new BlockExecutorTest.SimpleEthereumListener());
         BlockStore store = blockChain.getBlockStore();
 
         store.saveBlock(genesis, new BlockDifficulty(BigInteger.valueOf(1)), true);
