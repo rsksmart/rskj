@@ -24,9 +24,6 @@ public interface MinerClient {
     // Mines a PoW block
     boolean mineBlock();
 
-    // Mines a privately-signed block (only accepted if block difficulty is very low)
-    boolean fallbackMineBlock();
-
     void stop();
 
     boolean isMining();
