@@ -320,7 +320,6 @@ public class MinerManagerTest {
                 ethereum,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
