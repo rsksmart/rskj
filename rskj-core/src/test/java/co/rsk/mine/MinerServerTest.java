@@ -110,7 +110,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 this.blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -152,7 +151,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -218,7 +216,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -269,7 +266,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -323,7 +319,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -384,7 +379,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -437,7 +431,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -495,7 +488,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 this.blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -535,7 +527,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 this.blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -575,7 +566,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 this.blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -619,7 +609,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ethereumImpl,
                 this.blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -753,7 +742,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 Mockito.mock(Ethereum.class),
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 getBuilderWithMocks(),
                 new MinerClock(blockchain, config),

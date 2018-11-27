@@ -25,6 +25,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.DifficultyUtils;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Pack;
@@ -69,6 +70,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         this.constants = blockchainConfig.getCommonConstants();
     }
 
+    @VisibleForTesting
     public ProofOfWorkRule setFallbackMiningEnabled(boolean e) {
         fallbackMiningEnabled = e;
         return this;
@@ -79,15 +81,12 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         return isValid(block.getHeader());
     }
 
-    public static boolean isFallbackMiningPossible(RskSystemProperties config, BlockHeader header) {
+    private boolean isFallbackMiningPossible(BlockHeader header) {
         if (config.getBlockchainConfig().getConfigForBlock(header.getNumber()).isRskip98()) {
             return false;
         }
 
         Constants constants = config.getBlockchainConfig().getCommonConstants();
-        if (header.getNumber() >= constants.getEndOfFallbackMiningBlockNumber()) {
-            return false;
-        }
 
         if (header.getDifficulty().compareTo(constants.getFallbackMiningDifficulty()) > 0) {
             return false;
@@ -100,7 +99,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         return true;
     }
 
-    public boolean isFallbackMiningPossibleAndBlockSigned(BlockHeader header) {
+    private boolean isFallbackMiningPossibleAndBlockSigned(BlockHeader header) {
 
         if (header.getBitcoinMergedMiningCoinbaseTransaction() != null) {
             return false;
@@ -115,7 +114,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        return isFallbackMiningPossible(config, header);
+        return isFallbackMiningPossible(header);
 
     }
 
