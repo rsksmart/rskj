@@ -247,7 +247,6 @@ public class Web3ImplSnapshotTest {
                 ethereum,
                 blockchain,
                 factory.getBlockProcessor(),
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),

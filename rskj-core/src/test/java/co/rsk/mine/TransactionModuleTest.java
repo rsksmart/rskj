@@ -262,7 +262,6 @@ public class TransactionModuleTest {
                 eth,
                 blockchain,
                 null,
-                new DifficultyCalculator(config),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
