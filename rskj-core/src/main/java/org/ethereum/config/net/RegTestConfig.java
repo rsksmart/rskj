@@ -37,7 +37,6 @@ public class RegTestConfig extends AbstractNetConfig {
      */
     public static RegTestConfig getDefaultRegTestConfig() {
         RegTestConfig config = new RegTestConfig();
-        config.add(0, new RegTestOrchidConfig());
         config.add(0, new RegTestSecondForkConfig());
         return config;
     }
