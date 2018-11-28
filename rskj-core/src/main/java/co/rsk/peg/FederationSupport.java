@@ -53,11 +53,11 @@ public class FederationSupport {
     }
 
     /**
-     * Returns the public key of the federation's federator at the given index
+     * Returns the BTC public key of the federation's federator at the given index
      * @param index the federator's index (zero-based)
      * @return the federator's public key
      */
-    public byte[] getFederatorPublicKey(int index) {
+    public byte[] getFederatorBtcPublicKey(int index) {
         List<BtcECKey> publicKeys = getActiveFederation().getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
