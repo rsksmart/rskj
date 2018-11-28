@@ -22,6 +22,7 @@ package org.ethereum.config.net;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.BridgeConstants;
 import co.rsk.peg.Federation;
+import co.rsk.peg.FederationMember;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -84,7 +85,7 @@ public class AbstractNetConfig implements BlockchainNetConfig {
             genesisFederation = bridgeConstants.getGenesisFederation();
         } else{
             genesisFederation = new Federation(
-                    configFederationPublicKeys,
+                    FederationMember.getFederationMembersFromKeys(configFederationPublicKeys),
                     bridgeConstants.getGenesisFederation().getCreationTime(),
                     1L,
                     bridgeConstants.getBtcParams()
