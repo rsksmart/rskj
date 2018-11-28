@@ -82,7 +82,7 @@ public class FederationTest {
     public void membersImmutable() {
         boolean exception = false;
         try {
-            federation.getMembers().add(new FederationMember(new BtcECKey(), new ECKey()));
+            federation.getMembers().add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
         } catch (Exception e) {
             exception = true;
         }
@@ -260,7 +260,7 @@ public class FederationTest {
                 BtcECKey.fromPrivate(BigInteger.valueOf(500)),
         }));
 
-        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600))));
+        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(620))));
         Federation otherFederation = new Federation(
                 members,
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -269,7 +269,7 @@ public class FederationTest {
         );
 
         members.remove(members.size()-1);
-        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(610))));
+        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(620))));
         Federation yetOtherFederation = new Federation(
                 members,
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),

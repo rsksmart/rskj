@@ -110,9 +110,7 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
                     federatorKeys.add(new BtcECKey());
                 }
                 retiringFederation = new Federation(
-                        federatorKeys.stream().map(pk ->
-                                new FederationMember(pk, ECKey.fromPublicOnly(pk.getPubKey())
-                        )).collect(Collectors.toList()),
+                        FederationMember.getFederationMembersFromKeys(federatorKeys),
                         Instant.ofEpochMilli(new Random().nextLong()),
                         Helper.randomInRange(1, 10),
                         networkParameters

@@ -229,17 +229,14 @@ public class BridgeSerializationUtils {
         byte[] creationTimeBytes = rlpList.get(FEDERATION_CREATION_TIME_INDEX).getRLPData();
         Instant creationTime = Instant.ofEpochMilli(BigIntegers.fromUnsignedByteArray(creationTimeBytes).longValue());
 
-        // IMPORTANT: Both BTC and RSK public keys are the same.
+        // IMPORTANT: All BTC, RSK and MST public keys are the same.
         // This is for compatibility with the pre <INSERT FORK NAME HERE> fork network.
         List<FederationMember> federationMembers = ((RLPList) rlpList.get(FEDERATION_PUB_KEYS_INDEX)).stream()
-                .map(pubKeyBytes -> new FederationMember(
-                        BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()),
-                        ECKey.fromPublicOnly(pubKeyBytes.getRLPData())
-                )).collect(Collectors.toList());
-
-        List<ECKey> rskPubKeys = ((RLPList) rlpList.get(FEDERATION_PUB_KEYS_INDEX)).stream()
-                .map(pubKeyBytes -> ECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
-                .collect(Collectors.toList());
+                .map(pubKeyBytes ->
+                        FederationMember.getFederationMemberFromKey(
+                                BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData())
+                        )
+                ).collect(Collectors.toList());
 
         byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
         long creationBlockNumber = BigIntegers.fromUnsignedByteArray(creationBlockNumberBytes).longValue();
@@ -259,7 +256,7 @@ public class BridgeSerializationUtils {
     public static PendingFederation deserializePendingFederation(byte[] data) {
         // BTC and RSK keys are the same
         List<FederationMember> members = deserializeBtcPublicKeys(data).stream().map(pk ->
-            new FederationMember(pk, ECKey.fromPublicOnly(pk.getPubKey()))
+            FederationMember.getFederationMemberFromKey(pk)
         ).collect(Collectors.toList());
 
         return new PendingFederation(members);
