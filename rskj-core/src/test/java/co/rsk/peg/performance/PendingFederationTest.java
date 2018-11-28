@@ -92,9 +92,7 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
                 for (int i = 0; i < numFederators; i++) {
                     federatorKeys.add(new BtcECKey());
                 }
-                pendingFederation = new PendingFederation(federatorKeys.stream().map(pk ->
-                        new FederationMember(pk, ECKey.fromPublicOnly(pk.getPubKey())
-                )).collect(Collectors.toList()));
+                pendingFederation = new PendingFederation(FederationMember.getFederationMembersFromKeys(federatorKeys));
                 provider.setPendingFederation(pendingFederation);
             } else {
                 pendingFederation = null;

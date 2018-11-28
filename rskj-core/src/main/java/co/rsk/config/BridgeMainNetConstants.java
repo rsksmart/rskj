@@ -45,11 +45,9 @@ public class BridgeMainNetConstants extends BridgeConstants {
                 federator12PublicKey, federator13PublicKey, federator14PublicKey
         );
 
-        // IMPORTANT: Both BTC and RSK keys are the same.
+        // IMPORTANT: BTC, RSK and MST keys are the same.
         // Change upon implementation of the <INSERT FORK NAME HERE> fork.
-        List<FederationMember> federationMembers = genesisFederationPublicKeys.stream().map(pk -> new FederationMember(
-                pk, ECKey.fromPublicOnly(pk.getPubKey())
-        )).collect(Collectors.toList());
+        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
 
         // Currently set to:
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00

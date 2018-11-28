@@ -196,9 +196,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
                 for (int i = 0; i < numKeys; i++) {
                     pendingFederationKeys.add(new BtcECKey());
                 }
-                pendingFederation = new PendingFederation(pendingFederationKeys.stream().map(pk ->
-                        new FederationMember(pk, ECKey.fromPublicOnly(pk.getPubKey())
-                )).collect(Collectors.toList()));
+                pendingFederation = new PendingFederation(FederationMember.getFederationMembersFromKeys(pendingFederationKeys));
                 provider.setPendingFederation(pendingFederation);
             }
 

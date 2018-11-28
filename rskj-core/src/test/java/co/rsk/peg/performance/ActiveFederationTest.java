@@ -108,9 +108,7 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
                     federatorKeys.add(new BtcECKey());
                 }
 
-                List<FederationMember> members = federatorKeys.stream().map(pk ->
-                        new FederationMember(pk, ECKey.fromPublicOnly(pk.getPubKey()))
-                ).collect(Collectors.toList());
+                List<FederationMember> members = FederationMember.getFederationMembersFromKeys(federatorKeys);
 
                 federation = new Federation(
                         members,

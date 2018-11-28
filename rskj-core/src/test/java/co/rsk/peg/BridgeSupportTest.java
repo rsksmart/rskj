@@ -523,7 +523,7 @@ public class BridgeSupportTest {
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         Federation oldFederation = bridgeConstants.getGenesisFederation();
         BtcECKey key = new BtcECKey(new SecureRandom());
-        FederationMember member = new FederationMember(key, ECKey.fromPublicOnly(key.getPubKey()));
+        FederationMember member = FederationMember.getFederationMemberFromKey(key);
         Federation newFederation = new Federation(
                 Collections.singletonList(member),
                 Instant.EPOCH,
