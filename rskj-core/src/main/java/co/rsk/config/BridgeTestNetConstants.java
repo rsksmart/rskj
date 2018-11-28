@@ -45,11 +45,9 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         List<BtcECKey> genesisFederationPublicKeys = Arrays.asList(federator0PublicKey, federator1PublicKey, federator2PublicKey, federator3PublicKey);
 
-        // IMPORTANT: Both BTC and RSK keys are the same.
+        // IMPORTANT: BTC, RSK and MST keys are the same.
         // Change upon implementation of the <INSERT FORK NAME HERE> fork.
-        List<FederationMember> federationMembers = genesisFederationPublicKeys.stream().map(pk -> new FederationMember(
-                pk, ECKey.fromPublicOnly(pk.getPubKey())
-        )).collect(Collectors.toList());
+        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
 
         // Currently set to:
         // Currently set to: Monday, October 8, 2018 12:00:00 AM GMT-03:00

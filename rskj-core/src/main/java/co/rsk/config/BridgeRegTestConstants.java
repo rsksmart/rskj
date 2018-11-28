@@ -51,11 +51,9 @@ public class BridgeRegTestConstants extends BridgeConstants {
         federatorPrivateKeys = Lists.newArrayList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey);
         List<BtcECKey> federatorPublicKeys = federatorPrivateKeys.stream().map(key -> BtcECKey.fromPublicOnly(key.getPubKey())).collect(Collectors.toList());
 
-        // IMPORTANT: Both BTC and RSK keys are the same.
+        // IMPORTANT: BTC, RSK and MST keys are the same.
         // Change upon implementation of the <INSERT FORK NAME HERE> fork.
-        List<FederationMember> federationMembers = federatorPublicKeys.stream().map(pk -> new FederationMember(
-                pk, ECKey.fromPublicOnly(pk.getPubKey())
-        )).collect(Collectors.toList());
+        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federatorPublicKeys);
 
         Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 

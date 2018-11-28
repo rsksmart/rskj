@@ -1473,8 +1473,8 @@ public class BridgeSupport {
             return 1;
         }
 
-        // Build the new federation member using the same key for both BTC and RSK
-        FederationMember member = new FederationMember(key, ECKey.fromPublicOnly(key.getPubKey()));
+        // Build the new federation member using the same key for BTC, RSK and MST
+        FederationMember member = FederationMember.getFederationMemberFromKey(key);
 
         currentPendingFederation = currentPendingFederation.addMember(member);
 

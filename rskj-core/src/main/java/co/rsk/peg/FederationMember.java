@@ -40,13 +40,17 @@ import java.util.stream.Collectors;
 public final class FederationMember {
     private final BtcECKey btcPublicKey;
     private final ECKey rskPublicKey;
+    private final ECKey mstPublicKey;
 
     // To be removed when different keys per federation member feature is implemented. This is just a helper
     // method to make it easier w.r.t. compatibility with the current approach
+    public static FederationMember getFederationMemberFromKey(BtcECKey pk) {
+        ECKey ethKey = ECKey.fromPublicOnly(pk.getPubKey());
+        return new FederationMember(pk, ethKey, ethKey);
+    }
+
     public static List<FederationMember> getFederationMembersFromKeys(List<BtcECKey> pks) {
-        return pks.stream().map(pk ->
-                new FederationMember(pk, ECKey.fromPublicOnly(pk.getPubKey()))
-        ).collect(Collectors.toList());
+        return pks.stream().map(pk -> getFederationMemberFromKey(pk)).collect(Collectors.toList());
     }
 
     /**
@@ -55,8 +59,13 @@ public final class FederationMember {
      * The total ordering is defined such that, for any two members M1, M2,
      * 1) M1 < M2 iif BTC_PUB_KEY(M1) <lex BTC_PUB_KEY(M2) OR
      *              (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
-     *               RSK_PUB_KEY(M1) <lex RSK_PUB_KEY(M2))
-     * 2) M1 == M2 iff BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND RSK_PUB_KEY(M1) ==lex RSK_PUB_KEY(M2)
+     *               RSK_PUB_KEY(M1) <lex RSK_PUB_KEY(M2)) OR
+     *              (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
+     *               RSK_PUB_KEY(M1) ==lex RSK_PUB_KEY(M2) AND
+     *               MST_PUB_KEY(M1) <lex MST_PUB_KEY(M2))
+     * 2) M1 == M2 iff BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
+     *                 RSK_PUB_KEY(M1) ==lex RSK_PUB_KEY(M2) AND
+     *                 MST_PUB_KEY(M1) ==lex MST_PUB_KEY(M2) AND
      * 3) M1 > M2 otherwise
      *
      * where <lex and ==lex is given by negative and zero values (resp.) of the
@@ -69,16 +78,21 @@ public final class FederationMember {
         public int compare(FederationMember m1, FederationMember m2) {
             int btcKeysComparison = comparator.compare(m1.getBtcPublicKey().getPubKey(), m2.getBtcPublicKey().getPubKey());
             if (btcKeysComparison == 0) {
-                return comparator.compare(m1.getRskPublicKey().getPubKey(), m2.getRskPublicKey().getPubKey());
+                int rskKeysComparison = comparator.compare(m1.getRskPublicKey().getPubKey(), m2.getRskPublicKey().getPubKey());
+                if (rskKeysComparison == 0) {
+                    return comparator.compare(m1.getMstPublicKey().getPubKey(), m2.getMstPublicKey().getPubKey());
+                }
+                return rskKeysComparison;
             }
             return btcKeysComparison;
         }
     };
 
-    public FederationMember(BtcECKey btcPublicKey, ECKey rskPublicKey) {
+    public FederationMember(BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
         // Copy public keys to ensure effective immutability
         this.btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKey());
         this.rskPublicKey = ECKey.fromPublicOnly(rskPublicKey.getPubKey());
+        this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey());
     }
 
     BtcECKey getBtcPublicKey() {
@@ -91,9 +105,19 @@ public final class FederationMember {
         return ECKey.fromPublicOnly(rskPublicKey.getPubKey());
     }
 
+    ECKey getMstPublicKey() {
+        // Return a copy
+        return ECKey.fromPublicOnly(mstPublicKey.getPubKey());
+    }
+
     @Override
     public String toString() {
-        return String.format("<BTC-%s, RSK-%s> federation member", Hex.toHexString(btcPublicKey.getPubKey()), Hex.toHexString(rskPublicKey.getPubKey()));
+        return String.format(
+                "<BTC-%s, RSK-%s, MST-%s> federation member",
+                Hex.toHexString(btcPublicKey.getPubKey()),
+                Hex.toHexString(rskPublicKey.getPubKey()),
+                Hex.toHexString(mstPublicKey.getPubKey())
+        );
     }
 
     @Override
@@ -109,7 +133,8 @@ public final class FederationMember {
         FederationMember otherFederationMember = (FederationMember) other;
 
         return Arrays.equals(btcPublicKey.getPubKey(), otherFederationMember.btcPublicKey.getPubKey()) &&
-                Arrays.equals(rskPublicKey.getPubKey(), otherFederationMember.rskPublicKey.getPubKey());
+                Arrays.equals(rskPublicKey.getPubKey(), otherFederationMember.rskPublicKey.getPubKey()) &&
+                Arrays.equals(mstPublicKey.getPubKey(), otherFederationMember.mstPublicKey.getPubKey());
     }
 
     @Override
@@ -118,7 +143,8 @@ public final class FederationMember {
         // well-defined hashCode(s).
         return Objects.hash(
                 btcPublicKey,
-                rskPublicKey
+                rskPublicKey,
+                mstPublicKey
         );
     }
 }
