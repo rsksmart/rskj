@@ -25,7 +25,6 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.BigIntegers;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -254,7 +253,7 @@ public class BridgeSerializationUtils {
     // For the serialization format, see BridgeSerializationUtils::serializePendingFederation
     // and serializePublicKeys::deserializePublicKeys
     public static PendingFederation deserializePendingFederation(byte[] data) {
-        // BTC and RSK keys are the same
+        // BTC, RSK and MST keys are the same
         List<FederationMember> members = deserializeBtcPublicKeys(data).stream().map(pk ->
             FederationMember.getFederationMemberFromKey(pk)
         ).collect(Collectors.toList());
