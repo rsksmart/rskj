@@ -46,13 +46,15 @@ import static org.mockito.Matchers.any;
 public class FederationMemberTest {
     private BtcECKey btcKey;
     private ECKey rskKey;
+    private ECKey mstKey;
     private FederationMember member;
 
     @Before
     public void createFederationMember() {
         btcKey = new BtcECKey();
         rskKey = new ECKey();
-        member = new FederationMember(btcKey, rskKey);
+        mstKey = new ECKey();
+        member = new FederationMember(btcKey, rskKey, mstKey);
     }
 
     @Test
@@ -74,21 +76,28 @@ public class FederationMemberTest {
 
     @Test
     public void testEquals_sameKeys() {
-        FederationMember otherMember = new FederationMember(btcKey, rskKey);
+        FederationMember otherMember = new FederationMember(btcKey, rskKey, mstKey);
 
         Assert.assertTrue(member.equals(otherMember));
     }
 
     @Test
     public void testEquals_differentBtcKey() {
-        FederationMember otherMember = new FederationMember(new BtcECKey(), rskKey);
+        FederationMember otherMember = new FederationMember(new BtcECKey(), rskKey, mstKey);
 
         Assert.assertFalse(member.equals(otherMember));
     }
 
     @Test
     public void testEquals_differentRskKey() {
-        FederationMember otherMember = new FederationMember(btcKey, new ECKey());
+        FederationMember otherMember = new FederationMember(btcKey, new ECKey(), mstKey);
+
+        Assert.assertFalse(member.equals(otherMember));
+    }
+
+    @Test
+    public void testEquals_differentMstKey() {
+        FederationMember otherMember = new FederationMember(btcKey, rskKey, new ECKey());
 
         Assert.assertFalse(member.equals(otherMember));
     }

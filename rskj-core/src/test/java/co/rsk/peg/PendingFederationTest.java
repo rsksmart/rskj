@@ -70,7 +70,7 @@ public class PendingFederationTest {
     public void membersImmutable() {
         boolean exception = false;
         try {
-            pendingFederation.getMembers().add(new FederationMember(new BtcECKey(), new ECKey()));
+            pendingFederation.getMembers().add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
         } catch (Exception e) {
             exception = true;
         }
@@ -135,11 +135,11 @@ public class PendingFederationTest {
                 BtcECKey.fromPrivate(BigInteger.valueOf(500)),
         }));
 
-        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600))));
+        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(620))));
         PendingFederation otherPendingFederation = new PendingFederation(members);
 
         members.remove(members.size()-1);
-        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(610))));
+        members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(630))));
         PendingFederation yetOtherPendingFederation = new PendingFederation(members);
 
         Assert.assertFalse(otherPendingFederation.equals(yetOtherPendingFederation));
