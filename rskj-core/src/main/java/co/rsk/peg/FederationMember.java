@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 /**
  * Immutable representation of an RSK Federation member.
  *
- * It's composed of two public keys: one for the RSK and one for the
- * BTC network.
+ * It's composed of three public keys: one for the RSK network, one for the
+ * BTC network and one called MST of yet undefined usage.
  *
  * @author Ariel Mendelzon
  */
@@ -42,8 +42,9 @@ public final class FederationMember {
     private final ECKey rskPublicKey;
     private final ECKey mstPublicKey;
 
-    // To be removed when different keys per federation member feature is implemented. This is just a helper
-    // method to make it easier w.r.t. compatibility with the current approach
+    // To be removed when different keys per federation member feature is implemented. These are just helper
+    // methods to make it easier w.r.t. compatibility with the current approach
+
     public static FederationMember getFederationMemberFromKey(BtcECKey pk) {
         ECKey ethKey = ECKey.fromPublicOnly(pk.getPubKey());
         return new FederationMember(pk, ethKey, ethKey);
@@ -71,7 +72,7 @@ public final class FederationMember {
      * where <lex and ==lex is given by negative and zero values (resp.) of the
      * UnsignedBytes.lexicographicalComparator() comparator.
      */
-    public static final Comparator<FederationMember> BTC_RSK_PUBKEYS_COMPARATOR = new Comparator<FederationMember>() {
+    public static final Comparator<FederationMember> BTC_RSK_MST_PUBKEYS_COMPARATOR = new Comparator<FederationMember>() {
         private Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
 
         @Override

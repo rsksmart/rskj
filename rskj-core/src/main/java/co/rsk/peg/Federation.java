@@ -51,7 +51,7 @@ public final class Federation {
         // Sorting members ensures same order of federation members for same members
         // Immutability provides protection against unwanted modification, thus making the Federation instance
         // effectively immutable
-        this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
+        this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
 
         this.creationTime = creationTime;
         this.creationBlockNumber = creationBlockNumber;
