@@ -47,7 +47,7 @@ public final class PendingFederation {
         // Sorting members ensures same order for members
         // Immutability provides protection against unwanted modification, thus making the Pending Federation instance
         // effectively immutable
-        this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
+        this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
     }
 
     public List<FederationMember> getMembers() {

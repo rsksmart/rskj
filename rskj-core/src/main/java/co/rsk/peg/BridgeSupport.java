@@ -45,7 +45,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
@@ -1282,13 +1281,7 @@ public class BridgeSupport {
      * @return the federator's public key
      */
     public byte[] getFederatorPublicKey(int index) {
-        List<BtcECKey> publicKeys = getActiveFederation().getBtcPublicKeys();
-
-        if (index < 0 || index >= publicKeys.size()) {
-            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and {}", publicKeys.size() - 1));
-        }
-
-        return publicKeys.get(index).getPubKey();
+        return federationSupport.getFederatorBtcPublicKey(index);
     }
 
     /**
@@ -1452,7 +1445,7 @@ public class BridgeSupport {
 
     /**
      * Adds the given key to the current pending federation.
-     * IMPORTANT: the given key is used both for BTC and RSK.
+     * IMPORTANT: for now, the given key is used for BTC, RSK and MST.
      *
      * @param dryRun whether to just do a dry run
      * @param key the public key to add
