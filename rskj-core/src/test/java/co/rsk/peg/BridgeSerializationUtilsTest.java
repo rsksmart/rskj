@@ -25,6 +25,7 @@ import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
@@ -36,7 +37,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -46,8 +46,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.*;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
@@ -135,14 +135,14 @@ public class BridgeSerializationUtilsTest {
         };
 
         Federation federation = new Federation(
-            Arrays.asList(new BtcECKey[]{
+            FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                     BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[2]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[3]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[4]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[5]),
-            }),
+            })),
             Instant.ofEpochMilli(0xabcdef), //
             42L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -152,7 +152,7 @@ public class BridgeSerializationUtilsTest {
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("ff00abcdef"); // Creation time
         expectedBuilder.append("ff2a"); // Creation block number
-        federation.getPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
+        federation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
             expectedBuilder.append("dd");
             expectedBuilder.append(Hex.toHexString(key.getPubKey()));
         });
@@ -188,10 +188,10 @@ public class BridgeSerializationUtilsTest {
 
         Assert.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
         Assert.assertEquals(4, deserializedFederation.getNumberOfSignaturesRequired());
-        Assert.assertEquals(6, deserializedFederation.getPublicKeys().size());
+        Assert.assertEquals(6, deserializedFederation.getBtcPublicKeys().size());
         Assert.assertThat(deserializedFederation.getCreationBlockNumber(), is(42L));
         for (int i = 0; i < 6; i++) {
-            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedFederation.getPublicKeys().get(i).getPubKey()));
+            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedFederation.getBtcPublicKeys().get(i).getPubKey()));
         }
         Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), deserializedFederation.getBtcParams());
     }
@@ -239,19 +239,19 @@ public class BridgeSerializationUtilsTest {
         };
 
         PendingFederation pendingFederation = new PendingFederation(
-                Arrays.asList(new BtcECKey[]{
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[2]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[3]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[4]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[5]),
-                })
+                }))
         );
 
         byte[] result = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
         StringBuilder expectedBuilder = new StringBuilder();
-        pendingFederation.getPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
+        pendingFederation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
             expectedBuilder.append("dd");
             expectedBuilder.append(Hex.toHexString(key.getPubKey()));
         });
@@ -279,9 +279,9 @@ public class BridgeSerializationUtilsTest {
 
         PendingFederation deserializedPendingFederation = BridgeSerializationUtils.deserializePendingFederation(sample);
 
-        Assert.assertEquals(6, deserializedPendingFederation.getPublicKeys().size());
+        Assert.assertEquals(6, deserializedPendingFederation.getBtcPublicKeys().size());
         for (int i = 0; i < 6; i++) {
-            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedPendingFederation.getPublicKeys().get(i).getPubKey()));
+            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedPendingFederation.getBtcPublicKeys().get(i).getPubKey()));
         }
     }
 
@@ -627,14 +627,14 @@ public class BridgeSerializationUtilsTest {
         };
 
         Federation federation = new Federation(
-                Arrays.asList(
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(
                         BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[2]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[3]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[4]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[5])
-                ),
+                )),
                 Instant.ofEpochMilli(0xabcdef),
                 42L,
                 networkParms

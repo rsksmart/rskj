@@ -886,7 +886,7 @@ public class BridgeSupport {
     public void addSignature(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
         Context.propagate(btcContext);
         Federation retiringFederation = getRetiringFederation();
-        if (!getActiveFederation().getPublicKeys().contains(federatorPublicKey) && (retiringFederation == null || !retiringFederation.getPublicKeys().contains(federatorPublicKey))) {
+        if (!getActiveFederation().getBtcPublicKeys().contains(federatorPublicKey) && (retiringFederation == null || !retiringFederation.getBtcPublicKeys().contains(federatorPublicKey))) {
             logger.warn("Supplied federator public key {} does not belong to any of the federators.", federatorPublicKey);
             return;
         }
@@ -963,10 +963,10 @@ public class BridgeSupport {
                     logger.debug("Tx input {} for tx {} signed.", i, new Keccak256(rskTxHash));
                 } catch (IllegalStateException e) {
                     Federation retiringFederation = getRetiringFederation();
-                    if (getActiveFederation().hasPublicKey(federatorPublicKey)) {
+                    if (getActiveFederation().hasBtcPublicKey(federatorPublicKey)) {
                         logger.debug("A member of the active federation is trying to sign a tx of the retiring one");
                         return;
-                    } else if (retiringFederation != null && retiringFederation.hasPublicKey(federatorPublicKey)) {
+                    } else if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey)) {
                         logger.debug("A member of the retiring federation is trying to sign a tx of the active one");
                         return;
                     }
@@ -1264,7 +1264,7 @@ public class BridgeSupport {
      * @return the federation size
      */
     public Integer getFederationSize() {
-        return federationSupport.getFederationSize();
+        return getActiveFederation().getBtcPublicKeys().size();
     }
 
     /**
@@ -1281,7 +1281,7 @@ public class BridgeSupport {
      * @return the federator's public key
      */
     public byte[] getFederatorPublicKey(int index) {
-        return federationSupport.getFederatorPublicKey(index);
+        return federationSupport.getFederatorBtcPublicKey(index);
     }
 
     /**
@@ -1324,7 +1324,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        return retiringFederation.getPublicKeys().size();
+        return retiringFederation.getBtcPublicKeys().size();
     }
 
     /**
@@ -1351,10 +1351,10 @@ public class BridgeSupport {
             return null;
         }
 
-        List<BtcECKey> publicKeys = retiringFederation.getPublicKeys();
+        List<BtcECKey> publicKeys = retiringFederation.getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
-            throw new IndexOutOfBoundsException(String.format("Retiring federator index must be between 0 and {}", publicKeys.size() - 1));
+            throw new IndexOutOfBoundsException(String.format("Retiring federator index must be between 0 and %d", publicKeys.size() - 1));
         }
 
         return publicKeys.get(index).getPubKey();
@@ -1444,7 +1444,9 @@ public class BridgeSupport {
     }
 
     /**
-     * Adds the given key to the current pending federation
+     * Adds the given key to the current pending federation.
+     * IMPORTANT: for now, the given key is used for BTC, RSK and MST.
+     *
      * @param dryRun whether to just do a dry run
      * @param key the public key to add
      * @return 1 upon success, -1 if there was no pending federation, -2 if the key was already in the pending federation
@@ -1456,7 +1458,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        if (currentPendingFederation.getPublicKeys().contains(key)) {
+        if (currentPendingFederation.getBtcPublicKeys().contains(key)) {
             return -2;
         }
 
@@ -1464,7 +1466,10 @@ public class BridgeSupport {
             return 1;
         }
 
-        currentPendingFederation = currentPendingFederation.addPublicKey(key);
+        // Build the new federation member using the same key for BTC, RSK and MST
+        FederationMember member = FederationMember.getFederationMemberFromKey(key);
+
+        currentPendingFederation = currentPendingFederation.addMember(member);
 
         provider.setPendingFederation(currentPendingFederation);
 
@@ -1666,7 +1671,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        return currentPendingFederation.getPublicKeys().size();
+        return currentPendingFederation.getBtcPublicKeys().size();
     }
 
     /**
@@ -1681,10 +1686,10 @@ public class BridgeSupport {
             return null;
         }
 
-        List<BtcECKey> publicKeys = currentPendingFederation.getPublicKeys();
+        List<BtcECKey> publicKeys = currentPendingFederation.getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
-            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and {}", publicKeys.size() - 1));
+            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", publicKeys.size() - 1));
         }
 
         return publicKeys.get(index).getPubKey();
