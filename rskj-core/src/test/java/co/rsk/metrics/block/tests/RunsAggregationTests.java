@@ -1,7 +1,7 @@
 package co.rsk.metrics.block.tests;
 
-import co.rsk.metrics.block.profiler.simple.ProfilerResult;
 import co.rsk.metrics.block.profiler.ProfilingException;
+import co.rsk.metrics.block.profiler.full.ProfilerResult;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
@@ -11,8 +11,8 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 
-
-public class RunsAggregation {
+//Make sure you're using the correct profiler package in your tests, in this case this suite uses the full profiler
+public class RunsAggregationTests {
 
 
     @Test
@@ -29,7 +29,7 @@ public class RunsAggregation {
 
 
     private void generateAggregatedFile(String sourceName, String destFile, String description,int runs ) throws IOException, ProfilingException {
-        String path = "/home/raul/RSKWorkspace/rskj/rskj-core/src/test/resources/performance/player-runs";
+        String path = TestContext.ROOT + "/src/test/resources/performance/player-runs";
         ObjectMapper mapper = new ObjectMapper();
         JavaType type = mapper.getTypeFactory().constructType(ProfilerResult.class);
 
@@ -48,15 +48,15 @@ public class RunsAggregation {
 
 
     private void generateAggregatedDetailedFile(String sourceName, String destFile, String description,int runs ) throws IOException, ProfilingException {
-        String path = "/home/raul/RSKWorkspace/rskj/rskj-core/src/test/resources/performance/player-runs";
+        String path = TestContext.ROOT + "/src/test/resources/performance/player-runs";
         ObjectMapper mapper = new ObjectMapper();
-        JavaType type = mapper.getTypeFactory().constructType(co.rsk.metrics.block.profiler.detailed.ProfilerResult.class);
+        JavaType type = mapper.getTypeFactory().constructType(ProfilerResult.class);
 
 
-        co.rsk.metrics.block.profiler.detailed.ProfilerResult aggregatedRun = new co.rsk.metrics.block.profiler.detailed.ProfilerResult();
+        ProfilerResult aggregatedRun = new ProfilerResult();
         for(int i = 1; i < runs; i++){
             String json = new String(ByteStreams.toByteArray(new FileInputStream(path+"/"+sourceName+"_"+i+".json")));
-            co.rsk.metrics.block.profiler.detailed.ProfilerResult playerRun  = mapper.readValue(json, type);
+            ProfilerResult playerRun  = mapper.readValue(json, type);
             aggregatedRun.aggregate(playerRun, runs);
         }
 
