@@ -64,7 +64,6 @@ public class GenesisBuilderTests {
 
         int i = 0;
         BigInteger nonce = TestContext.INITIAL_TRX_NONCE;
-        boolean firstAccount = true;
         for(AccountStatus accountStatus: genesisInfo.getRegularAccounts()){
 
             Assert.assertEquals("ACC_"+i, accountStatus.getAccountName());

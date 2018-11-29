@@ -30,6 +30,8 @@ public final class GenesisLoader {
         return this.genesisInfo.getRegularAccounts();
     }
 
+    public Vector<AccountStatus> getRemascCoinbases() { return  this.genesisInfo.getRemascCoinbases(); }
+
     public Vector<AccountStatus> getTokenContracts(){
         return this.genesisInfo.getTokenContracts();
     }

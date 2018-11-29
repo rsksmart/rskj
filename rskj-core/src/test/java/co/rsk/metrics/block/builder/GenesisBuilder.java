@@ -1,6 +1,7 @@
 package co.rsk.metrics.block.builder;
 
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.metrics.block.tests.TestContext;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -48,6 +49,7 @@ public final class GenesisBuilder {
 
         //Vector<AccountStatus> generatedTokenContracts = new Vector<>(5);
         Vector<AccountStatus> generatedNormalAccounts = new Vector<>(regularAcounts);
+        Vector<AccountStatus> generatedRemascCoinbases = new Vector<>(TestContext.DATASOURCE_COINBASES_TO_GENERATE);
         AccountStatus tokenOwner = new AccountStatus(getAccount("TOKENS_OWNER_ACCOUNT").getAddress().toString(),"TOKENS_OWNER_ACCOUNT" );
 
         Path path = Paths.get(root + "/genesis-info");
@@ -113,13 +115,21 @@ public final class GenesisBuilder {
         genesisWriter.write("\""+"dabadabadabadabadabadabadabadabadaba0001"+"\": { \"balance\": \""+accountBalance.toString()+"\"}"+ ",");
 
 
+        //Generate coinbases for Remasc
+        for(int i = 0; i < TestContext.DATASOURCE_COINBASES_TO_GENERATE; i++){
+            String accountName = "RemascAccount_"+i;
+            Account remascAccount = getAccount(accountName);
+
+            generatedRemascCoinbases.add(new AccountStatus(remascAccount.getAddress().toString(), accountName));
+            genesisWriter.write("\""+remascAccount.getAddress().toString()+"\": { \"balance\": \""+accountBalance.toString()+"\"},");
+
+        }
+
         Account tokenCreator = getAccount("TokenCreatorAccount");
         genesisWriter.write("\""+tokenCreator.getAddress().toString()+"\": { \"balance\": \""+accountBalance.toString()+"\"},");
 
 
         logger.info("Generating {} accounts", regularAcounts);
-        //infoWriter.write(",\"accounts\": [ ");
-       // genesisWriter.write(",");
 
         for (int i = 0; i < regularAcounts; i++){
 
@@ -127,18 +137,16 @@ public final class GenesisBuilder {
             Account account = getAccount(accountName);
 
             generatedNormalAccounts.add(new AccountStatus(account.getAddress().toString(), accountName)); //Used later to sign transactions
-
             genesisWriter.write("\""+account.getAddress().toString()+"\": { \"balance\": \""+accountBalance.toString()+"\"}"+ (i+1 ==regularAcounts?"":","));
 
         }
 
-        //infoWriter.write("]");
         genesisWriter.write("},");
         genesisWriter.write("\"nonce\": \"0x0000000000000000\", \"mixhash\": \"0x00\", \"bitcoinMergedMiningHeader\": \"0x00\",");
         genesisWriter.write("\"bitcoinMergedMiningMerkleProof\": \"0x00\", \"bitcoinMergedMiningCoinbaseTransaction\": \"0x00\",");
         genesisWriter.write("\"timestamp\": \"0x00\", \"parentHash\": \"0x0000000000000000000000000000000000000000000000000000000000000000\",");
         genesisWriter.write("\"extraData\": \"0x0000000000000000000000000000000000000000000000000000000000000000\", \"gasLimit\": \"0x2fefd8\", \"difficulty\": \"0x0000000001\",");
-        genesisWriter.write("\"minimumGasPrice\": \"0x00\", \"coinbase\": \"0xe94aef644e428941ee0a3741f28d80255fddba7f\"");
+        genesisWriter.write("\"minimumGasPrice\": \"0x00\", \"coinbase\": \""+generatedRemascCoinbases.get(0).getAddress()+"\"");
         genesisWriter.write("}");
         genesisWriter.close();
 
@@ -146,7 +154,7 @@ public final class GenesisBuilder {
 
 
         //Persist generated accounts and contracts to avoid parsing those lists when loading the genesis file
-        GenesisInfo genesisInfo = new GenesisInfo(generatedNormalAccounts, new Vector<>(0), fileHash, tokenOwner);
+        GenesisInfo genesisInfo = new GenesisInfo(generatedNormalAccounts, new Vector<>(0), generatedRemascCoinbases, fileHash, tokenOwner);
         FileOutputStream fos = new FileOutputStream(root + "/genesis-info");
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         oos.writeObject(genesisInfo);

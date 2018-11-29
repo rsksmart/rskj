@@ -242,14 +242,14 @@ public class BlockChainBuilder {
 
                 //Generate actual block using the last connected best-block's hash
 
-               Block block = blockGenerator.createChildBlock(lastBlock, b.getTransactions(),null, b.getBlockDifficulty().longValue(), TestContext.MIN_GAS_PRICE, b.getBlockGasLimit().toByteArray());
+               Block block = blockGenerator.createChildBlock(lastBlock, b.getTransactions(),null, b.getBlockDifficulty().longValue(), TestContext.MIN_GAS_PRICE, b.getBlockGasLimit().toByteArray(), new RskAddress(b.getCoinbase()));
 
-                Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+               Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
                blockExecutor.executeAndFillAll(block, lastBlock);
-                profiler.stop(metric);
+               profiler.stop(metric);
 
 
-                metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_MINING);
+               metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_MINING);
                block = miner.mineBlock(block);
                profiler.stop(metric);
 

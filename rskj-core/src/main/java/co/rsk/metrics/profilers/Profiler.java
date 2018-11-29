@@ -26,6 +26,13 @@ public interface Profiler {
         GET_REPOSITORY_SNAPSHOT, //20
         GET_ENCODED_TRX, //21
         TRX_GET_HASH, //22
+        TRIE_GET_HASH, //23
+        TRIE_FLUSH, //24
+        TRIE_SAVE_PUT_IN_STORE, //25
+        TRIE_SAVE_GET_HASH, //26
+        TRIE_SAVE_GET_MESSAGE, //27
+        TRIE_SAVE_GET_VALUE_HASH, //28
+        TRIE_SAVE_GET_VALUE //29
 
     }
 

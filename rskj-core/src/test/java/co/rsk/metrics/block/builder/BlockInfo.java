@@ -16,14 +16,16 @@ public class BlockInfo {
     private long blockNumber;
     private BigInteger blockGasLimit;
     private List<BlockHeader> uncles;
+    private String coinbase;
 
-    public BlockInfo(List<Transaction> trxs, Coin paidFees, BigInteger blockDifficulty, long blockNumber, BigInteger blockGasLimit, List<BlockHeader> uncles){
+    public BlockInfo(List<Transaction> trxs, Coin paidFees, BigInteger blockDifficulty, long blockNumber, BigInteger blockGasLimit, List<BlockHeader> uncles, String coinbase){
         this.transactions = trxs;
         this.paidFees = paidFees;
         this.blockDifficulty = blockDifficulty;
         this.blockNumber = blockNumber;
         this.blockGasLimit = blockGasLimit;
         this.uncles = uncles;
+        this.coinbase = coinbase;
     }
 
     private BlockInfo(){
@@ -38,6 +40,7 @@ public class BlockInfo {
         blockMock.blockNumber = block.getNumber();
         blockMock.blockGasLimit = block.getGasLimitAsInteger();
         blockMock.uncles = block.getUncleList();
+        blockMock.coinbase = block.getCoinbase().toString();
 
         return blockMock;
     }
@@ -65,4 +68,6 @@ public class BlockInfo {
     public List<BlockHeader> getUncles() {
         return uncles;
     }
+
+    public String getCoinbase() { return this.coinbase;}
 }

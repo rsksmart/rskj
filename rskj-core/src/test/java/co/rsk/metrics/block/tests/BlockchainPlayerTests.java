@@ -4,8 +4,8 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.metrics.block.BlockchainPlayer;
 import co.rsk.metrics.block.builder.InvalidGenesisFileException;
 import co.rsk.metrics.block.profiler.ProfilingException;
-import co.rsk.metrics.block.profiler.detailed.ExecutionProfiler;
-import co.rsk.metrics.block.profiler.detailed.Metric;
+import co.rsk.metrics.block.profiler.full.ExecutionProfiler;
+import co.rsk.metrics.block.profiler.full.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import org.ethereum.config.DefaultConfig;
@@ -114,7 +114,8 @@ public class BlockchainPlayerTests {
     private void playBlockchain_DetailedProfiler(BlockStore blockStore, String destinationBlockchain, String profileOutput, TestSystemProperties config, boolean includesRemasc) throws InvalidGenesisFileException, IOException, ProfilingException {
         ExecutionProfiler.singleton().clean();
 
-        BlockchainPlayer.playBlockchain(blockStore, destinationBlockchain, 1, config, includesRemasc, true);
+        boolean useCache = TestContext.IDEAL_CACHE_ON;
+        BlockchainPlayer.playBlockchain(blockStore, destinationBlockchain, 1, config, includesRemasc, useCache);
         List<Metric> nonstopped = ExecutionProfiler.singleton().isAllStopped();
         if(nonstopped.size()>0){
             System.out.println("NO SE PARARON TODOS LOS METRICS!!");

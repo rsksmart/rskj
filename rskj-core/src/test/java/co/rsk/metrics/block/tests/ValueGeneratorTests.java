@@ -26,6 +26,7 @@ public class ValueGeneratorTests {
         Assert.assertEquals(valueGenerator.getTokenContractsLength(), TestContext.DATASOURCE_VALUES_TO_GENERATE);
         Assert.assertEquals(valueGenerator.getTransferTypeLength(), TestContext.DATASOURCE_VALUES_TO_GENERATE);
         Assert.assertEquals(valueGenerator.getTrxAmountLength(), TestContext.DATASOURCE_VALUES_TO_GENERATE);
+        Assert.assertEquals(valueGenerator.getCoinbaseLength(), TestContext.DATASOURCE_VALUES_TO_GENERATE);
 
         for(int i = 0; i< TestContext.DATASOURCE_VALUES_TO_GENERATE; i++){
             int value = valueGenerator.nextMayorityAccount().intValue();
@@ -46,7 +47,13 @@ public class ValueGeneratorTests {
 
             Boolean trxType = valueGenerator.nextTransferType();
             Assert.assertNotNull(trxType);
+
+            value = valueGenerator.nextCoinbase();
+            Assert.assertTrue(value >= 0);
+            Assert.assertTrue(value < TestContext.DATASOURCE_COINBASES_TO_GENERATE);
+
         }
+
     }
 
 
@@ -76,6 +83,11 @@ public class ValueGeneratorTests {
 
             Boolean trxType = valueGenerator.nextTransferType();
             Assert.assertNotNull(trxType);
+
+            value = valueGenerator.nextCoinbase();
+            Assert.assertTrue(value >= 0);
+            Assert.assertTrue(value < TestContext.DATASOURCE_COINBASES_TO_GENERATE);
+
         }
     }
 

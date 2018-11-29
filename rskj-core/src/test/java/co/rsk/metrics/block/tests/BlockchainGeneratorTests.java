@@ -25,7 +25,7 @@ public class BlockchainGeneratorTests {
         TestSystemProperties config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestGenesisConfig());
         config.setGenesisInfo(TestContext.GENESIS_FILE);
-        new BlockchainGenerator(TestContext.BLOCK_DB_DIR, TestContext.MIN_GAS_PRICE, TestContext.TRANSF_TX_GAS_LIMIT, TestContext.TOKEN_TRANSF_TX_GAS_LIMIT, TestContext.BLOCK_GAS_LIMIT, TestContext.GENESIS_FILE_ROOT, TestContext.BLOCKS_TO_GENERATE, TestContext.MAX_TRX_PER_BLOCK, valueGenerator, TestContext.BLOCK_DIFFICULTY, config, metadataWriter, false);
+        new BlockchainGenerator(TestContext.BLOCK_DB_DIR, TestContext.MIN_GAS_PRICE, TestContext.TRANSF_TX_GAS_LIMIT, TestContext.TOKEN_TRANSF_TX_GAS_LIMIT, TestContext.BLOCK_GAS_LIMIT, TestContext.GENESIS_FILE_ROOT, TestContext.BLOCKS_TO_GENERATE, TestContext.EMPTY_BLOCKS_TO_GENERATE, TestContext.MAX_TRX_PER_BLOCK, valueGenerator, TestContext.BLOCK_DIFFICULTY, config, metadataWriter, false);
     }
 
 
@@ -37,7 +37,7 @@ public class BlockchainGeneratorTests {
         config.setBlockchainConfig(new RegTestGenesisConfig());
         config.setGenesisInfo(TestContext.GENESIS_FILE);
         String dbDir = TestContext.BLOCK_DB_DIR+"-resmac";
-        new BlockchainGenerator(dbDir,TestContext.MIN_GAS_PRICE, TestContext.TRANSF_TX_GAS_LIMIT, TestContext.TOKEN_TRANSF_TX_GAS_LIMIT, TestContext.BLOCK_GAS_LIMIT, TestContext.GENESIS_FILE_ROOT, TestContext.BLOCKS_TO_GENERATE, TestContext.MAX_TRX_PER_BLOCK, valueGenerator, TestContext.BLOCK_DIFFICULTY, config, metadataWriter, true);
+        new BlockchainGenerator(dbDir,TestContext.MIN_GAS_PRICE, TestContext.TRANSF_TX_GAS_LIMIT, TestContext.TOKEN_TRANSF_TX_GAS_LIMIT, TestContext.BLOCK_GAS_LIMIT, TestContext.GENESIS_FILE_ROOT, TestContext.BLOCKS_TO_GENERATE, TestContext.EMPTY_BLOCKS_TO_GENERATE, TestContext.MAX_TRX_PER_BLOCK, valueGenerator, TestContext.BLOCK_DIFFICULTY, config, metadataWriter, true);
     }
 
     @Test
@@ -53,7 +53,7 @@ public class BlockchainGeneratorTests {
         config.setBlockchainConfig(new RegTestGenesisConfig());
         config.setGenesisInfo(TestContext.GENESIS_FILE);
         long filledFiftyPercent = Math.round(Math.ceil(TestContext.MAX_TRX_PER_BLOCK*0.5));
-        new BlockchainGenerator(TestContext.BLOCK_DB_DIR, TestContext.MIN_GAS_PRICE, TestContext.TRANSF_TX_GAS_LIMIT, TestContext.TOKEN_TRANSF_TX_GAS_LIMIT, TestContext.BLOCK_GAS_LIMIT, TestContext.GENESIS_FILE_ROOT, TestContext.BLOCKS_TO_GENERATE, filledFiftyPercent, valueGenerator, TestContext.BLOCK_DIFFICULTY,config, metadataWriter, false);
+        new BlockchainGenerator(TestContext.BLOCK_DB_DIR, TestContext.MIN_GAS_PRICE, TestContext.TRANSF_TX_GAS_LIMIT, TestContext.TOKEN_TRANSF_TX_GAS_LIMIT, TestContext.BLOCK_GAS_LIMIT, TestContext.GENESIS_FILE_ROOT, TestContext.BLOCKS_TO_GENERATE, TestContext.EMPTY_BLOCKS_TO_GENERATE, filledFiftyPercent, valueGenerator, TestContext.BLOCK_DIFFICULTY,config, metadataWriter, false);
     }
 
     @Test
@@ -64,6 +64,6 @@ public class BlockchainGeneratorTests {
         config.setBlockchainConfig(new RegTestGenesisConfig());
         config.setGenesisInfo(TestContext.GENESIS_FILE);
         long filledTenPercent = Math.round(Math.ceil(TestContext.MAX_TRX_PER_BLOCK*0.1));
-        new BlockchainGenerator(TestContext.BLOCK_DB_DIR, TestContext.MIN_GAS_PRICE, TestContext.TRANSF_TX_GAS_LIMIT, TestContext.TOKEN_TRANSF_TX_GAS_LIMIT, TestContext.BLOCK_GAS_LIMIT, TestContext.GENESIS_FILE_ROOT, TestContext.BLOCKS_TO_GENERATE, filledTenPercent, valueGenerator, TestContext.BLOCK_DIFFICULTY,config, metadataWriter, false);
+        new BlockchainGenerator(TestContext.BLOCK_DB_DIR, TestContext.MIN_GAS_PRICE, TestContext.TRANSF_TX_GAS_LIMIT, TestContext.TOKEN_TRANSF_TX_GAS_LIMIT, TestContext.BLOCK_GAS_LIMIT, TestContext.GENESIS_FILE_ROOT, TestContext.BLOCKS_TO_GENERATE, TestContext.EMPTY_BLOCKS_TO_GENERATE, filledTenPercent, valueGenerator, TestContext.BLOCK_DIFFICULTY,config, metadataWriter, false);
     }
 }

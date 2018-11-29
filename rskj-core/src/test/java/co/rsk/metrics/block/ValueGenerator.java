@@ -1,5 +1,7 @@
 package co.rsk.metrics.block;
 
+import co.rsk.metrics.block.tests.TestContext;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Writer;
@@ -25,14 +27,15 @@ public class ValueGenerator {
     private List<Integer> trxSelectionSrc;
     private List<Integer> trxAmountSrc;
     private List<Boolean> trxTypeSrc;
+    private List<Integer> coinbaseSrc;
 
     //Current indexes
-    private Iterator<Integer> may,min,trxSel,trxAmt;
+    private Iterator<Integer> may,min,trxSel,trxAmt, coinbaseSel;
     private Iterator<Boolean> trxType;
 
 
     //Random caps
-    private int minorityCap, mayorityCap, trxAmountCap;
+    private int minorityCap, mayorityCap, trxAmountCap, coinbaseCap;
 
 
     /**
@@ -46,6 +49,7 @@ public class ValueGenerator {
         useRandom = true;
         this.minorityCap = minorityCap;
         this.mayorityCap = mayorityCap;
+        this.coinbaseCap = TestContext.DATASOURCE_COINBASES_TO_GENERATE;
         trxAmountCap = maxTrxAmount;
     }
 
@@ -61,6 +65,8 @@ public class ValueGenerator {
         this.minorityCap = minorityCap;
         this.mayorityCap = mayorityCap;
         trxAmountCap = maxTrxAmount;
+        this.coinbaseCap = TestContext.DATASOURCE_COINBASES_TO_GENERATE;
+
     }
 
     /**
@@ -76,12 +82,14 @@ public class ValueGenerator {
         trxSelectionSrc = readRandomIntFile(sourceDir+"/trxSelectionInt");
         trxAmountSrc = readRandomIntFile(sourceDir+"/trxAmountInt");
         trxTypeSrc = readRandomBoolFile(sourceDir+"/trxTypeBool");
+        coinbaseSrc = readRandomIntFile(sourceDir+"/coinbaseSelectionInt");
 
         may = mayorityAccountsSrc.iterator();
         min = minorityAccountsSrc.iterator();
         trxSel = trxSelectionSrc.iterator();
         trxAmt = trxAmountSrc.iterator();
         trxType = trxTypeSrc.iterator();
+        coinbaseSel = coinbaseSrc.iterator();
     }
 
 
@@ -107,6 +115,7 @@ public class ValueGenerator {
         generateRandomIntFile(valueSource, sourceDir+"/trxSelectionInt", valuesToGenerate, 0,5); //From 0,1,2,3,4
         generateRandomIntFile(valueSource, sourceDir+"/trxAmountInt", valuesToGenerate, 1, maxTrxAmount);
         generateRandomIntFile(valueSource, sourceDir+"/trxTypeBool", valuesToGenerate,0, 2);//0,1
+        generateRandomIntFile(valueSource, sourceDir+"/coinbaseSelectionInt", valuesToGenerate, 0, TestContext.DATASOURCE_COINBASES_TO_GENERATE); //From 0 to 19
 
         useRandom = false;
         minorityAccountsSrc = readRandomIntFile(sourceDir+"/minorityInt");
@@ -114,12 +123,16 @@ public class ValueGenerator {
         trxSelectionSrc = readRandomIntFile(sourceDir+"/trxSelectionInt");
         trxAmountSrc = readRandomIntFile(sourceDir+"/trxAmountInt");
         trxTypeSrc = readRandomBoolFile(sourceDir+"/trxTypeBool");
+        coinbaseSrc = readRandomIntFile(sourceDir+"/coinbaseSelectionInt");
+
 
         may = mayorityAccountsSrc.iterator();
         min = minorityAccountsSrc.iterator();
         trxSel = trxSelectionSrc.iterator();
         trxAmt = trxAmountSrc.iterator();
         trxType = trxTypeSrc.iterator();
+        coinbaseSel = coinbaseSrc.iterator();
+
 
     }
 
@@ -196,6 +209,20 @@ public class ValueGenerator {
         return trxType.next();
     }
 
+    /**
+     * Get the next coinbase index
+     */
+    public  Integer nextCoinbase(){
+        if(useRandom)
+            return random.nextInt(coinbaseCap);
+
+        if(!coinbaseSel.hasNext()){
+            coinbaseSel = coinbaseSrc.iterator();
+        }
+
+        return coinbaseSel.next();
+    }
+
 
     //Functions used for unit-testing, may not have any real purpose for actual code
     public int getMayorityAccountsLength(){
@@ -213,6 +240,9 @@ public class ValueGenerator {
     }
     public int getTransferTypeLength(){
         return this.trxTypeSrc.size();
+    }
+    public  int getCoinbaseLength(){
+        return this.coinbaseSrc.size();
     }
 }
 

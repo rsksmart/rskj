@@ -12,7 +12,6 @@ import org.ethereum.config.CommonConfig;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
-import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
