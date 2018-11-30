@@ -29,4 +29,9 @@ public class DevNetSecondForkConfig extends DevNetOrchidConfig {
     public boolean isRskipGetBtcTransactionConfirmations() {
         return true;
     }
+
+    @Override
+    public boolean isRskipMultipleKeyFederateMembers() {
+        return true;
+    }
 }

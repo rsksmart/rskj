@@ -29,4 +29,9 @@ public class RegTestSecondForkConfig extends RegTestOrchidConfig {
     public boolean isRskipGetBtcTransactionConfirmations() {
         return true;
     }
+
+    @Override
+    public boolean isRskipMultipleKeyFederateMembers() {
+        return true;
+    }
 }
