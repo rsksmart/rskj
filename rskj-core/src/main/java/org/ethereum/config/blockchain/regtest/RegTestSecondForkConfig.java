@@ -20,4 +20,8 @@
 package org.ethereum.config.blockchain.regtest;
 
 public class RegTestSecondForkConfig extends RegTestOrchidConfig {
+    @Override
+    public boolean isRskipMultipleKeyFederateMembers() {
+        return true;
+    }
 }

@@ -42,6 +42,35 @@ public final class FederationMember {
     private final ECKey rskPublicKey;
     private final ECKey mstPublicKey;
 
+    public enum KeyType {
+        BTC("btc"),
+        RSK("rsk"),
+        MST("mst");
+
+        private String value;
+
+        KeyType(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public static KeyType byValue(String value) {
+            switch (value) {
+                case "rsk":
+                    return KeyType.RSK;
+                case "mst":
+                    return KeyType.MST;
+                case "btc":
+                    return KeyType.BTC;
+                default:
+                    throw new IllegalArgumentException(String.format("Invalid value for FederationMember.KeyType: %s", value));
+            }
+        }
+    }
+
     // To be removed when different keys per federation member feature is implemented. These are just helper
     // methods to make it easier w.r.t. compatibility with the current approach
 
@@ -58,7 +87,7 @@ public final class FederationMember {
      * Compares federation members based on their underlying keys.
      *
      * The total ordering is defined such that, for any two members M1, M2,
-     * 1) M1 < M2 iif BTC_PUB_KEY(M1) <lex BTC_PUB_KEY(M2) OR
+     * 1) M1 < M2 iff BTC_PUB_KEY(M1) <lex BTC_PUB_KEY(M2) OR
      *              (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
      *               RSK_PUB_KEY(M1) <lex RSK_PUB_KEY(M2)) OR
      *              (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
@@ -109,6 +138,18 @@ public final class FederationMember {
     ECKey getMstPublicKey() {
         // Return a copy
         return ECKey.fromPublicOnly(mstPublicKey.getPubKey());
+    }
+
+    ECKey getPublicKey(KeyType keyType) {
+        switch (keyType) {
+            case RSK:
+                return getRskPublicKey();
+            case MST:
+                return getMstPublicKey();
+            case BTC:
+            default:
+                return ECKey.fromPublicOnly(btcPublicKey.getPubKey());
+        }
     }
 
     @Override
