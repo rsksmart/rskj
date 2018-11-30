@@ -29,4 +29,9 @@ public class MainNetSecondForkConfig extends MainNetOrchid060Config {
     public boolean isRskipGetBtcTransactionConfirmations() {
         return true;
     }
+
+    @Override
+    public boolean isRskipMultipleKeyFederateMembers() {
+        return true;
+    }
 }
