@@ -1285,6 +1285,16 @@ public class BridgeSupport {
     }
 
     /**
+     * Returns the public key of given type of the federation's federator at the given index
+     * @param index the federator's index (zero-based)
+     * @param keyType the key type
+     * @return the federator's public key
+     */
+    public byte[] getFederatorPublicKeyByType(int index, FederationMember.KeyType keyType) {
+        return federationSupport.getFederatorPublicKeyByType(index, keyType);
+    }
+
+    /**
      * Returns the federation's creation time
      * @return the federation creation time
      */
@@ -1358,6 +1368,27 @@ public class BridgeSupport {
         }
 
         return publicKeys.get(index).getPubKey();
+    }
+
+    /**
+     * Returns the public key of the given type of the retiring federation's federator at the given index
+     * @param index the retiring federator's index (zero-based)
+     * @param keyType the key type
+     * @return the retiring federator's public key of the given type, null if no retiring federation exists
+     */
+    public byte[] getRetiringFederatorPublicKeyByType(int index, FederationMember.KeyType keyType) {
+        Federation retiringFederation = getRetiringFederation();
+        if (retiringFederation == null) {
+            return null;
+        }
+
+        List<FederationMember> members = retiringFederation.getMembers();
+
+        if (index < 0 || index >= members.size()) {
+            throw new IndexOutOfBoundsException(String.format("Retiring federator index must be between 0 and %d", members.size() - 1));
+        }
+
+        return members.get(index).getPublicKey(keyType).getPubKey(true);
     }
 
     /**
@@ -1675,7 +1706,7 @@ public class BridgeSupport {
     }
 
     /**
-     * Returns the currently pending federation threshold, or null if none exists
+     * Returns the currently pending federation federator's public key at the given index, or null if none exists
      * @param index the federator's index (zero-based)
      * @return the pending federation's federator public key
      */
@@ -1693,6 +1724,28 @@ public class BridgeSupport {
         }
 
         return publicKeys.get(index).getPubKey();
+    }
+
+    /**
+     * Returns the public key of the given type of the pending federation's federator at the given index
+     * @param index the federator's index (zero-based)
+     * @param keyType the key type
+     * @return the pending federation's federator public key of given type
+     */
+    public byte[] getPendingFederatorPublicKeyByType(int index, FederationMember.KeyType keyType) {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return null;
+        }
+
+        List<FederationMember> members = currentPendingFederation.getMembers();
+
+        if (index < 0 || index >= members.size()) {
+            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", members.size() - 1));
+        }
+
+        return members.get(index).getPublicKey(keyType).getPubKey(true);
     }
 
     /**
