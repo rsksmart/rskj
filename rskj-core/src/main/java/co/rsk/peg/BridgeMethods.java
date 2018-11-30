@@ -226,6 +226,18 @@ public enum BridgeMethods {
             ),
             10000L,
             (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKey,
+            blockChainConfig -> !blockChainConfig.isRskipMultipleKeyFederateMembers(),
+            true
+    ),
+    GET_FEDERATOR_PUBLIC_KEY_BY_TYPE(
+            CallTransaction.Function.fromSignature(
+                    "getFederatorPublicKey",
+                    new String[]{"int256", "string"},
+                    new String[]{"bytes"}
+            ),
+            10000L,
+            (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyByType,
+            blockChainConfig -> blockChainConfig.isRskipMultipleKeyFederateMembers(),
             true
     ),
     GET_FEE_PER_KB(
@@ -307,6 +319,18 @@ public enum BridgeMethods {
             ),
             3000L,
             (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKey,
+            blockChainConfig -> !blockChainConfig.isRskipMultipleKeyFederateMembers(),
+            true
+    ),
+    GET_PENDING_FEDERATOR_PUBLIC_KEY_BY_TYPE(
+            CallTransaction.Function.fromSignature(
+                    "getPendingFederatorPublicKey",
+                    new String[]{"int256", "string"},
+                    new String[]{"bytes"}
+            ),
+            3000L,
+            (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKeyByType,
+            blockChainConfig -> blockChainConfig.isRskipMultipleKeyFederateMembers(),
             true
     ),
     GET_RETIRING_FEDERATION_ADDRESS(
@@ -367,6 +391,18 @@ public enum BridgeMethods {
             ),
             3000L,
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKey,
+            blockChainConfig -> !blockChainConfig.isRskipMultipleKeyFederateMembers(),
+            true
+    ),
+    GET_RETIRING_FEDERATOR_PUBLIC_KEY_BY_TYPE(
+            CallTransaction.Function.fromSignature(
+                    "getRetiringFederatorPublicKey",
+                    new String[]{"int256", "string"},
+                    new String[]{"bytes"}
+            ),
+            3000L,
+            (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKeyByType,
+            blockChainConfig -> blockChainConfig.isRskipMultipleKeyFederateMembers(),
             true
     ),
     GET_STATE_FOR_BTC_RELEASE_CLIENT(

@@ -637,6 +637,23 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFederatorPublicKey(index);
     }
 
+    public byte[] getFederatorPublicKeyByType(Object[] args)
+    {
+        logger.trace("getFederatorPublicKey");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.valueOf((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getFederatorPublicKeyByType", e);
+            throw new RuntimeException("Exception in getFederatorPublicKeyByType", e);
+        }
+
+        return bridgeSupport.getFederatorPublicKeyByType(index, keyType);
+    }
+
     public Long getFederationCreationTime(Object[] args)
     {
         logger.trace("getFederationCreationTime");
@@ -684,6 +701,30 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         int index = ((BigInteger) args[0]).intValue();
         byte[] publicKey = bridgeSupport.getRetiringFederatorPublicKey(index);
+
+        if (publicKey == null) {
+            // Empty array is returned when public key is not found or there's no retiring federation
+            return new byte[]{};
+        }
+
+        return publicKey;
+    }
+
+    public byte[] getRetiringFederatorPublicKeyByType(Object[] args)
+    {
+        logger.trace("getRetiringFederatorPublicKeyByType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.valueOf((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getRetiringFederatorPublicKeyByType", e);
+            throw new RuntimeException("Exception in getRetiringFederatorPublicKeyByType", e);
+        }
+
+        byte[] publicKey = bridgeSupport.getRetiringFederatorPublicKeyByType(index, keyType);
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found or there's no retiring federation
@@ -796,6 +837,30 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         int index = ((BigInteger) args[0]).intValue();
         byte[] publicKey = bridgeSupport.getPendingFederatorPublicKey(index);
+
+        if (publicKey == null) {
+            // Empty array is returned when public key is not found
+            return new byte[]{};
+        }
+
+        return publicKey;
+    }
+
+    public byte[] getPendingFederatorPublicKeyByType(Object[] args)
+    {
+        logger.trace("getPendingFederatorPublicKeyByType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.valueOf((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getPendingFederatorPublicKeyByType", e);
+            throw new RuntimeException("Exception in getPendingFederatorPublicKeyByType", e);
+        }
+
+        byte[] publicKey = bridgeSupport.getPendingFederatorPublicKeyByType(index, keyType);
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found

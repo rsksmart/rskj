@@ -42,6 +42,22 @@ public final class FederationMember {
     private final ECKey rskPublicKey;
     private final ECKey mstPublicKey;
 
+    public enum KeyType {
+        BTC("btc"),
+        RSK("rsk"),
+        MST("mst");
+
+        private String name;
+
+        KeyType(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
     // To be removed when different keys per federation member feature is implemented. These are just helper
     // methods to make it easier w.r.t. compatibility with the current approach
 
@@ -109,6 +125,18 @@ public final class FederationMember {
     ECKey getMstPublicKey() {
         // Return a copy
         return ECKey.fromPublicOnly(mstPublicKey.getPubKey());
+    }
+
+    ECKey getPublicKey(KeyType keyType) {
+        switch (keyType) {
+            case RSK:
+                return getRskPublicKey();
+            case MST:
+                return getMstPublicKey();
+            case BTC:
+            default:
+                return ECKey.fromPublicOnly(btcPublicKey.getPubKey());
+        }
     }
 
     @Override
