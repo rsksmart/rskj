@@ -64,4 +64,6 @@ public interface BlockchainConfig {
     boolean isRfs122();
 
     boolean isRskipGetBtcTransactionConfirmations();
+
+    boolean isRskipMultipleKeyFederateMembers();
 }
