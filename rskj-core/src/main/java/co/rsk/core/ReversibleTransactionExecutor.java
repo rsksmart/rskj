@@ -79,7 +79,8 @@ public class ReversibleTransactionExecutor {
                 toAddress,
                 value,
                 data,
-                fromAddress
+                fromAddress,
+                config.getBlockchainConfig().getCommonConstants().getChainId()
         );
 
         TransactionExecutor executor = new TransactionExecutor(
@@ -105,8 +106,9 @@ public class ReversibleTransactionExecutor {
                 byte[] receiveAddress,
                 byte[] value,
                 byte[] data,
-                RskAddress fromAddress) {
-            super(nonce, gasPrice, gasLimit, receiveAddress, value, data);
+                RskAddress fromAddress,
+                byte chainId) {
+            super(nonce, gasPrice, gasLimit, receiveAddress, value, data, chainId);
             this.sender = fromAddress;
         }
 

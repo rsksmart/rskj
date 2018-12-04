@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -127,19 +128,11 @@ public class Transaction {
         }
     }
 
-    /* creation contract tx
-     * [ nonce, gasPrice, gasLimit, "", endowment, init, signature(v, r, s) ]
-     * or simple send tx
-     * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
-     */
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
-    }
+    @VisibleForTesting
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte chainId, ECDSASignature signature) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, chainId);
 
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
-
-        this.signature = ECDSASignature.fromComponents(r, s, v);
+        this.signature = signature;
     }
 
     public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
@@ -313,7 +306,7 @@ public class Transaction {
             return false;
         }
 
-        return this.getChainId() == 0 || this.getChainId() == currentChainId;
+        return chainId == currentChainId;
     }
 
     public void sign(byte[] privKeyBytes) throws MissingPrivateKeyException {
@@ -418,16 +411,11 @@ public class Transaction {
      * This encoding is used when signing the transaction
      */
     protected byte[] calculateEncodedRaw() {
-        // Since EIP-155 use chainId for v
-        if (chainId == 0) {
-            return encode(null, null, null);
-        } else {
-            byte[] v = RLP.encodeByte(chainId);
-            byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-            byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        byte[] v = RLP.encodeByte(chainId);
+        byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
 
-            return encode(v, r, s);
-        }
+        return encode(v, r, s);
     }
 
     public byte[] getEncoded() {
@@ -444,11 +432,11 @@ public class Transaction {
         byte[] s;
 
         if (this.signature != null) {
-            v = RLP.encodeByte((byte) (chainId == 0 ? signature.v : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
+            v = RLP.encodeByte((byte) ((signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
             r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
             s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
         } else {
-            v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
+            v = RLP.encodeByte(chainId);
             r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
             s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
         }
@@ -456,7 +444,7 @@ public class Transaction {
         return encode(v, r, s);
     }
 
-    private byte[] encode(byte[] v, byte[] r, byte[] s) {
+    protected byte[] encode(byte[] v, byte[] r, byte[] s) {
         // parse null as 0 for nonce
         byte[] toEncodeNonce;
         if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {

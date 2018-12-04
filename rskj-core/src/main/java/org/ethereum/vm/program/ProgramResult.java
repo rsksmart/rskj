@@ -178,8 +178,8 @@ public class ProgramResult {
     }
 
     public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
-                                                      byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
-        InternalTransaction transaction = new InternalTransaction(parentHash, deep, size(internalTransactions), nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note);
+                                                      byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note, byte chainId) {
+        InternalTransaction transaction = new InternalTransaction(parentHash, deep, size(internalTransactions), nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note, chainId);
         getInternalTransactions().add(transaction);
         return transaction;
     }

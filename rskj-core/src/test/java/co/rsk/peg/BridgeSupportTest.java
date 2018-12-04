@@ -56,6 +56,7 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 import org.ethereum.config.net.RegTestConfig;
@@ -1179,6 +1180,7 @@ public class BridgeSupportTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
+        Constants commonConstants = config.getBlockchainConfig().getCommonConstants();
         org.ethereum.core.Transaction tx = new InternalTransaction(
                 null, 0, 0,
                 BigIntegers.asUnsignedByteArray(NONCE),
@@ -1188,10 +1190,12 @@ public class BridgeSupportTest {
                 Hex.decode(TO_ADDRESS),
                 BigIntegers.asUnsignedByteArray(AMOUNT),
                 Hex.decode(DATA),
-                "");
+                "",
+                commonConstants.getChainId()
+        );
 
         track.saveCode(tx.getSender(), new byte[] {0x1});
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, commonConstants.getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, null);
 
         try {

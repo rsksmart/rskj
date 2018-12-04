@@ -23,11 +23,15 @@ import co.rsk.asm.EVMAssembler;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.BlockchainConfig;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.vm.BytecodeCompiler;
-import org.ethereum.core.*;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
+import org.ethereum.core.Account;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.BadJumpDestinationException;
@@ -35,7 +39,6 @@ import org.ethereum.vm.program.Program.StackTooSmallException;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -44,8 +47,6 @@ import java.util.List;
 
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Roman Mandeleil
@@ -2982,11 +2983,7 @@ public class VMTest {
     }
 
     private BlockchainConfig getBlockchainConfig() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip91()).thenReturn(true);
-        when(blockchainConfig.isRskip90()).thenReturn(true);
-        when(blockchainConfig.isRskip89()).thenReturn(true);
-        return blockchainConfig;
+        return new RegTestOrchidConfig();
     }
 
     private Program getProgram(byte[] code, Transaction transaction) {

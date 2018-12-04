@@ -51,7 +51,9 @@ public class BlockEncodingTest {
                 BigInteger.valueOf(21000).toByteArray(),
                 new ECKey().getAddress(),
                 BigInteger.valueOf(1000).toByteArray(),
-                null);
+                null,
+                (byte) 0
+        );
 
         txs.add(tx);
 

@@ -52,7 +52,9 @@ public class BlockTest {
                 BigInteger.valueOf(21000).toByteArray(),
                 new ECKey().getAddress() ,
                 BigInteger.valueOf(1000).toByteArray(),
-                null);
+                null,
+                (byte) 0
+        );
         txNotToRemasc.sign(new ECKey().getPrivKeyBytes());
         txs.add(txNotToRemasc);
 
@@ -62,7 +64,9 @@ public class BlockTest {
                 BigInteger.valueOf(21000).toByteArray(),
                 PrecompiledContracts.REMASC_ADDR.getBytes(),
                 BigInteger.valueOf(1000).toByteArray(),
-                null);
+                null,
+                (byte) 0
+        );
         txToRemascThatIsNotTheLatestTx.sign(new ECKey().getPrivKeyBytes());
         txs.add(txToRemascThatIsNotTheLatestTx);
 

@@ -461,8 +461,8 @@ public class BridgeUtilsTest {
 
     @Test
     public void testIsContractTx() {
-        Assert.assertFalse(BridgeUtils.isContractTx(new Transaction((byte[]) null, null, null, null, null, null)));
-        Assert.assertTrue(BridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null)));
+        Assert.assertFalse(BridgeUtils.isContractTx(new Transaction((byte[]) null, null, null, null, null, null, (byte) 0)));
+        Assert.assertTrue(BridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null, (byte) 0)));
     }
 
     @Test(expected = IllegalArgumentException.class)

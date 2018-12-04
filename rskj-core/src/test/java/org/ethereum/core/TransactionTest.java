@@ -22,6 +22,8 @@ package org.ethereum.core;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -40,8 +42,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -98,7 +98,9 @@ public class TransactionTest {
         // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
         Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
                 value.toByteArray(),
-                null);
+                null,
+                (byte) 0
+        );
 
         tx.sign(senderPrivKey);
 
@@ -139,7 +141,7 @@ public class TransactionTest {
         BigInteger value = new BigInteger("1000000000000000000000000");
 
         Transaction tx = new Transaction(nonce, gasPrice, gasLimit,
-                ecKey.getAddress(), value.toByteArray(), null);
+                ecKey.getAddress(), value.toByteArray(), null, (byte) 0);
 
         tx.sign(senderPrivKey);
 
@@ -219,7 +221,7 @@ public class TransactionTest {
     @Ignore
     @Test
     public void testTransactionFromNew1() throws MissingPrivateKeyException {
-        Transaction txNew = new Transaction(testNonce, testGasPrice, testGasLimit, testReceiveAddress, testValue, testData);
+        Transaction txNew = new Transaction(testNonce, testGasPrice, testGasLimit, testReceiveAddress, testValue, testData, (byte) 0);
 
         assertEquals("", Hex.toHexString(txNew.getNonce()));
         assertEquals(new BigInteger(1, testGasPrice), txNew.getGasPrice().asBigInteger());
@@ -256,7 +258,7 @@ public class TransactionTest {
         byte[] value = Hex.decode("2386f26fc10000"); //10000000000000000"
         byte[] data = new byte[0];
 
-        Transaction tx = new Transaction(nonce, gasPrice, gas, recieveAddress, value, data);
+        Transaction tx = new Transaction(nonce, gasPrice, gas, recieveAddress, value, data, (byte) 0);
 
         // Testing unsigned
         String encodedUnsigned = Hex.toHexString(tx.getEncoded());
@@ -288,7 +290,7 @@ public class TransactionTest {
 
 
         Transaction tx1 = new Transaction(nonce, gasPrice, gas,
-                recieveAddress, endowment, init);
+                recieveAddress, endowment, init, (byte) 0);
         tx1.sign(senderPrivKey);
 
         byte[] payload = tx1.getEncoded();
@@ -595,6 +597,7 @@ public class TransactionTest {
          */
 
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
+        byte chainId = config.getBlockchainConfig().getCommonConstants().getChainId();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(config, nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
@@ -604,7 +607,7 @@ public class TransactionTest {
         String code = "6060604052341561000c57fe5b5b6102938061001c6000396000f3006060604052361561004a576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806309e587a514610053578063de990da914610065575b6100515b5b565b005b341561005b57fe5b610063610077565b005b341561006d57fe5b610075610092565b005b3373ffffffffffffffffffffffffffffffffffffffff16ff5b565b60003090508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b15156100fa57fe5b60325a03f1151561010757fe5b5050508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b151561016d57fe5b60325a03f1151561017a57fe5b5050508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b15156101e057fe5b60325a03f115156101ed57fe5b5050508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b151561025357fe5b60325a03f1151561026057fe5b5050505b505600a165627a7a72305820084e74021c556522723b6725354378df2fb4b6732f82dd33f5daa29e2820b37c0029";
         String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"homicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"multipleHomicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"payable\":true,\"type\":\"fallback\"}]";
 
-        Transaction tx = createTx(blockchain, sender, new byte[0], Hex.decode(code));
+        Transaction tx = createTx(blockchain, sender, new byte[0], Hex.decode(code), chainId);
         executeTransaction(blockchain, tx);
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
@@ -630,7 +633,7 @@ public class TransactionTest {
         catch (RuntimeException ex) {
         }
 
-        Transaction tx1 = createTx(blockchain, sender, contractAddress, callData, 0);
+        Transaction tx1 = createTx(blockchain, sender, contractAddress, callData, chainId);
         ProgramResult programResult = executeTransaction(blockchain, tx1).getResult();
 
         // suicide of a single account should be counted only once
@@ -665,6 +668,7 @@ public class TransactionTest {
          */
 
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
+        byte chainId = config.getBlockchainConfig().getCommonConstants().getChainId();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(config, nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
@@ -678,28 +682,28 @@ public class TransactionTest {
         // Second contract ABI
         String abi2 = "[{\"constant\":false,\"inputs\":[{\"name\":\"invokedAddress\",\"type\":\"address\"}],\"name\":\"doIt\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"externalEvent\",\"type\":\"event\"}]";
 
-        Transaction tx1 = createTx(blockchain, sender, new byte[0], Hex.decode(code1));
+        Transaction tx1 = createTx(blockchain, sender, new byte[0], Hex.decode(code1), chainId);
         executeTransaction(blockchain, tx1);
 
-        Transaction tx2 = createTx(blockchain, sender, new byte[0], Hex.decode(code2));
+        Transaction tx2 = createTx(blockchain, sender, new byte[0], Hex.decode(code2), chainId);
         executeTransaction(blockchain, tx2);
 
         CallTransaction.Contract contract2 = new CallTransaction.Contract(abi2);
         byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(tx1.getContractAddress().getBytes()));
 
-        Transaction tx3 = createTx(blockchain, sender, tx2.getContractAddress().getBytes(), data);
+        Transaction tx3 = createTx(blockchain, sender, tx2.getContractAddress().getBytes(), data, chainId);
         TransactionExecutor executor = executeTransaction(blockchain, tx3);
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
         Assert.assertEquals(false, executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
     }
 
-    private Transaction createTx(Blockchain blockchain, ECKey sender, byte[] receiveAddress, byte[] data) throws InterruptedException {
-        return createTx(blockchain, sender, receiveAddress, data, 0);
+    private Transaction createTx(Blockchain blockchain, ECKey sender, byte[] receiveAddress, byte[] data, byte chainId) throws InterruptedException {
+        return createTx(blockchain, sender, receiveAddress, data, 0, chainId);
     }
 
     private Transaction createTx(Blockchain blockchain, ECKey sender, byte[] receiveAddress,
-                                   byte[] data, long value) throws InterruptedException {
+                                 byte[] data, long value, byte chainId) throws InterruptedException {
         BigInteger nonce = blockchain.getRepository().getNonce(new RskAddress(sender.getAddress()));
         Transaction tx = new Transaction(
                 ByteUtil.bigIntegerToBytes(nonce),
@@ -707,7 +711,9 @@ public class TransactionTest {
                 ByteUtil.longToBytesNoLeadZeroes(3_000_000),
                 receiveAddress,
                 ByteUtil.longToBytesNoLeadZeroes(value),
-                data);
+                data,
+                chainId
+        );
         tx.sign(sender.getPrivKeyBytes());
         return tx;
     }

@@ -36,9 +36,9 @@ public class InternalTransaction extends Transaction {
     private String note;
 
     public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
-                               byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
+                               byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note, byte chainId) {
 
-        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
+        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data), chainId);
 
         this.parentHash = parentHash;
         this.deep = deep;

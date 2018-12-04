@@ -29,7 +29,6 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
-import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Block;
@@ -605,7 +604,7 @@ public class TestRunner {
 
         org.ethereum.core.Transaction transaction = new org.ethereum.core.Transaction(
                 nonceBytes, gasPriceBytes, gasBytes,
-                toAddr, valueBytes, data);
+                toAddr, valueBytes, data, (byte) 0);
 
         return transaction;
     }

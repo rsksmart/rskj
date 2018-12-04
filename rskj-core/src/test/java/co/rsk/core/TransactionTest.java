@@ -20,6 +20,8 @@ package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -31,8 +33,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -65,7 +65,9 @@ public class TransactionTest {
         // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
         Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
                 value.toByteArray(),
-                null);
+                null,
+                (byte) 0
+        );
 
         tx.sign(senderPrivKey);
 
@@ -105,7 +107,7 @@ public class TransactionTest {
         // Tn(nonce); Tp(pgas); Tg(gaslimit); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
         Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
                 value.toByteArray(),
-                null);
+                null, (byte) 0);
 
         tx.sign(senderPrivateKey);
 

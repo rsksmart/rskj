@@ -153,7 +153,9 @@ public abstract class BridgePerformanceTestCase {
                     gasLimit,
                     sender.getAddress(),
                     value.toByteArray(),
-                    null);
+                    null,
+                    (byte) 0
+            );
             tx.sign(sender.getPrivKeyBytes());
 
             return tx;

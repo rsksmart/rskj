@@ -288,7 +288,7 @@ public class ReceiptStoreImplTest {
         // TODO calculate cumulative gas
         TransactionReceipt receipt = new TransactionReceipt(stateRoot, gasUsed, gasUsed, bloom, logs, new byte[]{0x01});
 
-        receipt.setTransaction(new Transaction((byte[]) null, null, null, null, null, null));
+        receipt.setTransaction(new Transaction((byte[]) null, null, null, null, null, null, (byte) 0));
 
         return receipt;
     }

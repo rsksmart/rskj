@@ -117,7 +117,7 @@ public class StateTestRunner {
         repository = RepositoryBuilder.build(stateTestCase.getPre());
         logger.info("loaded repository");
 
-        transaction = TransactionBuilder.build(stateTestCase.getTransaction());
+        transaction = TransactionBuilder.build(stateTestCase.getTransaction(), config.getBlockchainConfig().getCommonConstants().getChainId());
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 

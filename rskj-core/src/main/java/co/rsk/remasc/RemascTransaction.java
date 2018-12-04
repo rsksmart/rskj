@@ -23,7 +23,10 @@ import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.PrecompiledContracts;
+
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Tx that invokes Remasc's processMinersFees method.
@@ -74,5 +77,20 @@ public class RemascTransaction extends Transaction {
     public boolean acceptTransactionSignature(byte chainId) {
         // RemascTransaction is not signed and not signature validation should be done
         return true;
+    }
+
+    @Override
+    protected byte[] calculateEncodedRaw() {
+        return encode(null, null, null);
+    }
+
+    @Override
+    protected byte[] calculateEncoded() {
+        // this is encoded as pre EIP-155 for compatibility, because the Remasc transaction chainId is hardcoded to 0
+        byte[] v = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+
+        return encode(v, r, s);
     }
 }

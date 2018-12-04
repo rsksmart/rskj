@@ -176,7 +176,7 @@ public class TransactionsMessageTest {
     public void test_3() throws Exception {
 
         String expected =
-                "f871f86f808609184e72a0008242559479b08ad8787060333663d19704909ee7b1903e588ad3c21bcecceda1000000801ba0c614666b4277ff9012b1421483b5869bf2e456a0864e36306f1e1e1d44a68855a00e5bdb8b4108cc3c0512357e76ecd398c106fe91747259683b3798398032a580";
+                "f871f86f808609184e72a0008242559479b08ad8787060333663d19704909ee7b1903e588ad3c21bcecceda10000008024a078c970bad0f7a614aeb5ad9114f2ed43dc6b00a05d428394482c65b186e52504a0493755c4951b9f4d401c5ee839f8f4260ba5614ba053a0c10b862d7ea62bcae6";
 
         BigInteger value = new BigInteger("1000000000000000000000000");
 
@@ -187,7 +187,7 @@ public class TransactionsMessageTest {
         byte[] gasLimit = Hex.decode("4255");
 
         Transaction tx = new Transaction(null, gasPrice,
-                gasLimit, ecKey.getAddress(), value.toByteArray(), null);
+                gasLimit, ecKey.getAddress(), value.toByteArray(), null, (byte) 0);
 
         tx.sign(privKey);
         tx.getEncoded();

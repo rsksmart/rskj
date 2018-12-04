@@ -889,7 +889,9 @@ public class BlockExecutorTest {
                 gasLimitData, // gasLimit
                 to,
                 valueData,
-                null); // no data
+                null, // no data
+                config.getBlockchainConfig().getCommonConstants().getChainId()
+        );
         tx.sign(privateKeyBytes);
         return tx;
     }

@@ -20,6 +20,7 @@
 package org.ethereum.jsontestsuite.builder;
 
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.jsontestsuite.model.TransactionTck;
 
 import static org.ethereum.json.Utils.*;
@@ -27,7 +28,10 @@ import static org.ethereum.json.Utils.*;
 public class TransactionBuilder {
 
     public static Transaction build(TransactionTck transactionTck) {
+        return build(transactionTck, (byte) 0);
+    }
 
+    public static Transaction build(TransactionTck transactionTck, byte chainId) {
         Transaction transaction;
         if (transactionTck.getSecretKey() != null){
 
@@ -37,7 +41,9 @@ public class TransactionBuilder {
                     parseVarData(transactionTck.getGasLimit()),
                     parseData(transactionTck.getTo()),
                     parseVarData(transactionTck.getValue()),
-                    parseData(transactionTck.getData()));
+                    parseData(transactionTck.getData()),
+                    chainId
+            );
             transaction.sign(parseData(transactionTck.getSecretKey()));
 
         } else {
@@ -49,9 +55,12 @@ public class TransactionBuilder {
                     parseData(transactionTck.getTo()),
                     parseNumericData(transactionTck.getValue()),
                     parseData(transactionTck.getData()),
-                    parseData(transactionTck.getR()),
-                    parseData(transactionTck.getS()),
-                    parseByte(transactionTck.getV())
+                    chainId,
+                    ECKey.ECDSASignature.fromComponents(
+                        parseData(transactionTck.getR()),
+                        parseData(transactionTck.getS()),
+                        parseByte(transactionTck.getV())
+                    )
             );
         }
 

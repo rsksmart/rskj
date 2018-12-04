@@ -37,15 +37,14 @@ import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
-import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -1974,7 +1973,7 @@ public class BridgeTest {
         when(tx.getHash()).thenReturn(new Keccak256("001122334455667788990011223344556677889900112233445566778899aabb"));
 
         // Run the program on the VM
-        Program program = new Program(config.getVmConfig(), precompiledContracts, mock(BlockchainConfig.class), code, invoke, tx);
+        Program program = new Program(config.getVmConfig(), precompiledContracts, new RegTestOrchidConfig(), code, invoke, tx);
         try {
             for (int i = 0; i < numOps; i++) {
                 vm.step(program);

@@ -251,6 +251,7 @@ public class Program {
         }
 
         byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
+        byte chainId = blockchainConfig.getConstants().getChainId();
 
         return getResult().addInternalTransaction(
                 transaction.getHash().getBytes(),
@@ -262,7 +263,8 @@ public class Program {
                 receiveAddress.getBytes(),
                 value.getBytes(),
                 data,
-                note);
+                note,
+                chainId);
     }
 
     private <T extends ProgramListenerAware> T setupProgramListener(T traceListenerAware) {
