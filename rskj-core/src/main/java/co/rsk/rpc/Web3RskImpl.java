@@ -37,6 +37,7 @@ import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3Impl;
+import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -79,11 +80,12 @@ public class Web3RskImpl extends Web3Impl {
                        PeerServer peerServer,
                        BlockProcessor nodeBlockProcessor,
                        HashRateCalculator hashRateCalculator,
-                       ConfigCapabilities configCapabilities) {
+                       ConfigCapabilities configCapabilities,
+                       BuildInfo buildInfo) {
         super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
               personalModule, ethModule, txPoolModule, mnrModule, debugModule,
               channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor,
-              hashRateCalculator, configCapabilities);
+              hashRateCalculator, configCapabilities, buildInfo);
 
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;

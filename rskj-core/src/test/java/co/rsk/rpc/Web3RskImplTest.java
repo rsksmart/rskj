@@ -98,6 +98,7 @@ public class Web3RskImplTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
         web3.ext_dumpState();

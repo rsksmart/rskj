@@ -98,6 +98,7 @@ public class Web3Impl implements Web3 {
     private final RskSystemProperties config;
 
     private final FilterManager filterManager;
+    private final BuildInfo buildInfo;
     private final SnapshotManager snapshotManager;
 
     private final PersonalModule personalModule;
@@ -126,7 +127,8 @@ public class Web3Impl implements Web3 {
             PeerServer peerServer,
             BlockProcessor nodeBlockProcessor,
             HashRateCalculator hashRateCalculator,
-            ConfigCapabilities configCapabilities) {
+            ConfigCapabilities configCapabilities,
+            BuildInfo buildInfo) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -148,6 +150,7 @@ public class Web3Impl implements Web3 {
         this.configCapabilities = configCapabilities;
         this.config = config;
         filterManager = new FilterManager(eth);
+        this.buildInfo = buildInfo;
         snapshotManager = new SnapshotManager(blockchain, transactionPool, minerServer);
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
@@ -176,7 +179,7 @@ public class Web3Impl implements Web3 {
     public String web3_clientVersion() {
         String clientVersion = baseClientVersion + "/" + config.projectVersion() + "/" +
                 System.getProperty("os.name") + "/Java1.8/" +
-                config.projectVersionModifier() + "-" + BuildInfo.getBuildHash();
+                config.projectVersionModifier() + "-" + buildInfo.getBuildHash();
 
         if (logger.isDebugEnabled()) {
             logger.debug("web3_clientVersion(): {}", clientVersion);
