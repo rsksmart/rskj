@@ -229,14 +229,14 @@ public enum BridgeMethods {
             blockChainConfig -> !blockChainConfig.isRskipMultipleKeyFederateMembers(),
             true
     ),
-    GET_FEDERATOR_PUBLIC_KEY_BY_TYPE(
+    GET_FEDERATOR_PUBLIC_KEY_OF_TYPE(
             CallTransaction.Function.fromSignature(
-                    "getFederatorPublicKey",
+                    "getFederatorPublicKeyOfType",
                     new String[]{"int256", "string"},
                     new String[]{"bytes"}
             ),
             10000L,
-            (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyByType,
+            (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyOfType,
             blockChainConfig -> blockChainConfig.isRskipMultipleKeyFederateMembers(),
             true
     ),
@@ -322,14 +322,14 @@ public enum BridgeMethods {
             blockChainConfig -> !blockChainConfig.isRskipMultipleKeyFederateMembers(),
             true
     ),
-    GET_PENDING_FEDERATOR_PUBLIC_KEY_BY_TYPE(
+    GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
             CallTransaction.Function.fromSignature(
-                    "getPendingFederatorPublicKey",
+                    "getPendingFederatorPublicKeyOfType",
                     new String[]{"int256", "string"},
                     new String[]{"bytes"}
             ),
             3000L,
-            (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKeyByType,
+            (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKeyOfType,
             blockChainConfig -> blockChainConfig.isRskipMultipleKeyFederateMembers(),
             true
     ),
@@ -394,14 +394,14 @@ public enum BridgeMethods {
             blockChainConfig -> !blockChainConfig.isRskipMultipleKeyFederateMembers(),
             true
     ),
-    GET_RETIRING_FEDERATOR_PUBLIC_KEY_BY_TYPE(
+    GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
             CallTransaction.Function.fromSignature(
-                    "getRetiringFederatorPublicKey",
+                    "getRetiringFederatorPublicKeyOfType",
                     new String[]{"int256", "string"},
                     new String[]{"bytes"}
             ),
             3000L,
-            (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKeyByType,
+            (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKeyOfType,
             blockChainConfig -> blockChainConfig.isRskipMultipleKeyFederateMembers(),
             true
     ),
