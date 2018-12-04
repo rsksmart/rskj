@@ -279,7 +279,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void getAddressFromEthTransaction() {
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         byte[] privKey = generatePrivKey();
         tx.sign(privKey);
 
@@ -291,7 +291,7 @@ public class BridgeUtilsTest {
 
     @Test(expected = Exception.class)
     public void getAddressFromEthNotSignTransaction() {
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
     }
 
@@ -461,7 +461,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void testIsContractTx() {
-        Assert.assertFalse(BridgeUtils.isContractTx(new Transaction(null, null, null, null, null, null)));
+        Assert.assertFalse(BridgeUtils.isContractTx(new Transaction((byte[]) null, null, null, null, null, null)));
         Assert.assertTrue(BridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null)));
     }
 

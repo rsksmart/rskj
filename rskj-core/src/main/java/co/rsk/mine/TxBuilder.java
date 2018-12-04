@@ -122,7 +122,7 @@ public class TxBuilder {
     {
         String toAddress = Hex.toHexString(new ECKey(Utils.getRandom()).getAddress());
 
-        Transaction tx = Transaction.create(config, toAddress, BigInteger.valueOf(1000), txNonce, gasPrice, gasLimit);
+        Transaction tx = new Transaction(config, toAddress, BigInteger.valueOf(1000), txNonce, gasPrice, gasLimit);
         tx.sign(privateKeyBytes);
 
         return tx;
