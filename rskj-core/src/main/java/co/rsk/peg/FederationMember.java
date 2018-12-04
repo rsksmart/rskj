@@ -87,7 +87,7 @@ public final class FederationMember {
      * Compares federation members based on their underlying keys.
      *
      * The total ordering is defined such that, for any two members M1, M2,
-     * 1) M1 < M2 iif BTC_PUB_KEY(M1) <lex BTC_PUB_KEY(M2) OR
+     * 1) M1 < M2 iff BTC_PUB_KEY(M1) <lex BTC_PUB_KEY(M2) OR
      *              (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
      *               RSK_PUB_KEY(M1) <lex RSK_PUB_KEY(M2)) OR
      *              (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
