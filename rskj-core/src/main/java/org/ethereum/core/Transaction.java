@@ -406,47 +406,54 @@ public class Transaction {
 
     }
 
-    /**
-     * For signatures you have to keep also
-     * RLP of the transaction without any signature data
-     */
     public byte[] getEncodedRaw() {
         if (this.rawRlpEncoding == null) {
-            // Since EIP-155 use chainId for v
-            if (chainId == 0) {
-                this.rawRlpEncoding = encode(null, null, null);
-            } else {
-                byte[] v = RLP.encodeByte(chainId);
-                byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-                byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-
-                this.rawRlpEncoding = encode(v, r, s);
-            }
+            this.rawRlpEncoding = calculateEncodedRaw();
         }
 
         return ByteUtil.cloneBytes(this.rawRlpEncoding);
     }
 
+    /**
+     * This encoding is used when signing the transaction
+     */
+    protected byte[] calculateEncodedRaw() {
+        // Since EIP-155 use chainId for v
+        if (chainId == 0) {
+            return encode(null, null, null);
+        } else {
+            byte[] v = RLP.encodeByte(chainId);
+            byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+            byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+
+            return encode(v, r, s);
+        }
+    }
+
     public byte[] getEncoded() {
         if (this.rlpEncoding == null) {
-            byte[] v;
-            byte[] r;
-            byte[] s;
-
-            if (this.signature != null) {
-                v = RLP.encodeByte((byte) (chainId == 0 ? signature.v : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
-                r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
-                s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
-            } else {
-                v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
-                r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-                s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-            }
-
-            this.rlpEncoding = encode(v, r, s);
+            this.rlpEncoding = calculateEncoded();
         }
 
         return ByteUtil.cloneBytes(this.rlpEncoding);
+    }
+
+    protected byte[] calculateEncoded() {
+        byte[] v;
+        byte[] r;
+        byte[] s;
+
+        if (this.signature != null) {
+            v = RLP.encodeByte((byte) (chainId == 0 ? signature.v : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
+            r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
+            s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
+        } else {
+            v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
+            r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+            s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        }
+
+        return encode(v, r, s);
     }
 
     private byte[] encode(byte[] v, byte[] r, byte[] s) {

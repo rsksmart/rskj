@@ -77,7 +77,7 @@ public class InternalTransaction extends Transaction {
     }
 
     @Override
-    public byte[] getEncoded() {
+    protected byte[] calculateEncoded() {
         byte[] nonce = getNonce();
         if (isEmpty(nonce) || getLength(nonce) == 1 && nonce[0] == 0) {
             nonce = RLP.encodeElement((byte[]) null);
@@ -101,8 +101,8 @@ public class InternalTransaction extends Transaction {
     }
 
     @Override
-    public byte[] getEncodedRaw() {
-        return getEncoded();
+    protected byte[] calculateEncodedRaw() {
+        return calculateEncoded();
     }
 
     @Override
