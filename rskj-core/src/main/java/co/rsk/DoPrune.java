@@ -20,13 +20,13 @@ package co.rsk;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.RskFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -54,9 +54,10 @@ public class DoPrune {
 
     private final RskSystemProperties rskSystemProperties;
     private final Blockchain blockchain;
+    private final BuildInfo buildInfo;
 
     public static void main(String[] args) {
-        ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
+        ApplicationContext ctx = new AnnotationConfigApplicationContext(RskFactory.class);
         DoPrune runner = ctx.getBean(DoPrune.class);
         runner.doPrune();
         runner.stop();
@@ -65,9 +66,11 @@ public class DoPrune {
     @Autowired
     public DoPrune(
             RskSystemProperties rskSystemProperties,
-            Blockchain blockchain) {
+            Blockchain blockchain,
+            BuildInfo buildInfo) {
         this.rskSystemProperties = rskSystemProperties;
         this.blockchain = blockchain;
+        this.buildInfo = buildInfo;
     }
 
     private void doPrune() {
@@ -77,7 +80,7 @@ public class DoPrune {
         RskAddress contractAddress = DEFAULT_CONTRACT_ADDRESS;
 
         logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
-        BuildInfo.printInfo();
+        buildInfo.printInfo(logger);
 
         long height = this.blockchain.getBestBlock().getNumber();
 
