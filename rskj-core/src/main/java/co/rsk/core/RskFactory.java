@@ -79,7 +79,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 
 @Configuration
@@ -412,10 +411,16 @@ public class RskFactory {
     }
 
     @Bean
-    public BuildInfo getBuildInfo(ResourceLoader resourceLoader) throws IOException {
+    public BuildInfo getBuildInfo(ResourceLoader resourceLoader) {
         Properties props = new Properties();
         Resource buldInfoFile = resourceLoader.getResource("classpath:build-info.properties");
-        props.load(buldInfoFile.getInputStream());
+        try {
+            props.load(buldInfoFile.getInputStream());
+        } catch (IOException ioe) {
+            logger.warn("build-info.properties file missing from classpath");
+            logger.trace("build-info.properties file missing from classpath exception", ioe);
+            return new BuildInfo("dev", "dev");
+        }
 
         return new BuildInfo(props.getProperty("build.hash"), props.getProperty("build.branch"));
     }
