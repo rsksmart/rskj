@@ -161,7 +161,7 @@ public class TxBuilderEx {
 
     private Transaction createNewTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {
         long gasLimit = 21000L + random.nextInt(100);
-        Transaction tx = Transaction.create(config, toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(gasLimit));
+        Transaction tx = new Transaction(config, toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(gasLimit));
         tx.sign(privateKey);
         return tx;
     }

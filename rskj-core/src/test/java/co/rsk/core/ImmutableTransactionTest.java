@@ -26,18 +26,6 @@ public class ImmutableTransactionTest {
         }
     }
 
-    @Test
-    public void tryingToSetGasLimit() {
-        Transaction tx = createImmutableTransaction();
-
-        try {
-            tx.setGasLimit(new byte[32]);
-        }
-        catch (ImmutableTransaction.ImmutableTransactionException ex) {
-            Assert.assertTrue(ex.getMessage().contains("Immutable transaction: trying to set gas limit"));
-        }
-    }
-
     private static Transaction createImmutableTransaction() {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
