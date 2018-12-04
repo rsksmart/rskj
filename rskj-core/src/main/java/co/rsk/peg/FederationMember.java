@@ -47,14 +47,27 @@ public final class FederationMember {
         RSK("rsk"),
         MST("mst");
 
-        private String name;
+        private String value;
 
-        KeyType(String name) {
-            this.name = name;
+        KeyType(String value) {
+            this.value = value;
         }
 
-        public String getName() {
-            return name;
+        public String getValue() {
+            return value;
+        }
+
+        public static KeyType byValue(String value) {
+            switch (value) {
+                case "rsk":
+                    return KeyType.RSK;
+                case "mst":
+                    return KeyType.MST;
+                case "btc":
+                    return KeyType.BTC;
+                default:
+                    throw new IllegalArgumentException(String.format("Invalid value for FederationMember.KeyType: %s", value));
+            }
         }
     }
 

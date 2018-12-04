@@ -73,7 +73,7 @@ public class FederationSupport {
      * @param keyType the key type
      * @return the federator's public key
      */
-    public byte[] getFederatorPublicKeyByType(int index, FederationMember.KeyType keyType) {
+    public byte[] getFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         List<FederationMember> members = getActiveFederation().getMembers();
 
         if (index < 0 || index >= members.size()) {
