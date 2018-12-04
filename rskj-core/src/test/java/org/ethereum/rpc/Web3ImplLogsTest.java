@@ -597,7 +597,8 @@ public class Web3ImplLogsTest {
                 null,
                 null,
                 null,
-                new SimpleConfigCapabilities()
+                new SimpleConfigCapabilities(),
+                null
         );
     }
 

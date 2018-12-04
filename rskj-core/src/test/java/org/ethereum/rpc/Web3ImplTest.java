@@ -60,6 +60,7 @@ import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.solidity.compiler.SolidityCompiler;
+import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -269,6 +270,7 @@ public class Web3ImplTest {
                 debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
+                null,
                 null,
                 null,
                 null,
@@ -951,6 +953,7 @@ public class Web3ImplTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -1272,6 +1275,7 @@ public class Web3ImplTest {
                 peerServer,
                 null,
                 null,
+                null,
                 null
         );
     }
@@ -1325,7 +1329,8 @@ public class Web3ImplTest {
                 null,
                 nodeBlockProcessor,
                 null,
-                configCapabilities
+                configCapabilities,
+                new BuildInfo("test", "test")
         );
     }
 
@@ -1357,6 +1362,7 @@ public class Web3ImplTest {
                 debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
+                null,
                 null,
                 null,
                 null,
@@ -1410,6 +1416,7 @@ public class Web3ImplTest {
                 debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
+                null,
                 null,
                 null,
                 null,
