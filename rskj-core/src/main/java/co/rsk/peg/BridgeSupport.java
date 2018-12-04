@@ -1290,8 +1290,8 @@ public class BridgeSupport {
      * @param keyType the key type
      * @return the federator's public key
      */
-    public byte[] getFederatorPublicKeyByType(int index, FederationMember.KeyType keyType) {
-        return federationSupport.getFederatorPublicKeyByType(index, keyType);
+    public byte[] getFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
+        return federationSupport.getFederatorPublicKeyOfType(index, keyType);
     }
 
     /**
@@ -1376,7 +1376,7 @@ public class BridgeSupport {
      * @param keyType the key type
      * @return the retiring federator's public key of the given type, null if no retiring federation exists
      */
-    public byte[] getRetiringFederatorPublicKeyByType(int index, FederationMember.KeyType keyType) {
+    public byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return null;
@@ -1732,7 +1732,7 @@ public class BridgeSupport {
      * @param keyType the key type
      * @return the pending federation's federator public key of given type
      */
-    public byte[] getPendingFederatorPublicKeyByType(int index, FederationMember.KeyType keyType) {
+    public byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
