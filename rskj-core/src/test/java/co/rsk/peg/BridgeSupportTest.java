@@ -2058,6 +2058,9 @@ public class BridgeSupportTest {
         List<BtcECKey> publicKeys = getTestFederationPublicKeys(6);
         for (int i = 0; i < 6; i++) {
             Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
         }
     }
 
@@ -2091,6 +2094,9 @@ public class BridgeSupportTest {
         List<BtcECKey> publicKeys = getTestFederationPublicKeys(3);
         for (int i = 0; i < 3; i++) {
             Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
         }
     }
 
@@ -2128,6 +2134,9 @@ public class BridgeSupportTest {
         List<BtcECKey> publicKeys = getTestFederationPublicKeys(3);
         for (int i = 0; i < 3; i++) {
             Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
         }
     }
 
@@ -2165,6 +2174,10 @@ public class BridgeSupportTest {
         List<BtcECKey> publicKeys = getTestFederationPublicKeys(6);
         for (int i = 0; i < 6; i++) {
             Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
+
         }
     }
 
@@ -2175,6 +2188,9 @@ public class BridgeSupportTest {
         Assert.assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
         Assert.assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
         Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKey(0));
+        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
+        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
+        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
     }
 
     @Test
@@ -2209,6 +2225,9 @@ public class BridgeSupportTest {
         Assert.assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
         Assert.assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
         Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKey(0));
+        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
+        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
+        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
     }
 
     @Test
@@ -2247,6 +2266,9 @@ public class BridgeSupportTest {
         List<BtcECKey> publicKeys = getTestFederationPublicKeys(4);
         for (int i = 0; i < 4; i++) {
             Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getRetiringFederatorPublicKey(i)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
         }
     }
 
@@ -2256,6 +2278,9 @@ public class BridgeSupportTest {
 
         Assert.assertEquals(-1, bridgeSupport.getPendingFederationSize().intValue());
         Assert.assertNull(bridgeSupport.getPendingFederatorPublicKey(0));
+        Assert.assertNull(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
+        Assert.assertNull(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
+        Assert.assertNull(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
     }
 
     @Test
@@ -2269,6 +2294,9 @@ public class BridgeSupportTest {
         List<BtcECKey> publicKeys = getTestFederationPublicKeys(5);
         for (int i = 0; i < 5; i++) {
             Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getPendingFederatorPublicKey(i)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getPendingFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getPendingFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getPendingFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
         }
     }
 
@@ -2517,6 +2545,9 @@ public class BridgeSupportTest {
         Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
         Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKey(0)));
+        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)));
+        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)));
+        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)));
         verify(mocksProvider.getElection(), times(1)).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
     }
@@ -2552,7 +2583,15 @@ public class BridgeSupportTest {
         Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
         Assert.assertEquals(2, bridgeSupport.getPendingFederationSize().intValue());
         Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKey(0)));
+        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)));
+        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)));
+        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)));
+
         Assert.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKey(1)));
+        Assert.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.BTC)));
+        Assert.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.RSK)));
+        Assert.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.MST)));
+
         verify(mocksProvider.getElection(), times(1)).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
     }
