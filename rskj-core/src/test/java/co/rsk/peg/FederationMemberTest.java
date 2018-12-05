@@ -101,4 +101,19 @@ public class FederationMemberTest {
 
         Assert.assertFalse(member.equals(otherMember));
     }
+
+    @Test
+    public void keyType_byValue() {
+        Assert.assertEquals(FederationMember.KeyType.BTC, FederationMember.KeyType.byValue("btc"));
+        Assert.assertEquals(FederationMember.KeyType.RSK, FederationMember.KeyType.byValue("rsk"));
+        Assert.assertEquals(FederationMember.KeyType.MST, FederationMember.KeyType.byValue("mst"));
+    }
+
+    @Test
+    public void keyType_byValueInvalid() {
+        try {
+            FederationMember.KeyType.byValue("whatever");
+            Assert.fail();
+        } catch (IllegalArgumentException e) {}
+    }
 }
