@@ -105,12 +105,8 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             if (present) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
-                List<BtcECKey> federatorKeys = new ArrayList<>();
-                for (int i = 0; i < numFederators; i++) {
-                    federatorKeys.add(new BtcECKey());
-                }
                 retiringFederation = new Federation(
-                        FederationMember.getFederationMembersFromKeys(federatorKeys),
+                        ActiveFederationTest.getNRandomFederationMembers(numFederators),
                         Instant.ofEpochMilli(new Random().nextLong()),
                         Helper.randomInRange(1, 10),
                         networkParameters

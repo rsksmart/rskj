@@ -82,6 +82,24 @@ public class FederationMemberTest {
     }
 
     @Test
+    public void testEquals_sameKeysDifferentCompression() {
+        FederationMember uncompressedMember = new FederationMember(
+                BtcECKey.fromPublicOnly(btcKey.getPubKeyPoint().getEncoded(false)),
+                ECKey.fromPublicOnly(rskKey.getPubKey(false)),
+                ECKey.fromPublicOnly(mstKey.getPubKey(false))
+        );
+
+        FederationMember compressedMember = new FederationMember(
+                BtcECKey.fromPublicOnly(btcKey.getPubKeyPoint().getEncoded(true)),
+                ECKey.fromPublicOnly(rskKey.getPubKey(true)),
+                ECKey.fromPublicOnly(mstKey.getPubKey(true))
+        );
+
+        Assert.assertTrue(compressedMember.equals(uncompressedMember));
+        Assert.assertTrue(uncompressedMember.equals(compressedMember));
+    }
+
+    @Test
     public void testEquals_differentBtcKey() {
         FederationMember otherMember = new FederationMember(new BtcECKey(), rskKey, mstKey);
 
@@ -100,5 +118,20 @@ public class FederationMemberTest {
         FederationMember otherMember = new FederationMember(btcKey, rskKey, new ECKey());
 
         Assert.assertFalse(member.equals(otherMember));
+    }
+
+    @Test
+    public void keyType_byValue() {
+        Assert.assertEquals(FederationMember.KeyType.BTC, FederationMember.KeyType.byValue("btc"));
+        Assert.assertEquals(FederationMember.KeyType.RSK, FederationMember.KeyType.byValue("rsk"));
+        Assert.assertEquals(FederationMember.KeyType.MST, FederationMember.KeyType.byValue("mst"));
+    }
+
+    @Test
+    public void keyType_byValueInvalid() {
+        try {
+            FederationMember.KeyType.byValue("whatever");
+            Assert.fail();
+        } catch (IllegalArgumentException e) {}
     }
 }

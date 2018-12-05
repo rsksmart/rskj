@@ -26,6 +26,7 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
@@ -133,8 +134,9 @@ public class BridgeSerializationUtilsTest {
                 BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
         };
 
+        // Only actual keys serialized are BTC keys, so we don't really care about RSK or MST keys
         Federation federation = new Federation(
-            FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
+            FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
                     BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[2]),
@@ -237,8 +239,9 @@ public class BridgeSerializationUtilsTest {
                 BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
         };
 
+        // Only actual keys serialized are BTC keys, so we don't really care about RSK or MST keys
         PendingFederation pendingFederation = new PendingFederation(
-                FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
+                FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[2]),
@@ -625,8 +628,9 @@ public class BridgeSerializationUtilsTest {
                 BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
         };
 
+        // Only actual keys serialized are BTC keys, so deserialization will fill RSK and MST keys with those
         Federation federation = new Federation(
-                FederationMember.getFederationMembersFromKeys(Arrays.asList(
+                FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(
                         BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[2]),

@@ -192,11 +192,11 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
                 final int maxKeys = 16;
                 int numKeys = Helper.randomInRange(minKeys, maxKeys);
 
-                List<BtcECKey> pendingFederationKeys = new ArrayList<>();
+                List<FederationMember> pendingFederationMembers = new ArrayList<>();
                 for (int i = 0; i < numKeys; i++) {
-                    pendingFederationKeys.add(new BtcECKey());
+                    pendingFederationMembers.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
                 }
-                pendingFederation = new PendingFederation(FederationMember.getFederationMembersFromKeys(pendingFederationKeys));
+                pendingFederation = new PendingFederation(pendingFederationMembers);
                 provider.setPendingFederation(pendingFederation);
             }
 

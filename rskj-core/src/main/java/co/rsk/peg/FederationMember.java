@@ -120,9 +120,10 @@ public final class FederationMember {
 
     public FederationMember(BtcECKey btcPublicKey, ECKey rskPublicKey, ECKey mstPublicKey) {
         // Copy public keys to ensure effective immutability
-        this.btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKey());
-        this.rskPublicKey = ECKey.fromPublicOnly(rskPublicKey.getPubKey());
-        this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey());
+        // Make sure we always use compressed versions of public keys
+        this.btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
+        this.rskPublicKey = ECKey.fromPublicOnly(rskPublicKey.getPubKey(true));
+        this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey(true));
     }
 
     BtcECKey getBtcPublicKey() {
