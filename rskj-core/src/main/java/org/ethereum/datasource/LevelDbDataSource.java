@@ -268,7 +268,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         try (WriteBatch batch = db.createWriteBatch()) {
             for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
 
-                byte[] key = entry.getValue();
+                byte[] key = entry.getKey().getData();
                 byte[] value =entry.getValue();
                 // Make this check explicit so that users know very clearly what to expect
                 if (key == null || value == null) throw new NullPointerException();
@@ -340,7 +340,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
-    // All is flushed immediately: there is no cache to flush
+    // All is flushed immediately: there is no uncommittedCache to flush
     @Override
     public void flush(){
 
