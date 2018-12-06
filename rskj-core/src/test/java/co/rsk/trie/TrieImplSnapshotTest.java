@@ -26,6 +26,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * Created by ajlopez on 05/04/2017.
@@ -119,6 +124,18 @@ public class TrieImplSnapshotTest {
 
         Assert.assertNotNull(snapshot.get("foo".getBytes()));
         Assert.assertNull(snapshot.get("bar".getBytes()));
+    }
+
+    @Test
+    public void getSnapshotToTheSameTrie() {
+        TrieStore store = mock(TrieStore.class);
+        Trie trie = new TrieImpl(store, false);
+        trie = trie.put("key", "value".getBytes());
+
+        Trie snapshotTrie = trie.getSnapshotTo(trie.getHash());
+
+        Assert.assertThat(snapshotTrie, is(trie));
+        verify(store, never()).retrieve(any(byte[].class));
     }
 
     @Test
