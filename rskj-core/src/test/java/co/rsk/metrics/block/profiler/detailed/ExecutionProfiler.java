@@ -171,6 +171,40 @@ public class ExecutionProfiler implements Profiler {
         }
 
     }
+
+    public BlockProfilingInfo flushAggregatedAllBlocks(){
+        if(this.currentBlock != null){
+            this.profilePerBlock.add(this.currentBlock);
+        }
+
+        Map<Integer, Metric> metricsMap = new HashMap<>();
+        ArrayList<Metric> newMetrics = new ArrayList<>();
+        BlockProfilingInfo aggregatedBlock = new BlockProfilingInfo();
+
+        for(BlockProfilingInfo info: this.profilePerBlock){
+            aggregatedBlock.setTrxs(aggregatedBlock.getTrxs()+info.getTrxs());
+            for(Metric metric : info.getMetrics()){
+                if(metricsMap.containsKey(metric.getType())){
+                    Metric currentMetric = metricsMap.get(metric.getType());
+                    currentMetric.setThCPUt(currentMetric.getThCPUt()+ metric.getThCPUt());
+                    currentMetric.setgCt(currentMetric.getgCt() + metric.getgCt());
+                    currentMetric.setSt(currentMetric.getSt() + metric.getSt());
+                }
+                else{
+                    Metric newMetric = new Metric();
+                    newMetric.setThCPUt(metric.getThCPUt());
+                    newMetric.setgCt(metric.getgCt());
+                    newMetric.setSt(metric.getSt());
+                    newMetric.setType(metric.getType());
+                    metricsMap.put(metric.getType(), newMetric);
+                }
+            }
+            newMetrics.addAll(metricsMap.values());
+        }
+        aggregatedBlock.setMetrics(newMetrics);
+        return aggregatedBlock;
+    }
+
     public void flush(String pathStr) {
         if(this.currentBlock != null){
             this.profilePerBlock.add(this.currentBlock);
