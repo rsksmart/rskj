@@ -27,6 +27,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import co.rsk.peg.FederationTestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
@@ -75,7 +76,7 @@ public class BridgeEventLoggerImplTest {
                 BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49"))
         );
 
-        List<FederationMember> oldFederationMembers = FederationMember.getFederationMembersFromKeys(oldFederationKeys);
+        List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
 
         Federation oldFederation = new Federation(oldFederationMembers,
                 Instant.ofEpochMilli(15005L), 15L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
@@ -86,7 +87,7 @@ public class BridgeEventLoggerImplTest {
                 BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
         );
 
-        List<FederationMember> newFederationMembers = FederationMember.getFederationMembersFromKeys(newFederationKeys);
+        List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
 
         Federation newFederation = new Federation(newFederationMembers,
                 Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));

@@ -30,7 +30,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -88,17 +90,11 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             if (present) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
-                List<BtcECKey> federatorKeys = new ArrayList<>();
-                for (int i = 0; i < numFederators; i++) {
-                    federatorKeys.add(new BtcECKey());
-                }
-                pendingFederation = new PendingFederation(FederationMember.getFederationMembersFromKeys(federatorKeys));
+                pendingFederation = new PendingFederation(ActiveFederationTest.getNRandomFederationMembers(numFederators));
                 provider.setPendingFederation(pendingFederation);
             } else {
                 pendingFederation = null;
             }
         };
     }
-
-
 }
