@@ -82,6 +82,24 @@ public class FederationMemberTest {
     }
 
     @Test
+    public void testEquals_sameKeysDifferentCompression() {
+        FederationMember uncompressedMember = new FederationMember(
+                BtcECKey.fromPublicOnly(btcKey.getPubKeyPoint().getEncoded(false)),
+                ECKey.fromPublicOnly(rskKey.getPubKey(false)),
+                ECKey.fromPublicOnly(mstKey.getPubKey(false))
+        );
+
+        FederationMember compressedMember = new FederationMember(
+                BtcECKey.fromPublicOnly(btcKey.getPubKeyPoint().getEncoded(true)),
+                ECKey.fromPublicOnly(rskKey.getPubKey(true)),
+                ECKey.fromPublicOnly(mstKey.getPubKey(true))
+        );
+
+        Assert.assertTrue(compressedMember.equals(uncompressedMember));
+        Assert.assertTrue(uncompressedMember.equals(compressedMember));
+    }
+
+    @Test
     public void testEquals_differentBtcKey() {
         FederationMember otherMember = new FederationMember(new BtcECKey(), rskKey, mstKey);
 
