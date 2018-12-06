@@ -312,7 +312,9 @@ public class BlockExecutor {
 
         lastStateRootHash = initialRepository.getRoot();
         boolean hardfork9999 = Block.isHardFork9999(block.getNumber());
-        return new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees,hardfork9999);
+        return new BlockResult(executedTransactions, receipts, lastStateRootHash,
+                initialRepository.getMutableTrie().getTrie(),
+                totalGasUsed, totalPaidFees,hardfork9999);
     }
 
     public interface TransactionExecutorFactory {

@@ -45,13 +45,19 @@ public class BlockResult {
     private final Coin paidFees;
     private final byte[] logsBloom;
 
+    // is is for optimizing switching between states. Instead of using the "stateRoot" field,
+    // which requires regenerating the trie, usingh the finalState field does not.
+    private final Trie finalState;
+
     public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts,
-                       byte[] stateRoot, long gasUsed, Coin paidFees,boolean hardfork9999) {
+                       byte[] stateRoot, Trie finalState,long gasUsed, Coin paidFees,boolean hardfork9999) {
+
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
         this.stateRoot = stateRoot;
         this.gasUsed = gasUsed;
         this.paidFees = paidFees;
+        this.finalState = finalState;
 
         if (hardfork9999)
             this.receiptsRoot = calculateReceiptsTrieRootNew(transactionReceipts);
@@ -70,6 +76,8 @@ public class BlockResult {
     public byte[] getStateRoot() {
         return this.stateRoot;
     }
+
+    public Trie getFinalState() { return this.finalState; }
 
     public byte[] getReceiptsRoot() {
         return this.receiptsRoot;
@@ -126,7 +134,8 @@ public class BlockResult {
     private static class InterruptedExecutionBlockResult extends BlockResult {
         public InterruptedExecutionBlockResult() {
             // it doesn't matter if it's pre or post HF9999
-            super(Collections.emptyList(), Collections.emptyList(), null, 0, Coin.ZERO,false);
+            super(Collections.emptyList(), Collections.emptyList(), null, null,
+                    0, Coin.ZERO,false);
         }
     }
 }

@@ -119,6 +119,8 @@ public class RskSystemProperties extends SystemProperties {
         return new Account(ECKey.fromPrivate(HashUtil.keccak256(coinbaseSecret.getBytes(StandardCharsets.UTF_8))));
     }
 
+    public boolean useStateCache() { return getBoolean("state.cache.enabled", true);}
+    public int stateCacheSize() { return getInt("state.cache.size", 100*1000);}
     public boolean isMinerClientEnabled() {
         return getBoolean("miner.client.enabled", false);
     }

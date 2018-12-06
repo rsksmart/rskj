@@ -480,6 +480,11 @@ public class MutableRepository implements Repository {
     }
 
     @Override
+    public void syncTo(Trie root) {
+        this.trie = new MutableTrieImpl(root);
+    }
+
+    @Override
     public synchronized boolean isClosed() {
         return this.closed;
     }
@@ -548,6 +553,11 @@ public class MutableRepository implements Repository {
     // not a RepositoryTrack
 
     public synchronized Repository getSnapshotTo(byte[] root) {
+        // If we're getting the same state we're standing on, there is no need
+        /// to grab new nodes from the DB.
+        if (Arrays.equals(root,this.trie.getTrie().getHash().getBytes())) {
+            return new MutableRepository(trie.getTrie());
+        }
         MutableTrie atrie = this.trie.getSnapshotTo(new Keccak256(root));
         return new MutableRepository(atrie.getTrie());
     }

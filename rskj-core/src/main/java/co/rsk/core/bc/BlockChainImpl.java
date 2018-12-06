@@ -301,7 +301,10 @@ public class BlockChainImpl implements Blockchain {
             }
 
             logger.trace("Start switchToBlockChain");
-            switchToBlockChain(block, totalDifficulty);
+
+            // Genesis block has no result
+            Trie finalState = (result!=null)?result.getFinalState():null;
+            switchToBlockChain(block, totalDifficulty,finalState);
             logger.trace("Start saveReceipts");
             saveReceipts(block, result);
             logger.trace("Start processBest");
@@ -503,11 +506,15 @@ public class BlockChainImpl implements Blockchain {
         this.blockRecorder = blockRecorder;
     }
 
-    private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
+    private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty,Trie finalState) {
         synchronized (accessLock) {
             storeBlock(block, totalDifficulty, true);
             status = new BlockChainStatus(block, totalDifficulty);
-            repository.syncToRoot(block.getStateRoot());
+
+            if (finalState!=null)
+                repository.syncTo(finalState);
+            else
+                repository.syncToRoot(block.getStateRoot());
         }
     }
 

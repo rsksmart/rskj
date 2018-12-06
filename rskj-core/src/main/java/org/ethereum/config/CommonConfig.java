@@ -26,6 +26,7 @@ import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.RepositoryTrack;
@@ -42,6 +43,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static java.util.Arrays.parallelSetAll;
 
 @Configuration
 @ComponentScan(
@@ -60,9 +62,16 @@ public class CommonConfig {
         }
 
         KeyValueDataSource ds = makeDataSource(config, "state");
+        KeyValueDataSource dscache;
+
+        if (config.useStateCache()) {
+            dscache = new DataSourceWithCache(ds,config.stateCacheSize());
+        }
+          else
+            dscache = ds;
 
 
-        return new RepositoryImpl(new TrieImpl(new TrieStoreImpl(ds),true));
+        return new RepositoryImpl(new TrieImpl(new TrieStoreImpl(dscache),true));
     }
 
     private KeyValueDataSource makeDataSource(RskSystemProperties config, String name) {

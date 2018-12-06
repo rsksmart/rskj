@@ -213,7 +213,7 @@ public class RepositoryPerformanceTest {
 
         // Use a datasource with cache
         LevelDbDataSource  dsBase = new LevelDbDataSource("test-storage-rows",config.databaseDir());
-        DataSourceWithCache ds = new DataSourceWithCache(dsBase);
+        DataSourceWithCache ds = new DataSourceWithCache(dsBase,100*1000);
         TrieStoreImpl astore = new TrieStoreImpl(ds);
 
         ds.init();
