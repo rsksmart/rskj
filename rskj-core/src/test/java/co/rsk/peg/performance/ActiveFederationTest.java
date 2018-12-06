@@ -38,6 +38,14 @@ import java.util.stream.Collectors;
 
 @Ignore
 public class ActiveFederationTest extends BridgePerformanceTestCase {
+    public static List<FederationMember> getNRandomFederationMembers(int n) {
+        List<FederationMember> result = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            result.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
+        }
+        return result;
+    }
+
     private Federation federation;
 
     @Test
@@ -103,12 +111,7 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             if (!genesis) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
-                List<BtcECKey> federatorKeys = new ArrayList<>();
-                for (int i = 0; i < numFederators; i++) {
-                    federatorKeys.add(new BtcECKey());
-                }
-
-                List<FederationMember> members = FederationMember.getFederationMembersFromKeys(federatorKeys);
+                List<FederationMember> members = getNRandomFederationMembers(numFederators);
 
                 federation = new Federation(
                         members,
@@ -122,6 +125,4 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
             }
         };
     }
-
-
 }
