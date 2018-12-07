@@ -45,7 +45,7 @@ public class Web3ImplRpcTest {
         Repository repository = Web3Mocks.getMockRepository();
         Web3Impl web3 = new Web3RskImpl(eth, blockchain, transactionPool,
                             new TestSystemProperties(), null, null, pm,
-                            null, null, null,
+                            null, null, null, null,
                             null, null, repository, null, null,
                             null, null, null,
                             null, null, null, null);
