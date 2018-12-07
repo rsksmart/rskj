@@ -585,6 +585,7 @@ public class Web3ImplLogsTest {
                 Web3Mocks.getMockMinerServer(),
                 personalModule,
                 ethModule,
+                null,
                 txPoolModule,
                 null,
                 debugModule,

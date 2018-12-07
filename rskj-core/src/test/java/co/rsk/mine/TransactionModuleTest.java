@@ -307,6 +307,7 @@ public class TransactionModuleTest {
                 Web3Mocks.getMockMinerServer(),
                 personalModule,
                 ethModule,
+                null,
                 txPoolModule,
                 null,
                 debugModule,
