@@ -269,28 +269,6 @@ public class MinerManagerTest {
         Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
     }
 
-    @Test
-    public void mineBlockUsingTimeTravel() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        MinerManager manager = new MinerManager();
-
-        MinerServerImpl minerServer = getMinerServer();
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        long currentTime = minerServer.getCurrentTimeInSeconds();
-
-        minerServer.increaseTime(10);
-
-        manager.mineBlock(blockchain, minerClient, minerServer);
-
-        Block block = blockchain.getBestBlock();
-        Assert.assertEquals(1, block.getNumber());
-
-        Assert.assertTrue(currentTime + 10 <= block.getTimestamp());
-        Assert.assertTrue(currentTime + 11 > block.getTimestamp());
-    }
-
     private static MinerClientImpl getMinerClient(MinerServerImpl minerServer) {
         return getMinerClient(new RskImplForTest() {
             @Override
@@ -314,7 +292,7 @@ public class MinerManagerTest {
         ethereum.repository = repository;
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(config);
         return new MinerServerImpl(
                 config,
                 ethereum,

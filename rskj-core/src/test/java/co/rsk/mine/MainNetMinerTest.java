@@ -73,7 +73,7 @@ public class MainNetMinerTest {
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -134,7 +134,7 @@ public class MainNetMinerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(config);
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -193,7 +193,7 @@ public class MainNetMinerTest {
     private BlockToMineBuilder blockToMineBuilder() {
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(config);
         return new BlockToMineBuilder(
                 ConfigUtils.getDefaultMiningConfig(),
                 repository,
