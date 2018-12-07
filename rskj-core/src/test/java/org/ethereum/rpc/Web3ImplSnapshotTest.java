@@ -137,8 +137,7 @@ public class Web3ImplSnapshotTest {
     @Test
     public void mine() {
         SimpleEthereum ethereum = new SimpleEthereum();
-        MinerServer minerServer = getMinerServerForTest(ethereum);
-        Web3Impl web3 = createWeb3(ethereum, minerServer);
+        Web3Impl web3 = createWeb3(ethereum);
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
@@ -147,59 +146,12 @@ public class Web3ImplSnapshotTest {
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
     }
 
-    @Test
-    public void increaseTimeUsingHexadecimalValue() {
-        SimpleEthereum ethereum = new SimpleEthereum();
-        MinerServer minerServer = getMinerServerForTest(ethereum);
-        Web3Impl web3 = createWeb3(ethereum, minerServer);
 
-        String result = web3.evm_increaseTime("0x10");
-
-        Assert.assertEquals("0x10", result);
-        Assert.assertEquals(16, minerServer.increaseTime(0));
-    }
-
-    @Test
-    public void increaseTimeUsingDecimalValue() {
-        SimpleEthereum ethereum = new SimpleEthereum();
-        MinerServer minerServer = getMinerServerForTest(ethereum);
-        Web3Impl web3 = createWeb3(ethereum, minerServer);
-
-        String result = web3.evm_increaseTime("16");
-
-        Assert.assertEquals("0x10", result);
-        Assert.assertEquals(16, minerServer.increaseTime(0));
-    }
-
-    @Test
-    public void increaseTimeTwice() {
-        SimpleEthereum ethereum = new SimpleEthereum();
-        MinerServer minerServer = getMinerServerForTest(ethereum);
-        Web3Impl web3 = createWeb3(ethereum, minerServer);
-
-        web3.evm_increaseTime("0x10");
-        String result = web3.evm_increaseTime("0x10");
-
-        Assert.assertEquals("0x20", result);
-        Assert.assertEquals(32, minerServer.increaseTime(0));
-    }
-
-    @Test
-    public void increaseTimeTwiceUsingDecimalValues() {
-        SimpleEthereum ethereum = new SimpleEthereum();
-        MinerServer minerServer = getMinerServerForTest(ethereum);
-        Web3Impl web3 = createWeb3(ethereum, minerServer);
-
-        web3.evm_increaseTime("16");
-        String result = web3.evm_increaseTime("16");
-
-        Assert.assertEquals("0x20", result);
-        Assert.assertEquals(32, minerServer.increaseTime(0));
-    }
-
-    private Web3Impl createWeb3(SimpleEthereum ethereum, MinerServer minerServer) {
+    private Web3Impl createWeb3(SimpleEthereum ethereum) {
+        MinerClock minerClock = new MinerClock(config);
+        MinerServer minerServer = getMinerServerForTest(ethereum, minerClock);
         MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
-        EvmModule evmModule = new EvmModuleImpl(minerServer, minerClient, blockchain, factory.getTransactionPool());
+        EvmModule evmModule = new EvmModuleImpl(minerServer, minerClient, minerClock, blockchain, factory.getTransactionPool());
         PersonalModule pm = new PersonalModuleWalletDisabled();
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
@@ -235,13 +187,12 @@ public class Web3ImplSnapshotTest {
 
     private Web3Impl createWeb3() {
         SimpleEthereum ethereum = new SimpleEthereum();
-        return createWeb3(ethereum, getMinerServerForTest(ethereum));
+        return createWeb3(ethereum);
     }
 
-    private MinerServer getMinerServerForTest(SimpleEthereum ethereum) {
+    private MinerServer getMinerServerForTest(SimpleEthereum ethereum, MinerClock clock) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
-        MinerClock clock = new MinerClock(blockchain, config);
         return new MinerServerImpl(
                 config,
                 ethereum,

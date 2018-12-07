@@ -61,9 +61,5 @@ public interface MinerServer {
 
     void setExtraData(byte[] extraData);
 
-    long getCurrentTimeInSeconds();
-
-    long increaseTime(long seconds);
-
     Optional<Block> getLatestBlock();
 }
