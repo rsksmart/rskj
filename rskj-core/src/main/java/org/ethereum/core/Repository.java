@@ -23,7 +23,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
@@ -168,23 +167,6 @@ public interface Repository extends AccountInformationProvider {
      */
     void syncToRoot(byte[] root);
 
-    /**
-     * Check to see if the current repository has an open connection to the database
-     *
-     * @return <tt>true</tt> if connection to database is open
-     */
-    boolean isClosed();
-
-    /**
-     * Close the database
-     */
-    void close();
-
-    /**
-     * Reset
-     */
-    void reset();
-
     void updateBatch(Map<RskAddress, AccountState> accountStates,
                      Map<RskAddress, ContractDetails> contractDetailes);
 
@@ -196,8 +178,6 @@ public interface Repository extends AccountInformationProvider {
                      Map<RskAddress, ContractDetails> cacheDetails);
 
     Repository getSnapshotTo(byte[] root);
-
-    DetailsDataStore getDetailsDataStore();
 
     void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
 

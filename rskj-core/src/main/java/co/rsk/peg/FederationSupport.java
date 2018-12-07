@@ -20,6 +20,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.config.BridgeConstants;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.Block;
 
 import javax.annotation.Nullable;
@@ -33,11 +34,13 @@ public class FederationSupport {
 
     private final BridgeStorageProvider provider;
     private final BridgeConstants bridgeConstants;
+    private final BlockchainNetConfig blockchainNetConfig;
     private final Block executionBlock;
 
-    public FederationSupport(BridgeStorageProvider provider, BridgeConstants bridgeConstants, Block executionBlock) {
+    public FederationSupport(BridgeStorageProvider provider, BlockchainNetConfig netConfig, Block executionBlock) {
         this.provider = provider;
-        this.bridgeConstants = bridgeConstants;
+        this.blockchainNetConfig = netConfig;
+        this.bridgeConstants = netConfig.getCommonConstants().getBridgeConstants();
         this.executionBlock = executionBlock;
     }
 
@@ -78,7 +81,7 @@ public class FederationSupport {
                 return provider.getOldFederation();
             case GENESIS:
             default:
-                return bridgeConstants.getGenesisFederation();
+                return blockchainNetConfig.getGenesisFederation();
         }
     }
 

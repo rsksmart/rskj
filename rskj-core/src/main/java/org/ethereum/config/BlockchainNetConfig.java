@@ -19,6 +19,8 @@
 
 package org.ethereum.config;
 
+import co.rsk.peg.Federation;
+
 /**
  * Describes a set of configs for a specific blockchain depending on the block number
  *
@@ -35,4 +37,9 @@ public interface BlockchainNetConfig {
      * Returns the constants common for all the blocks in this blockchain
      */
     Constants getCommonConstants();
+
+    /**
+    * Returns the genesis  federation for all the blocks in this blockchain
+    */
+    Federation getGenesisFederation();
 }

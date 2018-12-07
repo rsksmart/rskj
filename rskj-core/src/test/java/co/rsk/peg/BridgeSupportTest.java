@@ -47,7 +47,6 @@ import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieStoreImpl;
 import com.google.common.collect.Lists;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -57,14 +56,14 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
+import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -321,7 +320,7 @@ public class BridgeSupportTest {
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, eventLogger, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
 
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         ECKey key = new ECKey();
         tx.sign(key.getPrivKeyBytes());
 
@@ -375,7 +374,7 @@ public class BridgeSupportTest {
         List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
@@ -436,7 +435,7 @@ public class BridgeSupportTest {
             blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
@@ -497,7 +496,7 @@ public class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = null;
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
@@ -544,7 +543,7 @@ public class BridgeSupportTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 35
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(35, 1);
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
@@ -626,7 +625,7 @@ public class BridgeSupportTest {
         track.commit();
 
         track = repository.startTracking();
-        Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction tx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock);
@@ -700,7 +699,7 @@ public class BridgeSupportTest {
             blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction rskTx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = new BridgeSupport(config, track, mock(BridgeEventLogger.class), provider, rskCurrentBlock);
@@ -1132,7 +1131,7 @@ public class BridgeSupportTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction (config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 
@@ -1156,7 +1155,7 @@ public class BridgeSupportTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 
@@ -1339,13 +1338,15 @@ public class BridgeSupportTest {
 
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
         doReturn(btcParams).when(bridgeConstants).getBtcParams();
+        TestSystemProperties mockSystemProperties = mock(TestSystemProperties.class);
+        when(mockSystemProperties.getBlockchainConfig()).thenReturn(config.getBlockchainConfig());
         StoredBlock storedBlock = mock(StoredBlock.class);
         doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
         BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
         doReturn(storedBlock).when(btcBlockStore).getChainHead();
 
         BridgeSupport bridgeSupport = new BridgeSupport(
-                mock(TestSystemProperties.class),
+                mockSystemProperties,
                 mock(Repository.class),
                 mock(BridgeEventLogger.class),
                 bridgeConstants,
@@ -3173,6 +3174,7 @@ public class BridgeSupportTest {
 
         BridgeConstants constantsMock = mock(BridgeConstants.class);
         when(constantsMock.getGenesisFederation()).thenReturn(mockedGenesisFederation);
+
         when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         when(constantsMock.getFederationChangeAuthorizer()).thenReturn(BridgeRegTestConstants.getInstance().getFederationChangeAuthorizer());
         when(constantsMock.getFederationActivationAge()).thenReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge());
@@ -3236,6 +3238,10 @@ public class BridgeSupportTest {
             holder.setPendingFederation(m.getArgumentAt(0, PendingFederation.class));
             return null;
         }).when(providerMock).setPendingFederation(any());
+
+        BlockchainNetConfig blockchainNetConfig = spy(RegTestConfig.getDefaultRegTestConfig());
+        when(blockchainNetConfig.getGenesisFederation()).thenReturn(mockedGenesisFederation);
+        config.setBlockchainConfig(blockchainNetConfig);
 
         return new BridgeSupport(config, null, eventLogger, constantsMock, providerMock, null, null, executionBlock);
     }

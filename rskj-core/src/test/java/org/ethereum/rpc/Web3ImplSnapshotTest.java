@@ -196,7 +196,7 @@ public class Web3ImplSnapshotTest {
     }
 
     private Web3Impl createWeb3(SimpleEthereum ethereum, MinerServer minerServer) {
-        MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config);
+        MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
         PersonalModule pm = new PersonalModuleWalletDisabled();
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());

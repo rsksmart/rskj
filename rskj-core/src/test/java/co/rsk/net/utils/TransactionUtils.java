@@ -57,7 +57,7 @@ public class TransactionUtils {
     }
 
     public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
-        Transaction tx = Transaction.create(new TestSystemProperties(), toAddress, value, nonce, gasPrice, gasLimit);
+        Transaction tx = new Transaction(new TestSystemProperties(), toAddress, value, nonce, gasPrice, gasLimit);
         tx.sign(privateKey);
         return tx;
     }

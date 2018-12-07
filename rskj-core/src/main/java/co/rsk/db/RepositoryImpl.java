@@ -57,8 +57,7 @@ public class RepositoryImpl implements Repository {
 
     private TrieStore store;
     private Trie trie;
-    private DetailsDataStore detailsDataStore;
-    private boolean closed;
+    protected DetailsDataStore detailsDataStore;
     private TrieStore.Pool trieStorePool;
     private int memoryStorageLimit;
 
@@ -71,7 +70,7 @@ public class RepositoryImpl implements Repository {
             KeyValueDataSource detailsDS,
             TrieStore.Pool trieStorePool,
             int memoryStorageLimit) {
-        this(store, new DetailsDataStore(new DatabaseImpl(detailsDS), trieStorePool, memoryStorageLimit),
+        this(store, new DetailsDataStore(detailsDS, trieStorePool, memoryStorageLimit),
              trieStorePool, memoryStorageLimit);
     }
 
@@ -322,21 +321,6 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized boolean isClosed() {
-        return this.closed;
-    }
-
-    @Override
-    public synchronized void close() {
-        this.closed = true;
-    }
-
-    @Override
-    public void reset() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public synchronized void updateBatch(Map<RskAddress, AccountState> stateCache,
                                          Map<RskAddress, ContractDetails> detailsCache) {
         logger.debug("updatingBatch: detailsCache.size: {}", detailsCache.size());
@@ -420,11 +404,6 @@ public class RepositoryImpl implements Repository {
         RepositoryImpl snapshotRepository = new RepositoryImpl(this.store, this.detailsDataStore, this.trieStorePool, this.memoryStorageLimit);
         snapshotRepository.syncToRoot(root);
         return snapshotRepository;
-    }
-
-    @Override
-    public synchronized DetailsDataStore getDetailsDataStore() {
-        return this.detailsDataStore;
     }
 
     @Override

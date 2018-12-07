@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,36 +16,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.rpc.dto;
+package co.rsk.rpc.modules.eth;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.ethereum.rpc.Web3;
 
-/**
- * Created by Ruben on 4/4/2017.
- */
-public class ModulesDTO {
+public interface EthModuleTransaction {
+    String sendTransaction(Web3.CallArguments args);
 
-    @JsonProperty("eth")
-    public String getEthVersion()
-    {
-        return "1.0";
-    }
-
-    @JsonProperty("net")
-    public String getNetVersion()
-    {
-        return "1.0";
-    }
-
-    @JsonProperty("rpc")
-    public String getRpcVersion()
-    {
-        return "1.0";
-    }
-
-    @JsonProperty("web3")
-    public String getWeb3Version()
-    {
-        return "1.0";
-    }
+    String sendRawTransaction(String rawData);
 }

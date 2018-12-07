@@ -19,15 +19,20 @@
 
 package org.ethereum.config;
 
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
-import com.typesafe.config.*;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigRenderOptions;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.config.blockchain.HardForkActivationConfig;
-import org.ethereum.config.net.MainNetConfig;
-import org.ethereum.config.net.TestNetConfig;
-import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.config.net.DevNetConfig;
+import org.ethereum.config.net.MainNetConfig;
+import org.ethereum.config.net.RegTestConfig;
+import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.net.p2p.P2pHandler;
@@ -35,7 +40,6 @@ import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.*;
 import java.lang.annotation.ElementType;
@@ -83,6 +87,7 @@ public abstract class SystemProperties {
     public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
     // TODO: define a proper name for this config setting
     public static final String PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME = "blockchain.config.hardforkActivationHeights";
+    public static final String PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS = "genesis_constants.federationPublicKeys";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_DB_RESET = "database.reset";
     // TODO review rpc properties
@@ -212,10 +217,10 @@ public abstract class SystemProperties {
                     blockchainConfig = new TestNetConfig();
                     break;
                 case "devnet":
-                    blockchainConfig = DevNetConfig.getFromConfig(getHardForkActivationConfig());
+                    blockchainConfig = DevNetConfig.getFromConfig(getHardForkActivationConfig(), getGenesisFederationPublicKeys());
                     break;
                 case "regtest":
-                    blockchainConfig = RegTestConfig.getFromConfig(getHardForkActivationConfig());
+                    blockchainConfig = RegTestConfig.getFromConfig(getHardForkActivationConfig(), getGenesisFederationPublicKeys());
                     break;
                 default:
                     throw new RuntimeException(String.format(
@@ -279,6 +284,8 @@ public abstract class SystemProperties {
     public boolean databaseReset() {
         return configFromFiles.getBoolean("database.reset");
     }
+
+
 
     @ValidateMe
     public List<Node> peerActive() {
@@ -763,5 +770,14 @@ public abstract class SystemProperties {
             return null;
         }
         return new HardForkActivationConfig(this.getConfig().getObject(PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME).toConfig());
+    }
+
+    private List<BtcECKey> getGenesisFederationPublicKeys() {
+        List<BtcECKey> genesisFederationsPublicKeys = Collections.emptyList();
+        if (configFromFiles.hasPath(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS)) {
+            List<String> configFederationPublicKeys = configFromFiles.getStringList(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS);
+            genesisFederationsPublicKeys = configFederationPublicKeys.stream().map(key -> BtcECKey.fromPublicOnly(Hex.decode(key))).collect(Collectors.toList());
+        }
+        return genesisFederationsPublicKeys;
     }
 }
