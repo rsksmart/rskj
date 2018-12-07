@@ -450,16 +450,6 @@ public class MinerServerImpl implements MinerServer {
         return Optional.ofNullable(latestBlock);
     }
 
-    @Override
-    public long getCurrentTimeInSeconds() {
-        return clock.getCurrentTimeInSeconds();
-    }
-
-    @Override
-    public long increaseTime(long seconds) {
-        return clock.increaseTime(seconds);
-    }
-
     class NewBlockListener extends EthereumListenerAdapter {
 
         @Override
