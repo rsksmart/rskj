@@ -67,6 +67,7 @@ import org.ethereum.net.server.PeerServerImpl;
 import org.ethereum.rpc.Web3;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.sync.SyncPool;
+import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +75,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+
+import java.io.IOException;
+import java.util.Properties;
 
 @Configuration
 @ComponentScan("org.ethereum")
@@ -161,7 +167,8 @@ public class RskFactory {
                         PeerServer peerServer,
                         BlockProcessor nodeBlockProcessor,
                         HashRateCalculator hashRateCalculator,
-                        ConfigCapabilities configCapabilities) {
+                        ConfigCapabilities configCapabilities,
+                        BuildInfo buildInfo) {
         return new Web3RskImpl(
                 rsk,
                 blockchain,
@@ -183,7 +190,8 @@ public class RskFactory {
                 peerServer,
                 nodeBlockProcessor,
                 hashRateCalculator,
-                configCapabilities
+                configCapabilities,
+                buildInfo
         );
     }
 
@@ -400,5 +408,20 @@ public class RskFactory {
             TransactionPool transactionPool,
             CompositeEthereumListener emitter){
         return new TransactionGateway(channelManager, transactionPool, emitter);
+    }
+
+    @Bean
+    public BuildInfo getBuildInfo(ResourceLoader resourceLoader) {
+        Properties props = new Properties();
+        Resource buldInfoFile = resourceLoader.getResource("classpath:build-info.properties");
+        try {
+            props.load(buldInfoFile.getInputStream());
+        } catch (IOException ioe) {
+            logger.warn("build-info.properties file missing from classpath");
+            logger.trace("build-info.properties file missing from classpath exception", ioe);
+            return new BuildInfo("dev", "dev");
+        }
+
+        return new BuildInfo(props.getProperty("build.hash"), props.getProperty("build.branch"));
     }
 }
