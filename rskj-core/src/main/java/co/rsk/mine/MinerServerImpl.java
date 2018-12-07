@@ -81,6 +81,7 @@ public class MinerServerImpl implements MinerServer {
     private final ProofOfWorkRule powRule;
     private final BlockToMineBuilder builder;
     private final BlockchainNetConfig blockchainConfig;
+    private final MinerClock clock;
 
     private boolean isFallbackMining;
     private int fallbackBlocksGenerated;
@@ -125,6 +126,7 @@ public class MinerServerImpl implements MinerServer {
             DifficultyCalculator difficultyCalculator,
             ProofOfWorkRule powRule,
             BlockToMineBuilder builder,
+            MinerClock clock,
             MiningConfig miningConfig) {
         this.config = config;
         this.ethereum = ethereum;
@@ -133,6 +135,7 @@ public class MinerServerImpl implements MinerServer {
         this.difficultyCalculator = difficultyCalculator;
         this.powRule = powRule;
         this.builder = builder;
+        this.clock = clock;
         this.blockchainConfig = config.getBlockchainConfig();
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
@@ -594,6 +597,7 @@ public class MinerServerImpl implements MinerServer {
         logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
 
         final Block newBlock = builder.build(newBlockParent, extraData);
+        clock.clearIncreaseTime();
 
         if (autoSwitchBetweenNormalAndFallbackMining) {
             setFallbackMining(ProofOfWorkRule.isFallbackMiningPossible(config, newBlock.getHeader()));
@@ -652,16 +656,13 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
-    @VisibleForTesting
     public long getCurrentTimeInSeconds() {
-        // this is not great, but it was the simplest way to extract BlockToMineBuilder
-        return builder.getCurrentTimeInSeconds();
+        return clock.getCurrentTimeInSeconds();
     }
 
     @Override
     public long increaseTime(long seconds) {
-        // this is not great, but it was the simplest way to extract BlockToMineBuilder
-        return builder.increaseTime(seconds);
+        return clock.increaseTime(seconds);
     }
 
     class NewBlockListener extends EthereumListenerAdapter {
