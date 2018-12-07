@@ -314,6 +314,7 @@ public class MinerManagerTest {
         ethereum.repository = repository;
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
+        MinerClock clock = new MinerClock(blockchain, config);
         return new MinerServerImpl(
                 config,
                 ethereum,
@@ -330,8 +331,10 @@ public class MinerManagerTest {
                         new GasLimitCalculator(config),
                         new BlockValidationRuleDummy(),
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
     }

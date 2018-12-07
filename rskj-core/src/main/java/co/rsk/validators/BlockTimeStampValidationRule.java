@@ -44,7 +44,7 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
             return true;
         }
 
-        final long currentTime = System.currentTimeMillis() / 1000;
+        final long currentTime = System.currentTimeMillis() / 1000L;
         final long blockTime = block.getTimestamp();
 
         boolean result = blockTime - currentTime <= this.validPeriodLength;
