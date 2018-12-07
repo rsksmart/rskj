@@ -60,6 +60,8 @@ public class RskSystemProperties extends SystemProperties {
     private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; //miliseconds
     private static final int PD_DEFAULT_REFRESH_PERIOD = 60000; //miliseconds
 
+    private static final String REGTEST_BLOCKCHAIN_CONFIG = "regtest";
+
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
@@ -99,6 +101,14 @@ public class RskSystemProperties extends SystemProperties {
     @Nullable
     public Account localCoinbaseAccount() {
         if (!isMinerServerEnabled()) {
+            return null;
+        }
+
+        // Regtest always has MINER_COINBASE_SECRET_CONFIG set in regtest.conf file. When MINER_REWARD_ADDRESS_CONFIG is set both values exist
+        // and that does not pass the checks below. If MINER_REWARD_ADDRESS_CONFIG exists, that value must be used so consider that
+        // special regtest case by adding this guard.
+        if(configFromFiles.getString(PROPERTY_BC_CONFIG_NAME).equals(REGTEST_BLOCKCHAIN_CONFIG) &&
+                configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
             return null;
         }
 
