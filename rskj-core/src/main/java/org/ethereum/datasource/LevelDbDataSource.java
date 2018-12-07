@@ -150,13 +150,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key));
+                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name,  Hex.toHexString(key));
             }
 
             try {
                 byte[] ret = db.get(key);
                 if (logger.isTraceEnabled()) {
-                    logger.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key) + ", " + (ret == null ? "null" : ret.length));
+                    logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
                 }
 
                 return ret;
@@ -165,7 +165,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 try {
                     byte[] ret = db.get(key);
                     if (logger.isTraceEnabled()) {
-                        logger.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key) + ", " + (ret == null ? "null" : ret.length));
+                        logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
                     }
 
                     return ret;
@@ -185,12 +185,12 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.put(): " + name + ", key: " + Hex.toHexString(key) + ", " + (value == null ? "null" : value.length));
+                logger.trace("~> LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (value == null ? "null" : value.length));
             }
 
             db.put(key, value);
             if (logger.isTraceEnabled()) {
-                logger.trace("<~ LevelDbDataSource.put(): " + name + ", key: " + Hex.toHexString(key) + ", " + (value == null ? "null" : value.length));
+                logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (value == null ? "null" : value.length));
             }
 
             return value;
@@ -204,12 +204,12 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.delete(): " + name + ", key: " + Hex.toHexString(key));
+                logger.trace("~> LevelDbDataSource.delete(): {}, key: {}", name, Hex.toHexString(key));
             }
 
             db.delete(key);
             if (logger.isTraceEnabled()) {
-                logger.trace("<~ LevelDbDataSource.delete(): " + name + ", key: " + Hex.toHexString(key));
+                logger.trace("<~ LevelDbDataSource.delete(): {}, key: {}", name, Hex.toHexString(key));
             }
 
         } finally {
@@ -222,7 +222,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.keys(): " + name);
+                logger.trace("~> LevelDbDataSource.keys(): {}", name);
             }
 
             try (DBIterator iterator = db.iterator()) {
@@ -231,7 +231,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                     result.add(iterator.peekNext().getKey());
                 }
                 if (logger.isTraceEnabled()) {
-                    logger.trace("<~ LevelDbDataSource.keys(): " + name + ", " + result.size());
+                    logger.trace("<~ LevelDbDataSource.keys(): {}, {}", name, result.size());
                 }
 
                 return result;
@@ -259,13 +259,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
+                logger.trace("~> LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
             }
 
             try {
                 updateBatchInternal(rows);
                 if (logger.isTraceEnabled()) {
-                    logger.trace("<~ LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
+                    logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
                 }
 
             } catch (Exception e) {
@@ -274,7 +274,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 try {
                     updateBatchInternal(rows);
                     if (logger.isTraceEnabled()) {
-                        logger.trace("<~ LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
+                        logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
                     }
 
                 } catch (Exception e1) {
