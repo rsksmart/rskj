@@ -20,38 +20,22 @@
 package org.ethereum.util;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
 
 public class BuildInfo {
 
-    private static final Logger logger = LoggerFactory.getLogger("general");
+    private final String buildHash;
+    private final String buildBranch;
 
-    private static String buildHash;
-    private static String buildBranch;
+    public BuildInfo(String buildHash, String buildBranch) {
+        this.buildHash = buildHash;
+        this.buildBranch = buildBranch;
+    }
 
-    public static String getBuildHash() {
+    public String getBuildHash() {
         return buildHash;
     }
 
-    static {
-        try {
-            Properties props = new Properties();
-            InputStream is = BuildInfo.class.getResourceAsStream("/build-info.properties");
-
-            props.load(is);
-
-            buildHash = props.getProperty("build.hash");
-            buildBranch = props.getProperty("build.branch");
-        } catch (IOException e) {
-            logger.error("Error reading /build-info.properties", e);
-        }
-    }
-
-    public static void printInfo(){
+    public void printInfo(Logger logger){
         logger.info("git.hash: [{}]", buildHash);
         logger.info("build.branch: {}", buildBranch);
     }
