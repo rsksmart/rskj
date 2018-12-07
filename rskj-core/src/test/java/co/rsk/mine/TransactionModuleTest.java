@@ -319,7 +319,8 @@ public class TransactionModuleTest {
                 null,
                 null,
                 null,
-                configCapabilities
+                configCapabilities,
+                null
         );
     }
 }
