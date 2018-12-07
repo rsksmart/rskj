@@ -32,6 +32,7 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.*;
+import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
@@ -156,6 +157,7 @@ public class RskFactory {
                         MnrModule mnrModule,
                         PersonalModule personalModule,
                         EthModule ethModule,
+                        EvmModule evmModule,
                         TxPoolModule txPoolModule,
                         DebugModule debugModule,
                         ChannelManager channelManager,
@@ -178,6 +180,7 @@ public class RskFactory {
                 minerServer,
                 personalModule,
                 ethModule,
+                evmModule,
                 txPoolModule,
                 mnrModule,
                 debugModule,
