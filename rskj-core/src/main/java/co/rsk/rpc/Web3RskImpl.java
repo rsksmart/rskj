@@ -25,6 +25,7 @@ import co.rsk.mine.*;
 import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
@@ -68,6 +69,7 @@ public class Web3RskImpl extends Web3Impl {
                        MinerServer minerServer,
                        PersonalModule personalModule,
                        EthModule ethModule,
+                       EvmModule evmModule,
                        TxPoolModule txPoolModule,
                        MnrModule mnrModule,
                        DebugModule debugModule,
@@ -83,7 +85,7 @@ public class Web3RskImpl extends Web3Impl {
                        ConfigCapabilities configCapabilities,
                        BuildInfo buildInfo) {
         super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
-              personalModule, ethModule, txPoolModule, mnrModule, debugModule,
+              personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule,
               channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor,
               hashRateCalculator, configCapabilities, buildInfo);
 
