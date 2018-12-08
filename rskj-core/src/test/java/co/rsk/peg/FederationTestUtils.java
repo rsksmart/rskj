@@ -28,24 +28,24 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class FederationTestUtils {
-    public static List<FederationMember> getFederationMembers(int amount, int offset) {
+    public static List<FederationMember> getFederationMembers(int memberCount) {
         List<FederationMember> result = new ArrayList<>();
-        for (int i = 0; i < amount; i++) {
+        for (int i = 1; i <= memberCount; i++) {
             result.add(new FederationMember(
-                    BtcECKey.fromPrivate(BigInteger.valueOf((offset+i) * 100)),
-                    ECKey.fromPrivate(BigInteger.valueOf((offset+i) * 101)),
-                    ECKey.fromPrivate(BigInteger.valueOf((offset+i) * 102))
+                    BtcECKey.fromPrivate(BigInteger.valueOf((i) * 100)),
+                    ECKey.fromPrivate(BigInteger.valueOf((i) * 101)),
+                    ECKey.fromPrivate(BigInteger.valueOf((i) * 102))
             ));
         }
         result.sort(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR);
         return result;
     }
 
-    public static List<FederationMember> getFederationMembersFromPks(int offset, Integer... pks) {
+    public static List<FederationMember> getFederationMembersFromPks(Integer... pks) {
         return Arrays.stream(pks).map(n -> new FederationMember(
                 BtcECKey.fromPrivate(BigInteger.valueOf(n)),
-                ECKey.fromPrivate(BigInteger.valueOf(n+offset)),
-                ECKey.fromPrivate(BigInteger.valueOf(n+offset*2))
+                ECKey.fromPrivate(BigInteger.valueOf(n+1)),
+                ECKey.fromPrivate(BigInteger.valueOf(n+2))
         )).collect(Collectors.toList());
     }
 

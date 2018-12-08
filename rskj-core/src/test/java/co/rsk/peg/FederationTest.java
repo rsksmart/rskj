@@ -53,7 +53,7 @@ public class FederationTest {
     @Before
     public void createFederation() {
         federation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600),
+                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -176,7 +176,7 @@ public class FederationTest {
     @Test
     public void testEquals_differentNumberOfMembers() {
         Federation otherFederation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600, 700),
+                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -187,7 +187,7 @@ public class FederationTest {
     @Test
     public void testEquals_differentCreationTime() {
         Federation otherFederation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600),
+                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -198,7 +198,7 @@ public class FederationTest {
     @Test
     public void testEquals_differentCreationBlockNumber() {
         Federation otherFederation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600),
+                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
                 1L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -209,7 +209,7 @@ public class FederationTest {
     @Test
     public void testEquals_differentNetworkParameters() {
         Federation otherFederation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600),
+                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET)
@@ -219,7 +219,7 @@ public class FederationTest {
 
     @Test
     public void testEquals_differentMembers() {
-        List<FederationMember> members = FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500);
+        List<FederationMember> members = FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500);
 
         members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(620))));
         Federation otherFederation = new Federation(
@@ -246,7 +246,7 @@ public class FederationTest {
     @Test
     public void testEquals_same() {
         Federation otherFederation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600),
+                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
