@@ -2037,13 +2037,13 @@ public class BridgeSupportTest {
     @Test
     public void getFederationMethods_genesis() throws IOException {
         Federation activeFederation = new Federation(
-                FederationTestUtils.getFederationMembers(3, 1),
+                FederationTestUtils.getFederationMembers(3),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation genesisFederation = new Federation(
-                FederationTestUtils.getFederationMembers(6, 1),
+                FederationTestUtils.getFederationMembers(6),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -2053,7 +2053,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(6, bridgeSupport.getFederationSize().intValue());
         Assert.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
         Assert.assertEquals(genesisFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
-        List<FederationMember> members = FederationTestUtils.getFederationMembers(6, 1);
+        List<FederationMember> members = FederationTestUtils.getFederationMembers(6);
         for (int i = 0; i < 6; i++) {
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
@@ -2065,13 +2065,13 @@ public class BridgeSupportTest {
     @Test
     public void getFederationMethods_active() throws IOException {
         Federation activeFederation = new Federation(
-                FederationTestUtils.getFederationMembers(3, 1),
+                FederationTestUtils.getFederationMembers(3),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation genesisFederation = new Federation(
-                FederationTestUtils.getFederationMembers(6, 1),
+                FederationTestUtils.getFederationMembers(6),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -2089,7 +2089,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(3, bridgeSupport.getFederationSize().intValue());
         Assert.assertEquals(2, bridgeSupport.getFederationThreshold().intValue());
         Assert.assertEquals(activeFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
-        List<FederationMember> members = FederationTestUtils.getFederationMembers(3, 1);
+        List<FederationMember> members = FederationTestUtils.getFederationMembers(3);
         for (int i = 0; i < 3; i++) {
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
@@ -2101,13 +2101,13 @@ public class BridgeSupportTest {
     @Test
     public void getFederationMethods_newActivated() throws IOException {
         Federation newFederation = new Federation(
-                FederationTestUtils.getFederationMembers(3, 1),
+                FederationTestUtils.getFederationMembers(3),
                 Instant.ofEpochMilli(1000),
                 15L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation oldFederation = new Federation(
-                FederationTestUtils.getFederationMembers(6, 1),
+                FederationTestUtils.getFederationMembers(6),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -2129,7 +2129,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(3, bridgeSupport.getFederationSize().intValue());
         Assert.assertEquals(2, bridgeSupport.getFederationThreshold().intValue());
         Assert.assertEquals(newFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
-        List<FederationMember> members = FederationTestUtils.getFederationMembers(3, 1);
+        List<FederationMember> members = FederationTestUtils.getFederationMembers(3);
         for (int i = 0; i < 3; i++) {
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
@@ -2141,13 +2141,13 @@ public class BridgeSupportTest {
     @Test
     public void getFederationMethods_newNotActivated() throws IOException {
         Federation newFederation = new Federation(
-                FederationTestUtils.getFederationMembers(3, 1),
+                FederationTestUtils.getFederationMembers(3),
                 Instant.ofEpochMilli(1000),
                 15L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation oldFederation = new Federation(
-                FederationTestUtils.getFederationMembers(6, 1),
+                FederationTestUtils.getFederationMembers(6),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -2169,7 +2169,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(6, bridgeSupport.getFederationSize().intValue());
         Assert.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
         Assert.assertEquals(oldFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
-        List<FederationMember> members = FederationTestUtils.getFederationMembers(6, 1);
+        List<FederationMember> members = FederationTestUtils.getFederationMembers(6);
         for (int i = 0; i < 6; i++) {
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
@@ -2194,14 +2194,14 @@ public class BridgeSupportTest {
     @Test
     public void getRetiringFederationMethods_presentNewInactive() throws IOException {
         Federation mockedNewFederation = new Federation(
-                FederationTestUtils.getFederationMembers(2, 1),
+                FederationTestUtils.getFederationMembers(2),
                 Instant.ofEpochMilli(2000),
                 10L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         Federation mockedOldFederation = new Federation(
-                FederationTestUtils.getFederationMembers(4, 1),
+                FederationTestUtils.getFederationMembers(4),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -2231,14 +2231,14 @@ public class BridgeSupportTest {
     @Test
     public void getRetiringFederationMethods_presentNewActive() throws IOException {
         Federation mockedNewFederation = new Federation(
-                FederationTestUtils.getFederationMembers(2, 1),
+                FederationTestUtils.getFederationMembers(2),
                 Instant.ofEpochMilli(2000),
                 10L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         Federation mockedOldFederation = new Federation(
-                FederationTestUtils.getFederationMembers(4, 1),
+                FederationTestUtils.getFederationMembers(4),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -2261,7 +2261,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(3, bridgeSupport.getRetiringFederationThreshold().intValue());
         Assert.assertEquals(1000, bridgeSupport.getRetiringFederationCreationTime().toEpochMilli());
         Assert.assertEquals(mockedOldFederation.getAddress().toString(), bridgeSupport.getRetiringFederationAddress().toString());
-        List<FederationMember> members = FederationTestUtils.getFederationMembers(4, 1);
+        List<FederationMember> members = FederationTestUtils.getFederationMembers(4);
         for (int i = 0; i < 4; i++) {
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getRetiringFederatorPublicKey(i)));
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
@@ -2283,11 +2283,11 @@ public class BridgeSupportTest {
 
     @Test
     public void getPendingFederationMethods_present() throws IOException {
-        PendingFederation mockedPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembers(5, 1));
+        PendingFederation mockedPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembers(5));
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, mockedPendingFederation, null, null);
 
         Assert.assertEquals(5, bridgeSupport.getPendingFederationSize().intValue());
-        List<FederationMember> members = FederationTestUtils.getFederationMembers(5, 1);
+        List<FederationMember> members = FederationTestUtils.getFederationMembers(5);
         for (int i = 0; i < 5; i++) {
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getPendingFederatorPublicKey(i)));
             Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getPendingFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
@@ -2435,14 +2435,14 @@ public class BridgeSupportTest {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("create", new byte[][]{}, false);
 
         Federation mockedNewFederation = new Federation(
-                FederationTestUtils.getFederationMembers(2, 1),
+                FederationTestUtils.getFederationMembers(2),
                 Instant.ofEpochMilli(2000),
                 10L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         Federation mockedOldFederation = new Federation(
-                FederationTestUtils.getFederationMembers(4, 1),
+                FederationTestUtils.getFederationMembers(4),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -2476,14 +2476,14 @@ public class BridgeSupportTest {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("create", new byte[][]{}, false);
 
         Federation mockedNewFederation = new Federation(
-                FederationTestUtils.getFederationMembers(2, 1),
+                FederationTestUtils.getFederationMembers(2),
                 Instant.ofEpochMilli(2000),
                 10L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         Federation mockedOldFederation = new Federation(
-                FederationTestUtils.getFederationMembers(4, 1),
+                FederationTestUtils.getFederationMembers(4),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -2926,7 +2926,7 @@ public class BridgeSupportTest {
     @Test
     public void getRetiringFederationWallet_nonEmpty() throws IOException {
         Federation mockedNewFederation = new Federation(
-                FederationTestUtils.getFederationMembers(2, 1),
+                FederationTestUtils.getFederationMembers(2),
                 Instant.ofEpochMilli(2000),
                 10L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
