@@ -807,7 +807,7 @@ public class BridgeStorageProviderTest {
 
     private Federation buildMockFederation(Integer... pks) {
         return new Federation(
-                FederationTestUtils.getFederationMembersFromPks(1, pks),
+                FederationTestUtils.getFederationMembersFromPks(pks),
                 Instant.ofEpochMilli(1000),
                 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
