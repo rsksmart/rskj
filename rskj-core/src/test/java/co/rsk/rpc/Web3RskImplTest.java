@@ -86,6 +86,7 @@ public class Web3RskImplTest {
                 Web3Mocks.getMockMinerServer(),
                 pm,
                 em,
+                null,
                 tpm,
                 null,
                 dm,
