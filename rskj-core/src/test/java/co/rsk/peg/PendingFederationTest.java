@@ -45,7 +45,7 @@ public class PendingFederationTest {
 
     @Before
     public void createPendingFederation() {
-        pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600));
+        pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class PendingFederationTest {
 
     @Test
     public void isComplete_not() {
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(1, 200));
+        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(200));
         Assert.assertFalse(otherPendingFederation.isComplete());
     }
 
@@ -89,13 +89,13 @@ public class PendingFederationTest {
 
     @Test
     public void testEquals_differentNumberOfMembers() {
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600, 700));
+        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700));
         Assert.assertFalse(pendingFederation.equals(otherPendingFederation));
     }
 
     @Test
     public void testEquals_differentMembers() {
-        List<FederationMember> members = FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500);
+        List<FederationMember> members = FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500);
 
         members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(620))));
         PendingFederation otherPendingFederation = new PendingFederation(members);
@@ -111,23 +111,23 @@ public class PendingFederationTest {
 
     @Test
     public void testEquals_same() {
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600));
+        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
         Assert.assertTrue(pendingFederation.equals(otherPendingFederation));
     }
 
     @Test
     public void testToString() {
         Assert.assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(1, 100));
+        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100));
         Assert.assertEquals("1 signatures pending federation (incomplete)", otherPendingFederation.toString());
     }
 
     @Test
     public void buildFederation_ok_a() {
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600));
+        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
 
         Federation expectedFederation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600),
+                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 Instant.ofEpochMilli(1234L),
                 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
@@ -145,11 +145,11 @@ public class PendingFederationTest {
     @Test
     public void buildFederation_ok_b() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(
-                1, 100, 200, 300, 400, 500, 600, 700, 800, 900
+                100, 200, 300, 400, 500, 600, 700, 800, 900
         ));
 
         Federation expectedFederation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(1, 100, 200, 300, 400, 500, 600, 700, 800, 900),
+                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700, 800, 900),
                 Instant.ofEpochMilli(1234L), 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
@@ -166,7 +166,7 @@ public class PendingFederationTest {
 
     @Test
     public void buildFederation_incomplete() {
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(1, 100));
+        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100));
 
         try {
             otherPendingFederation.buildFederation(Instant.ofEpochMilli(12L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
