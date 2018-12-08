@@ -1382,13 +1382,7 @@ public class BridgeSupport {
             return null;
         }
 
-        List<FederationMember> members = retiringFederation.getMembers();
-
-        if (index < 0 || index >= members.size()) {
-            throw new IndexOutOfBoundsException(String.format("Retiring federator index must be between 0 and %d", members.size() - 1));
-        }
-
-        return members.get(index).getPublicKey(keyType).getPubKey(true);
+        return federationSupport.getMemberPublicKeyOfType(retiringFederation.getMembers(), index, keyType, "Retiring federator");
     }
 
     /**
@@ -1739,13 +1733,7 @@ public class BridgeSupport {
             return null;
         }
 
-        List<FederationMember> members = currentPendingFederation.getMembers();
-
-        if (index < 0 || index >= members.size()) {
-            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", members.size() - 1));
-        }
-
-        return members.get(index).getPublicKey(keyType).getPubKey(true);
+        return federationSupport.getMemberPublicKeyOfType(currentPendingFederation.getMembers(), index, keyType, "Federator");
     }
 
     /**
