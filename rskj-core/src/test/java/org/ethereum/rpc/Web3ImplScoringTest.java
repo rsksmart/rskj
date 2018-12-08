@@ -368,6 +368,7 @@ public class Web3ImplScoringTest {
                 Web3Mocks.getMockMinerServer(),
                 pm,
                 em,
+                null,
                 tpm,
                 null,
                 dm,
