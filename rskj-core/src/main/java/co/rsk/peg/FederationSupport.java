@@ -74,10 +74,21 @@ public class FederationSupport {
      * @return the federator's public key
      */
     public byte[] getFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
-        List<FederationMember> members = getActiveFederation().getMembers();
+        return getMemberPublicKeyOfType(getActiveFederation().getMembers(), index, keyType, "Federator");
+    }
 
+    /**
+     * Returns the compressed public key of given type of the member list at the given index
+     * Throws a custom index out of bounds exception when appropiate
+     * @param members the list of federation members
+     * @param index the federator's index (zero-based)
+     * @param keyType the key type
+     * @param errorPrefix the index out of bounds error prefix
+     * @return the federation member's public key
+     */
+    public byte[] getMemberPublicKeyOfType(List<FederationMember> members, int index, FederationMember.KeyType keyType, String errorPrefix) {
         if (index < 0 || index >= members.size()) {
-            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", members.size() - 1));
+            throw new IndexOutOfBoundsException(String.format("%s index must be between 0 and %d", errorPrefix, members.size() - 1));
         }
 
         return members.get(index).getPublicKey(keyType).getPubKey(true);
