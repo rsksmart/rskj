@@ -32,6 +32,7 @@ import org.junit.Test;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -144,6 +145,53 @@ public class FederationSupportTest {
 
         Assert.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), mstKey0.getPubKey(true)));
         Assert.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(1, FederationMember.KeyType.MST), mstKey1.getPubKey(true)));
+    }
+
+    @Test
+    public void getMemberPublicKeyOfType() {
+        BtcECKey btcKey0 = new BtcECKey();
+        ECKey rskKey0 = new ECKey();
+        ECKey mstKey0 = new ECKey();
+
+        BtcECKey btcKey1 = new BtcECKey();
+        ECKey rskKey1 = new ECKey();
+        ECKey mstKey1 = new ECKey();
+
+        List<FederationMember> members = Arrays.asList(
+                new FederationMember(btcKey0, rskKey0, mstKey0),
+                new FederationMember(btcKey1, rskKey1, mstKey1)
+        );
+
+        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 0, FederationMember.KeyType.BTC, "a prefix"), btcKey0.getPubKey()));
+        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 1, FederationMember.KeyType.BTC, "a prefix"), btcKey1.getPubKey()));
+
+        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 0, FederationMember.KeyType.RSK, "a prefix"), rskKey0.getPubKey(true)));
+        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 1, FederationMember.KeyType.RSK, "a prefix"), rskKey1.getPubKey(true)));
+
+        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 0, FederationMember.KeyType.MST, "a prefix"), mstKey0.getPubKey(true)));
+        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 1, FederationMember.KeyType.MST, "a prefix"), mstKey1.getPubKey(true)));
+    }
+
+    @Test
+    public void getMemberPublicKeyOfType_OutOfBounds() {
+        List<FederationMember> members = Arrays.asList(
+                new FederationMember(new BtcECKey(), new ECKey(), new ECKey()),
+                new FederationMember(new BtcECKey(), new ECKey(), new ECKey())
+        );
+
+        try {
+            federationSupport.getMemberPublicKeyOfType(members,2, FederationMember.KeyType.BTC, "a prefix");
+            Assert.fail();
+        } catch (IndexOutOfBoundsException e) {
+            Assert.assertTrue(e.getMessage().startsWith("a prefix"));
+        }
+
+        try {
+            federationSupport.getMemberPublicKeyOfType(members,-1, FederationMember.KeyType.MST, "another prefix");
+            Assert.fail();
+        } catch (IndexOutOfBoundsException e) {
+            Assert.assertTrue(e.getMessage().startsWith("another prefix"));
+        }
     }
 
     private Federation getNewFakeFederation(long creationBlockNumber) {
