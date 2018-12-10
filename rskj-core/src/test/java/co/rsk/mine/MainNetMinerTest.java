@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.time.Clock;
 
 /**
  * Created by SerAdmin on 1/3/2018.
@@ -72,7 +73,7 @@ public class MainNetMinerTest {
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -133,7 +134,7 @@ public class MainNetMinerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -192,7 +193,7 @@ public class MainNetMinerTest {
     private BlockToMineBuilder blockToMineBuilder() {
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         return new BlockToMineBuilder(
                 ConfigUtils.getDefaultMiningConfig(),
                 repository,
