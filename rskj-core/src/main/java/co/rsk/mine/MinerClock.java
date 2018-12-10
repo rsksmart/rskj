@@ -17,27 +17,17 @@
  */
 package co.rsk.mine;
 
-import co.rsk.config.RskSystemProperties;
-import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.Block;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 
-@Component
 public class MinerClock {
     private final boolean isRegtest;
     private final Clock clock;
 
     private long timeAdjustment;
 
-    @Autowired
-    public MinerClock(RskSystemProperties config) {
-        this(config.getBlockchainConfig() instanceof RegTestConfig, Clock.systemUTC());
-    }
-
-    MinerClock(boolean isRegtest, Clock clock) {
+    public MinerClock(boolean isRegtest, Clock clock) {
         this.isRegtest = isRegtest;
         this.clock = clock;
     }
