@@ -39,6 +39,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -292,7 +293,7 @@ public class MinerManagerTest {
         ethereum.repository = repository;
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         return new MinerServerImpl(
                 config,
                 ethereum,

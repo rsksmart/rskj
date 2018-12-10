@@ -43,6 +43,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Clock;
 import java.util.List;
 
 /**
@@ -148,7 +149,7 @@ public class Web3ImplSnapshotTest {
 
 
     private Web3Impl createWeb3(SimpleEthereum ethereum) {
-        MinerClock minerClock = new MinerClock(config);
+        MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = getMinerServerForTest(ethereum, minerClock);
         MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
         EvmModule evmModule = new EvmModuleImpl(minerServer, minerClient, minerClock, blockchain, factory.getTransactionPool());
