@@ -17,39 +17,19 @@
  */
 package co.rsk.mine;
 
-import co.rsk.config.RskSystemProperties;
-import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 
-@Component
 public class MinerClock {
-    private final Blockchain blockchain;
     private final boolean isRegtest;
     private final Clock clock;
 
     private long timeAdjustment;
 
-    @Autowired
-    public MinerClock(Blockchain blockchain, RskSystemProperties config) {
-        this(blockchain, config.getBlockchainConfig() instanceof RegTestConfig, Clock.systemUTC());
-    }
-
-    MinerClock(Blockchain blockchain, boolean isRegtest, Clock clock) {
-        this.blockchain = blockchain;
+    public MinerClock(boolean isRegtest, Clock clock) {
         this.isRegtest = isRegtest;
         this.clock = clock;
-    }
-
-    /**
-     * @deprecated this is here for compatibility but should be removed along with the fallback mining feature
-     */
-    public long getCurrentTimeInSeconds() {
-        return calculateTimestampForChild(blockchain.getBestBlock());
     }
 
     public long calculateTimestampForChild(Block parent) {

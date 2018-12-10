@@ -46,10 +46,6 @@ public class Constants {
     // Private mining is allowed if difficulty is lower or equal than this value
     private final BlockDifficulty fallbackMiningDifficulty = new BlockDifficulty(BigInteger.valueOf((long) 14E15)); // 14 peta evert 14 secs = 1 peta/s.
 
-    private static long blockPerDay = 24*3600 / 14;
-
-    private long endOfFallbackMiningBlockNumber = blockPerDay*30*6; // Approximately 6 months of private mining fallback, then you're free my child. Fly, fly away.
-
     // 0.5 peta/s. This means that on reset difficulty will allow private mining.
     private final BlockDifficulty minimumDifficulty = new BlockDifficulty(BigInteger.valueOf((long) 14E15 / 2 )); // 0.5 peta/s.
 
@@ -126,8 +122,6 @@ public class Constants {
     }
 
     public BlockDifficulty getFallbackMiningDifficulty() { return fallbackMiningDifficulty; }
-
-    public long getEndOfFallbackMiningBlockNumber() { return endOfFallbackMiningBlockNumber; }
 
     public BigInteger getDifficultyBoundDivisor() {
         return difficultyBoundDivisor;

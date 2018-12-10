@@ -20,6 +20,7 @@ package co.rsk.rpc.modules.evm;
 
 import co.rsk.core.SnapshotManager;
 import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerClock;
 import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Blockchain;
@@ -39,6 +40,7 @@ public class EvmModuleImpl implements EvmModule {
     private final MinerManager minerManager;
     private final MinerServer minerServer;
     private final MinerClient minerClient;
+    private final MinerClock minerClock;
     private final Blockchain blockchain;
     private final SnapshotManager snapshotManager;
 
@@ -46,11 +48,13 @@ public class EvmModuleImpl implements EvmModule {
     public EvmModuleImpl(
             MinerServer minerServer,
             MinerClient minerClient,
+            MinerClock minerClock,
             Blockchain blockchain,
             TransactionPool transactionPool) {
         this.minerManager = new MinerManager();
         this.minerServer = minerServer;
         this.minerClient = minerClient;
+        this.minerClock = minerClock;
         this.blockchain = blockchain;
         this.snapshotManager = new SnapshotManager(blockchain, transactionPool, minerServer);
     }
@@ -102,7 +106,7 @@ public class EvmModuleImpl implements EvmModule {
     public String evm_increaseTime(String seconds) {
         try {
             long nseconds = stringNumberAsBigInt(seconds).longValue();
-            String result = toJsonHex(minerServer.increaseTime(nseconds));
+            String result = toJsonHex(minerClock.increaseTime(nseconds));
             logger.debug("evm_increaseTime({}): {}", nseconds, result);
             return result;
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
