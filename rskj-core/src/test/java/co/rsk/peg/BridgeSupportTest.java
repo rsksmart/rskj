@@ -2926,6 +2926,158 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void setLockWhitelistDisableBlockDelay_ok() throws IOException, BlockStoreException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        RskAddress sender = new RskAddress(senderBytes);
+        when(mockedTx.getSender()).thenReturn(sender);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        when(mockedWhitelist.isDisableBlockSet()).thenReturn(false);
+        int bestChainHeight = 10;
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        when(storedBlock.getHeight()).thenReturn(bestChainHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(mockedWhitelist,btcBlockStore);
+
+        BigInteger disableBlockDelayBI = BigInteger.valueOf(100);
+
+        Assert.assertEquals(1, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        verify(mockedWhitelist, times(1)).setDisableBlockHeight(disableBlockDelayBI.intValue() + bestChainHeight);
+    }
+
+    @Test
+    public void setLockWhitelistDisableBlockDelay_negativeDisableBlockBI() throws IOException, BlockStoreException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        RskAddress sender = new RskAddress(senderBytes);
+        when(mockedTx.getSender()).thenReturn(sender);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        when(mockedWhitelist.isDisableBlockSet()).thenReturn(false);
+        int bestChainHeight = 10;
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        when(storedBlock.getHeight()).thenReturn(bestChainHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(mockedWhitelist,btcBlockStore);
+
+        BigInteger disableBlockDelayBI = BigInteger.valueOf(-2);
+
+        Assert.assertEquals(-2, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        verify(mockedWhitelist, never()).put(any(), any());
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void setLockWhitelistDisableBlockDelay_disableBlockDelayBIBiggerThanInt() throws IOException, BlockStoreException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        RskAddress sender = new RskAddress(senderBytes);
+        when(mockedTx.getSender()).thenReturn(sender);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        when(mockedWhitelist.isDisableBlockSet()).thenReturn(false);
+        int bestChainHeight = 10;
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        when(storedBlock.getHeight()).thenReturn(bestChainHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(mockedWhitelist,btcBlockStore);
+        //Duplicate Int Max Value by 2 because its signed and add 1 to pass the limit
+        BigInteger disableBlockDelayBI = BigInteger.valueOf((long)Integer.MAX_VALUE * 2 + 1);
+
+        bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI);
+        verify(mockedWhitelist, never()).put(any(), any());
+    }
+
+    @Test
+    public void setLockWhitelistDisableBlockDelay_overflow() throws IOException, BlockStoreException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        RskAddress sender = new RskAddress(senderBytes);
+        when(mockedTx.getSender()).thenReturn(sender);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        when(mockedWhitelist.isDisableBlockSet()).thenReturn(false);
+        int bestChainHeight = (Integer.MAX_VALUE / 2) + 2;
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        when(storedBlock.getHeight()).thenReturn(bestChainHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(mockedWhitelist,btcBlockStore);
+
+        BigInteger disableBlockDelayBI = BigInteger.valueOf(Integer.MAX_VALUE / 2);
+
+        Assert.assertEquals(-2, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        verify(mockedWhitelist, never()).put(any(), any());
+    }
+
+    @Test
+    public void setLockWhitelistDisableBlockDelay_maxIntValueDisableBlockBI() throws IOException, BlockStoreException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        RskAddress sender = new RskAddress(senderBytes);
+        when(mockedTx.getSender()).thenReturn(sender);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        when(mockedWhitelist.isDisableBlockSet()).thenReturn(false);
+        int bestChainHeight = 10;
+        BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        when(storedBlock.getHeight()).thenReturn(bestChainHeight);
+        when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(mockedWhitelist,btcBlockStore);
+
+        BigInteger disableBlockDelayBI = BigInteger.valueOf(Integer.MAX_VALUE);
+
+        Assert.assertEquals(-2, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        verify(mockedWhitelist, never()).put(any(), any());
+    }
+
+    @Test
+    public void setLockWhitelistDisableBlockDelay_disabled() throws IOException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        RskAddress sender = new RskAddress(senderBytes);
+        when(mockedTx.getSender()).thenReturn(sender);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        when(mockedWhitelist.isDisableBlockSet()).thenReturn(true);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        BigInteger disableBlockDelayBI = BigInteger.valueOf(100);
+        Assert.assertEquals(-1, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        verify(mockedWhitelist, never()).put(any(), any());
+    }
+
+    @Test
+    public void setLockWhitelistDisableBlockDelay_notAuthorized() throws IOException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
+        RskAddress sender = new RskAddress(senderBytes);
+        when(mockedTx.getSender()).thenReturn(sender);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        BigInteger disableBlockDelayBI = BigInteger.valueOf(100);
+        Assert.assertEquals(-10, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        verify(mockedWhitelist, never()).put(any(), any());
+    }
+
+    @Test
     public void removeLockWhitelistAddress_ok() throws IOException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
@@ -3246,7 +3398,7 @@ public class BridgeSupportTest {
         return new BridgeSupport(config, null, eventLogger, constantsMock, providerMock, null, null, executionBlock);
     }
 
-    private BridgeSupport getBridgeSupportWithMocksForWhitelistTests(LockWhitelist mockedWhitelist) throws IOException {
+    private BridgeSupport getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(LockWhitelist mockedWhitelist, BtcBlockstoreWithCache btcBlockStore) throws IOException {
         BridgeConstants constantsMock = mock(BridgeConstants.class);
         when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         when(constantsMock.getLockWhitelistChangeAuthorizer()).thenReturn(BridgeRegTestConstants.getInstance().getLockWhitelistChangeAuthorizer());
@@ -3254,7 +3406,11 @@ public class BridgeSupportTest {
         BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
         when(providerMock.getLockWhitelist()).thenReturn(mockedWhitelist);
 
-        return new BridgeSupport(config, null, null, constantsMock, providerMock, null, null, null);
+        return new BridgeSupport(config, null, null, constantsMock, providerMock, btcBlockStore, null, null);
+    }
+
+    private BridgeSupport getBridgeSupportWithMocksForWhitelistTests(LockWhitelist mockedWhitelist) throws IOException {
+        return getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(mockedWhitelist, null);
     }
 
     private List<BtcECKey> getTestFederationPublicKeys(int amount) {
