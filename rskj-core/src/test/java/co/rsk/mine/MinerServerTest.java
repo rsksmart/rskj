@@ -45,6 +45,7 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -104,13 +105,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServerImpl minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 this.blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -146,13 +146,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -212,13 +211,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -263,13 +261,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -317,13 +314,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -378,13 +374,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -431,13 +426,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -489,13 +483,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 this.blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -529,13 +522,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 this.blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -569,13 +561,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 this.blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -613,13 +604,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(blockchain, config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 this.blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -651,60 +641,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         } finally {
             minerServer.stop();
         }
-    }
-
-    @Test
-    public void getCurrentTimeInMilliseconds() {
-        long current = blockStore.getBestBlock().getTimestamp();
-
-        MinerServer server = getMinerServerWithMocks();
-
-        long result = server.getCurrentTimeInSeconds();
-
-        Assert.assertTrue(result >= current);
-        Assert.assertTrue(result <= current + 1);
-    }
-
-    @Test
-    public void increaseTime() {
-        long current = blockStore.getBestBlock().getTimestamp();
-
-        MinerServer server = getMinerServerWithMocks();
-
-        Assert.assertEquals(10, server.increaseTime(10));
-
-        long result = server.getCurrentTimeInSeconds();
-
-        Assert.assertTrue(result >= current + 10);
-        Assert.assertTrue(result <= current + 11);
-    }
-
-    @Test
-    public void increaseTimeUsingNegativeNumberHasNoEffect() {
-        long current = blockStore.getBestBlock().getTimestamp();
-
-        MinerServer server = getMinerServerWithMocks();
-
-        Assert.assertEquals(0, server.increaseTime(-10));
-
-        long result = server.getCurrentTimeInSeconds();
-
-        Assert.assertTrue(result >= current);
-    }
-
-    @Test
-    public void increaseTimeTwice() {
-        long current = blockStore.getBestBlock().getTimestamp();
-
-        MinerServer server = getMinerServerWithMocks();
-
-        Assert.assertEquals(5, server.increaseTime(5));
-        Assert.assertEquals(10, server.increaseTime(5));
-
-        long result = server.getCurrentTimeInSeconds();
-
-        Assert.assertTrue(result >= current + 10);
-        Assert.assertTrue(result <= current + 11);
     }
 
     private BtcBlock getMergedMiningBlockWithOnlyCoinbase(MinerWork work) {
@@ -753,10 +689,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 Mockito.mock(Ethereum.class),
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 getBuilderWithMocks(),
-                new MinerClock(blockchain, config),
+                new MinerClock(true, Clock.systemUTC()),
                 ConfigUtils.getDefaultMiningConfig()
         );
     }

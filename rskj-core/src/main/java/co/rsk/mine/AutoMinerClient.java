@@ -74,11 +74,6 @@ public class AutoMinerClient implements MinerClient {
     }
 
     @Override
-    public boolean fallbackMineBlock() {
-        throw new RuntimeException("Fallback mining is deprecated");
-    }
-
-    @Override
     public void stop() {
         stop = true;
         isMining = false;

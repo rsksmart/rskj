@@ -121,7 +121,6 @@ public abstract class SystemProperties {
 
     // mutable options for tests
     private String databaseDir = null;
-    private String fallbackMiningKeysDir = null;
     private String projectVersion = null;
     private String projectVersionModifier = null;
 
@@ -360,16 +359,6 @@ public abstract class SystemProperties {
     @ValidateMe
     public String databaseDir() {
         return databaseDir == null ? configFromFiles.getString("database.dir") : databaseDir;
-    }
-
-    // can be missing
-    public String fallbackMiningKeysDir() {
-        try {
-            return fallbackMiningKeysDir == null ? configFromFiles.getString("fallbackMining.keysDir") : fallbackMiningKeysDir;
-        } catch(ConfigException.Missing e) {
-            fallbackMiningKeysDir ="";
-            return fallbackMiningKeysDir;
-        }
     }
 
     public void setDataBaseDir(String dataBaseDir) {

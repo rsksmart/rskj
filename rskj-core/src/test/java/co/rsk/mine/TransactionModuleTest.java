@@ -65,6 +65,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
+import java.time.Clock;
 
 public class TransactionModuleTest {
     Wallet wallet;
@@ -255,14 +256,13 @@ public class TransactionModuleTest {
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
         CompositeEthereumListener compositeEthereumListener = new CompositeEthereumListener();
         Ethereum eth = new EthereumImpl(new ChannelManagerImpl(config, new SyncPool(compositeEthereumListener, blockchain, config, null)), transactionPool, compositeEthereumListener, blockchain);
-        MinerClock minerClock = new MinerClock(blockchain, config);
+        MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
 
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 eth,
                 blockchain,
                 null,
-                new DifficultyCalculator(config),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
