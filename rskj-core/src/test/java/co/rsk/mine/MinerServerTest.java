@@ -45,6 +45,7 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -104,7 +105,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServerImpl minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -145,7 +146,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -210,7 +211,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -260,7 +261,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -313,7 +314,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -373,7 +374,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -425,7 +426,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -482,7 +483,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -521,7 +522,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -560,7 +561,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -603,7 +604,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerClock clock = new MinerClock(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
@@ -690,7 +691,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 getBuilderWithMocks(),
-                new MinerClock(config),
+                new MinerClock(true, Clock.systemUTC()),
                 ConfigUtils.getDefaultMiningConfig()
         );
     }
