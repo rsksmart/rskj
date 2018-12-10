@@ -27,6 +27,7 @@ import co.rsk.rpc.modules.eth.subscribe.EthSubscribeTypes;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeRequest;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.ByteBufInputStream;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
@@ -40,7 +41,12 @@ import java.io.IOException;
  *
  * Note that we split JSON-RPC handling in two because jsonrpc4j wasn't able to handle the PUB-SUB model.
  * Eventually, we might want to implement all methods in this style and remove jsonrpc4j.
+ *
+ * We make this object Sharable so it can be instanced once in the netty pipeline
+ * and since all objects used by this object are thread safe, 
  */
+
+@Sharable
 public class RskJsonRpcHandler
         extends SimpleChannelInboundHandler<ByteBufHolder>
         implements RskJsonRpcRequestVisitor {
