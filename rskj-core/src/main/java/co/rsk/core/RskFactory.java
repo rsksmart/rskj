@@ -22,10 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerClientImpl;
-import co.rsk.mine.AutoMinerClient;
-import co.rsk.mine.MinerServer;
+import co.rsk.mine.*;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.sync.SyncConfiguration;
@@ -44,6 +41,7 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
+import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
@@ -80,6 +78,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.util.Properties;
 
 @Configuration
@@ -426,5 +425,10 @@ public class RskFactory {
         }
 
         return new BuildInfo(props.getProperty("build.hash"), props.getProperty("build.branch"));
+    }
+
+    @Bean
+    public MinerClock getMinerClock(RskSystemProperties config){
+        return new MinerClock(config.getBlockchainConfig() instanceof RegTestConfig, Clock.systemUTC());
     }
 }
