@@ -30,6 +30,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -103,6 +104,10 @@ public class EthModule
         try {
             Block executionBlock = executionBlockRetriever.getExecutionBlock(bnOrId);
             ProgramResult res = callConstant(args, executionBlock);
+            if (res.isRevert()) {
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+            }
+
             return s = toJsonHex(res.getHReturn());
         } finally {
             LOGGER.debug("eth_call(): {}", s);
