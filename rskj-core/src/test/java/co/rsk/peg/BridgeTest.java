@@ -799,7 +799,7 @@ public class BridgeTest {
         Bridge spiedBridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
         PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         spiedBridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -829,7 +829,7 @@ public class BridgeTest {
         Bridge spiedBridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
         PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
 
-        Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         spiedBridge.init(rskTx, getGenesisBlock(), track, null, null, null);
