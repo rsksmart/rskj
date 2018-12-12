@@ -266,7 +266,6 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
-        Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -277,13 +276,13 @@ public class BridgeStorageProviderTest {
             Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
             return new byte[]{(byte)0xaa};
         });
-        PowerMockito.when(BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(Context.class))).then((InvocationOnMock invocation) -> {
+        PowerMockito.when(BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
             byte[] data = invocation.getArgumentAt(0, byte[].class);
-            Context btcContext = invocation.getArgumentAt(1, Context.class);
+            NetworkParameters networkParameters = invocation.getArgumentAt(1, NetworkParameters.class);
             // Make sure we're deserializing what just came from the repo with the correct BTC context
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
-            Assert.assertEquals(contextMock, btcContext);
+            Assert.assertEquals(networkParameters, config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams());
             return newFederation;
         });
 
@@ -296,11 +295,9 @@ public class BridgeStorageProviderTest {
     public void getNewFederation_nullBytes() throws IOException {
         List<Integer> storageBytesCalls = new ArrayList<>();
         List<Integer> deserializeCalls = new ArrayList<>();
-        Context contextMock = mock(Context.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
-        Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageBytesCalls.add(0);
@@ -311,7 +308,7 @@ public class BridgeStorageProviderTest {
             Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
             return null;
         });
-        PowerMockito.when(BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(Context.class))).then((InvocationOnMock invocation) -> {
+        PowerMockito.when(BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
             deserializeCalls.add(0);
             return null;
         });
@@ -470,9 +467,6 @@ public class BridgeStorageProviderTest {
         // Overriding BridgeStorageConfiguration to make sure it serializes the unlimited whitelist data
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                 BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(500)));
-        Context contextMock = mock(Context.class);
-        when(contextMock.getParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
-        Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
         .then((InvocationOnMock invocation) -> {
@@ -532,9 +526,6 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                 BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(500)));
-        Context contextMock = mock(Context.class);
-        when(contextMock.getParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
-        Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class)))
             .then((InvocationOnMock invocation) -> {
