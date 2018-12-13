@@ -986,21 +986,15 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3();
 
         String addr1 = web3.personal_newAccountWithSeed("sampleSeed1");
-        String addr2 = web3.personal_newAccountWithSeed("sampleSeed2");
 
         byte[] hash = Keccak256Helper.keccak256("this is the data to hash".getBytes());
 
-        String signature = "";
-        try {
-            signature = web3.eth_sign(addr1, "0x" + Hex.toHexString(hash));
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        String signature = web3.eth_sign(addr1, "0x" + Hex.toHexString(hash));
 
-        String expectedSignature = "0x" + wallet.getAccount(new RskAddress(addr1)).getEcKey().sign(hash).r.toString() + wallet.getAccount(new RskAddress(addr1)).getEcKey().sign(hash).s.toString() + wallet.getAccount(new RskAddress(addr1)).getEcKey().sign(hash).v;
-
-        Assert.assertTrue("Signature is not the same one returned by the key", expectedSignature.compareTo(signature) == 0);
+        Assert.assertThat(
+                signature,
+                is("0xc8be87722c6452172a02a62fdea70c8b25cfc9613d28647bf2aeb3c7d1faa1a91b861fccc05bb61e25ff4300502812750706ca8df189a0b8163540b9bccabc9f1b")
+        );
     }
 
     @Test
