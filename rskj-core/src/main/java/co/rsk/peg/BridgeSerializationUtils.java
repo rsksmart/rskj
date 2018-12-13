@@ -218,7 +218,7 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederation
-    public static Federation deserializeFederation(byte[] data, Context btcContext) {
+    public static Federation deserializeFederation(byte[] data, NetworkParameters networkParameters) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
@@ -235,7 +235,7 @@ public class BridgeSerializationUtils {
         byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
         long creationBlockNumber = BigIntegers.fromUnsignedByteArray(creationBlockNumberBytes).longValue();
 
-        return new Federation(pubKeys, creationTime, creationBlockNumber, btcContext.getParams());
+        return new Federation(pubKeys, creationTime, creationBlockNumber, networkParameters);
     }
 
     // A pending federation is serialized as the
