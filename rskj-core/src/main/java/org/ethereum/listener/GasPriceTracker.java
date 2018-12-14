@@ -20,6 +20,7 @@
 package org.ethereum.listener;
 
 import co.rsk.core.Coin;
+import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -41,7 +42,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger("gaspricetracker");
 
     private final Coin[] window = new Coin[512];
-    private final Coin defaultPrice = Coin.valueOf(20_000_000_000L);
+    private Coin defaultPrice = Coin.valueOf(20_000_000_000L);
     private int idx = window.length - 1;
     private boolean filled = false;
 
@@ -51,6 +52,8 @@ public class GasPriceTracker extends EthereumListenerAdapter {
     public void onBlock(Block block, List<TransactionReceipt> receipts) {
         logger.trace("Start onBlock");
 
+        defaultPrice = block.getMinimumGasPrice();
+
         for (Transaction tx : block.getTransactionsList()) {
             onTransaction(tx);
         }
@@ -59,11 +62,16 @@ public class GasPriceTracker extends EthereumListenerAdapter {
     }
 
     public void onTransaction(Transaction tx) {
+        if (tx instanceof RemascTransaction) {
+            return;
+        }
+
         if (idx == -1) {
             idx = window.length - 1;
             filled = true;
             lastVal = null;  // recalculate only 'sometimes'
         }
+
         window[idx--] = tx.getGasPrice();
     }
 
