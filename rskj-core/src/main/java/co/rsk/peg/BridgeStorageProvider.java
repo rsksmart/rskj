@@ -220,7 +220,7 @@ public class BridgeStorageProvider {
                 data ->
                         data == null
                         ? null
-                        : BridgeSerializationUtils.deserializeFederation(data, networkParameters)
+                        : BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters)
         );
         return newFederation;
     }
@@ -238,7 +238,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(NEW_FEDERATION_KEY, newFederation, BridgeSerializationUtils::serializeFederation);
+        safeSaveToRepository(NEW_FEDERATION_KEY, newFederation, BridgeSerializationUtils::serializeFederationOnlyBtcKeys);
     }
 
     public Federation getOldFederation() {
@@ -249,7 +249,7 @@ public class BridgeStorageProvider {
         oldFederation = safeGetFromRepository(OLD_FEDERATION_KEY,
                 data -> data == null
                         ? null
-                        : BridgeSerializationUtils.deserializeFederation(data, networkParameters)
+                        : BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters)
         );
         return oldFederation;
     }
@@ -264,7 +264,7 @@ public class BridgeStorageProvider {
      */
     public void saveOldFederation() {
         if (shouldSaveOldFederation) {
-            safeSaveToRepository(OLD_FEDERATION_KEY, oldFederation, BridgeSerializationUtils::serializeFederation);
+            safeSaveToRepository(OLD_FEDERATION_KEY, oldFederation, BridgeSerializationUtils::serializeFederationOnlyBtcKeys);
         }
     }
 
@@ -276,7 +276,7 @@ public class BridgeStorageProvider {
         pendingFederation = safeGetFromRepository(PENDING_FEDERATION_KEY,
                 data -> data == null
                         ? null :
-                        BridgeSerializationUtils.deserializePendingFederation(data)
+                        BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(data)
         );
         return pendingFederation;
     }
@@ -291,7 +291,7 @@ public class BridgeStorageProvider {
      */
     public void savePendingFederation() {
         if (shouldSavePendingFederation) {
-            safeSaveToRepository(PENDING_FEDERATION_KEY, pendingFederation, BridgeSerializationUtils::serializePendingFederation);
+            safeSaveToRepository(PENDING_FEDERATION_KEY, pendingFederation, BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys);
         }
     }
 
