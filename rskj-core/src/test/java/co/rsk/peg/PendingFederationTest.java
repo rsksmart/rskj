@@ -33,9 +33,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.mockito.Matchers.any;
 
@@ -181,7 +179,7 @@ public class PendingFederationTest {
     @Test
     public void getHash() {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
-        PowerMockito.when(BridgeSerializationUtils.serializePendingFederation(pendingFederation)).thenReturn(new byte[] { (byte) 0xaa });
+        PowerMockito.when(BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(pendingFederation)).thenReturn(new byte[] { (byte) 0xaa });
 
         Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(new byte[] { (byte) 0xaa }));
 

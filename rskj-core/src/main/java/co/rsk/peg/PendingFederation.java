@@ -113,7 +113,7 @@ public final class PendingFederation {
     }
 
     public Keccak256 getHash() {
-        byte[] encoded = BridgeSerializationUtils.serializePendingFederation(this);
+        byte[] encoded = BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(this);
         return new Keccak256(HashUtil.keccak256(encoded));
     }
 
