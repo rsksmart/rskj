@@ -17,23 +17,24 @@
  */
 package co.rsk;
 
-import co.rsk.blocks.BlockPlayer;
-import co.rsk.blocks.FileBlockPlayer;
 import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
-import co.rsk.core.RskImpl;
 import co.rsk.db.PruneConfiguration;
 import co.rsk.db.PruneService;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.mine.TxBuilder;
 import co.rsk.mine.TxBuilderEx;
-import co.rsk.net.*;
+import co.rsk.net.BlockProcessor;
+import co.rsk.net.MessageHandler;
+import co.rsk.net.TransactionGateway;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.rpc.netty.Web3WebSocketServer;
-import org.ethereum.core.*;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
@@ -146,7 +147,6 @@ public class FullNodeRunner implements NodeRunner {
         }
         if (rskSystemProperties.isBlocksEnabled()) {
             setupRecorder(rskSystemProperties.blocksRecorder());
-            setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
         }
 
         if (!"".equals(rskSystemProperties.blocksLoader())) {
@@ -288,33 +288,6 @@ public class FullNodeRunner implements NodeRunner {
     private void setupRecorder(@Nullable String blocksRecorderFileName) {
         if (blocksRecorderFileName != null) {
             blockchain.setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
-        }
-    }
-
-    private void setupPlayer(Rsk rsk, ChannelManager cm, Blockchain bc, @Nullable String blocksPlayerFileName) {
-        if (blocksPlayerFileName == null) {
-            return;
-        }
-
-        new Thread(() -> {
-            RskImpl rskImpl = (RskImpl) rsk;
-            try (FileBlockPlayer bplayer = new FileBlockPlayer(rskSystemProperties, blocksPlayerFileName)) {
-                rskImpl.setIsPlayingBlocks(true);
-                connectBlocks(bplayer, bc, cm);
-            } catch (Exception e) {
-                logger.error("Error", e);
-            } finally {
-                rskImpl.setIsPlayingBlocks(false);
-            }
-        }).start();
-    }
-
-    private void connectBlocks(BlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
-        for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
-            ImportResult tryToConnectResult = bc.tryToConnect(block);
-            if (BlockProcessResult.importOk(tryToConnectResult)) {
-                cm.broadcastBlock(block);
-            }
         }
     }
 }

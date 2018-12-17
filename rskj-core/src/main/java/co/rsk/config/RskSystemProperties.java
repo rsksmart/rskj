@@ -201,10 +201,6 @@ public class RskSystemProperties extends SystemProperties {
         return getString("blocks.recorder", null);
     }
 
-    public String blocksPlayer() {
-        return getString("blocks.player", null);
-    }
-
     public boolean isFlushEnabled() {
         return getBoolean("blockchain.flush", true);
     }

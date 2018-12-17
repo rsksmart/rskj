@@ -43,7 +43,7 @@ public class SelectionRuleTest {
         //Low hash is proved in smallerBlockHashTest
     }
 
-    private static BlockChainImpl createBlockchain() {
+    private static Blockchain createBlockchain() {
         RskTestFactory factory = new RskTestFactory();
         return factory.getBlockchain();
     }

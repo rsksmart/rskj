@@ -25,7 +25,6 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockUnclesValidationRule;
@@ -60,7 +59,7 @@ import static org.junit.Assert.*;
 public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     private final DifficultyCalculator difficultyCalculator;
-    private BlockChainImpl blockchain;
+    private Blockchain blockchain;
     private Repository repository;
     private BlockStore blockStore;
     private TransactionPool transactionPool;

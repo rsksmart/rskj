@@ -950,7 +950,7 @@ public class BlockChainImplTest {
         )));
     }
 
-    public static Block getGenesisBlock(BlockChainImpl blockChain) {
+    public static Block getGenesisBlock(Blockchain blockChain) {
         Repository repository = blockChain.getRepository();
 
         Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true);
