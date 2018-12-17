@@ -35,10 +35,8 @@ public class FileBlockPlayer implements BlockPlayer, AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger("blockplayer");
     private BufferedReader reader;
     private FileReader freader;
-    private final RskSystemProperties config;
 
-    public FileBlockPlayer(RskSystemProperties config, String filename) {
-        this.config = config;
+    public FileBlockPlayer(String filename) {
         try {
             this.freader = new FileReader(filename);
             this.reader = new BufferedReader(this.freader);

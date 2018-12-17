@@ -197,13 +197,22 @@ public class RskSystemProperties extends SystemProperties {
         return getBoolean("blocks.enabled", false);
     }
 
+    public boolean isProcessBlocksAndExit() {
+        return getBoolean("blocks.processAndExit", false);
+    }
+
     public String blocksRecorder() {
         return getString("blocks.recorder", null);
     }
 
-    public String blocksPlayer() {
-        return getString("blocks.player", null);
+    public String blocksPlayerPath() {
+        return getString("blocks.player.path", null);
     }
+
+    public String blocksPlayerFormat() {
+        return getString("blocks.player.format", null);
+    }
+
 
     public boolean isFlushEnabled() {
         return getBoolean("blockchain.flush", true);

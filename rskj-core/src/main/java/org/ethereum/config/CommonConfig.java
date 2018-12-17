@@ -39,6 +39,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -58,6 +60,11 @@ public class CommonConfig {
         String databaseDir = config.databaseDir();
         if (config.databaseReset()){
             FileUtil.recursiveDelete(databaseDir);
+            try {
+                Files.createDirectories(FileUtil.getDatabaseDirectoryPath(databaseDir,"database"));
+            } catch (IOException e) {
+                logger.error("Could not re-create database directory");
+            }
             logger.info("Database reset done");
         }
         return buildRepository(databaseDir, config.getStatesCacheSize());

@@ -18,6 +18,7 @@
 package co.rsk;
 
 import co.rsk.blocks.BlockPlayer;
+import co.rsk.blocks.BlockstoreBlockPlayer;
 import co.rsk.blocks.FileBlockPlayer;
 import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
@@ -118,7 +119,12 @@ public class FullNodeRunner implements NodeRunner {
         this.buildInfo = buildInfo;
 
         PruneConfiguration pruneConfiguration = rskSystemProperties.getPruneConfiguration();
-        this.pruneService = new PruneService(pruneConfiguration, rskSystemProperties, blockchain, PrecompiledContracts.REMASC_ADDR);
+        this.pruneService = new PruneService(
+                pruneConfiguration,
+                rskSystemProperties,
+                blockchain,
+                PrecompiledContracts.REMASC_ADDR
+        );
     }
 
     @Override
@@ -133,6 +139,14 @@ public class FullNodeRunner implements NodeRunner {
         );
         buildInfo.printInfo(logger);
 
+        if ((rskSystemProperties.isBlocksEnabled()) && (rskSystemProperties.isProcessBlocksAndExit())) {
+            setupRecorder(rskSystemProperties.blocksRecorder());
+            setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayerPath(),
+                        rskSystemProperties.blocksPlayerFormat(), false
+            );
+            return;
+        }
+
         transactionGateway.start();
         // this should be the genesis block at this point
         transactionPool.start(blockchain.getBestBlock());
@@ -146,7 +160,14 @@ public class FullNodeRunner implements NodeRunner {
         }
         if (rskSystemProperties.isBlocksEnabled()) {
             setupRecorder(rskSystemProperties.blocksRecorder());
-            setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
+            setupPlayer(
+                    rsk,
+                    channelManager,
+                    blockchain,
+                    rskSystemProperties.blocksPlayerPath(),
+                    rskSystemProperties.blocksPlayerFormat(),
+                    true
+            );
         }
 
         if (!"".equals(rskSystemProperties.blocksLoader())) {
@@ -293,22 +314,44 @@ public class FullNodeRunner implements NodeRunner {
         }
     }
 
-    private void setupPlayer(Rsk rsk, ChannelManager cm, Blockchain bc, @Nullable String blocksPlayerFileName) {
+    private void setupPlayer(
+            Rsk rsk, ChannelManager cm, Blockchain bc, @Nullable String blocksPlayerFileName,
+            @Nullable String sourceFormat, boolean backgroundThread) {
         if (blocksPlayerFileName == null) {
             return;
         }
-
-        new Thread(() -> {
-            RskImpl rskImpl = (RskImpl) rsk;
-            try (FileBlockPlayer bplayer = new FileBlockPlayer(rskSystemProperties, blocksPlayerFileName)) {
-                rskImpl.setIsPlayingBlocks(true);
+        if (backgroundThread) {
+            new Thread(() -> {
+                RskImpl rskImpl = (RskImpl) rsk;
+                try (FileBlockPlayer bplayer = new FileBlockPlayer(blocksPlayerFileName)) {
+                    rskImpl.setIsPlayingBlocks(true);
+                    connectBlocks(bplayer, bc, cm);
+                } catch (Exception e) {
+                    logger.error("Error", e);
+                } finally {
+                    rskImpl.setIsPlayingBlocks(false);
+                }
+            }).start();
+        } else {
+            logger.info("Start importing..");
+            try (BlockPlayer bplayer = createBlockPlayer(sourceFormat, blocksPlayerFileName)) {
                 connectBlocks(bplayer, bc, cm);
             } catch (Exception e) {
                 logger.error("Error", e);
             } finally {
-                rskImpl.setIsPlayingBlocks(false);
+                logger.info("End importing..");
             }
-        }).start();
+        }
+    }
+
+    private BlockPlayer createBlockPlayer(String format, String blocksPlayerFileName) {
+        if ((format == null) || (format.toLowerCase().equals("file"))) {
+            return new FileBlockPlayer(blocksPlayerFileName);
+        } else if (format.toLowerCase().equals("blockstore")) {
+            return new BlockstoreBlockPlayer(blocksPlayerFileName, blockchain.getBestBlock().getNumber() + 1);
+        } else {
+            return null;
+        }
     }
 
     private void connectBlocks(BlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
