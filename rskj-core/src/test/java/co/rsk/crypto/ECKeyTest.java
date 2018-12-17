@@ -18,6 +18,7 @@
 
 package co.rsk.crypto;
 
+import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
@@ -28,14 +29,6 @@ import static org.junit.Assert.*;
 
 public class ECKeyTest {
     private String exampleMessage = new String("This is an example of a signed message.");
-
-    @Test(expected = SignatureException.class)
-    public void testSignedMessageToKeyThrowsSignatureException() throws SignatureException {
-        byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
-        String signature = Base64.toBase64String(new byte[128]);
-        ECKey key = ECKey.signatureToKey(messageHash, signature);
-        assertNull(key);
-    }
 
     @Test
     public void fromComponentsWithRecoveryCalculation() {
