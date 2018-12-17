@@ -27,6 +27,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey.ECDSASignature;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -57,7 +58,11 @@ public class ECKeyTest {
     private String address = "8a40bfaa73256b60764c1bf40675a99083efb075";
 
     private String exampleMessage = "This is an example of a signed message.";
-    private String sigBase64 = "HD5AsBr4wuH6UU9tXuSJhUvgfGayfwoY0cKT03sFUjnpQsupHznd/3mCIRfLuNHlRCVGdAyHecdyM8IVZMtc1I8=";
+
+    // Signature components
+    private final BigInteger r = new BigInteger("28157690258821599598544026901946453245423343069728565040002908283498585537001");
+    private final BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
+    byte v = 28;
 
     @Test
     public void testHashCode() {
@@ -130,9 +135,10 @@ public class ECKeyTest {
         System.out.println("Data\t: " + exampleMessage);
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         ECDSASignature signature = key.sign(messageHash);
-        String output = signature.toBase64();
-        System.out.println("Signtr\t: " + output + " (Base64, length: " + output.length() + ")");
-        assertEquals(sigBase64, output);
+
+        assertEquals(r, signature.r);
+        assertEquals(s, signature.s);
+        assertEquals(v, signature.v);
     }
 
     @Test
@@ -151,7 +157,7 @@ public class ECKeyTest {
         ECDSASignature sig = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 0x1b);
         byte[] rawtx = Hex.decode("f82804881bc16d674ec8000094cd2a3d9f938e13cd947ec05abc7fe734df8dd8268609184e72a0006480");
         try {
-            ECKey key = ECKey.signatureToKey(HashUtil.keccak256(rawtx), sig.toBase64());
+            ECKey key = ECKey.signatureToKey(HashUtil.keccak256(rawtx), sig);
             System.out.println("Signature public key\t: " + Hex.toHexString(key.getPubKey()));
             System.out.println("Sender is\t\t: " + Hex.toHexString(key.getAddress()));
             assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(key.getAddress()));
@@ -168,7 +174,7 @@ public class ECKeyTest {
         byte[] rawtx = Hex.decode("f86e80893635c9adc5dea000008609184e72a00082109f9479b08ad8787060333663d19704909ee7b1903e58801ba0899b92d0c76cbf18df24394996beef19c050baa9823b4a9828cd9b260c97112ea0c9e62eb4cf0a9d95ca35c8830afac567619d6b3ebee841a3c8be61d35acd8049");
 
         Transaction tx = new ImmutableTransaction(rawtx);
-        ECKey key = ECKey.signatureToKey(HashUtil.keccak256(rawtx), tx.getSignature().toBase64());
+        ECKey key = ECKey.signatureToKey(HashUtil.keccak256(rawtx), tx.getSignature());
 
         System.out.println("Signature public key\t: " + Hex.toHexString(key.getPubKey()));
         System.out.println("Sender is\t\t: " + Hex.toHexString(key.getAddress()));
@@ -279,7 +285,10 @@ public class ECKeyTest {
     @Test
     public void testSignedMessageToKey() throws SignatureException {
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
-        ECKey key = ECKey.signatureToKey(messageHash, sigBase64);
+
+        ECKey key = ECKey.signatureToKey(messageHash, ECDSASignature.fromComponents(ByteUtil.bigIntegerToBytes(r, 32),
+                ByteUtil.bigIntegerToBytes(s, 32), v));
+
         assertNotNull(key);
         assertArrayEquals(pubKey, key.getPubKey());
     }
