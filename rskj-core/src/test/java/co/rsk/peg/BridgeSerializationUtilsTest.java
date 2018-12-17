@@ -28,6 +28,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
@@ -249,6 +250,69 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
+    public void serializeFederation_serializedKeysAreCompressedAndThree() {
+        final int NUM_MEMBERS = 10;
+        final int EXPECTED_NUM_KEYS = 3;
+        final int EXPECTED_PUBLICKEY_SIZE = 33;
+
+        List<FederationMember> members = new ArrayList<>();
+        for (int j = 0; j < NUM_MEMBERS; j++) {
+            members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
+        }
+
+        Federation testFederation = new Federation(
+                members, Instant.now(), 123, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        byte[] serializedFederation = BridgeSerializationUtils.serializeFederation(testFederation);
+
+        RLPList serializedList = (RLPList) RLP.decode2(serializedFederation).get(0);
+
+        Assert.assertEquals(3, serializedList.size());
+
+        RLPList memberList = (RLPList) serializedList.get(2);
+
+        Assert.assertEquals(NUM_MEMBERS, memberList.size());
+
+        for (int i = 0; i < NUM_MEMBERS; i++) {
+            RLPList memberKeys = (RLPList) RLP.decode2(memberList.get(i).getRLPData()).get(0);
+            Assert.assertEquals(EXPECTED_NUM_KEYS, memberKeys.size());
+            for (int j = 0; j < EXPECTED_NUM_KEYS; j++) {
+                Assert.assertEquals(EXPECTED_PUBLICKEY_SIZE, memberKeys.get(j).getRLPData().length);
+            }
+
+        }
+    }
+
+    @Test
+    public void deserializeFederation_wrongListSize() {
+        byte[] serialized = RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0]));
+
+        try {
+            BridgeSerializationUtils.deserializeFederation(serialized, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid serialized Federation"));
+        }
+    }
+
+    @Test
+    public void deserializeFederation_invalidFederationMember() {
+        byte[] serialized = RLP.encodeList(
+                RLP.encodeElement(BigInteger.valueOf(1).toByteArray()),
+                RLP.encodeElement(BigInteger.valueOf(1).toByteArray()),
+                RLP.encodeList(RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0])))
+        );
+
+        try {
+            BridgeSerializationUtils.deserializeFederation(serialized, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid serialized FederationMember"));
+        }
+    }
+
+    @Test
     public void serializeAndDeserializePendingFederation() {
         final int NUM_CASES = 20;
 
@@ -268,6 +332,49 @@ public class BridgeSerializationUtilsTest {
                     serializedTestPendingFederation);
 
             Assert.assertEquals(testPendingFederation, desserializedTestPendingFederation);
+        }
+    }
+
+    @Test
+    public void serializePendingFederation_serializedKeysAreCompressedAndThree() {
+        final int NUM_MEMBERS = 10;
+        final int EXPECTED_NUM_KEYS = 3;
+        final int EXPECTED_PUBLICKEY_SIZE = 33;
+
+        List<FederationMember> members = new ArrayList<>();
+        for (int j = 0; j < NUM_MEMBERS; j++) {
+            members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
+        }
+
+        PendingFederation testPendingFederation = new PendingFederation(members);
+
+        byte[] serializedPendingFederation = BridgeSerializationUtils.serializePendingFederation(testPendingFederation);
+
+        RLPList memberList = (RLPList) RLP.decode2(serializedPendingFederation).get(0);
+
+        Assert.assertEquals(NUM_MEMBERS, memberList.size());
+
+        for (int i = 0; i < NUM_MEMBERS; i++) {
+            RLPList memberKeys = (RLPList) RLP.decode2(memberList.get(i).getRLPData()).get(0);
+            Assert.assertEquals(EXPECTED_NUM_KEYS, memberKeys.size());
+            for (int j = 0; j < EXPECTED_NUM_KEYS; j++) {
+                Assert.assertEquals(EXPECTED_PUBLICKEY_SIZE, memberKeys.get(j).getRLPData().length);
+            }
+
+        }
+    }
+
+    @Test
+    public void deserializePendingFederation_invalidFederationMember() {
+        byte[] serialized = RLP.encodeList(
+                RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0]))
+        );
+
+        try {
+            BridgeSerializationUtils.deserializePendingFederation(serialized);
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid serialized FederationMember"));
         }
     }
 
