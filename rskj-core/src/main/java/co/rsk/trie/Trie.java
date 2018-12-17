@@ -42,6 +42,12 @@ public interface Trie {
 
     void save();
 
+    /**
+     * sends all data to disk. This applies to the store and all keys saved into the
+     * store, not only to this node.
+     */
+    void flush();
+
     void copyTo(TrieStore target);
 
     int trieSize();

@@ -321,4 +321,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
             resetDbLock.writeLock().unlock();
         }
     }
+
+    @Override
+    public void flush(){
+        // All is flushed immediately: there is no uncommittedCache to flush
+    }
 }

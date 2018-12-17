@@ -104,4 +104,9 @@ public class HashMapDB implements KeyValueDataSource {
             this.storage.clear();
         }
     }
+
+    @Override
+    public void flush(){
+        // HashMapDB has no flush: everything is kept in memory.
+    }
 }

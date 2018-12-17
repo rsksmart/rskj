@@ -35,8 +35,12 @@ public class KeyValueDataSourceTest {
         return Arrays.asList(new Object[][] {
             { new HashMapDB(), HashMapDB.class.getSimpleName(), true},
             { new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true },
+            { new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true },
+            { new DataSourceWithCache(new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", LevelDbDataSource.class.getSimpleName()), true },
             { new HashMapDB(), HashMapDB.class.getSimpleName(), false },
             { new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), false },
+            { new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false },
+            { new DataSourceWithCache(new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", LevelDbDataSource.class.getSimpleName()), false }
         });
     }
 
@@ -86,6 +90,21 @@ public class KeyValueDataSourceTest {
         }
         for (Map.Entry<ByteArrayWrapper, byte[]> updatedValue : updatedValues.entrySet()) {
             assertThat(keyValueDataSource.get(updatedValue.getKey().getData()), is(updatedValue.getValue()));
+        }
+    }
+
+    @Test
+    public void updateBatchWithKeysToRemove() {
+        Map<ByteArrayWrapper, byte[]> updatedValues = generateRandomValuesToUpdate(CACHE_SIZE);
+        keyValueDataSource.updateBatch(updatedValues, Collections.emptySet());
+        keyValueDataSource.updateBatch(Collections.emptyMap(), updatedValues.keySet());
+
+        if (withFlush) {
+            keyValueDataSource.flush();
+        }
+
+        for (Map.Entry<ByteArrayWrapper, byte[]> updatedValue : updatedValues.entrySet()) {
+            assertThat(keyValueDataSource.get(updatedValue.getKey().getData()), is(nullValue()));
         }
     }
 
