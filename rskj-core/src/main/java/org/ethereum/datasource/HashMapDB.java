@@ -41,18 +41,21 @@ public class HashMapDB implements KeyValueDataSource {
 
     @Override
     public byte[] get(byte[] arg0) throws DBException {
+        Objects.requireNonNull(arg0);
         return storage.get(wrap(arg0));
     }
 
 
     @Override
     public byte[] put(byte[] key, byte[] value) throws DBException {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
         return storage.put(wrap(key), value);
     }
 
     @Override
     public void init() {
-
+        this.storage.clear();
     }
 
     @Override

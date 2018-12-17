@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -74,9 +75,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 return;
             }
 
-            if (name == null) {
-                throw new NullPointerException("no name set to the db");
-            }
+            Objects.requireNonNull(name, "no name set to the db");
 
             Options options = new Options();
             options.createIfMissing(true);
@@ -144,6 +143,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public byte[] get(byte[] key) {
+        Objects.requireNonNull(key);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -179,15 +179,18 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public byte[] put(byte[] key, byte[] value) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
+
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (value == null ? "null" : value.length));
+                logger.trace("~> LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
             }
 
             db.put(key, value);
             if (logger.isTraceEnabled()) {
-                logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (value == null ? "null" : value.length));
+                logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
             }
 
             return value;

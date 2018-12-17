@@ -28,6 +28,10 @@ public interface KeyValueDataSource extends DataSource {
 
     byte[] get(byte[] key);
 
+    /**
+     * null puts() are NOT allowed.
+     * @return the same value it received
+     */
     byte[] put(byte[] key, byte[] value);
 
     void delete(byte[] key);
