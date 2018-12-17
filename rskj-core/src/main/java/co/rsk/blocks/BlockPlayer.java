@@ -23,6 +23,6 @@ import org.ethereum.core.Block;
 /**
  * Created by ajlopez on 5/8/2016.
  */
-public interface BlockPlayer {
+public interface BlockPlayer  extends AutoCloseable {
     Block readBlock();
 }
