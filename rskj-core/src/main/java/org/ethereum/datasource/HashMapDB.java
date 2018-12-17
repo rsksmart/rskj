@@ -73,9 +73,21 @@ public class HashMapDB implements KeyValueDataSource {
     }
 
     @Override
-    public synchronized void updateBatch(Map<byte[], byte[]> rows) {
-        rows.entrySet().stream().
-                forEach(entry -> storage.put(wrap(entry.getKey()), entry.getValue()));
+    public synchronized void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
+        if (rows.containsKey(null) || rows.containsValue(null)) {
+            throw new IllegalArgumentException("Cannot update null values");
+        }
+        rows.keySet().removeAll(keysToRemove);
+        for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
+            ByteArrayWrapper wrappedKey = entry.getKey();
+            byte[] key = wrappedKey.getData();
+            byte[] value = entry.getValue();
+            put(key , value);
+        }
+
+        for (ByteArrayWrapper keyToRemove : keysToRemove) {
+            delete(keyToRemove.getData());
+        }
     }
 
     public synchronized HashMapDB setClearOnClose(boolean clearOnClose) {

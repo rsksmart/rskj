@@ -20,6 +20,7 @@
 package org.ethereum.datasource;
 
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.db.ByteArrayWrapper;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,10 +40,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static java.lang.System.getProperty;
 import static org.fusesource.leveldbjni.JniDBFactory.factory;
 
-/**
- * @author Roman Mandeleil
- * @since 18.01.2015
- */
 public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
@@ -245,17 +242,27 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
-    private void updateBatchInternal(Map<byte[], byte[]> rows) throws IOException {
+    private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) throws IOException {
+        if (rows.containsKey(null) || rows.containsValue(null)) {
+            throw new IllegalArgumentException("Cannot update null values");
+        }
+        // Note that this is not atomic.
         try (WriteBatch batch = db.createWriteBatch()) {
-            for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
-                batch.put(entry.getKey(), entry.getValue());
+            for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
+                batch.put(entry.getKey().getData(), entry.getValue());
+            }
+            for (ByteArrayWrapper deleteKey : deleteKeys) {
+                batch.delete(deleteKey.getData());
             }
             db.write(batch);
         }
     }
 
     @Override
-    public void updateBatch(Map<byte[], byte[]> rows) {
+    public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
+        if (rows.containsKey(null)) {
+            throw new IllegalArgumentException("Cannot update null values");
+        }
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -263,20 +270,22 @@ public class LevelDbDataSource implements KeyValueDataSource {
             }
 
             try {
-                updateBatchInternal(rows);
+                updateBatchInternal(rows, deleteKeys);
                 if (logger.isTraceEnabled()) {
                     logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
                 }
-
+            } catch (IllegalArgumentException iae) {
+                throw iae;
             } catch (Exception e) {
                 logger.error("Error, retrying one more time...", e);
                 // try one more time
                 try {
-                    updateBatchInternal(rows);
+                    updateBatchInternal(rows, deleteKeys);
                     if (logger.isTraceEnabled()) {
                         logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
                     }
-
+                } catch (IllegalArgumentException iae) {
+                    throw iae;
                 } catch (Exception e1) {
                     logger.error("Error", e);
                     panicProcessor.panic("leveldb", String.format("Error %s", e.getMessage()));

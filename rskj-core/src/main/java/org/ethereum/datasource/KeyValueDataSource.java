@@ -19,13 +19,11 @@
 
 package org.ethereum.datasource;
 
+import org.ethereum.db.ByteArrayWrapper;
+
 import java.util.Map;
 import java.util.Set;
 
-/**
- * @author Roman Mandeleil
- * @since 18.01.2015
- */
 public interface KeyValueDataSource extends DataSource {
 
     byte[] get(byte[] key);
@@ -36,7 +34,15 @@ public interface KeyValueDataSource extends DataSource {
 
     Set<byte[]> keys();
 
-    void updateBatch(Map<byte[], byte[]> rows);
+    /**
+     * Note that updateBatch() does not imply the operation is atomic:
+     * if somethings breaks, it's possible that some keys get written and some
+     * others don't.
+     * IMPORTANT: keysToRemove override entriesToUpdate
+     * @param entriesToUpdate
+     * @param keysToRemove
+     */
+    void updateBatch(Map<ByteArrayWrapper, byte[]> entriesToUpdate, Set<ByteArrayWrapper> keysToRemove);
 
     default void copyFrom(KeyValueDataSource ds) {
         for (byte[] key : ds.keys()) {

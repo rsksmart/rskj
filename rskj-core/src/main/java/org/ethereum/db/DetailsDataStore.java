@@ -25,6 +25,7 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,7 +137,7 @@ public class DetailsDataStore {
     private long flushInternal() {
         long totalSize = 0;
 
-        Map<byte[], byte[]> batch = new HashMap<>();
+        Map<ByteArrayWrapper, byte[]> batch = new HashMap<>(cache.size());
         for (Map.Entry<RskAddress, ContractDetails> entry : cache.entrySet()) {
             ContractDetails details = entry.getValue();
             details.syncStorage();
@@ -145,11 +146,11 @@ public class DetailsDataStore {
 
             byte[] value = details.getEncoded();
 
-            batch.put(key, value);
+            batch.put(ByteUtil.wrap(key), value);
             totalSize += value.length;
         }
 
-        db.updateBatch(batch);
+        db.updateBatch(batch, Collections.emptySet());
 
         for (RskAddress key : removes) {
             db.delete(key.getBytes());
