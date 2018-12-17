@@ -213,6 +213,13 @@ public class Program {
 
         this.ops = nullToEmpty(ops);
 
+        if (config.vmTrace()) {
+            this.traceListener = new ProgramTraceListener(config);
+        }
+        else {
+            this.traceListener = null;
+        }
+
         this.memory = setupProgramListener(new Memory());
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
@@ -227,7 +234,6 @@ public class Program {
         }
 
         precompile();
-        traceListener = new ProgramTraceListener(config);
     }
 
     public static void setUseDataWordPool(Boolean value) {
@@ -266,6 +272,10 @@ public class Program {
     }
 
     private <T extends ProgramListenerAware> T setupProgramListener(T traceListenerAware) {
+        if (traceListener == null) {
+            return traceListenerAware;
+        }
+
         if (programListener.isEmpty()) {
             programListener.addListener(traceListener);
         }
