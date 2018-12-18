@@ -21,16 +21,28 @@ import org.ethereum.config.BlockchainConfig;
 
 public class BridgeStorageConfiguration {
     private final boolean isUnlimitedWhitelistEnabled;
+    private final boolean isMultikeyFederation;
 
-    public BridgeStorageConfiguration(boolean isUnlimitedWhitelistEnabled) {
+    public BridgeStorageConfiguration(
+            boolean isUnlimitedWhitelistEnabled,
+            boolean isMultikeyFederation
+    ) {
         this.isUnlimitedWhitelistEnabled = isUnlimitedWhitelistEnabled;
+        this.isMultikeyFederation = isMultikeyFederation;
     }
 
-    public boolean getUnlimitedWhitelistEnabled() {
+    public boolean isUnlimitedWhitelistEnabled() {
         return isUnlimitedWhitelistEnabled;
     }
 
+    public boolean isMultikeyFederation() {
+        return isMultikeyFederation;
+    }
+
     public static BridgeStorageConfiguration fromBlockchainConfig(BlockchainConfig config) {
-        return new BridgeStorageConfiguration(config.isRskip87());
+        return new BridgeStorageConfiguration(
+                config.isRskip87(),
+                config.isRskipMultipleKeyFederateMembers()
+        );
     }
 }
