@@ -609,6 +609,14 @@ public class BridgeSerializationUtils {
         return new ReleaseTransactionSet(entries);
     }
 
+    public static byte[] serializeInteger(Integer value) {
+        return RLP.encodeBigInteger(BigInteger.valueOf(value));
+    }
+
+    public static Integer deserializeInteger(byte[] data) {
+        return RLP.decodeBigInteger(data, 0).intValue();
+    }
+
     // An ABI call spec is serialized as:
     // function name encoded in UTF-8
     // arg_1, ..., arg_n

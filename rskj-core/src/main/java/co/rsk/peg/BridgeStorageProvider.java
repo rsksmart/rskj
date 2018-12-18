@@ -31,10 +31,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
+import java.util.*;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
@@ -57,6 +54,12 @@ public class BridgeStorageProvider {
     private static final DataWord LOCK_UNLIMITED_WHITELIST_KEY = DataWord.fromString("unlimitedLockWhitelist");
     private static final DataWord FEE_PER_KB_KEY = DataWord.fromString("feePerKb");
     private static final DataWord FEE_PER_KB_ELECTION_KEY = DataWord.fromString("feePerKbElection");
+
+    // Version keys and versions
+    private static final DataWord NEW_FEDERATION_FORMAT_VERSION = DataWord.fromString("newFederationFormatVersion");
+    private static final DataWord OLD_FEDERATION_FORMAT_VERSION = DataWord.fromString("oldFederationFormatVersion");
+    private static final DataWord PENDING_FEDERATION_FORMAT_VERSION = DataWord.fromString("pendingFederationFormatVersion");
+    private static final Integer FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
 
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -91,11 +94,14 @@ public class BridgeStorageProvider {
     private Coin feePerKb;
     private ABICallElection feePerKbElection;
 
+    private HashMap<DataWord, Optional<Integer>> storageVersion;
+
     public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, BridgeStorageConfiguration bridgeStorageConfiguration) {
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
         this.bridgeStorageConfiguration = bridgeStorageConfiguration;
+        this.storageVersion = new HashMap<>();
     }
 
     public List<UTXO> getNewFederationBtcUTXOs() throws IOException {
@@ -216,11 +222,13 @@ public class BridgeStorageProvider {
             return newFederation;
         }
 
+        Optional<Integer> storageVersion = getStorageVersion(NEW_FEDERATION_FORMAT_VERSION);
+
         newFederation = safeGetFromRepository(NEW_FEDERATION_KEY,
                 data ->
                         data == null
                         ? null
-                        : BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters)
+                        : deserializeFederationAccordingToVersion(data, storageVersion)
         );
         return newFederation;
     }
@@ -238,7 +246,14 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(NEW_FEDERATION_KEY, newFederation, BridgeSerializationUtils::serializeFederationOnlyBtcKeys);
+        RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
+
+        if (bridgeStorageConfiguration.isMultikeyFederation()) {
+            saveStorageVersion(NEW_FEDERATION_FORMAT_VERSION, FEDERATION_FORMAT_VERSION_MULTIKEY);
+            serializer = BridgeSerializationUtils::serializeFederation;
+        }
+
+        safeSaveToRepository(NEW_FEDERATION_KEY, newFederation, serializer);
     }
 
     public Federation getOldFederation() {
@@ -246,10 +261,12 @@ public class BridgeStorageProvider {
             return oldFederation;
         }
 
+        Optional<Integer> storageVersion = getStorageVersion(OLD_FEDERATION_FORMAT_VERSION);
+
         oldFederation = safeGetFromRepository(OLD_FEDERATION_KEY,
                 data -> data == null
                         ? null
-                        : BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters)
+                        : deserializeFederationAccordingToVersion(data, storageVersion)
         );
         return oldFederation;
     }
@@ -264,7 +281,14 @@ public class BridgeStorageProvider {
      */
     public void saveOldFederation() {
         if (shouldSaveOldFederation) {
-            safeSaveToRepository(OLD_FEDERATION_KEY, oldFederation, BridgeSerializationUtils::serializeFederationOnlyBtcKeys);
+            RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
+
+            if (bridgeStorageConfiguration.isMultikeyFederation()) {
+                saveStorageVersion(OLD_FEDERATION_FORMAT_VERSION, FEDERATION_FORMAT_VERSION_MULTIKEY);
+                serializer = BridgeSerializationUtils::serializeFederation;
+            }
+
+            safeSaveToRepository(OLD_FEDERATION_KEY, oldFederation, serializer);
         }
     }
 
@@ -273,10 +297,12 @@ public class BridgeStorageProvider {
             return pendingFederation;
         }
 
+        Optional<Integer> storageVersion = getStorageVersion(PENDING_FEDERATION_FORMAT_VERSION);
+
         pendingFederation = safeGetFromRepository(PENDING_FEDERATION_KEY,
                 data -> data == null
                         ? null :
-                        BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(data)
+                        deserializePendingFederationAccordingToVersion(data, storageVersion)
         );
         return pendingFederation;
     }
@@ -291,7 +317,14 @@ public class BridgeStorageProvider {
      */
     public void savePendingFederation() {
         if (shouldSavePendingFederation) {
-            safeSaveToRepository(PENDING_FEDERATION_KEY, pendingFederation, BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys);
+            RepositorySerializer<PendingFederation> serializer = BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys;
+
+            if (bridgeStorageConfiguration.isMultikeyFederation()) {
+                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION, FEDERATION_FORMAT_VERSION_MULTIKEY);
+                serializer = BridgeSerializationUtils::serializePendingFederation;
+            }
+
+            safeSaveToRepository(PENDING_FEDERATION_KEY, pendingFederation, serializer);
         }
     }
 
@@ -326,7 +359,7 @@ public class BridgeStorageProvider {
         List<OneOffWhiteListEntry> oneOffEntries = lockWhitelist.getAll(OneOffWhiteListEntry.class);
         safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight()), BridgeSerializationUtils::serializeOneOffLockWhitelist);
 
-        if (this.bridgeStorageConfiguration.getUnlimitedWhitelistEnabled()) {
+        if (this.bridgeStorageConfiguration.isUnlimitedWhitelistEnabled()) {
             List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getAll(UnlimitedWhiteListEntry.class);
             safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
         }
@@ -349,7 +382,7 @@ public class BridgeStorageProvider {
 
         whitelistedAddresses.putAll(oneOffWhitelistAndDisableBlockHeightData.getLeft());
 
-        if (this.bridgeStorageConfiguration.getUnlimitedWhitelistEnabled()) {
+        if (this.bridgeStorageConfiguration.isUnlimitedWhitelistEnabled()) {
             whitelistedAddresses.putAll(safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY,
                     data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)));
         }
@@ -422,6 +455,46 @@ public class BridgeStorageProvider {
 
         saveFeePerKb();
         saveFeePerKbElection();
+    }
+
+    private Optional<Integer> getStorageVersion(DataWord versionKey) {
+        if (!storageVersion.containsKey(versionKey)) {
+            Optional<Integer> version = safeGetFromRepository(versionKey, data -> {
+                if (data == null || data.length == 0) {
+                    return Optional.empty();
+                }
+
+                return Optional.of(BridgeSerializationUtils.deserializeInteger(data));
+            });
+
+            storageVersion.put(versionKey, version);
+            return version;
+        }
+
+        return storageVersion.get(versionKey);
+    }
+
+    private void saveStorageVersion(DataWord versionKey, Integer version) {
+        safeSaveToRepository(versionKey, version, BridgeSerializationUtils::serializeInteger);
+        storageVersion.put(versionKey, Optional.of(version));
+    }
+
+    private Federation deserializeFederationAccordingToVersion(byte[] data, Optional<Integer> version) {
+        if (!version.isPresent()) {
+            return BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters);
+        }
+
+        // Assume this is the multi-key version
+        return BridgeSerializationUtils.deserializeFederation(data, networkParameters);
+    }
+
+    private PendingFederation deserializePendingFederationAccordingToVersion(byte[] data, Optional<Integer> version) {
+        if (!version.isPresent()) {
+            return BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(data);
+        }
+
+        // Assume this is the multi-key version
+        return BridgeSerializationUtils.deserializePendingFederation(data);
     }
 
     private <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
