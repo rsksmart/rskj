@@ -760,7 +760,7 @@ public class BridgeStorageProviderTest {
             Assert.assertEquals(DataWord.fromString("oldFederation"), address);
             Assert.assertNull(data);
             return null;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
 
         storageProvider.saveOldFederation();
         // Shouldn't have tried to save nor serialize anything
@@ -802,7 +802,7 @@ public class BridgeStorageProviderTest {
                 Assert.assertNull(data);
             }
             return null;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
 
         storageProvider.saveOldFederation();
         // Shouldn't have tried to save nor serialize anything
@@ -1019,7 +1019,7 @@ public class BridgeStorageProviderTest {
             Assert.assertEquals(DataWord.fromString("pendingFederation"), address);
             Assert.assertNull(data);
             return null;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
 
         storageProvider.savePendingFederation();
         // Shouldn't have tried to save nor serialize anything
@@ -1106,7 +1106,7 @@ public class BridgeStorageProviderTest {
                 Assert.assertNull(data);
             }
             return null;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
 
         storageProvider.savePendingFederation();
         // Shouldn't have tried to save nor serialize anything

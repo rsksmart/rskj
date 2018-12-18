@@ -39,6 +39,18 @@ public enum BridgeMethods {
             ),
             13000L,
             (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKey,
+            blockchainConfig -> !blockchainConfig.isRskipMultipleKeyFederateMembers(),
+            false
+    ),
+    ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY(
+            CallTransaction.Function.fromSignature(
+                    "addFederatorPublicKeyMultikey",
+                    new String[]{"bytes", "bytes", "bytes"},
+                    new String[]{"int256"}
+            ),
+            13000L,
+            (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKeyMultikey,
+            blockchainConfig -> blockchainConfig.isRskipMultipleKeyFederateMembers(),
             false
     ),
     ADD_LOCK_WHITELIST_ADDRESS(
