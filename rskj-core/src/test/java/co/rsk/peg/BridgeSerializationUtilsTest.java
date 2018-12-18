@@ -1001,6 +1001,18 @@ public class BridgeSerializationUtilsTest {
                 nullValue());
     }
 
+    @Test
+    public void serializeInteger() {
+        Assert.assertEquals(BigInteger.valueOf(123), RLP.decodeBigInteger(BridgeSerializationUtils.serializeInteger(123), 0));
+        Assert.assertEquals(BigInteger.valueOf(1200), RLP.decodeBigInteger(BridgeSerializationUtils.serializeInteger(1200), 0));
+    }
+
+    @Test
+    public void deserializeInteger() {
+        Assert.assertEquals(123, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(123))).intValue());
+        Assert.assertEquals(1200, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(1200))).intValue());
+    }
+
     private Address mockAddressHash160(String hash160) {
         Address result = mock(Address.class);
         when(result.getHash160()).thenReturn(Hex.decode(hash160));
