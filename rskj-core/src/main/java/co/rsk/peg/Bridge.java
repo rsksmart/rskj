@@ -143,6 +143,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function CREATE_FEDERATION = BridgeMethods.CREATE_FEDERATION.getFunction();
     // Adds the given key to the current pending federation
     public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY = BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Adds the given key to the current pending federation (multiple-key version)
+    public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY = BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY.getFunction();
     // Commits the currently pending federation
     public static final CallTransaction.Function COMMIT_FEDERATION = BridgeMethods.COMMIT_FEDERATION.getFunction();
     // Rolls back the currently pending federation
@@ -774,17 +776,25 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     {
         logger.trace("addFederatorPublicKey");
 
-        byte[] publicKeyBytes;
-        try {
-            publicKeyBytes = (byte[]) args[0];
-        } catch (Exception e) {
-            logger.warn("Exception in addFederatorPublicKey", e);
-            return -10;
-        }
+        byte[] publicKeyBytes = (byte[]) args[0];
 
         return bridgeSupport.voteFederationChange(
                 rskTx,
                 new ABICallSpec("add", new byte[][]{ publicKeyBytes })
+        );
+    }
+
+    public Integer addFederatorPublicKeyMultikey(Object[] args)
+    {
+        logger.trace("addFederatorPublicKeyMultikey");
+
+        byte[] btcPublicKeyBytes = (byte[]) args[0];
+        byte[] rskPublicKeyBytes = (byte[]) args[1];
+        byte[] mstPublicKeyBytes = (byte[]) args[2];
+
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("add-multi", new byte[][]{ btcPublicKeyBytes, rskPublicKeyBytes, mstPublicKeyBytes })
         );
     }
 

@@ -45,6 +45,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
@@ -91,6 +92,7 @@ public class BridgeSupport {
     private final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(
             "create",
             "add",
+            "add-multi",
             "commit",
             "rollback"));
 
@@ -1469,21 +1471,24 @@ public class BridgeSupport {
     }
 
     /**
-     * Adds the given key to the current pending federation.
-     * IMPORTANT: for now, the given key is used for BTC, RSK and MST.
+     * Adds the given keys to the current pending federation.
      *
      * @param dryRun whether to just do a dry run
-     * @param key the public key to add
+     * @param btcKey the BTC public key to add
+     * @param rskKey the RSK public key to add
+     * @param mstKey the MST public key to add
      * @return 1 upon success, -1 if there was no pending federation, -2 if the key was already in the pending federation
      */
-    private Integer addFederatorPublicKey(boolean dryRun, BtcECKey key) {
+    private Integer addFederatorPublicKeyMultikey(boolean dryRun, BtcECKey btcKey, ECKey rskKey, ECKey mstKey) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
             return -1;
         }
 
-        if (currentPendingFederation.getBtcPublicKeys().contains(key)) {
+        if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
+            currentPendingFederation.getMembers().stream().map(m -> m.getRskPublicKey()).anyMatch(k -> k.equals(rskKey)) ||
+            currentPendingFederation.getMembers().stream().map(m -> m.getMstPublicKey()).anyMatch(k -> k.equals(mstKey))) {
             return -2;
         }
 
@@ -1491,8 +1496,7 @@ public class BridgeSupport {
             return 1;
         }
 
-        // Build the new federation member using the same key for BTC, RSK and MST
-        FederationMember member = FederationMember.getFederationMemberFromKey(key);
+        FederationMember member = new FederationMember(btcKey, rskKey, mstKey);
 
         currentPendingFederation = currentPendingFederation.addMember(member);
 
@@ -1644,14 +1648,39 @@ public class BridgeSupport {
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
             case "add":
-                byte[] publicKeyBytes = (byte[]) callSpec.getArguments()[0];
+                byte[] publicKeyBytes = callSpec.getArguments()[0];
                 BtcECKey publicKey;
+                ECKey publicKeyEc;
                 try {
                     publicKey = BtcECKey.fromPublicOnly(publicKeyBytes);
+                    publicKeyEc = ECKey.fromPublicOnly(publicKeyBytes);
                 } catch (Exception e) {
                     throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(publicKeyBytes), e);
                 }
-                executionResult = addFederatorPublicKey(dryRun, publicKey);
+                executionResult = addFederatorPublicKeyMultikey(dryRun, publicKey, publicKeyEc, publicKeyEc);
+                result = new ABICallVoteResult(executionResult == 1, executionResult);
+                break;
+            case "add-multi":
+                BtcECKey btcPublicKey;
+                ECKey rskPublicKey, mstPublicKey;
+                try {
+                    btcPublicKey = BtcECKey.fromPublicOnly(callSpec.getArguments()[0]);
+                } catch (Exception e) {
+                    throw new BridgeIllegalArgumentException("BTC public key could not be parsed " + Hex.toHexString(callSpec.getArguments()[0]), e);
+                }
+
+                try {
+                    rskPublicKey = ECKey.fromPublicOnly(callSpec.getArguments()[1]);
+                } catch (Exception e) {
+                    throw new BridgeIllegalArgumentException("RSK public key could not be parsed " + Hex.toHexString(callSpec.getArguments()[1]), e);
+                }
+
+                try {
+                    mstPublicKey = ECKey.fromPublicOnly(callSpec.getArguments()[2]);
+                } catch (Exception e) {
+                    throw new BridgeIllegalArgumentException("MST public key could not be parsed " + Hex.toHexString(callSpec.getArguments()[2]), e);
+                }
+                executionResult = addFederatorPublicKeyMultikey(dryRun, btcPublicKey, rskPublicKey, mstPublicKey);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
             case "commit":
