@@ -33,18 +33,22 @@ import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.trie.TrieImpl;
+import com.sun.xml.internal.bind.api.impl.NameConverter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.mockito.internal.PowerMockitoCore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -60,8 +64,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 6/7/2016.
@@ -71,14 +74,15 @@ import static org.mockito.Mockito.when;
 public class BridgeStorageProviderTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final NetworkParameters networkParameters = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
-    private final BridgeStorageConfiguration bridgeStorageConfigurationAtHeightZero = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(0));
+    private final BridgeStorageConfiguration bridgeStorageConfigurationBeforeForks = new BridgeStorageConfiguration(false, false);
+    private final BridgeStorageConfiguration bridgeStorageConfigurationFedMultiKey = new BridgeStorageConfiguration(false, true);
 
     private int transactionOffset;
 
     @Test
     public void createInstance() throws IOException {
         Repository repository = createRepositoryImpl(config);
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
 
@@ -111,7 +115,7 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
         provider0.getBtcTxHashesAlreadyProcessed();
         provider0.getReleaseRequestQueue();
         provider0.getReleaseTransactionSet();
@@ -133,7 +137,7 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("newFederationBtcUTXOs".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("oldFederationBtcUTXOs".getBytes())));
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
 
@@ -174,7 +178,7 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
         provider0.getBtcTxHashesAlreadyProcessed().put(hash1, 1L);
         provider0.getBtcTxHashesAlreadyProcessed().put(hash2, 1L);
         provider0.save();
@@ -182,7 +186,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
         Set<Sha256Hash> processedHashes = processed.keySet();
@@ -203,7 +207,7 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
         provider0.getRskTxsWaitingForSignatures().put(hash1, tx1);
         provider0.getRskTxsWaitingForSignatures().put(hash2, tx2);
         provider0.getRskTxsWaitingForSignatures().put(hash3, tx3);
@@ -213,7 +217,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         SortedMap<Keccak256, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
 
@@ -240,7 +244,7 @@ public class BridgeStorageProviderTest {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
         provider0.getNewFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
         provider0.getNewFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
         provider0.save();
@@ -248,7 +252,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         List<UTXO> utxos = provider.getNewFederationBtcUTXOs();
 
@@ -257,25 +261,35 @@ public class BridgeStorageProviderTest {
     }
 
     @Test
-    public void getNewFederation() throws IOException {
-        List<Integer> calls = new ArrayList<>();
-        Context contextMock = mock(Context.class);
+    public void getNewFederation_initialVersion() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        List<Integer> deserializeCalls = new ArrayList<>();
         Federation newFederation = buildMockFederation(100, 200, 300);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
-            calls.add(0);
+            storageCalls.add(0);
             RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
-            // Make sure the bytes are get from the correct address in the repo
-            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
-            return new byte[]{(byte)0xaa};
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                // First call is storage version getter
+                Assert.assertEquals(new DataWord("newFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                return new byte[0];
+            } else {
+                // Second call is the actual storage getter
+                Assert.assertEquals(2, storageCalls.size());
+                Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return new byte[]{(byte) 0xaa};
+            }
         });
+
         PowerMockito.when(BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
-            calls.add(0);
+            deserializeCalls.add(0);
             byte[] data = invocation.getArgumentAt(0, byte[].class);
             NetworkParameters networkParameters = invocation.getArgumentAt(1, NetworkParameters.class);
             // Make sure we're deserializing what just came from the repo with the correct BTC context
@@ -286,45 +300,133 @@ public class BridgeStorageProviderTest {
 
         Assert.assertEquals(newFederation, storageProvider.getNewFederation());
         Assert.assertEquals(newFederation, storageProvider.getNewFederation());
-        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        Assert.assertEquals(2, storageCalls.size());
+        Assert.assertEquals(1, deserializeCalls.size());
     }
 
     @Test
-    public void getNewFederation_nullBytes() throws IOException {
-        List<Integer> storageBytesCalls = new ArrayList<>();
-        List<Integer> deserializeCalls = new ArrayList<>();
+    public void getNewFederation_initialVersion_nullBytes() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
-            storageBytesCalls.add(0);
+            storageCalls.add(0);
             RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
-            // Make sure the bytes are get from the correct address in the repo
-            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
-            return null;
-        });
-        PowerMockito.when(BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
-            deserializeCalls.add(0);
-            return null;
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                Assert.assertEquals(new DataWord("newFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                // First call is storage version getter
+                return new byte[0];
+            } else {
+                // Second and third calls are actual storage getters
+                Assert.assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
+                Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return null;
+            }
         });
 
         Assert.assertEquals(null, storageProvider.getNewFederation());
         Assert.assertEquals(null, storageProvider.getNewFederation());
-        Assert.assertEquals(2, storageBytesCalls.size()); // 2 for the calls to getStorageBytes
-        Assert.assertEquals(0, deserializeCalls.size()); // 2 for the calls to getStorageBytes
+        Assert.assertEquals(3, storageCalls.size());
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class));
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class));
     }
 
     @Test
-    public void saveNewFederation() throws IOException {
+    public void getNewFederation_multiKeyVersion() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        List<Integer> deserializeCalls = new ArrayList<>();
+        Federation newFederation = buildMockFederation(100, 200, 300);
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                // First call is storage version getter
+                Assert.assertEquals(new DataWord("newFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                return RLP.encodeBigInteger(BigInteger.valueOf(1234));
+            } else {
+                // Second call is the actual storage getter
+                Assert.assertEquals(2, storageCalls.size());
+                Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return new byte[]{(byte) 0xaa};
+            }
+        });
+
+        PowerMockito.when(BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
+            deserializeCalls.add(0);
+            byte[] data = invocation.getArgumentAt(0, byte[].class);
+            NetworkParameters networkParameters = invocation.getArgumentAt(1, NetworkParameters.class);
+            // Make sure we're deserializing what just came from the repo with the correct BTC context
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
+            Assert.assertEquals(networkParameters, config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams());
+            return newFederation;
+        });
+
+        Assert.assertEquals(newFederation, storageProvider.getNewFederation());
+        Assert.assertEquals(newFederation, storageProvider.getNewFederation());
+        Assert.assertEquals(2, storageCalls.size());
+        Assert.assertEquals(1, deserializeCalls.size());
+    }
+
+    @Test
+    public void getNewFederation_multiKeyVersion_nullBytes() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                Assert.assertEquals(new DataWord("newFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                // First call is storage version getter
+                return RLP.encodeBigInteger(BigInteger.valueOf(1234));
+            } else {
+                // Second and third calls are the actual storage getters
+                Assert.assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
+                Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return null;
+            }
+        });
+
+        Assert.assertEquals(null, storageProvider.getNewFederation());
+        Assert.assertEquals(null, storageProvider.getNewFederation());
+        Assert.assertEquals(3, storageCalls.size());
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class));
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class));
+    }
+
+    @Test
+    public void saveNewFederation_preMultikey() throws IOException {
         Federation newFederation = buildMockFederation(100, 200, 300);
         List<Integer> storageBytesCalls = new ArrayList<>();
         List<Integer> serializeCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        useOriginalIntegerSerialization();
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         PowerMockito.when(BridgeSerializationUtils.serializeFederationOnlyBtcKeys(any(Federation.class))).then((InvocationOnMock invocation) -> {
             Federation federation = invocation.getArgumentAt(0, Federation.class);
@@ -355,13 +457,681 @@ public class BridgeStorageProviderTest {
     }
 
     @Test
+    public void saveNewFederation_postMultikey() throws IOException {
+        Federation newFederation = buildMockFederation(100, 200, 300);
+        List<Integer> storageBytesCalls = new ArrayList<>();
+        List<Integer> serializeCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        useOriginalIntegerSerialization();
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationFedMultiKey);
+
+        PowerMockito.when(BridgeSerializationUtils.serializeFederation(any(Federation.class))).then((InvocationOnMock invocation) -> {
+            Federation federation = invocation.getArgumentAt(0, Federation.class);
+            Assert.assertEquals(newFederation, federation);
+            serializeCalls.add(0);
+            return new byte[]{(byte)0xbb};
+        });
+        Mockito.doAnswer((InvocationOnMock invocation) -> {
+            storageBytesCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            byte[] data = invocation.getArgumentAt(2, byte[].class);
+
+            if (storageBytesCalls.size() == 1) {
+                // First call is the version setting
+                Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+                Assert.assertEquals(new DataWord("newFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
+            } else {
+                Assert.assertEquals(2, storageBytesCalls.size());
+                // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
+                Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+                Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertTrue(Arrays.equals(new byte[]{(byte) 0xbb}, data));
+            }
+            return null;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+
+        storageProvider.saveNewFederation();
+        // Shouldn't have tried to save nor serialize anything
+        Assert.assertEquals(0, storageBytesCalls.size());
+        Assert.assertEquals(0, serializeCalls.size());
+        storageProvider.setNewFederation(newFederation);
+        storageProvider.saveNewFederation();
+        Assert.assertEquals(2, storageBytesCalls.size());
+        Assert.assertEquals(1, serializeCalls.size());
+    }
+
+    @Test
+    public void getOldFederation_initialVersion() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        List<Integer> deserializeCalls = new ArrayList<>();
+        Federation oldFederation = buildMockFederation(100, 200, 300);
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                // First call is storage version getter
+                Assert.assertEquals(new DataWord("oldFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                return new byte[0];
+            } else {
+                // Second call is the actual storage getter
+                Assert.assertEquals(2, storageCalls.size());
+                Assert.assertEquals(new DataWord("oldFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return new byte[]{(byte) 0xaa};
+            }
+        });
+
+        PowerMockito.when(BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
+            deserializeCalls.add(0);
+            byte[] data = invocation.getArgumentAt(0, byte[].class);
+            NetworkParameters networkParameters = invocation.getArgumentAt(1, NetworkParameters.class);
+            // Make sure we're deserializing what just came from the repo with the correct BTC context
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
+            Assert.assertEquals(networkParameters, config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams());
+            return oldFederation;
+        });
+
+        Assert.assertEquals(oldFederation, storageProvider.getOldFederation());
+        Assert.assertEquals(2, storageCalls.size());
+        Assert.assertEquals(1, deserializeCalls.size());
+    }
+
+    @Test
+    public void getOldFederation_initialVersion_nullBytes() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                Assert.assertEquals(new DataWord("oldFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                // First call is storage version getter
+                return new byte[0];
+            } else {
+                // Second and third calls are actual storage getters
+                Assert.assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
+                Assert.assertEquals(new DataWord("oldFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return null;
+            }
+        });
+
+        Assert.assertEquals(null, storageProvider.getOldFederation());
+        Assert.assertEquals(null, storageProvider.getOldFederation());
+        Assert.assertEquals(3, storageCalls.size());
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class));
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class));
+    }
+
+    @Test
+    public void getOldFederation_multiKeyVersion() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        List<Integer> deserializeCalls = new ArrayList<>();
+        Federation oldFederation = buildMockFederation(100, 200, 300);
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                // First call is storage version getter
+                Assert.assertEquals(new DataWord("oldFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                return RLP.encodeBigInteger(BigInteger.valueOf(1234));
+            } else {
+                // Second call is the actual storage getter
+                Assert.assertEquals(2, storageCalls.size());
+                Assert.assertEquals(new DataWord("oldFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return new byte[]{(byte) 0xaa};
+            }
+        });
+
+        PowerMockito.when(BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
+            deserializeCalls.add(0);
+            byte[] data = invocation.getArgumentAt(0, byte[].class);
+            NetworkParameters networkParameters = invocation.getArgumentAt(1, NetworkParameters.class);
+            // Make sure we're deserializing what just came from the repo with the correct BTC context
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
+            Assert.assertEquals(networkParameters, config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams());
+            return oldFederation;
+        });
+
+        Assert.assertEquals(oldFederation, storageProvider.getOldFederation());
+        Assert.assertEquals(2, storageCalls.size());
+        Assert.assertEquals(1, deserializeCalls.size());
+    }
+
+    @Test
+    public void getOldFederation_multiKeyVersion_nullBytes() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                Assert.assertEquals(new DataWord("oldFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                // First call is storage version getter
+                return RLP.encodeBigInteger(BigInteger.valueOf(1234));
+            } else {
+                // Second and third calls are actual storage getters
+                Assert.assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
+                Assert.assertEquals(new DataWord("oldFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return null;
+            }
+        });
+
+        Assert.assertEquals(null, storageProvider.getOldFederation());
+        Assert.assertEquals(null, storageProvider.getOldFederation());
+        Assert.assertEquals(3, storageCalls.size());
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class));
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class));
+    }
+
+    @Test
+    public void saveOldFederation_preMultikey() throws IOException {
+        Federation oldFederation = buildMockFederation(100, 200, 300);
+        List<Integer> storageBytesCalls = new ArrayList<>();
+        List<Integer> serializeCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        useOriginalIntegerSerialization();
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        PowerMockito.when(BridgeSerializationUtils.serializeFederationOnlyBtcKeys(any(Federation.class))).then((InvocationOnMock invocation) -> {
+            Federation federation = invocation.getArgumentAt(0, Federation.class);
+            Assert.assertEquals(oldFederation, federation);
+            serializeCalls.add(0);
+            return new byte[]{(byte)0xbb};
+        });
+        Mockito.doAnswer((InvocationOnMock invocation) -> {
+            storageBytesCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            byte[] data = invocation.getArgumentAt(2, byte[].class);
+            // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
+            Assert.assertEquals(new DataWord("oldFederation".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xbb}, data));
+            return null;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+
+        storageProvider.saveOldFederation();
+        // Shouldn't have tried to save nor serialize anything
+        Assert.assertEquals(0, storageBytesCalls.size());
+        Assert.assertEquals(0, serializeCalls.size());
+        storageProvider.setOldFederation(oldFederation);
+        storageProvider.saveOldFederation();
+        Assert.assertEquals(1, storageBytesCalls.size());
+        Assert.assertEquals(1, serializeCalls.size());
+    }
+
+    @Test
+    public void saveOldFederation_postMultikey() throws IOException {
+        Federation oldFederation = buildMockFederation(100, 200, 300);
+        List<Integer> storageBytesCalls = new ArrayList<>();
+        List<Integer> serializeCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        useOriginalIntegerSerialization();
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationFedMultiKey);
+
+        PowerMockito.when(BridgeSerializationUtils.serializeFederation(any(Federation.class))).then((InvocationOnMock invocation) -> {
+            Federation federation = invocation.getArgumentAt(0, Federation.class);
+            Assert.assertEquals(oldFederation, federation);
+            serializeCalls.add(0);
+            return new byte[]{(byte)0xbb};
+        });
+        Mockito.doAnswer((InvocationOnMock invocation) -> {
+            storageBytesCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            byte[] data = invocation.getArgumentAt(2, byte[].class);
+
+            if (storageBytesCalls.size() == 1) {
+                // First call is the version setting
+                Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+                Assert.assertEquals(new DataWord("oldFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
+            } else {
+                Assert.assertEquals(2, storageBytesCalls.size());
+                // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
+                Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+                Assert.assertEquals(new DataWord("oldFederation".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertTrue(Arrays.equals(new byte[]{(byte) 0xbb}, data));
+            }
+            return null;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+
+        storageProvider.saveOldFederation();
+        // Shouldn't have tried to save nor serialize anything
+        Assert.assertEquals(0, storageBytesCalls.size());
+        Assert.assertEquals(0, serializeCalls.size());
+        storageProvider.setOldFederation(oldFederation);
+        storageProvider.saveOldFederation();
+        Assert.assertEquals(2, storageBytesCalls.size());
+        Assert.assertEquals(1, serializeCalls.size());
+    }
+
+    @Test
+    public void saveOldFederation_preMultikey_setToNull() throws IOException {
+        List<Integer> storageBytesCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        useOriginalIntegerSerialization();
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        Mockito.doAnswer((InvocationOnMock invocation) -> {
+            storageBytesCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            byte[] data = invocation.getArgumentAt(2, byte[].class);
+
+            // Make sure the bytes are set to the correct address in the repo and that what's saved is null
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+            Assert.assertEquals(new DataWord("oldFederation".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertNull(data);
+            return null;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+
+        storageProvider.saveOldFederation();
+        // Shouldn't have tried to save nor serialize anything
+        Assert.assertEquals(0, storageBytesCalls.size());
+        storageProvider.setOldFederation(null);
+        storageProvider.saveOldFederation();
+        Assert.assertEquals(1, storageBytesCalls.size());
+
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.serializeFederation(any(Federation.class));
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.serializeFederationOnlyBtcKeys(any(Federation.class));
+    }
+
+    @Test
+    public void saveOldFederation_postMultikey_setToNull() throws IOException {
+        List<Integer> storageBytesCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        useOriginalIntegerSerialization();
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationFedMultiKey);
+
+        Mockito.doAnswer((InvocationOnMock invocation) -> {
+            storageBytesCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            byte[] data = invocation.getArgumentAt(2, byte[].class);
+
+            if (storageBytesCalls.size() == 1) {
+                // First call is the version setting
+                Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+                Assert.assertEquals(new DataWord("oldFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
+            } else {
+                Assert.assertEquals(2, storageBytesCalls.size());
+                // Make sure the bytes are set to the correct address in the repo and that what's saved is null
+                Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+                Assert.assertEquals(new DataWord("oldFederation".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertNull(data);
+            }
+            return null;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+
+        storageProvider.saveOldFederation();
+        // Shouldn't have tried to save nor serialize anything
+        Assert.assertEquals(0, storageBytesCalls.size());
+        storageProvider.setOldFederation(null);
+        storageProvider.saveOldFederation();
+        Assert.assertEquals(2, storageBytesCalls.size());
+
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.serializeFederation(any(Federation.class));
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.serializeFederationOnlyBtcKeys(any(Federation.class));
+    }
+
+    @Test
+    public void getPendingFederation_initialVersion() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        List<Integer> deserializeCalls = new ArrayList<>();
+        PendingFederation pendingFederation = buildMockPendingFederation(100, 200, 300);
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                // First call is storage version getter
+                Assert.assertEquals(new DataWord("pendingFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                return new byte[0];
+            } else {
+                // Second call is the actual storage getter
+                Assert.assertEquals(2, storageCalls.size());
+                Assert.assertEquals(new DataWord("pendingFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return new byte[]{(byte) 0xaa};
+            }
+        });
+
+        PowerMockito.when(BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(any(byte[].class))).then((InvocationOnMock invocation) -> {
+            deserializeCalls.add(0);
+            byte[] data = invocation.getArgumentAt(0, byte[].class);
+            // Make sure we're deserializing what just came from the repo with the correct BTC context
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
+            return pendingFederation;
+        });
+
+        Assert.assertEquals(pendingFederation, storageProvider.getPendingFederation());
+        Assert.assertEquals(2, storageCalls.size());
+        Assert.assertEquals(1, deserializeCalls.size());
+    }
+
+    @Test
+    public void getPendingFederation_initialVersion_nullBytes() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                // First call is storage version getter
+                Assert.assertEquals(new DataWord("pendingFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                return new byte[0];
+            } else {
+                // Second call is the actual storage getter
+                Assert.assertEquals(2, storageCalls.size());
+                Assert.assertEquals(new DataWord("pendingFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return null;
+            }
+        });
+
+        Assert.assertEquals(null, storageProvider.getPendingFederation());
+        Assert.assertEquals(2, storageCalls.size());
+
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.deserializePendingFederation(any(byte[].class));
+    }
+
+    @Test
+    public void getPendingFederation_multiKeyVersion() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        List<Integer> deserializeCalls = new ArrayList<>();
+        PendingFederation pendingFederation = buildMockPendingFederation(100, 200, 300);
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                // First call is storage version getter
+                Assert.assertEquals(new DataWord("pendingFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                return RLP.encodeBigInteger(BigInteger.valueOf(1234));
+            } else {
+                // Second call is the actual storage getter
+                Assert.assertEquals(2, storageCalls.size());
+                Assert.assertEquals(new DataWord("pendingFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return new byte[]{(byte) 0xaa};
+            }
+        });
+
+        PowerMockito.when(BridgeSerializationUtils.deserializePendingFederation(any(byte[].class))).then((InvocationOnMock invocation) -> {
+            deserializeCalls.add(0);
+            byte[] data = invocation.getArgumentAt(0, byte[].class);
+            // Make sure we're deserializing what just came from the repo with the correct BTC context
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
+            return pendingFederation;
+        });
+
+        Assert.assertEquals(pendingFederation, storageProvider.getPendingFederation());
+        Assert.assertEquals(2, storageCalls.size());
+        Assert.assertEquals(1, deserializeCalls.size());
+    }
+
+    @Test
+    public void getPendingFederation_multiKeyVersion_nullBytes() throws IOException {
+        List<Integer> storageCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            storageCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageCalls.size() == 1) {
+                // First call is storage version getter
+                Assert.assertEquals(new DataWord("pendingFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                return RLP.encodeBigInteger(BigInteger.valueOf(1234));
+            } else {
+                // Second call is the actual storage getter
+                Assert.assertEquals(2, storageCalls.size());
+                Assert.assertEquals(new DataWord("pendingFederation".getBytes(StandardCharsets.UTF_8)), address);
+                return null;
+            }
+        });
+
+        Assert.assertEquals(null, storageProvider.getPendingFederation());
+        Assert.assertEquals(2, storageCalls.size());
+
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.deserializePendingFederation(any(byte[].class));
+    }
+
+    @Test
+    public void savePendingFederation_preMultikey() throws IOException {
+        PendingFederation pendingFederation = buildMockPendingFederation(100, 200, 300);
+        List<Integer> storageBytesCalls = new ArrayList<>();
+        List<Integer> serializeCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        PowerMockito.when(BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(any(PendingFederation.class))).then((InvocationOnMock invocation) -> {
+            PendingFederation federation = invocation.getArgumentAt(0, PendingFederation.class);
+            Assert.assertEquals(pendingFederation, federation);
+            serializeCalls.add(0);
+            return new byte[]{(byte)0xbb};
+        });
+        Mockito.doAnswer((InvocationOnMock invocation) -> {
+            storageBytesCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            byte[] data = invocation.getArgumentAt(2, byte[].class);
+            // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
+            Assert.assertEquals(new DataWord("pendingFederation".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xbb}, data));
+            return null;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+
+        storageProvider.savePendingFederation();
+        // Shouldn't have tried to save nor serialize anything
+        Assert.assertEquals(0, storageBytesCalls.size());
+        Assert.assertEquals(0, serializeCalls.size());
+        storageProvider.setPendingFederation(pendingFederation);
+        storageProvider.savePendingFederation();
+        Assert.assertEquals(1, storageBytesCalls.size());
+        Assert.assertEquals(1, serializeCalls.size());
+    }
+
+    @Test
+    public void savePendingFederation_preMultikey_setToNull() throws IOException {
+        List<Integer> storageBytesCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+
+        Mockito.doAnswer((InvocationOnMock invocation) -> {
+            storageBytesCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            byte[] data = invocation.getArgumentAt(2, byte[].class);
+            // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
+            Assert.assertEquals(new DataWord("pendingFederation".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertNull(data);
+            return null;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+
+        storageProvider.savePendingFederation();
+        // Shouldn't have tried to save nor serialize anything
+        Assert.assertEquals(0, storageBytesCalls.size());
+        storageProvider.setPendingFederation(null);
+        storageProvider.savePendingFederation();
+        Assert.assertEquals(1, storageBytesCalls.size());
+
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(any(PendingFederation.class));
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.serializePendingFederation(any(PendingFederation.class));
+    }
+
+    @Test
+    public void savePendingFederation_postMultikey() throws IOException {
+        PendingFederation pendingFederation = buildMockPendingFederation(100, 200, 300);
+        List<Integer> storageBytesCalls = new ArrayList<>();
+        List<Integer> serializeCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        useOriginalIntegerSerialization();
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationFedMultiKey);
+
+        PowerMockito.when(BridgeSerializationUtils.serializePendingFederation(any(PendingFederation.class))).then((InvocationOnMock invocation) -> {
+            PendingFederation federation = invocation.getArgumentAt(0, PendingFederation.class);
+            Assert.assertEquals(pendingFederation, federation);
+            serializeCalls.add(0);
+            return new byte[]{(byte)0xbb};
+        });
+        Mockito.doAnswer((InvocationOnMock invocation) -> {
+            storageBytesCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            byte[] data = invocation.getArgumentAt(2, byte[].class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageBytesCalls.size() == 1) {
+                Assert.assertEquals(new DataWord("pendingFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
+            } else {
+                Assert.assertEquals(2, storageBytesCalls.size());
+                // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
+                Assert.assertEquals(new DataWord("pendingFederation".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertTrue(Arrays.equals(new byte[]{(byte) 0xbb}, data));
+            }
+            return null;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+
+        storageProvider.savePendingFederation();
+        // Shouldn't have tried to save nor serialize anything
+        Assert.assertEquals(0, storageBytesCalls.size());
+        Assert.assertEquals(0, serializeCalls.size());
+        storageProvider.setPendingFederation(pendingFederation);
+        storageProvider.savePendingFederation();
+        Assert.assertEquals(2, storageBytesCalls.size());
+        Assert.assertEquals(1, serializeCalls.size());
+    }
+
+    @Test
+    public void savePendingFederation_postMultikey_setToNull() throws IOException {
+        List<Integer> storageBytesCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        useOriginalIntegerSerialization();
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationFedMultiKey);
+
+        Mockito.doAnswer((InvocationOnMock invocation) -> {
+            storageBytesCalls.add(0);
+            RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            byte[] data = invocation.getArgumentAt(2, byte[].class);
+
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
+
+            if (storageBytesCalls.size() == 1) {
+                Assert.assertEquals(new DataWord("pendingFederationFormatVersion".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
+            } else {
+                Assert.assertEquals(2, storageBytesCalls.size());
+                // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
+                Assert.assertEquals(new DataWord("pendingFederation".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertNull(data);
+            }
+            return null;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
+
+        storageProvider.savePendingFederation();
+        // Shouldn't have tried to save nor serialize anything
+        Assert.assertEquals(0, storageBytesCalls.size());
+        storageProvider.setPendingFederation(null);
+        storageProvider.savePendingFederation();
+        Assert.assertEquals(2, storageBytesCalls.size());
+
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(any(PendingFederation.class));
+        PowerMockito.verifyStatic(never());
+        BridgeSerializationUtils.serializePendingFederation(any(PendingFederation.class));
+    }
+
+    @Test
     public void getFederationElection_nonNullBytes() throws IOException {
         List<Integer> calls = new ArrayList<>();
         AddressBasedAuthorizer authorizerMock = mock(AddressBasedAuthorizer.class);
         ABICallElection electionMock = mock(ABICallElection.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -393,7 +1163,7 @@ public class BridgeStorageProviderTest {
         ABICallElection electionMock = mock(ABICallElection.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -422,7 +1192,7 @@ public class BridgeStorageProviderTest {
         List<Integer> serializeCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         PowerMockito.when(BridgeSerializationUtils.serializeElection(any(ABICallElection.class))).then((InvocationOnMock invocation) -> {
             ABICallElection election = invocation.getArgumentAt(0, ABICallElection.class);
@@ -666,7 +1436,7 @@ public class BridgeStorageProviderTest {
         ReleaseRequestQueue requestQueueMock = mock(ReleaseRequestQueue.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -697,7 +1467,7 @@ public class BridgeStorageProviderTest {
         ReleaseTransactionSet transactionSetMock = mock(ReleaseTransactionSet.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -727,7 +1497,7 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         Coin expectedCoin = Coin.valueOf(5325);
         provider0.setFeePerKb(expectedCoin);
@@ -736,7 +1506,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         assertThat(provider.getFeePerKb(), is(expectedCoin));
     }
@@ -745,7 +1515,7 @@ public class BridgeStorageProviderTest {
     public void getFeePerKbElection_emptyVotes() {
         AddressBasedAuthorizer authorizerMock = mock(AddressBasedAuthorizer.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         HashMap<ABICallSpec, List<RskAddress>> electionVotes = new HashMap<>();
         byte[] serializedElection = BridgeSerializationUtils.serializeElection(
@@ -768,7 +1538,7 @@ public class BridgeStorageProviderTest {
                 .thenReturn(1);
         when(authorizerMock.isAuthorized(any(RskAddress.class)))
                 .thenReturn(true);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
 
         byte[] electionFee = new byte[] {0x43, 0x19};
         ABICallSpec expectedWinner = new ABICallSpec("setFeePerKb", new byte[][]{electionFee});
@@ -810,6 +1580,15 @@ public class BridgeStorageProviderTest {
                 Instant.ofEpochMilli(1000),
                 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
+    }
+
+    private PendingFederation buildMockPendingFederation(Integer... pks) {
+        return new PendingFederation(FederationTestUtils.getFederationMembersFromPks(pks));
+    }
+
+    private void useOriginalIntegerSerialization() {
+        PowerMockito.when(BridgeSerializationUtils.serializeInteger(any(Integer.class))).thenCallRealMethod();
+        PowerMockito.when(BridgeSerializationUtils.deserializeInteger(any(byte[].class))).thenCallRealMethod();
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
