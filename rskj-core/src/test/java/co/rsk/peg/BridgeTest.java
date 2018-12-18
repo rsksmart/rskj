@@ -1372,8 +1372,8 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.getFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class))).then((InvocationOnMock invocation) ->
-                BigInteger.valueOf(invocation.getArgumentAt(0, int.class)).toString()
-                        .concat(invocation.getArgumentAt(1, FederationMember.KeyType.class).getValue()).getBytes()
+                BigInteger.valueOf(invocation.getArgument(0)).toString()
+                        .concat(((FederationMember.KeyType)invocation.getArgument(1)).getValue()).getBytes()
         );
 
         Assert.assertTrue(Arrays.equals("10btc".getBytes(),
@@ -1511,8 +1511,8 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.getRetiringFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class))).then((InvocationOnMock invocation) ->
-                BigInteger.valueOf(invocation.getArgumentAt(0, int.class)).toString()
-                        .concat(invocation.getArgumentAt(1, FederationMember.KeyType.class).getValue()).getBytes()
+                BigInteger.valueOf(invocation.getArgument(0)).toString()
+                        .concat(((FederationMember.KeyType)invocation.getArgument(1)).getValue()).getBytes()
         );
 
         Assert.assertTrue(Arrays.equals("10btc".getBytes(),
@@ -1618,8 +1618,8 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.getPendingFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class))).then((InvocationOnMock invocation) ->
-                BigInteger.valueOf(invocation.getArgumentAt(0, int.class)).toString()
-                        .concat(invocation.getArgumentAt(1, FederationMember.KeyType.class).getValue()).getBytes()
+                BigInteger.valueOf(invocation.getArgument(0)).toString()
+                        .concat(((FederationMember.KeyType)invocation.getArgument(1)).getValue()).getBytes()
         );
 
         Assert.assertTrue(Arrays.equals("10btc".getBytes(),
