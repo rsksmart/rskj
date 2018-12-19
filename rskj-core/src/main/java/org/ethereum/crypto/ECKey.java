@@ -52,13 +52,11 @@ import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.util.Arrays;
@@ -520,18 +518,6 @@ public class ECKey implements Serializable {
             }
         }
 
-        /**
-         *
-         * @return -
-         */
-        public String toBase64() {
-            byte[] sigData = new byte[65];  // 1 header + 32 bytes for R + 32 bytes for S
-            sigData[0] = v;
-            System.arraycopy(bigIntegerToBytes(this.r, 32), 0, sigData, 1, 32);
-            System.arraycopy(bigIntegerToBytes(this.s, 32), 0, sigData, 33, 32);
-            return new String(Base64.encode(sigData), Charset.forName("UTF-8"));
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -618,45 +604,31 @@ public class ECKey implements Serializable {
      * determine if the signature was correct.
      *
      * @param messageHash a piece of human readable text that was signed
-     * @param signatureBase64 The Ethereum-format message signature in base64
+     * @param signature The message signature
      *
      * @return -
      * @throws SignatureException If the public key could not be recovered or if there was a signature format error.
      */
-    public static ECKey signatureToKey(byte[] messageHash, String signatureBase64) throws SignatureException {
-        byte[] signatureEncoded;
-        try {
-            signatureEncoded = Base64.decode(signatureBase64);
-        } catch (RuntimeException e) {
-            // This is what you get back from Bouncy Castle if base64 doesn't decode :(
-            throw new SignatureException("Could not decode base64", e);
-        }
-        // Parse the signature bytes into r/s and the selector value.
-        if (signatureEncoded.length < 65) {
-            throw new SignatureException("Signature truncated, expected 65 bytes and got " + signatureEncoded.length);
-        }
-        int header = signatureEncoded[0] & 0xFF;
+    public static ECKey signatureToKey(byte[] messageHash, ECDSASignature signature) throws SignatureException {
+        int header = signature.v & 0xFF;
         // The header byte: 0x1B = first key with even y, 0x1C = first key with odd y,
         //                  0x1D = second key with even y, 0x1E = second key with odd y
         if (header < 27 || header > 34) {
             throw new SignatureException("Header byte out of range: " + header);
         }
-        BigInteger r = new BigInteger(1, Arrays.copyOfRange(signatureEncoded, 1, 33));
-        BigInteger s = new BigInteger(1, Arrays.copyOfRange(signatureEncoded, 33, 65));
-        ECDSASignature sig = new ECDSASignature(r, s);
+
         boolean compressed = false;
         if (header >= 31) {
             compressed = true;
             header -= 4;
         }
         int recId = header - 27;
-        ECKey key = ECKey.recoverFromSignature(recId, sig, messageHash, compressed);
+        ECKey key = ECKey.recoverFromSignature(recId, signature, messageHash, compressed);
         if (key == null) {
             throw new SignatureException("Could not recover public key from signature");
         }
         return key;
     }
-
 
     /**
      * Decrypt cipher by AES in SIC(also know as CTR) mode
@@ -669,7 +641,6 @@ public class ECKey implements Serializable {
         if (priv == null) {
             throw new MissingPrivateKeyException();
         }
-
 
         AESEngine engine = new AESEngine();
         SICBlockCipher ctrEngine = new SICBlockCipher(engine);

@@ -236,7 +236,7 @@ public class PrecompiledContracts {
                 if (isValid(r, s, v)) {
                     ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[31]);
 
-                    ECKey key = ECKey.signatureToKey(h, signature.toBase64());
+                    ECKey key = ECKey.signatureToKey(h, signature);
                     out = new DataWord(key.getAddress());
                 }
             } catch (Exception any) {
