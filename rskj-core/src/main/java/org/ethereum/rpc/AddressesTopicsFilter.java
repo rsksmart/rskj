@@ -33,9 +33,11 @@ public class AddressesTopicsFilter {
     private RskAddress[] addresses = new RskAddress[0];
     private Bloom[][] filterBlooms;
 
-    public AddressesTopicsFilter(RskAddress[] addresses, Topic[] topics) {
+    public AddressesTopicsFilter(RskAddress[] addresses, Topic[][] topics) {
         if (topics != null) {
-            this.topics.add(topics);
+            for (int nt = 0; nt < topics.length; nt++) {
+                this.topics.add(topics[nt]);
+            }
         }
 
         this.addresses = addresses;
@@ -78,7 +80,9 @@ public class AddressesTopicsFilter {
             } else {
                 filterBlooms[i] = new Bloom[orTopics.length];
                 for (int j = 0; j < orTopics.length; j++) {
-                    filterBlooms[i][j] = Bloom.create(Keccak256Helper.keccak256(orTopics[j]));
+                    if (orTopics[j] != null) {
+                        filterBlooms[i][j] = Bloom.create(Keccak256Helper.keccak256(orTopics[j]));
+                    }
                 }
             }
         }
@@ -120,11 +124,15 @@ public class AddressesTopicsFilter {
 
         List<DataWord> logTopics = logInfo.getTopics();
 
-        if (logTopics.size() < this.topics.size()) {
-            return false;
-        }
-
         for (int i = 0; i < this.topics.size(); i++) {
+            if (logTopics.size() <= i) {
+                if (topics.get(i).length == 0) {
+                    continue;
+                }
+
+                return false;
+            }
+
             DataWord logTopic = logTopics.get(i);
             Topic[] orTopics = topics.get(i);
 

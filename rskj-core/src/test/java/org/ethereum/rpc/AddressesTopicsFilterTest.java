@@ -63,7 +63,7 @@ public class AddressesTopicsFilterTest {
     public void noMatchEmptyBloomWithFilterWithTopic() {
         Topic topic = createTopic();
 
-        AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], new Topic[] { topic });
+        AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], new Topic[][] {{ topic }});
 
         Assert.assertFalse(filter.matchBloom(new Bloom()));
     }
@@ -72,7 +72,7 @@ public class AddressesTopicsFilterTest {
     public void matchAllBloomWithFilterWithTopic() {
         Topic topic = createTopic();
 
-        AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], new Topic[] { topic });
+        AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], new Topic[][] {{ topic }});
 
         Assert.assertTrue(filter.matchBloom(getAllBloom()));
     }

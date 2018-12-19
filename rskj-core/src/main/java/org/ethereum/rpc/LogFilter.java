@@ -23,7 +23,9 @@ import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.LogInfo;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
@@ -105,8 +107,11 @@ public class LogFilter extends Filter {
     public static LogFilter fromFilterRequest(Web3.FilterRequest fr, Blockchain blockchain) throws Exception {
         RskAddress[] addresses;
 
-        // TODO get array of topics, with topics, and array of topics inside (the OR operation over topics)
-        Topic[] topics = null;
+        // Now, there is an array of array of topics
+        // first level are topic filters by position
+        // second level contains OR topic filters for that position
+        // null value matches anything
+        Topic[][] topics;
 
         if (fr.address instanceof String) {
             addresses = new RskAddress[] { new RskAddress(stringHexToByteArray((String) fr.address)) };
@@ -125,15 +130,21 @@ public class LogFilter extends Filter {
         }
 
         if (fr.topics != null) {
-            for (Object topic : fr.topics) {
+            topics = new Topic[fr.topics.length][];
+
+            for (int nt = 0; nt < fr.topics.length; nt++) {
+                Object topic = fr.topics[nt];
+
                 if (topic == null) {
-                    topics = new Topic[0];
+                    topics[nt] = new Topic[0];
                 } else if (topic instanceof String) {
-                    topics = new Topic[] { new Topic((String) topic) };
+                    topics[nt] = new Topic[] { new Topic((String) topic) };
                 } else if (topic instanceof Collection<?>) {
+                    // TODO list of topics as topic with OR logic
+
                     Collection<?> iterable = (Collection<?>)topic;
 
-                    topics = iterable.stream()
+                    topics[nt] = iterable.stream()
                             .filter(String.class::isInstance)
                             .map(String.class::cast)
                             .map(TypeConverter::stringHexToByteArray)
