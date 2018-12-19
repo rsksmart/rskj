@@ -82,6 +82,7 @@ public class Web3ImplLogsTest {
     //
     private final static String GET_VALUED_EVENT_SIGNATURE = "1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
     private final static String INC_EVENT_SIGNATURE = "6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad";
+    private final static String ONE_TOPIC = "0000000000000000000000000000000000000000000000000000000000000001";
     private final static String INCREMENT_METHOD_SIGNATURE = "371303c0";
     private final static String GET_VALUE_METHOD_SIGNATURE = "20965255";
     private final TestSystemProperties config = new TestSystemProperties();
@@ -470,6 +471,26 @@ public class Web3ImplLogsTest {
         for (int k = 0; k < logs.length; k++) {
             Assert.assertEquals(address, ((LogFilterElement) logs[k]).address);
         }
+    }
+
+    @Test
+    public void getLogsFromBlockchainWithCallContractAndFilterWithTwoTopics() throws Exception {
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[2];
+        fr.topics[0] = INC_EVENT_SIGNATURE;
+        fr.topics[1] = ONE_TOPIC;
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        Assert.assertEquals(1, logs.length);
+
+        Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
+        Assert.assertEquals("0x" + INC_EVENT_SIGNATURE, ((LogFilterElement) logs[0]).topics[0]);
+        Assert.assertEquals("0x" + ONE_TOPIC, ((LogFilterElement) logs[0]).topics[1]);
     }
 
     @Test
