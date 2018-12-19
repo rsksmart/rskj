@@ -375,7 +375,7 @@ public class Transaction {
         }
 
         try {
-            ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature().toBase64());
+            ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature());
             sender = new RskAddress(key.getAddress());
         } catch (SignatureException e) {
             logger.error(e.getMessage(), e);
