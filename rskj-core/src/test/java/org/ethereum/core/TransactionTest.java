@@ -74,7 +74,7 @@ public class TransactionTest {
         // step 2: hash = sha3(step1)
         byte[] txHash = HashUtil.keccak256(data);
 
-        String signature = key.doSign(txHash).toBase64();
+        ECKey.ECDSASignature signature = key.doSign(txHash);
         System.out.println(signature);
     }
 
@@ -109,7 +109,7 @@ public class TransactionTest {
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature().toBase64());
+        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature());
 
         System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
         System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
@@ -150,7 +150,7 @@ public class TransactionTest {
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature().toBase64());
+        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature());
 
         System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
         System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
