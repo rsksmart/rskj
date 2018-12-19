@@ -6,10 +6,11 @@ import co.rsk.metrics.profilers.impl.DummyProfiler;
 public class ProfilerFactory {
 
 
-    private static Profiler instance = null;
+    private static volatile Profiler instance = null;
 
 
-    public static void configure(Profiler profiler){
+
+    public static synchronized void configure(Profiler profiler){
         if(instance == null){
             instance = profiler;
         }

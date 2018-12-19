@@ -30,7 +30,7 @@ public class ExecutionProfiler implements Profiler {
 
     @Override
     public void stop(co.rsk.metrics.profilers.Metric metric) {
-        metric.setDelta(null);
+        //metric.setDelta(null);
     }
 
 

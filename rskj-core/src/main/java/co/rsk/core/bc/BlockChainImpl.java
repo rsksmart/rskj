@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.Metrics;
@@ -78,6 +79,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class BlockChainImpl implements Blockchain {
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final Repository repository;
@@ -205,12 +207,12 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private ImportResult internalTryToConnect(Block block) {
-
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
                 !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                          block.getShortHash(),
                          block.getNumber());
+
             return ImportResult.EXIST;
         }
 
@@ -237,6 +239,7 @@ public class BlockChainImpl implements Blockchain {
         else {
             logger.trace("get parent and total difficulty");
             parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
+
             if (parent == null) {
                 return ImportResult.NO_PARENT;
             }
@@ -549,11 +552,15 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private boolean isValid(Block block) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_VALIDATION);
         if (block.isGenesis()) {
+            profiler.stop(metric);
             return true;
         }
 
-        return blockValidator.isValid(block);
+        boolean isValid =  blockValidator.isValid(block);
+        profiler.stop(metric);
+        return isValid;
     }
 
     // Rolling counter that helps doing flush every RskSystemProperties.CONFIG.flushNumberOfBlocks() flush attempts

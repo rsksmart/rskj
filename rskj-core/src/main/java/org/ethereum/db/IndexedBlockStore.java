@@ -134,7 +134,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         long t1 = System.nanoTime();
 
         if (indexDB != null) {
-            Metric metric = profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
+            Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
             indexDB.commit();
             profiler.stop(metric);
         }
@@ -146,7 +146,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public synchronized void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCKSTORE_SAVE_BLOCK);
         List<BlockInfo> blockInfos = index.get(block.getNumber());
         if (blockInfos == null) {
             blockInfos = new ArrayList<>();
@@ -175,7 +174,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
         index.put(block.getNumber(), blockInfos);
         blockCache.addBlock(block);
         remascCache.put(block.getHash(), getSiblingsFromBlock(block));
-        profiler.stop(metric);
     }
 
     @Override
@@ -333,7 +331,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public synchronized void reBranch(Block forkBlock){
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_REBRANCH);
         Block bestBlock = getBestBlock();
         long maxLevel = Math.max(bestBlock.getNumber(), forkBlock.getNumber());
 
@@ -400,7 +397,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
             --currentLevel;
         }
 
-        profiler.stop(metric);
     }
 
     @VisibleForTesting

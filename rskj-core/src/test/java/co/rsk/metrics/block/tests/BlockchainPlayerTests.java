@@ -5,8 +5,6 @@ import co.rsk.metrics.block.BlockchainPlayer;
 import co.rsk.metrics.block.builder.InvalidGenesisFileException;
 import co.rsk.metrics.block.profiler.ProfilingException;
 import co.rsk.metrics.block.profiler.full.ExecutionProfiler;
-import co.rsk.metrics.block.profiler.full.Metric;
-import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
@@ -29,7 +27,7 @@ public class BlockchainPlayerTests {
 
     @Test
     public void testPlayBlockchainWithoutRemasc_DetailedProfiler() throws InvalidGenesisFileException, IOException, ProfilingException {
-        ExecutionProfiler.singleton().clean();
+        //ExecutionProfiler.singleton().clean();
         ProfilerFactory.configure(ExecutionProfiler.singleton());
         ExecutionProfiler.singleton().newBlock(-4,0);
 
@@ -52,7 +50,7 @@ public class BlockchainPlayerTests {
 
 
     @Test
-    public void testPlaySingleBlockchainWithoutRemasc_DetailedProfiler() throws InvalidGenesisFileException, IOException, ProfilingException {
+    public void testPlaySingleBlockchainWithoutRemasc() throws InvalidGenesisFileException, IOException, ProfilingException {
         ExecutionProfiler.singleton().clean();
         ProfilerFactory.configure(ExecutionProfiler.singleton());
         ExecutionProfiler.singleton().newBlock(-4,0);
@@ -94,7 +92,7 @@ public class BlockchainPlayerTests {
 
     @Test
     public void testPlaySingleBlockchainWithRemasc_DetailedProfiler() throws InvalidGenesisFileException, IOException, ProfilingException {
-        ExecutionProfiler.singleton().clean();
+        //ExecutionProfiler.singleton().clean();
         ProfilerFactory.configure(ExecutionProfiler.singleton());
         ExecutionProfiler.singleton().newBlock(-4,0);
 
@@ -109,6 +107,23 @@ public class BlockchainPlayerTests {
         System.gc();
     }
 
+    @Test
+    public void testPlaySingleBlockchainWithoutTokenTransfer() throws InvalidGenesisFileException, IOException, ProfilingException {
+        ProfilerFactory.configure(ExecutionProfiler.singleton());
+        ExecutionProfiler.singleton().newBlock(-4,0);
+
+        DefaultConfig defaultConfig = new DefaultConfig();
+        BlockStore sourceRemascBlockStore = defaultConfig.buildBlockStore(TestContext.BLOCK_DB_DIR+"-no-token-transfers");
+        int run =0;
+        TestSystemProperties config = new TestSystemProperties();
+        config.setBlockchainConfig(new RegTestGenesisConfig());
+        config.setGenesisInfo(TestContext.GENESIS_FILE);
+
+        playBlockchain_DetailedProfiler(sourceRemascBlockStore, TestContext.PLAY_DB_FILE+"-no-token-transfers"+run, TestContext.BLOCK_REPLAY_DIR+"/playRunNoTokens_"+run+".json", config, false);
+        System.gc();
+    }
+
+
 
 
     private void playBlockchain_DetailedProfiler(BlockStore blockStore, String destinationBlockchain, String profileOutput, TestSystemProperties config, boolean includesRemasc) throws InvalidGenesisFileException, IOException, ProfilingException {
@@ -116,12 +131,12 @@ public class BlockchainPlayerTests {
 
         boolean useCache = TestContext.IDEAL_CACHE_ON;
         BlockchainPlayer.playBlockchain(blockStore, destinationBlockchain, 1, config, includesRemasc, useCache);
-        List<Metric> nonstopped = ExecutionProfiler.singleton().isAllStopped();
+        List<co.rsk.metrics.profilers.Metric> nonstopped = ExecutionProfiler.singleton().isAllStopped();
         if(nonstopped.size()>0){
             System.out.println("NO SE PARARON TODOS LOS METRICS!!");
-            for(Metric metric : nonstopped){
+           /* for(co.rsk.metrics.profilers.Metric metric : nonstopped){
                 System.out.println(Profiler.PROFILING_TYPE.values()[metric.getType()]);
-            }
+            }*/
 
         }
         ExecutionProfiler.singleton().flushAggregated(profileOutput);

@@ -245,6 +245,7 @@ public class BlockChainBuilder {
                Block block = blockGenerator.createChildBlock(lastBlock, b.getTransactions(),null, b.getBlockDifficulty().longValue(), TestContext.MIN_GAS_PRICE, b.getBlockGasLimit().toByteArray(), new RskAddress(b.getCoinbase()));
 
                Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+                System.out.println("Executing block " + block.getNumber() + " with "+ block.getTransactionsList().size());
                blockExecutor.executeAndFillAll(block, lastBlock);
                profiler.stop(metric);
 

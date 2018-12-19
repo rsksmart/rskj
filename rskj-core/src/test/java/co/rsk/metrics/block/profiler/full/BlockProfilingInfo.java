@@ -5,7 +5,8 @@ import java.util.ArrayList;
 public class BlockProfilingInfo {
 
     private long blockId;
-    private ArrayList<Metric> metrics;
+    private ArrayList<MetricImpl> metrics;
+    private BlockConnectionMetric blockConnectionInfo;
     private int trxs;
 
     public BlockProfilingInfo(){
@@ -15,16 +16,24 @@ public class BlockProfilingInfo {
     public BlockProfilingInfo(long blockId, int trxs){
         this.blockId = blockId;
         this.metrics = new ArrayList<>();
+        this.blockConnectionInfo = null;
         this.trxs = trxs;
     }
 
-    public ArrayList<Metric> getMetrics(){
+    public ArrayList<MetricImpl> getMetrics(){
         return  this.metrics;
     }
-    public void setMetrics(ArrayList<Metric> metrics) {
+    public void setMetrics(ArrayList<MetricImpl> metrics) {
         this.metrics = metrics;
     }
 
+    public BlockConnectionMetric getBlockConnectionInfo() {
+        return blockConnectionInfo;
+    }
+
+    public void setBlockConnectionInfo(BlockConnectionMetric generalInfo) {
+        this.blockConnectionInfo = generalInfo;
+    }
 
     public long getBlockId() {
         return blockId;

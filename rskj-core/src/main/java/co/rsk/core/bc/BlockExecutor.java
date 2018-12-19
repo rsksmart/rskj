@@ -215,7 +215,6 @@ public class BlockExecutor {
                     block,
                     totalGasUsed
             );
-
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {
                 if (discardInvalidTxs) {
@@ -236,9 +235,8 @@ public class BlockExecutor {
 
             logger.trace("tx executed");
 
-            metric = profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
             track.commit();
-            profiler.stop(metric);
+
             logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();

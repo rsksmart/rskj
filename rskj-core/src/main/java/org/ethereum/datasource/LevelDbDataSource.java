@@ -65,7 +65,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-
     public LevelDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
         this.name = name;
@@ -153,7 +152,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public byte[] get(byte[] key) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DISK_READ);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -183,13 +182,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 }
             }
         } finally {
-            profiler.stop(metric);
             resetDbLock.readLock().unlock();
+            profiler.stop(metric);
         }
     }
 
     @Override
     public byte[] put(byte[] key, byte[] value) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -204,11 +204,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
             return value;
         } finally {
             resetDbLock.readLock().unlock();
+            profiler.stop(metric);
         }
     }
 
     @Override
     public void delete(byte[] key) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -222,11 +224,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
         } finally {
             resetDbLock.readLock().unlock();
+            profiler.stop(metric);
         }
     }
 
     @Override
     public Set<byte[]> keys() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -250,6 +254,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             }
         } finally {
             resetDbLock.readLock().unlock();
+            profiler.stop(metric);
         }
     }
 
@@ -258,10 +263,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
             for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
                 batch.put(entry.getKey(), entry.getValue());
             }
-            Metric metric =  profiler.start(Profiler.PROFILING_TYPE.DATA_FLUSH);
+            Metric metric =  profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
             db.write(batch);
             profiler.stop(metric);
         }
+
     }
 
     @Override
@@ -316,6 +322,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 logger.error("Failed to find the db file on the close: {} ", name);
                 panicProcessor.panic("leveldb", String.format("Failed to find the db file on the close: %s", name));
             }
+
         } finally {
             resetDbLock.writeLock().unlock();
         }

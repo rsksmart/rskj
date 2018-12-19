@@ -18,6 +18,9 @@
 
 package co.rsk.validators;
 
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
@@ -35,7 +38,7 @@ import static java.math.BigInteger.ONE;
 
 /**
  * Validate a transactions list.
- * It validates each transaction nonce againts the expeced sender account nonce
+ * It validates each transaction nonce against the expected sender account nonce
  * It allows many transactions with the same sender
  *
  * @return true if the transactions are valid, false if any transaction is invalid
@@ -43,6 +46,8 @@ import static java.math.BigInteger.ONE;
 public class BlockTxsValidationRule implements BlockParentDependantValidationRule{
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
+
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final Repository repository;
@@ -53,13 +58,16 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
 
     @Override
     public boolean isValid(Block block, Block parent) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_TXS_VAL);
         if(block == null || parent == null) {
             logger.warn("BlockTxsValidationRule - block or parent are null");
+            profiler.stop(metric);
             return false;
         }
 
         List<Transaction> txs = block.getTransactionsList();
         if (txs.isEmpty()) {
+            profiler.stop(metric);
             return true;
         }
 
@@ -72,6 +80,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
                 tx.verify();
             } catch (RuntimeException e) {
                 logger.warn("Unable to verify transaction", e);
+                profiler.stop(metric);
                 return false;
             }
 
@@ -91,10 +100,12 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
                                      String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
                                                    txNonce, expectedNonce, parentRepo.getNonce(sender), tx.getHash()));
 
+                profiler.stop(metric);
                 return false;
             }
         }
 
+        profiler.stop(metric);
         return true;
     }
 }

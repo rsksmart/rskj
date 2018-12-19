@@ -1,6 +1,10 @@
 package co.rsk.metrics.block.profiler.full;
 
-import co.rsk.metrics.block.profiler.ProfilingException;
+import co.rsk.metrics.block.profiler.full.marshalling.PersistedBlock;
+import co.rsk.metrics.block.profiler.full.marshalling.PersistedBlockMetric;
+import co.rsk.metrics.block.profiler.full.marshalling.PersistedMetric;
+import co.rsk.metrics.block.profiler.full.marshalling.ProfilerResult;
+import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -22,28 +26,42 @@ public class ExecutionProfiler implements Profiler {
     private static volatile ExecutionProfiler singleton = null;
     private static Object mutex = new Object();
 
+    //Metrics
     private ArrayList<BlockProfilingInfo> profilePerBlock;
-    private BlockProfilingInfo currentBlock;
-    private ArrayList<Metric> currentMetrics;
-    private ThreadMXBean thread;
-    int startCount;
-    int stopCount;
 
+    //Current block info
+    private BlockProfilingInfo currentBlock;
+    private ArrayList<MetricImpl> currentDetailedMetrics;
+
+
+    private ThreadMXBean thread;
+    int transferStartingBlock;
 
     @Override
-    public synchronized co.rsk.metrics.profilers.Metric start(PROFILING_TYPE type) {
-        startCount++;
-        Metric metric = new Metric(type, thread);
-        currentMetrics.add(metric);
-        return metric;
+    public synchronized Metric start(PROFILING_TYPE type) {
 
+        if(PROFILING_TYPE.BLOCK_CONNECTION.equals(type)){
+            BlockConnectionMetric blockConnectionMetrics = new BlockConnectionMetric(type, thread);
+            this.currentBlock.setBlockConnectionInfo(blockConnectionMetrics);
+            return blockConnectionMetrics;
+        }
+
+        MetricImpl metric = new MetricImpl(type, thread);
+        currentDetailedMetrics.add(metric);
+        return metric;
     }
 
-    @Override
-    public synchronized void stop(co.rsk.metrics.profilers.Metric metric) {
-        stopCount++;
+    /*@Override
+    public Metric startBlockConnection() {
+        BlockConnectionMetric blockConnectionMetrics = new BlockConnectionMetric(PROFILING_TYPE.BLOCK_CONNECTION, thread);
+        this.currentBlock.setBlockConnectionInfo(blockConnectionMetrics);
+        return blockConnectionMetrics;
+    }*/
 
-        metric.setDelta(thread);
+
+    @Override
+    public synchronized void stop(Metric metric) {
+        ((MetricImpl)metric).setDelta(thread);
     }
 
 
@@ -55,33 +73,35 @@ public class ExecutionProfiler implements Profiler {
         }
 
         this.currentBlock = new BlockProfilingInfo(blockId, trxQty);
-        this.currentMetrics = this.currentBlock.getMetrics();
+        this.currentDetailedMetrics = this.currentBlock.getMetrics();
     }
 
 
     public synchronized void clean() {
         this.currentBlock = null;
         this.profilePerBlock = new ArrayList<>();
-        this.currentMetrics = null;
-        startCount = stopCount = 0;
+        this.currentDetailedMetrics = null;
     }
 
-    private ExecutionProfiler() throws ProfilingException {
+    private ExecutionProfiler() {
         super();
-        startCount = stopCount = 0;
         this.currentBlock = null;
-        this.currentMetrics = null;
+        this.currentDetailedMetrics = null;
         this.profilePerBlock = new ArrayList<>();
+
         thread = ManagementFactory.getThreadMXBean();
-        if(!thread.isThreadCpuTimeSupported()){
-            throw new ProfilingException("Thread CPU Time is not supported");
+        if(thread.isThreadCpuTimeSupported()){
+            thread.setThreadCpuTimeEnabled(true);
         }
-        thread.setThreadCpuTimeEnabled(true);
+        //TODO: Add flag to avoid CPU time calculation when not supported
     }
 
+    public void setTransferStartingBlock(int transferStartingBlock) {
+        this.transferStartingBlock = transferStartingBlock;
+    }
 
     //Thread-safe singleton
-    public static final ExecutionProfiler singleton() throws ProfilingException {
+    public static final ExecutionProfiler singleton()  {
 
         ExecutionProfiler instance = singleton;
 
@@ -95,21 +115,30 @@ public class ExecutionProfiler implements Profiler {
         return instance; //instance instead of singleton is used to reduce volatile attribute access, increasing performance
     }
 
+    //Bill pug singleton
+    /*private static class ExecutionProfilerSingleton{
+        private static final ExecutionProfiler INSTANCE = new ExecutionProfiler();
+    }
 
-   public List<Metric> isAllStopped(){
+    public static ExecutionProfiler getInstance(){
+        return ExecutionProfilerSingleton.INSTANCE;
+    }
+*/
 
-        System.out.println("START COUNT "+startCount);
-        System.out.println("STOP COUNT" + stopCount);
-        List<Metric> nonStopped = new ArrayList<>();
+  public List<Metric> isAllStopped(){
+
+        List<co.rsk.metrics.profilers.Metric> nonStopped = new ArrayList<>();
+
         for(BlockProfilingInfo info : this.profilePerBlock){
-            int idx = 0;
-            for(Metric metric : info.getMetrics()){
+            for(MetricImpl metric : info.getMetrics()){
                 if(!metric.isStopped()){
                     nonStopped.add(metric);
-                    //System.out.println(idx);
                 }
-                idx++;
             }
+            if(!info.getBlockConnectionInfo().isStopped()){
+                nonStopped.add(info.getBlockConnectionInfo());
+            }
+
         }
 
         return  nonStopped;
@@ -122,54 +151,56 @@ public class ExecutionProfiler implements Profiler {
             this.profilePerBlock.add(this.currentBlock);
         }
 
-        ArrayList<BlockProfilingInfo> aggregatedList = new ArrayList<>();
+        ArrayList<PersistedBlock> aggregatedList = new ArrayList<>();
 
         for(BlockProfilingInfo info: this.profilePerBlock){
 
-            BlockProfilingInfo aggregatedBlock = new BlockProfilingInfo();
-            aggregatedBlock.setBlockId(info.getBlockId());
-            aggregatedBlock.setTrxs(info.getTrxs());
-            Map<Integer, Metric> metricsMap = new HashMap<>();
-            ArrayList<Metric> newMetrics = new ArrayList<>();
-            aggregatedBlock.setMetrics(newMetrics);
-            aggregatedList.add(aggregatedBlock);
-            Map<Integer, Integer> metricCount = new HashMap<>();
+            if(info.getBlockId() > 0 ){
+                PersistedBlock aggregatedBlock = new PersistedBlock();
+                aggregatedBlock.setBlockId(info.getBlockId());
+                aggregatedBlock.setTrxs(info.getTrxs());
 
+                Map<Integer, PersistedMetric> metricsMap = new HashMap<>();
+                aggregatedList.add(aggregatedBlock);
 
-            for(Metric metric : info.getMetrics()){
+                for(MetricImpl metric : info.getMetrics()){
 
-                if(metricsMap.containsKey(metric.getType())){
-                    Metric currentMetric = metricsMap.get(metric.getType());
-                    currentMetric.setThCPUt(currentMetric.getThCPUt()+ metric.getThCPUt());
-                    currentMetric.setgCt(currentMetric.getgCt() + metric.getgCt());
-                    currentMetric.setSt(currentMetric.getSt() + metric.getSt());
-
-                    //RAM usage is not additive, an average value must be calculated
-                    currentMetric.setRamAtStart(currentMetric.getRamAtStart() + metric.getRamAtStart());
-                    currentMetric.setRamAtEnd(currentMetric.getRamAtEnd() + metric.getRamAtEnd());
-                    metricCount.put(metric.getType(), metricCount.get(metric.getType()) + 1);
+                    if(metricsMap.containsKey(metric.getType())){
+                        PersistedMetric currentMetric = metricsMap.get(metric.getType());
+                        currentMetric.setThCPUt(currentMetric.getThCPUt()+ metric.getThCPUt());
+                        currentMetric.setgCt(currentMetric.getgCt() + metric.getgCt());
+                        currentMetric.setSt(currentMetric.getSt() + metric.getSt());
+                        currentMetric.setNumOfEvents(currentMetric.getNumOfEvents() + 1);
+                    }
+                    else{
+                        PersistedMetric newMetric = new PersistedMetric();
+                        newMetric.setThCPUt(metric.getThCPUt());
+                        newMetric.setgCt(metric.getgCt());
+                        newMetric.setSt(metric.getSt());
+                        newMetric.setType(metric.getType());
+                        newMetric.setNumOfEvents(1);
+                        metricsMap.put(metric.getType(), newMetric);
+                    }
                 }
-                else{
-                    Metric newMetric = new Metric();
-                    newMetric.setThCPUt(metric.getThCPUt());
-                    newMetric.setgCt(metric.getgCt());
-                    newMetric.setSt(metric.getSt());
-                    newMetric.setType(metric.getType());
-                    newMetric.setRamAtStart(metric.getRamAtStart());
-                    newMetric.setRamAtEnd(metric.getRamAtEnd());
-                    metricsMap.put(metric.getType(), newMetric);
-                    metricCount.put(metric.getType(), 1);
-                }
+
+                ArrayList<PersistedMetric> newMetrics = new ArrayList<>(metricsMap.size());
+                newMetrics.addAll(metricsMap.values());
+                aggregatedBlock.setMetrics(newMetrics);
+
+                //Shortening value to store in JSON, a rounded-up integer in MB
+                int startRam = Math.round(info.getBlockConnectionInfo().getRamAtStart()/(1048576));
+                int endRam = Math.round(info.getBlockConnectionInfo().getRamAtEnd()/(1048576)); // 1048576=1024*1024
+
+                PersistedBlockMetric blockConnection = new PersistedBlockMetric(startRam, endRam);
+                blockConnection.setThCPUt(info.getBlockConnectionInfo().getThCPUt());
+                blockConnection.setgCt(info.getBlockConnectionInfo().getgCt());
+                blockConnection.setSt(info.getBlockConnectionInfo().getSt());
+                blockConnection.setNumOfEvents(1);
+                aggregatedBlock.setBlockConnection(blockConnection);
+
             }
 
-            newMetrics.addAll(metricsMap.values());
 
-            //Calculate average RAM
-            for(Metric metric : newMetrics){
-                int count = metricCount.get(metric.getType());
-                metric.setRamAtStart(metric.getRamAtStart()/count);
-                metric.setRamAtEnd(metric.getRamAtEnd()/count);
-            }
         }
 
         Path path = Paths.get(pathStr);
@@ -183,32 +214,6 @@ public class ExecutionProfiler implements Profiler {
         }
 
         ProfilerResult result = new ProfilerResult(aggregatedList);
-
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            mapper.writeValue(new FileWriter(pathStr), result);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-    public void flush(String pathStr) {
-        if(this.currentBlock != null){
-            this.profilePerBlock.add(this.currentBlock);
-        }
-
-
-        Path path = Paths.get(pathStr);
-        if (Files.exists(path)) {
-            try {
-                Files.delete(path);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return;
-            }
-        }
-
-        ProfilerResult result = new ProfilerResult(profilePerBlock);
 
         ObjectMapper mapper = new ObjectMapper();
         try {

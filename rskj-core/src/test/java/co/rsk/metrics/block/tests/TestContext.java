@@ -8,6 +8,7 @@ public abstract class TestContext {
     public static final int EMPTY_BLOCKS_TO_GENERATE = 3990; //Empty blocks to include before the actual content
     public static final int BLOCKS_TO_GENERATE = 100; //Blocks with data to generate
     public static final int ACCOUNTS_TO_GENERATE = 1000; //Number of accounts to generate at genesis time
+    public static final int DUMMY_CONTRACTS_QTY = 100; //Number of contracts to generate for the special cases scenario
     public static final int TRX_MAX_RND_AMOUNT = 4; //Maximun unit of tokens/coin to transfer in a transaction
     public static final int DATASOURCE_VALUES_TO_GENERATE = 4000000; //Amount of pre-generated values to generate for each variable
     public static final int DATASOURCE_COINBASES_TO_GENERATE = 40; //Number of possible coinbases to generate and use
@@ -15,10 +16,15 @@ public abstract class TestContext {
     public static final BigInteger BLOCK_DIFFICULTY = BigInteger.ONE;
     public static final BigInteger ACCOUNT_BALANCE = new BigInteger("210000000000000000000000000000");
     public static final BigInteger MIN_GAS_PRICE = BigInteger.TEN;
-    public static final BigInteger BLOCK_GAS_LIMIT = new BigInteger("100000000000000");
-    public static final BigInteger TOKEN_TRANSF_TX_GAS_LIMIT = new BigInteger("1000000");
-    public static final BigInteger TRANSF_TX_GAS_LIMIT = new BigInteger("2141592");
-    public static final BigInteger INITIAL_TRX_NONCE = BigInteger.ZERO;//"deadbeefdeadbef0";
+    public static final BigInteger BLOCK_GAS_LIMIT = new BigInteger("6800000");
+    public static final BigInteger TOKEN_TRANSF_TX_GAS_LIMIT = new BigInteger("54000");
+    public static final BigInteger DUMMY_CONTRACT_GENERATION_GAS_LIMIT = new BigInteger("619858").add(new BigInteger("383600"));
+    public static final BigInteger ERC20_CONTRACT_GENERATION_GAS_LIMIT = DUMMY_CONTRACT_GENERATION_GAS_LIMIT;
+    public static final BigInteger EXCODESIZE_CONTRACT_GENERATION_GAS_LIMIT = new BigInteger("128641").add(new BigInteger("56905").add(new BigInteger("207600")));
+    public static final BigInteger DYN_CREATION_CONTRACT_GENERATION_GAS_LIMIT = EXCODESIZE_CONTRACT_GENERATION_GAS_LIMIT;
+    public static final BigInteger SPECIAL_CASES_CALL_GAS_LIMIT = BLOCK_GAS_LIMIT.subtract(new BigInteger("1000000"));
+    public static final BigInteger TRANSF_TX_GAS_LIMIT = new BigInteger("21000");
+    public static final BigInteger INITIAL_TRX_NONCE = BigInteger.ZERO;
 
 
 

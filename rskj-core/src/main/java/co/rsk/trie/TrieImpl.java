@@ -19,6 +19,9 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
@@ -63,6 +66,7 @@ public class TrieImpl implements Trie {
     private static final int ARITY = 2;
 
     private static final Logger logger = LoggerFactory.getLogger("newtrie");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final String PANIC_TOPIC = "newtrie";
     private static final String INVALID_ARITY = "Invalid arity";
@@ -170,7 +174,7 @@ public class TrieImpl implements Trie {
     }
 
     /**
-     * Pool method, to create a NewTrie from a serialized message
+     * Factory method, to create a NewTrie from a serialized message
      * the store argument is used to retrieve any subnode
      * of the subnode
      *
@@ -186,7 +190,10 @@ public class TrieImpl implements Trie {
     }
 
     private static TrieImpl fromMessage(byte[] message, int position, int msglength, TrieStore store) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
+
         if (message == null) {
+            profiler.stop(metric);
             return null;
         }
 
@@ -269,6 +276,9 @@ public class TrieImpl implements Trie {
             logger.error(ERROR_CREATING_TRIE, ex);
             panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE +": " + ex.getMessage());
             throw new TrieSerializationException(ERROR_CREATING_TRIE, ex);
+        }
+        finally {
+            profiler.stop(metric);
         }
     }
 

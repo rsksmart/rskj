@@ -40,7 +40,7 @@ public class ExecutionProfiler implements Profiler {
     public synchronized void stop(co.rsk.metrics.profilers.Metric metric) {
         stopCount++;
 
-        metric.setDelta(thread);
+        //metric.setDelta(thread);
     }
 
 

@@ -76,7 +76,7 @@ public class BlockchainPlayer {
                 if (blockInformation.isInMainChain()) {
 
                     //Fill cache:
-                    //TODO RAUL: REMOVE WHEN CACHE IS REMOVED
+                    //TODO RAUL: REMOVE WHEN CACHE IS IMPLEMENTED
                     if(cachedTrxs){
                         for(Transaction trx : block.getTransactionsList()){
                             trx.getSender();

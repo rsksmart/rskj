@@ -266,8 +266,9 @@ public class TransactionExecutor {
         precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
-            Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
+            Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
+            profiler.stop(metric);
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             BigInteger txGasLimit = toBI(tx.getGasLimit());
 
@@ -277,23 +278,25 @@ public class TransactionExecutor {
                 execError(String.format("Out of Gas calling precompiled contract 0x%s, required: %d, left: %s ",
                         targetAddress.toString(), (requiredGas + basicTxCost), mEndGas));
                 mEndGas = BigInteger.ZERO;
-                profiler.stop(metric);
                 return;
             } else {
                 long gasUsed = requiredGas + basicTxCost;
                 mEndGas = txGasLimit.subtract(BigInteger.valueOf(requiredGas + basicTxCost));
 
                 // FIXME: save return for vm trace
+                metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
                 try {
                     byte[] out = precompiledContract.execute(tx.getData());
                     result.setHReturn(out);
                 } catch (RuntimeException e) {
                     result.setException(e);
                 }
+                finally {
+                    profiler.stop(metric);
+                }
 
                 result.spendGas(gasUsed);
             }
-            profiler.stop(metric);
         } else {
             byte[] code = track.getCode(targetAddress);
             if (isEmpty(code)) {
@@ -397,7 +400,6 @@ public class TransactionExecutor {
                 } else {
                     mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
                     program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
-
                     cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
                 }
             }

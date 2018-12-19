@@ -1,7 +1,7 @@
 package co.rsk.metrics.block.tests;
 
 import co.rsk.metrics.block.profiler.ProfilingException;
-import co.rsk.metrics.block.profiler.full.ProfilerResult;
+import co.rsk.metrics.block.profiler.full.marshalling.ProfilerResult;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
