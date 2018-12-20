@@ -107,7 +107,10 @@ public class LogFilter extends Filter {
     public static LogFilter fromFilterRequest(Web3.FilterRequest fr, Blockchain blockchain) throws Exception {
         RskAddress[] addresses;
 
-        // TODO get array of topics, with topics, and array of topics inside (the OR operation over topics)
+        // Now, there is an array of array of topics
+        // first level are topic filters by position
+        // second level contains OR topic filters for that position
+        // null value matches anything
         Topic[][] topics;
 
         if (fr.address instanceof String) {

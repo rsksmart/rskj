@@ -494,6 +494,26 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void getLogsFromBlockchainWithCallContractAndFilterBySecondTopic() throws Exception {
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[2];
+        fr.topics[0] = null;
+        fr.topics[1] = ONE_TOPIC;
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        Assert.assertEquals(1, logs.length);
+
+        Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
+        Assert.assertEquals("0x" + INC_EVENT_SIGNATURE, ((LogFilterElement) logs[0]).topics[0]);
+        Assert.assertEquals("0x" + ONE_TOPIC, ((LogFilterElement) logs[0]).topics[1]);
+    }
+
+    @Test
     public void createMainContractWithoutEvents() throws Exception {
         Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
