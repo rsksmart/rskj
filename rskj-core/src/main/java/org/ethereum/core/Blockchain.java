@@ -26,6 +26,7 @@ import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public interface Blockchain {
@@ -69,6 +70,7 @@ public interface Blockchain {
 
     BlockChainStatus getStatus();
 
+    @Nullable
     TransactionInfo getTransactionInfo(byte[] hash);
 
     void setTotalDifficulty(BlockDifficulty totalDifficulty);
