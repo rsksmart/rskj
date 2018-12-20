@@ -26,6 +26,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
@@ -35,7 +36,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
-import org.ethereum.util.Utils;
 import org.ethereum.vm.*;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -48,13 +48,10 @@ import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.*;
 
-import static java.lang.StrictMath.min;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.ethereum.util.BIUtil.*;
@@ -184,8 +181,8 @@ public class Program {
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
 
-    boolean isLogEnabled;
-    boolean isGasLogEnabled;
+    private boolean isLogEnabled;
+    private boolean isGasLogEnabled;
 
     public Program(
             VmConfig config,
@@ -303,7 +300,7 @@ public class Program {
         return this.previouslyExecutedOp;
     }
 
-    public DataWord getNewDataWordFast() {
+    private DataWord getNewDataWordFast() {
         if (dataWordPool==null) {
             return new DataWord();
         }
@@ -320,19 +317,19 @@ public class Program {
         stackPush(dw);
     }
 
-    public void stackPushZero() {
+    private void stackPushZero() {
         DataWord dw=getNewDataWordFast();
         dw.zero();
         stackPush(dw);
     }
 
-    public void stackPushOne() {
+    private void stackPushOne() {
         DataWord stackWord=getNewDataWordFast();
         stackWord.assignData(DataWord.ONE.getData());
         stackPush(stackWord);
     }
 
-    public void stackClear(){
+    private void stackClear(){
         if (dataWordPool==null) {
             stack.clear();
             return;
@@ -493,7 +490,7 @@ public class Program {
         memory.write(addrB.intValue(), value.getData(), value.getData().length, false);
     }
 
-    public void memorySaveLimited(int addr, byte[] data, int dataSize) {
+    private void memorySaveLimited(int addr, byte[] data, int dataSize) {
         memory.write(addr, data, dataSize, true);
     }
 
@@ -871,7 +868,7 @@ public class Program {
         }
     }
 
-    public boolean executeCode(
+    private boolean executeCode(
             MessageCall msg,
             RskAddress contextAddress,
             Coin contextBalance,
@@ -879,7 +876,7 @@ public class Program {
             Repository track,
             byte[] programCode,
             RskAddress senderAddress,
-            byte[] data ) {
+            byte[] data) {
 
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult = null;
@@ -972,7 +969,7 @@ public class Program {
         stopped=false;
     }
 
-    public void clearUsedGas() {
+    private void clearUsedGas() {
         getResult().clearUsedGas();
     }
 
@@ -980,7 +977,7 @@ public class Program {
         spendGas(getRemainingGas(), "Spending all remaining");
     }
 
-    public void refundGas(long gasValue, String cause) {
+    private void refundGas(long gasValue, String cause) {
         if (isGasLogEnabled) {
             gasLogger.info("[{}] Refund for cause: [{}], gas: [{}]", invoke.hashCode(), cause, gasValue);
         }
@@ -1010,7 +1007,7 @@ public class Program {
         storageSave(word1.getData(), word2.getData());
     }
 
-    public void storageSave(byte[] key, byte[] val) {
+    private void storageSave(byte[] key, byte[] val) {
         // DataWord constructor some times reference the passed byte[] instead
         // of making a copy.
         DataWord keyWord = new DataWord(key);
@@ -1291,7 +1288,7 @@ public class Program {
         return trace;
     }
 
-    public int processAndSkipCodeHeader(int offset) {
+    private int processAndSkipCodeHeader(int offset) {
         int ret = offset;
         if (ops.length >= 4) {
             OpCode op = OpCode.code(ops[0]);
@@ -1324,7 +1321,7 @@ public class Program {
         computeJumpDests(i);
     }
 
-    public void computeJumpDests(int start) {
+    private void computeJumpDests(int start) {
         if (jumpdestSet == null) {
             jumpdestSet = new BitSet(ops.length);
         }
@@ -1464,7 +1461,7 @@ public class Program {
         }
     }
 
-    public boolean byTestingSuite() {
+    private boolean byTestingSuite() {
         return invoke.byTestingSuite();
     }
 
