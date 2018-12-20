@@ -75,18 +75,6 @@ public class BitSetTest {
     }
 
     @Test
-    public void setAll() {
-        BitSet set = new BitSet(17);
-
-        set.setAll();
-
-        Assert.assertEquals(17, set.size());
-
-        for (int k = 0; k < set.size(); k++)
-            Assert.assertTrue(set.get(k));
-    }
-
-    @Test
     public void exceptionIfCreatedWithNegativeSize() {
 
 
