@@ -390,26 +390,6 @@ public class ContractDetailsImplTest {
     }
 
     @Test
-    public void setStorageUsingKeysAndValues() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
-
-        List<DataWord> keys = new ArrayList<>();
-
-        keys.add(DataWord.ZERO);
-        keys.add(DataWord.ONE);
-
-        List<DataWord> values = new ArrayList<>();
-
-        values.add(new DataWord(42));
-        values.add(new DataWord(144));
-
-        details.setStorage(keys, values);
-
-        Assert.assertEquals(new DataWord(42), details.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), details.get(DataWord.ONE));
-    }
-
-    @Test
     public void setStorageUsingMap() {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
@@ -430,31 +410,19 @@ public class ContractDetailsImplTest {
 
         byte[] initialRoot = details.getStorageHash();
 
-        List<DataWord> keys = new ArrayList<>();
-
-        keys.add(DataWord.ZERO);
-        keys.add(DataWord.ONE);
-
-        List<DataWord> values = new ArrayList<>();
-
-        values.add(new DataWord(42));
-        values.add(new DataWord(144));
-
-        details.setStorage(keys, values);
+        Map<DataWord, DataWord> firstStorage = new HashMap<>();
+        firstStorage.put(DataWord.ZERO, new DataWord(42));
+        firstStorage.put(DataWord.ONE, new DataWord(144));
+        details.setStorage(firstStorage);
 
         byte[] root = details.getStorageHash();
 
-        List<DataWord> keys2 = new ArrayList<>();
+        Map<DataWord, DataWord> secondStorage = new HashMap<>();
 
-        keys2.add(new DataWord(2));
-        keys2.add(new DataWord(3));
+        secondStorage.put(new DataWord(2), new DataWord(1));
+        secondStorage.put(new DataWord(3), new DataWord(2));
 
-        List<DataWord> values2 = new ArrayList<>();
-
-        values2.add(new DataWord(1));
-        values2.add(new DataWord(2));
-
-        details.setStorage(keys2, values2);
+        details.setStorage(secondStorage);
 
         ContractDetails result = details.getSnapshotTo(root);
 
@@ -476,17 +444,11 @@ public class ContractDetailsImplTest {
         HashMapDB store = new HashMapDB();
         ContractDetailsImpl details = buildContractDetails(store);
 
-        List<DataWord> keys = new ArrayList<>();
+        Map<DataWord, DataWord> storage = new HashMap<>();
+        storage.put(DataWord.ZERO, new DataWord(42));
+        storage.put(DataWord.ONE, new DataWord(144));
 
-        keys.add(DataWord.ZERO);
-        keys.add(DataWord.ONE);
-
-        List<DataWord> values = new ArrayList<>();
-
-        values.add(new DataWord(42));
-        values.add(new DataWord(144));
-
-        details.setStorage(keys, values);
+        details.setStorage(storage);
         details.syncStorage();
 
         byte[] encoded = details.getEncoded();
@@ -506,17 +468,11 @@ public class ContractDetailsImplTest {
         HashMapDB store = new HashMapDB();
         ContractDetailsImpl details = buildContractDetails(store);
 
-        List<DataWord> keys = new ArrayList<>();
+        Map<DataWord, DataWord> storage = new HashMap<>();
+        storage.put(DataWord.ZERO, new DataWord(42));
+        storage.put(DataWord.ONE, new DataWord(144));
 
-        keys.add(DataWord.ZERO);
-        keys.add(DataWord.ONE);
-
-        List<DataWord> values = new ArrayList<>();
-
-        values.add(new DataWord(42));
-        values.add(new DataWord(144));
-
-        details.setStorage(keys, values);
+        details.setStorage(storage);
 
         byte[] encoded = details.getEncodedOldFormat();
 

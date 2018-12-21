@@ -23,7 +23,6 @@ import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -60,8 +59,6 @@ public interface ContractDetails {
     Map<DataWord,DataWord> getStorage(@Nullable Collection<DataWord> keys);
 
     Map<DataWord, DataWord> getStorage();
-
-    void setStorage(List<DataWord> storageKeys, List<DataWord> storageValues);
 
     void setStorage(Map<DataWord, DataWord> storage);
 
