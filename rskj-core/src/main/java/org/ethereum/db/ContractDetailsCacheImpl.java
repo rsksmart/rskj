@@ -203,21 +203,6 @@ public class ContractDetailsCacheImpl implements ContractDetails {
     }
 
     @Override
-    public void setStorage(List<DataWord> storageKeys, List<DataWord> storageValues) {
-
-        for (int i = 0; i < storageKeys.size(); ++i){
-
-            DataWord key   = storageKeys.get(i);
-            DataWord value = storageValues.get(i);
-
-            if (value.isZero()) {
-                storage.put(key, null);
-            }
-        }
-
-    }
-
-    @Override
     public void setStorage(Map<DataWord, DataWord> storage) {
         this.storage = storage;
     }
