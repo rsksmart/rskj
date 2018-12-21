@@ -1412,7 +1412,7 @@ public class VM {
         DataWord codeAddress = program.stackPop();
 
         // value is always zero in a DELEGATECALL operation
-        DataWord value = op.equals(OpCode.DELEGATECALL) ? DataWord.ZERO : program.stackPop();
+        DataWord value = op.equals(OpCode.DELEGATECALL) || op.equals(OpCode.STATICCALL) ? DataWord.ZERO : program.stackPop();
 
         if (program.isStaticCall() && op == CALL && !value.isZero()) {
             throw Program.ExceptionHelper.modificationException();
