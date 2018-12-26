@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,18 +16,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.crypto;
+package co.rsk.rpc.modules.evm;
 
-import org.bouncycastle.crypto.KeyEncoder;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+public interface EvmModule {
+    String evm_increaseTime(String seconds);
 
-/**
- * Created by Anton Nashatyrev on 01.10.2015.
- */
-public class ECIESPublicKeyEncoder implements KeyEncoder {
-    @Override
-    public byte[] getEncoded(AsymmetricKeyParameter asymmetricKeyParameter) {
-        return ((ECPublicKeyParameters) asymmetricKeyParameter).getQ().getEncoded(false);
-    }
+    void evm_mine();
+
+    void evm_reset();
+
+    boolean evm_revert(String snapshotId);
+
+    String evm_snapshot();
+
+    void evm_startMining();
+
+    void evm_stopMining();
 }

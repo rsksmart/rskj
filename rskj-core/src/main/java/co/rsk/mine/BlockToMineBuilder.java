@@ -41,7 +41,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
-import java.time.Clock;
 import java.util.*;
 
 /**
@@ -60,16 +59,13 @@ public class BlockToMineBuilder {
     private final DifficultyCalculator difficultyCalculator;
     private final GasLimitCalculator gasLimitCalculator;
     private final BlockValidationRule validationRules;
+    private final MinerClock clock;
 
-    private final Clock clock;
     private final MinimumGasPriceCalculator minimumGasPriceCalculator;
     private final MinerUtils minerUtils;
     private final BlockExecutor executor;
 
     private final Coin minerMinGasPriceTarget;
-
-    private long timeAdjustment;
-    private long minimumAcceptableTime;
 
     @Autowired
     public BlockToMineBuilder(
@@ -81,7 +77,8 @@ public class BlockToMineBuilder {
             GasLimitCalculator gasLimitCalculator,
             @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
             RskSystemProperties config,
-            ReceiptStore receiptStore) {
+            ReceiptStore receiptStore,
+            MinerClock clock) {
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
         this.blockStore = Objects.requireNonNull(blockStore);
@@ -89,8 +86,7 @@ public class BlockToMineBuilder {
         this.difficultyCalculator = Objects.requireNonNull(difficultyCalculator);
         this.gasLimitCalculator = Objects.requireNonNull(gasLimitCalculator);
         this.validationRules = Objects.requireNonNull(validationRules);
-
-        this.clock = Clock.systemUTC();
+        this.clock = Objects.requireNonNull(clock);
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
@@ -145,8 +141,6 @@ public class BlockToMineBuilder {
 
         final List<Transaction> txsToRemove = new ArrayList<>();
         final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
-        minimumAcceptableTime = newBlockParent.getTimestamp() + 1;
-
         final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice);
 
         newBlock.setExtraData(extraData);
@@ -191,7 +185,7 @@ public class BlockToMineBuilder {
             Coin minimumGasPrice) {
         final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        final long timestampSeconds = this.getCurrentTimeInSeconds();
+        final long timestampSeconds = clock.calculateTimestampForChild(newBlockParent);
 
         // Set gas limit before executing block
         BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getMininimum());
@@ -222,21 +216,5 @@ public class BlockToMineBuilder {
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
         return newHeader;
-    }
-
-    // Note that this needs to be refactored.
-    public long getCurrentTimeInSeconds() {
-        long ret = clock.millis() / 1000 + timeAdjustment;
-        return Long.max(ret, minimumAcceptableTime);
-    }
-
-    // Note that this needs to be refactored.
-    public long increaseTime(long seconds) {
-        if (seconds <= 0) {
-            return timeAdjustment;
-        }
-
-        timeAdjustment += seconds;
-        return timeAdjustment;
     }
 }

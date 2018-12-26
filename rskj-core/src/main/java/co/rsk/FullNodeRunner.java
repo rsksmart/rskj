@@ -72,6 +72,7 @@ public class FullNodeRunner implements NodeRunner {
     private final PeerServer peerServer;
     private final SyncPool.PeerClientFactory peerClientFactory;
     private final TransactionGateway transactionGateway;
+    private final BuildInfo buildInfo;
 
     private final PruneService pruneService;
 
@@ -94,7 +95,8 @@ public class FullNodeRunner implements NodeRunner {
             TransactionPool transactionPool,
             PeerServer peerServer,
             SyncPool.PeerClientFactory peerClientFactory,
-            TransactionGateway transactionGateway) {
+            TransactionGateway transactionGateway,
+            BuildInfo buildInfo) {
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
@@ -113,6 +115,7 @@ public class FullNodeRunner implements NodeRunner {
         this.peerServer = peerServer;
         this.peerClientFactory = peerClientFactory;
         this.transactionGateway = transactionGateway;
+        this.buildInfo = buildInfo;
 
         PruneConfiguration pruneConfiguration = rskSystemProperties.getPruneConfiguration();
         this.pruneService = new PruneService(pruneConfiguration, rskSystemProperties, blockchain, PrecompiledContracts.REMASC_ADDR);
@@ -128,7 +131,7 @@ public class FullNodeRunner implements NodeRunner {
                 rskSystemProperties.projectVersion(),
                 rskSystemProperties.projectVersionModifier()
         );
-        BuildInfo.printInfo();
+        buildInfo.printInfo(logger);
 
         transactionGateway.start();
         // this should be the genesis block at this point

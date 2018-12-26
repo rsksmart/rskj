@@ -53,14 +53,6 @@ public interface MinerServer {
 
     SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock);
 
-    boolean generateFallbackBlock();
-
-    void setFallbackMining(boolean p);
-
-    void setAutoSwitchBetweenNormalAndFallbackMining(boolean p);
-
-    boolean isFallbackMining();
-
     RskAddress getCoinbaseAddress();
 
     MinerWork getWork();
@@ -68,10 +60,6 @@ public interface MinerServer {
     void buildBlockToMine(@Nonnull Block newParent, boolean createCompetitiveBlock);
 
     void setExtraData(byte[] extraData);
-
-    long getCurrentTimeInSeconds();
-
-    long increaseTime(long seconds);
 
     Optional<Block> getLatestBlock();
 }

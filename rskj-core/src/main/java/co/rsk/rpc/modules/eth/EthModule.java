@@ -30,6 +30,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -45,7 +46,7 @@ import static org.ethereum.rpc.TypeConverter.toJsonHex;
 // TODO add all RPC methods
 @Component
 public class EthModule
-    implements EthModuleSolidity, EthModuleWallet {
+    implements EthModuleSolidity, EthModuleWallet, EthModuleTransaction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
@@ -55,6 +56,7 @@ public class EthModule
     private final ExecutionBlockRetriever executionBlockRetriever;
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
+    private final EthModuleTransaction ethModuleTransaction;
 
     @Autowired
     public EthModule(
@@ -63,13 +65,15 @@ public class EthModule
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
             EthModuleSolidity ethModuleSolidity,
-            EthModuleWallet ethModuleWallet) {
+            EthModuleWallet ethModuleWallet,
+            EthModuleTransaction ethModuleTransaction) {
         this.config = config;
         this.blockchain = blockchain;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
+        this.ethModuleTransaction = ethModuleTransaction;
     }
 
     @Override
@@ -100,6 +104,10 @@ public class EthModule
         try {
             Block executionBlock = executionBlockRetriever.getExecutionBlock(bnOrId);
             ProgramResult res = callConstant(args, executionBlock);
+            if (res.isRevert()) {
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+            }
+
             return s = toJsonHex(res.getHReturn());
         } finally {
             LOGGER.debug("eth_call(): {}", s);
@@ -123,7 +131,12 @@ public class EthModule
 
     @Override
     public String sendTransaction(Web3.CallArguments args) {
-        return ethModuleWallet.sendTransaction(args);
+        return ethModuleTransaction.sendTransaction(args);
+    }
+
+    @Override
+    public String sendRawTransaction(String rawData) {
+        return ethModuleTransaction.sendRawTransaction(rawData);
     }
 
     @Override

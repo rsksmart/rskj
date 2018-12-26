@@ -21,23 +21,23 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.InvalidInetAddressException;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
@@ -59,7 +59,6 @@ import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -71,8 +70,6 @@ import static org.ethereum.rpc.TypeConverter.*;
 
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
-
-    private final MinerManager minerManager = new MinerManager();
 
     public org.ethereum.core.Repository repository;
 
@@ -98,10 +95,11 @@ public class Web3Impl implements Web3 {
     private final RskSystemProperties config;
 
     private final FilterManager filterManager;
-    private final SnapshotManager snapshotManager;
+    private final BuildInfo buildInfo;
 
     private final PersonalModule personalModule;
     private final EthModule ethModule;
+    private final EvmModule evmModule;
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
     private final DebugModule debugModule;
@@ -117,6 +115,7 @@ public class Web3Impl implements Web3 {
             MinerServer minerServer,
             PersonalModule personalModule,
             EthModule ethModule,
+            EvmModule evmModule,
             TxPoolModule txPoolModule,
             MnrModule mnrModule,
             DebugModule debugModule,
@@ -126,11 +125,13 @@ public class Web3Impl implements Web3 {
             PeerServer peerServer,
             BlockProcessor nodeBlockProcessor,
             HashRateCalculator hashRateCalculator,
-            ConfigCapabilities configCapabilities) {
+            ConfigCapabilities configCapabilities,
+            BuildInfo buildInfo) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.evmModule = evmModule;
         this.repository = repository;
         this.transactionPool = transactionPool;
         this.minerClient = minerClient;
@@ -148,7 +149,7 @@ public class Web3Impl implements Web3 {
         this.configCapabilities = configCapabilities;
         this.config = config;
         filterManager = new FilterManager(eth);
-        snapshotManager = new SnapshotManager(blockchain, transactionPool);
+        this.buildInfo = buildInfo;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
         personalModule.init(this.config);
@@ -176,7 +177,7 @@ public class Web3Impl implements Web3 {
     public String web3_clientVersion() {
         String clientVersion = baseClientVersion + "/" + config.projectVersion() + "/" +
                 System.getProperty("os.name") + "/Java1.8/" +
-                config.projectVersionModifier() + "-" + BuildInfo.getBuildHash();
+                config.projectVersionModifier() + "-" + buildInfo.getBuildHash();
 
         if (logger.isDebugEnabled()) {
             logger.debug("web3_clientVersion(): {}", clientVersion);
@@ -547,28 +548,6 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    @Override
-    public String eth_sendRawTransaction(String rawData) throws Exception {
-        String s = null;
-        try {
-            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
-
-            if (null == tx.getGasLimit()
-                    || null == tx.getGasPrice()
-                    || null == tx.getValue()) {
-                throw new JsonRpcInvalidParamException("Missing parameter, gasPrice, gas or value");
-            }
-
-            eth.submitTransaction(tx);
-
-            return s = tx.getHash().toJsonString();
-        } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("eth_sendRawTransaction({}): {}", rawData, s);
-            }
-        }
-    }
-
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
         BlockInformationResult bir = new BlockInformationResult();
         bir.hash = TypeConverter.toJsonHex(blockInformation.getHash());
@@ -922,6 +901,13 @@ public class Web3Impl implements Web3 {
     public Object[] eth_getFilterChanges(String id) {
         logger.debug("eth_getFilterChanges ...");
 
+        // TODO(mc): this is a quick solution that seems to work with OpenZeppelin tests, but needs to be reviewed
+        // We do the same as in Ganache: mine a block in each request to getFilterChanges so block filters work
+        if (config.isMinerClientEnabled() && config.minerClientAutoMine()) {
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            minerClient.mineBlock();
+        }
+
         Object[] s = null;
 
         try {
@@ -1091,6 +1077,11 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public EvmModule getEvmModule() {
+        return evmModule;
+    }
+
+    @Override
     public TxPoolModule getTxPoolModule() {
         return txPoolModule;
     }
@@ -1103,83 +1094,6 @@ public class Web3Impl implements Web3 {
     @Override
     public DebugModule getDebugModule() {
         return debugModule;
-    }
-
-    @Override
-    public String evm_snapshot() {
-        int snapshotId = snapshotManager.takeSnapshot();
-
-        logger.debug("evm_snapshot(): {}", snapshotId);
-
-        return toJsonHex(snapshotId);
-    }
-
-    @Override
-    public boolean evm_revert(String snapshotId) {
-        try {
-            int sid = stringHexToBigInteger(snapshotId).intValue();
-            return snapshotManager.revertToSnapshot(sid);
-        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-            throw new JsonRpcInvalidParamException("invalid snapshot id " + snapshotId, e);
-        } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("evm_revert({})", snapshotId);
-            }
-        }
-    }
-
-    @Override
-    public void evm_reset() {
-        snapshotManager.resetSnapshots();
-        if (logger.isDebugEnabled()) {
-            logger.debug("evm_reset()");
-        }
-    }
-
-    @Override
-    public void evm_mine() {
-        minerManager.mineBlock(this.blockchain, minerClient, minerServer);
-        if (logger.isDebugEnabled()) {
-            logger.debug("evm_mine()");
-        }
-    }
-
-    @Override
-    public void evm_fallbackMine() {
-        minerManager.fallbackMineBlock(this.blockchain, minerClient, minerServer);
-        if (logger.isDebugEnabled()) {
-            logger.debug("evm_fallbackMine()");
-        }
-    }
-
-    @Override
-    public void evm_startMining() {
-        minerServer.start();
-        if (logger.isDebugEnabled()) {
-            logger.debug("evm_startMining()");
-        }
-    }
-
-    @Override
-    public void evm_stopMining() {
-        minerServer.stop();
-        if (logger.isDebugEnabled()) {
-            logger.debug("evm_stopMining()");
-        }
-    }
-
-    @Override
-    public String evm_increaseTime(String seconds) {
-        try {
-            long nseconds = stringNumberAsBigInt(seconds).longValue();
-            String result = toJsonHex(minerServer.increaseTime(nseconds));
-            if (logger.isDebugEnabled()) {
-                logger.debug("evm_increaseTime({}): {}", nseconds, result);
-            }
-            return result;
-        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-            throw new JsonRpcInvalidParamException("invalid number of seconds " + seconds, e);
-        }
     }
 
     /**

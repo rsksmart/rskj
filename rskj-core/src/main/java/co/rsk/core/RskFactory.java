@@ -22,14 +22,14 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
+import co.rsk.mine.*;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.*;
+import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
@@ -41,6 +41,7 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
+import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
@@ -65,6 +66,7 @@ import org.ethereum.net.server.PeerServerImpl;
 import org.ethereum.rpc.Web3;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.sync.SyncPool;
+import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +74,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+
+import java.io.IOException;
+import java.time.Clock;
+import java.util.Properties;
 
 @Configuration
 @ComponentScan("org.ethereum")
@@ -148,6 +156,7 @@ public class RskFactory {
                         MnrModule mnrModule,
                         PersonalModule personalModule,
                         EthModule ethModule,
+                        EvmModule evmModule,
                         TxPoolModule txPoolModule,
                         DebugModule debugModule,
                         ChannelManager channelManager,
@@ -159,7 +168,8 @@ public class RskFactory {
                         PeerServer peerServer,
                         BlockProcessor nodeBlockProcessor,
                         HashRateCalculator hashRateCalculator,
-                        ConfigCapabilities configCapabilities) {
+                        ConfigCapabilities configCapabilities,
+                        BuildInfo buildInfo) {
         return new Web3RskImpl(
                 rsk,
                 blockchain,
@@ -169,6 +179,7 @@ public class RskFactory {
                 minerServer,
                 personalModule,
                 ethModule,
+                evmModule,
                 txPoolModule,
                 mnrModule,
                 debugModule,
@@ -181,7 +192,8 @@ public class RskFactory {
                 peerServer,
                 nodeBlockProcessor,
                 hashRateCalculator,
-                configCapabilities
+                configCapabilities,
+                buildInfo
         );
     }
 
@@ -322,12 +334,12 @@ public class RskFactory {
     }
 
     @Bean
-    public EthModuleWallet getEthModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, TransactionPool transactionPool) {
+    public EthModuleWallet getEthModuleWallet(Wallet wallet) {
         if (wallet == null) {
             return new EthModuleWalletDisabled();
         }
 
-        return new EthModuleWalletEnabled(config, rsk, wallet, transactionPool);
+        return new EthModuleWalletEnabled(wallet);
     }
 
     @Bean
@@ -339,6 +351,35 @@ public class RskFactory {
             logger.debug("Solidity compiler unavailable", e);
             return new EthModuleSolidityDisabled();
         }
+    }
+
+    @Bean
+    public EthModuleTransaction getEthModuleTransaction(
+            RskSystemProperties config,
+            Wallet wallet,
+            TransactionPool transactionPool,
+            MinerServer minerServer,
+            MinerClient minerClient,
+            Blockchain blockchain) {
+
+        if (wallet == null) {
+            return new EthModuleTransactionDisabled(config, transactionPool);
+        }
+
+        if (config.minerClientAutoMine()) {
+            return new EthModuleTransactionInstant(config, wallet, transactionPool, minerServer, minerClient, blockchain);
+        }
+
+        return new EthModuleTransactionBase(config, wallet, transactionPool);
+    }
+
+    @Bean
+    public MinerClient getMinerClient(RskSystemProperties config, Rsk rsk, MinerServer minerServer) {
+        if (config.minerClientAutoMine()) {
+            return new AutoMinerClient(minerServer);
+        }
+
+        return new MinerClientImpl(rsk, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
     }
 
     @Bean
@@ -369,5 +410,25 @@ public class RskFactory {
             TransactionPool transactionPool,
             CompositeEthereumListener emitter){
         return new TransactionGateway(channelManager, transactionPool, emitter);
+    }
+
+    @Bean
+    public BuildInfo getBuildInfo(ResourceLoader resourceLoader) {
+        Properties props = new Properties();
+        Resource buldInfoFile = resourceLoader.getResource("classpath:build-info.properties");
+        try {
+            props.load(buldInfoFile.getInputStream());
+        } catch (IOException ioe) {
+            logger.warn("build-info.properties file missing from classpath");
+            logger.trace("build-info.properties file missing from classpath exception", ioe);
+            return new BuildInfo("dev", "dev");
+        }
+
+        return new BuildInfo(props.getProperty("build.hash"), props.getProperty("build.branch"));
+    }
+
+    @Bean
+    public MinerClock getMinerClock(RskSystemProperties config){
+        return new MinerClock(config.getBlockchainConfig() instanceof RegTestConfig, Clock.systemUTC());
     }
 }

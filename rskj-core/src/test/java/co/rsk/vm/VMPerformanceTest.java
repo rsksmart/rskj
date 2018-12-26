@@ -20,6 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.vm.DataWord;
@@ -28,11 +29,9 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -73,14 +72,12 @@ public class VMPerformanceTest {
         VMPerformanceTest vmpt = new VMPerformanceTest();
         vmpt.setup();
         vmpt.testVMPerformance1();
-        vmpt.tearDown();
     }
 
     public static void runWithLogging(ResultLogger resultLogger) {
         VMPerformanceTest vmpt = new VMPerformanceTest();
         vmpt.setup();
         vmpt.testVMPerformance1(resultLogger);
-        vmpt.tearDown();
     }
 
     @Before
@@ -88,11 +85,6 @@ public class VMPerformanceTest {
         invoke = new ProgramInvokeMockImpl();
         long million=1000000;
         invoke.setGasLimit(1000*million);
-    }
-
-    @After
-    public void tearDown() {
-        invoke.getRepository().close();
     }
 
     public void waitForProfiler() {

@@ -23,9 +23,7 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
-import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
@@ -38,22 +36,16 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.*;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -81,12 +73,9 @@ public class MinerServerImpl implements MinerServer {
     private final ProofOfWorkRule powRule;
     private final BlockToMineBuilder builder;
     private final BlockchainNetConfig blockchainConfig;
+    private final MinerClock clock;
 
-    private boolean isFallbackMining;
-    private int fallbackBlocksGenerated;
-    private Timer fallbackMiningTimer;
     private Timer refreshWorkTimer;
-    private int secsBetweenFallbackMinedBlocks;
     private NewBlockListener blockListener;
 
     private boolean started;
@@ -110,11 +99,6 @@ public class MinerServerImpl implements MinerServer {
     private final BigDecimal gasUnitInDollars;
 
     private final BlockProcessor nodeBlockProcessor;
-    private final DifficultyCalculator difficultyCalculator;
-
-    private boolean autoSwitchBetweenNormalAndFallbackMining;
-    private boolean fallbackMiningScheduled;
-    private final RskSystemProperties config;
 
     @Autowired
     public MinerServerImpl(
@@ -122,17 +106,16 @@ public class MinerServerImpl implements MinerServer {
             Ethereum ethereum,
             Blockchain blockchain,
             BlockProcessor nodeBlockProcessor,
-            DifficultyCalculator difficultyCalculator,
             ProofOfWorkRule powRule,
             BlockToMineBuilder builder,
+            MinerClock clock,
             MiningConfig miningConfig) {
-        this.config = config;
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.nodeBlockProcessor = nodeBlockProcessor;
-        this.difficultyCalculator = difficultyCalculator;
         this.powRule = powRule;
         this.builder = builder;
+        this.clock = clock;
         this.blockchainConfig = config.getBlockchainConfig();
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
@@ -142,23 +125,6 @@ public class MinerServerImpl implements MinerServer {
         coinbaseAddress = miningConfig.getCoinbaseAddress();
         minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
         gasUnitInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
-
-        // One more second to force continuous reduction in difficulty
-        // TODO(mc) move to MiningConstants
-
-        // It's not so important to add one because the timer has an average delay of 1 second.
-        secsBetweenFallbackMinedBlocks =
-                config.getAverageFallbackMiningTime();
-        // default
-        if (secsBetweenFallbackMinedBlocks == 0) {
-            secsBetweenFallbackMinedBlocks = (blockchainConfig.getCommonConstants().getDurationLimit());
-        }
-        autoSwitchBetweenNormalAndFallbackMining = !blockchainConfig.getCommonConstants().getFallbackMiningDifficulty().equals(BlockDifficulty.ZERO);
-    }
-
-    // This method is used for tests
-    public void setSecsBetweenFallbackMinedBlocks(int m) {
-        secsBetweenFallbackMinedBlocks = m;
     }
 
     private LinkedHashMap<Keccak256, Block> createNewBlocksWaitingList() {
@@ -168,62 +134,6 @@ public class MinerServerImpl implements MinerServer {
                 return size() > CACHE_SIZE;
             }
         };
-
-    }
-
-    public int getFallbackBlocksGenerated() {
-        return fallbackBlocksGenerated;
-    }
-
-    public boolean isFallbackMining() {
-        return isFallbackMining;
-    }
-
-    public void setFallbackMiningState() {
-        if (isFallbackMining) {
-            // setFallbackMining() can be called before start
-            if (started) {
-                if (fallbackMiningTimer == null) {
-                    fallbackMiningTimer = new Timer("Private mining timer");
-                }
-                if (!fallbackMiningScheduled) {
-                    fallbackMiningTimer.schedule(new FallbackMiningTask(), 1000, 1000);
-                    fallbackMiningScheduled = true;
-                }
-                // Because the Refresh occurs only once every minute,
-                // we need to create at least one first block to mine
-                Block bestBlock = blockchain.getBestBlock();
-                buildBlockToMine(bestBlock, false);
-            } else {
-                if (fallbackMiningTimer != null) {
-                    fallbackMiningTimer.cancel();
-                    fallbackMiningTimer = null;
-                }
-            }
-        } else {
-            fallbackMiningScheduled = false;
-            if (fallbackMiningTimer != null) {
-                fallbackMiningTimer.cancel();
-                fallbackMiningTimer = null;
-            }
-        }
-    }
-
-    @Override
-    public void setAutoSwitchBetweenNormalAndFallbackMining(boolean p) {
-        autoSwitchBetweenNormalAndFallbackMining = p;
-    }
-
-    public void setFallbackMining(boolean p) {
-        synchronized (lock) {
-            if (isFallbackMining == p) {
-                return;
-            }
-
-            isFallbackMining = p;
-            setFallbackMiningState();
-
-        }
 
     }
 
@@ -248,7 +158,6 @@ public class MinerServerImpl implements MinerServer {
             ethereum.removeListener(blockListener);
             refreshWorkTimer.cancel();
             refreshWorkTimer = null;
-            setFallbackMiningState();
         }
     }
 
@@ -270,114 +179,7 @@ public class MinerServerImpl implements MinerServer {
 
             refreshWorkTimer = new Timer("Refresh work for mining");
             refreshWorkTimer.schedule(new RefreshBlock(), DELAY_BETWEEN_BUILD_BLOCKS_MS, DELAY_BETWEEN_BUILD_BLOCKS_MS);
-            setFallbackMiningState();
         }
-    }
-
-    @Nullable
-    public static byte[] readFromFile(File aFile) {
-        try {
-            try (FileInputStream fis = new FileInputStream(aFile)) {
-                byte[] array = new byte[1024];
-                int r = fis.read(array);
-                array = java.util.Arrays.copyOfRange(array, 0, r);
-                fis.close();
-                return array;
-            }
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    static byte[] privKey0;
-    static byte[] privKey1;
-
-    @Override
-    public boolean generateFallbackBlock() {
-        Block newBlock;
-        synchronized (lock) {
-            if (latestBlock == null) {
-                return false;
-            }
-
-            // Iterate and find a block that can be privately mined.
-            Block workingBlock = latestBlock;
-            newBlock = workingBlock.cloneBlock();
-        }
-
-        boolean isEvenBlockNumber = (newBlock.getNumber() % 2) == 0;
-
-
-        String path = config.fallbackMiningKeysDir();
-
-        if (privKey0 == null) {
-            privKey0 = readFromFile(new File(path, "privkey0.bin"));
-        }
-
-        if (privKey1 == null) {
-            privKey1 = readFromFile(new File(path, "privkey1.bin"));
-        }
-
-        if (!isEvenBlockNumber && privKey1 == null) {
-            return false;
-        }
-
-        if (isEvenBlockNumber && privKey0 == null) {
-            return false;
-        }
-
-        ECKey privateKey;
-
-        if (isEvenBlockNumber) {
-            privateKey = ECKey.fromPrivate(privKey0);
-        } else {
-            privateKey = ECKey.fromPrivate(privKey1);
-        }
-
-        //
-        // Set the timestamp now to control mining interval better
-        //
-        BlockHeader newHeader = newBlock.getHeader();
-
-        newHeader.setTimestamp(this.getCurrentTimeInSeconds());
-        Block parentBlock = blockchain.getBlockByHash(newHeader.getParentHash().getBytes());
-        newHeader.setDifficulty(
-                difficultyCalculator.calcDifficulty(newHeader, parentBlock.getHeader()));
-
-        // fallback mining marker
-        newBlock.setExtraData(new byte[]{42});
-        byte[] signature = fallbackSign(newBlock.getHashForMergedMining(), privateKey);
-
-        newBlock.setBitcoinMergedMiningHeader(signature);
-
-        newBlock.seal();
-
-        if (!isValid(newBlock)) {
-            String message = "Invalid fallback block supplied by miner: " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber();
-            logger.error(message);
-            return false;
-        } else {
-            latestBlock = null; // never reuse if block is valid
-            ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
-            fallbackBlocksGenerated++;
-            logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getShortHash(), newBlock.getShortHashForMergedMining(), newBlock.getNumber());
-            return importResult.isSuccessful();
-        }
-
-    }
-
-    private byte[] fallbackSign(byte[] hash, ECKey privKey) {
-        ECKey.ECDSASignature signature = privKey.sign(hash);
-
-        byte vdata = signature.v;
-        byte[] rdata = signature.r.toByteArray();
-        byte[] sdata = signature.s.toByteArray();
-
-        byte[] vencoded = RLP.encodeByte(vdata);
-        byte[] rencoded = RLP.encodeElement(rdata);
-        byte[] sencoded = RLP.encodeElement(sdata);
-
-        return RLP.encodeList(vencoded, rencoded, sencoded);
     }
 
     @Override
@@ -594,10 +396,7 @@ public class MinerServerImpl implements MinerServer {
         logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
 
         final Block newBlock = builder.build(newBlockParent, extraData);
-
-        if (autoSwitchBetweenNormalAndFallbackMining) {
-            setFallbackMining(ProofOfWorkRule.isFallbackMiningPossible(config, newBlock.getHeader()));
-        }
+        clock.clearIncreaseTime();
 
         synchronized (lock) {
             Keccak256 parentHash = newBlockParent.getHash();
@@ -651,19 +450,6 @@ public class MinerServerImpl implements MinerServer {
         return Optional.ofNullable(latestBlock);
     }
 
-    @Override
-    @VisibleForTesting
-    public long getCurrentTimeInSeconds() {
-        // this is not great, but it was the simplest way to extract BlockToMineBuilder
-        return builder.getCurrentTimeInSeconds();
-    }
-
-    @Override
-    public long increaseTime(long seconds) {
-        // this is not great, but it was the simplest way to extract BlockToMineBuilder
-        return builder.increaseTime(seconds);
-    }
-
     class NewBlockListener extends EthereumListenerAdapter {
 
         @Override
@@ -696,24 +482,6 @@ public class MinerServerImpl implements MinerServer {
 
         private boolean isSyncing() {
             return nodeBlockProcessor.hasBetterBlockToSync();
-        }
-    }
-
-    private class FallbackMiningTask extends TimerTask {
-        @Override
-        public void run() {
-            try {
-                Block bestBlock = blockchain.getBestBlock();
-                long curtimestampSeconds = getCurrentTimeInSeconds();
-
-
-                if (curtimestampSeconds > bestBlock.getTimestamp() + secsBetweenFallbackMinedBlocks) {
-                    generateFallbackBlock();
-                }
-            } catch (Throwable th) {
-                logger.error("Unexpected error: {}", th);
-                panicProcessor.panic("mserror", th.getMessage());
-            }
         }
     }
 

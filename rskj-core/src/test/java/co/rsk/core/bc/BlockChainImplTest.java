@@ -29,7 +29,7 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
-import co.rsk.validators.DummyBlockValidator;
+import org.bouncycastle.util.Arrays;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.HashUtil;
@@ -38,24 +38,17 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mapdb.DB;
-import org.bouncycastle.util.Arrays;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-/**
- * Created by ajlopez on 29/07/2016.
- *
- */
 
 public class BlockChainImplTest {
 
@@ -84,9 +77,9 @@ public class BlockChainImplTest {
 
     @Test
     public void onBestBlockTest() {
-        BlockChainImpl blockChain = createBlockChain();
+        BlockExecutorTest.SimpleEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
+        BlockChainImpl blockChain = createBlockChain(listener);
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
-        BlockExecutorTest.SimpleEthereumListener listener = ((BlockExecutorTest.SimpleEthereumListener) blockChain.getListener());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis,0,2l);
         Block block1b = blockGenerator.createChildBlock(genesis,0,1l);
@@ -186,13 +179,6 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void unimplementedMethods() {
-        BlockChainImpl blockChain = createBlockChain();
-        Assert.assertNull(blockChain.getListOfBodiesByHashes(null));
-        Assert.assertNull(blockChain.getListOfHeadersStartFrom(null, 0, 0, false));
-    }
-
-    @Test
     public void addBlockOne() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
@@ -202,8 +188,8 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Assert.assertEquals(2, blockChain.getSize());
-        Assert.assertTrue(blockChain.isBlockExist(genesis.getHash().getBytes()));
-        Assert.assertTrue(blockChain.isBlockExist(block1.getHash().getBytes()));
+        Assert.assertTrue(blockChain.getBlockStore().isBlockExist(genesis.getHash().getBytes()));
+        Assert.assertTrue(blockChain.getBlockStore().isBlockExist(block1.getHash().getBytes()));
 
         BlockChainStatus status = blockChain.getStatus();
 
@@ -330,15 +316,14 @@ public class BlockChainImplTest {
 
     @Test
     public void importNotBest() {
-        BlockChainImpl blockChain = createBlockChain();
+        BlockExecutorTest.SimpleEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
+        BlockChainImpl blockChain = createBlockChain(listener);
         Block genesis = getGenesisBlock(blockChain);
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis);
         Block block1b = blockGenerator.createChildBlock(genesis);
 
         boolean block1bBigger = SelectionRule.isThisBlockHashSmaller(block1.getHash().getBytes(), block1b.getHash().getBytes());
-
-        BlockExecutorTest.SimpleEthereumListener listener = (BlockExecutorTest.SimpleEthereumListener) blockChain.getListener();
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1bBigger?block1:block1b));
@@ -701,18 +686,20 @@ public class BlockChainImplTest {
 
     @Test
     public void validateMinedBlockOne() {
-        BlockChainImpl blockChain = createBlockChain();
+        BlockExecutorTest.SimpleEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
+        BlockChainImpl blockChain = createBlockChain(listener);
         Block genesis = getGenesisBlock(blockChain);
         Block block = new BlockGenerator().createChildBlock(genesis);
 
-        BlockExecutor executor = createExecutor(blockChain);
+        BlockExecutor executor = createExecutor(blockChain, listener);
 
         Assert.assertTrue(executor.executeAndValidate(block, genesis));
     }
 
     @Test
     public void validateMinedBlockSeven() {
-        BlockChainImpl blockChain = createBlockChain();
+        BlockExecutorTest.SimpleEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
+        BlockChainImpl blockChain = createBlockChain(listener);
         Block genesis = getGenesisBlock(blockChain);
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -724,7 +711,7 @@ public class BlockChainImplTest {
         Block block6 = blockGenerator.createChildBlock(block5);
         Block block7 = blockGenerator.createChildBlock(block6);
 
-        BlockExecutor executor = createExecutor(blockChain);
+        BlockExecutor executor = createExecutor(blockChain, listener);
 
         Assert.assertTrue(executor.executeAndValidate(block1, genesis));
         Assert.assertTrue(executor.executeAndValidate(block2, block1));
@@ -768,7 +755,7 @@ public class BlockChainImplTest {
     @Test
     public void getTransactionInfo() {
         BlockExecutorTest.TestObjects objects = BlockExecutorTest.generateBlockWithOneTransaction();
-        BlockChainImpl blockChain = createBlockChain(objects.getRepository());
+        BlockChainImpl blockChain = createBlockChain(objects.getRepository(), new BlockExecutorTest.SimpleEthereumListener());
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(objects.getParent()));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(objects.getBlock()));
@@ -779,8 +766,8 @@ public class BlockChainImplTest {
     @Test
     public void listenTransactionSummary() {
         BlockExecutorTest.TestObjects objects = BlockExecutorTest.generateBlockWithOneTransaction();
-        BlockChainImpl blockChain = createBlockChain(objects.getRepository());
-        BlockExecutorTest.SimpleEthereumListener listener = (BlockExecutorTest.SimpleEthereumListener)blockChain.getListener();
+        BlockExecutorTest.SimpleEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
+        BlockChainImpl blockChain = createBlockChain(objects.getRepository(), listener);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(objects.getParent()));
         Assert.assertNull(listener.getLatestSummary());
@@ -791,8 +778,8 @@ public class BlockChainImplTest {
 
     @Test
     public void listenOnBlockWhenAddingBlock() {
-        BlockChainImpl blockChain = createBlockChain();
-        BlockExecutorTest.SimpleEthereumListener listener = (BlockExecutorTest.SimpleEthereumListener)blockChain.getListener();
+        BlockExecutorTest.SimpleEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
+        BlockChainImpl blockChain = createBlockChain(listener);
 
         Block genesis = getGenesisBlock(blockChain);
         Block block1 = new BlockGenerator().createChildBlock(genesis);
@@ -803,34 +790,6 @@ public class BlockChainImplTest {
         Assert.assertNotNull(listener.getLatestBlock());
         Assert.assertNotNull(listener.getLatestTrace());
         Assert.assertEquals(block1.getHash(), listener.getLatestBlock().getHash());
-    }
-
-    @Test
-    public void createWithoutArgumentsAndUnusedMethods() {
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockChainImpl blockChain = new BlockChainImpl(null, null, null, null, null, new DummyBlockValidator(), false, 1, new BlockExecutor(null, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                null,
-                null,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        )));
-        blockChain.setExitOn(0);
-        blockChain.close();
     }
 
     @Test
@@ -867,7 +826,7 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(1L), BigInteger.TEN);
+        Transaction tx = new Transaction(config, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(1L), BigInteger.TEN);
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
@@ -896,7 +855,7 @@ public class BlockChainImplTest {
         track.commit();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000100", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.valueOf(22000L));
+        Transaction tx = new Transaction(config, "0000000000000000000000000000000000000100", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.valueOf(22000L));
         tx.sign(account.getEcKey().getPrivKeyBytes());
         txs.add(tx);
 
@@ -936,10 +895,14 @@ public class BlockChainImplTest {
     }
 
     public static BlockChainImpl createBlockChain() {
-        return new BlockChainBuilder().build();
+        return createBlockChain(null);
     }
 
-    public static BlockChainImpl createBlockChain(Repository repository) {
+    public static BlockChainImpl createBlockChain(BlockExecutorTest.SimpleEthereumListener listener) {
+        return new BlockChainBuilder().setListener(listener).build();
+    }
+
+    private static BlockChainImpl createBlockChain(Repository repository, BlockExecutorTest.SimpleEthereumListener listener) {
         IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
@@ -948,15 +911,17 @@ public class BlockChainImplTest {
 
         BlockValidatorImpl blockValidator = validatorBuilder.build();
 
-        return createBlockChain(repository, blockStore, blockValidator);
+        return createBlockChain(repository, blockStore, blockValidator, listener);
     }
 
     private static BlockChainImpl createBlockChain(Repository repository, IndexedBlockStore blockStore, BlockValidatorImpl blockValidator) {
+        return createBlockChain(repository, blockStore, blockValidator, null);
+    }
+
+    private static BlockChainImpl createBlockChain(Repository repository, IndexedBlockStore blockStore, BlockValidatorImpl blockValidator, BlockExecutorTest.SimpleEthereumListener listener) {
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
-
-        CompositeEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
@@ -999,7 +964,7 @@ public class BlockChainImplTest {
         return genesis;
     }
 
-    private static BlockExecutor createExecutor(BlockChainImpl blockChain) {
+    private static BlockExecutor createExecutor(BlockChainImpl blockChain, BlockExecutorTest.SimpleEthereumListener listener) {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         return new BlockExecutor(blockChain.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
@@ -1010,7 +975,7 @@ public class BlockChainImplTest {
                 null,
                 programInvokeFactory,
                 block1,
-                blockChain.getListener(),
+                listener,
                 totalGasUsed1,
                 config.getVmConfig(),
                 config.getBlockchainConfig(),

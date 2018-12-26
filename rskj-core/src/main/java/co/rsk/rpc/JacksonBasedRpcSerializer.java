@@ -29,6 +29,8 @@ import java.io.InputStream;
  * This implements basic JSON-RPC serialization using Jackson.
  */
 public class JacksonBasedRpcSerializer implements JsonRpcSerializer {
+    //From https://fasterxml.github.io/jackson-databind/javadoc/2.5/com/fasterxml/jackson/databind/ObjectMapper.html
+    // ObjectMapper is thread-safe as long as the config methods are not called after the serialiation begins.
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override

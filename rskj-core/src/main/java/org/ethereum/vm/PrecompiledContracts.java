@@ -63,7 +63,15 @@ public class PrecompiledContracts {
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_STR);
     public static final RskAddress SAMPLE_ADDR = new RskAddress(SAMPLE_ADDR_STR);
 
-    private static final String RSK_NATIVECONTRACT_REQUIREDPREFIX = "000000000000000000000000";
+    public static final DataWord BRIDGE_ADDR_DW = new DataWord(BRIDGE_ADDR.getBytes());
+    public static final DataWord IDENTITY_ADDR_DW = new DataWord(IDENTITY_ADDR.getBytes());
+    public static final DataWord REMASC_ADDR_DW  = new DataWord(REMASC_ADDR.getBytes());
+    public static final DataWord SAMPLE_ADDR_DW = new DataWord(SAMPLE_ADDR.getBytes());
+    public static final DataWord ECRECOVER_ADDR_DW = new DataWord(ECRECOVER_ADDR);
+    public static final DataWord RIPEMPD160_ADDR_DW = new DataWord(RIPEMPD160_ADDR);
+    public static final DataWord BIG_INT_MODEXP_ADDR_DW = new DataWord(BIG_INT_MODEXP_ADDR);
+    public static final DataWord SHA256_ADDR_DW = new DataWord(SHA256_ADDR);
+
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
     private static Ripempd160 ripempd160 = new Ripempd160();
@@ -77,34 +85,35 @@ public class PrecompiledContracts {
         this.config = config;
     }
 
+
     public PrecompiledContract getContractForAddress(BlockchainConfig blockchainConfig, DataWord address) {
 
         if (address == null) {
             return identity;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + ECRECOVER_ADDR)) {
+        if (address.equals(ECRECOVER_ADDR_DW)) {
             return ecRecover;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + SHA256_ADDR)) {
+        if (address.equals(SHA256_ADDR_DW)) {
             return sha256;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + RIPEMPD160_ADDR)) {
+        if (address.equals(RIPEMPD160_ADDR_DW)) {
             return ripempd160;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + IDENTITY_ADDR_STR)) {
+        if (address.equals(IDENTITY_ADDR_DW)) {
             return identity;
         }
         // RSKIP-93 removes this contract completely
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + SAMPLE_ADDR_STR) && !blockchainConfig.isRskip93()) {
+        if (address.equals(SAMPLE_ADDR_DW) && !blockchainConfig.isRskip93()) {
             return sample;
         }
-        if (address.isHex(BRIDGE_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR_STR)) {
+        if (address.equals(BRIDGE_ADDR_DW)) {
             return new Bridge(config, BRIDGE_ADDR);
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BIG_INT_MODEXP_ADDR)) {
+        if (address.equals(BIG_INT_MODEXP_ADDR_DW)) {
             return bigIntegerModexp;
         }
-        if (address.isHex(REMASC_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR_STR)) {
+        if (address.equals(REMASC_ADDR_DW)) {
             return new RemascContract(config, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName()), REMASC_ADDR);
         }
 
@@ -227,7 +236,7 @@ public class PrecompiledContracts {
                 if (isValid(r, s, v)) {
                     ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[31]);
 
-                    ECKey key = ECKey.signatureToKey(h, signature.toBase64());
+                    ECKey key = ECKey.signatureToKey(h, signature);
                     out = new DataWord(key.getAddress());
                 }
             } catch (Exception any) {

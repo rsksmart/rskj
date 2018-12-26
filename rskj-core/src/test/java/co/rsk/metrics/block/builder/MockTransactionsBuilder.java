@@ -120,12 +120,12 @@ public class MockTransactionsBuilder {
         contractNonce = contractNonce.add(BigInteger.ONE);
         List<Transaction> result = new ArrayList<>(2);
 
-        Transaction trx =  Transaction.create(config, null, BigInteger.ZERO, contractNonce, BigInteger.ONE, gasLimits.getSpecialCasesContractGenLimit(), Hex.decode(created));
+        Transaction trx =  new Transaction(config, null, BigInteger.ZERO, contractNonce, BigInteger.ONE, gasLimits.getSpecialCasesContractGenLimit(), Hex.decode(created));
         trx.sign(contractsCreator.getEcKey().getPrivKeyBytes());
         result.add(trx);
 
         contractNonce = contractNonce.add(BigInteger.ONE);
-        trx =  Transaction.create(config, null, BigInteger.ZERO, contractNonce, BigInteger.ONE, gasLimits.getSpecialCasesContractGenLimit(), Hex.decode(creator));
+        trx = new Transaction(config, null, BigInteger.ZERO, contractNonce, BigInteger.ONE, gasLimits.getSpecialCasesContractGenLimit(), Hex.decode(creator));
         trx.sign(contractsCreator.getEcKey().getPrivKeyBytes());
         result.add(trx);
 
@@ -139,7 +139,7 @@ public class MockTransactionsBuilder {
         String contractCode = ContractData.DUMMY_CONTRACT;
         for(int i = 0; i < quantity; i++){
             contractNonce = contractNonce.add(BigInteger.ONE);
-            Transaction trx =  Transaction.create(config, null, BigInteger.ZERO, contractNonce, BigInteger.ONE, gasLimits.getErc20ContractGenLimit(), Hex.decode(contractCode));
+            Transaction trx = new Transaction(config, null, BigInteger.ZERO, contractNonce, BigInteger.ONE, gasLimits.getErc20ContractGenLimit(), Hex.decode(contractCode));
             trx.sign(contractsCreator.getEcKey().getPrivKeyBytes());
             trxs.add(trx);
         }
@@ -149,7 +149,7 @@ public class MockTransactionsBuilder {
     public Transaction generateExtcodesizeContractTransaction(){
         String ECS2 = ContractData.EC2_CONTRACT;
         contractNonce = contractNonce.add(BigInteger.ONE);
-        Transaction trx =  Transaction.create(config, null, BigInteger.ZERO, contractNonce, BigInteger.ONE, gasLimits.getSpecialCasesContractGenLimit(), Hex.decode(ECS2));
+        Transaction trx =  new Transaction(config, null, BigInteger.ZERO, contractNonce, BigInteger.ONE, gasLimits.getSpecialCasesContractGenLimit(), Hex.decode(ECS2));
         trx.sign(contractsCreator.getEcKey().getPrivKeyBytes());
         return trx;
     }
@@ -225,7 +225,7 @@ public class MockTransactionsBuilder {
 
 
     private Transaction generateTokenCreationTransaction(Account creator, BigInteger nonce, BigInteger balance, String code){
-        Transaction trx =  Transaction.create(config, null, balance, nonce, BigInteger.ONE, gasLimits.getErc20ContractGenLimit(), Hex.decode(code));
+        Transaction trx =  new Transaction(config, null, balance, nonce, BigInteger.ONE, gasLimits.getErc20ContractGenLimit(), Hex.decode(code));
         trx.sign(creator.getEcKey().getPrivKeyBytes());
         return trx;
     }
@@ -260,7 +260,7 @@ public class MockTransactionsBuilder {
         BigInteger nonce = data.getFrom().nextNonce();
         int trxValue = valueGenerator.nextTrxAmount();
 
-        Transaction tx = Transaction.create(
+        Transaction tx = new Transaction(
                 config, data.getTo().getAddress(),
                 BigInteger.valueOf(trxValue), nonce, gasLimits.getGasPrice(), gasLimits.getCoinTransferLimit());
 

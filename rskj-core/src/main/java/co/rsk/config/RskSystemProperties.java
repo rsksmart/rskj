@@ -60,6 +60,8 @@ public class RskSystemProperties extends SystemProperties {
     private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; //miliseconds
     private static final int PD_DEFAULT_REFRESH_PERIOD = 60000; //miliseconds
 
+    private static final String REGTEST_BLOCKCHAIN_CONFIG = "regtest";
+
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
@@ -102,6 +104,14 @@ public class RskSystemProperties extends SystemProperties {
             return null;
         }
 
+        // Regtest always has MINER_COINBASE_SECRET_CONFIG set in regtest.conf file. When MINER_REWARD_ADDRESS_CONFIG is set both values exist
+        // and that does not pass the checks below. If MINER_REWARD_ADDRESS_CONFIG exists, that value must be used so consider that
+        // special regtest case by adding this guard.
+        if(configFromFiles.getString(PROPERTY_BC_CONFIG_NAME).equals(REGTEST_BLOCKCHAIN_CONFIG) &&
+                configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
+            return null;
+        }
+
         if (configFromFiles.hasPath(MINER_COINBASE_SECRET_CONFIG) &&
                 configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
             throw new RskConfigurationException("It is required to have only one of " + MINER_REWARD_ADDRESS_CONFIG + " or " + MINER_COINBASE_SECRET_CONFIG);
@@ -130,6 +140,10 @@ public class RskSystemProperties extends SystemProperties {
 
     public Duration minerClientDelayBetweenRefreshes() {
         return configFromFiles.getDuration("miner.client.delayBetweenRefreshes");
+    }
+
+    public boolean minerClientAutoMine() {
+        return configFromFiles.getBoolean("miner.client.autoMine");
     }
 
     public boolean isMinerServerEnabled() {
@@ -333,10 +347,6 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean getForceTargetGasLimit() {
         return getBoolean("forcegaslimit", true);
-    }
-
-    public int getAverageFallbackMiningTime() {
-        return getInt("fallbackMining.blockTime", 0);
     }
 
     // Sync config properties

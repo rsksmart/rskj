@@ -23,16 +23,15 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import co.rsk.trie.TrieStore;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -40,7 +39,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -54,7 +52,6 @@ public class RepositoryTrack implements Repository {
     private final Map<RskAddress, AccountState> cacheAccounts = new HashMap<>();
     private final Map<RskAddress, ContractDetails> cacheDetails = new HashMap<>();
 
-    private final DetailsDataStore dds;
     private final Repository repository;
     private final TrieStore.Pool trieStorePool;
     private final int memoryStorageLimit;
@@ -63,7 +60,6 @@ public class RepositoryTrack implements Repository {
         this.repository = repository;
         this.trieStorePool = trieStorePool;
         this.memoryStorageLimit = memoryStorageLimit;
-        this.dds = new DetailsDataStore(new DatabaseImpl(new HashMapDB()), trieStorePool, memoryStorageLimit);
     }
 
     @Override
@@ -378,25 +374,6 @@ public class RepositoryTrack implements Repository {
         cacheDetails.clear();
     }
 
-    public void dumpChanges() {
-        HashMap<RskAddress, AccountState> accountStates = new HashMap<>();
-        HashMap<RskAddress, ContractDetails> contractDetails= new HashMap<>();
-        updateBatch(accountStates,contractDetails);
-
-        StringBuilder buf = new StringBuilder();
-        buf.append("accountStates:\n");
-        for (HashMap.Entry<RskAddress, AccountState> entry : accountStates.entrySet()) {
-            buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
-        }
-
-        buf.append("contractDetails:\n");
-        for (HashMap.Entry<RskAddress, ContractDetails> entry : contractDetails.entrySet()) {
-            buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
-        }
-
-        logger.debug(buf.toString());
-    }
-
     @Override
     public void updateBatch(Map<RskAddress, AccountState> accountStates,
                             Map<RskAddress, ContractDetails> contractDetails) {
@@ -425,21 +402,6 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public boolean isClosed() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void close() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void reset() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Repository getSnapshotTo(byte[] root) {
         throw new UnsupportedOperationException();
     }
@@ -448,11 +410,6 @@ public class RepositoryTrack implements Repository {
         return (repository instanceof RepositoryTrack)
                 ? ((RepositoryTrack) repository).getOriginRepository()
                 : repository;
-    }
-
-    @Override
-    public DetailsDataStore getDetailsDataStore(){
-        return dds;
     }
 
     @Override

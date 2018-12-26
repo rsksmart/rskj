@@ -39,6 +39,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -252,7 +253,7 @@ public class MinerManagerTest {
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
         Assert.assertFalse(blockchain.getBestBlock().getTransactionsList().isEmpty());
 
-        SnapshotManager snapshotManager = new SnapshotManager(blockchain, transactionPool);
+        SnapshotManager snapshotManager = new SnapshotManager(blockchain, transactionPool, minerServer);
         snapshotManager.resetSnapshots();
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
@@ -267,28 +268,6 @@ public class MinerManagerTest {
         manager.mineBlock(blockchain, minerClient, minerServer);
 
         Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
-    }
-
-    @Test
-    public void mineBlockUsingTimeTravel() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        MinerManager manager = new MinerManager();
-
-        MinerServerImpl minerServer = getMinerServer();
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        long currentTime = minerServer.getCurrentTimeInSeconds();
-
-        minerServer.increaseTime(10);
-
-        manager.mineBlock(blockchain, minerClient, minerServer);
-
-        Block block = blockchain.getBestBlock();
-        Assert.assertEquals(1, block.getNumber());
-
-        Assert.assertTrue(currentTime + 10 <= block.getTimestamp());
-        Assert.assertTrue(currentTime + 11 > block.getTimestamp());
     }
 
     private static MinerClientImpl getMinerClient(MinerServerImpl minerServer) {
@@ -306,7 +285,7 @@ public class MinerManagerTest {
     }
 
     private static MinerClientImpl getMinerClient(RskImplForTest rsk, MinerServerImpl minerServer) {
-        return new MinerClientImpl(rsk, minerServer, config);
+        return new MinerClientImpl(rsk, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
     }
 
     private MinerServerImpl getMinerServer() {
@@ -314,12 +293,12 @@ public class MinerManagerTest {
         ethereum.repository = repository;
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         return new MinerServerImpl(
                 config,
                 ethereum,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         ConfigUtils.getDefaultMiningConfig(),
@@ -330,8 +309,10 @@ public class MinerManagerTest {
                         new GasLimitCalculator(config),
                         new BlockValidationRuleDummy(),
                         config,
-                        null
+                        null,
+                        clock
                 ),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
     }
@@ -345,8 +326,7 @@ public class MinerManagerTest {
 
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
-            super(null, null, null, null,
-                  new TestCompositeEthereumListener(), null, null, null);
+            super(null, null, new TestCompositeEthereumListener(), null, null);
         }
     }
 }

@@ -181,7 +181,7 @@ public class BridgeSupport {
                 bridgeConstants,
                 eventLogger,
                 btcContext,
-                new FederationSupport(provider, bridgeConstants, executionBlock),
+                new FederationSupport(provider, config.getBlockchainConfig(), executionBlock),
                 btcBlockStore,
                 btcBlockChain
         );
@@ -1822,14 +1822,13 @@ public class BridgeSupport {
         if (!isLockWhitelistChangeAuthorized(tx)) {
             return LOCK_WHITELIST_GENERIC_ERROR_CODE;
         }
-
         LockWhitelist lockWhitelist = provider.getLockWhitelist();
         if (lockWhitelist.isDisableBlockSet()) {
             return -1;
         }
         int disableBlockDelay = disableBlockDelayBI.intValueExact();
         int bestChainHeight = getBtcBlockchainBestChainHeight();
-        if (bestChainHeight < 0 || Integer.MAX_VALUE - disableBlockDelay < bestChainHeight) {
+        if (disableBlockDelay + bestChainHeight <= bestChainHeight) {
             return -2;
         }
         lockWhitelist.setDisableBlockHeight(bestChainHeight + disableBlockDelay);

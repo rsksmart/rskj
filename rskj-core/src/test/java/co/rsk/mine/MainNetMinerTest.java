@@ -11,15 +11,11 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.util.RskTestFactory;
@@ -34,13 +30,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.time.Clock;
 
 /**
  * Created by SerAdmin on 1/3/2018.
  */
 public class MainNetMinerTest {
     private BlockChainImpl blockchain;
-    public static DifficultyCalculator DIFFICULTY_CALCULATOR ;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -55,7 +51,6 @@ public class MainNetMinerTest {
         RskTestFactory factory = new RskTestFactory();
         config = new TestSystemProperties();
         config.setBlockchainConfig(new FallbackMainNetConfig());
-        DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
         blockStore = factory.getBlockStore();
@@ -78,14 +73,15 @@ public class MainNetMinerTest {
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 this.blockchain,
                 null,
-                DIFFICULTY_CALCULATOR,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 blockToMineBuilder(),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -119,112 +115,6 @@ public class MainNetMinerTest {
         }
     }
 
-    @Test
-    public void generateFallbackMinedBlock() throws InterruptedException, IOException {
-        // generate private keys for testing now.
-        ECKey privateMiningKey0 = ECKey.fromPrivate(BigInteger.TEN);
-        ECKey privateMiningKey1 = ECKey.fromPrivate(BigInteger.TEN.add(BigInteger.ONE));
-
-        byte[] privKey0 = privateMiningKey0.getPrivKeyBytes();
-        saveToFile(privKey0, new File(folder.getRoot().getCanonicalPath(), "privkey0.bin"));
-        byte[] privKey1 = privateMiningKey1.getPrivKeyBytes();
-        saveToFile(privKey1, new File(folder.getRoot().getCanonicalPath(), "privkey1.bin"));
-
-        TestSystemProperties tempConfig = new TestSystemProperties() {
-
-            BlockchainNetConfig blockchainNetConfig = config.getBlockchainConfig();
-
-            @Override
-            public String fallbackMiningKeysDir() {
-                try {
-                    return folder.getRoot().getCanonicalPath();
-                } catch (Exception e) {}
-                return null;
-            }
-
-            @Override
-            protected BlockchainNetConfig buildBlockchainConfig() {
-                return new BlockchainNetConfig() {
-                    @Override
-                    public BlockchainConfig getConfigForBlock(long blockNumber) {
-                        return blockchainNetConfig.getConfigForBlock(blockNumber);
-                    }
-
-                    @Override
-                    public Constants getCommonConstants() {
-                        return new Constants() {
-                            @Override
-                            public byte[] getFallbackMiningPubKey0() {
-                                return privateMiningKey0.getPubKey();
-                            }
-                            @Override
-                            public byte[] getFallbackMiningPubKey1() {
-                                return privateMiningKey1.getPubKey();
-                            }
-                        };
-                    }
-                };
-            }
-
-        };
-
-
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
-
-        MinerServer minerServer = new MinerServerImpl(
-                tempConfig,
-                ethereumImpl,
-                blockchain,
-                null,
-                DIFFICULTY_CALCULATOR,
-                new ProofOfWorkRule(tempConfig).setFallbackMiningEnabled(true),
-                blockToMineBuilder(),
-                ConfigUtils.getDefaultMiningConfig()
-        );
-        try {
-            minerServer.setFallbackMining(true);
-
-            // Accelerate mining
-            ((MinerServerImpl) minerServer).setSecsBetweenFallbackMinedBlocks(1);
-
-            minerServer.start();
-
-            // Blocks are generated auomatically
-            // but we can call minerServer.generateFallbackBlock() to generate it manually
-            // boolean result = minerServer.generateFallbackBlock();
-            // Assert.assertTrue(result);
-            long start = System.currentTimeMillis();
-            while (((MinerServerImpl) minerServer).getFallbackBlocksGenerated() == 0) {
-
-                if (System.currentTimeMillis() - start > 20 * 1000) {
-                    Assert.assertTrue(false);
-                }
-                Thread.sleep(1000); //
-
-            }
-
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
-            // mine another
-            // NOTE that is NOT using the next block (parity change) because of the blockchain mockito
-            // to mine a subsequent block, use a real blockchain, not the mockito.
-            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-
-            //result = minerServer.generateFallbackBlock();
-            //Assert.assertTrue(result);
-            start = System.currentTimeMillis();
-            while (((MinerServerImpl) minerServer).getFallbackBlocksGenerated() == 1) {
-                if (System.currentTimeMillis() - start > 20 * 1000) {
-                    Assert.assertTrue(false);
-                }
-                Thread.sleep(1000); //
-            }
-
-            Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
-        } finally {
-            minerServer.stop();
-        }
-    }
     /*
      * This test is much more likely to fail than the
      * submitBitcoinBlockProofOfWorkNotGoodEnough test. Even then
@@ -244,14 +134,15 @@ public class MainNetMinerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
                 this.blockchain,
                 blockProcessor,
-                DIFFICULTY_CALCULATOR,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 blockToMineBuilder(),
+                clock,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -302,16 +193,18 @@ public class MainNetMinerTest {
     private BlockToMineBuilder blockToMineBuilder() {
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         return new BlockToMineBuilder(
                 ConfigUtils.getDefaultMiningConfig(),
                 repository,
                 blockStore,
                 transactionPool,
-                DIFFICULTY_CALCULATOR,
+                new DifficultyCalculator(config),
                 new GasLimitCalculator(config),
                 unclesValidationRule,
                 config,
-                null
+                null,
+                clock
         );
     }
 }

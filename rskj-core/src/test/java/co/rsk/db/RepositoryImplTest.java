@@ -54,13 +54,6 @@ public class RepositoryImplTest {
     }
 
     @Test
-    public void isNotClosedWhenCreated() {
-        RepositoryImpl repository = createRepositoryImpl(config);
-
-        Assert.assertFalse(repository.isClosed());
-    }
-
-    @Test
     public void hasEmptyHashAsRootWhenCreated() {
         RepositoryImpl repository = createRepositoryImpl(config);
 
@@ -463,13 +456,6 @@ public class RepositoryImplTest {
         Assert.assertNotNull(keys);
         Assert.assertFalse(keys.isEmpty());
         Assert.assertEquals(1, keys.size());
-    }
-
-    @Test
-    public void getDetailsDataStore() {
-        RepositoryImpl repository = createRepositoryImpl(config);
-
-        Assert.assertNotNull(repository.getDetailsDataStore());
     }
 
     @Test

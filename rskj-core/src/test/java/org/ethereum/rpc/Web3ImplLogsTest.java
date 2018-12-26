@@ -573,7 +573,7 @@ public class Web3ImplLogsTest {
     private Web3Impl createWeb3() {
         Wallet wallet = WalletFactory.createWallet();
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
-        EthModule ethModule = new EthModule(config, blockChain, null, new ExecutionBlockRetriever(blockChain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, transactionPool));
+        EthModule ethModule = new EthModule(config, blockChain, null, new ExecutionBlockRetriever(blockChain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         return new Web3RskImpl(
@@ -585,6 +585,7 @@ public class Web3ImplLogsTest {
                 Web3Mocks.getMockMinerServer(),
                 personalModule,
                 ethModule,
+                null,
                 txPoolModule,
                 null,
                 debugModule,
@@ -597,7 +598,8 @@ public class Web3ImplLogsTest {
                 null,
                 null,
                 null,
-                new SimpleConfigCapabilities()
+                new SimpleConfigCapabilities(),
+                null
         );
     }
 
