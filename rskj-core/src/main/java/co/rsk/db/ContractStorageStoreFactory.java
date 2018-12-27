@@ -66,11 +66,6 @@ public class ContractStorageStoreFactory {
 
         RskAddress addr = new RskAddress(address);
 
-        if (addr.equals(PrecompiledContracts.REMASC_ADDR) ||
-                addr.equals(PrecompiledContracts.BRIDGE_ADDR)) {
-            return true;
-        }
-
-        return false;
+        return addr.equals(PrecompiledContracts.REMASC_ADDR) || addr.equals(PrecompiledContracts.BRIDGE_ADDR);
     }
 }

@@ -19,7 +19,6 @@
 package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.Keccak256Helper;
@@ -47,7 +46,6 @@ import static org.ethereum.util.ByteUtil.wrap;
  * Created by ajlopez on 05/04/2017.
  */
 public class ContractDetailsImpl implements ContractDetails {
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final Logger logger = LoggerFactory.getLogger("contractdetails");
 
     private Trie trie;
