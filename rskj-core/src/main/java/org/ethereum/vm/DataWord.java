@@ -483,16 +483,7 @@ public final class DataWord implements Comparable<DataWord> {
                 o.data, 0, o.data.length);
 
         // Convert result into -1, 0 or 1 as is the convention
-        // SigNum uses floating point arithmetic. It should be faster
-        // to solve it in integer arithmetic
-        // return (int) Math.signum(result);
-        if (result<0) {
-            return -1;
-        } else if (result>0) {
-            return 1;
-        } else {
-            return 0;
-        }
+        return Integer.signum(result);
     }
 
     public void signExtend(byte k) {
