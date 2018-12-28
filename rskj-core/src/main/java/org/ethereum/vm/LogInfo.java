@@ -37,13 +37,11 @@ import java.util.List;
  */
 public class LogInfo {
 
-    byte[] address = new byte[]{};
-    List<DataWord> topics = new ArrayList<>();
-    byte[] data = new byte[]{};
-    private boolean rejected = false;
+    private final byte[] address;
+    private final List<DataWord> topics;
+    private final byte[] data;
 
-    /* Log info in encoded form */
-    private byte[] rlpEncoded;
+    private boolean rejected = false;
 
     public LogInfo(byte[] rlp) {
 
@@ -57,17 +55,16 @@ public class LogInfo {
         this.address = address.getRLPData() != null ? address.getRLPData() : new byte[]{};
         this.data = data.getRLPData() != null ? data.getRLPData() : new byte[]{};
 
+        this.topics = new ArrayList<>();
         for (RLPElement topic1 : topics) {
             byte[] topic = topic1.getRLPData();
             this.topics.add(new DataWord(topic));
         }
-
-        rlpEncoded = rlp;
     }
 
     public LogInfo(byte[] address, List<DataWord> topics, byte[] data) {
         this.address = (address != null) ? address : new byte[]{};
-        this.topics = (topics != null) ? topics : new ArrayList<DataWord>();
+        this.topics = (topics != null) ? topics : new ArrayList<>();
         this.data = (data != null) ? data : new byte[]{};
     }
 
