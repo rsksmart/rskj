@@ -80,26 +80,21 @@ public class MessageCall {
     /**
      * start of memory to be output of the call
      */
-    private DataWord outDataOffs;
+    private final DataWord outDataOffs;
     /**
      * size of memory to be output data to the call
      */
-    private DataWord outDataSize;
+    private final DataWord outDataSize;
 
     public MessageCall(MsgType type, DataWord gas, DataWord codeAddress,
-                       DataWord endowment, DataWord inDataOffs, DataWord inDataSize) {
+                       DataWord endowment, DataWord inDataOffs, DataWord inDataSize,
+                       DataWord outDataOffs, DataWord outDataSize) {
         this.type = type;
         this.gas = gas;
         this.codeAddress = codeAddress;
         this.endowment = endowment;
         this.inDataOffs = inDataOffs;
         this.inDataSize = inDataSize;
-    }
-
-    public MessageCall(MsgType type, DataWord gas, DataWord codeAddress,
-                       DataWord endowment, DataWord inDataOffs, DataWord inDataSize,
-                       DataWord outDataOffs, DataWord outDataSize) {
-        this(type, gas, codeAddress, endowment, inDataOffs, inDataSize);
         this.outDataOffs = outDataOffs;
         this.outDataSize = outDataSize;
     }
