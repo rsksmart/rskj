@@ -105,7 +105,6 @@ public class Program {
     private final byte[] ops;
     private int pc;
     private byte lastOp;
-    private byte previouslyExecutedOp;
     private boolean stopped;
     private byte exeVersion;    // currently limited to 0..127
     private byte scriptVersion; // currently limited to 0..127
@@ -181,8 +180,8 @@ public class Program {
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
 
-    boolean isLogEnabled;
-    boolean isGasLogEnabled;
+    private final boolean isLogEnabled;
+    private final boolean isGasLogEnabled;
 
     public Program(
             VmConfig config,
@@ -271,10 +270,6 @@ public class Program {
         return traceListenerAware;
     }
 
-    public byte getOp(int pc) {
-        return (getLength(ops) <= pc) ? 0 : ops[pc];
-    }
-
     public byte getCurrentOp() {
         return isEmpty(ops) ? 0 : ops[pc];
     }
@@ -286,21 +281,7 @@ public class Program {
         this.lastOp = op;
     }
 
-    /**
-     * Should be set only after the OP is fully executed.
-     */
-    public void setPreviouslyExecutedOp(byte op) {
-        this.previouslyExecutedOp = op;
-    }
-
-    /**
-     * Returns the last fully executed OP.
-     */
-    public byte getPreviouslyExecutedOp() {
-        return this.previouslyExecutedOp;
-    }
-
-    public DataWord getNewDataWordFast() {
+    private DataWord getNewDataWordFast() {
         if (dataWordPool==null) {
             return new DataWord();
         }
@@ -311,25 +292,19 @@ public class Program {
         }
     }
 
-    public void stackPush(byte[] data) {
-        DataWord dw=getNewDataWordFast();
-        dw.assign(data);
-        stackPush(dw);
-    }
-
-    public void stackPushZero() {
+    private void stackPushZero() {
         DataWord dw=getNewDataWordFast();
         dw.zero();
         stackPush(dw);
     }
 
-    public void stackPushOne() {
+    private void stackPushOne() {
         DataWord stackWord=getNewDataWordFast();
         stackWord.assignData(DataWord.ONE.getData());
         stackPush(stackWord);
     }
 
-    public void stackClear(){
+    private void stackClear() {
         if (dataWordPool==null) {
             stack.clear();
             return;
@@ -363,12 +338,6 @@ public class Program {
         return dw;
     }
 
-    public DataWord newEmptyDataWord() {
-        DataWord dw=getNewDataWordFast();
-        dw.zero();
-        return dw;
-    }
-
     public void stackPush(DataWord stackWord) {
         verifyStackOverflow(0, 1); //Sanity Check
         stack.push(stackWord);
@@ -390,10 +359,6 @@ public class Program {
 
     public int getPC() {
         return pc;
-    }
-
-    public void setPC(DataWord pc) {
-        this.setPC(pc.intValue());
     }
 
     public void setPC(int pc) {
@@ -418,22 +383,6 @@ public class Program {
 
     public void step() {
         setPC(pc + 1);
-    }
-
-
-    public byte[] byteSweep(int n) {
-
-        if (pc + n > ops.length) {
-            stop();
-        }
-
-        byte[] data = Arrays.copyOfRange(ops, pc, pc + n);
-        pc += n;
-        if (pc >= ops.length) {
-            stop();
-        }
-
-        return data;
     }
 
     public DataWord sweepGetDataWord(int n) {
@@ -485,7 +434,7 @@ public class Program {
         memory.write(addrB.intValue(), value.getData(), value.getData().length, false);
     }
 
-    public void memorySaveLimited(int addr, byte[] data, int dataSize) {
+    private void memorySaveLimited(int addr, byte[] data, int dataSize) {
         memory.write(addr, data, dataSize, true);
     }
 
@@ -513,10 +462,6 @@ public class Program {
 
     public DataWord memoryLoad(DataWord addr) {
         return memory.readWord(addr.intValue());
-    }
-
-    public DataWord memoryLoad(int address) {
-        return memory.readWord(address);
     }
 
     public byte[] memoryChunk(int offset, int size) {
@@ -732,23 +677,6 @@ public class Program {
 
     }
 
-    public static long limitToMaxGas(DataWord gas) {
-        long r =gas.longValueSafe();
-        if (r>MAX_GAS) {
-            return MAX_GAS;
-        }
-        return r;
-
-    }
-
-    public static long limitToMaxGas(BigInteger gas) {
-        long r =limitToMaxLong(gas);
-        if (r>MAX_GAS) {
-            return MAX_GAS;
-        }
-        return r;
-    }
-
     public static long limitToMaxLong(BigInteger gas) {
         try {
             long r = gas.longValueExact();
@@ -769,16 +697,6 @@ public class Program {
             d = Math.multiplyExact(a, b);
         } catch (ArithmeticException e) {
             d = Long.MAX_VALUE;
-        }
-        return d;
-    }
-
-    public static long addLimitToMaxLong(long a,long b) {
-        long d;
-        try {
-            d = Math.addExact(a,b);
-        } catch (ArithmeticException e) {
-            d= Long.MAX_VALUE;
         }
         return d;
     }
@@ -863,7 +781,7 @@ public class Program {
         }
     }
 
-    public boolean executeCode(
+    private boolean executeCode(
             MessageCall msg,
             RskAddress contextAddress,
             Coin contextBalance,
@@ -871,10 +789,9 @@ public class Program {
             Repository track,
             byte[] programCode,
             RskAddress senderAddress,
-            byte[] data ) {
+            byte[] data) {
 
         returnDataBuffer = null; // reset return buffer right before the call
-        ProgramResult childResult = null;
 
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, new DataWord(contextAddress.getBytes()),
@@ -886,7 +803,7 @@ public class Program {
         VM vm = new VM(config, precompiledContracts);
         Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
         vm.play(program);
-        childResult  = program.getResult();
+        ProgramResult childResult = program.getResult();
 
         getTrace().merge(program.getTrace());
         getResult().merge(childResult);
@@ -964,7 +881,7 @@ public class Program {
         stopped=false;
     }
 
-    public void clearUsedGas() {
+    private void clearUsedGas() {
         getResult().clearUsedGas();
     }
 
@@ -972,7 +889,7 @@ public class Program {
         spendGas(getRemainingGas(), "Spending all remaining");
     }
 
-    public void refundGas(long gasValue, String cause) {
+    private void refundGas(long gasValue, String cause) {
         if (isGasLogEnabled) {
             gasLogger.info("[{}] Refund for cause: [{}], gas: [{}]", invoke.hashCode(), cause, gasValue);
         }
@@ -1002,7 +919,7 @@ public class Program {
         storageSave(word1.getData(), word2.getData());
     }
 
-    public void storageSave(byte[] key, byte[] val) {
+    private void storageSave(byte[] key, byte[] val) {
         // DataWord constructor some times reference the passed byte[] instead
         // of making a copy.
         DataWord keyWord = new DataWord(key);
@@ -1188,7 +1105,7 @@ public class Program {
                     if ((i + 1) % 16 == 0) {
                         String tmp = format("[%4s]-[%4s]", Integer.toString(i - 15, 16),
                                 Integer.toString(i, 16)).replace(" ", "0");
-                        memoryData.append("").append(tmp).append(" ");
+                        memoryData.append(tmp).append(" ");
                         memoryData.append(oneLine);
                         if (i < memory.size()) {
                             memoryData.append("\n");
@@ -1210,7 +1127,7 @@ public class Program {
                 if (i != pc) {
                     opsString.append(tmpString);
                 } else {
-                    opsString.append(" >>").append(tmpString).append("");
+                    opsString.append(" >>").append(tmpString);
                 }
 
             }
@@ -1269,25 +1186,15 @@ public class Program {
         }
     }
 
-    public static int getScriptVersionInCode(byte[] ops){
-        if (ops.length >= 4) {
-            OpCode op = OpCode.code(ops[0]);
-            if ((op!=null) && op == OpCode.HEADER) {
-                return ops[2];
-            }
-        }
-        return 0;
-    }
-
     public ProgramTrace getTrace() {
         return trace;
     }
 
-    public int processAndSkipCodeHeader(int offset) {
+    private int processAndSkipCodeHeader(int offset) {
         int ret = offset;
         if (ops.length >= 4) {
             OpCode op = OpCode.code(ops[0]);
-            if ((op != null) && op == OpCode.HEADER) {
+            if (op == OpCode.HEADER) {
                 // next byte is executable format version
                 // header length in bytes
                 int exe = ops[1] & 0xff;
@@ -1316,7 +1223,7 @@ public class Program {
         computeJumpDests(i);
     }
 
-    public void computeJumpDests(int start) {
+    private void computeJumpDests(int start) {
         if (jumpdestSet == null) {
             jumpdestSet = new BitSet(ops.length);
         }
@@ -1456,7 +1363,7 @@ public class Program {
         }
     }
 
-    public boolean byTestingSuite() {
+    private boolean byTestingSuite() {
         return invoke.byTestingSuite();
     }
 
@@ -1515,14 +1422,6 @@ public class Program {
             return new OutOfGasException("Not enough gas for '%s' operation executing: opGas[%d], programGas[%d];", op, opGas, programGas);
         }
 
-        public static OutOfGasException notEnoughOpGas(OpCode op, DataWord opGas, DataWord programGas) {
-            return notEnoughOpGas(op, opGas.longValue(), programGas.longValue());
-        }
-
-        public static OutOfGasException notEnoughOpGas(OpCode op, BigInteger opGas, BigInteger programGas) {
-            return notEnoughOpGas(op, opGas.longValue(), programGas.longValue());
-        }
-
         public static OutOfGasException notEnoughSpendingGas(String cause, long gasValue, Program program) {
             return new OutOfGasException("Not enough gas for '%s' cause spending: invokeGas[%d], gas[%d], usedGas[%d];",
                     cause, program.invoke.getGas(), gasValue, program.getResult().getGasUsed());
@@ -1531,18 +1430,16 @@ public class Program {
         public static OutOfGasException gasOverflow(BigInteger actualGas, BigInteger gasLimit) {
             return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d];", actualGas.longValue(), gasLimit.longValue());
         }
-        public static OutOfGasException gasOverflow(long actualGas, BigInteger gasLimit) {
-            return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d];", actualGas, gasLimit.longValue());
-        }
+
         public static IllegalOperationException invalidOpCode(byte... opCode) {
             return new IllegalOperationException("Invalid operation code: opcode[%s];", Hex.toHexString(opCode, 0, 1));
         }
 
-        public static BadJumpDestinationException badJumpDestination(int pc) {
+        private static BadJumpDestinationException badJumpDestination(int pc) {
             return new BadJumpDestinationException("Operation with pc isn't 'JUMPDEST': PC[%d];", pc);
         }
 
-        public static StackTooSmallException tooSmallStack(int expectedSize, int actualSize) {
+        private static StackTooSmallException tooSmallStack(int expectedSize, int actualSize) {
             return new StackTooSmallException("Expected stack size %d but actual %d;", expectedSize, actualSize);
         }
 
@@ -1552,8 +1449,8 @@ public class Program {
     }
 
     @SuppressWarnings("serial")
-    public class StackTooLargeException extends RuntimeException {
-        public StackTooLargeException(String message) {
+    private class StackTooLargeException extends RuntimeException {
+        private StackTooLargeException(String message) {
             super(message);
         }
     }
@@ -1575,10 +1472,12 @@ public class Program {
     public byte getExeVersion() {
         return exeVersion;
     }
+
     public byte getScriptVersion() {
         return scriptVersion;
     }
-    public int getStartAddr(){
+
+    public int getStartAddr() {
         return startAddr;
     }
 
