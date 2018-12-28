@@ -63,8 +63,6 @@ public interface ProgramInvoke {
 
     DataWord getGaslimit();
 
-    boolean byTransaction();
-
     boolean byTestingSuite();
 
     int getCallDeep();

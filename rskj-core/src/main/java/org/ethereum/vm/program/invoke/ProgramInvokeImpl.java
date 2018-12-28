@@ -26,7 +26,6 @@ import org.ethereum.vm.program.Program;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.Map;
 
 /**
  * @author Roman Mandeleil
@@ -46,7 +45,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private final DataWord callValue;
     private long gas;
 
-    byte[] msgData;
+    private byte[] msgData;
 
     /**
      * BLOCK  env **
@@ -59,8 +58,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private final DataWord gaslimit;
 
     private final DataWord transactionIndex;
-
-    private Map<DataWord, DataWord> storage;
 
     private final Repository repository;
     private boolean byTransaction = true;
@@ -147,36 +144,43 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*           ADDRESS op         */
+    @Override
     public DataWord getOwnerAddress() {
         return address;
     }
 
     /*           BALANCE op         */
+    @Override
     public DataWord getBalance() {
         return balance;
     }
 
     /*           ORIGIN op         */
+    @Override
     public DataWord getOriginAddress() {
         return origin;
     }
 
     /*           CALLER op         */
+    @Override
     public DataWord getCallerAddress() {
         return caller;
     }
 
     /*           GASPRICE op       */
+    @Override
     public DataWord getMinGasPrice() {
         return gasPrice;
     }
 
     /*           GAS op       */
+    @Override
     public long  getGas() {
         return gas;
     }
 
     /*          CALLVALUE op    */
+    @Override
     public DataWord getCallValue() {
         return callValue;
     }
@@ -190,6 +194,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private static BigInteger maxMsgData = BigInteger.valueOf(Integer.MAX_VALUE);
 
     /*     CALLDATALOAD  op   */
+    @Override
     public DataWord getDataValue(DataWord indexData) {
 
         BigInteger tempIndex = indexData.value();
@@ -210,6 +215,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*  CALLDATASIZE */
+    @Override
     public DataWord getDataSize() {
 
         if (msgData == null || msgData.length == 0) {
@@ -220,6 +226,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*  CALLDATACOPY */
+    @Override
     public byte[] getDataCopy(DataWord offsetData, DataWord lengthData) {
 
         int offset = offsetData.intValueSafe();
@@ -244,45 +251,48 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
 
     /*     PREVHASH op    */
+    @Override
     public DataWord getPrevHash() {
         return prevHash;
     }
 
     /*     COINBASE op    */
+    @Override
     public DataWord getCoinbase() {
         return coinbase;
     }
 
     /*     TIMESTAMP op    */
+    @Override
     public DataWord getTimestamp() {
         return timestamp;
     }
 
     /*     NUMBER op    */
+    @Override
     public DataWord getNumber() {
         return number;
     }
 
     /*     TXINDEX op    */
+    @Override
     public DataWord getTransactionIndex() {
         return transactionIndex;
     }
 
     /*     DIFFICULTY op    */
+    @Override
     public DataWord getDifficulty() {
         return difficulty;
     }
 
     /*     GASLIMIT op    */
+    @Override
     public DataWord getGaslimit() {
         return gaslimit;
     }
 
-    /*  Storage */
-    public Map<DataWord, DataWord> getStorage() {
-        return storage;
-    }
-
+    @Override
     public Repository getRepository() {
         return repository;
     }
@@ -290,11 +300,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     @Override
     public BlockStore getBlockStore() {
         return blockStore;
-    }
-
-    @Override
-    public boolean byTransaction() {
-        return byTransaction;
     }
 
     @Override
@@ -371,9 +376,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         if (repository != null ? !repository.equals(that.repository) : that.repository != null) {
             return false;
         }
-        if (storage != null ? !storage.equals(that.storage) : that.storage != null) {
-            return false;
-        }
         if (timestamp != null ? !timestamp.equals(that.timestamp) : that.timestamp != null) {
             return false;
         }
@@ -398,7 +400,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                 ", number=" + number +
                 ", difficulty=" + difficulty +
                 ", gaslimit=" + gaslimit +
-                ", storage=" + storage +
                 ", repository=" + repository +
                 ", byTransaction=" + byTransaction +
                 ", byTestingSuite=" + byTestingSuite +

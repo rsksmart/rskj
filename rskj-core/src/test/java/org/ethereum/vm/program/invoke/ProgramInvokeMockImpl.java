@@ -36,6 +36,7 @@ import java.nio.charset.StandardCharsets;
  * @since 03.06.2014
  */
 public class ProgramInvokeMockImpl implements ProgramInvoke {
+    private static RskAddress defaultContractAddress = new RskAddress("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
 
     private byte[] msgData;
 
@@ -43,7 +44,6 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     private Repository repository;
     private RskAddress ownerAddress = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
-    private final RskAddress defaultContractAddress = new RskAddress("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
 
     private RskAddress contractAddress;
     // default for most tests. This can be overwritten by the test
@@ -54,7 +54,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         this.msgData = msgDataRaw;
     }
 
-    public ProgramInvokeMockImpl(String contractCode, RskAddress contractAddress) {
+    private ProgramInvokeMockImpl(String contractCode, RskAddress contractAddress) {
         this(Hex.decode(contractCode), contractAddress);
     }
 
@@ -63,7 +63,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
         this.repository.createAccount(ownerAddress);
         //Defaults to defaultContractAddress constant defined in this mock
-        this.contractAddress = contractAddress!=null?contractAddress:this.defaultContractAddress;
+        this.contractAddress = contractAddress != null ? contractAddress : defaultContractAddress;
         this.repository.createAccount(this.contractAddress);
         this.repository.saveCode(this.contractAddress, contractCode);
         this.txindex = DataWord.ZERO;
@@ -79,9 +79,6 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     public RskAddress getContractAddress() {
         return this.contractAddress;
-    }
-
-    public ProgramInvokeMockImpl(boolean defaults) {
     }
 
     /*           ADDRESS op         */
@@ -235,11 +232,6 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     public void setOwnerAddress(RskAddress ownerAddress) {
         this.ownerAddress = ownerAddress;
-    }
-
-    @Override
-    public boolean byTransaction() {
-        return true;
     }
 
     @Override
