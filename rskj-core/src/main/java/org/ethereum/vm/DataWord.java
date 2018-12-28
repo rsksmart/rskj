@@ -41,11 +41,10 @@ import java.nio.ByteBuffer;
 public final class DataWord implements Comparable<DataWord> {
 
     /* Maximum value of the DataWord */
-    public static final BigInteger _2_256 = BigInteger.valueOf(2).pow(256);
+    private static final BigInteger _2_256 = BigInteger.valueOf(2).pow(256);
     public static final BigInteger MAX_VALUE = _2_256.subtract(BigInteger.ONE);
     public static final DataWord ZERO = new DataWord(new byte[32]);      // don't push it in to the stack
     public static final DataWord ONE = new DataWord(1);
-    public static final DataWord ZERO_EMPTY_ARRAY = new DataWord(new byte[0]);      // don't push it in to the stack
 
     private byte[] data; // Optimization, do not initialize until needed
 
@@ -53,7 +52,7 @@ public final class DataWord implements Comparable<DataWord> {
         newZeroData();
     }
 
-    public void newZeroData() {
+    private void newZeroData() {
         data=new byte[32];
     }
 
@@ -107,9 +106,10 @@ public final class DataWord implements Comparable<DataWord> {
         data[25] = (byte) ((i>>48) & 0xff);
         data[24] = (byte) ((i>>56) & 0xff);
     }
+
     // Assign does not assume data!=null to be able to be called
     // from contructor
-    public void assign(byte[] data) {
+    private void assign(byte[] data) {
         if (data == null) {
             this.data = ByteUtil.EMPTY_BYTE_ARRAY;
         } else if (data.length == 32) {
@@ -231,21 +231,7 @@ public final class DataWord implements Comparable<DataWord> {
 
         return longVal;
     }
-    /**
-     * Converts this DataWord to a long, checking for lost information.
-     * If this DataWord is out of the possible range for a long result
-     * then an ArithmeticException is thrown.
-     *
-     * @return this DataWord converted to a long.
-     * @throws ArithmeticException - if this will not fit in a long.
-     */
-    public long longValueCheck() {
-        if (bitsOccupied()>63) {
-            throw new ArithmeticException();
-        }
 
-        return longValue();
-    }
     /**
      * In case of long overflow returns Long.MAX_VALUE
      * otherwise works as #longValue()
@@ -322,36 +308,10 @@ public final class DataWord implements Comparable<DataWord> {
         return this;
     }
 
-    public void negate() {
-
-        if (this.isZero()) {
-            return;
-        }
-
-        for (int i = 0; i < this.data.length; ++i) {
-            this.data[i] = (byte) ~this.data[i];
-        }
-
-        for (int i = this.data.length - 1; i >= 0; --i) {
-            this.data[i] = (byte) (1 + this.data[i] & 0xFF);
-            if (this.data[i] != 0) {
-                break;
-            }
-        }
-    }
-
     public void bnot() {
         for (int i = 0; i < this.data.length; ++i) {
             this.data[i] = (byte) ~this.data[i];
         }
-    }
-    // this is 100 times slower than the new not.
-    public void slowBnot() {
-        if (this.isZero()) {
-            this.data = ByteUtil.copyToArray(MAX_VALUE);
-            return;
-        }
-        this.data = ByteUtil.copyToArray(MAX_VALUE.subtract(this.value()));
     }
 
     // By   : Holger
@@ -487,6 +447,7 @@ public final class DataWord implements Comparable<DataWord> {
         return "0x" + hexValue.replaceFirst("^0+(?!$)", "");
     }
 
+    @Override
     public DataWord clone() {
         return new DataWord(Arrays.clone(data));
     }
@@ -519,7 +480,7 @@ public final class DataWord implements Comparable<DataWord> {
         }
         int result = FastByteComparisons.compareTo(
                 data, 0, data.length,
-                o.getData(), 0, o.getData().length);
+                o.data, 0, o.data.length);
 
         // Convert result into -1, 0 or 1 as is the convention
         // SigNum uses floating point arithmetic. It should be faster
@@ -556,7 +517,7 @@ public final class DataWord implements Comparable<DataWord> {
         return 31 - firstNonZero + 1;
     }
 
-    public static int numberOfLeadingZeros(byte i) {
+    private static int numberOfLeadingZeros(byte i) {
         // UNTESTED: Needs unit testing
         if (i == 0) {
             return 8;
@@ -578,11 +539,11 @@ public final class DataWord implements Comparable<DataWord> {
         return n;
     }
 
-    public static int numberOfTrailingNonZeros(byte i) {
+    private static int numberOfTrailingNonZeros(byte i) {
         return 8 - numberOfLeadingZeros(i);
     }
 
-    public int bitsOccupied() {
+    private int bitsOccupied() {
         int firstNonZero = ByteUtil.firstNonZeroByte(data);
         if (firstNonZero == -1) {
             return 0;
@@ -590,10 +551,6 @@ public final class DataWord implements Comparable<DataWord> {
 
         // TODO Replace/Update this class code with current EthereumJ version
         return numberOfTrailingNonZeros(data[firstNonZero]) + ((31 - firstNonZero)<<3);
-    }
-
-    public boolean isHex(String hex) {
-        return Hex.toHexString(data).equals(hex);
     }
 
     /**
