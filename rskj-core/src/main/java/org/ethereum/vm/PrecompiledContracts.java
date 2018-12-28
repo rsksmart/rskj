@@ -49,12 +49,12 @@ import static org.ethereum.util.ByteUtil.*;
  */
 public class PrecompiledContracts {
 
-    public static final String ECRECOVER_ADDR = "0000000000000000000000000000000000000001";
-    public static final String SHA256_ADDR = "0000000000000000000000000000000000000002";
-    public static final String RIPEMPD160_ADDR = "0000000000000000000000000000000000000003";
-    public static final String IDENTITY_ADDR_STR = "0000000000000000000000000000000000000004";
-    public static final String BIG_INT_MODEXP_ADDR = "0000000000000000000000000000000000000005";
-    public static final String SAMPLE_ADDR_STR = "0000000000000000000000000000000001000005";
+    private static final String ECRECOVER_ADDR = "0000000000000000000000000000000000000001";
+    private static final String SHA256_ADDR = "0000000000000000000000000000000000000002";
+    private static final String RIPEMPD160_ADDR = "0000000000000000000000000000000000000003";
+    private static final String IDENTITY_ADDR_STR = "0000000000000000000000000000000000000004";
+    private static final String BIG_INT_MODEXP_ADDR = "0000000000000000000000000000000000000005";
+    private static final String SAMPLE_ADDR_STR = "0000000000000000000000000000000001000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
 
@@ -63,14 +63,14 @@ public class PrecompiledContracts {
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_STR);
     public static final RskAddress SAMPLE_ADDR = new RskAddress(SAMPLE_ADDR_STR);
 
-    public static final DataWord BRIDGE_ADDR_DW = new DataWord(BRIDGE_ADDR.getBytes());
-    public static final DataWord IDENTITY_ADDR_DW = new DataWord(IDENTITY_ADDR.getBytes());
-    public static final DataWord REMASC_ADDR_DW  = new DataWord(REMASC_ADDR.getBytes());
-    public static final DataWord SAMPLE_ADDR_DW = new DataWord(SAMPLE_ADDR.getBytes());
-    public static final DataWord ECRECOVER_ADDR_DW = new DataWord(ECRECOVER_ADDR);
-    public static final DataWord RIPEMPD160_ADDR_DW = new DataWord(RIPEMPD160_ADDR);
-    public static final DataWord BIG_INT_MODEXP_ADDR_DW = new DataWord(BIG_INT_MODEXP_ADDR);
-    public static final DataWord SHA256_ADDR_DW = new DataWord(SHA256_ADDR);
+    private static final DataWord BRIDGE_ADDR_DW = new DataWord(BRIDGE_ADDR.getBytes());
+    private static final DataWord IDENTITY_ADDR_DW = new DataWord(IDENTITY_ADDR.getBytes());
+    private static final DataWord REMASC_ADDR_DW  = new DataWord(REMASC_ADDR.getBytes());
+    private static final DataWord SAMPLE_ADDR_DW = new DataWord(SAMPLE_ADDR.getBytes());
+    private static final DataWord ECRECOVER_ADDR_DW = new DataWord(ECRECOVER_ADDR);
+    private static final DataWord RIPEMPD160_ADDR_DW = new DataWord(RIPEMPD160_ADDR);
+    private static final DataWord BIG_INT_MODEXP_ADDR_DW = new DataWord(BIG_INT_MODEXP_ADDR);
+    private static final DataWord SHA256_ADDR_DW = new DataWord(SHA256_ADDR);
 
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
@@ -132,7 +132,7 @@ public class PrecompiledContracts {
 
     public static class Identity extends PrecompiledContract {
 
-        public Identity() {
+        private Identity() {
         }
 
         @Override
