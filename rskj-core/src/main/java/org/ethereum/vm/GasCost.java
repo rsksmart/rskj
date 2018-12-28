@@ -28,22 +28,6 @@ package org.ethereum.vm;
  */
 public class GasCost {
 
-    /* backwards compatibility, remove eventually */
-    public static final int STEP = 1;
-    public static final int SSTORE = 300;
-    /* backwards compatibility, remove eventually */
-
-    public static final int ZEROSTEP = 0;
-    public static final int QUICKSTEP = 2;
-    public static final int FASTESTSTEP = 3;
-    public static final int FASTSTEP = 5;
-    public static final int MIDSTEP = 8;
-    public static final int SLOWSTEP = 10;
-    public static final int EXTSTEP = 20;
-
-    public static final int GENESISGASLIMIT = 1000000;
-    public static final int MINGASLIMIT = 125000;
-
     public static final int BALANCE = 400;
     public static final int SHA3 = 30;
     public static final int SHA3_WORD = 6;
@@ -57,16 +41,12 @@ public class GasCost {
     public static final int REFUND_SSTORE = 15000;
     public static final int CREATE = 32000;
 
-    public static final int JUMPDEST = 1;
-    public static final int CREATE_DATA_BYTE = 5;
     public static final int CALL = 700;
     public static final int STIPEND_CALL = 2300; // For transferring coins in CALL, this is always passed to child
     public static final int VT_CALL = 9000;  //value transfer call
     public static final int NEW_ACCT_CALL = 25000;  //new account call
     public static final int MEMORY = 3; // TODO: Memory in V0 is more expensive than V1: This MUST be modified before release
-    public static final int MEMORY_V1 =3;
     public static final int SUICIDE_REFUND = 24000;
-    public static final int QUAD_COEFF_DIV = 512;
     public static final int CREATE_DATA = 200; // paid for each new byte of code
     public static final int REPLACE_DATA = 50; // paid for each byte of code replaced
     public static final int TX_NO_ZERO_DATA = 68;
@@ -80,13 +60,6 @@ public class GasCost {
     public static final int COPY_GAS = 3;
     public static final int EXP_GAS = 10;
     public static final int EXP_BYTE_GAS = 50;
-    public static final int IDENTITY = 15;
-    public static final int IDENTITY_WORD = 3;
-    public static final int RIPEMD160 = 600;
-    public static final int RIPEMD160_WORD = 120;
-    public static final int SHA256 = 60;
-    public static final int SHA256_WORD = 12;
-    public static final int EC_RECOVER = 3000;
     public static final int EXT_CODE_SIZE = 700;
     public static final int EXT_CODE_COPY = 700;
     public static final int NEW_ACCT_SUICIDE = 25000;
