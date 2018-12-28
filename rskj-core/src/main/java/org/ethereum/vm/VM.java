@@ -21,17 +21,16 @@ package org.ethereum.vm;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.Blockchain;
-import org.ethereum.crypto.HashUtil;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -88,8 +87,6 @@ public class VM {
 
     /* Keeps track of the number of steps performed in this VM */
     private int vmCounter = 0;
-
-    private static VMHook vmHook;
 
     private final VmConfig vmConfig;
     private final PrecompiledContracts precompiledContracts;
@@ -169,7 +166,7 @@ public class VM {
         vmCounter =0;
     }
 
-    protected void checkOpcode() {
+    private void checkOpcode() {
         if (op == null) {
             throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
         }
@@ -180,7 +177,7 @@ public class VM {
     }
 
 
-    public static long limitedAddToMaxLong(long left, long right) {
+    private static long limitedAddToMaxLong(long left, long right) {
         try {
             return Math.addExact(left, right);
         } catch (ArithmeticException e) {
@@ -188,7 +185,7 @@ public class VM {
         }
     }
 
-    protected void spendOpCodeGas() {
+    private void spendOpCodeGas() {
         if (!computeGas) {
             return;
         }
@@ -196,7 +193,7 @@ public class VM {
     }
 
 
-    protected void doSTOP() {
+    private void doSTOP() {
         if (computeGas) {
             gasCost = GasCost.STOP;
             spendOpCodeGas();
@@ -206,7 +203,7 @@ public class VM {
         program.stop();
     }
 
-    protected void doADD() {
+    private void doADD() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -223,7 +220,7 @@ public class VM {
 
     }
 
-    protected void doMUL() {
+    private void doMUL() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -239,7 +236,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSUB() {
+    private void doSUB() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -255,7 +252,7 @@ public class VM {
         program.step();
     }
 
-    protected void doDIV()  {
+    private void doDIV()  {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -271,7 +268,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSDIV() {
+    private void doSDIV() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -287,7 +284,7 @@ public class VM {
         program.step();
     }
 
-    protected void doMOD() {
+    private void doMOD() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -303,7 +300,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSMOD() {
+    private void doSMOD() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -319,7 +316,7 @@ public class VM {
         program.step();
     }
 
-    protected void doEXP() {
+    private void doEXP() {
         if (computeGas) {
             DataWord exp = stack.get(stack.size() - 2);
             int bytesOccupied = exp.bytesOccupied();
@@ -340,7 +337,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSIGNEXTEND()  {
+    private void doSIGNEXTEND()  {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -358,7 +355,7 @@ public class VM {
         program.step();
     }
 
-    protected void doNOT() {
+    private void doNOT() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -372,7 +369,7 @@ public class VM {
         program.step();
     }
 
-    protected void doLT() {
+    private void doLT() {
         spendOpCodeGas();
         // EXECUTION PHASE
         // TODO: can be improved by not using BigInteger
@@ -394,7 +391,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSLT() {
+    private void doSLT() {
         spendOpCodeGas();
         // EXECUTION PHASE
         // TODO: can be improved by not using BigInteger
@@ -415,7 +412,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSGT() {
+    private void doSGT() {
         spendOpCodeGas();
         // EXECUTION PHASE
         // TODO: can be improved by not using BigInteger
@@ -437,7 +434,7 @@ public class VM {
     }
 
 
-    protected void doGT() {
+    private void doGT() {
         spendOpCodeGas();
         // EXECUTION PHASE
         // TODO: can be improved by not using BigInteger
@@ -458,7 +455,7 @@ public class VM {
         program.step();
     }
 
-    protected void doEQ() {
+    private void doEQ() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -478,7 +475,7 @@ public class VM {
         program.step();
     }
 
-    protected void  doISZERO() {
+    private void doISZERO() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -498,7 +495,7 @@ public class VM {
         program.step();
     }
 
-    protected void doAND(){
+    private void doAND() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -514,7 +511,7 @@ public class VM {
         program.step();
     }
 
-    protected void doOR(){
+    private void doOR() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -530,7 +527,7 @@ public class VM {
         program.step();
     }
 
-    protected void doXOR(){
+    private void doXOR() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -546,7 +543,7 @@ public class VM {
         program.step();
     }
 
-    protected void doBYTE() {
+    private void doBYTE() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -572,7 +569,7 @@ public class VM {
         program.step();
     }
 
-    protected void doADDMOD() {
+    private void doADDMOD() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -585,7 +582,7 @@ public class VM {
         program.step();
     }
 
-    protected void doMULMOD() {
+    private void doMULMOD() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -598,7 +595,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSHA3() {
+    private void doSHA3() {
         DataWord size;
         long sizeLong;
         long newMemSize ;
@@ -632,7 +629,7 @@ public class VM {
         program.step();
     }
 
-    protected void doADDRESS() {
+    private void doADDRESS() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord address = program.getOwnerAddress();
@@ -646,7 +643,7 @@ public class VM {
         program.step();
     }
 
-    protected void doBALANCE() {
+    private void doBALANCE() {
         if (computeGas) {
             gasCost = GasCost.BALANCE;
             spendOpCodeGas();
@@ -666,7 +663,7 @@ public class VM {
         program.step();
     }
 
-    protected void doORIGIN(){
+    private void doORIGIN() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord originAddress = program.getOriginAddress();
@@ -679,7 +676,7 @@ public class VM {
         program.step();
     }
 
-    protected void doCALLER()  {
+    private void doCALLER()  {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord callerAddress = program.getCallerAddress();
@@ -692,7 +689,7 @@ public class VM {
         program.step();
     }
 
-    protected void doCALLVALUE() {
+    private void doCALLVALUE() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord callValue = program.getCallValue();
@@ -705,7 +702,7 @@ public class VM {
         program.step();
     }
 
-    protected void  doCALLDATALOAD() {
+    private void doCALLDATALOAD() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord dataOffs = program.stackPop();
@@ -720,7 +717,7 @@ public class VM {
         program.step();
     }
 
-    protected void doCALLDATASIZE() {
+    private void doCALLDATASIZE() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord dataSize = program.getDataSize();
@@ -733,7 +730,7 @@ public class VM {
         program.step();
     }
 
-    protected void doCALLDATACOPY() {
+    private void doCALLDATACOPY() {
         if (computeGas) {
             gasCost += computeDataCopyGas();
             spendOpCodeGas();
@@ -764,7 +761,7 @@ public class VM {
         return calcMemGas(oldMemSize, newMemSize, copySize);
     }
 
-    protected void doCODESIZE() {
+    private void doCODESIZE() {
         if (computeGas) {
             if (op == OpCode.EXTCODESIZE) {
                 gasCost = GasCost.EXT_CODE_SIZE;
@@ -797,7 +794,7 @@ public class VM {
         program.step();
     }
 
-    protected void doCODECOPY() {
+    private void doCODECOPY() {
         DataWord size;
         long newMemSize ;
         long copySize;
@@ -883,7 +880,7 @@ public class VM {
         program.step();
     }
 
-    protected void doRETURNDATASIZE() {
+    private void doRETURNDATASIZE() {
         spendOpCodeGas();
         DataWord dataSize = program.getReturnDataBufferSize();
         if (isLogEnabled) {
@@ -893,7 +890,7 @@ public class VM {
         program.step();
     }
 
-    protected void doRETURNDATACOPY() {
+    private void doRETURNDATACOPY() {
         if (computeGas) {
             gasCost += computeDataCopyGas();
             spendOpCodeGas();
@@ -919,7 +916,7 @@ public class VM {
         program.step();
     }
 
-    protected void doGASPRICE(){
+    private void doGASPRICE() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord gasPrice = program.getGasPrice();
@@ -932,7 +929,7 @@ public class VM {
         program.step();
     }
 
-    protected void doTXINDEX() {
+    private void doTXINDEX() {
         spendOpCodeGas();
         // EXECUTION PHASE
 
@@ -946,7 +943,7 @@ public class VM {
         program.step();
     }
 
-    protected void doBLOCKHASH() {
+    private void doBLOCKHASH() {
         spendOpCodeGas();
         // EXECUTION PHASE
 
@@ -962,7 +959,7 @@ public class VM {
         program.step();
     }
 
-    protected void doCOINBASE() {
+    private void doCOINBASE() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord coinbase = program.getCoinbase();
@@ -975,7 +972,7 @@ public class VM {
         program.step();
     }
 
-    protected void doTIMESTAMP() {
+    private void doTIMESTAMP() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord timestamp = program.getTimestamp();
@@ -988,7 +985,7 @@ public class VM {
         program.step();
     }
 
-    protected void doNUMBER(){
+    private void doNUMBER() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord number = program.getNumber();
@@ -1001,7 +998,7 @@ public class VM {
         program.step();
     }
 
-    protected void doDIFFICULTY() {
+    private void doDIFFICULTY() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord difficulty = program.getDifficulty();
@@ -1014,7 +1011,7 @@ public class VM {
         program.step();
     }
 
-    protected void doGASLIMIT() {
+    private void doGASLIMIT() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord gaslimit = program.getGasLimit();
@@ -1027,14 +1024,14 @@ public class VM {
         program.step();
     }
 
-    protected void doPOP(){
+    private void doPOP() {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.disposeWord(program.stackPop());
         program.step();
     }
 
-    protected void doDUP() {
+    private void doDUP() {
         spendOpCodeGas();
         // EXECUTION PHASE
         int n = op.val() - OpCode.DUP1.val() + 1;
@@ -1043,7 +1040,7 @@ public class VM {
         program.step();
     }
 
-    protected void doDUPN() {
+    private void doDUPN() {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
@@ -1058,7 +1055,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSWAP(){
+    private void doSWAP() {
         spendOpCodeGas();
         // EXECUTION PHASE
         int n = op.val() - OpCode.SWAP1.val() + 2;
@@ -1067,7 +1064,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSWAPN(){
+    private void doSWAPN() {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
@@ -1081,7 +1078,7 @@ public class VM {
         program.step();
     }
 
-    protected void doLOG(){
+    private void doLOG() {
         if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
             throw Program.ExceptionHelper.modificationException();
         }
@@ -1140,7 +1137,7 @@ public class VM {
         program.step();
     }
 
-    protected void doMLOAD(){
+    private void doMLOAD() {
         long newMemSize ;
 
         if (computeGas) {
@@ -1161,7 +1158,7 @@ public class VM {
         program.step();
     }
 
-    protected void doMSTORE() {
+    private void doMSTORE() {
         long newMemSize ;
 
         if (computeGas) {
@@ -1183,7 +1180,7 @@ public class VM {
         program.step();
     }
 
-    protected void doMSTORE8(){
+    private void doMSTORE8() {
         long newMemSize ;
 
         if (computeGas) {
@@ -1203,7 +1200,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSLOAD() {
+    private void doSLOAD() {
         if (computeGas) {
             gasCost = GasCost.SLOAD;
             spendOpCodeGas();
@@ -1226,7 +1223,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSSTORE() {
+    private void doSSTORE() {
         if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
             throw Program.ExceptionHelper.modificationException();
         }
@@ -1269,7 +1266,7 @@ public class VM {
         program.step();
     }
 
-    protected void doJUMP(){
+    private void doJUMP() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord pos = program.stackPop();
@@ -1284,7 +1281,7 @@ public class VM {
 
     }
 
-    protected void doJUMPI(){
+    private void doJUMPI() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord pos = program.stackPop();
@@ -1306,7 +1303,7 @@ public class VM {
         program.disposeWord(cond);
     }
 
-    protected void doPC(){
+    private void doPC() {
         spendOpCodeGas();
         // EXECUTION PHASE
         int pc = program.getPC();
@@ -1320,7 +1317,7 @@ public class VM {
         program.step();
     }
 
-    protected void doMSIZE(){
+    private void doMSIZE() {
         spendOpCodeGas();
         // EXECUTION PHASE
         int memSize = program.getMemSize();
@@ -1334,7 +1331,7 @@ public class VM {
         program.step();
     }
 
-    protected void doGAS(){
+    private void doGAS() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord gas = program.newDataWord(program.getRemainingGas());
@@ -1347,7 +1344,7 @@ public class VM {
         program.step();
     }
 
-    protected void doPUSH(){
+    private void doPUSH() {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
@@ -1362,14 +1359,14 @@ public class VM {
         program.stackPush(data);
     }
 
-    protected void doJUMPDEST()
+    private void doJUMPDEST()
     {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
     }
 
-    protected void doCREATE(){
+    private void doCREATE() {
         if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
             throw Program.ExceptionHelper.modificationException();
         }
@@ -1407,7 +1404,7 @@ public class VM {
         program.step();
     }
 
-    protected void doCALL(){
+    private void doCALL() {
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
@@ -1529,12 +1526,12 @@ public class VM {
         return callGas;
     }
 
-    protected void doREVERT(){
+    private void doREVERT() {
         doRETURN();
         program.getResult().setRevert();
     }
 
-    protected void doRETURN(){
+    private void doRETURN() {
         DataWord size;
         long sizeLong;
         long newMemSize ;
@@ -1569,7 +1566,7 @@ public class VM {
         program.stop();
     }
 
-    protected void doSUICIDE(){
+    private void doSUICIDE() {
         if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
             throw Program.ExceptionHelper.modificationException();
         }
@@ -1594,8 +1591,7 @@ public class VM {
         program.stop();
     }
 
-    protected void doCODEREPLACE() {
-
+    private void doCODEREPLACE() {
         DataWord size;
         long newCodeSizeLong;
         long newMemSize ;
@@ -1644,7 +1640,7 @@ public class VM {
         program.step();
     }
 
-    protected void executeOpcode() {
+    private void executeOpcode() {
         // Execute operation
         BlockchainConfig config = program.getBlockchainConfig();
         switch (op.val()) {
@@ -1891,7 +1887,7 @@ public class VM {
         }
     }
 
-    protected void logOpCode() {
+    private void logOpCode() {
         if (isLogEnabled && !op.equals(OpCode.CALL)
                 && !op.equals(OpCode.CALLCODE)
                 && !op.equals(OpCode.CREATE)) {
@@ -1946,11 +1942,7 @@ public class VM {
                     this.dumpLine(op, gasBefore, gasCost , memWords, program);
                 }
 
-                if (vmHook != null) {
-                    vmHook.step(program, op);
-                }
                 executeOpcode();
-                program.setPreviouslyExecutedOp(op.val());
                 logOpCode();
                 vmCounter++;
             } // for
@@ -1968,34 +1960,21 @@ public class VM {
         }
     }
 
-    public void initDebugData() {
+    private void initDebugData() {
         gasBefore = 0;
         memWords = 0;
     }
 
     public void play(Program program) {
         try {
-            if (vmHook != null) {
-                vmHook.startPlay(program);
-            }
-
             initDebugData();
             this.steps(program,Long.MAX_VALUE);
-
-            if (vmHook != null) {
-                vmHook.stopPlay(program);
-            }
-
         } catch (RuntimeException e) {
             program.setRuntimeFailure(e);
-        } catch (StackOverflowError soe){
+        } catch (StackOverflowError soe) {
             logger.error("\n !!! StackOverflowError: update your java run command with -Xss32M !!!\n", soe);
             System.exit(-1);
         }
-    }
-
-    public static void setVmHook(VMHook vmHook) {
-        VM.vmHook = vmHook;
     }
 
     /**
