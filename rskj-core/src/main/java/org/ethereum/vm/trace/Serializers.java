@@ -19,19 +19,13 @@
 
 package org.ethereum.vm.trace;
 
+import co.rsk.panic.PanicProcessor;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
-import co.rsk.panic.PanicProcessor;
-import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -42,31 +36,6 @@ public final class Serializers {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("vmtrace");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-
-    public static class DataWordSerializer extends JsonSerializer<DataWord> {
-
-        @Override
-        public void serialize(DataWord gas, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
-            jgen.writeString(gas.value().toString());
-        }
-    }
-
-    public static class ByteArraySerializer extends JsonSerializer<byte[]> {
-
-        @Override
-        public void serialize(byte[] memory, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
-            jgen.writeString(Hex.toHexString(memory));
-        }
-    }
-
-    public static class OpCodeSerializer extends JsonSerializer<Byte> {
-
-        @Override
-        public void serialize(Byte op, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
-            jgen.writeString(org.ethereum.vm.OpCode.code(op).name());
-        }
-    }
-
 
     public static String serializeFieldsOnly(Object value, boolean pretty) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -93,7 +62,7 @@ public final class Serializers {
                 .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE);
     }
 
-    public static ObjectMapper createMapper(boolean pretty) {
+    private static ObjectMapper createMapper(boolean pretty) {
         ObjectMapper mapper = new ObjectMapper();
         if (pretty) {
             mapper.enable(SerializationFeature.INDENT_OUTPUT);
