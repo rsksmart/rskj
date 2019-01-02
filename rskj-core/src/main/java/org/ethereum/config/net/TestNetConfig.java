@@ -22,6 +22,7 @@ package org.ethereum.config.net;
 
 import org.ethereum.config.blockchain.testnet.TestNetBeforeBridgeSyncConfig;
 import org.ethereum.config.blockchain.testnet.TestNetDifficultyDropEnabledConfig;
+import org.ethereum.config.blockchain.testnet.TestNetOrchid060Config;
 
 public class TestNetConfig extends AbstractNetConfig {
     public static final TestNetConfig INSTANCE = new TestNetConfig();
@@ -31,5 +32,7 @@ public class TestNetConfig extends AbstractNetConfig {
         // 21 days of 1 block every 14 seconds.
         // On blockchain launch blocks will be faster until difficulty is adjusted to available hashing power.
         add(114_000, new TestNetDifficultyDropEnabledConfig());
+        // Static call fix.
+        add(233_000, new TestNetOrchid060Config());
     }
 }

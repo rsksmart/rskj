@@ -21,20 +21,34 @@ import com.typesafe.config.Config;
 
 public class HardForkActivationConfig {
     private final int orchidActivationHeight;
+    private final int orchid060ActivationHeight;
 
     private static final String PROPERTY_ORCHID_NAME = "orchid";
+    private static final String PROPERTY_ORCHID_060_NAME = "orchid060";
 
     public HardForkActivationConfig(Config config) {
         // If I don't have any config for orchidActivationHeight I will set it to 0
-        this(config.hasPath(PROPERTY_ORCHID_NAME) ? config.getInt(PROPERTY_ORCHID_NAME) : 0);
+        this(
+                config.hasPath(PROPERTY_ORCHID_NAME) ? config.getInt(PROPERTY_ORCHID_NAME) : 0,
+                config.hasPath(PROPERTY_ORCHID_060_NAME) ? config.getInt(PROPERTY_ORCHID_060_NAME) : 0
+        );
     }
 
-    public HardForkActivationConfig(int orchidActivationHeight) {
+    public HardForkActivationConfig(int orchidActivationHeight, int orchid060ActivationHeight) {
         this.orchidActivationHeight = orchidActivationHeight;
+        this.orchid060ActivationHeight = orchid060ActivationHeight;
     }
 
     public int getOrchidActivationHeight() {
         return orchidActivationHeight;
     }
 
+    /**
+     * TODO(mc): Only Devnet knows about Orchid060 activation config.
+     *           This is a quick solution but the whole HF activation needs work.
+     *           E.g. we don't handle the case where Orchid060 < Orchid (fails at runtime).
+     */
+    public int getOrchid060ActivationHeight() {
+        return orchid060ActivationHeight;
+    }
 }
