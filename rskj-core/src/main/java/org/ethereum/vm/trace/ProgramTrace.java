@@ -26,6 +26,8 @@ import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryTrack;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
+import org.ethereum.vm.program.Memory;
+import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,13 +164,16 @@ public class ProgramTrace {
         return this;
     }
 
-    public Op addOp(byte code, int pc, int deep, long gas, OpActions actions) {
+    public Op addOp(byte code, int pc, int deep, long gas, OpActions actions, Memory memory, Stack stack) {
         Op op = new Op();
         op.setActions(actions);
         op.setCode(OpCode.code(code));
         op.setDeep(deep);
         op.setGas(gas);
         op.setPc(pc);
+
+        op.setMemory(memory);
+        op.setStack(stack);
 
         ops.add(op);
 

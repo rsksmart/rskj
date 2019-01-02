@@ -19,7 +19,13 @@
 
 package org.ethereum.vm.trace;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.OpCode;
+import org.ethereum.vm.program.Memory;
+import org.ethereum.vm.program.Stack;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Op {
 
@@ -28,6 +34,8 @@ public class Op {
     private int pc;
     private long gas;
     private OpActions actions;
+    private List<String> memory = new ArrayList<>();
+    private List<String> stack = new ArrayList<>();
 
     public OpCode getCode() {
         return code;
@@ -67,5 +75,22 @@ public class Op {
 
     public void setActions(OpActions actions) {
         this.actions = actions;
+    }
+
+    public void setMemory(Memory memory) {
+        int size = memory.size();
+
+        for (int k = 0; k < size; k += 32) {
+            byte[] bytes = memory.read(k, Math.min(32, size - k));
+            this.memory.add(Hex.toHexString(bytes));
+        }
+    }
+
+    public void setStack(Stack stack) {
+        int size = stack.size();
+
+        for (int k = 0; k < size; k++) {
+            this.stack.add(Hex.toHexString(stack.get(k).getData()));
+        }
     }
 }
