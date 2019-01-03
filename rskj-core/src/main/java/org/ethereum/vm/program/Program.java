@@ -378,11 +378,16 @@ public class Program {
     }
 
     public void disposeWord(DataWord dw) {
-        if (dataWordPool==null) {
+        if (dataWordPool == null) {
             return ;
         }
+
+        if (dw == DataWord.ZERO || dw == DataWord.ONE) {
+            throw new IllegalArgumentException("Can't dispose a global DataWord");
+        }
+
         // If there are enough cached values, just really dispose
-        if (dataWordPool.size()<1024) {
+        if (dataWordPool.size() < 1024) {
             dataWordPool.push(dw);
         }
     }

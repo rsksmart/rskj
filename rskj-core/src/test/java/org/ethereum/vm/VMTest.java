@@ -40,6 +40,7 @@ import org.bouncycastle.util.encoders.Hex;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.EmptyStackException;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
@@ -119,9 +120,7 @@ public class VMTest {
     @Test
     public void testSTATICCALLWithStatusOne() {
         invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
-        RskAddress address = invoke.getContractAddress();
         program = getProgram(compile("PUSH1 0x00" +
-                        " PUSH1 0x00" +
                         " PUSH1 0x00" +
                         " PUSH1 0x00" +
                         " PUSH1 0x00" +
@@ -133,6 +132,63 @@ public class VMTest {
         vm.steps(program, Long.MAX_VALUE);
 
         assertEquals(DataWord.ONE, program.stackPop());
+        assertTrue(program.getStack().isEmpty());
+    }
+
+    @Test(expected = EmptyStackException.class)
+    public void testSTATICCALLWithStatusOneFailsWithOldCode() {
+        invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
+        program = getProgram(compile("PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH20 0x" + invoke.getContractAddress() +
+                " PUSH4 0x005B8D80" +
+                " STATICCALL"), null, true);
+
+        program.fullTrace();
+
+        vm.steps(program, Long.MAX_VALUE);
+    }
+
+    @Test
+    public void testSTATICCALLWithStatusOneAndAdditionalValueInStackUsingPreFixStaticCall() {
+        invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
+        program = getProgram(compile("PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH20 0x" + invoke.getContractAddress() +
+                " PUSH4 0x005B8D80" +
+                " STATICCALL"), null, true);
+
+        program.fullTrace();
+        vm.steps(program, Long.MAX_VALUE);
+
+        assertEquals(DataWord.ONE, program.stackPop());
+        assertTrue(program.getStack().isEmpty());
+    }
+
+    @Test
+    public void testSTATICCALLWithStatusOneAndAdditionalValueInStackUsingFixStaticCallLeavesValueInStack() {
+        invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
+        program = getProgram(compile("PUSH1 0x2a" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH20 0x" + invoke.getContractAddress() +
+                " PUSH4 0x005B8D80" +
+                " STATICCALL"));
+
+        program.fullTrace();
+        vm.steps(program, Long.MAX_VALUE);
+
+        assertEquals(DataWord.ONE, program.stackPop());
+        assertFalse(program.getStack().isEmpty());
+        assertEquals(1, program.getStack().size());
+        assertEquals(new DataWord(42), program.getStack().pop());
     }
 
     @Test  // PUSH1 OP
@@ -2986,16 +3042,23 @@ public class VMTest {
         return getProgram(code, null);
     }
 
-    private BlockchainConfig getBlockchainConfig() {
+    private BlockchainConfig getBlockchainConfig(boolean preFixStaticCall) {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip91()).thenReturn(true);
+
+        when(blockchainConfig.isRskip103()).thenReturn(!preFixStaticCall);
+
         when(blockchainConfig.isRskip90()).thenReturn(true);
         when(blockchainConfig.isRskip89()).thenReturn(true);
         return blockchainConfig;
     }
 
     private Program getProgram(byte[] code, Transaction transaction) {
-        return new Program(vmConfig, precompiledContracts, getBlockchainConfig(), code, invoke, transaction);
+        return getProgram(code, transaction, false);
+    }
+
+    private Program getProgram(byte[] code, Transaction transaction, boolean preFixStaticCall) {
+        return new Program(vmConfig, precompiledContracts, getBlockchainConfig(preFixStaticCall), code, invoke, transaction);
     }
 
     private byte[] compile(String code) {

@@ -23,9 +23,7 @@ import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.LogInfo;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
