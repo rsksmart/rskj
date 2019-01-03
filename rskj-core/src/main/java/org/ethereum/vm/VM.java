@@ -21,7 +21,6 @@ package org.ethereum.vm;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.db.ContractDetails;
@@ -1411,8 +1410,17 @@ public class VM {
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
-        // value is always zero in a DELEGATECALL operation
-        DataWord value = op.equals(OpCode.DELEGATECALL) ? DataWord.ZERO : program.stackPop();
+        DataWord value;
+
+        BlockchainConfig config = program.getBlockchainConfig();
+
+        if (config.isRskip103()) {
+            // value is always zero in a DELEGATECALL or STATICCALL operation
+            value = op == OpCode.DELEGATECALL || op == OpCode.STATICCALL ? DataWord.ZERO : program.stackPop();
+        } else {
+            // value is always zero in a DELEGATECALL operation
+            value = op == OpCode.DELEGATECALL ? DataWord.ZERO : program.stackPop();
+        }
 
         if (program.isStaticCall() && op == CALL && !value.isZero()) {
             throw Program.ExceptionHelper.modificationException();
@@ -1484,8 +1492,14 @@ public class VM {
         program.disposeWord(outDataSize);
         program.disposeWord(codeAddress);
         program.disposeWord(gas);
-        if (!op.equals(OpCode.DELEGATECALL)) {
-            program.disposeWord(value);
+        if (config.isRskip103()) {
+            if (op != OpCode.DELEGATECALL && op != OpCode.STATICCALL) {
+                program.disposeWord(value);
+            }
+        } else {
+            if (!op.equals(OpCode.DELEGATECALL)) {
+                program.disposeWord(value);
+            }
         }
 
         program.step();
@@ -1515,7 +1529,8 @@ public class VM {
             callGas += GasCost.NEW_ACCT_CALL;
         }
 
-        if (op != OpCode.DELEGATECALL && !value.isZero()) {
+        // RSKIP103: we don't need to check static call nor delegate call since value will always be zero
+        if (!value.isZero()) {
             callGas += GasCost.VT_CALL;
         }
 
