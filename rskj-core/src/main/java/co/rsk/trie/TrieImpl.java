@@ -134,36 +134,8 @@ public class TrieImpl implements Trie {
         return this;
     }
 
-    @Override
-    public Trie cloneTrie() {
+    private Trie cloneTrie() {
         return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store).withSecure(this.isSecure);
-    }
-
-    @Override
-    public Trie cloneTrie(byte[] newValue) {
-        TrieImpl trie = new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store).withSecure(this.isSecure);
-        trie.setValue(newValue);
-        return trie;
-    }
-
-    @Override
-    public void removeNode(int position) {
-        if (this.nodes != null) {
-            this.nodes[position] = null;
-        }
-
-        if (this.hashes != null) {
-            this.hashes[position] = null;
-        }
-    }
-
-    @Override
-    public void removeValue() {
-        this.value = null;
-    }
-
-    private void setValue(byte[] value) {
-        this.value = value;
     }
 
     /**
@@ -669,8 +641,7 @@ public class TrieImpl implements Trie {
      * @param n     the subnode position (0 to arity - 1)
      * @param hash  the subnode hash
      */
-    @Override
-    public void setHash(int n, Keccak256 hash) {
+    private void setHash(int n, Keccak256 hash) {
         if (this.hashes == null) {
             this.hashes = new Keccak256[ARITY];
         }
