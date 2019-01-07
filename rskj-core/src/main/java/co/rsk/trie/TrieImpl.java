@@ -35,9 +35,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -71,7 +69,6 @@ public class TrieImpl implements Trie {
     private static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash ";
 
     private static final int MESSAGE_HEADER_LENGTH = 2 + Short.BYTES * 2;
-    private static final int SERIALIZATION_HEADER_LENGTH = Short.BYTES * 2 + Integer.BYTES * 2;
 
     // all zeroed, default hash for empty nodes
     private static Keccak256 emptyHash = makeEmptyHash();
@@ -698,41 +695,6 @@ public class TrieImpl implements Trie {
         buffer.putShort((short) 0);
         buffer.put(root);
         buffer.put(bytes);
-
-        return buffer.array();
-    }
-
-    public byte[] serializeTrie() {
-        byte[] message = this.toMessage();
-
-        List<byte[]> subnodes = new ArrayList<>();
-
-        for (int k = 0; k < ARITY; k++) {
-            TrieImpl subnode = this.getNode(k);
-
-            if (subnode != null) {
-                subnodes.add(subnode.serializeTrie());
-            }
-        }
-
-        int totalSize = message.length;
-
-        for (byte[] sn : subnodes) {
-            totalSize += sn.length;
-        }
-
-        ByteBuffer buffer = ByteBuffer.allocate(SERIALIZATION_HEADER_LENGTH + totalSize);
-
-        buffer.putShort((short)0); // serialize version
-        buffer.putShort((short)subnodes.size());   // no of subnodes
-        buffer.putInt(message.length);  // this node length
-        buffer.putInt(totalSize);   // all trie length
-
-        buffer.put(message);
-
-        for (byte[] sn : subnodes) {
-            buffer.put(sn);
-        }
 
         return buffer.array();
     }
