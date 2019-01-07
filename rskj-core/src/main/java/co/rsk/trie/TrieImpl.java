@@ -134,8 +134,7 @@ public class TrieImpl implements Trie {
         return this;
     }
 
-    @Override
-    public Trie cloneTrie() {
+    private Trie cloneTrie() {
         return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store).withSecure(this.isSecure);
     }
 

@@ -46,8 +46,6 @@ public interface Trie {
 
     int trieSize();
 
-    Trie cloneTrie();
-
     Trie getSnapshotTo(Keccak256 hash);
 
     byte[] serialize();
