@@ -48,8 +48,6 @@ public interface Trie {
 
     Trie cloneTrie();
 
-    void setHash(int n, Keccak256 hash);
-
     Trie getSnapshotTo(Keccak256 hash);
 
     byte[] serialize();

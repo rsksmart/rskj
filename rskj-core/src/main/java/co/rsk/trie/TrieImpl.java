@@ -642,8 +642,7 @@ public class TrieImpl implements Trie {
      * @param n     the subnode position (0 to arity - 1)
      * @param hash  the subnode hash
      */
-    @Override
-    public void setHash(int n, Keccak256 hash) {
+    private void setHash(int n, Keccak256 hash) {
         if (this.hashes == null) {
             this.hashes = new Keccak256[ARITY];
         }
