@@ -48,12 +48,6 @@ public interface Trie {
 
     Trie cloneTrie();
 
-    Trie cloneTrie(byte[] newValue);
-
-    void removeNode(int position);
-
-    void removeValue();
-
     void setHash(int n, Keccak256 hash);
 
     Trie getSnapshotTo(Keccak256 hash);
