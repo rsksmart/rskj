@@ -26,6 +26,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
@@ -35,7 +36,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
-import org.ethereum.util.Utils;
 import org.ethereum.vm.*;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -48,13 +48,10 @@ import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.*;
 
-import static java.lang.StrictMath.min;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.ethereum.util.BIUtil.*;
@@ -184,8 +181,8 @@ public class Program {
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
 
-    boolean isLogEnabled;
-    boolean isGasLogEnabled;
+    private boolean isLogEnabled;
+    private boolean isGasLogEnabled;
 
     public Program(
             VmConfig config,
@@ -303,7 +300,7 @@ public class Program {
         return this.previouslyExecutedOp;
     }
 
-    public DataWord getNewDataWordFast() {
+    private DataWord getNewDataWordFast() {
         if (dataWordPool==null) {
             return new DataWord();
         }
@@ -320,19 +317,19 @@ public class Program {
         stackPush(dw);
     }
 
-    public void stackPushZero() {
+    private void stackPushZero() {
         DataWord dw=getNewDataWordFast();
         dw.zero();
         stackPush(dw);
     }
 
-    public void stackPushOne() {
+    private void stackPushOne() {
         DataWord stackWord=getNewDataWordFast();
         stackWord.assignData(DataWord.ONE.getData());
         stackPush(stackWord);
     }
 
-    public void stackClear(){
+    private void stackClear(){
         if (dataWordPool==null) {
             stack.clear();
             return;
@@ -493,7 +490,7 @@ public class Program {
         memory.write(addrB.intValue(), value.getData(), value.getData().length, false);
     }
 
-    public void memorySaveLimited(int addr, byte[] data, int dataSize) {
+    private void memorySaveLimited(int addr, byte[] data, int dataSize) {
         memory.write(addr, data, dataSize, true);
     }
 
@@ -871,7 +868,7 @@ public class Program {
         }
     }
 
-    public boolean executeCode(
+    private boolean executeCode(
             MessageCall msg,
             RskAddress contextAddress,
             Coin contextBalance,
@@ -879,7 +876,7 @@ public class Program {
             Repository track,
             byte[] programCode,
             RskAddress senderAddress,
-            byte[] data ) {
+            byte[] data) {
 
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult = null;
@@ -972,7 +969,7 @@ public class Program {
         stopped=false;
     }
 
-    public void clearUsedGas() {
+    private void clearUsedGas() {
         getResult().clearUsedGas();
     }
 
@@ -980,7 +977,7 @@ public class Program {
         spendGas(getRemainingGas(), "Spending all remaining");
     }
 
-    public void refundGas(long gasValue, String cause) {
+    private void refundGas(long gasValue, String cause) {
         if (isGasLogEnabled) {
             gasLogger.info("[{}] Refund for cause: [{}], gas: [{}]", invoke.hashCode(), cause, gasValue);
         }
@@ -1010,7 +1007,7 @@ public class Program {
         storageSave(word1.getData(), word2.getData());
     }
 
-    public void storageSave(byte[] key, byte[] val) {
+    private void storageSave(byte[] key, byte[] val) {
         // DataWord constructor some times reference the passed byte[] instead
         // of making a copy.
         DataWord keyWord = new DataWord(key);
@@ -1291,7 +1288,7 @@ public class Program {
         return trace;
     }
 
-    public int processAndSkipCodeHeader(int offset) {
+    private int processAndSkipCodeHeader(int offset) {
         int ret = offset;
         if (ops.length >= 4) {
             OpCode op = OpCode.code(ops[0]);
@@ -1324,7 +1321,7 @@ public class Program {
         computeJumpDests(i);
     }
 
-    public void computeJumpDests(int start) {
+    private void computeJumpDests(int start) {
         if (jumpdestSet == null) {
             jumpdestSet = new BitSet(ops.length);
         }
@@ -1344,76 +1341,6 @@ public class Program {
                 i += op.asInt() - OpCode.PUSH1.asInt() + 1;
             }
         }
-    }
-
-    static String formatBinData(byte[] binData, int startPC) {
-        StringBuilder ret = new StringBuilder();
-        for (int i = 0; i < binData.length; i+= 16) {
-            ret.append(Utils.align("" + Integer.toHexString(startPC + (i)) + ":", ' ', 8, false));
-            ret.append(Hex.toHexString(binData, i, min(16, binData.length - i))).append('\n');
-        }
-        return ret.toString();
-    }
-
-    public static String stringifyMultiline(byte[] code) {
-        int index = 0;
-        StringBuilder sb = new StringBuilder();
-        BitSet mask = buildReachableBytecodesMask(code);
-        ByteArrayOutputStream binData = new ByteArrayOutputStream();
-        int binDataStartPC = -1;
-
-        while (index < code.length) {
-            final byte opCode = code[index];
-            OpCode op = OpCode.code(opCode);
-
-            if (!mask.get(index)) {
-                if (binDataStartPC == -1) {
-                    binDataStartPC = index;
-                }
-                binData.write(code[index]);
-                index ++;
-                if (index < code.length) {
-                    continue;
-                }
-            }
-
-            if (binDataStartPC != -1) {
-                sb.append(formatBinData(binData.toByteArray(), binDataStartPC));
-                binDataStartPC = -1;
-                binData = new ByteArrayOutputStream();
-                if (index == code.length) {
-                    continue;
-                }
-            }
-
-            sb.append(Utils.align("" + Integer.toHexString(index) + ":", ' ', 8, false));
-
-            if (op == null) {
-                sb.append("<UNKNOWN>: ").append(0xFF & opCode).append("\n");
-                index ++;
-                continue;
-            }
-
-            if (op.name().startsWith("PUSH")) {
-                sb.append(' ').append(op.name()).append(' ');
-
-                int nPush = op.val() - OpCode.PUSH1.val() + 1;
-                byte[] data = Arrays.copyOfRange(code, index + 1, index + nPush + 1);
-                BigInteger bi = new BigInteger(1, data);
-                sb.append("0x").append(bi.toString(16));
-                if (bi.bitLength() <= 32) {
-                    sb.append(" (").append(new BigInteger(1, data).toString()).append(") ");
-                }
-
-                index += nPush + 1;
-            } else {
-                sb.append(' ').append(op.name());
-                index++;
-            }
-            sb.append('\n');
-        }
-
-        return sb.toString();
     }
 
     public DataWord getReturnDataBufferSize() {
@@ -1440,81 +1367,6 @@ public class Program {
 
     public BlockchainConfig getBlockchainConfig() {
         return blockchainConfig;
-    }
-
-    static class ByteCodeIterator {
-        private byte[] code;
-        private int pc;
-
-        public ByteCodeIterator(byte[] code) {
-            this.code = code;
-        }
-
-        public void setPC(int pc) {
-            this.pc = pc;
-        }
-
-        public int getPC() {
-            return pc;
-        }
-
-        public OpCode getCurOpcode() {
-            return pc < code.length ? OpCode.code(code[pc]) : null;
-        }
-
-        public boolean isPush() {
-            return getCurOpcode() != null ? getCurOpcode().name().startsWith("PUSH") : false;
-        }
-
-        public byte[] getCurOpcodeArg() {
-            if (isPush()) {
-                int nPush = getCurOpcode().val() - OpCode.PUSH1.val() + 1;
-                return Arrays.copyOfRange(code, pc + 1, pc + nPush + 1);
-            } else {
-                return new byte[0];
-            }
-        }
-
-        public boolean next() {
-            pc += 1 + getCurOpcodeArg().length;
-            return pc < code.length;
-        }
-    }
-
-    static BitSet buildReachableBytecodesMask(byte[] code) {
-        NavigableSet<Integer> gotos = new TreeSet<>();
-        ByteCodeIterator it = new ByteCodeIterator(code);
-        BitSet ret = new BitSet(code.length);
-        int lastPush = 0;
-        int lastPushPC = 0;
-        do {
-            ret.set(it.getPC()); // reachable bytecode
-            if (it.isPush()) {
-                lastPush = new BigInteger(1, it.getCurOpcodeArg()).intValue();
-                lastPushPC = it.getPC();
-            }
-            if (it.getCurOpcode() == OpCode.JUMP || it.getCurOpcode() == OpCode.JUMPI) {
-                if (it.getPC() != lastPushPC + 1) {
-                    // some PC arithmetic we totally can't deal with
-                    // assuming all bytecodes are reachable as a fallback
-                    ret.setAll();
-                    return ret;
-                }
-                int jumpPC = lastPush;
-                if (!ret.get(jumpPC)) {
-                    // code was not explored yet
-                    gotos.add(jumpPC);
-                }
-            }
-            if (it.getCurOpcode() == OpCode.JUMP || it.getCurOpcode() == OpCode.RETURN ||
-                    it.getCurOpcode() == OpCode.STOP) {
-                if (gotos.isEmpty()) {
-                    break;
-                }
-                it.setPC(gotos.pollFirst());
-            }
-        } while(it.next());
-        return ret;
     }
 
     public void addListener(ProgramOutListener listener) {
@@ -1609,7 +1461,7 @@ public class Program {
         }
     }
 
-    public boolean byTestingSuite() {
+    private boolean byTestingSuite() {
         return invoke.byTestingSuite();
     }
 

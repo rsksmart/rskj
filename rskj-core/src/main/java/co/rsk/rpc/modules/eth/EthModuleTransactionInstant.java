@@ -24,7 +24,12 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.db.TransactionInfo;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionRevertedExecutionError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
 
 public class EthModuleTransactionInstant extends EthModuleTransactionBase {
 
@@ -44,18 +49,35 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
     public synchronized String sendTransaction(Web3.CallArguments args) {
         String txHash = super.sendTransaction(args);
         mineTransaction();
-        return txHash;
+        return getReturnMessage(txHash);
     }
 
     @Override
     public String sendRawTransaction(String rawData) {
         String txHash = super.sendRawTransaction(rawData);
         mineTransaction();
-        return txHash;
+        return getReturnMessage(txHash);
     }
 
     private void mineTransaction() {
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
         minerClient.mineBlock();
+    }
+
+    /**
+     * When insta-mining we can query the transaction status and return an error response immediately like Ganache.
+     * This does not apply during regular operation because queued transactions are not immediately executed.
+     */
+    private String getReturnMessage(String txHash) {
+        TransactionInfo transactionInfo = blockchain.getTransactionInfo(TypeConverter.stringHexToByteArray(txHash));
+        if (transactionInfo == null) {
+            throw unknownError("Unknown error when sending transaction: transaction wasn't mined");
+        }
+
+        if (!transactionInfo.getReceipt().isSuccessful()) {
+            throw transactionRevertedExecutionError();
+        }
+
+        return txHash;
     }
 }
