@@ -28,6 +28,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.Memory;
 import org.ethereum.vm.program.Stack;
+import org.ethereum.vm.program.Storage;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,8 @@ public class ProgramTrace {
     private String result;
     private String error;
     private Map<String, String> initStorage = new HashMap<>();
+    private Map<String, String> currentStorage = new HashMap<>();
+    private DataWord storageKey;
     private boolean fullStorage;
     private int storageSize;
     private String contractAddress;
@@ -84,8 +87,14 @@ public class ProgramTrace {
                         LOGGER.info("{} entries loaded to transaction's initStorage", initStorage.size());
                     }
                 }
+
+                saveCurrentStorage(initStorage);
             }
         }
+    }
+
+    private void saveCurrentStorage(Map<String, String> storage) {
+        this.currentStorage = new HashMap<>(storage);
     }
 
     private static ContractDetails getContractDetails(ProgramInvoke programInvoke) {
@@ -164,16 +173,31 @@ public class ProgramTrace {
         return this;
     }
 
-    public Op addOp(byte code, int pc, int deep, long gas, OpActions actions, Memory memory, Stack stack) {
+    public Op addOp(byte code, int pc, int deep, long gas, OpActions actions, Memory memory, Stack stack, Storage storage) {
         Op op = new Op();
         op.setActions(actions);
-        op.setCode(OpCode.code(code));
+        OpCode opcode = OpCode.code(code);
+        op.setCode(opcode);
         op.setDeep(deep);
         op.setGas(gas);
         op.setPc(pc);
 
         op.setMemory(memory);
         op.setStack(stack);
+
+        if (this.storageKey != null) {
+            RskAddress currentAddress = new RskAddress(this.contractAddress);
+            DataWord value = storage.getStorageValue(currentAddress, this.storageKey);
+            this.currentStorage = new HashMap<>(this.currentStorage);
+            this.currentStorage.put(this.storageKey.toString(), value.toString());
+            this.storageKey = null;
+        }
+
+        if (opcode == OpCode.SSTORE || opcode == OpCode.SLOAD) {
+            this.storageKey = stack.peek().clone();
+        }
+
+        op.setStorage(this.currentStorage);
 
         ops.add(op);
 

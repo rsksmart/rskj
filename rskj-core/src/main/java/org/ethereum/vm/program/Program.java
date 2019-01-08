@@ -1283,7 +1283,7 @@ public class Program {
 
     public void saveOpTrace() {
         if (this.pc < ops.length) {
-            trace.addOp(ops[pc], pc, getCallDeep(), getRemainingGas(), traceListener.resetActions(), this.memory, this.stack);
+            trace.addOp(ops[pc], pc, getCallDeep(), getRemainingGas(), traceListener.resetActions(), this.memory, this.stack, this.storage);
         }
     }
 

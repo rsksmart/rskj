@@ -25,7 +25,9 @@ import org.ethereum.vm.program.Memory;
 import org.ethereum.vm.program.Stack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Op {
 
@@ -36,6 +38,7 @@ public class Op {
     private OpActions actions;
     private List<String> memory = new ArrayList<>();
     private List<String> stack = new ArrayList<>();
+    private Map<String, String> storage = new HashMap<>();
 
     public OpCode getCode() {
         return code;
@@ -84,6 +87,10 @@ public class Op {
             byte[] bytes = memory.read(k, Math.min(32, size - k));
             this.memory.add(Hex.toHexString(bytes));
         }
+    }
+
+    public void setStorage(Map<String, String> storage) {
+        this.storage = storage;
     }
 
     public void setStack(Stack stack) {
