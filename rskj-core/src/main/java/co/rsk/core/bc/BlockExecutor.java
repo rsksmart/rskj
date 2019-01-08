@@ -20,10 +20,13 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.trie.Trie;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -250,7 +253,38 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
-        return new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees);
+        return new BlockResult(
+                executedTransactions,
+                receipts,
+                lastStateRootHash,
+                totalGasUsed,
+                totalPaidFees,
+                calcReceiptsTrie(receipts),
+                calculateLogsBloom(receipts)
+        );
+    }
+
+    private static byte[] calculateLogsBloom(List<TransactionReceipt> receipts) {
+        Bloom logBloom = new Bloom();
+
+        for (TransactionReceipt receipt : receipts) {
+            logBloom.or(receipt.getBloomFilter());
+        }
+
+        return logBloom.getData();
+    }
+
+    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
+        if (receipts.isEmpty()) {
+            return HashUtil.EMPTY_TRIE_HASH;
+        }
+
+        Trie receiptsTrie = new Trie();
+        for (int i = 0; i < receipts.size(); i++) {
+            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
+        }
+
+        return receiptsTrie.getHash().getBytes();
     }
 
     public interface TransactionExecutorFactory {
