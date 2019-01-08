@@ -71,7 +71,7 @@ public class TxPendingValidator {
         for (TxValidatorStep step : validatorSteps) {
             TransactionValidationResult validationResult = step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0);
             if (!validationResult.transactionIsValid()) {
-                logger.info("[tx={}] {} failed", tx.getHash(), step.getClass());
+                logger.info("[tx={}] validation failed with error: {}", tx.getHash(), validationResult.getErrorMessage());
                 return validationResult;
             }
         }
