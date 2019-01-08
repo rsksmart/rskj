@@ -1184,7 +1184,9 @@ public class Web3ImplTest {
         BigInteger nonce = BigInteger.ONE;
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
-        Web3Impl web3 = createWeb3(world, receiptStore);
+        BlockChainImpl blockChain = world.getBlockChain();
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, null, null, 10, 100);
+        Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
         // **** Initializes data ******************
         String addr1 = web3.personal_newAccountWithSeed("sampleSeed1");
