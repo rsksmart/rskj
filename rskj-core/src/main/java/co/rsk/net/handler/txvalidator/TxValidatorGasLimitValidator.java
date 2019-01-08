@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.net.TransactionValidationResult;
 import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -37,15 +38,20 @@ public class TxValidatorGasLimitValidator implements TxValidatorStep {
     private static final Logger logger = LoggerFactory.getLogger("txvalidator");
 
     @Override
-    public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
 
         if (txGasLimit.compareTo(gasLimit) <= 0 && txGasLimit.compareTo(Constants.getTransactionGasCap()) <= 0) {
-            return true;
+            return TransactionValidationResult.ok();
         }
 
         logger.warn("Invalid transaction {}: its gas limit {} is higher than the block gas limit {}", tx.getHash(), txGasLimit, gasLimit);
 
-        return false;
+        return TransactionValidationResult.withError(String.format(
+                "transaction's gas limit of %s is higher than the block's gas limit of %s",
+                txGasLimit,
+                gasLimit
+        ));
     }
+
 }
