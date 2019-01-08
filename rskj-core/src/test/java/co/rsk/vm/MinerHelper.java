@@ -20,7 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
@@ -141,7 +141,7 @@ public class MinerHelper {
     public void completeBlock(Block newBlock, Block parent) {
         processBlock(newBlock, parent);
 
-        newBlock.getHeader().setReceiptsRoot(BlockChainImpl.calcReceiptsTrie(txReceipts));
+        newBlock.getHeader().setReceiptsRoot(BlockExecutor.calcReceiptsTrie(txReceipts));
         newBlock.getHeader().setStateRoot(latestStateRootHash);
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
