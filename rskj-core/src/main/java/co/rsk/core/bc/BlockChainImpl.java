@@ -25,17 +25,14 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -526,21 +523,8 @@ public class BlockChainImpl implements Blockchain {
         nFlush = nFlush % flushNumberOfBlocks;
     }
 
+    @VisibleForTesting
     public static byte[] calcTxTrie(List<Transaction> transactions) {
         return Block.getTxTrie(transactions).getHash().getBytes();
-    }
-
-    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
-        Trie receiptsTrie = new Trie();
-
-        if (receipts == null || receipts.isEmpty()) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
-        }
-
-        return receiptsTrie.getHash().getBytes();
     }
 }
