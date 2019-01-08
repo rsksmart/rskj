@@ -23,8 +23,6 @@ import co.rsk.net.TransactionValidationResult;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -35,15 +33,11 @@ import java.math.BigInteger;
  * Transaction must not be null
  */
 public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
-    private static final Logger logger = LoggerFactory.getLogger("txvalidator");
-
     @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (!(tx instanceof RemascTransaction)) {
             return TransactionValidationResult.ok();
         }
-
-        logger.warn("Invalid transaction {}: it is a Remasc transaction", tx.getHash());
 
         return TransactionValidationResult.withError("transaction is a remasc transaction");
     }

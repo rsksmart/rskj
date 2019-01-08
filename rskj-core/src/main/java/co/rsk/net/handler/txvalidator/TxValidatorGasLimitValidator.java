@@ -23,8 +23,6 @@ import co.rsk.net.TransactionValidationResult;
 import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -35,8 +33,6 @@ import java.math.BigInteger;
  * Also Checks that the transaction gas limit is not higher than the max allowed value
  */
 public class TxValidatorGasLimitValidator implements TxValidatorStep {
-    private static final Logger logger = LoggerFactory.getLogger("txvalidator");
-
     @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
@@ -44,8 +40,6 @@ public class TxValidatorGasLimitValidator implements TxValidatorStep {
         if (txGasLimit.compareTo(gasLimit) <= 0 && txGasLimit.compareTo(Constants.getTransactionGasCap()) <= 0) {
             return TransactionValidationResult.ok();
         }
-
-        logger.warn("Invalid transaction {}: its gas limit {} is higher than the block gas limit {}", tx.getHash(), txGasLimit, gasLimit);
 
         return TransactionValidationResult.withError(String.format(
                 "transaction's gas limit of %s is higher than the block's gas limit of %s",
