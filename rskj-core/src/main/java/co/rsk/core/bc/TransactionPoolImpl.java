@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
@@ -187,7 +188,7 @@ public class TransactionPoolImpl implements TransactionPool {
         List<Transaction> added = new ArrayList<>();
 
         for (Transaction tx : txs) {
-            if (this.addTransaction(tx)) {
+            if (this.addTransaction(tx).transactionWasAdded()) {
                 added.add(tx);
 
                 Optional<Transaction> succesor = this.getQueuedSuccesor(tx);
@@ -196,7 +197,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     Transaction found = succesor.get();
                     queuedTransactions.removeTransactionByHash(found.getHash());
 
-                    if (!this.addTransaction(found)) {
+                    if (!this.addTransaction(found).transactionWasAdded()) {
                         break;
                     }
 
@@ -233,9 +234,10 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public synchronized boolean addTransaction(final Transaction tx) {
-        if (!shouldAcceptTx(tx)) {
-            return false;
+    public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
+        TransactionValidationResult validationResult = shouldAcceptTx(tx);
+        if (!validationResult.transactionIsValid()) {
+            return TransactionPoolAddResult.withError(validationResult.getErrorMessage());
         }
 
         Keccak256 hash = tx.getHash();
@@ -244,15 +246,15 @@ public class TransactionPoolImpl implements TransactionPool {
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
         if (pendingTransactions.hasTransaction(tx)) {
-            return false;
+            return TransactionPoolAddResult.withError("pending transaction with same hash already exists");
         }
 
         if (queuedTransactions.hasTransaction(tx)) {
-            return false;
+            return TransactionPoolAddResult.withError("queued transaction with same hash already exists");
         }
 
         if (!isBumpingGasPriceForSameNonceTx(tx)) {
-            return false;
+            return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
         }
 
         transactionBlocks.put(hash, bnumber);
@@ -264,12 +266,12 @@ public class TransactionPoolImpl implements TransactionPool {
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
 
-            return false;
+            return TransactionPoolAddResult.ok();
         }
 
         if (!senderCanPayPendingTransactionsAndNewTx(tx)) {
             // discard this tx to prevent spam
-            return false;
+            return TransactionPoolAddResult.withError("insufficient funds to pay for pending and new transaction");
         }
 
         pendingTransactions.addTransaction(tx);
@@ -281,7 +283,7 @@ public class TransactionPoolImpl implements TransactionPool {
             });
         }
 
-        return true;
+        return TransactionPoolAddResult.ok();
     }
 
     private boolean isBumpingGasPriceForSameNonceTx(Transaction tx) {
@@ -463,13 +465,13 @@ public class TransactionPoolImpl implements TransactionPool {
                             ByteUtil.bigIntegerToBytes(BigInteger.ZERO)); //minimum gas price
     }
 
-    private boolean shouldAcceptTx(Transaction tx) {
+    private TransactionValidationResult shouldAcceptTx(Transaction tx) {
         if (bestBlock == null) {
-            return true;
+            return TransactionValidationResult.ok();
         }
 
         AccountState state = repository.getAccountState(tx.getSender());
-        return validator.isValid(tx, bestBlock, state).transactionIsValid();
+        return validator.isValid(tx, bestBlock, state);
     }
 
     /**
