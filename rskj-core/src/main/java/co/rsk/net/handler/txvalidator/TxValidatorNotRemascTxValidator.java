@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.net.TransactionValidationResult;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -37,14 +38,13 @@ public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
     private static final Logger logger = LoggerFactory.getLogger("txvalidator");
 
     @Override
-    public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (!(tx instanceof RemascTransaction)) {
-            return true;
+            return TransactionValidationResult.ok();
         }
 
         logger.warn("Invalid transaction {}: it is a Remasc transaction", tx.getHash());
 
-        return false;
+        return TransactionValidationResult.withError("transaction is a remasc transaction");
     }
-
 }
