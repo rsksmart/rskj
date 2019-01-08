@@ -164,7 +164,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
 
         Assert.assertNotNull(result.getReceiptsRoot());
-        Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
+        Assert.assertArrayEquals(BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
 
         Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
 
@@ -258,7 +258,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(42000, result.getPaidFees().asBigInteger().intValueExact());
 
         Assert.assertNotNull(result.getReceiptsRoot());
-        Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
+        Assert.assertArrayEquals(BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
         Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
 
         Assert.assertNotNull(result.getLogsBloom());
@@ -790,7 +790,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(Coin.valueOf(21000), result.getPaidFees());
 
         Assert.assertNotNull(result.getReceiptsRoot());
-        Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
+        Assert.assertArrayEquals(BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
 
         Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
 
