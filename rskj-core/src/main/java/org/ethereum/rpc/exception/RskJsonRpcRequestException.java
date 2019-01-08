@@ -29,4 +29,8 @@ public class RskJsonRpcRequestException extends RuntimeException{
         return new RskJsonRpcRequestException(-32015, String.format("VM execution error: %s", message));
     }
 
+    public static RskJsonRpcRequestException transactionError(String message) {
+        return new RskJsonRpcRequestException(-32010, message);
+    }
+
 }
