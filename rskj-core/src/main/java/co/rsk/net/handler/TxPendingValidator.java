@@ -20,6 +20,7 @@ package co.rsk.net.handler;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
@@ -56,24 +57,20 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(config));
     }
 
-    public boolean isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
+    public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
         long basicTxCost = tx.transactionCost(executionBlock, config.getBlockchainConfig());
 
-        if (state == null && basicTxCost != 0) {
-            logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender());
-            return false;
-        }
-
         for (TxValidatorStep step : validatorSteps) {
-            if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0)) {
+            TransactionValidationResult validationResult = step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0);
+            if (!validationResult.transactionIsValid()) {
                 logger.info("[tx={}] {} failed", tx.getHash(), step.getClass());
-                return false;
+                return validationResult;
             }
         }
 
-        return true;
+        return TransactionValidationResult.ok();
     }
 }

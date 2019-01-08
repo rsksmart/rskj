@@ -49,9 +49,9 @@ public class TxValidatorAccountBalanceValidatorTest {
 
         TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
 
-        Assert.assertTrue(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false));
-        Assert.assertTrue(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false));
-        Assert.assertTrue(tvabv.validate(tx3, as, null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assert.assertTrue(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assert.assertTrue(tvabv.validate(tx3, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
@@ -68,8 +68,8 @@ public class TxValidatorAccountBalanceValidatorTest {
 
         TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
 
-        Assert.assertFalse(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false));
-        Assert.assertFalse(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assert.assertFalse(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
@@ -86,7 +86,7 @@ public class TxValidatorAccountBalanceValidatorTest {
 
         TxValidatorAccountBalanceValidator tv = new TxValidatorAccountBalanceValidator();
 
-        Assert.assertTrue(tv.validate(tx, new AccountState(), BigInteger.ONE, Coin.valueOf(1L), Long.MAX_VALUE, true));
+        Assert.assertTrue(tv.validate(tx, new AccountState(), BigInteger.ONE, Coin.valueOf(1L), Long.MAX_VALUE, true).transactionIsValid());
     }
 
 }
