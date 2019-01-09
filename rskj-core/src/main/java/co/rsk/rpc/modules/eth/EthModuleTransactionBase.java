@@ -22,13 +22,11 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Account;
-import org.ethereum.core.ImmutableTransaction;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +68,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
                 Transaction tx = new Transaction(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
-                transactionPool.addTransaction(tx.toImmutableTransaction());
+                transactionPool.addTransaction(tx.toImmutableTransaction())
+                        .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
                 s = tx.getHash().toJsonString();
             }
 
@@ -93,7 +92,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 throw new JsonRpcInvalidParamException("Missing parameter, gasPrice, gas or value");
             }
 
-            transactionPool.addTransaction(tx);
+            transactionPool.addTransaction(tx)
+                    .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
 
             return s = tx.getHash().toJsonString();
         } finally {

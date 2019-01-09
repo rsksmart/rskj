@@ -20,6 +20,7 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.net.TransactionValidationResult;
 import org.ethereum.core.*;
 
 import javax.annotation.Nullable;
@@ -38,7 +39,7 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
     }
 
     @Override
-    public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BlockHeader blockHeader = new BlockHeader(new byte[]{},
                 new byte[]{},
                 new byte[20],
@@ -56,6 +57,12 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
                 0
         );
         Block block = new Block(blockHeader);
-        return BigInteger.valueOf(tx.transactionCost(block, config.getBlockchainConfig())).compareTo(tx.getGasLimitAsInteger()) <= 0;
+
+        if (BigInteger.valueOf(tx.transactionCost(block, config.getBlockchainConfig())).compareTo(tx.getGasLimitAsInteger()) <= 0) {
+            return TransactionValidationResult.ok();
+        }
+
+        return TransactionValidationResult.withError("transaction's basic cost is above the gas limit");
     }
+
 }
