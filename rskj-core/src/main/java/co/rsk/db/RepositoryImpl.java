@@ -322,7 +322,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized void updateBatch(Map<RskAddress, AccountState> stateCache,
-                                         Map<RskAddress, ContractDetails> detailsCache) {
+                                         Map<RskAddress, ContractDetailsCacheImpl> detailsCache) {
         logger.debug("updatingBatch: detailsCache.size: {}", detailsCache.size());
 
         for (Map.Entry<RskAddress, AccountState> entry : stateCache.entrySet()) {
@@ -388,15 +388,14 @@ public class RepositoryImpl implements Repository {
     @Override
     public synchronized void loadAccount(RskAddress addr,
                                          Map<RskAddress, AccountState> cacheAccounts,
-                                         Map<RskAddress, ContractDetails> cacheDetails) {
+                                         Map<RskAddress, ContractDetailsCacheImpl> cacheDetails) {
         AccountState account = getAccountState(addr);
         ContractDetails details = getContractDetails(addr);
 
         account = (account == null) ? new AccountState() : account.clone();
-        details = new ContractDetailsCacheImpl(details);
 
         cacheAccounts.put(addr, account);
-        cacheDetails.put(addr, details);
+        cacheDetails.put(addr, new ContractDetailsCacheImpl(details));
     }
 
     @Override

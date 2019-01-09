@@ -21,7 +21,6 @@ package org.ethereum.db;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.db.ContractDetailsImpl;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
@@ -50,7 +49,7 @@ public class RepositoryTrack implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
     private final Map<RskAddress, AccountState> cacheAccounts = new HashMap<>();
-    private final Map<RskAddress, ContractDetails> cacheDetails = new HashMap<>();
+    private final Map<RskAddress, ContractDetailsCacheImpl> cacheDetails = new HashMap<>();
 
     private final Repository repository;
     private final TrieStore.Pool trieStorePool;
@@ -71,7 +70,7 @@ public class RepositoryTrack implements Repository {
             AccountState accountState = new AccountState();
             cacheAccounts.put(addr, accountState);
 
-            ContractDetails contractDetails = new ContractDetailsCacheImpl(null);
+            ContractDetailsCacheImpl contractDetails = new ContractDetailsCacheImpl(null);
             contractDetails.setDirty(true);
             cacheDetails.put(addr, contractDetails);
 
@@ -125,7 +124,7 @@ public class RepositoryTrack implements Repository {
 
     @Override
     public void loadAccount(RskAddress addr, Map<RskAddress, AccountState> cacheAccounts,
-                            Map<RskAddress, ContractDetails> cacheDetails) {
+                            Map<RskAddress, ContractDetailsCacheImpl> cacheDetails) {
 
         synchronized (repository) {
             AccountState accountState = this.cacheAccounts.get(addr);
@@ -138,8 +137,7 @@ public class RepositoryTrack implements Repository {
             }
 
             cacheAccounts.put(addr, accountState.clone());
-            ContractDetails contractDetailsLvl2 = new ContractDetailsCacheImpl(contractDetails);
-            cacheDetails.put(addr, contractDetailsLvl2);
+            cacheDetails.put(addr, new ContractDetailsCacheImpl(contractDetails));
         }
     }
 
@@ -376,19 +374,18 @@ public class RepositoryTrack implements Repository {
 
     @Override
     public void updateBatch(Map<RskAddress, AccountState> accountStates,
-                            Map<RskAddress, ContractDetails> contractDetails) {
+                            Map<RskAddress, ContractDetailsCacheImpl> contractDetails) {
 
         synchronized (repository) {
             for (Map.Entry<RskAddress, AccountState> entry : accountStates.entrySet()) {
                 cacheAccounts.put(entry.getKey(), entry.getValue());
             }
 
-            for (Map.Entry<RskAddress, ContractDetails> entry : contractDetails.entrySet()) {
+            for (Map.Entry<RskAddress, ContractDetailsCacheImpl> entry : contractDetails.entrySet()) {
 
-                ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) entry.getValue();
-                if (    contractDetailsCache.origContract != null
-                        && !(contractDetailsCache.origContract instanceof ContractDetailsImpl)) {
-                    cacheDetails.put(entry.getKey(), contractDetailsCache.origContract);
+                ContractDetailsCacheImpl contractDetailsCache = entry.getValue();
+                if (contractDetailsCache.origContract instanceof ContractDetailsCacheImpl) {
+                    cacheDetails.put(entry.getKey(), (ContractDetailsCacheImpl) contractDetailsCache.origContract);
                 } else {
                     cacheDetails.put(entry.getKey(), contractDetailsCache);
                 }
@@ -418,7 +415,7 @@ public class RepositoryTrack implements Repository {
             ContractDetails contractDetails) {
         synchronized (repository) {
             logger.trace("updateContractDetails: [{}]", addr);
-            ContractDetails contractDetailsCache = new ContractDetailsCacheImpl(null);
+            ContractDetailsCacheImpl contractDetailsCache = new ContractDetailsCacheImpl(null);
             contractDetails.setDirty(true);
             cacheDetails.put(addr, contractDetailsCache);
         }

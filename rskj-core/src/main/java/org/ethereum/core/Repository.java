@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import org.ethereum.db.ContractDetails;
+import org.ethereum.db.ContractDetailsCacheImpl;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
@@ -168,14 +169,14 @@ public interface Repository extends AccountInformationProvider {
     void syncToRoot(byte[] root);
 
     void updateBatch(Map<RskAddress, AccountState> accountStates,
-                     Map<RskAddress, ContractDetails> contractDetailes);
+                     Map<RskAddress, ContractDetailsCacheImpl> contractDetailes);
 
 
     byte[] getRoot();
 
     void loadAccount(RskAddress addr,
                      Map<RskAddress, AccountState> cacheAccounts,
-                     Map<RskAddress, ContractDetails> cacheDetails);
+                     Map<RskAddress, ContractDetailsCacheImpl> cacheDetails);
 
     Repository getSnapshotTo(byte[] root);
 

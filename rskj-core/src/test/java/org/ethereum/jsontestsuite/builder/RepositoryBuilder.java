@@ -38,7 +38,7 @@ public class RepositoryBuilder {
 
     public static Repository build(Map<String, AccountTck> accounts){
         HashMap<RskAddress, AccountState> stateBatch = new HashMap<>();
-        HashMap<RskAddress, ContractDetails> detailsBatch = new HashMap<>();
+        HashMap<RskAddress, ContractDetailsCacheImpl> detailsBatch = new HashMap<>();
         HashMapDB store = new HashMapDB();
         TrieStorePoolOnMemory pool = new TrieStorePoolOnMemory(() -> store);
 

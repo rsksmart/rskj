@@ -25,6 +25,7 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
+import org.ethereum.db.ContractDetailsCacheImpl;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
@@ -190,7 +191,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void updateBatch(Map<RskAddress, AccountState> accountStates, Map<RskAddress, ContractDetails> contractDetails) {
+    public void updateBatch(Map<RskAddress, AccountState> accountStates, Map<RskAddress, ContractDetailsCacheImpl> contractDetails) {
         for (RskAddress addr : contractDetails.keySet()) {
             if (!canListenTrace(addr)) {
                 return;
@@ -214,7 +215,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void loadAccount(RskAddress addr, Map<RskAddress, AccountState> cacheAccounts, Map<RskAddress, ContractDetails> cacheDetails) {
+    public void loadAccount(RskAddress addr, Map<RskAddress, AccountState> cacheAccounts, Map<RskAddress, ContractDetailsCacheImpl> cacheDetails) {
         repository.loadAccount(addr, cacheAccounts, cacheDetails);
     }
 
