@@ -235,19 +235,6 @@ public class ContractDetailsCacheImpl implements ContractDetails {
     }
 
     @Override
-    public ContractDetails clone() {
-
-        ContractDetailsCacheImpl contractDetails = new ContractDetailsCacheImpl(origContract);
-
-        Object storageClone = ((HashMap<DataWord, DataWord>)storage).clone();
-
-        contractDetails.setCode(this.getCode());
-        contractDetails.setStorage( (HashMap<DataWord, DataWord>) storageClone);
-        //WARNING bytesStorage is not cloned. Is this a bug?
-        return contractDetails;
-    }
-
-    @Override
     public String toString() {
 
         String ret = "  Code: " + Hex.toHexString(code) + "\n";
