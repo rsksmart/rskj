@@ -188,8 +188,15 @@ public class ProgramTrace {
         if (this.storageKey != null) {
             RskAddress currentAddress = new RskAddress(this.contractAddress);
             DataWord value = storage.getStorageValue(currentAddress, this.storageKey);
-            this.currentStorage = new HashMap<>(this.currentStorage);
-            this.currentStorage.put(this.storageKey.toString(), value.toString());
+
+            if (value != null) {
+                this.currentStorage = new HashMap<>(this.currentStorage);
+                this.currentStorage.put(this.storageKey.toString(), value.toString());
+            }
+            else {
+                this.currentStorage.remove(this.storageKey);
+            }
+
             this.storageKey = null;
         }
 
