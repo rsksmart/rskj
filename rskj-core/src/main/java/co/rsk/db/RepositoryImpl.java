@@ -22,14 +22,12 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.vm.DataWord;
@@ -55,32 +53,26 @@ public class RepositoryImpl implements Repository {
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
-    private TrieStore store;
     private Trie trie;
     protected DetailsDataStore detailsDataStore;
     private TrieStore.Pool trieStorePool;
     private int memoryStorageLimit;
 
-    public RepositoryImpl(TrieStore store, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
-        this(store, new HashMapDB(), trieStorePool, memoryStorageLimit);
-    }
-
     public RepositoryImpl(
-            TrieStore store,
+            Trie trie,
             KeyValueDataSource detailsDS,
             TrieStore.Pool trieStorePool,
             int memoryStorageLimit) {
-        this(store, new DetailsDataStore(detailsDS, trieStorePool, memoryStorageLimit),
+        this(trie, new DetailsDataStore(detailsDS, trieStorePool, memoryStorageLimit),
              trieStorePool, memoryStorageLimit);
     }
 
     private RepositoryImpl(
-            TrieStore store,
+            Trie trie,
             DetailsDataStore detailsDataStore,
             TrieStore.Pool trieStorePool,
             int memoryStorageLimit) {
-        this.store = store;
-        this.trie = new TrieImpl(store, true);
+        this.trie = trie;
         this.detailsDataStore = detailsDataStore;
         this.trieStorePool = trieStorePool;
         this.memoryStorageLimit = memoryStorageLimit;
@@ -286,7 +278,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository startTracking() {
-        return new RepositoryTrack(this, trieStorePool, memoryStorageLimit);
+        return new RepositoryTrack(this);
     }
 
     @Override
@@ -295,7 +287,7 @@ public class RepositoryImpl implements Repository {
             this.detailsDataStore.flush();
         }
 
-        if (this.store != null) {
+        if (this.trie.hasStore()) {
             this.trie.save();
         }
     }
@@ -401,9 +393,8 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository getSnapshotTo(byte[] root) {
-        RepositoryImpl snapshotRepository = new RepositoryImpl(this.store, this.detailsDataStore, this.trieStorePool, this.memoryStorageLimit);
-        snapshotRepository.syncToRoot(root);
-        return snapshotRepository;
+        Trie snapshotTrie = this.trie.getSnapshotTo(new Keccak256(root));
+        return new RepositoryImpl(snapshotTrie, this.detailsDataStore, this.trieStorePool, this.memoryStorageLimit);
     }
 
     @Override
