@@ -29,6 +29,7 @@ import co.rsk.db.RepositoryImplForTesting;
 import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieImpl;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -40,6 +41,7 @@ import org.ethereum.config.blockchain.testnet.TestNetDifficultyDropEnabledConfig
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -697,6 +699,6 @@ public class RemascStorageProviderTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }
