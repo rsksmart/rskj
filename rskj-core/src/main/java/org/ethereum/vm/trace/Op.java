@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.trace;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.Memory;
@@ -31,29 +32,32 @@ import java.util.Map;
 
 public class Op {
 
-    private OpCode code;
-    private int deep;
+    private OpCode op;
+    private int depth;
     private int pc;
     private long gas;
+
+    @JsonIgnore
     private OpActions actions;
+
     private List<String> memory = new ArrayList<>();
     private List<String> stack = new ArrayList<>();
     private Map<String, String> storage = new HashMap<>();
 
-    public OpCode getCode() {
-        return code;
+    public OpCode getOp() {
+        return op;
     }
 
-    public void setCode(OpCode code) {
-        this.code = code;
+    public void setOp(OpCode op) {
+        this.op = op;
     }
 
-    public int getDeep() {
-        return deep;
+    public int getDepth() {
+        return depth;
     }
 
-    public void setDeep(int deep) {
-        this.deep = deep;
+    public void setDepth(int depth) {
+        this.depth = depth;
     }
 
     public int getPc() {

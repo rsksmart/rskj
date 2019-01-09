@@ -21,6 +21,7 @@ package org.ethereum.vm.trace;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryTrack;
@@ -44,18 +45,22 @@ import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
 
 public class ProgramTrace {
-
     private static final Logger LOGGER = LoggerFactory.getLogger("vm");
 
-    private List<Op> ops = new LinkedList<>();
+    private List<Op> structLogs = new LinkedList<>();
     private String result;
     private String error;
     private Map<String, String> initStorage = new HashMap<>();
     private Map<String, String> currentStorage = new HashMap<>();
-    private DataWord storageKey;
-    private boolean fullStorage;
+
     private int storageSize;
     private String contractAddress;
+
+    @JsonIgnore
+    private DataWord storageKey;
+
+    @JsonIgnore
+    private boolean fullStorage;
 
     public ProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
         if (config.vmTrace() && programInvoke != null) {
@@ -107,12 +112,12 @@ public class ProgramTrace {
         return repository.getContractDetails(addr);
     }
 
-    public List<Op> getOps() {
-        return ops;
+    public List<Op> getStructLogs() {
+        return structLogs;
     }
 
-    public void setOps(List<Op> ops) {
-        this.ops = ops;
+    public void setStructLogs(List<Op> structLogs) {
+        this.structLogs = structLogs;
     }
 
     public String getResult() {
@@ -177,8 +182,8 @@ public class ProgramTrace {
         Op op = new Op();
         op.setActions(actions);
         OpCode opcode = OpCode.code(code);
-        op.setCode(opcode);
-        op.setDeep(deep);
+        op.setOp(opcode);
+        op.setDepth(deep);
         op.setGas(gas);
         op.setPc(pc);
 
@@ -197,6 +202,7 @@ public class ProgramTrace {
                 this.currentStorage.remove(this.storageKey);
             }
 
+            this.storageSize = this.currentStorage.size();
             this.storageKey = null;
         }
 
@@ -206,7 +212,7 @@ public class ProgramTrace {
 
         op.setStorage(this.currentStorage);
 
-        ops.add(op);
+        structLogs.add(op);
 
         return op;
     }
@@ -215,7 +221,7 @@ public class ProgramTrace {
      * Used for merging sub calls execution.
      */
     public void merge(ProgramTrace programTrace) {
-        this.ops.addAll(programTrace.ops);
+        this.structLogs.addAll(programTrace.structLogs);
     }
 
     public String asJsonString(boolean formatted) {
