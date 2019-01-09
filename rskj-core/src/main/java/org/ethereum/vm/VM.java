@@ -1928,10 +1928,6 @@ public class VM {
                     break;
                 }
 
-                if (vmConfig.vmTrace()) {
-                    program.saveOpTrace();
-                }
-
                 op = OpCode.code(program.getCurrentOp());
 
                 checkOpcode();

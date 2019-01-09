@@ -679,11 +679,7 @@ public class SyncProcessorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
         Assert.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis);

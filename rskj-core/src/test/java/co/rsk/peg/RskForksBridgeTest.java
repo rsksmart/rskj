@@ -365,12 +365,8 @@ public class RskForksBridgeTest {
                 beforeBambooProperties.getBlockchainConfig(),
                 beforeBambooProperties.playVM(),
                 beforeBambooProperties.isRemascEnabled(),
-                beforeBambooProperties.vmTrace(),
-                new PrecompiledContracts(beforeBambooProperties),
-                beforeBambooProperties.databaseDir(),
-                beforeBambooProperties.vmTraceDir(),
-                beforeBambooProperties.vmTraceCompressed())
-            .setLocalCall(true);
+                new PrecompiledContracts(beforeBambooProperties)
+        ).setLocalCall(true);
 
         executor.init();
         executor.execute();

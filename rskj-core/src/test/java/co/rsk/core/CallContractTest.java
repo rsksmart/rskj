@@ -80,12 +80,8 @@ public class CallContractTest {
                     config.getBlockchainConfig(),
                     config.playVM(),
                     config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed())
-                .setLocalCall(true);
+                    new PrecompiledContracts(config)
+            ).setLocalCall(true);
 
             executor.init();
             executor.execute();

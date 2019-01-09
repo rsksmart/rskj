@@ -42,10 +42,6 @@ import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.ethereum.vm.program.listener.CompositeProgramListener;
-import org.ethereum.vm.program.listener.ProgramListenerAware;
-import org.ethereum.vm.trace.ProgramTrace;
-import org.ethereum.vm.trace.ProgramTraceListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,8 +87,6 @@ public class Program {
     private final ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
 
     private ProgramOutListener listener;
-    private final ProgramTraceListener traceListener;
-    private final CompositeProgramListener programListener = new CompositeProgramListener();
 
     private final Stack stack;
     private final Memory memory;
@@ -100,7 +94,6 @@ public class Program {
     private byte[] returnDataBuffer;
 
     private final ProgramResult result = new ProgramResult();
-    private final ProgramTrace trace;
 
     private final byte[] ops;
     private int pc;
@@ -210,11 +203,10 @@ public class Program {
 
         this.ops = nullToEmpty(ops);
 
-        this.memory = setupProgramListener(new Memory());
-        this.stack = setupProgramListener(new Stack());
+        this.memory = new Memory();
+        this.stack = new Stack();
         this.stack.ensureCapacity(1024); // faster?
-        this.storage = setupProgramListener(new Storage(programInvoke));
-        this.trace = new ProgramTrace(config, programInvoke);
+        this.storage = new Storage(programInvoke);
 
         if (useDataWordPool) {
             this.dataWordPool = new java.util.Stack<>();
@@ -224,7 +216,6 @@ public class Program {
         }
 
         precompile();
-        traceListener = new ProgramTraceListener(config);
     }
 
     public static void setUseDataWordPool(Boolean value) {
@@ -260,15 +251,6 @@ public class Program {
                 value.getBytes(),
                 data,
                 note);
-    }
-
-    private <T extends ProgramListenerAware> T setupProgramListener(T traceListenerAware) {
-        if (programListener.isEmpty()) {
-            programListener.addListener(traceListener);
-        }
-
-        traceListenerAware.setTraceListener(traceListener);
-        return traceListenerAware;
     }
 
     public byte getOp(int pc) {
@@ -893,7 +875,6 @@ public class Program {
         vm.play(program);
         childResult  = program.getResult();
 
-        getTrace().merge(program.getTrace());
         getResult().merge(childResult);
 
         boolean childCallSuccessful = true;
@@ -1268,12 +1249,6 @@ public class Program {
         }
     }
 
-    public void saveOpTrace() {
-        if (this.pc < ops.length) {
-            trace.addOp(ops[pc], pc, getCallDeep(), getRemainingGas(), traceListener.resetActions());
-        }
-    }
-
     public static int getScriptVersionInCode(byte[] ops){
         if (ops.length >= 4) {
             OpCode op = OpCode.code(ops[0]);
@@ -1282,10 +1257,6 @@ public class Program {
             }
         }
         return 0;
-    }
-
-    public ProgramTrace getTrace() {
-        return trace;
     }
 
     private int processAndSkipCodeHeader(int offset) {

@@ -31,6 +31,7 @@ import co.rsk.db.RepositoryImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.TrieImpl;
 import co.rsk.validators.DummyBlockValidator;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
@@ -55,12 +56,9 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
-import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
@@ -69,7 +67,6 @@ import java.util.*;
 import static org.ethereum.crypto.HashUtil.shortHash;
 import static org.ethereum.json.Utils.parseData;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -82,7 +79,6 @@ public class TestRunner {
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private ProgramTrace trace = null;
     private boolean setNewStateRoot;
     private boolean validateGasUsed = false; // until EIP150 test cases are ready.
 
@@ -136,11 +132,7 @@ public class TestRunner {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         )));
 
         blockchain.setNoValidation(true);
@@ -282,13 +274,6 @@ public class TestRunner {
                 logger.info("Time elapsed [uS]: " + Long.toString(deltaTime));
             }
 
-            try {
-                saveProgramTraceFile(testCase.getName(), program.getTrace(), config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed());
-            } catch (IOException ioe) {
-                vmDidThrowAnEception = true;
-                e = ioe;
-            }
-
             if (testCase.getPost().size() == 0) {
                 if (vmDidThrowAnEception != true) {
                     String output =
@@ -305,8 +290,6 @@ public class TestRunner {
                     results.add(output);
                     return results;
                 }
-
-                this.trace = program.getTrace();
 
                 logger.info("--------- POST --------");
 
@@ -629,10 +612,6 @@ public class TestRunner {
         }
 
         return track;
-    }
-
-    public ProgramTrace getTrace() {
-        return trace;
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {

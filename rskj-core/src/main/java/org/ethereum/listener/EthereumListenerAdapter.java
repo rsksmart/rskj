@@ -25,7 +25,6 @@ import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
-import org.ethereum.vm.trace.ProgramTrace;
 
 import java.util.List;
 
@@ -78,11 +77,6 @@ public class EthereumListenerAdapter implements EthereumListener {
 
     }
 
-
-    @Override
-    public void onVMTraceCreated(String transactionHash, ProgramTrace trace) {
-
-    }
 
     @Override
     public void onNodeDiscovered(Node node) {

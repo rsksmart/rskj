@@ -26,7 +26,6 @@ import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
-import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,11 +101,6 @@ public class CompositeEthereumListener implements EthereumListener {
     @Override
     public void onHandShakePeer(Channel channel, HelloMessage helloMessage) {
         scheduleListenerCallbacks(listener -> listener.onHandShakePeer(channel, helloMessage));
-    }
-
-    @Override
-    public void onVMTraceCreated(String transactionHash, ProgramTrace trace) {
-        scheduleListenerCallbacks(listener -> listener.onVMTraceCreated(transactionHash, trace));
     }
 
     @Override

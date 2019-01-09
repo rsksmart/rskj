@@ -883,11 +883,7 @@ public class BlockChainImplTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
         executor.executeAndFill(block, genesis);
 
@@ -941,11 +937,7 @@ public class BlockChainImplTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         )));
     }
 
@@ -982,11 +974,7 @@ public class BlockChainImplTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
     }
 

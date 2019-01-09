@@ -423,11 +423,6 @@ public abstract class SystemProperties {
     }
 
     @ValidateMe
-    public int vmTraceInitStorageLimit() {
-        return configFromFiles.getInt("vm.structured.initStorageLimit");
-    }
-
-    @ValidateMe
     public int detailsInMemoryStorageLimit() {
         return configFromFiles.getInt("details.inmemory.storage.limit");
     }

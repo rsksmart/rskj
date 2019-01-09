@@ -20,8 +20,6 @@
 package org.ethereum.vm.program;
 
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.listener.ProgramListener;
-import org.ethereum.vm.program.listener.ProgramListenerAware;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -32,19 +30,13 @@ import static java.lang.String.format;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
 
-public class Memory implements ProgramListenerAware {
+public class Memory {
 
     private static final int CHUNK_SIZE = 1024;
     private static final int WORD_SIZE = 32;
 
     private List<byte[]> chunks = new LinkedList<>();
     private int softSize;
-    private ProgramListener traceListener;
-
-    @Override
-    public void setTraceListener(ProgramListener traceListener) {
-        this.traceListener = traceListener;
-    }
 
     public byte[] read(int address, int size) {
         if (size <= 0) {
@@ -107,10 +99,6 @@ public class Memory implements ProgramListenerAware {
             toCapture -= captured;
             start += captured;
         }
-
-        if (traceListener != null) {
-            traceListener.onMemoryWrite(address, data, dataSize);
-        }
     }
 
 
@@ -135,10 +123,6 @@ public class Memory implements ProgramListenerAware {
         if (toAllocate > 0) {
             toAllocate = (int) ceil((double) toAllocate / WORD_SIZE) * WORD_SIZE;
             softSize += toAllocate;
-
-            if (traceListener != null) {
-                traceListener.onMemoryExtend(toAllocate);
-            }
         }
     }
 

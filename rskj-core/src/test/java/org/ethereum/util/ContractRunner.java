@@ -126,11 +126,8 @@ public class ContractRunner {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed());
+                new PrecompiledContracts(config)
+        );
         executor.init();
         executor.execute();
         executor.go();

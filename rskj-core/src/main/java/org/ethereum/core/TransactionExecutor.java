@@ -35,11 +35,9 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +47,6 @@ import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 
 /**
  * @author Roman Mandeleil
@@ -71,10 +68,6 @@ public class TransactionExecutor {
     private final BlockchainNetConfig netConfig;
     private final boolean playVm;
     private final boolean enableRemasc;
-    private final boolean vmTrace;
-    private final String databaseDir;
-    private final String vmTraceDir;
-    private final boolean vmTraceCompressed;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
@@ -103,7 +96,7 @@ public class TransactionExecutor {
     public TransactionExecutor(Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock, EthereumListener listener, long gasUsedInTheBlock,
                                VmConfig vmConfig, BlockchainNetConfig blockchainConfig, boolean playVm, boolean remascEnabled,
-                               boolean vmTrace, PrecompiledContracts precompiledContracts, String databaseDir, String vmTraceDir, boolean vmTraceCompressed) {
+                               PrecompiledContracts precompiledContracts) {
         this.tx = tx;
         this.txindex = txindex;
         this.coinbase = coinbase;
@@ -120,10 +113,6 @@ public class TransactionExecutor {
         this.netConfig = blockchainConfig;
         this.playVm = playVm;
         this.enableRemasc = remascEnabled;
-        this.vmTrace = vmTrace;
-        this.databaseDir = databaseDir;
-        this.vmTraceDir = vmTraceDir;
-        this.vmTraceCompressed = vmTraceCompressed;
     }
 
 
@@ -506,23 +495,6 @@ public class TransactionExecutor {
 
         if (listener != null) {
             listener.onTransactionExecuted(summary);
-        }
-
-        logger.trace("tx listener done");
-
-        if (vmTrace && program != null) {
-            ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
-            String txHash = tx.getHash().toHexString();
-            try {
-                saveProgramTraceFile(txHash, trace, databaseDir, vmTraceDir, vmTraceCompressed);
-                if (listener != null) {
-                    listener.onVMTraceCreated(txHash, trace);
-                }
-            } catch (IOException e) {
-                String errorMessage = String.format("Cannot write trace to file: %s", e.getMessage());
-                panicProcessor.panic("executor", errorMessage);
-                logger.error(errorMessage);
-            }
         }
 
         logger.trace("tx finalization done");

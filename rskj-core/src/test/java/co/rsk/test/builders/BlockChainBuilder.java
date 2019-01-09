@@ -168,11 +168,7 @@ public class BlockChainBuilder {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         )));
 
         if (this.testing) {
@@ -214,11 +210,7 @@ public class BlockChainBuilder {
                     config.getBlockchainConfig(),
                     config.playVM(),
                     config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed()
+                    new PrecompiledContracts(config)
             ));
 
             for (Block b : this.blocks) {

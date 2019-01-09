@@ -41,7 +41,6 @@ import org.ethereum.net.server.Channel;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.ethereum.vm.trace.ProgramTrace;
 import org.junit.Assert;
 import org.junit.Test;
 import org.bouncycastle.util.BigIntegers;
@@ -92,11 +91,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         BlockResult result = executor.execute(block, repository.getRoot(), false);
@@ -134,11 +129,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
         Repository repository = objects.getRepository();
         Transaction tx = objects.getTransaction();
@@ -216,11 +207,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         Transaction tx1 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
@@ -300,11 +287,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         BlockResult result = executor.execute(block, parent.getStateRoot(), false);
@@ -349,11 +332,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
@@ -409,11 +388,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
@@ -455,11 +430,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         Assert.assertTrue(executor.executeAndValidate(block, parent));
@@ -486,11 +457,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         byte[] stateRoot = block.getStateRoot();
@@ -520,11 +487,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         byte[] receiptsRoot = block.getReceiptsRoot();
@@ -554,11 +517,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         block.getHeader().setGasUsed(0);
@@ -587,11 +546,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         block.getHeader().setPaidFees(Coin.ZERO);
@@ -620,11 +575,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         byte[] logBloom = block.getLogBloom();
@@ -662,11 +613,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
@@ -746,11 +693,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
         Repository repository = objects.getRepository();
         Transaction tx = objects.getTransaction();
@@ -842,11 +785,7 @@ public class BlockExecutorTest {
                 config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new PrecompiledContracts(config)
         ));
 
         List<Transaction> txs = new ArrayList<>();
@@ -1030,12 +969,6 @@ public class BlockExecutorTest {
         @Override
         public void onNoConnections() {
 
-        }
-
-        @Override
-        public void onVMTraceCreated(String transactionHash, ProgramTrace trace) {
-            latestTransactionHash = transactionHash;
-            latestTrace = trace.toString();
         }
 
         @Override

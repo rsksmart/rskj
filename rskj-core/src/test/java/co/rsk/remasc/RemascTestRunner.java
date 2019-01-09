@@ -137,11 +137,8 @@ class RemascTestRunner {
                     builder.getConfig().getBlockchainConfig(),
                     builder.getConfig().playVM(),
                     builder.getConfig().isRemascEnabled(),
-                    builder.getConfig().vmTrace(),
-                    new PrecompiledContracts(builder.getConfig()),
-                    builder.getConfig().databaseDir(),
-                    builder.getConfig().vmTraceDir(),
-                    builder.getConfig().vmTraceCompressed())
+                    new PrecompiledContracts(builder.getConfig())
+                )
         );
 
         for(int i = 0; i <= this.initialHeight; i++) {
