@@ -286,7 +286,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository startTracking() {
-        return new RepositoryTrack(this, trieStorePool, memoryStorageLimit);
+        return new RepositoryTrack(this);
     }
 
     @Override
