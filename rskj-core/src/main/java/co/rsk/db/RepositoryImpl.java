@@ -22,14 +22,12 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.vm.DataWord;
@@ -59,10 +57,6 @@ public class RepositoryImpl implements Repository {
     protected DetailsDataStore detailsDataStore;
     private TrieStore.Pool trieStorePool;
     private int memoryStorageLimit;
-
-    public RepositoryImpl(TrieStore store, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
-        this(new TrieImpl(store, true), new HashMapDB(), trieStorePool, memoryStorageLimit);
-    }
 
     public RepositoryImpl(
             Trie trie,
