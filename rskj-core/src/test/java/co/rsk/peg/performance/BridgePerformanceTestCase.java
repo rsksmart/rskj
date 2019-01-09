@@ -268,7 +268,7 @@ public abstract class BridgePerformanceTestCase {
 
         List<LogInfo> logs = new ArrayList<>();
 
-        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         Blockchain blockchain = BlockChainBuilder.ofSizeWithNoTransactionPoolCleaner(heightProvider.getHeight(executionIndex));
