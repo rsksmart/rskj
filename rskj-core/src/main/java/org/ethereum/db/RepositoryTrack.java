@@ -22,7 +22,6 @@ package org.ethereum.db;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
-import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -53,13 +52,9 @@ public class RepositoryTrack implements Repository {
     private final Map<RskAddress, ContractDetails> cacheDetails = new HashMap<>();
 
     private final Repository repository;
-    private final TrieStore.Pool trieStorePool;
-    private final int memoryStorageLimit;
 
-    public RepositoryTrack(Repository repository, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
+    public RepositoryTrack(Repository repository) {
         this.repository = repository;
-        this.trieStorePool = trieStorePool;
-        this.memoryStorageLimit = memoryStorageLimit;
     }
 
     @Override
@@ -323,8 +318,7 @@ public class RepositoryTrack implements Repository {
     @Override
     public Repository startTracking() {
         logger.debug("start tracking");
-
-        return new RepositoryTrack(this, trieStorePool, memoryStorageLimit);
+        return new RepositoryTrack(this);
     }
 
 

@@ -22,6 +22,7 @@ package org.ethereum.config;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -60,13 +61,15 @@ public class CommonConfig {
         return buildRepository(databaseDir, config.detailsInMemoryStorageLimit());
     }
 
-    public Repository buildRepository(String databaseDir, int memoryStorageLimit) {
+    private Repository buildRepository(String databaseDir, int memoryStorageLimit) {
         KeyValueDataSource ds = makeDataSource("state", databaseDir);
         KeyValueDataSource detailsDS = makeDataSource("details", databaseDir);
 
-        return new RepositoryImpl(new TrieStoreImpl(ds), detailsDS,
-                                  new TrieStorePoolOnDisk(databaseDir),
-                                  memoryStorageLimit
+        return new RepositoryImpl(
+                new TrieImpl(new TrieStoreImpl(ds), true),
+                detailsDS,
+                new TrieStorePoolOnDisk(databaseDir),
+                memoryStorageLimit
         );
     }
 
