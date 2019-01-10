@@ -60,6 +60,11 @@ public class PendingState implements AccountInformationProvider {
     }
 
     @Override
+    public Iterator<DataWord> getStorageKeys(RskAddress addr) {
+        return postExecutionReturn(executedRepository -> executedRepository.getStorageKeys(addr));
+    }
+
+    @Override
     public byte[] getCode(RskAddress addr) {
         return postExecutionReturn(executedRepository -> executedRepository.getCode(addr));
     }

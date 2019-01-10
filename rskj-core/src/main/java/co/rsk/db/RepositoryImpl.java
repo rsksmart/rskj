@@ -37,10 +37,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
@@ -234,6 +231,12 @@ public class RepositoryImpl implements Repository {
     public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
         ContractDetails details = getContractDetails(addr);
         return (details == null) ? null : details.get(key);
+    }
+
+    @Override
+    public Iterator<DataWord> getStorageKeys(RskAddress addr) {
+        ContractDetails details = getContractDetails(addr);
+        return (details == null) ? null : details.getStorageKeys().iterator();
     }
 
     @Override
