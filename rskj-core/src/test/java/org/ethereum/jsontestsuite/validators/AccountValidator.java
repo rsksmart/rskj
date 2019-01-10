@@ -21,11 +21,11 @@ package org.ethereum.jsontestsuite.validators;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.AccountState;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ContractDetails;
-import org.ethereum.vm.DataWord;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Repository;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -35,19 +35,20 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class AccountValidator {
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
-    public static List<String> valid(RskAddress addr, AccountState expectedState, ContractDetails expectedDetails,
-                                     AccountState currentState, ContractDetails currentDetails){
+    public static List<String> valid(RskAddress addr, Repository currentRepository, Repository expectedRepository) {
+        AccountState currentState = currentRepository.getAccountState(addr);
+        AccountState expectedState = expectedRepository.getAccountState(addr);
 
         List<String> results = new ArrayList<>();
 
-        if (currentState == null || currentDetails == null){
+        if (currentState == null || !currentRepository.isContract(addr)) {
             String formattedString = String.format("Account: %s: expected but doesn't exist",
                     addr);
             results.add(formattedString);
             return results;
         }
 
-        if (expectedState == null || expectedDetails == null){
+        if (expectedState == null || !expectedRepository.isContract(addr)) {
             String formattedString = String.format("Account: %s: unexpected account in the repository",
                     addr);
             results.add(formattedString);
@@ -70,23 +71,24 @@ public class AccountValidator {
         }
 
         byte[] code = Arrays.equals(currentState.getCodeHash(), EMPTY_DATA_HASH) ?
-                new byte[0] : currentDetails.getCode();
-        if (!Arrays.equals(expectedDetails.getCode(), code)) {
+                new byte[0] : currentRepository.getCode(addr);
+        if (!Arrays.equals(expectedRepository.getCode(addr), code)) {
             String formattedString = String.format("Account: %s: has unexpected code, expected code: %s found code: %s",
-                    addr, Hex.toHexString(expectedDetails.getCode()), Hex.toHexString(currentDetails.getCode()));
+                    addr, Hex.toHexString(expectedRepository.getCode(addr)), Hex.toHexString(currentRepository.getCode(addr)));
             results.add(formattedString);
         }
 
 
         // compare storage
-        Set<DataWord> currentKeys = currentDetails.getStorage().keySet();
-        Set<DataWord> expectedKeys = expectedDetails.getStorage().keySet();
+        Iterator<DataWord> currentKeys = currentRepository.getStorageKeys(addr);
+        Iterator<DataWord> expectedKeys = expectedRepository.getStorageKeys(addr);
         Set<DataWord> checked = new HashSet<>();
 
-        for (DataWord key : currentKeys) {
+        while (currentKeys.hasNext()) {
+            DataWord key = currentKeys.next();
 
-            DataWord currentValue = currentDetails.getStorage().get(key);
-            DataWord expectedValue = expectedDetails.getStorage().get(key);
+            DataWord currentValue = currentRepository.getStorageValue(addr, key);
+            DataWord expectedValue = expectedRepository.getStorageValue(addr, key);
             if (expectedValue == null) {
 
                 String formattedString = String.format("Account: %s: has unexpected storage data: %s = %s",
@@ -111,7 +113,9 @@ public class AccountValidator {
             checked.add(key);
         }
 
-        for (DataWord key : expectedKeys) {
+        while (expectedKeys.hasNext()) {
+            DataWord key = expectedKeys.next();
+
             if (!checked.contains(key)) {
                 String formattedString = String.format("Account: %s: doesn't exist expected storage key: %s",
                         addr, key.toString());

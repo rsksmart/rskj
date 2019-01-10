@@ -20,11 +20,9 @@
 package org.ethereum.jsontestsuite.validators;
 
 import co.rsk.core.RskAddress;
-import org.ethereum.core.AccountState;
-import org.ethereum.core.Repository;
-import org.ethereum.db.ContractDetails;
-import org.ethereum.util.ByteUtil;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Repository;
+import org.ethereum.util.ByteUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,14 +46,7 @@ public class RepositoryValidator {
         }
 
         for (RskAddress addr : currentKeys) {
-            AccountState state = currentRepository.getAccountState(addr);
-            ContractDetails details = currentRepository.getContractDetails(addr);
-
-            AccountState postState = postRepository.getAccountState(addr);
-            ContractDetails postDetails = postRepository.getContractDetails(addr);
-
-            List<String> accountResult =
-                AccountValidator.valid(addr, postState, postDetails, state, details);
+            List<String> accountResult = AccountValidator.valid(addr, currentRepository, postRepository);
 
             results.addAll(accountResult);
         }
