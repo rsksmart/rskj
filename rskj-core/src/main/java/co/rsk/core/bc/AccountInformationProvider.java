@@ -67,6 +67,12 @@ public interface AccountInformationProvider {
     byte[] getCode(RskAddress addr);
 
     /**
+     * @param addr an address account
+     * @return true if the addr identifies a contract
+     */
+    boolean isContract(RskAddress addr);
+
+    /**
      * Get current nonce of a given account
      *
      * @param addr of the account
