@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
+import java.util.Iterator;
 
 public interface AccountInformationProvider {
 
@@ -42,6 +43,13 @@ public interface AccountInformationProvider {
      * @return data in the form of a <code>DataWord</code>
      */
     DataWord getStorageValue(RskAddress addr, DataWord key);
+
+    /**
+     *
+     * @param addr of the account
+     * @return the keys for that addr
+     */
+    Iterator<DataWord> getStorageKeys(RskAddress addr);
 
     /**
      * Retrieve the code associated with an account
