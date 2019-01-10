@@ -38,6 +38,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.bouncycastle.util.encoders.Hex;
@@ -71,6 +72,7 @@ public class RemascProcessMinerFeesTest {
     private Map<byte[], BigInteger> preMineMap = Collections.singletonMap(cowAddress, cowInitialBalance.asBigInteger());
 
     private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
+    private BlockChainBuilder blockchainBuilder;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
@@ -88,6 +90,12 @@ public class RemascProcessMinerFeesTest {
         accountsAddressesUpToD.add(coinbaseD.getBytes());
     }
 
+    @Before
+    public void setup() {
+        blockchainBuilder = new BlockChainBuilder();
+        blockchainBuilder.setGenesis(genesisBlock).setConfig(config).setTesting(true);
+    }
+
     @Test
     public void processMinersFeesWithoutRequiredMaturity() {
         List<Block> blocks = createSimpleBlocks(genesisBlock, 1);
@@ -95,16 +103,14 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTx);
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 1));
 
-        BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setGenesis(genesisBlock).setTesting(true).setBlocks(blocks).build();
+        Blockchain blockchain = blockchainBuilder.setBlocks(blocks).build();
 
         assertNull(blockchain.getRepository().getAccountState(coinbaseA));
     }
 
     @Test
     public void processMinersFeesWithoutMinimumSyntheticSpan() {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = blockchainBuilder.build();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 2);
         Block blockWithOneTx = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), coinbaseA, null, minerFee, 0, txValue, cowKey);
@@ -167,8 +173,7 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void processMinersFeesWithNoSiblings() {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = blockchainBuilder.build();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
         Block blockWithOneTx = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), coinbaseA, null, minerFee, 0, txValue, cowKey);
@@ -243,8 +248,7 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void processMinersFeesWithOneSibling() {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = blockchainBuilder.build();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
         Block blockWithOneTxA = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), coinbaseA, null, minerFee, 0, txValue, cowKey);
@@ -349,8 +353,7 @@ public class RemascProcessMinerFeesTest {
     
     @Test
     public void siblingThatBreaksSelectionRuleGetsPunished() {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = blockchainBuilder.build();
 
         final long NUMBER_OF_TXS_WITH_FEES = 3;
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
@@ -495,8 +498,7 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void noPublisherFeeIsPaidWhenThePublisherHasNoSiblings() {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = blockchainBuilder.build();
 
         final long NUMBER_OF_TXS_WITH_FEES = 3;
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
@@ -572,8 +574,7 @@ public class RemascProcessMinerFeesTest {
 
 
     private void processMinersFeesWithOneSiblingBrokenSelectionRule(String reasonForBrokenSelectionRule) {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = blockchainBuilder.build();
 
         final long NUMBER_OF_TXS_WITH_FEES = 3;
         List<Block> blocks = createSimpleBlocks(this.genesisBlock, 4);
@@ -613,11 +614,11 @@ public class RemascProcessMinerFeesTest {
                         txindex,
                         block.getCoinbase(),
                         track,
-                blockchain.getBlockStore(),
-                null,
-                programInvokeFactory,
+                        blockchain.getBlockStore(),
+                        null,
+                        programInvokeFactory,
                         block,
-                null,
+                        null,
                         totalGasUsed,
                         config.getVmConfig(),
                         config.getBlockchainConfig(),
@@ -703,8 +704,7 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void processMinersFeesFromTxThatIsNotTheLatestTx() {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = blockchainBuilder.build();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
         Block blockWithOneTx = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), coinbaseA, null, minerFee, 0, txValue, cowKey);
@@ -788,8 +788,7 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void processMinersFeesFromTxInvokedByAnotherContract() {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = blockchainBuilder.build();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
         Block blockWithOneTx = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), coinbaseA, null, minerFee, 0, txValue, cowKey);
