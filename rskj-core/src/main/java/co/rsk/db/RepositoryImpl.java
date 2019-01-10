@@ -95,6 +95,11 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
+    public boolean isContract(RskAddress addr) {
+        return getContractDetails(addr) != null;
+    }
+
+    @Override
     public synchronized AccountState getAccountState(RskAddress addr) {
         AccountState result = null;
         byte[] accountData = null;

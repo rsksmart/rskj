@@ -266,6 +266,11 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
+    public boolean isContract(RskAddress addr) {
+        return getContractDetails(addr) != null;
+    }
+
+    @Override
     public void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
 
         logger.trace("add storage row, addr: [{}], key: [{}] val: [{}]", addr,

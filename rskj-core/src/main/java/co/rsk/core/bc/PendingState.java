@@ -75,6 +75,11 @@ public class PendingState implements AccountInformationProvider {
     }
 
     @Override
+    public boolean isContract(RskAddress addr) {
+        return postExecutionReturn(executedRepository -> executedRepository.isContract(addr));
+    }
+
+    @Override
     public BigInteger getNonce(RskAddress addr) {
         BigInteger nextNonce = pendingRepository.getNonce(addr);
         Optional<BigInteger> maxNonce = this.pendingTransactions.getTransactionsWithSender(addr).stream()
