@@ -178,6 +178,7 @@ public class RskWireProtocol extends EthHandler {
                 ethState = EthState.STATUS_FAILED;
                 recordEvent(EventType.INVALID_NETWORK);
                 disconnect(ReasonCode.NULL_IDENTITY);
+                ctx.pipeline().remove(this);
                 return;
             }
 
