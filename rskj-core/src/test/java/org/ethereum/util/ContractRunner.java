@@ -11,7 +11,6 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
@@ -61,14 +60,14 @@ public class ContractRunner {
                 .build();
     }
 
-    public ContractDetails addContract(String runtimeBytecode) {
+    public RskAddress addContract(String runtimeBytecode) {
         Account contractAccount = new AccountBuilder(blockchain)
                         .name(runtimeBytecode)
                         .balance(Coin.valueOf(10))
                         .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                         .build();
 
-        return repository.getContractDetails(contractAccount.getAddress());
+        return contractAccount.getAddress();
     }
 
     public ProgramResult createContract(byte[] bytecode) {

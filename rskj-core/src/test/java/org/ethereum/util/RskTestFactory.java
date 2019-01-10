@@ -26,7 +26,6 @@ import org.ethereum.db.*;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.listener.TestCompositeEthereumListener;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -66,16 +65,6 @@ public class RskTestFactory {
         genesis.flushRLP();
         getBlockchain().setBestBlock(genesis);
         getBlockchain().setTotalDifficulty(genesis.getCumulativeDifficulty());
-    }
-
-    public ContractDetails addContract(String runtimeBytecode) {
-        Account contractAccount = new AccountBuilder(getBlockchain())
-                .name(runtimeBytecode)
-                .balance(Coin.valueOf(10))
-                .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
-                .build();
-
-        return getRepository().getContractDetails(contractAccount.getAddress());
     }
 
     public ProgramResult executeRawContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {

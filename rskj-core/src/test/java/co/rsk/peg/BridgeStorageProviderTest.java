@@ -126,7 +126,7 @@ public class BridgeStorageProviderTest {
 
         RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
-        Assert.assertNotNull(repository.getContractDetails(contractAddress));
+        Assert.assertThat(repository.isContract(contractAddress), is(true));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("btcTxHashesAP".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("releaseRequestQueue".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("releaseTransactionSet".getBytes())));
