@@ -53,7 +53,7 @@ public class TrieImplTest {
         //System.out.println(trie.getHash().toHexString());
         TrieConverter tc = new TrieConverter();
         tc.init();
-        byte[] oldRoot = tc.getOldTrieRoot((TrieImpl) trie,false);
+        byte[] oldRoot = tc.getOldTrieRoot((TrieImpl) trie,false, false, (byte)0);
         //System.out.println(Hex.toHexString(oldRoot));
         Assert.assertEquals(Hex.toHexString(oldRoot),"f3fce1726e8bc33ea68a9ed40ddd075ced0a1076269d4dab8bec8aacd4ba8dc2");
 

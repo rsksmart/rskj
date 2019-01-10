@@ -28,6 +28,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Block;
@@ -81,7 +82,6 @@ public class TestRunner {
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
-    private boolean setNewStateRoot;
     private boolean validateGasUsed = false; // until EIP150 test cases are ready.
 
     public List<String> runTestSuite(TestSuite testSuite) {
@@ -119,32 +119,34 @@ public class TestRunner {
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, null, new DummyBlockValidator(), false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                blockStore,
-                receiptStore,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        )));
+        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, null, new DummyBlockValidator(), false, 1,
+            new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                               (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                                       tx1,
+                                       txindex1,
+                                       block1.getCoinbase(),
+                                       track1,
+                                       blockStore,
+                                       receiptStore,
+                                       programInvokeFactory,
+                                       block1,
+                                       null,
+                                       totalGasUsed1,
+                                       config.getVmConfig(),
+                                       config.getBlockchainConfig(),
+                                       config.playVM(),
+                                       config.isRemascEnabled(),
+                                       config.vmTrace(),
+                                       new PrecompiledContracts(config),
+                                       config.databaseDir(),
+                                       config.vmTraceDir(),
+                                       config.vmTraceCompressed()
+                               )
+        ));
 
         blockchain.setNoValidation(true);
 
         blockchain.setBestBlock(genesis);
-        blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
 
         /* 2 */ // Create block traffic list
         List<Block> blockTraffic = new ArrayList<>();
@@ -153,10 +155,6 @@ public class TestRunner {
             Block block = BlockBuilder.build(blockTck.getBlockHeader(),
                     blockTck.getTransactions(),
                     blockTck.getUncleHeaders());
-
-            setNewStateRoot = !((blockTck.getTransactions() == null)
-                    && (blockTck.getUncleHeaders() == null)
-                    && (blockTck.getBlockHeader() == null));
 
             Block tBlock = null;
             try {

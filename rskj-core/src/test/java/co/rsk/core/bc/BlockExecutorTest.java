@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
@@ -45,10 +46,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -75,7 +73,8 @@ public class BlockExecutorTest {
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+        BlockExecutor executor = new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+           (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
                 block1.getCoinbase(),
@@ -117,27 +116,29 @@ public class BlockExecutorTest {
         TestObjects objects = generateBlockWithOneTransaction();
         Block block = objects.getBlock();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(objects.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                null,
-                null,
-                programInvokeFactory,
-                block1,
-                listener,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor executor = new BlockExecutor(objects.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+            (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                   tx1,
+                   txindex1,
+                   block1.getCoinbase(),
+                   track1,
+                   null,
+                   null,
+                   programInvokeFactory,
+                   block1,
+                   listener,
+                   totalGasUsed1,
+                   config.getVmConfig(),
+                   config.getBlockchainConfig(),
+                   config.playVM(),
+                   config.isRemascEnabled(),
+                   config.vmTrace(),
+                   new PrecompiledContracts(config),
+                   config.databaseDir(),
+                   config.vmTraceDir(),
+                   config.vmTraceCompressed()
+           )
+        );
         Repository repository = objects.getRepository();
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
@@ -164,7 +165,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(
-                BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts()),
+                BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts()),
                 result.getReceiptsRoot()
         );
 
@@ -210,7 +211,8 @@ public class BlockExecutorTest {
 
         // Now initial accounts have been created
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+        BlockExecutor executor = new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+           (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
                 block1.getCoinbase(),
@@ -274,7 +276,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(
-                BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts()),
+                BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts()),
                 result.getReceiptsRoot()
         );
 
@@ -310,27 +312,29 @@ public class BlockExecutorTest {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(objects.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                null,
-                null,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor executor = new BlockExecutor(objects.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+           (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                   tx1,
+                   txindex1,
+                   block1.getCoinbase(),
+                   track1,
+                   null,
+                   null,
+                   programInvokeFactory,
+                   block1,
+                   null,
+                   totalGasUsed1,
+                   config.getVmConfig(),
+                   config.getBlockchainConfig(),
+                   config.playVM(),
+                   config.isRemascEnabled(),
+                   config.vmTrace(),
+                   new PrecompiledContracts(config),
+                   config.databaseDir(),
+                   config.vmTraceDir(),
+                   config.vmTraceCompressed()
+           )
+        );
 
         BlockResult result = executor.execute(block, parent.getStateRoot(), false);
         executor.executeAndFill(block, parent);
@@ -359,7 +363,8 @@ public class BlockExecutorTest {
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+        BlockExecutor executor = new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+           (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
                 block1.getCoinbase(),
@@ -400,10 +405,10 @@ public class BlockExecutorTest {
         Assert.assertEquals(1, block.getTransactionsList().size());
         Assert.assertEquals(tx, block.getTransactionsList().get(0));
         Assert.assertArrayEquals(
-                Block.getTxTrieRoot(Collections.singletonList(tx)),
+                BlockHashesHelper.getTxTrieRoot(Collections.singletonList(tx)),
                 block.getTxTrieRoot()
         );
-        
+
         Assert.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
@@ -422,7 +427,8 @@ public class BlockExecutorTest {
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+        BlockExecutor executor = new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+           (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
                 block1.getCoinbase(),
@@ -468,27 +474,29 @@ public class BlockExecutorTest {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(objects.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                null,
-                null,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor executor = new BlockExecutor(objects.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+           (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                   tx1,
+                   txindex1,
+                   block1.getCoinbase(),
+                   track1,
+                   null,
+                   null,
+                   programInvokeFactory,
+                   block1,
+                   null,
+                   totalGasUsed1,
+                   config.getVmConfig(),
+                   config.getBlockchainConfig(),
+                   config.playVM(),
+                   config.isRemascEnabled(),
+                   config.vmTrace(),
+                   new PrecompiledContracts(config),
+                   config.databaseDir(),
+                   config.vmTraceDir(),
+                   config.vmTraceCompressed()
+           )
+        );
 
         Assert.assertTrue(executor.executeAndValidate(block, parent));
     }
@@ -499,27 +507,29 @@ public class BlockExecutorTest {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(objects.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                null,
-                null,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor executor = new BlockExecutor(objects.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+           (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                   tx1,
+                   txindex1,
+                   block1.getCoinbase(),
+                   track1,
+                   null,
+                   null,
+                   programInvokeFactory,
+                   block1,
+                   null,
+                   totalGasUsed1,
+                   config.getVmConfig(),
+                   config.getBlockchainConfig(),
+                   config.playVM(),
+                   config.isRemascEnabled(),
+                   config.vmTrace(),
+                   new PrecompiledContracts(config),
+                   config.databaseDir(),
+                   config.vmTraceDir(),
+                   config.vmTraceCompressed()
+           )
+        );
 
         byte[] stateRoot = block.getStateRoot();
         stateRoot[0] = (byte)((stateRoot[0] + 1) % 256);
@@ -533,27 +543,29 @@ public class BlockExecutorTest {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(objects.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                null,
-                null,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor executor = new BlockExecutor(objects.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+               (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                       tx1,
+                       txindex1,
+                       block1.getCoinbase(),
+                       track1,
+                       null,
+                       null,
+                       programInvokeFactory,
+                       block1,
+                       null,
+                       totalGasUsed1,
+                       config.getVmConfig(),
+                       config.getBlockchainConfig(),
+                       config.playVM(),
+                       config.isRemascEnabled(),
+                       config.vmTrace(),
+                       new PrecompiledContracts(config),
+                       config.databaseDir(),
+                       config.vmTraceDir(),
+                       config.vmTraceCompressed()
+               )
+        );
 
         byte[] receiptsRoot = block.getReceiptsRoot();
         receiptsRoot[0] = (byte)((receiptsRoot[0] + 1) % 256);
@@ -567,27 +579,29 @@ public class BlockExecutorTest {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(objects.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                null,
-                null,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor executor = new BlockExecutor(objects.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+               (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                       tx1,
+                       txindex1,
+                       block1.getCoinbase(),
+                       track1,
+                       null,
+                       null,
+                       programInvokeFactory,
+                       block1,
+                       null,
+                       totalGasUsed1,
+                       config.getVmConfig(),
+                       config.getBlockchainConfig(),
+                       config.playVM(),
+                       config.isRemascEnabled(),
+                       config.vmTrace(),
+                       new PrecompiledContracts(config),
+                       config.databaseDir(),
+                       config.vmTraceDir(),
+                       config.vmTraceCompressed()
+               )
+        );
 
         block.getHeader().setGasUsed(0);
 
@@ -600,27 +614,29 @@ public class BlockExecutorTest {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(objects.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                null,
-                null,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor executor = new BlockExecutor(objects.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+               (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                       tx1,
+                       txindex1,
+                       block1.getCoinbase(),
+                       track1,
+                       null,
+                       null,
+                       programInvokeFactory,
+                       block1,
+                       null,
+                       totalGasUsed1,
+                       config.getVmConfig(),
+                       config.getBlockchainConfig(),
+                       config.playVM(),
+                       config.isRemascEnabled(),
+                       config.vmTrace(),
+                       new PrecompiledContracts(config),
+                       config.databaseDir(),
+                       config.vmTraceDir(),
+                       config.vmTraceCompressed()
+               )
+        );
 
         block.getHeader().setPaidFees(Coin.ZERO);
 
@@ -633,27 +649,29 @@ public class BlockExecutorTest {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(objects.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                null,
-                null,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor executor = new BlockExecutor(objects.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+               (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                       tx1,
+                       txindex1,
+                       block1.getCoinbase(),
+                       track1,
+                       null,
+                       null,
+                       programInvokeFactory,
+                       block1,
+                       null,
+                       totalGasUsed1,
+                       config.getVmConfig(),
+                       config.getBlockchainConfig(),
+                       config.playVM(),
+                       config.isRemascEnabled(),
+                       config.vmTrace(),
+                       new PrecompiledContracts(config),
+                       config.databaseDir(),
+                       config.vmTraceDir(),
+                       config.vmTraceCompressed()
+               )
+        );
 
         byte[] logBloom = block.getLogBloom();
         logBloom[0] = (byte)((logBloom[0] + 1) % 256);
@@ -675,7 +693,8 @@ public class BlockExecutorTest {
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+        BlockExecutor executor = new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+           (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
                 block1.getCoinbase(),
@@ -767,27 +786,29 @@ public class BlockExecutorTest {
         SimpleEthereumListener listener = new SimpleEthereumListener();
         Block block = objects.getBlock();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(objects.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                null,
-                null,
-                programInvokeFactory,
-                block1,
-                listener,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor executor = new BlockExecutor(objects.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+               (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                       tx1,
+                       txindex1,
+                       block1.getCoinbase(),
+                       track1,
+                       null,
+                       null,
+                       programInvokeFactory,
+                       block1,
+                       listener,
+                       totalGasUsed1,
+                       config.getVmConfig(),
+                       config.getBlockchainConfig(),
+                       config.playVM(),
+                       config.isRemascEnabled(),
+                       config.vmTrace(),
+                       new PrecompiledContracts(config),
+                       config.databaseDir(),
+                       config.vmTraceDir(),
+                       config.vmTraceCompressed()
+               )
+        );
         Repository repository = objects.getRepository();
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
@@ -827,7 +848,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(
-                BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts()),
+                BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts()),
                 result.getReceiptsRoot()
         );
 
@@ -866,7 +887,8 @@ public class BlockExecutorTest {
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+        BlockExecutor executor = new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+           (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
                 block1.getCoinbase(),

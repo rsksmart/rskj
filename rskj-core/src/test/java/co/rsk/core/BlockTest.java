@@ -20,6 +20,7 @@ package co.rsk.core;
 
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.remasc.RemascTransaction;
 import org.bouncycastle.util.encoders.Hex;
@@ -81,7 +82,7 @@ public class BlockTest {
                 new byte[0],                    // mixHash
                 new byte[]{0},         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                Block.getTxTrieRoot(txs), // transaction root
+                BlockHashesHelper.getTxTrieRoot(txs), // transaction root
                 HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 null,  // uncle list
@@ -435,7 +436,7 @@ public class BlockTest {
     public void checkTxTrieShouldBeEqualForHeaderAndBody() {
         Block block = new BlockGenerator().createBlock(10, 5);
         byte[] trieHash = block.getTxTrieRoot();
-        byte[] trieListHash = Block.getTxTrieRoot(block.getTransactionsList());
+        byte[] trieListHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList());
         Assert.assertArrayEquals(trieHash, trieListHash);
     }
 }

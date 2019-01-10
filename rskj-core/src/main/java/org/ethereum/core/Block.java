@@ -22,11 +22,10 @@ package org.ethereum.core;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
@@ -153,7 +152,7 @@ public class Block {
 
         this.header.setPaidFees(paidFees);
 
-        byte[] calculatedRoot = getTxTrieRoot(transactionsList);
+        byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList);
         this.header.setTransactionsRoot(calculatedRoot);
         this.checkExpectedRoot(transactionsRoot, calculatedRoot);
 
@@ -223,7 +222,7 @@ public class Block {
         // Parse Transactions
         RLPList txTransactions = (RLPList) block.get(1);
         this.transactionsList = parseTxs(txTransactions);
-        byte[] calculatedRoot = getTxTrieRoot(this.transactionsList);
+        byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(this.transactionsList);
         this.checkExpectedRoot(this.header.getTxTrieRoot(), calculatedRoot);
 
         // Parse Uncles
@@ -726,28 +725,6 @@ public class Block {
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         rlpEncoded = null;
-    }
-
-    public static boolean isHardFork9999(long number) {
-        return number >= 9999;
-    }
-
-    public static byte[] getTxTrieRoot(List<Transaction> transactions) {
-        return getTxTrieFor(transactions).getHash().getBytes();
-    }
-
-    private static Trie getTxTrieFor(List<Transaction> transactions) {
-        Trie txsState = new TrieImpl();
-        if (transactions == null) {
-            return txsState;
-        }
-
-        for (int i = 0; i < transactions.size(); i++) {
-            Transaction transaction = transactions.get(i);
-            txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());
-        }
-
-        return txsState;
     }
 
     public BigInteger getGasLimitAsInteger() {

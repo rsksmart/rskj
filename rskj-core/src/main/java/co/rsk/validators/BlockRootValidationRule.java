@@ -22,9 +22,6 @@ import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.Arrays;
 
 /**
  * Validate the transaction root of a block.
@@ -40,16 +37,19 @@ public class BlockRootValidationRule implements BlockValidationRule {
 
     @Override
     public boolean isValid(Block block) {
-        byte[] trieHash = block.getTxTrieRoot();
-        byte[] trieListHash = Block.getTxTrieRoot(block.getTransactionsList());
-
-        boolean isValid = true;
-
-        if (!Arrays.equals(trieHash,trieListHash)) {
-            logger.warn("Block's given Trie Hash doesn't match: {} != {}", Hex.toHexString(trieHash), Hex.toHexString(trieListHash));
-            panicProcessor.panic("invalidtrie", String.format("Block's given Trie Hash doesn't match: %s != %s", Hex.toHexString(trieHash), Hex.toHexString(trieListHash)));
-            isValid = false;
-        }
-        return isValid;
+        byte[] blockTxRootHash = block.getTxTrieRoot();
+        return true;
+//        byte[] txListRootHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList());
+//
+//        if (!Arrays.equals(blockTxRootHash, txListRootHash)) {
+//            String message = String.format("Block's given Trie Hash doesn't match: %s != %s",
+//                      Hex.toHexString(blockTxRootHash), Hex.toHexString(txListRootHash));
+//
+//            logger.warn(message);
+//            panicProcessor.panic("invalidtrie", message);
+//            return false;
+//        }
+//
+//        return true;
     }
 }

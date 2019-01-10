@@ -24,6 +24,10 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootTranslator;
+import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieImpl;
 import co.rsk.validators.BlockValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.*;
@@ -40,9 +44,6 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * Created by mario on 13/01/17.
@@ -59,16 +60,18 @@ public class BlockChainLoader {
     private final TransactionPool transactionPool;
     private final EthereumListener listener;
     private final BlockValidator blockValidator;
+    private final StateRootTranslator stateRootTranslator;
 
     @Autowired
     public BlockChainLoader(
             RskSystemProperties config,
-            org.ethereum.core.Repository repository,
-            org.ethereum.db.BlockStore blockStore,
+            Repository repository,
+            BlockStore blockStore,
             ReceiptStore receiptStore,
             TransactionPool transactionPool,
             EthereumListener listener,
-            BlockValidator blockValidator) {
+            BlockValidator blockValidator,
+            StateRootTranslator stateRootTranslator) {
 
         this.config = config;
         this.blockStore = blockStore;
@@ -77,6 +80,7 @@ public class BlockChainLoader {
         this.transactionPool = transactionPool;
         this.listener = listener;
         this.blockValidator = blockValidator;
+        this.stateRootTranslator = stateRootTranslator;
     }
 
     public BlockChainImpl loadBlockchain() {
@@ -91,28 +95,28 @@ public class BlockChainLoader {
                 config.isFlushEnabled(),
                 config.flushNumberOfBlocks(),
                 new BlockExecutor(
-                    repository,
-                        (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                            tx1,
-                            txindex1,
-                            block1.getCoinbase(),
-                            track1,
-                            blockStore,
-                            receiptStore,
-                            programInvokeFactory,
-                            block1,
-                            listener,
-                            totalGasUsed1,
-                            config.getVmConfig(),
-                            config.getBlockchainConfig(),
-                            config.playVM(),
-                            config.isRemascEnabled(),
-                            config.vmTrace(),
-                            new PrecompiledContracts(config),
-                            config.databaseDir(),
-                            config.vmTraceDir(),
-                            config.vmTraceCompressed()
-                        )
+                    repository, stateRootTranslator,
+                    (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                        tx1,
+                        txindex1,
+                        block1.getCoinbase(),
+                        track1,
+                        blockStore,
+                        receiptStore,
+                        programInvokeFactory,
+                        block1,
+                        listener,
+                        totalGasUsed1,
+                        config.getVmConfig(),
+                        config.getBlockchainConfig(),
+                        config.playVM(),
+                        config.isRemascEnabled(),
+                        config.vmTrace(),
+                        new PrecompiledContracts(config),
+                        config.databaseDir(),
+                        config.vmTraceDir(),
+                        config.vmTraceCompressed()
+                    )
                 )
         );
 
@@ -134,25 +138,25 @@ public class BlockChainLoader {
                 // First account state
                 repository.updateAccountState(addr, accountState);
                 // Then contract details, because they overwrite accountState
-                if (initialAddressState.getContractDetails()!=null) {
+                if (initialAddressState.getContractDetails() != null) {
                     repository.updateContractDetails(addr, initialAddressState.getContractDetails());
                 }
             }
 
             genesis.setStateRoot(repository.getRoot());
+            repository.commit();
             genesis.flushRLP();
-
-            blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+            byte[] stateRootHash = TrieConverter.computeOldAccountTrieRoot((TrieImpl) repository.getMutableTrie().getTrie());
+            stateRootTranslator.put(new Keccak256(stateRootHash), new Keccak256(genesis.getStateRoot()));
+            genesis.setStateRoot(stateRootHash);
             blockchain.setBestBlock(genesis);
-            blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
 
-            listener.onBlock(genesis, new ArrayList<TransactionReceipt>() );
+            listener.onBlock(genesis, new ArrayList<>() );
             repository.dumpState(genesis, 0, 0, null);
 
             logger.info("Genesis block loaded");
         } else {
             BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
-
             blockchain.setBestBlock(bestBlock);
             blockchain.setTotalDifficulty(totalDifficulty);
 
@@ -164,20 +168,10 @@ public class BlockChainLoader {
 
         String rootHash = config.rootHashStart();
         if (StringUtils.isNotBlank(rootHash)) {
-
             // update world state by dummy hash
             byte[] rootHashArray = Hex.decode(rootHash);
             logger.info("Loading root hash from property file: [{}]", rootHash);
             this.repository.syncToRoot(rootHashArray);
-
-        } else {
-
-            // Update world state to latest loaded block from db
-            // if state is not generated from empty premine list
-            // todo this is just a workaround, move EMPTY_TRIE_HASH logic to Trie implementation
-            if (!Arrays.equals(blockchain.getBestBlock().getStateRoot(), EMPTY_TRIE_HASH)) {
-                this.repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
-            }
         }
         return blockchain;
     }

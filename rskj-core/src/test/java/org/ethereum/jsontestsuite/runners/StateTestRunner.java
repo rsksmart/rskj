@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.StateRootTranslator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -122,27 +123,30 @@ public class StateTestRunner {
         BlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                blockStore,
-                null,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        )));
+        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, false, 1,
+                        new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                            (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                                tx1,
+                                txindex1,
+                                block1.getCoinbase(),
+                                track1,
+                                blockStore,
+                                null,
+                                programInvokeFactory,
+                                block1,
+                                null,
+                                totalGasUsed1,
+                                config.getVmConfig(),
+                                config.getBlockchainConfig(),
+                                config.playVM(),
+                                config.isRemascEnabled(),
+                                config.vmTrace(),
+                                new PrecompiledContracts(config),
+                                config.databaseDir(),
+                                config.vmTraceDir(),
+                                config.vmTraceCompressed()
+                        )
+        ));
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);

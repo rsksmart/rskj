@@ -24,6 +24,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.mine.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -37,6 +38,7 @@ import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
@@ -44,6 +46,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Clock;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -210,7 +213,8 @@ public class Web3ImplSnapshotTest {
                         rule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()

@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -37,6 +38,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.HashMap;
 
 public class BlockchainLoaderTest {
 
@@ -79,7 +81,8 @@ public class BlockchainLoaderTest {
         // To use getAccountsKeys() the trie must not be secure
         Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)),false);
 
-        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null);
+        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null,
+         null, ethereumListener, null, new StateRootTranslator(new HashMapDB(), new HashMap<>()));
 
         blockChainLoader.loadBlockchain();
 

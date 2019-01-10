@@ -24,10 +24,13 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.FamilyUtils;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
 import org.apache.commons.collections4.CollectionUtils;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -66,6 +69,7 @@ public class BlockToMineBuilder {
     private final BlockExecutor executor;
 
     private final Coin minerMinGasPriceTarget;
+    private final BlockchainNetConfig blockchainConfig;
 
     @Autowired
     public BlockToMineBuilder(
@@ -78,7 +82,8 @@ public class BlockToMineBuilder {
             @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
             RskSystemProperties config,
             ReceiptStore receiptStore,
-            MinerClock clock) {
+            MinerClock clock,
+            StateRootTranslator stateRootTranslator) {
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
         this.blockStore = Objects.requireNonNull(blockStore);
@@ -90,7 +95,8 @@ public class BlockToMineBuilder {
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        this.executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+        this.executor = new BlockExecutor(repository, stateRootTranslator,
+              (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
                 block1.getCoinbase(),
@@ -113,6 +119,7 @@ public class BlockToMineBuilder {
         ));
 
         this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
+        this.blockchainConfig = config.getBlockchainConfig();
     }
 
     /**
@@ -214,7 +221,7 @@ public class BlockToMineBuilder {
                 CollectionUtils.size(uncles)
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
-        newHeader.setTransactionsRoot(Block.getTxTrieRoot(txs));
+        newHeader.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(txs));
         return newHeader;
     }
 }

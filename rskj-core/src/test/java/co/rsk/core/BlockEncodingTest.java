@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
@@ -72,7 +73,7 @@ public class BlockEncodingTest {
                 new byte[0],                    // mixHash
                 new byte[]{0},         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                Block.getTxTrieRoot(txs), // transaction root
+                BlockHashesHelper.getTxTrieRoot(txs), // transaction root
                 HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 null,  // uncle list

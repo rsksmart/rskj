@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 
 /**
  * TrieStoreImpl store and retrieve Trie node by hash
@@ -76,9 +77,15 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public Trie retrieve(byte[] hash) {
-        byte[] message = this.store.get(hash);
+        // TODO THIS IS SHIT
+        return retrieve(hash, TrieImpl::fromMessage);
+    }
 
-        return TrieImpl.fromMessage(message, this);
+    @Override
+    public Trie retrieve(byte[] hash, BiFunction<byte[], TrieStore, Trie> func) {
+        byte[] message = retrieveValue(hash);
+
+        return func.apply(message, this);
     }
 
     public byte[] retrieveValue(byte[] hash) {

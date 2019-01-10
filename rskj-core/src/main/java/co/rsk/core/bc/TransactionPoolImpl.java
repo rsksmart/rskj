@@ -23,8 +23,6 @@ import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -46,6 +44,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.BIUtil.toBI;
 
 /**
@@ -439,8 +438,6 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private Block createFakePendingBlock(Block best) {
-        Trie txsTrie = new TrieImpl();
-
         // creating fake lightweight calculated block with no hashes calculations
         return new Block(best.getHash().getBytes(),
                             emptyUncleHashList, // uncleHash
@@ -458,7 +455,7 @@ public class TransactionPoolImpl implements TransactionPool {
                             new byte[0],
                             new byte[0],
                             new byte[32],  // receiptsRoot
-                            txsTrie.getHash().getBytes(),  // TransactionsRoot-
+                            EMPTY_TRIE_HASH,  // TransactionsRoot-
                             new byte[32],  // stateRoot
                             Collections.<Transaction>emptyList(), // tx list
                             Collections.<BlockHeader>emptyList(), // uncle list
