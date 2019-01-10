@@ -24,8 +24,10 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
@@ -807,7 +809,7 @@ public class BlockChainImplTest {
 
     @Test
     public void addInvalidMGPBlock() {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()),true)));
+        Repository repository = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true)));
 
         IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
@@ -867,7 +869,9 @@ public class BlockChainImplTest {
                 .parent(genesis).build();
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+        BlockExecutor executor = new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+           new TrieConverter(),
+           (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
                 block1.getCoinbase(),
@@ -925,27 +929,31 @@ public class BlockChainImplTest {
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        return new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                blockStore,
-                receiptStore,
-                programInvokeFactory,
-                block1,
-                listener,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        )));
+        return new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1,
+              new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+               new TrieConverter(),
+               (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                       tx1,
+                       txindex1,
+                       block1.getCoinbase(),
+                       track1,
+                       blockStore,
+                       receiptStore,
+                       programInvokeFactory,
+                       block1,
+                       listener,
+                       totalGasUsed1,
+                       config.getVmConfig(),
+                       config.getBlockchainConfig(),
+                       config.playVM(),
+                       config.isRemascEnabled(),
+                       config.vmTrace(),
+                       new PrecompiledContracts(config),
+                       config.databaseDir(),
+                       config.vmTraceDir(),
+                       config.vmTraceCompressed()
+               )
+        ));
     }
 
     // This method modifies the repository! Not nice for a getter.
@@ -969,7 +977,9 @@ public class BlockChainImplTest {
 
     private static BlockExecutor createExecutor(BlockChainImpl blockChain, BlockExecutorTest.SimpleEthereumListener listener) {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        return new BlockExecutor(blockChain.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+        return new BlockExecutor(blockChain.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                                 new TrieConverter(),
+             (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
                 block1.getCoinbase(),

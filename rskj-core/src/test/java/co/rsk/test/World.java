@@ -23,13 +23,16 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockStore;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -88,27 +91,31 @@ public class World {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         final TestSystemProperties config = new TestSystemProperties();
         if (this.blockExecutor == null)
-            this.blockExecutor = new BlockExecutor(this.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                    tx1,
-                    txindex1,
-                    block1.getCoinbase(),
-                    track1,
-                    this.getBlockChain().getBlockStore(),
-                    null,
-                    programInvokeFactory,
-                    block1,
-                    null,
-                    totalGasUsed1,
-                    config.getVmConfig(),
-                    config.getBlockchainConfig(),
-                    config.playVM(),
-                    config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed()
-            ));
+            this.blockExecutor = new BlockExecutor(this.getRepository(),
+                                                   new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                                                   new TrieConverter(),
+                                                   (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                                                           tx1,
+                                                           txindex1,
+                                                           block1.getCoinbase(),
+                                                           track1,
+                                                           this.getBlockChain().getBlockStore(),
+                                                           null,
+                                                           programInvokeFactory,
+                                                           block1,
+                                                           null,
+                                                           totalGasUsed1,
+                                                           config.getVmConfig(),
+                                                           config.getBlockchainConfig(),
+                                                           config.playVM(),
+                                                           config.isRemascEnabled(),
+                                                           config.vmTrace(),
+                                                           new PrecompiledContracts(config),
+                                                           config.databaseDir(),
+                                                           config.vmTraceDir(),
+                                                           config.vmTraceCompressed()
+                                                   )
+            );
 
         return this.blockExecutor;
     }

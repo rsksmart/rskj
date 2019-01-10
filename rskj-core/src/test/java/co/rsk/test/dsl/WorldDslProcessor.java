@@ -23,17 +23,21 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 /**
@@ -200,6 +204,7 @@ public class WorldDslProcessor {
             block.seal();
 
             latestImportResult = blockChain.tryToConnect(block);
+            blockChain.getRepository().syncToRoot(block.getStateRoot());
         }
     }
 
@@ -241,27 +246,30 @@ public class WorldDslProcessor {
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
             BlockExecutor executor = new BlockExecutor(world.getRepository(),
-                    (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                                                               tx1,
-                                                               txindex1,
-                                                               block1.getCoinbase(),
-                                                               track1,
-                    world.getBlockChain().getBlockStore(),
-                    null,
-                    programInvokeFactory,
-                                                               block1,
-                    null,
-                                                               totalGasUsed1,
-                                                               config.getVmConfig(),
-                                                               config.getBlockchainConfig(),
-                                                               config.playVM(),
-                                                               config.isRemascEnabled(),
-                                                               config.vmTrace(),
-                                                               new PrecompiledContracts(config),
-                                                               config.databaseDir(),
-                                                               config.vmTraceDir(),
-                                                               config.vmTraceCompressed()
-                                                       ));
+                                                       new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                                                       new TrieConverter(),
+                                                       (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                                                                                                  tx1,
+                                                                                                  txindex1,
+                                                                                                  block1.getCoinbase(),
+                                                                                                  track1,
+                                                       world.getBlockChain().getBlockStore(),
+                                                       null,
+                                                       programInvokeFactory,
+                                                                                                  block1,
+                                                       null,
+                                                                                                  totalGasUsed1,
+                                                                                                  config.getVmConfig(),
+                                                                                                  config.getBlockchainConfig(),
+                                                                                                  config.playVM(),
+                                                                                                  config.isRemascEnabled(),
+                                                                                                  config.vmTrace(),
+                                                                                                  new PrecompiledContracts(config),
+                                                                                                  config.databaseDir(),
+                                                                                                  config.vmTraceDir(),
+                                                                                                  config.vmTraceCompressed()
+                                                                                          )
+            );
             executor.executeAndFill(block, parent);
             world.saveBlock(name, block);
             parent = block;

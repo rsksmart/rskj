@@ -19,9 +19,6 @@ import java.util.stream.Collectors;
 
 public class DownloadingBodiesSyncState  extends BaseSyncState {
 
-    // validation rules for bodies
-    private final BlockCompositeRule blockValidationRules;
-
     // responses on wait
     private final Map<Long, PendingBodyResponse> pendingBodyResponses;
 
@@ -60,10 +57,6 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
         super(syncInformation, syncEventsHandler, syncConfiguration);
         this.limit = syncConfiguration.getTimeoutWaitingRequest();
-        this.blockValidationRules = new BlockCompositeRule(
-                new BlockUnclesHashValidationRule(),
-                new BlockRootValidationRule()
-        );
         this.pendingBodyResponses = new HashMap<>();
         this.pendingHeaders = pendingHeaders;
         this.skeletons = skeletons;
@@ -89,7 +82,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         // we already checked that this message was expected
         BlockHeader header = pendingBodyResponses.remove(message.getId()).header;
         Block block = Block.fromValidData(header, message.getTransactions(), message.getUncles());
-        if (!blockValidationRules.isValid(block)) {
+        if (!syncInformation.blockIsValid(block)) {
             handleInvalidMessage(peerId, header);
             return;
         }

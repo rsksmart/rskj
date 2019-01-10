@@ -30,6 +30,7 @@ import co.rsk.net.messages.StatusMessage;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.ChannelHandlerContext;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.eth.EthVersion;
@@ -43,7 +44,6 @@ import org.ethereum.sync.SyncStatistics;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -64,12 +64,12 @@ public class RskWireProtocol extends EthHandler {
      * also, is useful when returned BLOCK_BODIES msg doesn't cover all sent hashes
      * or in case when peer is disconnected
      */
-    private final PeerScoringManager peerScoringManager;
     protected final SyncStatistics syncStats = new SyncStatistics();
     protected EthState ethState = EthState.INIT;
     protected SyncState syncState = SyncState.IDLE;
     protected boolean syncDone = false;
 
+    private final PeerScoringManager peerScoringManager;
     private final RskSystemProperties config;
     private final MessageChannel messageSender;
     private final MessageHandler messageHandler;
@@ -77,12 +77,19 @@ public class RskWireProtocol extends EthHandler {
     private final MessageRecorder messageRecorder;
     private final Genesis genesis;
 
-    public RskWireProtocol(RskSystemProperties config, PeerScoringManager peerScoringManager, MessageHandler messageHandler, Blockchain blockchain, CompositeEthereumListener ethereumListener, Genesis genesis, MessageRecorder messageRecorder) {
+    public RskWireProtocol(
+            RskSystemProperties config,
+            PeerScoringManager peerScoringManager,
+            MessageHandler messageHandler,
+            Blockchain blockchain,
+            CompositeEthereumListener ethereumListener,
+            Genesis genesis, 
+            MessageRecorder messageRecorder) {
         super(blockchain, config, ethereumListener, V62);
+        this.config = config;
         this.peerScoringManager = peerScoringManager;
         this.messageHandler = messageHandler;
         this.blockchain = blockchain;
-        this.config = config;
         this.messageSender = new EthMessageSender(this);
         this.messageRecorder = messageRecorder;
         this.genesis = genesis;
@@ -155,6 +162,7 @@ public class RskWireProtocol extends EthHandler {
         try {
             byte protocolVersion = msg.getProtocolVersion();
             byte versionCode = version.getCode();
+
             if (protocolVersion != versionCode) {
                 loggerNet.info("Removing EthHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
                 loggerNet.info("Protocol version {} - message protocol version {}",
