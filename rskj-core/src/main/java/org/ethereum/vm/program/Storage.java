@@ -110,6 +110,11 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public boolean isContract(RskAddress addr) {
+        return repository.isContract(addr);
+    }
+
+    @Override
     public void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
         if (canListenTrace(addr)) {
             traceListener.onStoragePut(key, value);
