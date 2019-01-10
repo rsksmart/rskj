@@ -71,7 +71,7 @@ public class AccountState {
         RLPList items = (RLPList) RLP.decode2(rlpEncoded).get(0);
         this.nonce = items.get(0).getRLPData() == null ? BigInteger.ZERO
                 : new BigInteger(1, items.get(0).getRLPData());
-        this.balance = RLP.parseCoin(items.get(1).getRLPData());
+        this.balance = RLP.parseSignedCoinNonNullZero(items.get(1).getRLPData());
 
         if (items.size() > 2) {
             byte[] data = items.get(2).getRLPData();
@@ -113,7 +113,7 @@ public class AccountState {
     public byte[] getEncoded() {
         if (rlpEncoded == null) {
             byte[] anonce = RLP.encodeBigInteger(this.nonce);
-            byte[] abalance = RLP.encodeCoin(this.balance);
+            byte[] abalance = RLP.encodeSignedCoinNonNullZero(this.balance);
             if (stateFlags != 0) {
                 byte[] astateFlags = RLP.encodeInt(this.stateFlags);
                 this.rlpEncoded = RLP.encodeList(anonce, abalance, astateFlags);

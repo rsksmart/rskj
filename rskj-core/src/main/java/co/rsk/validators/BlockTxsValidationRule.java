@@ -18,6 +18,9 @@
 
 package co.rsk.validators;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
@@ -46,13 +49,21 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final Repository repository;
+    private final RskSystemProperties config;
+    private final StateRootTranslator stateRootTranslator;
 
-    public BlockTxsValidationRule(Repository repository) {
+    public BlockTxsValidationRule(
+            Repository repository,
+            RskSystemProperties config,
+            StateRootTranslator stateRootTranslator) {
         this.repository = repository;
+        this.config = config;
+        this.stateRootTranslator = stateRootTranslator;
     }
 
     @Override
     public boolean isValid(Block block, Block parent) {
+
         if(block == null || parent == null) {
             logger.warn("BlockTxsValidationRule - block or parent are null");
             return false;
@@ -63,7 +74,11 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             return true;
         }
 
-        Repository parentRepo = repository.getSnapshotTo(parent.getStateRoot());
+        byte[] parentStateRoot = parent.getStateRoot();
+        if (!config.getBlockchainConfig().getConfigForBlock(block.getNumber()).isRskipUnitrie()){
+            parentStateRoot = stateRootTranslator.get(new Keccak256(parentStateRoot)).getBytes();
+        }
+        Repository parentRepo = repository.getSnapshotTo(parentStateRoot);
 
         Map<RskAddress, BigInteger> curNonce = new HashMap<>();
 

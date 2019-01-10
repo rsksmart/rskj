@@ -120,6 +120,7 @@ public class GenesisLoader {
                 repo.updateContractDetails(addr,cd);
         }
 
+        repo.commit();
         return repo.getRoot();
     }
 
