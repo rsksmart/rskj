@@ -27,7 +27,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -425,67 +424,14 @@ public class RepositoryTest {
         track2.addStorageBytes(HORSE, horseKey1, horseVal0);
         Repository track3 = track2.startTracking();
 
-        ContractDetails cowDetails = track3.getContractDetails(COW);
-        cowDetails.putBytes(cowKey1, cowVal1);
-
-        ContractDetails horseDetails = track3.getContractDetails(HORSE);
-        horseDetails.putBytes(horseKey1, horseVal1);
+        track3.addStorageBytes(COW, cowKey1, cowVal1);
+        track3.addStorageBytes(HORSE, horseKey1, horseVal1);
 
         track3.commit();
         track2.rollback();
 
-        ContractDetails cowDetailsOrigin = repository.getContractDetails(COW);
-        byte[] cowValOrin = cowDetailsOrigin.getBytes(cowKey1);
-
-        ContractDetails horseDetailsOrigin = repository.getContractDetails(HORSE);
-        byte[] horseValOrin = horseDetailsOrigin.getBytes(horseKey1);
-
-        assertArrayEquals(cowVal0, cowValOrin);
-        assertArrayEquals(horseVal0, horseValOrin);
-    }
-
-    @Test
-    public void test19b() {
-        Repository repository = createRepositoryImpl(config);
-        Repository track = repository.startTracking();
-
-        byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
-        byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
-
-        DataWord cowKey1 = new DataWord("c1");
-        byte[] cowVal1 = Hex.decode("c0a1");
-        byte[] cowVal0 = Hex.decode("c0a0");
-
-        DataWord horseKey1 = new DataWord("e1");
-        byte[] horseVal1 = Hex.decode("c0a1");
-        byte[] horseVal0 = Hex.decode("c0a0");
-
-        track.addStorageBytes(COW, cowKey1, cowVal0);
-        track.addStorageBytes(HORSE, horseKey1, horseVal0);
-        track.commit();
-
-        Repository track2 = repository.startTracking(); //track
-
-        track2.addStorageBytes(HORSE, horseKey1, horseVal0);
-        Repository track3 = track2.startTracking();
-
-        ContractDetails cowDetails = track3.getContractDetails(COW);
-        cowDetails.putBytes(cowKey1, cowVal1);
-
-        ContractDetails horseDetails = track3.getContractDetails(HORSE);
-        horseDetails.putBytes(horseKey1, horseVal1);
-
-        track3.commit();
-        track2.rollback();
-
-        ContractDetails cowDetailsOrigin = repository.getContractDetails(COW);
-        byte[] cowValOrin = cowDetailsOrigin.getBytes(cowKey1);
-
-        ContractDetails horseDetailsOrigin = repository.getContractDetails(HORSE);
-        byte[] horseValOrin = horseDetailsOrigin.getBytes(horseKey1);
-
-        assertArrayEquals(cowVal0, cowValOrin);
-        assertArrayEquals(horseVal0, horseValOrin);
+        assertArrayEquals(cowVal0, repository.getStorageBytes(COW, cowKey1));
+        assertArrayEquals(horseVal0, repository.getStorageBytes(HORSE, horseKey1));
     }
 
     @Test // testing for snapshot
@@ -507,8 +453,7 @@ public class RepositoryTest {
         track2.commit();
         repository.flush();
 
-        ContractDetails cowDetails = repository.getContractDetails(COW);
-        assertArrayEquals(cowVal0, cowDetails.getBytes(cowKey2));
+        assertArrayEquals(cowVal0, repository.getStorageBytes(COW, cowKey2));
 
         final CountDownLatch failSema = new CountDownLatch(2);
 
@@ -560,7 +505,7 @@ public class RepositoryTest {
         }
     }
 
-    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
+    private static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
         return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }

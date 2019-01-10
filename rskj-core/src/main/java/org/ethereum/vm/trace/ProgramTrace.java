@@ -21,8 +21,8 @@ package org.ethereum.vm.trace;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.AccountInformationProvider;
 import org.ethereum.core.Repository;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryTrack;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
@@ -31,10 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.lang.String.format;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -56,20 +53,22 @@ public class ProgramTrace {
         if (config.vmTrace() && programInvoke != null) {
             contractAddress = Hex.toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
 
-            ContractDetails contractDetails = getContractDetails(programInvoke);
-            if (contractDetails == null) {
+            AccountInformationProvider informationProvider = getInformationProvider(programInvoke);
+            RskAddress ownerAddress = new RskAddress(programInvoke.getOwnerAddress());
+            if (!informationProvider.isContract(ownerAddress)) {
                 storageSize = 0;
                 fullStorage = true;
             } else {
-                storageSize = contractDetails.getStorageSize();
+                storageSize = informationProvider.getStorageKeysCount(ownerAddress);
                 if (storageSize <= config.vmTraceInitStorageLimit()) {
                     fullStorage = true;
 
                     String address = toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
-                    for (Map.Entry<DataWord, DataWord> entry : contractDetails.getStorage().entrySet()) {
+                    Iterator<DataWord> keysIterator = informationProvider.getStorageKeys(ownerAddress);
+                    while (keysIterator.hasNext()) {
                         // TODO: solve NULL key/value storage problem
-                        DataWord key = entry.getKey();
-                        DataWord value = entry.getValue();
+                        DataWord key = keysIterator.next();
+                        DataWord value = informationProvider.getStorageValue(ownerAddress, key);
                         if (key == null || value == null) {
                             LOGGER.info("Null storage key/value: address[{}]" ,address);
                             continue;
@@ -86,14 +85,12 @@ public class ProgramTrace {
         }
     }
 
-    private static ContractDetails getContractDetails(ProgramInvoke programInvoke) {
+    private static AccountInformationProvider getInformationProvider(ProgramInvoke programInvoke) {
         Repository repository = programInvoke.getRepository();
         if (repository instanceof RepositoryTrack) {
             repository = ((RepositoryTrack) repository).getOriginRepository();
         }
-
-        RskAddress addr = new RskAddress(programInvoke.getOwnerAddress());
-        return repository.getContractDetails(addr);
+        return repository;
     }
 
     public List<Op> getOps() {

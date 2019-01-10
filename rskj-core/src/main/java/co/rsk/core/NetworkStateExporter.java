@@ -18,14 +18,13 @@
 
 package co.rsk.core;
 
+import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.panic.PanicProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -37,6 +36,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Iterator;
 
 /**
  * Created by mario on 13/01/17.
@@ -76,28 +76,28 @@ public class NetworkStateExporter {
         }
     }
 
-    private ObjectNode createContractNode(ContractDetails contractDetails, ObjectNode accountNode) {
+    private ObjectNode createContractNode(ObjectNode accountNode, AccountInformationProvider accountInformation, RskAddress addr, Iterator<DataWord> contractKeys) {
         ObjectNode contractNode = accountNode.objectNode();
-        contractNode.put("code", Hex.toHexString(contractDetails.getCode()));
+        contractNode.put("code", Hex.toHexString(accountInformation.getCode(addr)));
         ObjectNode dataNode = contractNode.objectNode();
-        for (DataWord key : contractDetails.getStorageKeys()) {
-            byte[] value = contractDetails.getBytes(key);
+        while (contractKeys.hasNext()) {
+            DataWord key = contractKeys.next();
+            byte[] value = accountInformation.getStorageBytes(addr, key);
             dataNode.put(Hex.toHexString(key.getData()), Hex.toHexString(value));
         }
         contractNode.set("data", dataNode);
         return contractNode;
     }
 
-    private ObjectNode createAccountNode(ObjectNode mainNode, RskAddress addr, Repository frozenRepository) {
+    private ObjectNode createAccountNode(ObjectNode mainNode, RskAddress addr, AccountInformationProvider accountInformation) {
         ObjectNode accountNode = mainNode.objectNode();
-        AccountState accountState = frozenRepository.getAccountState(addr);
-        Coin balance = accountState.getBalance();
+        Coin balance = accountInformation.getBalance(addr);
         accountNode.put("balance", balance.asBigInteger().toString());
-        BigInteger nonce = accountState.getNonce();
+        BigInteger nonce = accountInformation.getNonce(addr);
         accountNode.put("nonce", nonce.toString());
-        ContractDetails contractDetails = frozenRepository.getContractDetails(addr);
-        if (!contractDetails.isNullObject() && !PrecompiledContracts.REMASC_ADDR.equals(addr)) {
-            accountNode.set("contract", createContractNode(contractDetails, accountNode));
+        Iterator<DataWord> contractKeys = accountInformation.getStorageKeys(addr);
+        if (contractKeys.hasNext() && !PrecompiledContracts.REMASC_ADDR.equals(addr)) {
+            accountNode.set("contract", createContractNode(accountNode, accountInformation, addr, contractKeys));
         }
         return accountNode;
     }

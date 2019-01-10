@@ -21,9 +21,9 @@ package org.ethereum.vm;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.config.BlockchainConfig;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -34,7 +34,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -2035,20 +2035,21 @@ public class VM {
                     gasBefore, gasCost, memWords)
      */
     private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
+        Repository storage = program.getStorage();
+        RskAddress ownerAddress = new RskAddress(program.getOwnerAddress());
         if ("standard+".equals(vmConfig.dumpStyle())) {
             switch (op) {
                 case STOP:
                 case RETURN:
                 case SUICIDE:
-
-                    ContractDetails details = program.getStorage()
-                            .getContractDetails(new RskAddress(program.getOwnerAddress()));
-                    List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
-                    Collections.sort(storageKeys);
-
-                    storageKeys.forEach(key -> dumpLogger.trace("{} {}",
-                            Hex.toHexString(key.getNoLeadZeroesData()),
-                            Hex.toHexString(details.getStorage().get(key).getNoLeadZeroesData())));
+                    Iterator<DataWord> keysIterator = storage.getStorageKeys(ownerAddress);
+                    while (keysIterator.hasNext()) {
+                        DataWord key = keysIterator.next();
+                        DataWord value = storage.getStorageValue(ownerAddress, key);
+                        dumpLogger.trace("{} {}",
+                                Hex.toHexString(key.getNoLeadZeroesData()),
+                                Hex.toHexString(value.getNoLeadZeroesData()));
+                    }
                     break;
                 default:
                     break;
@@ -2070,14 +2071,14 @@ public class VM {
             }
 
             dumpLogger.trace("    STORAGE");
-            ContractDetails details = program.getStorage()
-                    .getContractDetails(new RskAddress(program.getOwnerAddress()));
-            List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
-            Collections.sort(storageKeys);
-
-            storageKeys.forEach(key -> dumpLogger.trace("{}: {}",
-                    key.shortHex(),
-                    details.getStorage().get(key).shortHex()));
+            Iterator<DataWord> keysIterator = storage.getStorageKeys(ownerAddress);
+            while (keysIterator.hasNext()) {
+                DataWord key = keysIterator.next();
+                DataWord value = storage.getStorageValue(ownerAddress, key);
+                dumpLogger.trace("{}: {}",
+                        key.shortHex(),
+                        value.shortHex());
+            }
 
             int level = program.getCallDeep();
             String contract = Hex.toHexString(program.getOwnerAddress().getLast20Bytes());

@@ -367,10 +367,9 @@ public class TestRunner {
                     for (DataWord storageKey : storage.keySet()) {
                         byte[] expectedStValue = storage.get(storageKey).getData();
 
-                        ContractDetails contractDetails =
-                                program.getStorage().getContractDetails(accountState.getAddress());
+                        RskAddress accountAddress = accountState.getAddress();
 
-                        if (contractDetails == null) {
+                        if (!program.getStorage().isContract(accountAddress)) {
                             String output =
                                     String.format("Storage raw doesn't exist: key [ %s ], expectedValue: [ %s ]",
                                             Hex.toHexString(storageKey.getData()),
@@ -383,8 +382,7 @@ public class TestRunner {
                             continue;
                         }
 
-                        Map<DataWord, DataWord> testStorage = contractDetails.getStorage();
-                        DataWord actualValue = testStorage.get(new DataWord(storageKey.getData()));
+                        DataWord actualValue = program.getStorage().getStorageValue(accountAddress, storageKey);
 
                         if (actualValue == null ||
                                 !Arrays.equals(expectedStValue, actualValue.getData())) {
