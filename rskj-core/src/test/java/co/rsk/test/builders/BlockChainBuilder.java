@@ -24,13 +24,14 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.peg.RepositoryBlockStore;
-import co.rsk.trie.TrieImpl;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
+import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
@@ -57,6 +58,7 @@ public class BlockChainBuilder {
     private ReceiptStore receiptStore;
     private RskSystemProperties config;
     private EthereumListener listener;
+    private StateRootTranslator stateRootTranslator;
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -120,6 +122,10 @@ public class BlockChainBuilder {
             repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
         }
 
+        if (stateRootTranslator == null) {
+            stateRootTranslator = new StateRootTranslator(new HashMapDB(), new HashMap<>());
+        }
+
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         }
@@ -153,27 +159,30 @@ public class BlockChainBuilder {
         }
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(this.repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                this.blockStore,
-                receiptStore,
-                programInvokeFactory,
-                block1,
-                listener,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        )));
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(this.repository,
+                      new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                      (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                              tx1,
+                              txindex1,
+                              block1.getCoinbase(),
+                              track1,
+                              this.blockStore,
+                              receiptStore,
+                              programInvokeFactory,
+                              block1,
+                              listener,
+                              totalGasUsed1,
+                              config.getVmConfig(),
+                              config.getBlockchainConfig(),
+                              config.playVM(),
+                              config.isRemascEnabled(),
+                              config.vmTrace(),
+                              new PrecompiledContracts(config),
+                              config.databaseDir(),
+                              config.vmTraceDir(),
+                              config.vmTraceCompressed()
+                      )
+        ));
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
@@ -181,45 +190,55 @@ public class BlockChainBuilder {
         }
 
         if (this.genesis != null) {
-            for (RskAddress addr : this.genesis.getPremine().keySet()) {
-                this.repository.createAccount(addr);
-                this.repository.addBalance(addr, this.genesis.getPremine().get(addr).getAccountState().getBalance());
+            for (RskAddress addr : genesis.getPremine().keySet()) {
+                repository.createAccount(addr);
+                InitialAddressState initialAddressState = genesis.getPremine().get(addr);
+                repository.addBalance(addr, initialAddressState.getAccountState().getBalance());
+                AccountState accountState = repository.getAccountState(addr);
+                accountState.setNonce(initialAddressState.getAccountState().getNonce());
+                // First account state
+                repository.updateAccountState(addr, accountState);
+                // Then contract details, because they overwrite accountState
+                if (initialAddressState.getContractDetails() != null) {
+                    repository.updateContractDetails(addr, initialAddressState.getContractDetails());
+                }
             }
+            repository.commit();
 
-            Repository track = this.repository.startTracking();
-            new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
-            track.commit();
-
-            this.genesis.setStateRoot(this.repository.getRoot());
-            this.genesis.flushRLP();
+//            Repository track = this.repository.startTracking();
+//            new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
+//            track.commit();
+            stateRootTranslator.put(new Keccak256(genesis.getStateRoot()), new Keccak256(repository.getRoot()));
+            genesis.setStateRoot(repository.getRoot());
+            genesis.flushRLP();
             blockChain.setBestBlock(this.genesis);
-
-            blockChain.setTotalDifficulty(this.genesis.getCumulativeDifficulty());
         }
 
         if (this.blocks != null) {
             final ProgramInvokeFactoryImpl programInvokeFactory1 = new ProgramInvokeFactoryImpl();
-            BlockExecutor blockExecutor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                    tx1,
-                    txindex1,
-                    block1.getCoinbase(),
-                    track1,
-                    blockStore,
-                    receiptStore,
-                    programInvokeFactory1,
-                    block1,
-                    listener,
-                    totalGasUsed1,
-                    config.getVmConfig(),
-                    config.getBlockchainConfig(),
-                    config.playVM(),
-                    config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed()
-            ));
+            BlockExecutor blockExecutor = new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                    (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                            tx1,
+                            txindex1,
+                            block1.getCoinbase(),
+                            track1,
+                            blockStore,
+                            receiptStore,
+                            programInvokeFactory1,
+                            block1,
+                            listener,
+                            totalGasUsed1,
+                            config.getVmConfig(),
+                            config.getBlockchainConfig(),
+                            config.playVM(),
+                            config.isRemascEnabled(),
+                            config.vmTrace(),
+                            new PrecompiledContracts(config),
+                            config.databaseDir(),
+                            config.vmTraceDir(),
+                            config.vmTraceCompressed()
+                    )
+            );
 
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock());
@@ -308,5 +327,9 @@ public class BlockChainBuilder {
 
         for (Block block: blocks)
             blockchain.tryToConnect(block);
+    }
+
+    public StateRootTranslator getStateRootTranslator() {
+        return stateRootTranslator;
     }
 }

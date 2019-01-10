@@ -13,7 +13,7 @@ import java.util.*;
  */
 public class GlobalKeyMap {
 
-    static public boolean enabled = false; // enable only for tests
+    static public boolean enabled = true; // enable only for tests
 
     static protected Map<ByteArrayWrapper,RskAddress> globalAddressMap;
 

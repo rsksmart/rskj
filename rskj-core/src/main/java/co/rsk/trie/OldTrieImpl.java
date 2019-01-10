@@ -20,27 +20,14 @@ package co.rsk.trie;
 
 
         import co.rsk.crypto.Keccak256;
-        import co.rsk.panic.PanicProcessor;
-        import org.ethereum.crypto.Keccak256Helper;
-        import org.ethereum.datasource.HashMapDB;
-        import org.ethereum.util.RLP;
-        import org.slf4j.Logger;
-        import org.slf4j.LoggerFactory;
-        import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-        import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.Keccak256Helper;
 
-        import javax.annotation.Nullable;
-        import java.io.ByteArrayInputStream;
-        import java.io.DataInputStream;
-        import java.io.EOFException;
-        import java.io.IOException;
-        import java.nio.ByteBuffer;
-        import java.nio.charset.StandardCharsets;
-        import java.util.ArrayList;
-        import java.util.Arrays;
-        import java.util.List;
-
-        import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.function.BiFunction;
         
         
 
@@ -61,10 +48,25 @@ public class OldTrieImpl extends TrieImpl {
     protected OldTrieImpl(byte[] encodedSharedPath,
                        int sharedPathLength, byte[] value, TrieImpl[] nodes,
                        Keccak256[] hashes, TrieStore store,
-                       int valueLength,byte[] valueHash) {
+                       int valueLength,byte[] valueHash, boolean isSecure) {
 
         super(encodedSharedPath,sharedPathLength, value, nodes,
-                hashes, store,valueLength,valueHash);
+                hashes, store,valueLength, valueHash, isSecure);
+    }
+
+    public OldTrieImpl(boolean isSecure) {
+        super(isSecure);
+    }
+
+    @Override
+    protected TrieImpl getInstance(TrieStore store, boolean isSecure){
+        return new OldTrieImpl(null, 0, null, null, null, store, 0, null, isSecure);
+    }
+
+    @Override
+    protected TrieImpl getInstance(byte[] encodedSharedPath, int sharedPathLength, byte[] value, TrieImpl[] nodes,
+                           Keccak256[] hashes, TrieStore store, int valueLength, byte[] valueHash, boolean isSecure) {
+        return new OldTrieImpl(encodedSharedPath, sharedPathLength, value, nodes, hashes, store, valueLength, valueHash, isSecure);
     }
 
     /**
@@ -83,12 +85,13 @@ public class OldTrieImpl extends TrieImpl {
     @Override
     public byte[] toMessage() {
         int lvalue = this.valueLength;
-        int nnodes = this.getNodeCount();
+        //int nnodes = this.getNodeCount();
         int lshared = this.sharedPathLength;
         int lencoded = getEncodedPathLength(lshared);
         boolean hasLongVal = this.hasLongValue();
 
         int bits = 0;
+        int nnodes = 0;
 
         for (int k = 0; k < ARITY; k++) {
             Keccak256 nodeHash = this.getHash(k);
@@ -96,11 +99,16 @@ public class OldTrieImpl extends TrieImpl {
             if (nodeHash == null) {
                 continue;
             }
-
+            nnodes++;
             bits |= 1 << k;
         }
 
-        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES + (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue));
+        ByteBuffer buffer = ByteBuffer.allocate(
+                MESSAGE_HEADER_LENGTH +
+//                        (lshared > 0 ? lencoded:0) + // TODO: check if lencoded is 0 when lshared is zero
+                        (lshared > 0 ? lencoded:0) + // TODO: check if lencoded is 0 when lshared is zero
+                        nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES +
+                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue)); //TODO check lvalue == 0 case
 
         buffer.put((byte) ARITY);
 
@@ -128,8 +136,11 @@ public class OldTrieImpl extends TrieImpl {
             if (nodeHash == null) {
                 continue;
             }
-
-            buffer.put(nodeHash.getBytes());
+            try {
+                buffer.put(nodeHash.getBytes());
+            } catch (Exception e) {
+                System.out.println(e);
+            }
         }
 
         if (lvalue > 0) {
@@ -143,6 +154,21 @@ public class OldTrieImpl extends TrieImpl {
 
         return buffer.array();
     }
+
+    @Override
+    public BiFunction<byte[], TrieStore, Trie> fromMessageFunction() {
+        return OldTrieImpl::fromMessage;
+    }
+
+    public static OldTrieImpl fromMessage(byte[] message, TrieStore store) {
+        if (message == null) {
+            return null;
+        }
+
+        return fromMessage(message, 0, message.length, store);
+    }
+
+
     private static OldTrieImpl fromMessage(byte[] message, int position, int msglength, TrieStore store) {
         if (message == null) {
             return null;
@@ -219,8 +245,8 @@ public class OldTrieImpl extends TrieImpl {
                 }
             }
 
-            OldTrieImpl trie = (OldTrieImpl) new OldTrieImpl(encodedSharedPath, lshared, value, null,
-                    hashes, store,lvalue,valueHash).withSecure(isSecure);
+            OldTrieImpl trie = new OldTrieImpl(encodedSharedPath, lshared, value, null,
+                    hashes, store,lvalue,valueHash, isSecure);
 
             if (store != null) {
                 trie.saved = true;

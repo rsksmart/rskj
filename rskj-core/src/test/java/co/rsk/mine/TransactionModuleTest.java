@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -66,6 +67,7 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.time.Clock;
+import java.util.HashMap;
 
 public class TransactionModuleTest {
     Wallet wallet;
@@ -274,7 +276,8 @@ public class TransactionModuleTest {
                         Mockito.mock(BlockUnclesValidationRule.class),
                         config,
                         receiptStore,
-                        minerClock
+                        minerClock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 minerClock,
                 ConfigUtils.getDefaultMiningConfig()

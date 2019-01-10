@@ -6,6 +6,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.DownloadingBodiesSyncState;
@@ -19,6 +20,7 @@ import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
@@ -664,27 +666,29 @@ public class SyncProcessorTest {
         Block block = new BlockGenerator().createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), (tx1, txindex, coinbase, repository, block1, totalGasUsed) -> new TransactionExecutor(
-                tx1,
-                txindex,
-                block1.getCoinbase(),
-                repository,
-                blockchain.getBlockStore(),
-                null,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                                                        (tx1, txindex, coinbase, repository, block1, totalGasUsed) -> new TransactionExecutor(
+                                                                tx1,
+                                                                txindex,
+                                                                block1.getCoinbase(),
+                                                                repository,
+                                                                blockchain.getBlockStore(),
+                                                                null,
+                                                                programInvokeFactory,
+                                                                block1,
+                                                                null,
+                                                                totalGasUsed,
+                                                                config.getVmConfig(),
+                                                                config.getBlockchainConfig(),
+                                                                config.playVM(),
+                                                                config.isRemascEnabled(),
+                                                                config.vmTrace(),
+                                                                new PrecompiledContracts(config),
+                                                                config.databaseDir(),
+                                                                config.vmTraceDir(),
+                                                                config.vmTraceCompressed()
+                                                        )
+        );
         Assert.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis);
         Assert.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());

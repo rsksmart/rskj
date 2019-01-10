@@ -10,13 +10,13 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
-import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
@@ -64,7 +64,6 @@ public class RskTestFactory {
         genesis.setStateRoot(getRepository().getRoot());
         genesis.flushRLP();
         getBlockchain().setBestBlock(genesis);
-        getBlockchain().setTotalDifficulty(genesis.getCumulativeDifficulty());
     }
 
     public ContractDetails addContract(String runtimeBytecode) {
@@ -155,7 +154,8 @@ public class RskTestFactory {
                     new DummyBlockValidator(),
                     false,
                     1,
-                    new BlockExecutor(getRepository(), (tx, txindex, coinbase, repository, block, totalGasUsed) -> new TransactionExecutor(
+                    new BlockExecutor(getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                        (tx, txindex, coinbase, repository, block, totalGasUsed) -> new TransactionExecutor(
                             tx,
                             txindex,
                             block.getCoinbase(),
@@ -180,6 +180,10 @@ public class RskTestFactory {
         }
 
         return blockchain;
+    }
+
+    private StateRootTranslator getStateRootTranslator() {
+        return new StateRootTranslator(new HashMapDB(), new HashMap<>());
     }
 
     public ReceiptStore getReceiptStore() {

@@ -24,6 +24,7 @@ import co.rsk.config.*;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.metrics.HashRateCalculatorMining;
@@ -36,10 +37,13 @@ import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.*;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.rlpx.Node;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -52,6 +56,7 @@ import org.springframework.context.annotation.Import;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -65,6 +70,7 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 @Import(CommonConfig.class)
 public class DefaultConfig {
     private static Logger logger = LoggerFactory.getLogger("general");
+    private final HashMap<Keccak256, Keccak256> stateRootMap = new HashMap<>();
 
     @Bean
     public BlockStore blockStore(RskSystemProperties config) {
@@ -144,8 +150,10 @@ public class DefaultConfig {
     public BlockParentDependantValidationRule blockParentDependantValidationRule(
             Repository repository,
             RskSystemProperties config,
-            DifficultyCalculator difficultyCalculator) {
-        BlockTxsValidationRule blockTxsValidationRule = new BlockTxsValidationRule(repository);
+            DifficultyCalculator difficultyCalculator,
+            StateRootTranslator stateRootTranslator) {
+
+        BlockTxsValidationRule blockTxsValidationRule = new BlockTxsValidationRule(repository, config, stateRootTranslator);
         BlockTxsFieldsValidationRule blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule();
         PrevMinGasPriceRule prevMinGasPriceRule = new PrevMinGasPriceRule();
         BlockParentNumberRule parentNumberRule = new BlockParentNumberRule();
@@ -154,6 +162,31 @@ public class DefaultConfig {
                 getCommonConstants().getGasLimitBoundDivisor());
 
         return new BlockParentCompositeRule(blockTxsFieldsValidationRule, blockTxsValidationRule, prevMinGasPriceRule, parentNumberRule, difficultyRule, parentGasLimitRule);
+    }
+
+    @Bean
+    public StateRootTranslator stateRootTranslator(RskSystemProperties config) {
+        return buildStateRootTranslator(config.databaseDir());
+    }
+
+    public StateRootTranslator buildStateRootTranslator(String databaseDir) {
+        KeyValueDataSource stateRootsDB = new LevelDbDataSource("stateRoots", databaseDir);
+        stateRootsDB.init();
+
+        return new StateRootTranslator(stateRootsDB, new HashMap<>());
+    }
+
+    @Bean
+    public BlockChainLoader blockChainLoader(RskSystemProperties config,
+                                             Repository repository,
+                                             BlockStore blockStore,
+                                             ReceiptStore receiptStore,
+                                             TransactionPool transactionPool,
+                                             EthereumListener listener,
+                                             BlockValidator blockValidator,
+                                             StateRootTranslator stateRootTranslator){
+        return new BlockChainLoader(config, repository, blockStore, receiptStore, transactionPool, listener,
+                                    blockValidator, stateRootTranslator);
     }
 
     @Bean(name = "blockValidationRule")

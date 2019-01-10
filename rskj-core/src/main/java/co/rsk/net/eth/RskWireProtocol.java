@@ -21,6 +21,7 @@ package co.rsk.net.eth;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
 import co.rsk.net.messages.BlockMessage;
@@ -29,8 +30,14 @@ import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieImpl;
 import io.netty.channel.ChannelHandlerContext;
-import org.ethereum.core.*;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.eth.EthVersion;
@@ -44,11 +51,11 @@ import org.ethereum.sync.SyncStatistics;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -88,6 +95,12 @@ public class RskWireProtocol extends EthHandler {
         this.messageRecorder = config.getMessageRecorder();
         this.genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
 
+        if (!BlockHashesHelper.isRskipUnitrie(0)) {
+            byte[] lastStateRootHash = TrieConverter.computeOldAccountTrieRoot(
+                    (TrieImpl)blockchain.getRepository().getSnapshotTo(genesis.getStateRoot()).getMutableTrie().getTrie()
+            );
+            genesis.setStateRoot(lastStateRootHash);
+        }
     }
 
     @Override
@@ -157,7 +170,9 @@ public class RskWireProtocol extends EthHandler {
         try {
             byte protocolVersion = msg.getProtocolVersion();
             byte versionCode = version.getCode();
-            if (protocolVersion != versionCode) {
+
+            if (!Arrays.equals(msg.getGenesisHash(), genesis.getHash().getBytes())
+                    || protocolVersion != versionCode) {
                 loggerNet.info("Removing EthHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
                 loggerNet.info("Protocol version {} - message protocol version {}",
                         versionCode,
@@ -247,10 +262,8 @@ public class RskWireProtocol extends EthHandler {
         Block bestBlock = blockChainStatus.getBestBlock();
         BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
-        // Original status
-        Genesis loadGenesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
         org.ethereum.net.eth.message.StatusMessage msg = new org.ethereum.net.eth.message.StatusMessage(protocolVersion, networkId,
-                ByteUtil.bigIntegerToBytes(totalDifficulty.asBigInteger()), bestBlock.getHash().getBytes(), loadGenesis.getHash().getBytes());
+                ByteUtil.bigIntegerToBytes(totalDifficulty.asBigInteger()), bestBlock.getHash().getBytes(), genesis.getHash().getBytes());
         sendMessage(msg);
 
         // RSK new protocol send status

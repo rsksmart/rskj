@@ -27,11 +27,13 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
@@ -46,10 +48,7 @@ import org.mockito.Mockito;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
@@ -122,7 +121,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -163,7 +163,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -228,7 +229,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -278,7 +280,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -331,7 +334,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -391,7 +395,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -443,7 +448,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -500,7 +506,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -539,7 +546,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -578,7 +586,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -621,7 +630,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -707,7 +717,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 Mockito.mock(BlockValidationRule.class),
                 config,
                 Mockito.mock(ReceiptStore.class),
-                Mockito.mock(MinerClock.class)
+                Mockito.mock(MinerClock.class),
+                new StateRootTranslator(new HashMapDB(), new HashMap<>())
         );
     }
 }

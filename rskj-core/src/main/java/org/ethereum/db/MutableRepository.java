@@ -92,22 +92,21 @@ public class MutableRepository implements Repository {
             return lastAccountKey;
         }
 
-        lastAccountKey =getAccountKey(addr,trie.isSecure());
+        lastAccountKey = getAccountKey(addr,trie.isSecure());
         lastAddr = addr;
         return lastAccountKey;
     }
 
     static public byte[] getAccountKey(RskAddress addr,boolean isSecure) {
-        byte[] secureKey = addr.getBytes();
+        byte[] accountKey = addr.getBytes();
 
         if (isSecure) {
             // Secure tries
-            secureKey = Keccak256Helper.keccak256(addr.getBytes());
-        } else
-            secureKey = addr.getBytes();
+            accountKey = Keccak256Helper.keccak256(accountKey);
+        }
 
         // a zero prefix allows us to extend the namespace in the future
-        return concat(DOMAIN_PREFIX,secureKey);
+        return concat(DOMAIN_PREFIX, accountKey);
     }
 
 
@@ -469,8 +468,12 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized void syncToRoot(byte[] root) {
-
         this.trie = this.trie.getSnapshotTo(new Keccak256(root));
+    }
+
+    @Override
+    public void syncTo(Trie root) {
+        this.trie = new MutableTrieImpl(root);
     }
 
     @Override

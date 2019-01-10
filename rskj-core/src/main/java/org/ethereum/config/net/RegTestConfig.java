@@ -21,7 +21,7 @@ package org.ethereum.config.net;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import org.ethereum.config.blockchain.HardForkActivationConfig;
-import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
+import org.ethereum.config.blockchain.regtest.RegTestSecondForkConfig;
 
 import java.util.List;
 
@@ -36,7 +36,7 @@ public class RegTestConfig extends AbstractNetConfig {
      */
     public static RegTestConfig getDefaultRegTestConfig() {
         RegTestConfig config = new RegTestConfig();
-        config.add(0, new RegTestOrchidConfig());
+        config.add(0, new RegTestSecondForkConfig());
         return config;
     }
 
@@ -56,7 +56,7 @@ public class RegTestConfig extends AbstractNetConfig {
             // Only add genesis config if the fork configs are set
             customConfig.add(0, new org.ethereum.config.blockchain.regtest.RegTestGenesisConfig());
         }
-        customConfig.add(hardForkActivationConfig.getOrchidActivationHeight(), new RegTestOrchidConfig());
+        customConfig.add(hardForkActivationConfig.getOrchidActivationHeight(), new RegTestSecondForkConfig());
         return customConfig;
     }
 }

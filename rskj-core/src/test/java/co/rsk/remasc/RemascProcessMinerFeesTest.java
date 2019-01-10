@@ -27,6 +27,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
@@ -36,6 +37,7 @@ import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Before;
@@ -118,27 +120,29 @@ public class RemascProcessMinerFeesTest {
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
-                tx,
-                txindex,
-                block.getCoinbase(),
-                track,
-                blockchain.getBlockStore(),
-                null,
-                programInvokeFactory,
-                block,
-                null,
-                totalGasUsed,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+            (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+                    tx,
+                    txindex,
+                    block.getCoinbase(),
+                    track,
+                    blockchain.getBlockStore(),
+                    null,
+                    programInvokeFactory,
+                    block,
+                    null,
+                    totalGasUsed,
+                    config.getVmConfig(),
+                    config.getBlockchainConfig(),
+                    config.playVM(),
+                    config.isRemascEnabled(),
+                    config.vmTrace(),
+                    new PrecompiledContracts(config),
+                    config.databaseDir(),
+                    config.vmTraceDir(),
+                    config.vmTraceCompressed()
+            )
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -181,27 +185,29 @@ public class RemascProcessMinerFeesTest {
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
-                tx,
-                txindex,
-                block.getCoinbase(),
-                track,
-                blockchain.getBlockStore(),
-                null,
-                programInvokeFactory,
-                block,
-                null,
-                totalGasUsed,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+                        tx,
+                        txindex,
+                        block.getCoinbase(),
+                        track,
+                        blockchain.getBlockStore(),
+                        null,
+                        programInvokeFactory,
+                        block,
+                        null,
+                        totalGasUsed,
+                        config.getVmConfig(),
+                        config.getBlockchainConfig(),
+                        config.playVM(),
+                        config.isRemascEnabled(),
+                        config.vmTrace(),
+                        new PrecompiledContracts(config),
+                        config.databaseDir(),
+                        config.vmTraceDir(),
+                        config.vmTraceCompressed()
+                )
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -259,27 +265,29 @@ public class RemascProcessMinerFeesTest {
         blocks.addAll(createSimpleBlocks(blockThatIncludesUncle, 8));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
-                tx,
-                txindex,
-                block.getCoinbase(),
-                track,
-                blockchain.getBlockStore(),
-                null,
-                programInvokeFactory,
-                block,
-                null,
-                totalGasUsed,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+                        tx,
+                        txindex,
+                        block.getCoinbase(),
+                        track,
+                        blockchain.getBlockStore(),
+                        null,
+                        programInvokeFactory,
+                        block,
+                        null,
+                        totalGasUsed,
+                        config.getVmConfig(),
+                        config.getBlockchainConfig(),
+                        config.playVM(),
+                        config.isRemascEnabled(),
+                        config.vmTrace(),
+                        new PrecompiledContracts(config),
+                        config.databaseDir(),
+                        config.vmTraceDir(),
+                        config.vmTraceCompressed()
+                )
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -379,7 +387,8 @@ public class RemascProcessMinerFeesTest {
         blocks.addAll(createSimpleBlocks(blockThatIncludesUnclesE, 7));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+        (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
                         tx,
                         txindex,
                         block.getCoinbase(),
@@ -399,7 +408,8 @@ public class RemascProcessMinerFeesTest {
                         config.databaseDir(),
                         config.vmTraceDir(),
                         config.vmTraceCompressed()
-                ));
+                )
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -514,27 +524,29 @@ public class RemascProcessMinerFeesTest {
         blocks.addAll(createSimpleBlocks(blockThatIncludesUncleC, 7));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
-                tx,
-                txindex,
-                block.getCoinbase(),
-                track,
-                blockchain.getBlockStore(),
-                null,
-                programInvokeFactory,
-                block,
-                null,
-                totalGasUsed,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+                        tx,
+                        txindex,
+                        block.getCoinbase(),
+                        track,
+                        blockchain.getBlockStore(),
+                        null,
+                        programInvokeFactory,
+                        block,
+                        null,
+                        totalGasUsed,
+                        config.getVmConfig(),
+                        config.getBlockchainConfig(),
+                        config.playVM(),
+                        config.isRemascEnabled(),
+                        config.vmTrace(),
+                        new PrecompiledContracts(config),
+                        config.databaseDir(),
+                        config.vmTraceDir(),
+                        config.vmTraceCompressed()
+                )
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -609,27 +621,29 @@ public class RemascProcessMinerFeesTest {
         blocks.addAll(createSimpleBlocks(blockWithOneTxD, 7));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
-                        tx,
-                        txindex,
-                        block.getCoinbase(),
-                        track,
-                        blockchain.getBlockStore(),
-                        null,
-                        programInvokeFactory,
-                        block,
-                        null,
-                        totalGasUsed,
-                        config.getVmConfig(),
-                        config.getBlockchainConfig(),
-                        config.playVM(),
-                        config.isRemascEnabled(),
-                        config.vmTrace(),
-                        new PrecompiledContracts(config),
-                        config.databaseDir(),
-                        config.vmTraceDir(),
-                        config.vmTraceCompressed()
-                ));
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+                                tx,
+                                txindex,
+                                block.getCoinbase(),
+                                track,
+                                blockchain.getBlockStore(),
+                                null,
+                                programInvokeFactory,
+                                block,
+                                null,
+                                totalGasUsed,
+                                config.getVmConfig(),
+                                config.getBlockchainConfig(),
+                                config.playVM(),
+                                config.isRemascEnabled(),
+                                config.vmTrace(),
+                                new PrecompiledContracts(config),
+                                config.databaseDir(),
+                                config.vmTraceDir(),
+                                config.vmTraceCompressed()
+                        )
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -712,27 +726,29 @@ public class RemascProcessMinerFeesTest {
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
-                tx,
-                txindex,
-                block.getCoinbase(),
-                track,
-                blockchain.getBlockStore(),
-                null,
-                programInvokeFactory,
-                block,
-                null,
-                totalGasUsed,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+                        tx,
+                        txindex,
+                        block.getCoinbase(),
+                        track,
+                        blockchain.getBlockStore(),
+                        null,
+                        programInvokeFactory,
+                        block,
+                        null,
+                        totalGasUsed,
+                        config.getVmConfig(),
+                        config.getBlockchainConfig(),
+                        config.playVM(),
+                        config.isRemascEnabled(),
+                        config.vmTrace(),
+                        new PrecompiledContracts(config),
+                        config.databaseDir(),
+                        config.vmTraceDir(),
+                        config.vmTraceCompressed()
+                )
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -796,27 +812,29 @@ public class RemascProcessMinerFeesTest {
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
-                tx,
-                txindex,
-                block.getCoinbase(),
-                track,
-                blockchain.getBlockStore(),
-                null,
-                programInvokeFactory,
-                block,
-                null,
-                totalGasUsed,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+                        tx,
+                        txindex,
+                        block.getCoinbase(),
+                        track,
+                        blockchain.getBlockStore(),
+                        null,
+                        programInvokeFactory,
+                        block,
+                        null,
+                        totalGasUsed,
+                        config.getVmConfig(),
+                        config.getBlockchainConfig(),
+                        config.playVM(),
+                        config.isRemascEnabled(),
+                        config.vmTrace(),
+                        new PrecompiledContracts(config),
+                        config.databaseDir(),
+                        config.vmTraceDir(),
+                        config.vmTraceCompressed()
+                )
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());

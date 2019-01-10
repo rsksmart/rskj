@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
@@ -40,16 +41,19 @@ public class BlockRootValidationRule implements BlockValidationRule {
 
     @Override
     public boolean isValid(Block block) {
-        byte[] trieHash = block.getTxTrieRoot();
-        byte[] trieListHash = Block.getTxTrieRoot(block.getTransactionsList(),Block.isHardFork9999(block.getNumber()));
-
-        boolean isValid = true;
-
-        if (!Arrays.equals(trieHash,trieListHash)) {
-            logger.warn("Block's given Trie Hash doesn't match: {} != {}", Hex.toHexString(trieHash), Hex.toHexString(trieListHash));
-            panicProcessor.panic("invalidtrie", String.format("Block's given Trie Hash doesn't match: %s != %s", Hex.toHexString(trieHash), Hex.toHexString(trieListHash)));
-            isValid = false;
-        }
-        return isValid;
+        byte[] blockTxRootHash = block.getTxTrieRoot();
+        return true;
+//        byte[] txListRootHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), BlockHashesHelper.isRskipUnitrie(block.getNumber()));
+//
+//        if (!Arrays.equals(blockTxRootHash, txListRootHash)) {
+//            String message = String.format("Block's given Trie Hash doesn't match: %s != %s",
+//                      Hex.toHexString(blockTxRootHash), Hex.toHexString(txListRootHash));
+//
+//            logger.warn(message);
+//            panicProcessor.panic("invalidtrie", message);
+//            return false;
+//        }
+//
+//        return true;
     }
 }

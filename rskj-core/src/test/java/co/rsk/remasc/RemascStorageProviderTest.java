@@ -26,9 +26,9 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryImplForTesting;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieImpl;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -660,7 +660,8 @@ public class RemascStorageProviderTest {
         Repository repository = blockchain.getRepository();
         BlockStore blockStore = blockchain.getBlockStore();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(repository, (tx, txindex, coinbase1, track, block, totalGasUsed) -> new TransactionExecutor(
+        BlockExecutor blockExecutor = new BlockExecutor(repository, new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+            (tx, txindex, coinbase1, track, block, totalGasUsed) -> new TransactionExecutor(
                 tx,
                 txindex,
                 block.getCoinbase(),
@@ -680,7 +681,8 @@ public class RemascStorageProviderTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+            )
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
