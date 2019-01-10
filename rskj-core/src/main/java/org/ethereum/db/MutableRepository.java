@@ -460,6 +460,11 @@ public class MutableRepository implements Repository {
     }
 
     @Override
+    public void syncTo(Trie root) {
+        this.trie = new MutableTrieImpl(root);
+    }
+
+    @Override
     public synchronized boolean isClosed() {
         return this.closed;
     }

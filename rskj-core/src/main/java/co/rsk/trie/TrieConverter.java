@@ -7,16 +7,29 @@ import org.ethereum.datasource.HashMapDB;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by SerAdmin on 10/23/2018.
  */
 public class TrieConverter {
-    //HashMapDB store;
     private final TrieStoreImpl store;
+    private final Map<Keccak256, Keccak256> cacheHashes;
 
     public TrieConverter() {
-        this.store = new TrieStoreImpl(new HashMapDB());
+        store = new TrieStoreImpl(new HashMapDB());
+        cacheHashes = new HashMap<>();
+    }
+
+    private static byte[] concat(byte[] first, byte b) {
+        return concat(first, new byte[]{b});
+    }
+
+    private static byte[] concat(byte[] first, byte[] second) {
+        byte[] result = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, result, first.length, second.length);
+        return result;
     }
 
     public byte[] getOrchidAccountTrieRoot(TrieImpl src) {
@@ -26,6 +39,11 @@ public class TrieConverter {
     private byte[] getOrchidAccountTrieRoot(byte[] key, TrieImpl src, boolean removeFirst8bits) {
         if (src == null) {
             return HashUtil.EMPTY_TRIE_HASH;
+        }
+
+        Keccak256 cacheHash = cacheHashes.get(src.getHash());
+        if (cacheHash != null) {
+            return cacheHash.getBytes();
         }
 
         // shared Path
@@ -42,8 +60,8 @@ public class TrieConverter {
             if (sharedPathLength < 8) {
                 throw new IllegalStateException("Unable to remove first 8-bits if path length is less than 8");
             }
-            sharedPathLength -=8;
-            encodedSharedPath = Arrays.copyOfRange(encodedSharedPath,1, encodedSharedPath.length);
+            sharedPathLength -= 8;
+            encodedSharedPath = Arrays.copyOfRange(encodedSharedPath, 1, encodedSharedPath.length);
         }
         TrieImpl child0 = (TrieImpl) src.retrieveNode(0);
         byte[] child0Hash = null;
@@ -53,7 +71,7 @@ public class TrieConverter {
         if (key.length == 8 * 32 + 8) {
             // We've reached the Account level. From now on everything will be different.
             AccountState astate = new AccountState(src.getValue());
-            OldAccountState oldState = new OldAccountState(astate.getNonce(),astate.getBalance());
+            OldAccountState oldState = new OldAccountState(astate.getNonce(), astate.getBalance());
             // child1 (0x80) will be the code
             if (child1 != null) {
                 oldState.setCodeHash(child1.getValueHash());
@@ -61,7 +79,7 @@ public class TrieConverter {
             // the child0 side will be the storage. The first child corresponds to the
             // 8-bit zero prefix. 1 bit is consumed by the branch. 7-bits left. We check that
             if (child0 != null) {
-                if (child0.getSharedPathLength()!=7) {
+                if (child0.getSharedPathLength() != 7) {
                     throw new IllegalStateException("First child must be 7-bits length");
                 }
                 // We'll create an ad-hoc trie for storage cells, the first
@@ -72,12 +90,14 @@ public class TrieConverter {
                 oldState.setStateRoot(stateRoot);
             }
 
-            byte[] avalue =oldState.getEncoded();
+            byte[] avalue = oldState.getEncoded();
             TrieImpl newNode = new TrieImpl(
                     encodedSharedPath, sharedPathLength,
-                    avalue, null, null,store,
-                    avalue.length,null).withSecure(src.isSecure());///src.isSecure()
+                    avalue, null, null, store,
+                    avalue.length, null, src.isSecure()
+            );
 
+            cacheHashes.put(src.getHash(), newNode.getHash());
             return newNode.getHash().getBytes();
         }
 
@@ -89,13 +109,18 @@ public class TrieConverter {
             child1Hash = getOrchidAccountTrieRoot(concat(key, (byte) 1), child1, false);
         }
 
-        Keccak256[] hashes = Stream.of(child0Hash, child1Hash).map(hash -> hash==null? null : new Keccak256(hash)).toArray(Keccak256[]::new);
+        Keccak256[] hashes = Stream.of(
+                child0Hash,
+                child1Hash
+        ).map(hash -> hash == null ? null : new Keccak256(hash)).toArray(Keccak256[]::new);
 
         TrieImpl newNode = new TrieImpl(
                 encodedSharedPath, sharedPathLength,
-                src.getValue(), null, hashes,store,src.valueLength,
-                src.getValueHash()).withSecure(src.isSecure());
+                src.getValue(), null, hashes, store, src.valueLength,
+                src.getValueHash(), src.isSecure()
+        );
 
+        cacheHashes.put(src.getHash(), newNode.getHash());
         return newNode.getHash().getBytes();
     }
 
@@ -103,7 +128,11 @@ public class TrieConverter {
         return getOrchidStateRoot(unitrieStorageRoot, true, false, (byte) 0);
     }
 
-    private byte[] getOrchidStateRoot(TrieImpl unitrieStorageRoot, boolean removeFirstNodePrefix, boolean onlyChild, byte ancestor) {
+    private byte[] getOrchidStateRoot(
+            TrieImpl unitrieStorageRoot,
+            boolean removeFirstNodePrefix,
+            boolean onlyChild,
+            byte ancestor) {
         if (unitrieStorageRoot == null) {
             return HashUtil.EMPTY_TRIE_HASH;
         }
@@ -112,19 +141,22 @@ public class TrieConverter {
         TrieImpl child1 = (TrieImpl) unitrieStorageRoot.retrieveNode(1);
         byte[] child0Hash = null;
         if (child0 != null) {
-            child0Hash = getOrchidStateRoot(child0, false, removeFirstNodePrefix && child1 == null, (byte)0);
+            child0Hash = getOrchidStateRoot(child0, false, removeFirstNodePrefix && child1 == null, (byte) 0);
         }
 
         byte[] child1Hash = null;
         if (child1 != null) {
-            child1Hash = getOrchidStateRoot(child1, false, removeFirstNodePrefix && child0 == null, (byte)1);
+            child1Hash = getOrchidStateRoot(child1, false, removeFirstNodePrefix && child0 == null, (byte) 1);
         }
 
         // shared Path
         byte[] encodedSharedPath = unitrieStorageRoot.getEncodedSharedPath();
         int sharedPathLength = unitrieStorageRoot.getSharedPathLength();
 
-        Keccak256[] hashes = Stream.of(child0Hash, child1Hash).map(hash -> hash==null? null : new Keccak256(hash)).toArray(Keccak256[]::new);
+        Keccak256[] hashes = Stream.of(
+                child0Hash,
+                child1Hash
+        ).map(hash -> hash == null ? null : new Keccak256(hash)).toArray(Keccak256[]::new);
 
         byte[] value = unitrieStorageRoot.getValue();
         int valueLength = unitrieStorageRoot.valueLength;
@@ -139,7 +171,7 @@ public class TrieConverter {
             if (child0 != null && child1 == null) {
                 return child0Hash;
             }
-            if (child0 == null && child1 != null ) {
+            if (child0 == null && child1 != null) {
                 return child1Hash;
             }
         }
@@ -156,17 +188,8 @@ public class TrieConverter {
         TrieImpl newNode = new TrieImpl(
                 encodedSharedPath, sharedPathLength,
                 value, null, hashes, store,
-                valueLength,valueHash).withSecure(unitrieStorageRoot.isSecure());
+                valueLength, valueHash, unitrieStorageRoot.isSecure()
+        );
         return newNode.getHash().getBytes();
-    }
-
-    private static byte[] concat(byte[] first, byte b) {
-        return concat(first, new byte[]{b});
-    }
-
-    private static byte[] concat(byte[] first, byte[] second) {
-        byte[] result = Arrays.copyOf(first, first.length + second.length);
-        System.arraycopy(second, 0, result, first.length, second.length);
-        return result;
     }
 }

@@ -27,6 +27,8 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.TrieImpl;
+import co.rsk.db.StateRootTranslator;
+import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.blockchain.GenesisConfig;
@@ -79,7 +81,10 @@ public class ImportLightTest {
                 new DummyBlockValidator(),
                 false,
                 1,
-                new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                new BlockExecutor(repository,
+                                  new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                      new TrieConverter(),
+                      (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                         tx1,
                         txindex1,
                         block1.getCoinbase(),

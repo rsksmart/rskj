@@ -22,6 +22,7 @@ import co.rsk.crypto.Keccak256;
 import org.ethereum.db.ByteArrayWrapper;
 
 import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * Created by ajlopez on 29/03/2017.
@@ -92,4 +93,5 @@ public interface Trie {
     // two nodes. In that case it will return false.
     boolean hasDataWithPrefix(byte[] key);
 
+    BiFunction<byte[], TrieStore, Trie> fromMessageFunction();
 }

@@ -318,7 +318,6 @@ public class BlockChainImpl implements Blockchain {
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
                         status.getTotalDifficulty().toString(), totalDifficulty.toString());
             }
-
             logger.trace("Start extendAlternativeBlockChain");
             extendAlternativeBlockChain(block, totalDifficulty);
             logger.trace("Start saveReceipts");
@@ -354,7 +353,6 @@ public class BlockChainImpl implements Blockchain {
         synchronized (accessLock) {
             status = new BlockChainStatus(block, totalDifficulty);
             blockStore.saveBlock(block, totalDifficulty, true);
-            repository.syncToRoot(block.getStateRoot());
         }
     }
 
@@ -458,11 +456,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
-        synchronized (accessLock) {
-            storeBlock(block, totalDifficulty, true);
-            status = new BlockChainStatus(block, totalDifficulty);
-            repository.syncToRoot(block.getStateRoot());
-        }
+        setStatus(block, totalDifficulty);
     }
 
     private void extendAlternativeBlockChain(Block block, BlockDifficulty totalDifficulty) {

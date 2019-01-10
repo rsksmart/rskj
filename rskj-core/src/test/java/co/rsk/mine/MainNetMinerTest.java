@@ -7,8 +7,10 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
@@ -16,6 +18,7 @@ import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.util.RskTestFactory;
@@ -31,6 +34,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Clock;
+import java.util.HashMap;
 
 /**
  * Created by SerAdmin on 1/3/2018.
@@ -204,7 +208,9 @@ public class MainNetMinerTest {
                 unclesValidationRule,
                 config,
                 null,
-                clock
+                clock,
+                new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                new TrieConverter()
         );
     }
 }

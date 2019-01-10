@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -34,6 +35,7 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.bouncycastle.util.encoders.Hex;
@@ -66,6 +68,7 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.time.Clock;
+import java.util.HashMap;
 
 public class TransactionModuleTest {
     Wallet wallet;
@@ -139,7 +142,7 @@ public class TransactionModuleTest {
         for (int i = 1; i < 100; i++) {
             String tx = sendTransaction(web3, repository);
             Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, tx);
-
+            repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
             Assert.assertEquals(i, blockchain.getBestBlock().getNumber());
             Assert.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
             Assert.assertEquals(tx, txInBlock.getHash().toJsonString());
@@ -274,7 +277,9 @@ public class TransactionModuleTest {
                         Mockito.mock(BlockUnclesValidationRule.class),
                         config,
                         receiptStore,
-                        minerClock
+                        minerClock,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>()),
+                        new TrieConverter()
                 ),
                 minerClock,
                 ConfigUtils.getDefaultMiningConfig()

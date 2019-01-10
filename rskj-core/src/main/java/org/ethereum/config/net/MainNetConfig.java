@@ -19,10 +19,7 @@
 
 package org.ethereum.config.net;
 
-import org.ethereum.config.blockchain.mainnet.MainNetAfterBridgeSyncConfig;
-import org.ethereum.config.blockchain.mainnet.MainNetBeforeBridgeSyncConfig;
-import org.ethereum.config.blockchain.mainnet.MainNetOrchid060Config;
-import org.ethereum.config.blockchain.mainnet.MainNetOrchidConfig;
+import org.ethereum.config.blockchain.mainnet.*;
 
 
 /**
@@ -36,5 +33,6 @@ public class MainNetConfig extends AbstractNetConfig {
         add(370_000, new MainNetAfterBridgeSyncConfig());
         add(729_000, new MainNetOrchidConfig());
         add(1_052_700, new MainNetOrchid060Config());
+        add(1_500_000, new MainNet070Config());
     }
 }
