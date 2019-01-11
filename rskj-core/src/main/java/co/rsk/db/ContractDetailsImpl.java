@@ -320,13 +320,6 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     @Override
-    public synchronized void setStorage(List<DataWord> storageKeys, List<DataWord> storageValues) {
-        for (int i = 0; i < storageKeys.size(); ++i) {
-            put(storageKeys.get(i), storageValues.get(i));
-        }
-    }
-
-    @Override
     public synchronized void setStorage(Map<DataWord, DataWord> storage) {
         for (Map.Entry<DataWord, DataWord> entry : storage.entrySet()) {
             put(entry.getKey(), entry.getValue());
