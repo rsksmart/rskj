@@ -108,8 +108,6 @@ public interface Repository extends AccountInformationProvider {
 
     void addStorageBytes(RskAddress addr, DataWord key, byte[] value);
 
-    byte[] getStorageBytes(RskAddress addr, DataWord key);
-
     /**
      * Add value to the balance of an account
      *
