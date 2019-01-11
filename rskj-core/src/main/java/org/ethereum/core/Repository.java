@@ -86,7 +86,9 @@ public interface Repository extends AccountInformationProvider {
      *
      * @param addr of the account
      * @return new contract details
+     * @deprecated prefer using {@link AccountInformationProvider}
      */
+    @Deprecated
     ContractDetails getContractDetails(RskAddress addr);
 
     /**
