@@ -47,6 +47,14 @@ public interface AccountInformationProvider {
     /**
      *
      * @param addr of the account
+     * @param key associated with this value
+     * @return raw data
+     */
+    byte[] getStorageBytes(RskAddress addr, DataWord key);
+
+    /**
+     *
+     * @param addr of the account
      * @return the keys for that addr
      */
     Iterator<DataWord> getStorageKeys(RskAddress addr);
