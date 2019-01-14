@@ -52,6 +52,13 @@ public interface AccountInformationProvider {
     Iterator<DataWord> getStorageKeys(RskAddress addr);
 
     /**
+     *
+     * @param addr of the account
+     * @return the count of keys for that addr
+     */
+    int getStorageKeysCount(RskAddress addr);
+
+    /**
      * Retrieve the code associated with an account
      *
      * @param addr of the account

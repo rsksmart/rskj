@@ -240,6 +240,12 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
+    public int getStorageKeysCount(RskAddress addr) {
+        ContractDetails details = getContractDetails(addr);
+        return (details == null) ? 0 : details.getStorageKeys().size();
+    }
+
+    @Override
     public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key) {
         ContractDetails details = getContractDetails(addr);
         return (details == null) ? null : details.getBytes(key);
