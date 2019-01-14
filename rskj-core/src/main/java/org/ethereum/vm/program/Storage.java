@@ -140,6 +140,11 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public int getStorageKeysCount(RskAddress addr) {
+        return repository.getStorageKeysCount(addr);
+    }
+
+    @Override
     public byte[] getStorageBytes(RskAddress addr, DataWord key) {
         return repository.getStorageBytes(addr, key);
     }
