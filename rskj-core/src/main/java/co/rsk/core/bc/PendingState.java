@@ -65,6 +65,11 @@ public class PendingState implements AccountInformationProvider {
     }
 
     @Override
+    public int getStorageKeysCount(RskAddress addr) {
+        return postExecutionReturn(executedRepository -> executedRepository.getStorageKeysCount(addr));
+    }
+
+    @Override
     public byte[] getCode(RskAddress addr) {
         return postExecutionReturn(executedRepository -> executedRepository.getCode(addr));
     }

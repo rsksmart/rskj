@@ -302,6 +302,13 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
+    public int getStorageKeysCount(RskAddress addr) {
+        synchronized (repository) {
+            return getContractDetails(addr).getStorageKeys().size();
+        }
+    }
+
+    @Override
     public byte[] getStorageBytes(RskAddress addr, DataWord key) {
         synchronized (repository) {
             return getContractDetails(addr).getBytes(key);
