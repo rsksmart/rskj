@@ -1169,7 +1169,7 @@ public class Program {
                 Collections.sort(storageKeys);
                 for (DataWord key : storageKeys) {
                     storageData.append(" ").append(key).append(" -> ").
-                            append(contractDetails.getStorage().get(key)).append("\n");
+                            append(contractDetails.getStorage().get(key)).append('\n');
                 }
                 if (storageData.length() > 0) {
                     storageData.insert(0, "\n");
