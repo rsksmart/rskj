@@ -47,6 +47,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.ethereum.util.BIUtil.toBI;
+import static org.ethereum.util.BIUtil.isLessThan;
 
 /**
  * Created by ajlopez on 08/08/2016.
