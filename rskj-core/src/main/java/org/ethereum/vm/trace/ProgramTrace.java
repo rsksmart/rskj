@@ -47,14 +47,15 @@ import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
 public class ProgramTrace {
     private static final Logger LOGGER = LoggerFactory.getLogger("vm");
 
+    private String contractAddress;
+    private Map<String, String> initStorage = new HashMap<>();
+
     private List<Op> structLogs = new LinkedList<>();
     private String result;
     private String error;
-    private Map<String, String> initStorage = new HashMap<>();
-    private Map<String, String> currentStorage = new HashMap<>();
 
     private int storageSize;
-    private String contractAddress;
+    private Map<String, String> currentStorage = new HashMap<>();
 
     @JsonIgnore
     private DataWord storageKey;
@@ -176,6 +177,10 @@ public class ProgramTrace {
     public ProgramTrace error(Exception error) {
         setError(error == null ? "" : format("%s: %s", error.getClass(), error.getMessage()));
         return this;
+    }
+
+    public void saveGasCost(long gasCost) {
+        structLogs.get(structLogs.size() - 1).setGasCost(gasCost);
     }
 
     public Op addOp(byte code, int pc, int deep, long gas, OpActions actions, Memory memory, Stack stack, Storage storage) {

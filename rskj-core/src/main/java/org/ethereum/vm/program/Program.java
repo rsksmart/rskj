@@ -1287,6 +1287,10 @@ public class Program {
         }
     }
 
+    public void saveOpGasCost(long gasCost) {
+        trace.saveGasCost(gasCost);
+    }
+
     public static int getScriptVersionInCode(byte[] ops){
         if (ops.length >= 4) {
             OpCode op = OpCode.code(ops[0]);

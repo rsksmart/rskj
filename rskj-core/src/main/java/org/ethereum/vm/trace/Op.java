@@ -36,6 +36,7 @@ public class Op {
     private int depth;
     private int pc;
     private long gas;
+    private long gasCost;
 
     @JsonIgnore
     private OpActions actions;
@@ -75,6 +76,8 @@ public class Op {
     public void setGas(long gas) {
         this.gas = gas;
     }
+
+    public void setGasCost(long gasCost) { this.gasCost = gasCost; }
 
     public OpActions getActions() {
         return actions;

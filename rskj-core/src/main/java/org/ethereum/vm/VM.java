@@ -1944,7 +1944,6 @@ public class VM {
                 //in opcodes requiring memory access only.
                 oldMemSize = program.getMemSize();
 
-
                 if (isLogEnabled) {
                     hint = "";
                 }
@@ -1965,6 +1964,11 @@ public class VM {
                     vmHook.step(program, op);
                 }
                 executeOpcode();
+
+                if (vmConfig.vmTrace()) {
+                    program.saveOpGasCost(gasCost);
+                }
+
                 program.setPreviouslyExecutedOp(op.val());
                 logOpCode();
                 vmCounter++;
