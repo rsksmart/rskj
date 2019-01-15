@@ -26,11 +26,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 public interface TrieStore {
     void save(Trie trie);
 
-    int getSaveCount();
-
     Trie retrieve(byte[] hash);
-
-    int getRetrieveCount();
 
     byte[] serialize();
 
