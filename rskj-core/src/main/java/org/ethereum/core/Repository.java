@@ -86,7 +86,9 @@ public interface Repository extends AccountInformationProvider {
      *
      * @param addr of the account
      * @return new contract details
+     * @deprecated prefer using {@link AccountInformationProvider}
      */
+    @Deprecated
     ContractDetails getContractDetails(RskAddress addr);
 
     /**
@@ -107,8 +109,6 @@ public interface Repository extends AccountInformationProvider {
     void addStorageRow(RskAddress addr, DataWord key, DataWord value);
 
     void addStorageBytes(RskAddress addr, DataWord key, byte[] value);
-
-    byte[] getStorageBytes(RskAddress addr, DataWord key);
 
     /**
      * Add value to the balance of an account

@@ -33,10 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -269,6 +266,11 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
+    public boolean isContract(RskAddress addr) {
+        return getContractDetails(addr) != null;
+    }
+
+    @Override
     public void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
 
         logger.trace("add storage row, addr: [{}], key: [{}] val: [{}]", addr,
@@ -294,6 +296,20 @@ public class RepositoryTrack implements Repository {
     public DataWord getStorageValue(RskAddress addr, DataWord key) {
         synchronized (repository) {
             return getContractDetails(addr).get(key);
+        }
+    }
+
+    @Override
+    public Iterator<DataWord> getStorageKeys(RskAddress addr) {
+        synchronized (repository) {
+            return getContractDetails(addr).getStorageKeys().iterator();
+        }
+    }
+
+    @Override
+    public int getStorageKeysCount(RskAddress addr) {
+        synchronized (repository) {
+            return getContractDetails(addr).getStorageKeys().size();
         }
     }
 
