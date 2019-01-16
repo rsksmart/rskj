@@ -86,11 +86,7 @@ public class ProgramTrace {
     }
 
     private static AccountInformationProvider getInformationProvider(ProgramInvoke programInvoke) {
-        Repository repository = programInvoke.getRepository();
-        if (repository instanceof RepositoryTrack) {
-            repository = ((RepositoryTrack) repository).getOriginRepository();
-        }
-        return repository;
+        return programInvoke.getRepository();
     }
 
     public List<Op> getOps() {
