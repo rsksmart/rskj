@@ -50,10 +50,6 @@ public class TrieStoreImpl implements TrieStore {
     // a key value data source to use
     private KeyValueDataSource store;
 
-    // internal variables, count of saves and retrieves
-    private int saveCount = 0;
-    private int retrieveCount = 0;
-
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
     }
@@ -64,17 +60,12 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public void save(Trie trie) {
-        this.saveCount++;
         this.store.put(trie.getHash().getBytes(), trie.toMessage());
 
         if (trie.hasLongValue()) {
-            this.saveCount++;
             this.store.put(trie.getValueHash(), trie.getValue());
         }
     }
-
-    @Override
-    public int getSaveCount() { return this.saveCount; }
 
     /**
      * retrieve retrieves a Trie instance from store, using hash a key
@@ -85,8 +76,6 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public Trie retrieve(byte[] hash) {
-        this.retrieveCount++;
-
         byte[] message = this.store.get(hash);
 
         return TrieImpl.fromMessage(message, this);
@@ -99,9 +88,6 @@ public class TrieStoreImpl implements TrieStore {
     public byte[] storeValue(byte[] key, byte[] value) {
         return this.store.put(key, value);
     }
-
-    @Override
-    public int getRetrieveCount() { return this.retrieveCount; }
 
     @Override
     public byte[] serialize() {
