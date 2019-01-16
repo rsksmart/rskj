@@ -31,6 +31,7 @@ import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
 
 import java.math.BigInteger;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -109,6 +110,11 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public boolean isContract(RskAddress addr) {
+        return repository.isContract(addr);
+    }
+
+    @Override
     public void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
         if (canListenTrace(addr)) {
             traceListener.onStoragePut(key, value);
@@ -131,6 +137,16 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public DataWord getStorageValue(RskAddress addr, DataWord key) {
         return repository.getStorageValue(addr, key);
+    }
+
+    @Override
+    public Iterator<DataWord> getStorageKeys(RskAddress addr) {
+        return repository.getStorageKeys(addr);
+    }
+
+    @Override
+    public int getStorageKeysCount(RskAddress addr) {
+        return repository.getStorageKeysCount(addr);
     }
 
     @Override

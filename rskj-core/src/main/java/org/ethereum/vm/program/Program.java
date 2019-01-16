@@ -33,7 +33,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.*;
@@ -1161,15 +1160,14 @@ public class Program {
                 stackData.insert(0, "\n");
             }
 
-            ContractDetails contractDetails = getStorage().
-                    getContractDetails(new RskAddress(getOwnerAddress()));
+            RskAddress ownerAddress = new RskAddress(getOwnerAddress());
             StringBuilder storageData = new StringBuilder();
-            if (contractDetails != null) {
-                List<DataWord> storageKeys = new ArrayList<>(contractDetails.getStorage().keySet());
-                Collections.sort(storageKeys);
-                for (DataWord key : storageKeys) {
+            if (getStorage().isContract(ownerAddress)) {
+                Iterator<DataWord> it = getStorage().getStorageKeys(ownerAddress);
+                while (it.hasNext()) {
+                    DataWord key = it.next();
                     storageData.append(" ").append(key).append(" -> ").
-                            append(contractDetails.getStorage().get(key)).append("\n");
+                            append(getStorage().getStorageValue(ownerAddress, key)).append('\n');
                 }
                 if (storageData.length() > 0) {
                     storageData.insert(0, "\n");

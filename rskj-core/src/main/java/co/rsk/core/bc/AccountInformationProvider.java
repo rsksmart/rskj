@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
+import java.util.Iterator;
 
 public interface AccountInformationProvider {
 
@@ -44,12 +45,40 @@ public interface AccountInformationProvider {
     DataWord getStorageValue(RskAddress addr, DataWord key);
 
     /**
+     *
+     * @param addr of the account
+     * @param key associated with this value
+     * @return raw data
+     */
+    byte[] getStorageBytes(RskAddress addr, DataWord key);
+
+    /**
+     *
+     * @param addr of the account
+     * @return the keys for that addr
+     */
+    Iterator<DataWord> getStorageKeys(RskAddress addr);
+
+    /**
+     *
+     * @param addr of the account
+     * @return the count of keys for that addr
+     */
+    int getStorageKeysCount(RskAddress addr);
+
+    /**
      * Retrieve the code associated with an account
      *
      * @param addr of the account
      * @return code in byte-array format
      */
     byte[] getCode(RskAddress addr);
+
+    /**
+     * @param addr an address account
+     * @return true if the addr identifies a contract
+     */
+    boolean isContract(RskAddress addr);
 
     /**
      * Get current nonce of a given account
