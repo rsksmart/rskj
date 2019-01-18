@@ -20,6 +20,8 @@ package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
 
+import javax.annotation.Nullable;
+
 /**
  * Created by ajlopez on 29/03/2017.
  */
@@ -47,6 +49,17 @@ public interface Trie {
     int trieSize();
 
     Trie getSnapshotTo(Keccak256 hash);
+
+    int getNodeCount();
+
+    @Nullable
+    Keccak256 getHash(int n);
+
+    byte[] getEncodedSharedPath();
+
+    int getSharedPathLength();
+
+    boolean isSecure();
 
     byte[] serialize();
 

@@ -88,14 +88,30 @@ public class TrieImpl implements Trie {
     // it is saved to store
     private boolean saved;
 
+    @Override
+    public boolean isSecure() {
+        return isSecure;
+    }
+
     // sha3 is applied to keys
     private boolean isSecure;
 
     // associated store, to store or retrieve nodes in the trie
     private TrieStore store;
 
+    @Override
+    public byte[] getEncodedSharedPath() {
+        return encodedSharedPath;
+    }
+
     // shared Path
     private byte[] encodedSharedPath;
+
+    @Override
+    public int getSharedPathLength() {
+        return sharedPathLength;
+    }
+
     private int sharedPathLength;
 
     // default constructor, no secure
@@ -546,7 +562,8 @@ public class TrieImpl implements Trie {
      * Takes into account that a node could be not present as an object and
      * only be referenced via its unique hash
      */
-    private int getNodeCount() {
+    @Override
+    public int getNodeCount() {
         int count = 0;
 
         for (int k = 0; k < ARITY; k++) {
@@ -612,8 +629,9 @@ public class TrieImpl implements Trie {
      *
      * @return  node hash or null if no node is present
      */
+    @Override
     @Nullable
-    private Keccak256 getHash(int n) {
+    public Keccak256 getHash(int n) {
         if (this.hashes != null && this.hashes[n] != null) {
             return this.hashes[n];
         }
