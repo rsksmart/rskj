@@ -116,42 +116,34 @@ public class TrieImpl implements Trie {
 
     // default constructor, no secure
     public TrieImpl() {
-        this(null, 0, null, null, null, null);
-        this.isSecure = false;
+        this(null, 0, null, null, null, null, false);
     }
 
     public TrieImpl(boolean isSecure) {
-        this(null, 0, null, null, null, null);
-        this.isSecure = isSecure;
+        this(null, 0, null, null, null, null, isSecure);
     }
 
     public TrieImpl(TrieStore store, boolean isSecure) {
-        this(null, 0, null, null, null, store);
-        this.isSecure = isSecure;
+        this(null, 0, null, null, null, store, isSecure);
     }
 
     private TrieImpl(TrieStore store, byte[] encodedSharedPath, int sharedPathLength, byte[] value, boolean isSecure) {
-        this(encodedSharedPath, sharedPathLength, value, null, null, store);
-        this.isSecure = isSecure;
+        this(encodedSharedPath, sharedPathLength, value, null, null, store, isSecure);
     }
 
     // full constructor
-    private TrieImpl(byte[] encodedSharedPath, int sharedPathLength, byte[] value, TrieImpl[] nodes, Keccak256[] hashes, TrieStore store) {
+    private TrieImpl(byte[] encodedSharedPath, int sharedPathLength, byte[] value, TrieImpl[] nodes, Keccak256[] hashes, TrieStore store, boolean secure) {
         this.value = value;
         this.nodes = nodes;
         this.hashes = hashes;
         this.store = store;
         this.encodedSharedPath = encodedSharedPath;
         this.sharedPathLength = sharedPathLength;
-    }
-
-    private TrieImpl withSecure(boolean isSecure) {
-        this.isSecure = isSecure;
-        return this;
+        this.isSecure = secure;
     }
 
     private Trie cloneTrie() {
-        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store).withSecure(this.isSecure);
+        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store, this.isSecure);
     }
 
     /**
@@ -243,7 +235,7 @@ public class TrieImpl implements Trie {
                 }
             }
 
-            TrieImpl trie = new TrieImpl(encodedSharedPath, lshared, value, null, hashes, store).withSecure(isSecure);
+            TrieImpl trie = new TrieImpl(encodedSharedPath, lshared, value, null, hashes, store, isSecure);
 
             if (store != null) {
                 trie.saved = true;
@@ -837,7 +829,7 @@ public class TrieImpl implements Trie {
                 return null;
             }
 
-            return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, value, newNodes, newHashes, this.store).withSecure(this.isSecure);
+            return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, value, newNodes, newHashes, this.store, this.isSecure);
         }
 
         if (isEmptyTrie(this.value, this.nodes, this.hashes)) {
@@ -875,7 +867,7 @@ public class TrieImpl implements Trie {
             return null;
         }
 
-        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, newNodes, newHashes, this.store).withSecure(this.isSecure);
+        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, newNodes, newHashes, this.store, this.isSecure);
     }
 
     private int lengthOfCommonPath(byte[] key, int length, int position, byte[] sharedPath) {
@@ -894,7 +886,7 @@ public class TrieImpl implements Trie {
         TrieImpl[] newChildNodes = this.cloneNodes(false);
         Keccak256[] newChildHashes = this.cloneHashes();
 
-        TrieImpl newChildTrie = new TrieImpl(null, 0, this.value, newChildNodes, newChildHashes, this.store).withSecure(this.isSecure);
+        TrieImpl newChildTrie = new TrieImpl(null, 0, this.value, newChildNodes, newChildHashes, this.store, this.isSecure);
 
         byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.sharedPathLength);
 
