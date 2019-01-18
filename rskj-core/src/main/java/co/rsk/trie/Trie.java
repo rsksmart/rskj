@@ -40,8 +40,6 @@ public interface Trie {
 
     Trie delete(String key);
 
-    byte[] toMessage();
-
     void save();
 
     void copyTo(TrieStore target);

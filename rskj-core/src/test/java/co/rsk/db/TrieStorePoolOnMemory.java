@@ -1,5 +1,6 @@
 package co.rsk.db;
 
+import co.rsk.trie.TrieSerializer;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.datasource.HashMapDB;
@@ -23,7 +24,7 @@ public class TrieStorePoolOnMemory implements TrieStore.Pool {
 
     @Override
     public TrieStore getInstanceFor(String name) {
-        return pool.computeIfAbsent(name, trieStoreName -> new TrieStoreImpl(storeProvider.getInstance()));
+        return pool.computeIfAbsent(name, trieStoreName -> new TrieStoreImpl(storeProvider.getInstance(), new TrieSerializer()));
     }
 
     @Override

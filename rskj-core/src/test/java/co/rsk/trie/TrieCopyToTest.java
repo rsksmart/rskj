@@ -11,10 +11,10 @@ public class TrieCopyToTest {
     @Test
     public void copyEmptyTrie() {
         HashMapDB map1 = new HashMapDB();
-        TrieStoreImpl store1 = new TrieStoreImpl(map1);
+        TrieStoreImpl store1 = new TrieStoreImpl(map1, new TrieSerializer());
 
         HashMapDB map2 = new HashMapDB();
-        TrieStoreImpl store2 = new TrieStoreImpl(map2);
+        TrieStoreImpl store2 = new TrieStoreImpl(map2, new TrieSerializer());
 
         Trie trie = new TrieImpl(store1, true);
 
@@ -31,10 +31,10 @@ public class TrieCopyToTest {
     @Test
     public void copyTrieWithOneHundredValues() {
         HashMapDB map1 = new HashMapDB();
-        TrieStoreImpl store1 = new TrieStoreImpl(map1);
+        TrieStoreImpl store1 = new TrieStoreImpl(map1, new TrieSerializer());
 
         HashMapDB map2 = new HashMapDB();
-        TrieStoreImpl store2 = new TrieStoreImpl(map2);
+        TrieStoreImpl store2 = new TrieStoreImpl(map2, new TrieSerializer());
 
         Trie trie = new TrieImpl(store1, true);
 
@@ -59,10 +59,10 @@ public class TrieCopyToTest {
     @Test
     public void copyTrieWithOneHundredValuesRetrievedFromStore() {
         HashMapDB map1 = new HashMapDB();
-        TrieStoreImpl store1 = new TrieStoreImpl(map1);
+        TrieStoreImpl store1 = new TrieStoreImpl(map1, new TrieSerializer());
 
         HashMapDB map2 = new HashMapDB();
-        TrieStoreImpl store2 = new TrieStoreImpl(map2);
+        TrieStoreImpl store2 = new TrieStoreImpl(map2, new TrieSerializer());
 
         Trie trie = new TrieImpl(store1, true);
 
@@ -89,10 +89,10 @@ public class TrieCopyToTest {
     @Test
     public void copyTwoTriesWithOneHundredValues() {
         HashMapDB map1 = new HashMapDB();
-        TrieStoreImpl store1 = new TrieStoreImpl(map1);
+        TrieStoreImpl store1 = new TrieStoreImpl(map1, new TrieSerializer());
 
         HashMapDB map2 = new HashMapDB();
-        TrieStoreImpl store2 = new TrieStoreImpl(map2);
+        TrieStoreImpl store2 = new TrieStoreImpl(map2, new TrieSerializer());
 
         Trie trie1 = new TrieImpl(store1, true);
         Trie trie2 = new TrieImpl(store1, true);

@@ -32,7 +32,7 @@ public class SecureTrieImplMessageTest {
     public void emptyTrieToMessage() {
         TrieImpl trie = new TrieImpl(true);
 
-        byte[] message = trie.toMessage();
+        byte[] message = new TrieSerializer().serialize(trie);
 
         Assert.assertNotNull(message);
         Assert.assertEquals(6, message.length);
@@ -51,7 +51,7 @@ public class SecureTrieImplMessageTest {
 
         Trie trie = new TrieImpl(true).put(key, new byte[] { 1, 2, 3, 4 });
 
-        byte[] message = trie.toMessage();
+        byte[] message = new TrieSerializer().serialize(trie);
 
         Assert.assertNotNull(message);
         Assert.assertEquals(42, message.length);
@@ -78,7 +78,7 @@ public class SecureTrieImplMessageTest {
 
         Trie trie = new TrieImpl(true).put(key, TrieImplValueTest.makeValue(33));
 
-        byte[] message = trie.toMessage();
+        byte[] message = new TrieSerializer().serialize(trie);
 
         Assert.assertNotNull(message);
         Assert.assertEquals(70, message.length);
@@ -106,7 +106,7 @@ public class SecureTrieImplMessageTest {
 
         Trie trie = new TrieImpl(true).put(key, new byte[] { 1, 2, 3, 4 });
 
-        byte[] message = trie.toMessage();
+        byte[] message = new TrieSerializer().serialize(trie);
 
         Assert.assertNotNull(message);
         Assert.assertEquals(42, message.length);
@@ -131,7 +131,7 @@ public class SecureTrieImplMessageTest {
         Trie trie = new TrieImpl(true).put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
                 .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
 
-        byte[] message = trie.toMessage();
+        byte[] message = new TrieSerializer().serialize(trie);
 
         Assert.assertNotNull(message);
         Assert.assertEquals(6 + 2 * Keccak256Helper.DEFAULT_SIZE_BYTES, message.length);

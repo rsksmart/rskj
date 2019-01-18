@@ -30,7 +30,7 @@ public class TrieImplMessageTest {
     public void emptyTrieToMessage() {
         TrieImpl trie = new TrieImpl();
 
-        byte[] message = trie.toMessage();
+        byte[] message = new TrieSerializer().serialize(trie);
 
         Assert.assertNotNull(message);
         Assert.assertEquals(6, message.length);
@@ -46,7 +46,7 @@ public class TrieImplMessageTest {
     public void trieWithValueToMessage() {
         Trie trie = new TrieImpl().put(new byte[0], new byte[] { 1, 2, 3, 4 });
 
-        byte[] message = trie.toMessage();
+        byte[] message = new TrieSerializer().serialize(trie);
 
         Assert.assertNotNull(message);
         Assert.assertEquals(10, message.length);
@@ -66,7 +66,7 @@ public class TrieImplMessageTest {
     public void trieWithLongValueToMessage() {
         Trie trie = new TrieImpl().put(new byte[0], TrieImplValueTest.makeValue(33));
 
-        byte[] message = trie.toMessage();
+        byte[] message = new TrieSerializer().serialize(trie);
 
         Assert.assertNotNull(message);
         Assert.assertEquals(38, message.length);
@@ -88,7 +88,7 @@ public class TrieImplMessageTest {
     public void trieWithSubtrieAndNoValueToMessage() {
         Trie trie = new TrieImpl().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 });
 
-        byte[] message = trie.toMessage();
+        byte[] message = new TrieSerializer().serialize(trie);
 
         Assert.assertNotNull(message);
         Assert.assertEquals(11, message.length);
@@ -113,7 +113,7 @@ public class TrieImplMessageTest {
         Trie trie = new TrieImpl().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
                 .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
 
-        byte[] message = trie.toMessage();
+        byte[] message = new TrieSerializer().serialize(trie);
 
         Assert.assertNotNull(message);
         Assert.assertEquals(6 + 1 + 2 * Keccak256Helper.DEFAULT_SIZE_BYTES, message.length);

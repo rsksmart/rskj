@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieSerializer;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
@@ -67,7 +68,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testEmptyRepo() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         Map result = writeAndReadJson(repository);
 
@@ -76,7 +77,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testNoContracts() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
@@ -120,7 +121,7 @@ public class NetworkStateExporterTest {
     @Test
     public void testContracts() throws Exception {
         TrieStore.Pool trieStorePool = new TrieStorePoolOnMemory();
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), trieStorePool, config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true), new HashMapDB(), trieStorePool, config.detailsInMemoryStorageLimit());
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
@@ -128,7 +129,7 @@ public class NetworkStateExporterTest {
         repository.increaseNonce(addr1);
         ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(
             addr1.getBytes(),
-            new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+            new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true),
             new byte[] {1, 2, 3, 4},
             trieStorePool,
             config.detailsInMemoryStorageLimit()

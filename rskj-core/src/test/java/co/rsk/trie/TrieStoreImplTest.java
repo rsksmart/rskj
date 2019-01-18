@@ -38,7 +38,7 @@ public class TrieStoreImplTest {
     @Before
     public void setUp() {
         this.map = spy(new HashMapDB());
-        this.store = new TrieStoreImpl(map);
+        this.store = new TrieStoreImpl(map, new TrieSerializer());
     }
 
     @Test
@@ -61,7 +61,7 @@ public class TrieStoreImplTest {
 
         store.save(trie);
 
-        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verify(map, times(1)).put(trie.getHash().getBytes(), new TrieSerializer().serialize(trie));
         verifyNoMoreInteractions(map);
     }
 
@@ -71,7 +71,7 @@ public class TrieStoreImplTest {
 
         store.save(trie);
 
-        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verify(map, times(1)).put(trie.getHash().getBytes(), new TrieSerializer().serialize(trie));
         verifyNoMoreInteractions(map);
 
         Trie newTrie = store.retrieve(trie.getHash().getBytes());
@@ -90,7 +90,7 @@ public class TrieStoreImplTest {
 
         store.save(trie);
 
-        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verify(map, times(1)).put(trie.getHash().getBytes(), new TrieSerializer().serialize(trie));
         verify(map, times(1)).put(trie.getValueHash(), trie.getValue());
         verifyNoMoreInteractions(map);
 
@@ -108,7 +108,7 @@ public class TrieStoreImplTest {
 
         trie.save();
 
-        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verify(map, times(1)).put(trie.getHash().getBytes(), new TrieSerializer().serialize(trie));
         verifyNoMoreInteractions(map);
     }
 
@@ -118,7 +118,7 @@ public class TrieStoreImplTest {
 
         trie.save();
 
-        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verify(map, times(1)).put(trie.getHash().getBytes(), new TrieSerializer().serialize(trie));
         verify(map, times(1)).put(trie.getValueHash(), trie.getValue());
         verifyNoMoreInteractions(map);
     }
@@ -141,7 +141,7 @@ public class TrieStoreImplTest {
 
         trie.save();
 
-        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verify(map, times(1)).put(trie.getHash().getBytes(), new TrieSerializer().serialize(trie));
 
         trie.save();
 

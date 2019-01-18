@@ -22,6 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieSerializer;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
@@ -126,7 +127,7 @@ public class RepositoryTest {
 
     @Test
     public void test16() {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -438,7 +439,7 @@ public class RepositoryTest {
     public void testMultiThread() throws InterruptedException {
         HashMapDB store = new HashMapDB();
         final Repository repository = new RepositoryImpl(
-                new TrieImpl(new TrieStoreImpl(store), true),
+                new TrieImpl(new TrieStoreImpl(store, new TrieSerializer()), true),
                 new HashMapDB(),
                 new TrieStorePoolOnMemory(() -> store),
                 config.detailsInMemoryStorageLimit()

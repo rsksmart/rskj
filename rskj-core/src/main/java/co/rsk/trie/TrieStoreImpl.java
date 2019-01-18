@@ -46,12 +46,14 @@ public class TrieStoreImpl implements TrieStore {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final String PANIC_TOPIC = "triestore";
     private static final String ERROR_CREATING_STORE = "Error creating trie store";
+    private final TrieSerializer serializer;
 
     // a key value data source to use
     private KeyValueDataSource store;
 
-    public TrieStoreImpl(KeyValueDataSource store) {
+    public TrieStoreImpl(KeyValueDataSource store, TrieSerializer serializer) {
         this.store = store;
+        this.serializer = serializer;
     }
 
     /**
@@ -60,7 +62,7 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public void save(Trie trie) {
-        this.store.put(trie.getHash().getBytes(), trie.toMessage());
+        this.store.put(trie.getHash().getBytes(), serializer.serialize(trie));
 
         if (trie.hasLongValue()) {
             this.store.put(trie.getValueHash(), trie.getValue());
@@ -78,7 +80,7 @@ public class TrieStoreImpl implements TrieStore {
     public Trie retrieve(byte[] hash) {
         byte[] message = this.store.get(hash);
 
-        return TrieImpl.fromMessage(message, this);
+        return serializer.deserialize(message, this);
     }
 
     public byte[] retrieveValue(byte[] hash) {
@@ -165,7 +167,7 @@ public class TrieStoreImpl implements TrieStore {
                 ds.put(key, value);
             }
 
-            return new TrieStoreImpl(ds);
+            return new TrieStoreImpl(ds, new TrieSerializer());
         }
         catch (IOException ex) {
             logger.error(ERROR_CREATING_STORE, ex);

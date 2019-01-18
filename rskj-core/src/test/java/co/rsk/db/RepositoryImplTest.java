@@ -23,10 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.TrieImpl;
-import co.rsk.trie.TrieImplHashTest;
-import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
+import co.rsk.trie.*;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
@@ -76,7 +73,7 @@ public class RepositoryImplTest {
 
     @Test
     public void syncToRootAfterCreatingAnAccount() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
+        TrieStore store = new TrieStoreImpl(new HashMapDB(), new TrieSerializer());
         RepositoryImpl repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         repository.flush();
@@ -440,7 +437,7 @@ public class RepositoryImplTest {
         RskAddress accAddress1 = randomAccountAddress();
         RskAddress accAddress2 = randomAccountAddress();
 
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
+        TrieStore store = new TrieStoreImpl(new HashMapDB(), new TrieSerializer());
         RepositoryImpl repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         repository.createAccount(accAddress1);
@@ -461,7 +458,7 @@ public class RepositoryImplTest {
 
     @Test
     public void flushNoReconnect() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
+        TrieStore store = new TrieStoreImpl(new HashMapDB(), new TrieSerializer());
         RepositoryImpl repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         RskAddress accAddress = randomAccountAddress();

@@ -25,6 +25,7 @@ import co.rsk.db.RepositoryImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieSerializer;
 import co.rsk.trie.TrieStoreImpl;
 import com.google.common.collect.Lists;
 import org.ethereum.core.*;
@@ -66,7 +67,7 @@ public class BlockExecutorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
 
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         Repository track = repository.startTracking();
 
@@ -189,7 +190,7 @@ public class BlockExecutorTest {
 
     @Test
     public void executeBlockWithTwoTransactions() {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         Repository track = repository.startTracking();
 
@@ -321,7 +322,7 @@ public class BlockExecutorTest {
 
     @Test
     public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance() {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         Repository track = repository.startTracking();
 
@@ -381,7 +382,7 @@ public class BlockExecutorTest {
 
     @Test
     public void executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalance() {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         Repository track = repository.startTracking();
 

@@ -29,7 +29,7 @@ public class SecureTrieImplSaveRetrieveTest {
     @Test
     public void updateSaveRetrieveAndGetOneThousandKeyValues() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = new TrieStoreImpl(map, new TrieSerializer());
 
         Trie trie = new TrieImpl(store, true);
 
@@ -54,7 +54,7 @@ public class SecureTrieImplSaveRetrieveTest {
     @Test
     public void updateSaveRetrieveAndGetOneThousandKeyLongValues() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = new TrieStoreImpl(map, new TrieSerializer());
 
         Trie trie = new TrieImpl(store, true);
 
@@ -79,7 +79,7 @@ public class SecureTrieImplSaveRetrieveTest {
     @Test
     public void updateSaveRetrieveAndGetOneThousandKeyValuesUsingBinaryTree() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = new TrieStoreImpl(map, new TrieSerializer());
 
         Trie trie = new TrieImpl(store, true);
 
@@ -104,7 +104,7 @@ public class SecureTrieImplSaveRetrieveTest {
     @Test
     public void updateSaveRetrieveAndGetOneThousandKeyLongValuesUsingBinaryTree() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = new TrieStoreImpl(map, new TrieSerializer());
 
         Trie trie = new TrieImpl(store, true);
 
@@ -129,7 +129,7 @@ public class SecureTrieImplSaveRetrieveTest {
     @Test
     public void updateSaveRetrieveAndGetOneThousandKeyValuesInverseOrder() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = new TrieStoreImpl(map, new TrieSerializer());
 
         Trie trie = new TrieImpl(store, true);
 
@@ -154,7 +154,7 @@ public class SecureTrieImplSaveRetrieveTest {
     @Test
     public void updateSaveRetrieveAndGetOneThousandKeyLongValuesInverseOrder() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = new TrieStoreImpl(map, new TrieSerializer());
 
         Trie trie = new TrieImpl(store, true);
 
@@ -179,7 +179,7 @@ public class SecureTrieImplSaveRetrieveTest {
     @Test
     public void saveTrieWithKeyValues() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = new TrieStoreImpl(map, new TrieSerializer());
 
         Trie trie = new TrieImpl(store, true)
                 .put("foo", "bar".getBytes())
@@ -195,7 +195,7 @@ public class SecureTrieImplSaveRetrieveTest {
     @Test
     public void saveTrieWithKeyLongValues() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = new TrieStoreImpl(map, new TrieSerializer());
 
         Trie trie = new TrieImpl(store, true)
                 .put("foo", "bar".getBytes())
@@ -211,7 +211,7 @@ public class SecureTrieImplSaveRetrieveTest {
     @Test
     public void retrieveTrieUsingHash() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = new TrieStoreImpl(map, new TrieSerializer());
 
         Trie trie = new TrieImpl(store, true)
                 .put("foo", "bar".getBytes())
@@ -234,7 +234,7 @@ public class SecureTrieImplSaveRetrieveTest {
     @Test
     public void retrieveTrieWithLongValuesUsingHash() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = new TrieStoreImpl(map, new TrieSerializer());
 
         Trie trie = new TrieImpl(store, true)
                 .put("foo", "bar".getBytes())

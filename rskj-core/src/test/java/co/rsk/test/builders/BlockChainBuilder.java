@@ -28,6 +28,7 @@ import co.rsk.db.RepositoryImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieSerializer;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
@@ -118,7 +119,7 @@ public class BlockChainBuilder {
         }
 
         if (repository == null)
-            repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+            repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false), new TrieSerializer()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);

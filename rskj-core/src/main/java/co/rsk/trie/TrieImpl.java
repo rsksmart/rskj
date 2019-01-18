@@ -63,15 +63,13 @@ public class TrieImpl implements Trie {
     private static final Logger logger = LoggerFactory.getLogger("newtrie");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final String PANIC_TOPIC = "newtrie";
-    private static final String INVALID_ARITY = "Invalid arity";
     private static final String ERROR_CREATING_TRIE = "Error creating trie from message";
     private static final String ERROR_NON_EXISTENT_TRIE_LOGGER = "Error non existent trie with hash {}";
     private static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash ";
 
-    private static final int MESSAGE_HEADER_LENGTH = 2 + Short.BYTES * 2;
-
     // all zeroed, default hash for empty nodes
     private static Keccak256 emptyHash = makeEmptyHash();
+    private final TrieSerializer serializer;
 
     // this node associated value, if any
     private byte[] value;
@@ -132,7 +130,7 @@ public class TrieImpl implements Trie {
     }
 
     // full constructor
-    private TrieImpl(byte[] encodedSharedPath, int sharedPathLength, byte[] value, TrieImpl[] nodes, Keccak256[] hashes, TrieStore store, boolean secure) {
+    public TrieImpl(byte[] encodedSharedPath, int sharedPathLength, byte[] value, TrieImpl[] nodes, Keccak256[] hashes, TrieStore store, boolean secure) {
         this.value = value;
         this.nodes = nodes;
         this.hashes = hashes;
@@ -140,113 +138,11 @@ public class TrieImpl implements Trie {
         this.encodedSharedPath = encodedSharedPath;
         this.sharedPathLength = sharedPathLength;
         this.isSecure = secure;
+        this.serializer = new TrieSerializer();
     }
 
     private Trie cloneTrie() {
         return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store, this.isSecure);
-    }
-
-    /**
-     * Pool method, to create a NewTrie from a serialized message
-     * the store argument is used to retrieve any subnode
-     * of the subnode
-     *
-     * @param message   the content (arity, hashes, value) serializaced as byte array
-     * @param store     the store containing the rest of the trie nodes, to be used on retrieve them if they are needed in memory
-     */
-    public static TrieImpl fromMessage(byte[] message, TrieStore store) {
-        if (message == null) {
-            return null;
-        }
-
-        return fromMessage(message, 0, message.length, store);
-    }
-
-    private static TrieImpl fromMessage(byte[] message, int position, int msglength, TrieStore store) {
-        if (message == null) {
-            return null;
-        }
-
-        ByteArrayInputStream bstream = new ByteArrayInputStream(message, position, msglength);
-        DataInputStream istream = new DataInputStream(bstream);
-
-        try {
-            int arity = istream.readByte();
-
-            if (arity != ARITY) {
-                throw new IllegalArgumentException(INVALID_ARITY);
-            }
-
-            int flags = istream.readByte();
-            boolean isSecure = (flags & 0x01) == 1;
-            boolean hasLongVal = (flags & 0x02) == 2;
-            int bhashes = istream.readShort();
-            int lshared = istream.readShort();
-
-            int nhashes = 0;
-            int lencoded = TrieImpl.getEncodedPathLength(lshared);
-
-            byte[] encodedSharedPath = null;
-
-            if (lencoded > 0) {
-                encodedSharedPath = new byte[lencoded];
-                if (istream.read(encodedSharedPath) != lencoded) {
-                    throw new EOFException();
-                }
-            }
-
-            Keccak256[] hashes = new Keccak256[arity];
-
-            for (int k = 0; k < arity; k++) {
-                if ((bhashes & (1 << k)) == 0) {
-                    continue;
-                }
-
-                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-
-                if (istream.read(valueHash) != Keccak256Helper.DEFAULT_SIZE_BYTES) {
-                    throw new EOFException();
-                }
-
-                hashes[k] = new Keccak256(valueHash);
-                nhashes++;
-            }
-
-            int offset = MESSAGE_HEADER_LENGTH + lencoded + nhashes * Keccak256Helper.DEFAULT_SIZE_BYTES;
-            byte[] value = null;
-
-            if (hasLongVal) {
-                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-
-                if (istream.read(valueHash) != Keccak256Helper.DEFAULT_SIZE_BYTES) {
-                    throw new EOFException();
-                }
-
-                value = store.retrieveValue(valueHash);
-            }
-            else {
-                int lvalue = msglength - offset;
-
-                if (lvalue > 0) {
-                    value = new byte[lvalue];
-                    if (istream.read(value) != lvalue) {
-                        throw new EOFException();
-                    }
-                }
-            }
-
-            TrieImpl trie = new TrieImpl(encodedSharedPath, lshared, value, null, hashes, store, isSecure);
-
-            if (store != null) {
-                trie.saved = true;
-            }
-
-            return trie;
-        } catch (IOException ex) {
-            logger.error(ERROR_CREATING_TRIE, ex);
-            panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE +": " + ex.getMessage());
-            throw new TrieSerializationException(ERROR_CREATING_TRIE, ex);
-        }
     }
 
     /**
@@ -272,7 +168,7 @@ public class TrieImpl implements Trie {
             return emptyHash.copy();
         }
 
-        byte[] message = this.toMessage();
+        byte[] message = serializer.serialize(this);
 
         this.hash = new Keccak256(Keccak256Helper.keccak256(message));
 
@@ -359,83 +255,6 @@ public class TrieImpl implements Trie {
     @Override
     public Trie delete(String key) {
         return delete(key.getBytes(StandardCharsets.UTF_8));
-    }
-
-    /**
-     * toMessage serialize the node to bytes. Used to persist the node in a key-value store
-     * like levelDB or redis.
-     *
-     * The serialization includes:
-     * - arity: byte
-     * - bits with present hashes: two bytes (example: 0x0203 says that the node has
-     * hashes at index 0, 1, 9 (the other subnodes are null)
-     * - present hashes: 32 bytes each
-     * - associated value: remainder bytes (no bytes if null)
-     *
-     * @return a byte array with the serialized info
-     */
-    @Override
-    public byte[] toMessage() {
-        int lvalue = this.value == null ? 0 : this.value.length;
-        int nnodes = this.getNodeCount();
-        int lshared = this.sharedPathLength;
-        int lencoded = getEncodedPathLength(lshared);
-        boolean hasLongVal = this.hasLongValue();
-
-        int bits = 0;
-
-        for (int k = 0; k < ARITY; k++) {
-            Keccak256 nodeHash = this.getHash(k);
-
-            if (nodeHash == null) {
-                continue;
-            }
-
-            bits |= 1 << k;
-        }
-
-        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES + (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue));
-
-        buffer.put((byte) ARITY);
-
-        byte flags = 0;
-
-        if (this.isSecure) {
-            flags |= 1;
-        }
-
-        if (hasLongVal) {
-            flags |= 2;
-        }
-
-        buffer.put(flags);
-        buffer.putShort((short) bits);
-        buffer.putShort((short) lshared);
-
-        if (lshared > 0) {
-            buffer.put(encodedSharedPath);
-        }
-
-        for (int k = 0; k < ARITY; k++) {
-            Keccak256 nodeHash = this.getHash(k);
-
-            if (nodeHash == null) {
-                continue;
-            }
-
-            buffer.put(nodeHash.getBytes());
-        }
-
-        if (lvalue > 0) {
-            if (hasLongVal) {
-                buffer.put(this.getValueHash());
-            }
-            else {
-                buffer.put(this.value);
-            }
-        }
-
-        return buffer.array();
     }
 
     /**
@@ -1005,7 +824,6 @@ public class TrieImpl implements Trie {
      * a bit value of the original byte
      *
      * @param bytes original key
-     * @param arity number of subnodes in each node trie
      *
      * @return expanded key
      */

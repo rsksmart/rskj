@@ -21,6 +21,7 @@ package co.rsk.db;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieCopier;
+import co.rsk.trie.TrieSerializer;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.BlockchainConfig;
@@ -118,7 +119,7 @@ public class PruneService {
         KeyValueDataSource sourceDataSource = levelDbByName(dataSourceName, this.rskConfiguration.databaseDir());
         sourceDataSource.init();
         KeyValueDataSource targetDataSource = levelDbByName(dataSourceName + "B", this.rskConfiguration.databaseDir());
-        TrieStore targetStore = new TrieStoreImpl(targetDataSource);
+        TrieStore targetStore = new TrieStoreImpl(targetDataSource, new TrieSerializer());
 
         TrieCopier.trieContractStateCopy(targetStore, blockchain, from, to, blockchain.getRepository(), this.contractAddress);
 

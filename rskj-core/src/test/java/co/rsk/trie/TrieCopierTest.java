@@ -51,9 +51,9 @@ public class TrieCopierTest {
     @Test
     public void copyTrie() {
         HashMapDB map1 = new HashMapDB();
-        TrieStoreImpl store1 = new TrieStoreImpl(map1);
+        TrieStoreImpl store1 = new TrieStoreImpl(map1, new TrieSerializer());
         HashMapDB map2 = new HashMapDB();
-        TrieStoreImpl store2 = new TrieStoreImpl(map2);
+        TrieStoreImpl store2 = new TrieStoreImpl(map2, new TrieSerializer());
 
         int nvalues = 10;
         byte[][] values = createValues(nvalues, 100);
@@ -79,9 +79,9 @@ public class TrieCopierTest {
     @Test
     public void copyThreeTries() {
         HashMapDB map1 = new HashMapDB();
-        TrieStoreImpl store1 = new TrieStoreImpl(map1);
+        TrieStoreImpl store1 = new TrieStoreImpl(map1, new TrieSerializer());
         HashMapDB map2 = new HashMapDB();
-        TrieStoreImpl store2 = new TrieStoreImpl(map2);
+        TrieStoreImpl store2 = new TrieStoreImpl(map2, new TrieSerializer());
 
         int nvalues = 30;
         byte[][] values = createValues(nvalues, 100);
@@ -132,8 +132,8 @@ public class TrieCopierTest {
 
     @Test
     public void copyBlockchainHeightTwoStates() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
-        TrieStore store2 = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
+        TrieStore store = new TrieStoreImpl(new HashMapDB().setClearOnClose(false), new TrieSerializer());
+        TrieStore store2 = new TrieStoreImpl(new HashMapDB().setClearOnClose(false), new TrieSerializer());
         Repository repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
         World world = new World(repository);
 
@@ -163,8 +163,8 @@ public class TrieCopierTest {
 
     @Test
     public void copyBlockchainHeightTwoContractStates() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
-        TrieStore store2 = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
+        TrieStore store = new TrieStoreImpl(new HashMapDB().setClearOnClose(false), new TrieSerializer());
+        TrieStore store2 = new TrieStoreImpl(new HashMapDB().setClearOnClose(false), new TrieSerializer());
         Repository repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
         World world = new World(repository);
 

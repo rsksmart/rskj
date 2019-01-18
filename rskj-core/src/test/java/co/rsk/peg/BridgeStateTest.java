@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieSerializer;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
@@ -39,7 +40,7 @@ public class BridgeStateTest {
     @Test
     public void recreateFromEmptyStorageProvider() throws IOException {
         TestSystemProperties config = new TestSystemProperties();
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
         BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(0));
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);

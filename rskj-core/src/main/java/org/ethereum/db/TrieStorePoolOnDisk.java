@@ -1,5 +1,6 @@
 package org.ethereum.db;
 
+import co.rsk.trie.TrieSerializer;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 
@@ -16,7 +17,7 @@ public class TrieStorePoolOnDisk implements TrieStore.Pool {
     }
 
     public TrieStore getInstanceFor(String name) {
-        return new TrieStoreImpl(DataSourcePool.levelDbByName(name, this.databaseDir));
+        return new TrieStoreImpl(DataSourcePool.levelDbByName(name, this.databaseDir), new TrieSerializer());
     }
 
     public boolean existsInstanceFor(String name) {

@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieSerializer;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -63,7 +64,7 @@ public class BlockchainLoaderTest {
 
         EthereumListener ethereumListener = Mockito.mock(EthereumListener.class);
 
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true), new HashMapDB(), new TrieStorePoolOnMemory(), systemProperties.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false), new TrieSerializer()), true), new HashMapDB(), new TrieStorePoolOnMemory(), systemProperties.detailsInMemoryStorageLimit());
 
         BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null);
 

@@ -35,7 +35,7 @@ public class TrieImplSnapshotTest {
 
     @Test
     public void getSnapshotToEmptyTrie() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
+        TrieStore store = new TrieStoreImpl(new HashMapDB(), new TrieSerializer());
         Trie trie = new TrieImpl(store, false);
 
         Trie snapshot = trie.getSnapshotTo(trie.getHash());
@@ -47,7 +47,7 @@ public class TrieImplSnapshotTest {
 
     @Test
     public void getSnapshotToTrie() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
+        TrieStore store = new TrieStoreImpl(new HashMapDB(), new TrieSerializer());
         Trie trie = new TrieImpl(store, false);
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
@@ -73,7 +73,7 @@ public class TrieImplSnapshotTest {
 
     @Test
     public void getSnapshotToTrieWithLongValues() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
+        TrieStore store = new TrieStoreImpl(new HashMapDB(), new TrieSerializer());
         Trie trie = new TrieImpl(store, false);
 
         trie = trie.put("foo".getBytes(), TrieImplValueTest.makeValue(100));
@@ -98,7 +98,7 @@ public class TrieImplSnapshotTest {
 
     @Test
     public void getSnapshotToTrieUsingDeserializedTrie() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
+        TrieStore store = new TrieStoreImpl(new HashMapDB(), new TrieSerializer());
         Trie trie = new TrieImpl(store, false);
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
@@ -126,7 +126,7 @@ public class TrieImplSnapshotTest {
         byte[] value1 = TrieImplValueTest.makeValue(100);
         byte[] value2 = TrieImplValueTest.makeValue(200);
 
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
+        TrieStore store = new TrieStoreImpl(new HashMapDB(), new TrieSerializer());
         Trie trie = new TrieImpl(store, false);
 
         trie = trie.put("foo".getBytes(), value1);

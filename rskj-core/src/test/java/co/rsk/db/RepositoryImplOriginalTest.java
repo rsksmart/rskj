@@ -24,6 +24,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieImpl;
+import co.rsk.trie.TrieSerializer;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Genesis;
@@ -725,7 +726,7 @@ public class RepositoryImplOriginalTest {
 
     @Test // testing for snapshot
     public void test20() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
+        TrieStore store = new TrieStoreImpl(new HashMapDB(), new TrieSerializer());
         Repository repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
         byte[] root = repository.getRoot();
 
@@ -776,7 +777,7 @@ public class RepositoryImplOriginalTest {
 
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
+        TrieStore store = new TrieStoreImpl(new HashMapDB(), new TrieSerializer());
         final Repository repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         final DataWord cowKey1 = new DataWord("c1");

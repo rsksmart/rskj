@@ -40,7 +40,7 @@ public class TrieImplSerializationTest {
 
     @Test
     public void serializeEmptyTrie() throws IOException {
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false);
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), false);
 
         byte[] bytes = trie.serialize();
 
@@ -59,7 +59,7 @@ public class TrieImplSerializationTest {
 
     @Test
     public void serializeTrieWithTwoValues() throws IOException {
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), false)
                 .put("foo".getBytes(), "bar".getBytes())
                 .put("bar".getBytes(), "foo".getBytes());
 
@@ -83,7 +83,7 @@ public class TrieImplSerializationTest {
         byte[] value1 = TrieImplValueTest.makeValue(100);
         byte[] value2 = TrieImplValueTest.makeValue(200);
 
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), false)
                 .put("foo".getBytes(), value1)
                 .put("bar".getBytes(), value2);
 
@@ -104,7 +104,7 @@ public class TrieImplSerializationTest {
 
     @Test
     public void deserializeEmptyTrie() {
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false);
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), false);
 
         byte[] bytes = trie.serialize();
 
@@ -117,7 +117,7 @@ public class TrieImplSerializationTest {
 
     @Test
     public void deserializeTrieWithTwoValues() {
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), false)
                 .put("foo".getBytes(), "bar".getBytes())
                 .put("bar".getBytes(), "foo".getBytes());
 
@@ -138,7 +138,7 @@ public class TrieImplSerializationTest {
         byte[] value1 = TrieImplValueTest.makeValue(100);
         byte[] value2 = TrieImplValueTest.makeValue(200);
 
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), false)
                 .put("foo".getBytes(), value1)
                 .put("bar".getBytes(), value2);
 
@@ -156,7 +156,7 @@ public class TrieImplSerializationTest {
 
     @Test
     public void deserializeSecureTrieWithTwoValues() {
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), false)
                 .put("foo".getBytes(), "bar".getBytes())
                 .put("bar".getBytes(), "foo".getBytes());
 
@@ -177,7 +177,7 @@ public class TrieImplSerializationTest {
         byte[] value1 = TrieImplValueTest.makeValue(100);
         byte[] value2 = TrieImplValueTest.makeValue(200);
 
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), false)
                 .put("foo".getBytes(), value1)
                 .put("bar".getBytes(), value2);
 
@@ -195,7 +195,7 @@ public class TrieImplSerializationTest {
 
     @Test
     public void deserializeTrieWithOneHundredValues() {
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false);
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), false);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(("foo" + k).getBytes(), ("bar" + k).getBytes());
@@ -214,7 +214,7 @@ public class TrieImplSerializationTest {
 
     @Test
     public void deserializeTrieWithOneHundredLongValues() {
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false);
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), false);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(("foo" + k).getBytes(), TrieImplValueTest.makeValue(k + 200));
@@ -233,7 +233,7 @@ public class TrieImplSerializationTest {
 
     @Test
     public void deserializeSecureTrieWithOneHundredValues() {
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), true);
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(("foo" + k).getBytes(), ("bar" + k).getBytes());
@@ -252,7 +252,7 @@ public class TrieImplSerializationTest {
 
     @Test
     public void deserializeSecureTrieWithOneHundredLongValues() {
-        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), true);
+        Trie trie = new TrieImpl(new TrieStoreImpl(new HashMapDB(), new TrieSerializer()), true);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(("foo" + k).getBytes(), TrieImplValueTest.makeValue(k + 200));
