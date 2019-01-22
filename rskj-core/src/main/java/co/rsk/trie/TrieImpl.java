@@ -77,10 +77,10 @@ public class TrieImpl implements Trie {
     private byte[] value;
 
     // the list of subnodes
-    private TrieImpl[] nodes;
+    private final TrieImpl[] nodes;
 
     // the list of subnode hashes
-    private Keccak256[] hashes;
+    private final Keccak256[] hashes;
 
     // this node hash value
     private Keccak256 hash;
@@ -122,8 +122,8 @@ public class TrieImpl implements Trie {
     // full constructor
     private TrieImpl(byte[] encodedSharedPath, int sharedPathLength, byte[] value, TrieImpl[] nodes, Keccak256[] hashes, TrieStore store) {
         this.value = value;
-        this.nodes = nodes;
-        this.hashes = hashes;
+        this.nodes = nodes != null ? nodes : new TrieImpl[ARITY];
+        this.hashes = hashes != null ? hashes : new Keccak256[ARITY];
         this.store = store;
         this.encodedSharedPath = encodedSharedPath;
         this.sharedPathLength = sharedPathLength;
@@ -135,7 +135,7 @@ public class TrieImpl implements Trie {
     }
 
     private Trie cloneTrie() {
-        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(true), cloneHashes(), this.store).withSecure(this.isSecure);
+        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, cloneNodes(), cloneHashes(), this.store).withSecure(this.isSecure);
     }
 
     /**
@@ -440,11 +440,9 @@ public class TrieImpl implements Trie {
             return;
         }
 
-        if (this.nodes != null) {
-            for (TrieImpl node : this.nodes) {
-                if (node != null) {
-                    node.save();
-                }
+        for (TrieImpl node : this.nodes) {
+            if (node != null) {
+                node.save();
             }
         }
 
@@ -462,11 +460,9 @@ public class TrieImpl implements Trie {
             this.retrieveNode(k);
         }
 
-        if (this.nodes != null) {
-            for (TrieImpl node : this.nodes) {
-                if (node != null) {
-                    node.copyTo(target);
-                }
+        for (TrieImpl node : this.nodes) {
+            if (node != null) {
+                node.copyTo(target);
             }
         }
 
@@ -550,7 +546,7 @@ public class TrieImpl implements Trie {
         int count = 0;
 
         for (int k = 0; k < ARITY; k++) {
-            TrieImpl node = this.getNode(k);
+            TrieImpl node = this.nodes[k];
             Keccak256 localHash = this.getHash(k);
 
             if (node != null && !isEmptyTrie(node.value, node.nodes, node.hashes) || localHash != null) {
@@ -570,14 +566,10 @@ public class TrieImpl implements Trie {
      * @return  the node or null if no subnode at position
      */
     private Trie retrieveNode(int n) {
-        Trie node = this.getNode(n);
+        Trie node = this.nodes[n];
 
         if (node != null) {
             return node;
-        }
-
-        if (this.hashes == null) {
-            return null;
         }
 
         Keccak256 localHash = this.hashes[n];
@@ -595,10 +587,6 @@ public class TrieImpl implements Trie {
             throw new TrieSerializationException(ERROR_NON_EXISTENT_TRIE + " " + strHash, null);
         }
 
-        if (this.nodes == null) {
-            this.nodes = new TrieImpl[ARITY];
-        }
-
         this.nodes[n] = (TrieImpl)node;
 
         return node;
@@ -614,11 +602,11 @@ public class TrieImpl implements Trie {
      */
     @Nullable
     private Keccak256 getHash(int n) {
-        if (this.hashes != null && this.hashes[n] != null) {
+        if (this.hashes[n] != null) {
             return this.hashes[n];
         }
 
-        if (this.nodes == null || this.nodes[n] == null) {
+        if (this.nodes[n] == null) {
             return null;
         }
 
@@ -630,23 +618,9 @@ public class TrieImpl implements Trie {
 
         Keccak256 localHash = node.getHash();
 
-        this.setHash(n, localHash);
+        this.hashes[n] = localHash;
 
         return localHash;
-    }
-
-    /**
-     * setHash save subnode hash at position n, in order to keep an internal cache
-     *
-     * @param n     the subnode position (0 to arity - 1)
-     * @param hash  the subnode hash
-     */
-    private void setHash(int n, Keccak256 hash) {
-        if (this.hashes == null) {
-            this.hashes = new Keccak256[ARITY];
-        }
-
-        this.hashes[n] = hash;
     }
 
     /**
@@ -706,20 +680,6 @@ public class TrieImpl implements Trie {
             panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE +": " + ex.getMessage());
             throw new TrieSerializationException(ERROR_CREATING_TRIE, ex);
         }
-    }
-
-    /**
-     * getNode gets the subnode at position n
-     *
-     * @param n
-     * @return
-     */
-    private TrieImpl getNode(int n) {
-        if (this.nodes == null) {
-            return null;
-        }
-
-        return this.nodes[n];
     }
 
     /**
@@ -812,7 +772,7 @@ public class TrieImpl implements Trie {
                 return this;
             }
 
-            TrieImpl[] newNodes = cloneNodes(false);
+            TrieImpl[] newNodes = cloneNodes();
             Keccak256[] newHashes = cloneHashes();
 
             if (isEmptyTrie(value, newNodes, newHashes)) {
@@ -829,7 +789,7 @@ public class TrieImpl implements Trie {
             return new TrieImpl(this.store, PathEncoder.encode(shared), lshared, value, this.isSecure);
         }
 
-        TrieImpl[] newNodes = cloneNodes(true);
+        TrieImpl[] newNodes = cloneNodes();
         Keccak256[] newHashes = cloneHashes();
 
         int pos = key[position];
@@ -873,7 +833,7 @@ public class TrieImpl implements Trie {
     }
 
     private TrieImpl split(int nshared) {
-        TrieImpl[] newChildNodes = this.cloneNodes(false);
+        TrieImpl[] newChildNodes = this.cloneNodes();
         Keccak256[] newChildHashes = this.cloneHashes();
 
         TrieImpl newChildTrie = new TrieImpl(null, 0, this.value, newChildNodes, newChildHashes, this.store).withSecure(this.isSecure);
@@ -888,33 +848,38 @@ public class TrieImpl implements Trie {
             newChildTrie.sharedPathLength = newSharedLength;
         }
 
-        TrieImpl newTrie = new TrieImpl(this.store, this.isSecure);
         TrieImpl[] newNodes = new TrieImpl[ARITY];
         int pos = sharedPath[nshared];
         newNodes[pos] = newChildTrie;
-        newTrie.nodes = newNodes;
 
+        byte[] newTrieEncodedSharedPath = null;
+        int newTrieSharedPathLength = 0;
         if (nshared > 0) {
             byte[] newSharedPath = new byte[nshared];
             System.arraycopy(sharedPath, 0, newSharedPath, 0, nshared);
-            newTrie.encodedSharedPath = PathEncoder.encode(newSharedPath);
-            newTrie.sharedPathLength = nshared;
+            newTrieEncodedSharedPath = PathEncoder.encode(newSharedPath);
+            newTrieSharedPathLength = nshared;
         }
 
-        return newTrie;
+        return new TrieImpl(
+                newTrieEncodedSharedPath,
+                newTrieSharedPathLength,
+                null,
+                newNodes,
+                null,
+                this.store
+        ).withSecure(
+                this.isSecure
+        );
     }
+
 
     /**
      * cloneHashes clone the internal subnode hashes cache
      *
      * @return a copy of the original hashes
      */
-    @Nullable
     private Keccak256[] cloneHashes() {
-        if (this.hashes == null) {
-            return null;
-        }
-
         int nhashes = this.hashes.length;
         Keccak256[] newHashes = new Keccak256[nhashes];
 
@@ -928,22 +893,13 @@ public class TrieImpl implements Trie {
     /**
      * cloneNodes clone the current list of nodes
      *
-     * @param create    create an empty list if the current list is null
-     *
      * @return the new list of nodes
      */
-    @Nullable
-    private TrieImpl[] cloneNodes(boolean create) {
-        if (nodes == null && !create) {
-            return null;
-        }
-
+    private TrieImpl[] cloneNodes() {
         TrieImpl[] newnodes = new TrieImpl[ARITY];
 
-        if (nodes != null) {
-            for (int k = 0; k < ARITY; k++) {
-                newnodes[k] = nodes[k];
-            }
+        for (int k = 0; k < ARITY; k++) {
+            newnodes[k] = nodes[k];
         }
 
         return newnodes;
@@ -968,19 +924,15 @@ public class TrieImpl implements Trie {
             return false;
         }
 
-        if (nodes != null) {
-            for (int k = 0; k < nodes.length; k++) {
-                if (nodes[k] != null) {
-                    return false;
-                }
+        for (int k = 0; k < nodes.length; k++) {
+            if (nodes[k] != null) {
+                return false;
             }
         }
 
-        if (hashes != null) {
-            for (int k = 0; k < hashes.length; k++) {
-                if (hashes[k] != null) {
-                    return false;
-                }
+        for (int k = 0; k < hashes.length; k++) {
+            if (hashes[k] != null) {
+                return false;
             }
         }
 
