@@ -849,8 +849,10 @@ public class TrieImpl implements Trie {
         }
 
         TrieImpl[] newNodes = new TrieImpl[ARITY];
+        Keccak256[] newHashes = new Keccak256[ARITY];
         int pos = sharedPath[nshared];
         newNodes[pos] = newChildTrie;
+        newHashes[pos] = newChildTrie.getHash();
 
         byte[] newTrieEncodedSharedPath = null;
         int newTrieSharedPathLength = 0;
@@ -866,7 +868,7 @@ public class TrieImpl implements Trie {
                 newTrieSharedPathLength,
                 null,
                 newNodes,
-                null,
+                newHashes,
                 this.store
         ).withSecure(
                 this.isSecure
