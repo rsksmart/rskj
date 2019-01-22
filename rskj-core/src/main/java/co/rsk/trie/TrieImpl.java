@@ -127,6 +127,7 @@ public class TrieImpl implements Trie {
         this.store = store;
         this.encodedSharedPath = encodedSharedPath;
         this.sharedPathLength = sharedPathLength;
+        populateMissingNodeHashes();
     }
 
     private TrieImpl withSecure(boolean isSecure) {
@@ -377,7 +378,7 @@ public class TrieImpl implements Trie {
         int bits = 0;
 
         for (int k = 0; k < ARITY; k++) {
-            Keccak256 nodeHash = this.getHash(k);
+            Keccak256 nodeHash = this.hashes[k];
 
             if (nodeHash == null) {
                 continue;
@@ -409,7 +410,7 @@ public class TrieImpl implements Trie {
         }
 
         for (int k = 0; k < ARITY; k++) {
-            Keccak256 nodeHash = this.getHash(k);
+            Keccak256 nodeHash = this.hashes[k];
 
             if (nodeHash == null) {
                 continue;
@@ -547,7 +548,7 @@ public class TrieImpl implements Trie {
 
         for (int k = 0; k < ARITY; k++) {
             TrieImpl node = this.nodes[k];
-            Keccak256 localHash = this.getHash(k);
+            Keccak256 localHash = this.hashes[k];
 
             if (node != null && !isEmptyTrie(node.value, node.nodes, node.hashes) || localHash != null) {
                 count++;
@@ -590,37 +591,6 @@ public class TrieImpl implements Trie {
         this.nodes[n] = (TrieImpl)node;
 
         return node;
-    }
-
-    /**
-     * getHash get hash associated to subnode at positin n. If the hash is known
-     * because it is in the internal hash cache, no access to subnode is needed.
-     *
-     * @param n     subnode position
-     *
-     * @return  node hash or null if no node is present
-     */
-    @Nullable
-    private Keccak256 getHash(int n) {
-        if (this.hashes[n] != null) {
-            return this.hashes[n];
-        }
-
-        if (this.nodes[n] == null) {
-            return null;
-        }
-
-        TrieImpl node = this.nodes[n];
-
-        if (isEmptyTrie(node.value, node.nodes, node.hashes)) {
-            return null;
-        }
-
-        Keccak256 localHash = node.getHash();
-
-        this.hashes[n] = localHash;
-
-        return localHash;
     }
 
     /**
@@ -1011,6 +981,30 @@ public class TrieImpl implements Trie {
     }
 
     public byte[] getValue() { return this.value; }
+
+    /**
+     * There are two cases:
+     * 1. we have the hashes but not the nodes. this is OK, we do nothing.
+     * 2. we have the nodes but not the hashes. we populate them at construction time.
+     */
+    private void populateMissingNodeHashes() {
+        for (int n = 0; n < ARITY; n++) {
+            if (this.hashes[n] != null) {
+                continue;
+            }
+
+            TrieImpl node = this.nodes[n];
+            if (node == null) {
+                continue;
+            }
+
+            if (isEmptyTrie(node.value, node.nodes, node.hashes)) {
+                continue;
+            }
+
+            this.hashes[n] = node.getHash();
+        }
+    }
 
     private static int getEncodedPathLength(int length) {
         return length / 8 + (length % 8 == 0 ? 0 : 1);
