@@ -109,10 +109,6 @@ public class BlockChainBuilder {
     }
 
     public BlockChainImpl build() {
-        return build(false);
-    }
-
-    public BlockChainImpl build(boolean withoutCleaner) {
         if (config == null){
             config = new TestSystemProperties();
         }
@@ -145,12 +141,7 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
-        TransactionPoolImpl transactionPool;
-        if (withoutCleaner) {
-            transactionPool = new TransactionPoolImplNoCleaner(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
-        } else {
-            transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
-        }
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(this.repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
@@ -230,29 +221,17 @@ public class BlockChainBuilder {
         return blockChain;
     }
 
-    public static Blockchain ofSizeWithNoTransactionPoolCleaner(int size) {
-        return ofSize(size, false, true);
-    }
-
     public static Blockchain ofSize(int size) {
-        return ofSize(size, false, false);
+        return ofSize(size, false);
     }
 
     public static Blockchain ofSize(int size, boolean mining) {
-        return ofSize(size, mining, null, null, false);
-    }
-
-    public static Blockchain ofSize(int size, boolean mining, boolean withoutCleaner) {
-        return ofSize(size, mining, null, null, withoutCleaner);
+        return ofSize(size, mining, null, null);
     }
 
     public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<Coin> balances) {
-        return ofSize(size, mining, accounts, balances, false);
-    }
-
-    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<Coin> balances, boolean withoutCleaner) {
         BlockChainBuilder builder = new BlockChainBuilder();
-        BlockChainImpl blockChain = builder.build(withoutCleaner);
+        BlockChainImpl blockChain = builder.build();
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();

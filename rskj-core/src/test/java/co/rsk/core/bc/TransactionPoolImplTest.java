@@ -74,13 +74,9 @@ public class TransactionPoolImplTest {
 
     @Test
     public void usingStart() {
-        transactionPool.start(blockChain.getBestBlock());
-
-        Assert.assertTrue(transactionPool.hasCleanerFuture());
-
-        transactionPool.stop();
-
         Assert.assertFalse(transactionPool.hasCleanerFuture());
+        transactionPool.start(blockChain.getBestBlock());
+        Assert.assertTrue(transactionPool.hasCleanerFuture());
     }
 
     @Test
