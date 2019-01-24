@@ -273,7 +273,7 @@ public abstract class BridgePerformanceTestCase {
         RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        Blockchain blockchain = BlockChainBuilder.ofSizeWithNoTransactionPoolCleaner(heightProvider.getHeight(executionIndex));
+        Blockchain blockchain = BlockChainBuilder.ofSize(heightProvider.getHeight(executionIndex));
         bridge.init(
                 tx,
                 blockchain.getBestBlock(),
