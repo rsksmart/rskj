@@ -144,9 +144,7 @@ public class TestRunner {
         )));
 
         blockchain.setNoValidation(true);
-
-        blockchain.setBestBlock(genesis);
-        blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
+        blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
         /* 2 */ // Create block traffic list
         List<Block> blockTraffic = new ArrayList<>();

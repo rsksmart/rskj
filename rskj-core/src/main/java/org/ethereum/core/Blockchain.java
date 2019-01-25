@@ -64,16 +64,12 @@ public interface Blockchain {
 
     ImportResult tryToConnect(Block block);
 
-    void setBestBlock(Block block);
-
     void setStatus(Block block, BlockDifficulty totalDifficulty);
 
     BlockChainStatus getStatus();
 
     @Nullable
     TransactionInfo getTransactionInfo(byte[] hash);
-
-    void setTotalDifficulty(BlockDifficulty totalDifficulty);
 
     byte[] getBestBlockHash();
 
