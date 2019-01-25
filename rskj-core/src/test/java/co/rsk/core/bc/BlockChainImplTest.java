@@ -153,8 +153,7 @@ public class BlockChainImplTest {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
 
-        blockChain.setBestBlock(genesis);
-        blockChain.setTotalDifficulty(genesis.getCumulativeDifficulty());
+        blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
         BlockChainStatus status = blockChain.getStatus();
 
         Assert.assertNotNull(status);

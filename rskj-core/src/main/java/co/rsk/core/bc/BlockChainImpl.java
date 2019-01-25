@@ -416,11 +416,6 @@ public class BlockChainImpl implements Blockchain {
     public Block getBlockByNumber(long number) { return blockStore.getChainBlockByNumber(number); }
 
     @Override
-    public void setBestBlock(Block block) {
-        this.setStatus(block, status.getTotalDifficulty());
-    }
-
-    @Override
     public Block getBestBlock() {
         return this.status.getBestBlock();
     }
@@ -452,11 +447,6 @@ public class BlockChainImpl implements Blockchain {
     @Override
     public BlockDifficulty getTotalDifficulty() {
         return status.getTotalDifficulty();
-    }
-
-    @Override
-    public void setTotalDifficulty(BlockDifficulty totalDifficulty) {
-        setStatus(status.getBestBlock(), totalDifficulty);
     }
 
     @Override @VisibleForTesting

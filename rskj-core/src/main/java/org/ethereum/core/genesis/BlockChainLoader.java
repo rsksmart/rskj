@@ -142,18 +142,15 @@ public class BlockChainLoader {
             genesis.flushRLP();
 
             blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
-            blockchain.setBestBlock(genesis);
-            blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
+            blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
-            listener.onBlock(genesis, new ArrayList<TransactionReceipt>() );
+            listener.onBlock(genesis, new ArrayList<>() );
             repository.dumpState(genesis, 0, 0, null);
 
             logger.info("Genesis block loaded");
         } else {
             BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
-
-            blockchain.setBestBlock(bestBlock);
-            blockchain.setTotalDifficulty(totalDifficulty);
+            blockchain.setStatus(bestBlock, totalDifficulty);
 
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     blockchain.getBestBlock().getNumber(),
