@@ -63,8 +63,8 @@ public class RskTestFactory {
         Genesis genesis = new BlockGenerator().getGenesisBlock();
         genesis.setStateRoot(getRepository().getRoot());
         genesis.flushRLP();
-        getBlockchain().setBestBlock(genesis);
-        getBlockchain().setTotalDifficulty(genesis.getCumulativeDifficulty());
+        BlockChainImpl blockchain = getBlockchain();
+        blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
     }
 
     public ProgramResult executeRawContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {

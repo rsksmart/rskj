@@ -119,9 +119,7 @@ public class ImportLightTest {
         genesis.flushRLP();
 
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
-
-        blockchain.setBestBlock(genesis);
-        blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
+        blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
         return blockchain;
     }
