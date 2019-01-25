@@ -48,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -151,7 +152,7 @@ public class StateTestRunner {
         block.setStateRoot(repository.getRoot());
         block.flushRLP();
 
-        blockchain.setBestBlock(block);
+        blockchain.setStatus(block, block.getCumulativeDifficulty());
         //blockchain.setProgramInvokeFactory(invokeFactory);
         //blockchain.startTracking();
 

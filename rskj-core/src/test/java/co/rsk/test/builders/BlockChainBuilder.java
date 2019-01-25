@@ -183,9 +183,7 @@ public class BlockChainBuilder {
 
             this.genesis.setStateRoot(this.repository.getRoot());
             this.genesis.flushRLP();
-            blockChain.setBestBlock(this.genesis);
-
-            blockChain.setTotalDifficulty(this.genesis.getCumulativeDifficulty());
+            blockChain.setStatus(this.genesis, this.genesis.getCumulativeDifficulty());
         }
 
         if (this.blocks != null) {
