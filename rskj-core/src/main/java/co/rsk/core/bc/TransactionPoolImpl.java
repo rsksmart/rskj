@@ -128,13 +128,6 @@ public class TransactionPoolImpl implements TransactionPool {
         this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
     }
 
-    public void stop() {
-        if (this.cleanerFuture != null) {
-            this.cleanerFuture.cancel(false);
-            this.cleanerFuture = null;
-        }
-    }
-
     public boolean hasCleanerFuture() {
         return this.cleanerFuture != null;
     }
