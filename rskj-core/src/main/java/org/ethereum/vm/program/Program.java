@@ -209,11 +209,11 @@ public class Program {
 
         this.ops = nullToEmpty(ops);
 
+        this.trace = new ProgramTrace(config, programInvoke);
         this.memory = setupProgramListener(new Memory());
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
         this.storage = setupProgramListener(new Storage(programInvoke));
-        this.trace = new ProgramTrace(config, programInvoke);
 
         if (useDataWordPool) {
             this.dataWordPool = new java.util.Stack<>();
@@ -1268,8 +1268,12 @@ public class Program {
 
     public void saveOpTrace() {
         if (this.pc < ops.length) {
-            trace.addOp(ops[pc], pc, getCallDeep(), getRemainingGas(), traceListener.resetActions());
+            trace.addOp(ops[pc], pc, getCallDeep(), getRemainingGas(), this.memory, this.stack, this.storage);
         }
+    }
+
+    public void saveOpGasCost(long gasCost) {
+        trace.saveGasCost(gasCost);
     }
 
     public static int getScriptVersionInCode(byte[] ops){

@@ -22,10 +22,14 @@ package org.ethereum.vm.trace;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.ethereum.core.Repository;
 import org.ethereum.db.RepositoryTrack;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
+import org.ethereum.vm.program.Memory;
+import org.ethereum.vm.program.Stack;
+import org.ethereum.vm.program.Storage;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,13 +45,22 @@ public class ProgramTrace {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("vm");
 
-    private List<Op> ops = new LinkedList<>();
+    private String contractAddress;
+    private Map<String, String> initStorage = new HashMap<>();
+
+    private List<Op> structLogs = new LinkedList<>();
     private String result;
     private String error;
-    private Map<String, String> initStorage = new HashMap<>();
-    private boolean fullStorage;
+
     private int storageSize;
-    private String contractAddress;
+
+    private Map<String, String> currentStorage = new HashMap<>();
+
+    @JsonIgnore
+    private boolean fullStorage;
+
+    @JsonIgnore
+    private DataWord storageKey;
 
     public ProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
         if (config.vmTrace() && programInvoke != null) {
@@ -82,7 +95,13 @@ public class ProgramTrace {
                     }
                 }
             }
+
+            saveCurrentStorage(initStorage);
         }
+    }
+
+    private void saveCurrentStorage(Map<String, String> storage) {
+        this.currentStorage = new HashMap<>(storage);
     }
 
     private static AccountInformationProvider getInformationProvider(ProgramInvoke programInvoke) {
@@ -93,12 +112,12 @@ public class ProgramTrace {
         return repository;
     }
 
-    public List<Op> getOps() {
-        return ops;
+    public List<Op> getStructLogs() {
+        return structLogs;
     }
 
-    public void setOps(List<Op> ops) {
-        this.ops = ops;
+    public void setStructLogs(List<Op> structLogs) {
+        this.structLogs = structLogs;
     }
 
     public String getResult() {
@@ -159,15 +178,44 @@ public class ProgramTrace {
         return this;
     }
 
-    public Op addOp(byte code, int pc, int deep, long gas, OpActions actions) {
+    public void saveGasCost(long gasCost) {
+        structLogs.get(structLogs.size() - 1).setGasCost(gasCost);
+    }
+
+    public Op addOp(byte code, int pc, int deep, long gas, Memory memory, Stack stack, Storage storage) {
         Op op = new Op();
-        op.setActions(actions);
-        op.setCode(OpCode.code(code));
-        op.setDeep(deep);
+        OpCode opcode = OpCode.code(code);
+        op.setOp(opcode);
+        op.setDepth(deep);
         op.setGas(gas);
         op.setPc(pc);
 
-        ops.add(op);
+        op.setMemory(memory);
+        op.setStack(stack);
+
+        if (this.storageKey != null) {
+            RskAddress currentAddress = new RskAddress(this.contractAddress);
+            DataWord value = storage.getStorageValue(currentAddress, this.storageKey);
+
+            if (value != null) {
+                this.currentStorage = new HashMap<>(this.currentStorage);
+                this.currentStorage.put(this.storageKey.toString(), value.toString());
+            }
+            else {
+                this.currentStorage.remove(this.storageKey);
+            }
+
+            this.storageSize = this.currentStorage.size();
+            this.storageKey = null;
+        }
+
+        if (opcode == OpCode.SSTORE || opcode == OpCode.SLOAD) {
+            this.storageKey = stack.peek().clone();
+        }
+
+        op.setStorage(this.currentStorage);
+
+        structLogs.add(op);
 
         return op;
     }
@@ -176,7 +224,7 @@ public class ProgramTrace {
      * Used for merging sub calls execution.
      */
     public void merge(ProgramTrace programTrace) {
-        this.ops.addAll(programTrace.ops);
+        this.structLogs.addAll(programTrace.structLogs);
     }
 
     public String asJsonString(boolean formatted) {
