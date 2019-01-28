@@ -14,14 +14,17 @@ public class BloomFilter extends BitSet {
     }
 
     public BloomFilter or(BloomFilter bloomFilter) {
+        return this.or(bloomFilter.getBytes());
+    }
+
+    public BloomFilter or(byte[] operandBytes) {
         BloomFilter result = new BloomFilter();
 
         byte[] resultBytes = result.getBytes();
         byte[] bytes = this.getBytes();
-        byte[] bytes2 = bloomFilter.getBytes();
 
         for (int k = 0; k < BLOOM_BYTES; k++) {
-            resultBytes[k] = (byte) (bytes[k] | bytes2[k]);
+            resultBytes[k] = (byte) (bytes[k] | operandBytes[k]);
         }
 
         return result;
