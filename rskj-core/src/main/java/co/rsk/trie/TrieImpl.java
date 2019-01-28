@@ -65,8 +65,7 @@ public class TrieImpl implements Trie {
     private static final String PANIC_TOPIC = "newtrie";
     private static final String INVALID_ARITY = "Invalid arity";
     private static final String ERROR_CREATING_TRIE = "Error creating trie from message";
-    private static final String ERROR_NON_EXISTENT_TRIE_LOGGER = "Error non existent trie with hash {}";
-    private static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash ";
+    private static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash %s";
 
     private static final int MESSAGE_HEADER_LENGTH = 2 + Short.BYTES * 2;
 
@@ -237,7 +236,7 @@ public class TrieImpl implements Trie {
         } catch (IOException ex) {
             logger.error(ERROR_CREATING_TRIE, ex);
             panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE +": " + ex.getMessage());
-            throw new TrieSerializationException(ERROR_CREATING_TRIE, ex);
+            throw new RuntimeException(ERROR_CREATING_TRIE, ex);
         }
     }
 
@@ -586,14 +585,7 @@ public class TrieImpl implements Trie {
             return null;
         }
 
-        node = this.store.retrieve(localHash.getBytes());
-
-        if (node == null) {
-            String strHash = localHash.toHexString();
-            logger.error(ERROR_NON_EXISTENT_TRIE_LOGGER, strHash);
-            panicProcessor.panic(PANIC_TOPIC, ERROR_NON_EXISTENT_TRIE + " " + strHash);
-            throw new TrieSerializationException(ERROR_NON_EXISTENT_TRIE + " " + strHash, null);
-        }
+        node = internalRetrieve(this.store, localHash.getBytes());
 
         if (this.nodes == null) {
             this.nodes = new TrieImpl[ARITY];
@@ -602,6 +594,19 @@ public class TrieImpl implements Trie {
         this.nodes[n] = (TrieImpl)node;
 
         return node;
+    }
+
+    private static Trie internalRetrieve(TrieStore store, byte[] root) {
+        Trie newTrie = store.retrieve(root);
+
+        if (newTrie == null) {
+            String log = String.format(ERROR_NON_EXISTENT_TRIE, Hex.toHexString(root));
+            logger.error(log);
+            panicProcessor.panic(PANIC_TOPIC, log);
+            throw new IllegalArgumentException(log);
+        }
+
+        return newTrie;
     }
 
     /**
@@ -689,22 +694,12 @@ public class TrieImpl implements Trie {
             }
 
             TrieStoreImpl store = TrieStoreImpl.deserialize(bytes, Short.BYTES + Keccak256Helper.DEFAULT_SIZE_BYTES, bytes.length - Short.BYTES - Keccak256Helper.DEFAULT_SIZE_BYTES, new HashMapDB());
-
-            Trie newTrie = store.retrieve(root);
-
-            if (newTrie == null) {
-                String strHash = Hex.toHexString(root);
-                logger.error(ERROR_NON_EXISTENT_TRIE_LOGGER, strHash);
-                panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE + " " + strHash);
-                throw new TrieSerializationException(ERROR_CREATING_TRIE + " " + strHash, null);
-            }
-
-            return newTrie;
+            return internalRetrieve(store, root);
         }
         catch (IOException ex) {
             logger.error(ERROR_CREATING_TRIE, ex);
             panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE +": " + ex.getMessage());
-            throw new TrieSerializationException(ERROR_CREATING_TRIE, ex);
+            throw new RuntimeException(ERROR_CREATING_TRIE, ex);
         }
     }
 
@@ -995,7 +990,6 @@ public class TrieImpl implements Trie {
      * a bit value of the original byte
      *
      * @param bytes original key
-     * @param arity number of subnodes in each node trie
      *
      * @return expanded key
      */
@@ -1027,17 +1021,7 @@ public class TrieImpl implements Trie {
             return new TrieImpl(this.store, this.isSecure);
         }
 
-        Trie newTrie = this.store.retrieve(hash.getBytes());
-
-        if (newTrie == null) {
-            String strHash = hash.toHexString();
-            logger.error(ERROR_NON_EXISTENT_TRIE_LOGGER, strHash);
-            panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE + " " + strHash);
-
-            throw new TrieSerializationException(ERROR_CREATING_TRIE + " " + strHash, null);
-        }
-
-        return newTrie;
+        return internalRetrieve(this.store, hash.getBytes());
     }
 
     public TrieStore getStore() {

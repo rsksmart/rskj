@@ -170,7 +170,7 @@ public class TrieStoreImpl implements TrieStore {
         catch (IOException ex) {
             logger.error(ERROR_CREATING_STORE, ex);
             panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_STORE +": " + ex.getMessage());
-            throw new TrieSerializationException(ERROR_CREATING_STORE, ex);
+            throw new RuntimeException(ERROR_CREATING_STORE, ex);
         }
     }
 }
