@@ -32,6 +32,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
+import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
@@ -491,7 +492,7 @@ public class BridgeUtilsTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(privKeyBytes);
 
-        Block rskExecutionBlock = new BlockGenerator().createChildBlock(Genesis.getInstance(config));
+        Block rskExecutionBlock = new BlockGenerator().createChildBlock(RskTestFactory.getGenesisInstance(config));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber(), config.getBlockchainConfig()));
     }

@@ -32,6 +32,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
@@ -65,7 +66,9 @@ public class BlockchainLoaderTest {
 
         Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true), new HashMapDB(), new TrieStorePoolOnMemory(), systemProperties.detailsInMemoryStorageLimit());
 
-        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null);
+        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null,
+                                                                 RskTestFactory.getGenesisInstance(systemProperties)
+        );
 
         blockChainLoader.loadBlockchain();
 

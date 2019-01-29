@@ -1,6 +1,7 @@
 package org.ethereum.util;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
@@ -21,6 +22,7 @@ import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
+import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -65,6 +67,10 @@ public class RskTestFactory {
         genesis.flushRLP();
         BlockChainImpl blockchain = getBlockchain();
         blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
+    }
+
+    public static Genesis getGenesisInstance(RskSystemProperties config) {
+        return GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false);
     }
 
     public ProgramResult executeRawContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {

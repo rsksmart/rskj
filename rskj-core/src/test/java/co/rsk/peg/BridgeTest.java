@@ -47,6 +47,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
@@ -1065,7 +1066,7 @@ public class BridgeTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
-        Block rskExecutionBlock = new BlockGenerator().createChildBlock(Genesis.getInstance(config));
+        Block rskExecutionBlock = new BlockGenerator().createChildBlock(RskTestFactory.getGenesisInstance(config));
 
         Repository mockRepository = mock(Repository.class);
         when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
@@ -1163,7 +1164,7 @@ public class BridgeTest {
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        Block rskExecutionBlock = blockGenerator.createChildBlock(Genesis.getInstance(config));
+        Block rskExecutionBlock = blockGenerator.createChildBlock(RskTestFactory.getGenesisInstance(config));
         for (int i = 0; i < 20; i++) {
             rskExecutionBlock = blockGenerator.createChildBlock(rskExecutionBlock);
         }
