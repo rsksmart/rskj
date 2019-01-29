@@ -19,11 +19,9 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -76,10 +74,6 @@ public class Genesis extends Block {
                 });
 
         setTransactionsList(Collections.emptyList());
-    }
-
-    public static Block getInstance(RskSystemProperties config) {
-        return GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false);
     }
 
     public static byte[] getZeroHash(){

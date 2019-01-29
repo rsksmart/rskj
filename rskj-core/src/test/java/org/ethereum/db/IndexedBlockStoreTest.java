@@ -23,11 +23,11 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
-import org.ethereum.core.Genesis;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.util.FileUtil;
+import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -68,7 +68,7 @@ public class IndexedBlockStoreTest {
         File file = new File(scenario1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
         config = new TestSystemProperties();
-        Block genesis = Genesis.getInstance(config);
+        Block genesis = RskTestFactory.getGenesisInstance(config);
         blocks.add(genesis);
         cumDifficulty = cumDifficulty.add(genesis.getCumulativeDifficulty());
 
@@ -737,7 +737,7 @@ public class IndexedBlockStoreTest {
         try {
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore(indexMap, blocksDB, indexDB);
 
-            Block genesis = Genesis.getInstance(config);
+            Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(genesis.getHash().getBytes(), 1, 100);
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
@@ -766,7 +766,7 @@ public class IndexedBlockStoreTest {
 
             // calc all TDs
             Map<Keccak256, BlockDifficulty> tDiffs = new HashMap<>();
-            td = Genesis.getInstance(config).getCumulativeDifficulty();
+            td = RskTestFactory.getGenesisInstance(config).getCumulativeDifficulty();
             for (Block block : bestLine){
                 td = td.add(block.getCumulativeDifficulty());
                 tDiffs.put(block.getHash(), td);
@@ -841,7 +841,7 @@ public class IndexedBlockStoreTest {
         try {
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore(indexMap, blocksDB, indexDB);
 
-            Block genesis = Genesis.getInstance(config);
+            Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(genesis.getHash().getBytes(), 1, 100);
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
@@ -895,7 +895,7 @@ public class IndexedBlockStoreTest {
         try {
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore(indexMap, blocksDB, indexDB);
 
-            Block genesis = Genesis.getInstance(config);
+            Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(genesis.getHash().getBytes(), 1, 100);
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
