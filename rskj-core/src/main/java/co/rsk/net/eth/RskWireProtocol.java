@@ -31,7 +31,6 @@ import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.core.*;
-import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.handler.EthHandler;
@@ -78,16 +77,15 @@ public class RskWireProtocol extends EthHandler {
     private final MessageRecorder messageRecorder;
     private final Genesis genesis;
 
-    public RskWireProtocol(RskSystemProperties config, PeerScoringManager peerScoringManager, MessageHandler messageHandler, Blockchain blockchain, CompositeEthereumListener ethereumListener) {
+    public RskWireProtocol(RskSystemProperties config, PeerScoringManager peerScoringManager, MessageHandler messageHandler, Blockchain blockchain, CompositeEthereumListener ethereumListener, Genesis genesis, MessageRecorder messageRecorder) {
         super(blockchain, config, ethereumListener, V62);
         this.peerScoringManager = peerScoringManager;
         this.messageHandler = messageHandler;
         this.blockchain = blockchain;
         this.config = config;
         this.messageSender = new EthMessageSender(this);
-        this.messageRecorder = config.getMessageRecorder();
-        this.genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
-
+        this.messageRecorder = messageRecorder;
+        this.genesis = genesis;
     }
 
     @Override
@@ -248,9 +246,8 @@ public class RskWireProtocol extends EthHandler {
         BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
         // Original status
-        Genesis loadGenesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
         org.ethereum.net.eth.message.StatusMessage msg = new org.ethereum.net.eth.message.StatusMessage(protocolVersion, networkId,
-                ByteUtil.bigIntegerToBytes(totalDifficulty.asBigInteger()), bestBlock.getHash().getBytes(), loadGenesis.getHash().getBytes());
+                ByteUtil.bigIntegerToBytes(totalDifficulty.asBigInteger()), bestBlock.getHash().getBytes(), genesis.getHash().getBytes());
         sendMessage(msg);
 
         // RSK new protocol send status
