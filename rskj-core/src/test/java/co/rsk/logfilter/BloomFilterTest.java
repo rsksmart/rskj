@@ -29,7 +29,7 @@ public class BloomFilterTest {
     }
 
     @Test
-    public void orBloomFitersWithSameBitOn() {
+    public void orBloomFiltersWithSameBitOn() {
         BloomFilter bloomFilter1 = new BloomFilter();
         BloomFilter bloomFilter2 = new BloomFilter();
 
@@ -51,7 +51,7 @@ public class BloomFilterTest {
     }
 
     @Test
-    public void orBloomFitersWithDifferentBitsOn() {
+    public void orBloomFiltersWithDifferentBitsOn() {
         BloomFilter bloomFilter1 = new BloomFilter();
         BloomFilter bloomFilter2 = new BloomFilter();
 
