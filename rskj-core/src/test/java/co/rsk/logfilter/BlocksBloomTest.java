@@ -62,7 +62,7 @@ public class BlocksBloomTest {
 
         Assert.assertArrayEquals(bloom1.getData(), blocksBloom.getBloom().getData());
     }
-    
+
     @Test
     public void addTwoNonConsecutiveBlocksToBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
