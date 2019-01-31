@@ -27,6 +27,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
+import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -127,7 +128,7 @@ public class StateTestRunner {
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
@@ -146,7 +147,8 @@ public class StateTestRunner {
                                 blockFactory,
                                 new ProgramInvokeFactoryImpl()
                         ),
-                        stateRootHandler
+                        stateRootHandler,
+                        config.getActivationConfig()
                 ),
                 stateRootHandler
         );
@@ -202,7 +204,7 @@ public class StateTestRunner {
 
     public static final byte[] ZERO32_BYTE_ARRAY = new byte[32];
     public Block build(Env env) {
-        return new Block(
+        return blockFactory.newBlock(
                 blockFactory.newHeader(
                         // Don't use the empty parent hash because it's used to log and
                         // when log entries are printed with empty parent hash it throws
@@ -214,7 +216,8 @@ public class StateTestRunner {
                         new byte[32], Coin.ZERO, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, null, 0
                 ),
                 Collections.emptyList(),
-                Collections.emptyList()
+                Collections.emptyList(),
+                false
         );
     }
 }

@@ -24,9 +24,11 @@ import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.db.RepositoryImplForTesting;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.trie.Trie;
 import org.apache.commons.lang3.tuple.Triple;
 import org.ethereum.core.Repository;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.After;
 import org.junit.Before;
@@ -82,7 +84,7 @@ public class RepositoryBlockStoreTest {
         // Read original store
         InputStream fileInputStream = ClassLoader.getSystemResourceAsStream("peg/RepositoryBlockStore_data.ser");
         ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-        Repository repository = new RepositoryImplForTesting();
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie()));
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         RepositoryBlockStore store = new RepositoryBlockStore(bridgeConstants, repository, PrecompiledContracts.BRIDGE_ADDR);
         for (int i = 0; i < 614; i++) {

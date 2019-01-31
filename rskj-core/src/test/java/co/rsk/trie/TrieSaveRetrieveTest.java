@@ -31,7 +31,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         for (int k = 0; k < 1000; k++)
             trie = trie.put(k + "", (k + "").getBytes());
@@ -56,7 +56,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         for (int k = 0; k < 1000; k++)
             trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
@@ -81,7 +81,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         for (int k = 0; k < 1000; k++)
             trie = trie.put(k + "", (k + "").getBytes());
@@ -106,7 +106,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         for (int k = 0; k < 1000; k++)
             trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
@@ -131,7 +131,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         for (int k = 1000; k > 0; k--)
             trie = trie.put(k + "", (k + "").getBytes());
@@ -156,7 +156,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         for (int k = 1000; k > 0; k--)
             trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
@@ -181,7 +181,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         for (int k = 1000; k > 0; k--)
             trie = trie.put(k + "", (k + "").getBytes());
@@ -206,7 +206,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         for (int k = 1000; k > 0; k--)
             trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
@@ -231,7 +231,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false).put("foo", "bar".getBytes())
+        Trie trie = new Trie(store).put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes())
                 .put("answer", "42".getBytes());
 
@@ -246,7 +246,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false).put("foo", "bar".getBytes())
+        Trie trie = new Trie(store).put("foo", "bar".getBytes())
                 .put("bar", TrieValueTest.makeValue(100))
                 .put("answer", TrieValueTest.makeValue(200));
 
@@ -261,7 +261,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false).put("foo", "bar".getBytes())
+        Trie trie = new Trie(store).put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes())
                 .put("answer", "42".getBytes());
 
@@ -283,7 +283,7 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store, false).put("foo", "bar".getBytes())
+        Trie trie = new Trie(store).put("foo", "bar".getBytes())
                 .put("bar", TrieValueTest.makeValue(100))
                 .put("answer", TrieValueTest.makeValue(200));
 

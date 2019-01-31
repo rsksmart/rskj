@@ -19,6 +19,7 @@
 
 package co.rsk.core;
 
+import co.rsk.db.StateRootHandler;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -31,11 +32,16 @@ import org.ethereum.vm.program.ProgramResult;
  */
 public class ReversibleTransactionExecutor {
 
-    private final Repository track;
+    private final Repository repository;
+    private final StateRootHandler stateRootHandler;
     private final TransactionExecutorFactory transactionExecutorFactory;
 
-    public ReversibleTransactionExecutor(Repository track, TransactionExecutorFactory transactionExecutorFactory) {
-        this.track = track;
+    public ReversibleTransactionExecutor(
+            Repository repository,
+            StateRootHandler stateRootHandler,
+            TransactionExecutorFactory transactionExecutorFactory) {
+        this.repository = repository;
+        this.stateRootHandler = stateRootHandler;
         this.transactionExecutorFactory = transactionExecutorFactory;
     }
 
@@ -48,9 +54,10 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             RskAddress fromAddress) {
-        Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
+        byte[] stateRoot = stateRootHandler.translate(executionBlock.getHeader()).getBytes();
+        Repository snapshot = repository.getSnapshotTo(stateRoot).startTracking();
 
-        byte[] nonce = repository.getNonce(fromAddress).toByteArray();
+        byte[] nonce = snapshot.getNonce(fromAddress).toByteArray();
         UnsignedTransaction tx = new UnsignedTransaction(
                 nonce,
                 gasPrice,
@@ -62,7 +69,7 @@ public class ReversibleTransactionExecutor {
         );
 
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(tx, 0, coinbase, repository, executionBlock, 0)
+                .newInstance(tx, 0, coinbase, snapshot, executionBlock, 0)
                 .setLocalCall(true);
 
         executor.init();

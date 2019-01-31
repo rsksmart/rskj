@@ -21,12 +21,14 @@ package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.db.RepositoryImplForTesting;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.trie.Trie;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -60,7 +62,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     public ProgramInvokeMockImpl(byte[] contractCode, RskAddress contractAddress) {
-        this.repository = new RepositoryImplForTesting();
+        this.repository = new MutableRepository(new MutableTrieImpl(new Trie()));
 
         this.repository.createAccount(ownerAddress);
         //Defaults to defaultContractAddress constant defined in this mock

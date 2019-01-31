@@ -60,7 +60,7 @@ public class BlockTest {
                     "'e4157b34ea9615cfbde6b4fda419828124b70c78': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
                     "}";
 
-    private Keccak256 GENESIS_STATE_ROOT = new Keccak256("59c6704f11a243a47899e79ea038c5da46965a81ae75b710d57fab10f82c086f");
+    private Keccak256 GENESIS_STATE_ROOT = new Keccak256("53e6153aca120147697cfeb5e6769996f747af9a216b98072996d56cf73297a4");
 
     static {
         TEST_GENESIS = TEST_GENESIS.replace("'", "\"");
@@ -74,7 +74,8 @@ public class BlockTest {
 
         Set keys = genesisMap.keySet();
 
-        Trie state = new Trie(null, true);
+        // Tries are not secure anymore. What is secure is the repository that contains them.
+        Trie state = new Trie(null);
 
         for (Object key : keys) {
 
@@ -92,7 +93,8 @@ public class BlockTest {
         }
 
         logger.info("root: {}", state.getHash());
-        assertEquals(GENESIS_STATE_ROOT, state.getHash());
+        // TODO(mc): the new encoding is different so the genesis hash is different too
+        assertEquals(GENESIS_STATE_ROOT, state.getHashOrchid(true));
     }
 
 }

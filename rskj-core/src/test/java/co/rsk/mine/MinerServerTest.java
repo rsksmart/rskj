@@ -27,6 +27,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -59,6 +60,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     private final DifficultyCalculator difficultyCalculator;
     private Blockchain blockchain;
     private Repository repository;
+    private StateRootHandler stateRootHandler;
     private BlockStore blockStore;
     private TransactionPool transactionPool;
     private BlockFactory blockFactory;
@@ -79,6 +81,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         };
         blockchain = factory.getBlockchain();
         repository = factory.getRepository();
+        stateRootHandler = factory.getStateRootHandler();
         blockStore = factory.getBlockStore();
         transactionPool = factory.getTransactionPool();
         blockFactory = factory.getBlockFactory();
@@ -95,6 +98,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         Repository track = Mockito.mock(Repository.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
+        Mockito.doReturn(repository.getMutableTrie()).when(track).getMutableTrie();
         Mockito.when(track.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
         Mockito.when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
         Mockito.when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
@@ -118,8 +122,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         localTransactionPool,
                         difficultyCalculator,
@@ -160,8 +166,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -226,8 +234,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -277,8 +287,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -331,8 +343,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -392,8 +406,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -445,8 +461,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -503,8 +521,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -543,8 +563,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -583,8 +605,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -627,8 +651,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,

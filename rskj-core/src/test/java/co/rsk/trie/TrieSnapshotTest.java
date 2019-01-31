@@ -19,13 +19,10 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
 
@@ -33,24 +30,10 @@ import static org.mockito.Mockito.*;
  * Created by ajlopez on 05/04/2017.
  */
 public class TrieSnapshotTest {
-    private static Keccak256 emptyHash = makeEmptyHash();
-
-    @Test
-    public void getSnapshotToEmptyTrie() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new Trie(store, false);
-
-        Trie snapshot = trie.getSnapshotTo(trie.getHash());
-
-        Assert.assertNotNull(snapshot);
-        Assert.assertEquals(trie.trieSize(), snapshot.trieSize());
-        Assert.assertEquals(emptyHash, snapshot.getHash());
-    }
-
     @Test
     public void getSnapshotToTrie() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
 
@@ -76,7 +59,7 @@ public class TrieSnapshotTest {
     @Test
     public void getSnapshotToTrieWithLongValues() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         trie = trie.put("foo".getBytes(), TrieValueTest.makeValue(100));
 
@@ -99,34 +82,9 @@ public class TrieSnapshotTest {
     }
 
     @Test
-    public void getSnapshotToTrieUsingDeserializedTrie() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new Trie(store, false);
-
-        trie = trie.put("foo".getBytes(), "bar".getBytes());
-
-        Keccak256 hash = trie.getHash();
-
-        trie.save();
-
-        trie = trie.put("bar".getBytes(), "foo".getBytes());
-
-        Assert.assertNotNull(trie.get("foo".getBytes()));
-        Assert.assertNotNull(trie.get("bar".getBytes()));
-
-        Trie snapshot = Trie.deserialize(trie.serialize()).getSnapshotTo(hash);
-
-        Assert.assertNotNull(snapshot);
-        Assert.assertEquals(hash, snapshot.getHash());
-
-        Assert.assertNotNull(snapshot.get("foo".getBytes()));
-        Assert.assertNull(snapshot.get("bar".getBytes()));
-    }
-
-    @Test
     public void getSnapshotToTheSameTrie() {
         TrieStore store = mock(TrieStore.class);
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
         trie = trie.put("key", "value".getBytes());
         trie.save();
 
@@ -134,40 +92,5 @@ public class TrieSnapshotTest {
 
         Assert.assertThat(snapshotTrie, is(trie));
         verify(store, never()).retrieve(any(byte[].class));
-    }
-
-    @Test
-    public void getSnapshotToTrieUsingDeserializedTrieWithLongValues() {
-        byte[] value1 = TrieValueTest.makeValue(100);
-        byte[] value2 = TrieValueTest.makeValue(200);
-
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new Trie(store, false);
-
-        trie = trie.put("foo".getBytes(), value1);
-
-        Keccak256 hash = trie.getHash();
-
-        trie.save();
-
-        trie = trie.put("bar".getBytes(), value2);
-
-        Assert.assertNotNull(trie.get("foo".getBytes()));
-        Assert.assertArrayEquals(value1, trie.get("foo".getBytes()));
-        Assert.assertNotNull(trie.get("bar".getBytes()));
-        Assert.assertArrayEquals(value2, trie.get("bar".getBytes()));
-
-        Trie snapshot = Trie.deserialize(trie.serialize()).getSnapshotTo(hash);
-
-        Assert.assertNotNull(snapshot);
-        Assert.assertEquals(hash, snapshot.getHash());
-
-        Assert.assertNotNull(snapshot.get("foo".getBytes()));
-        Assert.assertArrayEquals(value1, snapshot.get("foo".getBytes()));
-        Assert.assertNull(snapshot.get("bar".getBytes()));
-    }
-
-    public static Keccak256 makeEmptyHash() {
-        return new Keccak256(HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
     }
 }

@@ -47,8 +47,9 @@ public class Web3ImplRpcTest {
                             new TestSystemProperties(), null, null, pm,
                             null, null, null, null,
                             null, null, repository, null, null,
-                            null, null, null,
-                            null, null, null, null, null);
+                            null, null, null, null, null,
+                            null, null, null, null
+        );
 
         Map<String, String> result = web3.rpc_modules();
 

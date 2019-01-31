@@ -22,27 +22,36 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
-import org.ethereum.db.ContractDetails;
+import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
 import org.ethereum.vm.DataWord;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.Map;
 import java.util.Set;
 
-/**
- * @author Roman Mandeleil
- * @since 08.09.2014
- */
 public interface Repository extends AccountInformationProvider {
+
+    MutableTrie getMutableTrie();
 
     /**
      * Create a new account in the database
      *
      * @param addr of the contract
      * @return newly created account state
+     *
+     * This method creates an account, but is DOES NOT create a contract.
+     * To create a contract, internally the account node is extended with a root node
+     * for storage. To avoid creating the root node for storage each time a storage cell
+     * is added, we pre-create the storage node when we know the account will become a
+     * contract. This is done in setupContract().
+     * Note that we can't use the length or existence of the code node for this,
+     * because a contract's code can be empty!
+     *
      */
     AccountState createAccount(RskAddress addr);
 
+    void setupContract(RskAddress addr);
 
     /**
      * @param addr - account to check
@@ -60,7 +69,7 @@ public interface Repository extends AccountInformationProvider {
     AccountState getAccountState(RskAddress addr);
 
     /**
-     * Deletes the account
+     * Deletes the account. This is recursive: all storage keys are deleted
      *
      * @param addr of the account
      */
@@ -73,7 +82,7 @@ public interface Repository extends AccountInformationProvider {
      */
     void hibernate(RskAddress addr);
 
-        /**
+    /**
      * Increase the account nonce of the given account by one
      *
      * @param addr of the account
@@ -81,15 +90,7 @@ public interface Repository extends AccountInformationProvider {
      */
     BigInteger increaseNonce(RskAddress addr);
 
-    /**
-     * Retrieve contract details for a given account from the database
-     *
-     * @param addr of the account
-     * @return new contract details
-     * @deprecated prefer using {@link AccountInformationProvider}
-     */
-    @Deprecated
-    ContractDetails getContractDetails(RskAddress addr);
+    void setNonce(RskAddress addr,BigInteger  nonce);
 
     /**
      * Store code associated with an account
@@ -98,6 +99,21 @@ public interface Repository extends AccountInformationProvider {
      * @param code that will be associated with this account
      */
     void saveCode(RskAddress addr, byte[] code);
+
+    /**
+     * get the code associated with an account
+     *
+     * This method returns null if there is no code at the address.
+     * It may return the empty array for contracts that have installed zero code on construction.
+     * (not checked)
+    */
+    @Override
+    @Nullable
+    byte[] getCode(RskAddress addr);
+
+     // This method can retrieve the code size without actually retrieving the code
+    // in some cases.
+    int getCodeLength(RskAddress addr);
 
     /**
      * Put a value in storage of an account at a given key
@@ -109,6 +125,9 @@ public interface Repository extends AccountInformationProvider {
     void addStorageRow(RskAddress addr, DataWord key, DataWord value);
 
     void addStorageBytes(RskAddress addr, DataWord key, byte[] value);
+
+    @Override
+    byte[] getStorageBytes(RskAddress addr, DataWord key);
 
     /**
      * Add value to the balance of an account
@@ -132,8 +151,8 @@ public interface Repository extends AccountInformationProvider {
     Repository startTracking();
 
     void flush();
-    void flushNoReconnect();
 
+    void flushNoReconnect();
 
     /**
      * Store all the temporary changes made
@@ -147,6 +166,8 @@ public interface Repository extends AccountInformationProvider {
      */
     void rollback();
 
+    void save();
+
     /**
      * Return to one of the previous snapshots
      * by moving the root.
@@ -155,19 +176,12 @@ public interface Repository extends AccountInformationProvider {
      */
     void syncToRoot(byte[] root);
 
-    void updateBatch(Map<RskAddress, AccountState> accountStates,
-                     Map<RskAddress, ContractDetails> contractDetailes);
-
+    void syncTo(Trie root);
 
     byte[] getRoot();
 
-    void loadAccount(RskAddress addr,
-                     Map<RskAddress, AccountState> cacheAccounts,
-                     Map<RskAddress, ContractDetails> cacheDetails);
-
+    // This creates a new repository. Does not modify the parent
     Repository getSnapshotTo(byte[] root);
-
-    void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 

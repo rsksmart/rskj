@@ -18,8 +18,6 @@
 
 package co.rsk.trie;
 
-import org.ethereum.datasource.KeyValueDataSource;
-
 public interface TrieStore {
     void save(Trie trie);
 
@@ -27,20 +25,5 @@ public interface TrieStore {
 
     Trie retrieve(byte[] hash);
 
-    byte[] serialize();
-
     byte[] retrieveValue(byte[] hash);
-
-    KeyValueDataSource getDataSource();
-
-    default void copyFrom(TrieStore store) {
-        this.getDataSource().copyFrom(store.getDataSource());
-    }
-
-    interface Pool {
-        TrieStore getInstanceFor(String name);
-        boolean existsInstanceFor(String name);
-        void destroyInstanceFor(String name);
-        void closeInstanceFor(String name);
-    }
 }

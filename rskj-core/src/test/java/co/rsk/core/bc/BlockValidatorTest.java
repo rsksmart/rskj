@@ -31,6 +31,7 @@ import co.rsk.validators.BlockValidator;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
@@ -87,10 +88,9 @@ public class BlockValidatorTest {
 
     @Test
     public void validateBlockWithTransaction() {
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain(new BlockExecutorTest.SimpleEthereumListener());
+        BlockChainImpl blockChain = new BlockChainBuilder().setListener(new BlockExecutorTest.SimpleEthereumListener()).build();
 
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
-        genesis.seal();
+        Block genesis = blockChain.getBestBlock();
 
         Block parent = new BlockBuilder().parent(genesis).build();
         parent.seal();
@@ -100,7 +100,6 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder().parent(parent).transactions(txs).build();;
         block.seal();
 
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(parent));
 
         BlockValidator validator = createValidator(blockChain.getBlockStore());
@@ -482,10 +481,10 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
 
         Block genesis = blockGenerator.getGenesisBlock();
-        Block uncle1a = blockGenerator.createChildBlock(new Block(
+        Block uncle1a = blockGenerator.createChildBlock(blockFactory.newBlock(
                 blockFactory.newHeader(
                         null, null, TestUtils.randomAddress().getBytes(),
-                        null, Block.getTxTrie(null).getHash().getBytes(), null,
+                        null, HashUtil.EMPTY_TRIE_HASH, null,
                         null, TEST_DIFFICULTY.getBytes(), 0,
                         null, 0L, 0L, new byte[]{}, Coin.ZERO,
                         null, null, null, Coin.valueOf(10).getBytes(), 0
@@ -743,7 +742,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidTxNonce() {
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain(new BlockExecutorTest.SimpleEthereumListener());
+        BlockChainImpl blockChain = new BlockChainBuilder().setListener(new BlockExecutorTest.SimpleEthereumListener()).build();
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
 

@@ -19,23 +19,19 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,12 +184,14 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private ImportResult internalTryToConnect(Block block) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BEFORE_BLOCK_EXEC);
+
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
                 !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                          block.getShortHash(),
                          block.getNumber());
-
+            profiler.stop(metric);
             return ImportResult.EXIST;
         }
 
@@ -222,12 +220,14 @@ public class BlockChainImpl implements Blockchain {
             parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
             if (parent == null) {
+                profiler.stop(metric);
                 return ImportResult.NO_PARENT;
             }
 
             parentTotalDifficulty = blockStore.getTotalDifficultyForHash(parent.getHash().getBytes());
 
             if (parentTotalDifficulty == null || parentTotalDifficulty.equals(BlockDifficulty.ZERO)) {
+                profiler.stop(metric);
                 return ImportResult.NO_PARENT;
             }
         }
@@ -237,9 +237,11 @@ public class BlockChainImpl implements Blockchain {
             long blockNumber = block.getNumber();
             logger.warn("Invalid block with number: {}", blockNumber);
             panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, block.getHash()));
+            profiler.stop(metric);
             return ImportResult.INVALID_BLOCK;
         }
 
+        profiler.stop(metric);
         BlockResult result = null;
 
         if (parent != null) {
@@ -254,21 +256,27 @@ public class BlockChainImpl implements Blockchain {
 
             logger.trace("execute done");
 
+            metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
             boolean isValid = noValidation ? true : blockExecutor.validate(block, result);
 
             logger.trace("validate done");
 
             if (!isValid) {
+                profiler.stop(metric);
                 return ImportResult.INVALID_BLOCK;
             }
+            // Now that we know it's valid, we can commit the changes made by the block
+            // to the parent's repository.
 
             long totalTime = System.nanoTime() - saveTime;
             logger.trace("block: num: [{}] hash: [{}], executed after: [{}]nano", block.getNumber(), block.getShortHash(), totalTime);
 
             // the block is valid at this point
-            stateRootHandler.register(block.getHeader(), new Keccak256(result.getStateRoot()));
+            stateRootHandler.register(block.getHeader(), result.getFinalState());
+            profiler.stop(metric);
         }
 
+        metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
         // the new accumulated difficulty
         BlockDifficulty totalDifficulty = parentTotalDifficulty.add(block.getCumulativeDifficulty());
         logger.trace("TD: updated to {}", totalDifficulty);
@@ -304,6 +312,7 @@ public class BlockChainImpl implements Blockchain {
                 logger.info("*** Last block added [ #{} ]", block.getNumber());
             }
 
+            profiler.stop(metric);
             return ImportResult.IMPORTED_BEST;
         }
         // It is not the new best block
@@ -328,7 +337,7 @@ public class BlockChainImpl implements Blockchain {
             }
 
             logger.trace("Block not imported {} {}", block.getNumber(), block.getShortHash());
-
+            profiler.stop(metric);
             return ImportResult.IMPORTED_NOT_BEST;
         }
     }
@@ -349,8 +358,7 @@ public class BlockChainImpl implements Blockchain {
         synchronized (accessLock) {
             status = new BlockChainStatus(block, totalDifficulty);
             blockStore.saveBlock(block, totalDifficulty, true);
-            Keccak256 root = stateRootHandler.translate(block.getHeader());
-            repository.syncToRoot(root.getBytes());
+            repository.syncToRoot(stateRootHandler.translate(block.getHeader()).getBytes());
         }
     }
 
@@ -449,12 +457,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
-        synchronized (accessLock) {
-            storeBlock(block, totalDifficulty, true);
-            status = new BlockChainStatus(block, totalDifficulty);
-            Keccak256 root = stateRootHandler.translate(block.getHeader());
-            repository.syncToRoot(root.getBytes());
-        }
+        setStatus(block, totalDifficulty);
     }
 
     private void extendAlternativeBlockChain(Block block, BlockDifficulty totalDifficulty) {
@@ -497,10 +500,6 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private boolean isValid(Block block) {
-        if (block.isGenesis()) {
-            return true;
-        }
-
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_VALIDATION);
         boolean validation =  blockValidator.isValid(block);
         profiler.stop(metric);
@@ -524,23 +523,5 @@ public class BlockChainImpl implements Blockchain {
         }
         nFlush++;
         nFlush = nFlush % flushNumberOfBlocks;
-    }
-
-    public static byte[] calcTxTrie(List<Transaction> transactions) {
-        return Block.getTxTrie(transactions).getHash().getBytes();
-    }
-
-    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
-        Trie receiptsTrie = new Trie();
-
-        if (receipts == null || receipts.isEmpty()) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
-        }
-
-        return receiptsTrie.getHash().getBytes();
     }
 }

@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -132,7 +133,8 @@ class RemascTestRunner {
                         blockFactory,
                         programInvokeFactory
                 ),
-                builder.getStateRootHandler()
+                builder.getStateRootHandler(),
+                builder.getConfig().getActivationConfig()
         );
 
         for(int i = 0; i <= this.initialHeight; i++) {
@@ -176,6 +178,10 @@ class RemascTestRunner {
 
             System.out.println(result);
         }
+
+        this.blockchain.getRepository().syncToRoot(
+                builder.getStateRootHandler().translate(blockchain.getBestBlock().getHeader()).getBytes()
+        );
     }
 
     public Blockchain getBlockChain() {
@@ -260,7 +266,9 @@ class RemascTestRunner {
                         parentBlock, coinbase, genesis, txs, difficultyAsBD, paidFees, uncles, blockHash
                 ),
                 txs,
-                uncles
+                uncles,
+                true,
+                false
         );
     }
 
@@ -272,8 +280,8 @@ class RemascTestRunner {
                 BlockDifficulty finalDifficulty, Coin paidFees, List<BlockHeader> uncles, Keccak256 blockHash) {
             super(
                     parentBlock.getHash().getBytes(), RemascTestRunner.EMPTY_LIST_HASH, coinbase,
-                    genesis.getStateRoot(), BlockChainImpl.calcTxTrie(txs), HashUtil.EMPTY_TRIE_HASH,
-                    new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,
+                    genesis.getStateRoot(), BlockHashesHelper.getTxTrieRoot(txs, true),
+                    HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,
                     parentBlock.getGasLimit(), parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
                     paidFees, null, null, null,
                     Coin.valueOf(10), uncles.size(), false, true

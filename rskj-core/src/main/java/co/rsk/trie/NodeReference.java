@@ -17,17 +17,23 @@
  */
 package co.rsk.trie;
 
+import co.rsk.core.types.ints.Uint8;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.crypto.Keccak256Helper;
 
 import javax.annotation.Nullable;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
 
 public class NodeReference {
+    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 40;
+
     private final TrieStore store;
 
     private Trie lazyNode;
     private Keccak256 lazyHash;
+    private byte[] lazySerialized;
 
     public NodeReference(TrieStore store, @Nullable Trie node, @Nullable Keccak256 hash) {
         this.store = store;
@@ -88,6 +94,66 @@ public class NodeReference {
 
         lazyHash = lazyNode.getHash();
         return Optional.of(lazyHash);
+    }
+
+    /**
+     * The hash or empty if this is an empty reference.
+     * If the hash is not present but its node is known, it will be calculated.
+     */
+    public Optional<Keccak256> getHashOrchid(boolean isSecure) {
+        return getNode().map(trie -> trie.getHashOrchid(isSecure));
+    }
+
+    @SuppressWarnings("squid:S2384") // private method knows it can avoid copying the byte[] field
+    private byte[] getSerialized() {
+        if (lazySerialized == null) {
+            // only called when lazyNode != null
+            lazySerialized = lazyNode.toMessage();
+        }
+
+        return lazySerialized;
+    }
+
+    public boolean isEmbeddable() {
+        // if the node is embeddable then this reference must have a reference in memory
+        if (lazyNode == null || !lazyNode.isTerminal()) {
+            return false;
+        }
+
+        return getSerialized().length <= MAX_EMBEDDED_NODE_SIZE_IN_BYTES;
+    }
+
+    public int serializedLength() {
+        if (!isEmpty()) {
+            if (isEmbeddable()) {
+                return getSerialized().length + 1;
+            }
+
+            return Keccak256Helper.DEFAULT_SIZE_BYTES;
+        }
+
+        return 0;
+    }
+
+    public void serializeInto(ByteBuffer buffer) {
+        if (!isEmpty()) {
+            if (isEmbeddable()) {
+                byte[] serialized = getSerialized();
+                buffer.put(new Uint8(serialized.length).encode());
+                buffer.put(serialized);
+            } else {
+                byte[] hash = getHash().map(Keccak256::getBytes)
+                        .orElseThrow(() -> new IllegalStateException("The hash should always exists at this point"));
+                buffer.put(hash);
+            }
+        }
+    }
+
+    /**
+     * @return the tree size in bytes as specified in RSKIP107 plus the actual serialized size
+     */
+    public long referenceSize() {
+        return getNode().map(trie -> trie.getTreeSize().value).orElse(0L) + serializedLength();
     }
 
     public static NodeReference empty() {
