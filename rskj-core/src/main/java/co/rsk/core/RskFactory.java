@@ -24,7 +24,10 @@ import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.*;
 import co.rsk.net.*;
+import co.rsk.net.eth.MessageFilter;
+import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
+import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -43,9 +46,11 @@ import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.genesis.BlockChainLoader;
+import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.ReceiptStore;
@@ -77,7 +82,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.Properties;
 
@@ -296,12 +307,51 @@ public class RskFactory {
     }
 
     @Bean
+    public Genesis getGenesis(RskSystemProperties config) {
+        return GenesisLoader.loadGenesis(
+                config,
+                config.genesisInfo(),
+                config.getBlockchainConfig().getCommonConstants().getInitialNonce(),
+                true
+        );
+    }
+
+    @Bean
+    public MessageRecorder getMessageRecorder(RskSystemProperties config) {
+        if (!config.hasMessageRecorderEnabled()) {
+            return null;
+        }
+
+        String database = config.databaseDir();
+        String filename = "messages";
+        Path filePath = Paths.get(database).isAbsolute() ? Paths.get(database, filename) :
+                Paths.get(System.getProperty("user.dir"), database, filename);
+
+        String fullFilename = filePath.toString();
+        MessageFilter filter = new MessageFilter(config.getMessageRecorderCommands());
+
+        try {
+            return new WriterMessageRecorder(
+                    new BufferedWriter(
+                            new OutputStreamWriter(
+                                    new FileOutputStream(fullFilename), StandardCharsets.UTF_8)), filter);
+        }
+        catch (IOException ex) {
+            logger.error("Exception creating message recorder: ", ex);
+            return null;
+        }
+    }
+
+    @Bean
     public EthHandlerFactoryImpl.RskWireProtocolFactory getRskWireProtocolFactory(PeerScoringManager peerScoringManager,
                                                                                   MessageHandler messageHandler,
                                                                                   Blockchain blockchain,
                                                                                   RskSystemProperties config,
-                                                                                  CompositeEthereumListener ethereumListener){
-        return () -> new RskWireProtocol(config, peerScoringManager, messageHandler, blockchain, ethereumListener);
+                                                                                  CompositeEthereumListener ethereumListener,
+                                                                                  Genesis genesis,
+                                                                                  MessageRecorder messageRecorder){
+        return () -> new RskWireProtocol(config, peerScoringManager, messageHandler, blockchain, ethereumListener,
+                                         genesis, messageRecorder);
     }
 
     @Bean

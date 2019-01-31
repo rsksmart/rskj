@@ -38,7 +38,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -59,6 +58,7 @@ public class BlockChainLoader {
     private final TransactionPool transactionPool;
     private final EthereumListener listener;
     private final BlockValidator blockValidator;
+    private final Genesis genesis;
 
     @Autowired
     public BlockChainLoader(
@@ -68,7 +68,8 @@ public class BlockChainLoader {
             ReceiptStore receiptStore,
             TransactionPool transactionPool,
             EthereumListener listener,
-            BlockValidator blockValidator) {
+            BlockValidator blockValidator,
+            Genesis genesis) {
 
         this.config = config;
         this.blockStore = blockStore;
@@ -77,6 +78,7 @@ public class BlockChainLoader {
         this.transactionPool = transactionPool;
         this.listener = listener;
         this.blockValidator = blockValidator;
+        this.genesis = genesis;
     }
 
     public BlockChainImpl loadBlockchain() {
@@ -119,9 +121,6 @@ public class BlockChainLoader {
         Block bestBlock = blockStore.getBestBlock();
         if (bestBlock == null) {
             logger.info("DB is empty - adding Genesis");
-
-            BigInteger initialNonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
-            Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), initialNonce, true);
             for (RskAddress addr : genesis.getPremine().keySet()) {
                 repository.createAccount(addr);
                 InitialAddressState initialAddressState = genesis.getPremine().get(addr);

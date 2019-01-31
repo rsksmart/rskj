@@ -30,6 +30,7 @@ import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -348,7 +349,7 @@ public class RepositoryImplOriginalTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Genesis genesis = (Genesis)Genesis.getInstance(config);
+        Genesis genesis = RskTestFactory.getGenesisInstance(config);
         for (RskAddress addr : genesis.getPremine().keySet()) {
             repository.createAccount(addr);
             repository.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
@@ -357,7 +358,7 @@ public class RepositoryImplOriginalTest {
         track.commit();
 
         // To Review: config Genesis should have an State Root according to the new trie algorithm
-        // assertArrayEquals(Genesis.getInstance(SystemProperties.CONFIG).getStateRoot(), repository.getRoot());
+        // assertArrayEquals(Genesis.getGenesisInstance(SystemProperties.CONFIG).getStateRoot(), repository.getRoot());
     }
 
     @Test
