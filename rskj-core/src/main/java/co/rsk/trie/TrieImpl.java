@@ -29,10 +29,6 @@ import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -64,10 +60,10 @@ public class TrieImpl implements Trie {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final String PANIC_TOPIC = "newtrie";
     private static final String INVALID_ARITY = "Invalid arity";
-    private static final String ERROR_CREATING_TRIE = "Error creating trie from message";
     private static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash %s";
 
     private static final int MESSAGE_HEADER_LENGTH = 2 + Short.BYTES * 2;
+    private static final int LAST_BYTE_ONLY_MASK = 0x000000ff;
 
     // all zeroed, default hash for empty nodes
     private static Keccak256 emptyHash = makeEmptyHash();
@@ -153,91 +149,97 @@ public class TrieImpl implements Trie {
         return fromMessage(message, 0, message.length, store);
     }
 
+    // this methods reads a short as dataInputStream + byteArrayInputStream
     private static TrieImpl fromMessage(byte[] message, int position, int msglength, TrieStore store) {
         if (message == null) {
             return null;
         }
+        int current = position;
+        int arity = message[current];
+        current += Byte.BYTES;
 
-        ByteArrayInputStream bstream = new ByteArrayInputStream(message, position, msglength);
-        DataInputStream istream = new DataInputStream(bstream);
-
-        try {
-            int arity = istream.readByte();
-
-            if (arity != ARITY) {
-                throw new IllegalArgumentException(INVALID_ARITY);
-            }
-
-            int flags = istream.readByte();
-            boolean isSecure = (flags & 0x01) == 1;
-            boolean hasLongVal = (flags & 0x02) == 2;
-            int bhashes = istream.readShort();
-            int lshared = istream.readShort();
-
-            int nhashes = 0;
-            int lencoded = TrieImpl.getEncodedPathLength(lshared);
-
-            byte[] encodedSharedPath = null;
-
-            if (lencoded > 0) {
-                encodedSharedPath = new byte[lencoded];
-                if (istream.read(encodedSharedPath) != lencoded) {
-                    throw new EOFException();
-                }
-            }
-
-            Keccak256[] hashes = new Keccak256[arity];
-
-            for (int k = 0; k < arity; k++) {
-                if ((bhashes & (1 << k)) == 0) {
-                    continue;
-                }
-
-                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-
-                if (istream.read(valueHash) != Keccak256Helper.DEFAULT_SIZE_BYTES) {
-                    throw new EOFException();
-                }
-
-                hashes[k] = new Keccak256(valueHash);
-                nhashes++;
-            }
-
-            int offset = MESSAGE_HEADER_LENGTH + lencoded + nhashes * Keccak256Helper.DEFAULT_SIZE_BYTES;
-            byte[] value = null;
-
-            if (hasLongVal) {
-                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-
-                if (istream.read(valueHash) != Keccak256Helper.DEFAULT_SIZE_BYTES) {
-                    throw new EOFException();
-                }
-
-                value = store.retrieveValue(valueHash);
-            }
-            else {
-                int lvalue = msglength - offset;
-
-                if (lvalue > 0) {
-                    value = new byte[lvalue];
-                    if (istream.read(value) != lvalue) {
-                        throw new EOFException();
-                    }
-                }
-            }
-
-            TrieImpl trie = new TrieImpl(encodedSharedPath, lshared, value, null, hashes, store).withSecure(isSecure);
-
-            if (store != null) {
-                trie.saved = true;
-            }
-
-            return trie;
-        } catch (IOException ex) {
-            logger.error(ERROR_CREATING_TRIE, ex);
-            panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE +": " + ex.getMessage());
-            throw new RuntimeException(ERROR_CREATING_TRIE, ex);
+        if (arity != ARITY) {
+            throw new IllegalArgumentException(INVALID_ARITY);
         }
+
+        int flags = message[current];
+        current += Byte.BYTES;
+
+        boolean isSecure = (flags & 0x01) == 1;
+        boolean hasLongVal = (flags & 0x02) == 2;
+        int bhashes = readShort(message, current);
+        current += Short.BYTES;
+        int lshared = readShort(message, current);
+        current += Short.BYTES;
+
+        int nhashes = 0;
+        int lencoded = TrieImpl.getEncodedPathLength(lshared);
+
+        byte[] encodedSharedPath = null;
+
+        if (lencoded > 0) {
+            if (message.length - current < lencoded) {
+                throw new IllegalArgumentException(String.format(
+                        "Left message is too short for encoded shared path expected:%d actual:%d total:%d",
+                        lencoded, message.length - current, message.length));
+            }
+            encodedSharedPath = Arrays.copyOfRange(message, current, current + lencoded);
+            current += lencoded;
+        }
+
+        int keccakSize = Keccak256Helper.DEFAULT_SIZE_BYTES;
+        Keccak256[] hashes = new Keccak256[arity];
+
+        for (int k = 0; k < arity; k++) {
+            if ((bhashes & (1 << k)) == 0) {
+                continue;
+            }
+
+            if (message.length - current < keccakSize) {
+                throw new IllegalArgumentException(String.format(
+                        "Left message is too short for hash expected:%d actual:%d total:%d",
+                        keccakSize, message.length - current, message.length));
+            }
+
+            byte[] valueHash = Arrays.copyOfRange(message, current, current + keccakSize);
+            current += keccakSize;
+            hashes[k] = new Keccak256(valueHash);
+            nhashes++;
+        }
+
+        int offset = MESSAGE_HEADER_LENGTH + lencoded + nhashes * keccakSize;
+        byte[] value = null;
+
+        if (hasLongVal) {
+            if (message.length - current < keccakSize) {
+                throw new IllegalArgumentException(String.format(
+                        "Left message is too short for value hash expected:%d actual:%d total:%d",
+                        keccakSize, message.length - current, message.length));
+            }
+            byte[] valueHash = Arrays.copyOfRange(message, current, current + keccakSize);
+            // current += keccakSize; current position is not more needed
+
+            value = store.retrieveValue(valueHash);
+        } else {
+            int lvalue = msglength - offset;
+            if (lvalue > 0) {
+                if (message.length - current  < lvalue) {
+                    throw new IllegalArgumentException(String.format(
+                            "Left message is too short for value expected:%d actual:%d total:%d",
+                            lvalue, message.length - current, message.length));
+                }
+                value = Arrays.copyOfRange(message, current, current + lvalue);
+                //current += lvalue; current position is not more needed
+            }
+        }
+
+        TrieImpl trie = new TrieImpl(encodedSharedPath, lshared, value, null, hashes, store).withSecure(isSecure);
+
+        if (store != null) {
+            trie.saved = true;
+        }
+
+        return trie;
     }
 
     /**
@@ -681,26 +683,17 @@ public class TrieImpl implements Trie {
      * @return full trie deserialized from byte array
      */
     public static Trie deserialize(byte[] bytes) {
-        ByteArrayInputStream bstream = new ByteArrayInputStream(bytes);
-        DataInputStream dstream = new DataInputStream(bstream);
-
-        try {
-            dstream.readShort();
-
-            byte[] root = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-
-            if (dstream.read(root) != Keccak256Helper.DEFAULT_SIZE_BYTES) {
-                throw new EOFException();
-            }
-
-            TrieStoreImpl store = TrieStoreImpl.deserialize(bytes, Short.BYTES + Keccak256Helper.DEFAULT_SIZE_BYTES, bytes.length - Short.BYTES - Keccak256Helper.DEFAULT_SIZE_BYTES, new HashMapDB());
-            return internalRetrieve(store, root);
+        final int keccakSize = Keccak256Helper.DEFAULT_SIZE_BYTES;
+        int expectedSize = Short.BYTES + keccakSize;
+        if (expectedSize > bytes.length) {
+            throw new IllegalArgumentException(
+                    String.format("Expected size is: %d actual size is %d", expectedSize, bytes.length));
         }
-        catch (IOException ex) {
-            logger.error(ERROR_CREATING_TRIE, ex);
-            panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE +": " + ex.getMessage());
-            throw new RuntimeException(ERROR_CREATING_TRIE, ex);
-        }
+
+        byte[] root = Arrays.copyOfRange(bytes, Short.BYTES, expectedSize);
+        TrieStore store = TrieStoreImpl.deserialize(bytes, expectedSize, new HashMapDB());
+
+        return internalRetrieve(store, root);
     }
 
     /**
@@ -1053,5 +1046,15 @@ public class TrieImpl implements Trie {
      */
     private static Keccak256 makeEmptyHash() {
         return new Keccak256(Keccak256Helper.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
+    }
+
+    private static short readShort(byte[] bytes, int position) {
+        int ch1 = bytes[position] & LAST_BYTE_ONLY_MASK;
+        int ch2 = bytes[position + 1] & LAST_BYTE_ONLY_MASK;
+        if ((ch1 | ch2) < 0) {
+            throw new IllegalArgumentException(
+                    String.format("On position %d there are invalid bytes for a short value %s %s", position, ch1, ch2));
+        }
+        return (short)((ch1 << 8) + (ch2));
     }
 }
