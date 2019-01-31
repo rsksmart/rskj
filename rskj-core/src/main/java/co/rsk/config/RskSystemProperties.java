@@ -20,9 +20,6 @@ package co.rsk.config;
 
 import co.rsk.core.RskAddress;
 import co.rsk.db.PruneConfiguration;
-import co.rsk.net.eth.MessageFilter;
-import co.rsk.net.eth.MessageRecorder;
-import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
@@ -31,17 +28,9 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,8 +40,6 @@ import java.util.List;
  * Created by ajlopez on 3/3/2016.
  */
 public class RskSystemProperties extends SystemProperties {
-    private static final Logger logger = LoggerFactory.getLogger("config");
-
     /** while timeout period is lower than clean period it doesn't affect much since
     requests will be checked after a clean period.
      **/
@@ -68,8 +55,6 @@ public class RskSystemProperties extends SystemProperties {
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
-
-    private MessageRecorder messageRecorder;
 
     private List<ModuleDescription> moduleDescriptions;
 
@@ -306,39 +291,6 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         return configFromFiles.getStringList("messages.recorder.commands");
-    }
-
-    public MessageRecorder getMessageRecorder() {
-        if (messageRecorder != null) {
-            return messageRecorder;
-        }
-
-        if (!hasMessageRecorderEnabled()) {
-            return null;
-        }
-
-        String database = this.databaseDir();
-        String filename = "messages";
-        Path filePath;
-
-        if (Paths.get(database).isAbsolute()) {
-            filePath = Paths.get(database, filename);
-        } else {
-            filePath = Paths.get(System.getProperty("user.dir"), database, filename);
-        }
-
-        String fullFilename = filePath.toString();
-
-        MessageFilter filter = new MessageFilter(this.getMessageRecorderCommands());
-
-        try {
-            messageRecorder = new WriterMessageRecorder(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fullFilename), StandardCharsets.UTF_8)), filter);
-        }
-        catch (IOException ex) {
-            logger.error("Exception creating message recorder: ", ex);
-        }
-
-        return messageRecorder;
     }
 
     public long getTargetGasLimit() {
