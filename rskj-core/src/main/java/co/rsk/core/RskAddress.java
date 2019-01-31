@@ -37,7 +37,7 @@ public class RskAddress {
     /**
      * This is the size of an RSK address in bytes.
      */
-    private static final int LENGTH_IN_BYTES = 20;
+    public static final int LENGTH_IN_BYTES = 20;
 
     private static final RskAddress NULL_ADDRESS = new RskAddress();
 
