@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
+import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -34,7 +35,10 @@ import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.jsontestsuite.Env;
 import org.ethereum.jsontestsuite.StateTestCase;
 import org.ethereum.jsontestsuite.TestProgramInvokeFactory;
-import org.ethereum.jsontestsuite.builder.*;
+import org.ethereum.jsontestsuite.builder.EnvBuilder;
+import org.ethereum.jsontestsuite.builder.LogBuilder;
+import org.ethereum.jsontestsuite.builder.RepositoryBuilder;
+import org.ethereum.jsontestsuite.builder.TransactionBuilder;
 import org.ethereum.jsontestsuite.validators.LogsValidator;
 import org.ethereum.jsontestsuite.validators.OutputValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
@@ -140,7 +144,7 @@ public class StateTestRunner {
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>());
         blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
@@ -162,7 +166,7 @@ public class StateTestRunner {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), stateRootHandler), stateRootHandler);
+        ), stateRootHandler, config.getBlockchainConfig()), stateRootHandler);
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);
@@ -215,7 +219,7 @@ public class StateTestRunner {
 
     public static final byte[] ZERO32_BYTE_ARRAY = new byte[32];
     public Block build(Env env) {
-        return new Block(
+        return blockFactory.newBlock(
                 blockFactory.newHeader(
                         // Don't use the empty parent hash because it's used to log and
                         // when log entries are printed with empty parent hash it throws
@@ -227,7 +231,8 @@ public class StateTestRunner {
                         new byte[32], Coin.ZERO, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, null, 0
                 ),
                 Collections.emptyList(),
-                Collections.emptyList()
+                Collections.emptyList(),
+                false
         );
     }
 }

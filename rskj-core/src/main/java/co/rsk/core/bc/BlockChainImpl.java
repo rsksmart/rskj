@@ -19,23 +19,19 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -261,12 +257,14 @@ public class BlockChainImpl implements Blockchain {
             if (!isValid) {
                 return ImportResult.INVALID_BLOCK;
             }
+            // Now that we know it's valid, we can commit the changes made by the block
+            // to the parent's repository.
 
             long totalTime = System.nanoTime() - saveTime;
             logger.trace("block: num: [{}] hash: [{}], executed after: [{}]nano", block.getNumber(), block.getShortHash(), totalTime);
 
             // the block is valid at this point
-            stateRootHandler.register(block.getHeader(), new Keccak256(result.getStateRoot()));
+            stateRootHandler.register(block.getHeader(), result.getFinalState());
         }
 
         // the new accumulated difficulty
@@ -349,8 +347,7 @@ public class BlockChainImpl implements Blockchain {
         synchronized (accessLock) {
             status = new BlockChainStatus(block, totalDifficulty);
             blockStore.saveBlock(block, totalDifficulty, true);
-            Keccak256 root = stateRootHandler.translate(block.getHeader());
-            repository.syncToRoot(root.getBytes());
+            repository.syncToRoot(stateRootHandler.translate(block.getHeader()).getBytes());
         }
     }
 
@@ -449,12 +446,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
-        synchronized (accessLock) {
-            storeBlock(block, totalDifficulty, true);
-            status = new BlockChainStatus(block, totalDifficulty);
-            Keccak256 root = stateRootHandler.translate(block.getHeader());
-            repository.syncToRoot(root.getBytes());
-        }
+        setStatus(block, totalDifficulty);
     }
 
     private void extendAlternativeBlockChain(Block block, BlockDifficulty totalDifficulty) {
@@ -497,10 +489,6 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private boolean isValid(Block block) {
-        if (block.isGenesis()) {
-            return true;
-        }
-
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_VALIDATION);
         boolean validation =  blockValidator.isValid(block);
         profiler.stop(metric);
@@ -524,23 +512,5 @@ public class BlockChainImpl implements Blockchain {
         }
         nFlush++;
         nFlush = nFlush % flushNumberOfBlocks;
-    }
-
-    public static byte[] calcTxTrie(List<Transaction> transactions) {
-        return Block.getTxTrie(transactions).getHash().getBytes();
-    }
-
-    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
-        Trie receiptsTrie = new Trie();
-
-        if (receipts == null || receipts.isEmpty()) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
-        }
-
-        return receiptsTrie.getHash().getBytes();
     }
 }

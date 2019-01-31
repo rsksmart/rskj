@@ -22,9 +22,9 @@ package org.ethereum.core;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.trie.Trie;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -63,8 +63,8 @@ public class Block {
     /* Indicates if this block can or cannot be changed */
     private volatile boolean sealed;
 
-    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-        byte[] calculatedRoot = getTxTrie(transactionsList).getHash().getBytes();
+    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskipUnitrie, boolean sealed) {
+        byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskipUnitrie);
         if (!Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
             String message = String.format(
                     "Transactions trie root validation failed for block %d %s", header.getNumber(), header.getHash()
@@ -76,6 +76,7 @@ public class Block {
         this.header = header;
         this.transactionsList = Collections.unmodifiableList(transactionsList);
         this.uncleList = Collections.unmodifiableList(uncleList);
+        this.sealed = sealed;
     }
 
     public void seal() {
@@ -363,20 +364,6 @@ public class Block {
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         rlpEncoded = null;
-    }
-
-    public static Trie getTxTrie(List<Transaction> transactions){
-        if (transactions == null) {
-            return new Trie();
-        }
-
-        Trie txsState = new Trie();
-        for (int i = 0; i < transactions.size(); i++) {
-            Transaction transaction = transactions.get(i);
-            txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());
-        }
-
-        return txsState;
     }
 
     public BigInteger getGasLimitAsInteger() {

@@ -30,7 +30,10 @@ import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
@@ -48,7 +51,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Optional;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.*;
@@ -117,6 +123,8 @@ public class Program {
 
     private boolean isLogEnabled;
     private boolean isGasLogEnabled;
+
+    private RskAddress rskOwnerAddress;
 
     public Program(
             VmConfig config,
@@ -358,7 +366,7 @@ public class Program {
 
     public void suicide(DataWord obtainerAddress) {
 
-        RskAddress owner = new RskAddress(getOwnerAddress());
+        RskAddress owner = getOwnerRskAddress();
         Coin balance = getStorage().getBalance(owner);
 
         if (!balance.equals(Coin.ZERO)) {
@@ -382,7 +390,7 @@ public class Program {
 
     public void send(DataWord destAddress, Coin amount) {
 
-        RskAddress owner = new RskAddress(getOwnerAddress());
+        RskAddress owner = getOwnerRskAddress();
         RskAddress dest = new RskAddress(destAddress);
         Coin balance = getStorage().getBalance(owner);
 
@@ -413,7 +421,7 @@ public class Program {
             return;
         }
 
-        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        RskAddress senderAddress = getOwnerRskAddress();
         Coin endowment = new Coin(value.getData());
         if (isNotCovers(getStorage().getBalance(senderAddress), endowment)) {
             stackPushZero();
@@ -448,7 +456,7 @@ public class Program {
         if (!byTestingSuite()) {
             getStorage().increaseNonce(senderAddress);
         }
-
+        // Start tracking repository changes for the constructor of the contract
         Repository track = getStorage().startTracking();
 
         //In case of hashing collisions, check for any balance before createAccount()
@@ -458,7 +466,9 @@ public class Program {
             track.addBalance(newAddress, oldBalance);
         } else {
             track.createAccount(newAddress);
+
         }
+        track.setupContract(newAddress);
 
         // [4] TRANSFER THE BALANCE
         track.addBalance(senderAddress, endowment.negate());
@@ -530,6 +540,8 @@ public class Program {
             }
 
             track.commit();
+
+
             getResult().addDeleteAccounts(programResult.getDeleteAccounts());
             getResult().addLogInfos(programResult.getLogInfoList());
 
@@ -625,7 +637,7 @@ public class Program {
 
         // FETCH THE SAVED STORAGE
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
-        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        RskAddress senderAddress = getOwnerRskAddress();
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 
         if (isLogEnabled) {
@@ -646,6 +658,7 @@ public class Program {
 
         // FETCH THE CODE
         byte[] programCode = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
+        // programCode  can be null
 
         // Always first remove funds from sender
         track.addBalance(senderAddress, endowment.negate());
@@ -830,13 +843,34 @@ public class Program {
         DataWord keyWord = DataWord.valueOf(key);
         DataWord valWord = DataWord.valueOf(val);
 
-        getStorage().addStorageRow(new RskAddress(getOwnerAddress()), keyWord, valWord);
+        getStorage().addStorageRow(getOwnerRskAddress(), keyWord, valWord);
+    }
+
+    private RskAddress getOwnerRskAddress() {
+        if (rskOwnerAddress == null) {
+            rskOwnerAddress = new RskAddress(getOwnerAddress());
+        }
+
+        return rskOwnerAddress;
     }
 
     public byte[] getCode() {
         return ops;
     }
 
+    public byte[] getCodeHashAt(RskAddress addr) {
+        return invoke.getRepository().getCodeHash(addr);
+    }
+
+    public int getCodeLengthAt(RskAddress addr) {
+        return invoke.getRepository().getCodeLength(addr);
+    }
+
+
+    public int getCodeLengthAt(DataWord address) {
+        return getCodeLengthAt(new RskAddress(address));
+
+    }
     public byte[] getCodeAt(DataWord address) {
         return getCodeAt(new RskAddress(address));
     }
@@ -905,7 +939,7 @@ public class Program {
     }
 
     public DataWord storageLoad(DataWord key) {
-        return getStorage().getStorageValue(new RskAddress(getOwnerAddress()), key);
+        return getStorage().getStorageValue(getOwnerRskAddress(), key);
     }
 
     public DataWord getPrevHash() {
@@ -1199,7 +1233,7 @@ public class Program {
 
         Repository track = getStorage().startTracking();
 
-        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        RskAddress senderAddress = getOwnerRskAddress();
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 
@@ -1216,6 +1250,11 @@ public class Program {
 
         // Charge for endowment - is not reversible by rollback
         track.transfer(senderAddress, contextAddress, new Coin(msg.getEndowment().getData()));
+
+        // we are assuming that transfer is already creating destination account even if the amount is zero
+        if (!track.isContract(codeAddress)) {
+            track.setupContract(codeAddress);
+        }
 
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
@@ -1236,7 +1275,7 @@ public class Program {
             // Propagate the "local call" nature of the originating transaction down to the callee
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
 
-            Block executionBlock = new Block(
+            Block executionBlock = blockFactory.newBlock(
                     blockFactory.newHeader(
                             getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(),
                             ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),

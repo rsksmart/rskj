@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.*;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
@@ -35,6 +36,7 @@ import java.util.HashMap;
 public class BlockValidatorBuilder {
 
     private final TestSystemProperties config = new TestSystemProperties();
+
     private BlockTxsValidationRule blockTxsValidationRule;
 
     private BlockTxsFieldsValidationRule blockTxsFieldsValidationRule;
@@ -71,7 +73,7 @@ public class BlockValidatorBuilder {
     public BlockValidatorBuilder addBlockTxsValidationRule(Repository repository) {
         this.blockTxsValidationRule = new BlockTxsValidationRule(
                 repository,
-                new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>())
         );
         return this;
     }
@@ -110,7 +112,7 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockRootValidationRule() {
-        this.blockRootValidationRule = new BlockRootValidationRule();
+        this.blockRootValidationRule = new BlockRootValidationRule(config);
         return this;
     }
 

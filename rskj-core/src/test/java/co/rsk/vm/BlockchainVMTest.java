@@ -92,6 +92,7 @@ public class BlockchainVMTest {
         mh.completeBlock(block2, block1);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block2));
+        blockchain.getRepository().syncToRoot(block2.getStateRoot());
 
         Assert.assertEquals(blockchain.getBestBlock(), block2);
         Assert.assertEquals(2, block2.getNumber());

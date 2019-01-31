@@ -96,7 +96,7 @@ public class TrieDeleteTest {
 
     @Test
     public void deleteOneHundredValuesGivesTheSameHashUsingSecureKeys() {
-        Trie trie1 = new Trie(true);
+        Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, ("value" + k).getBytes());
@@ -104,7 +104,7 @@ public class TrieDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Trie trie2 = new Trie(true);
+        Trie trie2 = new Trie();
 
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, ("value" + k).getBytes());
@@ -114,7 +114,7 @@ public class TrieDeleteTest {
 
     @Test
     public void deleteOneHundredLongValuesGivesTheSameHashUsingSecureKeys() {
-        Trie trie1 = new Trie(true);
+        Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, TrieValueTest.makeValue(k + 200));
@@ -122,7 +122,7 @@ public class TrieDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Trie trie2 = new Trie(true);
+        Trie trie2 = new Trie();
 
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, TrieValueTest.makeValue(k + 200));
@@ -190,7 +190,7 @@ public class TrieDeleteTest {
 
     @Test
     public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHashUsingSecureKeys() {
-        Trie trie1 = new Trie(true);
+        Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, ("value" + k).getBytes());
@@ -206,7 +206,7 @@ public class TrieDeleteTest {
 
     @Test
     public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHashUsingSecureKeys() {
-        Trie trie1 = new Trie(true);
+        Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, TrieValueTest.makeValue(k + 200));

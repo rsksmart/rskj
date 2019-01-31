@@ -25,7 +25,7 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
 import org.ethereum.listener.TestCompositeEthereumListener;
-import org.ethereum.util.RskTestFactory;
+import org.ethereum.util.RskTestContext;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -49,11 +49,17 @@ public class TransactionPoolImplTest {
 
     @Before
     public void setUp() {
-        RskTestFactory factory = new RskTestFactory(config);
-        blockChain = factory.getBlockchain();
+        RskTestContext rskTestContext = new RskTestContext(new String[]{"--regtest"});
+        blockChain = rskTestContext.getBlockchain();
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
         blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
-        transactionPool = new TransactionPoolImpl(config, factory.getRepository(), null, null, factory.getBlockFactory(), new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
+        transactionPool = new TransactionPoolImpl(config, rskTestContext.getRepository(), null, null,
+                                                  rskTestContext.getBlockFactory(),
+                                                  new ProgramInvokeFactoryImpl(),
+                                                  new TestCompositeEthereumListener(),
+                                                  10,
+                                                  100
+        );
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
     }

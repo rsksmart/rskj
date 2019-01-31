@@ -21,6 +21,8 @@ package co.rsk.db;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.crypto.Keccak256;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.BlockHeader;
@@ -32,21 +34,23 @@ import java.util.Objects;
 
 public class StateRootHandler {
     private final BlockchainNetConfig blockchainConfig;
+    private final TrieConverter trieConverter;
     private final StateRootTranslator stateRootTranslator;
 
     public StateRootHandler(
             RskSystemProperties config,
+            TrieConverter trieConverter,
             KeyValueDataSource stateRootDB,
             Map<Keccak256, Keccak256> stateRootCache) {
         this.blockchainConfig = config.getBlockchainConfig();
+        this.trieConverter = trieConverter;
         this.stateRootTranslator = new StateRootTranslator(stateRootDB, stateRootCache);
     }
 
     public Keccak256 translate(BlockHeader block) {
         BlockchainConfig configForBlock = blockchainConfig.getConfigForBlock(block.getNumber());
-        boolean isRskip85Enabled = configForBlock.isRskip85();
         Keccak256 blockStateRoot = new Keccak256(block.getStateRoot());
-        if (isRskip85Enabled || block.isGenesis()) {
+        if (configForBlock.isRskipUnitrie()) {
             return blockStateRoot;
         }
 
@@ -56,21 +60,43 @@ public class StateRootHandler {
         );
     }
 
-    public void register(BlockHeader executedBlock, Keccak256 calculatedStateRoot) {
+    public Keccak256 convert(BlockHeader minedBlock, Trie executionResult) {
+        BlockchainConfig configForBlock = blockchainConfig.getConfigForBlock(minedBlock.getNumber());
+        if (configForBlock.isRskipUnitrie()) {
+            return executionResult.getHash();
+        }
+        //we shouldn't be converting blocks before orchid in stable networks
+        return new Keccak256(trieConverter.getOrchidAccountTrieRoot(executionResult));
+    }
+
+    public void register(BlockHeader executedBlock, Trie executionResult) {
         BlockchainConfig configForBlock = blockchainConfig.getConfigForBlock(executedBlock.getNumber());
-        boolean isRskip85Enabled = configForBlock.isRskip85();
-        // we only save state root translations for blocks before 0.5.0 activation
-        if (!isRskip85Enabled) {
-            Keccak256 blockStateRoot = new Keccak256(executedBlock.getStateRoot());
-            stateRootTranslator.put(blockStateRoot, calculatedStateRoot);
+
+        Keccak256 blockStateRoot = new Keccak256(executedBlock.getStateRoot());
+        if (configForBlock.isRskipUnitrie()) {
+            return;
+        }
+
+        if (executedBlock.isGenesis()) {
+            Keccak256 genesisStateRoot = convert(executedBlock, executionResult);
+            stateRootTranslator.put(genesisStateRoot, executionResult.getHash());
+        } else if (configForBlock.isRskip85()) {
+            Keccak256 orchidStateRoot = convert(executedBlock, executionResult);
+            stateRootTranslator.put(orchidStateRoot, executionResult.getHash());
+        } else {
+            stateRootTranslator.put(blockStateRoot, executionResult.getHash());
         }
     }
 
     public boolean validate(BlockHeader block, BlockResult result) {
         BlockchainConfig configForBlock = blockchainConfig.getConfigForBlock(block.getNumber());
-        boolean isRskip85Enabled = configForBlock.isRskip85();
-        if (!isRskip85Enabled) {
+        if (!configForBlock.isRskip85()) {
             return true;
+        }
+
+        if (!configForBlock.isRskipUnitrie()) {
+            byte[] orchidStateRoot = trieConverter.getOrchidAccountTrieRoot(result.getFinalState());
+            return Arrays.equals(orchidStateRoot, block.getStateRoot());
         }
 
         // we only validate state roots of blocks newer than 0.5.0 activation

@@ -19,10 +19,11 @@ package org.ethereum.util;
 
 import co.rsk.RskContext;
 import co.rsk.core.Wallet;
-import co.rsk.db.RepositoryImpl;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
 
@@ -48,17 +49,13 @@ public class RskTestContext extends RskContext {
     }
 
     @Override
-    protected RepositoryImpl buildRepository() {
-        return new RepositoryImpl(
-                new Trie(new TrieStoreImpl(new HashMapDB()), true),
-                new HashMapDB(),
-                new TrieStorePoolOnMemory()
-        );
+    protected Repository buildRepository() {
+        return new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
     }
 
     @Override
     protected StateRootHandler buildStateRootHandler() {
-        return new StateRootHandler(getRskSystemProperties(), new HashMapDB(), new HashMap<>());
+        return new StateRootHandler(getRskSystemProperties(), getTrieConverter(), new HashMapDB(), new HashMap<>());
     }
 
     @Override

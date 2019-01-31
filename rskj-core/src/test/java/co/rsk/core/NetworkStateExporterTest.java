@@ -18,47 +18,36 @@
 
 package co.rsk.core;
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.db.RepositoryImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.io.FileUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.ContractDetails;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by oscar on 13/01/2017.
  */
 public class NetworkStateExporterTest {
-    private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
-
     static String jsonFileName = "networkStateExporterTest.json";
-    private TestSystemProperties config;
-
-    @Before
-    public void setup(){
-        config = new TestSystemProperties();
-    }
 
     @AfterClass
     public static void cleanup(){
@@ -67,7 +56,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testEmptyRepo() throws Exception {
-        Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory());
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
 
         Map result = writeAndReadJson(repository);
 
@@ -76,15 +65,28 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testNoContracts() throws Exception {
-        Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory());
+        // This test will work on a non-secured Trie. To make it work with a secured-trie
+        // you have to do GlobalKeyMap.enabled = true first.
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
+        Set<RskAddress> set;
+        set = repository.getAccountsKeys();
+        Assert.assertEquals(1,set.size());
+
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
+
+        set = repository.getAccountsKeys();
+        Assert.assertEquals(1,set.size());
+
         String address2String = "2000000000000000000000000000000000000000";
         RskAddress addr2 = new RskAddress(address2String);
         repository.createAccount(addr2);
+        set = repository.getAccountsKeys();
+        Assert.assertEquals(2,set.size());
+
         repository.addBalance(addr2, Coin.valueOf(10L));
         repository.increaseNonce(addr2);
         repository.increaseNonce(addr2);
@@ -116,33 +118,27 @@ public class NetworkStateExporterTest {
         Assert.assertEquals("10",remascValue.get("balance"));
         Assert.assertEquals("1",remascValue.get("nonce"));
     }
-
     @Test
     public void testContracts() throws Exception {
-        TrieStore.Pool trieStorePool = new TrieStorePoolOnMemory();
-        Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), trieStorePool);
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
-        ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(
-            addr1.getBytes(),
-            new Trie(new TrieStoreImpl(new HashMapDB()), true),
-            new byte[] {1, 2, 3, 4},
-            trieStorePool
-        );
-        contractDetails.put(DataWord.ZERO, DataWord.ONE);
-        contractDetails.putBytes(DataWord.ONE, new byte[] {5, 6, 7, 8});
-        repository.updateContractDetails(addr1, contractDetails);
-        repository.saveCode(addr1, new byte[] {1, 2, 3, 4});
+
+        repository.saveCode(addr1, new byte[]{1, 2, 3, 4});
+        repository.addStorageRow(addr1, DataWord.ZERO, DataWord.ONE);
+        repository.addStorageBytes(addr1, DataWord.ONE, new byte[]{5, 6, 7, 8});
+
         AccountState accountState = repository.getAccountState(addr1);
-        accountState.setStateRoot(contractDetails.getStorageHash());
         repository.updateAccountState(addr1, accountState);
 
         Map result = writeAndReadJson(repository);
 
         Assert.assertEquals(1, result.keySet().size());
+
+        // Getting address1String only works if the Trie is not secure.
         Map address1Value = (Map) result.get(address1String);
         Assert.assertEquals(3, address1Value.keySet().size());
         Assert.assertEquals("1",address1Value.get("balance"));
@@ -152,7 +148,11 @@ public class NetworkStateExporterTest {
         Assert.assertEquals("01020304",contract.get("code"));
         Map data = (Map) contract.get("data");
         Assert.assertEquals(2, data.keySet().size());
-        Assert.assertEquals("01", data.get(Hex.toHexString(DataWord.ZERO.getData())));
+
+        String addrStr = Hex.toHexString(DataWord.ZERO.getData());
+
+        // A value expanded with leading zeros requires testing in expanded form.
+        Assert.assertEquals("01",data.get(addrStr));
         Assert.assertEquals("05060708", data.get(Hex.toHexString(DataWord.ONE.getData())));
     }
 

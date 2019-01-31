@@ -30,6 +30,7 @@ import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
@@ -49,6 +50,7 @@ public class World {
     private Map<String, Block> blocks = new HashMap<>();
     private Map<String, Account> accounts = new HashMap<>();
     private Map<String, Transaction> transactions = new HashMap<>();
+    private StateRootHandler stateRootHandler;
 
     public World() {
         this(new BlockChainBuilder().build());
@@ -82,6 +84,7 @@ public class World {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
         this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
+        this.stateRootHandler = new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>());
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
@@ -111,10 +114,16 @@ public class World {
                     config.databaseDir(),
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
-            ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+            ),
+           this.stateRootHandler,
+           config.getBlockchainConfig());
         }
 
         return this.blockExecutor;
+    }
+
+    public StateRootHandler getStateRootHandler() {
+        return this.stateRootHandler;
     }
 
     public BlockChainImpl getBlockChain() { return this.blockChain; }

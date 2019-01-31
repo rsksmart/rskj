@@ -42,7 +42,7 @@ public final class DataWord implements Comparable<DataWord> {
     /**
      * The number of bytes used to represent a DataWord
      */
-    private static final int BYTES = 32;
+    public static final int BYTES = 32;
     private static final byte[] ZERO_DATA = new byte[BYTES];
 
     /* Maximum value of the DataWord */
@@ -80,6 +80,12 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         return noLeadZeroesData;
+    }
+
+    // This is a special method that returns the data as the repository requires it.
+    // A zero value is converted into a null (the storage cell is deleted).
+    public byte[] getByteArrayForStorage() {
+        return ByteUtil.stripLeadingZeroes(data,null);
     }
 
     public byte[] getLast20Bytes() {

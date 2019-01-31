@@ -66,7 +66,7 @@ public class Genesis extends Block {
                    byte[] extraData,
                    byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                    byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] minimumGasPrice,
-                   boolean useRskip92Encoding,
+                   boolean useRskip92Encoding, boolean isRskipUnitrie,
                    Map<RskAddress, AccountState> initialAccounts,
                    Map<RskAddress, byte[]> initialCodes,
                    Map<RskAddress, Map<DataWord, byte[]>> initialStorages){
@@ -84,7 +84,9 @@ public class Genesis extends Block {
                     }
                 },
                 Collections.emptyList(),
-                Collections.emptyList()
+                Collections.emptyList(),
+                isRskipUnitrie,
+                false
         );
         if (!initialAccounts.keySet().containsAll(initialCodes.keySet())) {
             throw new IllegalArgumentException("Code must have an associated account");

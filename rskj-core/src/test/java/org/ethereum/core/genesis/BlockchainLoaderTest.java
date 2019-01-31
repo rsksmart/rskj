@@ -39,7 +39,8 @@ public class BlockchainLoaderTest {
             @Override
             public Genesis buildGenesis() {
                 boolean useRskip92Encoding = getRskSystemProperties().getBlockchainConfig().getConfigForBlock(0).isRskip92();
-                return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true, useRskip92Encoding);
+                boolean rskipUnitrie = getRskSystemProperties().getBlockchainConfig().getConfigForBlock(0).isRskipUnitrie();
+                return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true, useRskip92Encoding, rskipUnitrie);
             }
         };
         objects.getBlockchain(); // calls loadBlockchain
@@ -47,11 +48,13 @@ public class BlockchainLoaderTest {
 
         Assert.assertEquals(5, repository.getAccountsKeys().size());
 
-        Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
-        Assert.assertEquals(BigInteger.valueOf(24), repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
+        RskAddress daba01 = new RskAddress("dabadabadabadabadabadabadabadabadaba0001");
+        Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(daba01));
+        Assert.assertEquals(BigInteger.valueOf(24), repository.getNonce(daba01));
 
-        Assert.assertEquals(Coin.valueOf(1000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
-        Assert.assertEquals(BigInteger.ZERO, repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
+        RskAddress daba02 = new RskAddress("dabadabadabadabadabadabadabadabadaba0002");
+        Assert.assertEquals(Coin.valueOf(1000), repository.getBalance(daba02));
+        Assert.assertEquals(BigInteger.ZERO, repository.getNonce(daba02));
 
         RskAddress address = new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051");
         Assert.assertEquals(Coin.valueOf(10), repository.getBalance(address));

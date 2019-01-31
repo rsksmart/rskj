@@ -292,6 +292,12 @@ public class TransactionExecutor {
                 try {
                     byte[] out = precompiledContract.execute(tx.getData());
                     result.setHReturn(out);
+                    if (!track.isExist(targetAddress)) {
+                        track.createAccount(targetAddress);
+                        track.setupContract(targetAddress);
+                    } else if (!track.isContract(targetAddress)) {
+                        track.setupContract(targetAddress);
+                    }
                 } catch (RuntimeException e) {
                     result.setException(e);
                 }
@@ -301,6 +307,7 @@ public class TransactionExecutor {
             }
         } else {
             byte[] code = track.getCode(targetAddress);
+            // Code can be null
             if (isEmpty(code)) {
                 mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
                 result.spendGas(basicTxCost);
@@ -322,10 +329,14 @@ public class TransactionExecutor {
 
     private void create() {
         RskAddress newContractAddress = tx.getContractAddress();
+        cacheTrack.createAccount(newContractAddress); // pre-created
+
         if (isEmpty(tx.getData())) {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
-            cacheTrack.createAccount(newContractAddress);
+            // If there is no data, then the account is created, but without code nor
+            // storage. It doesn't even call setupContract() to setup a storage root
         } else {
+            cacheTrack.setupContract(newContractAddress);
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
@@ -334,10 +345,12 @@ public class TransactionExecutor {
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
+            /* Storage keys not available anymore in a fast way
             ContractDetails contractDetails = program.getStorage().getContractDetails(newContractAddress);
             for (DataWord key : contractDetails.getStorageKeys()) {
                 program.storageSave(key, DataWord.ZERO);
             }
+            */
         }
 
         Coin endowment = tx.getValue();
@@ -419,7 +432,7 @@ public class TransactionExecutor {
             }
 
         } catch (Throwable e) {
-
+            // NOTE: we really should about the node, shutdown everything, and fail safe.
             // TODO: catch whatever they will throw on you !!!
 //            https://github.com/ethereum/cpp-ethereum/blob/develop/libethereum/Executive.cpp#L241
             cacheTrack.rollback();
@@ -482,11 +495,11 @@ public class TransactionExecutor {
                 .deletedAccounts(result.getDeleteAccounts())
                 .internalTransactions(result.getInternalTransactions());
 
-        ContractDetails cdetails = track.getContractDetails(addr);
+        /*ContractDetails cdetails = track.getContractDetails(addr);
 
         if (cdetails != null) {
             summaryBuilder.storageDiff(cdetails.getStorage());
-        }
+        }*/
 
         if (result.getException() != null) {
             summaryBuilder.markAsFailed();

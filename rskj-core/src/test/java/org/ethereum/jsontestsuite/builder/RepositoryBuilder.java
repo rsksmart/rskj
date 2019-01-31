@@ -19,51 +19,58 @@
 
 package org.ethereum.jsontestsuite.builder;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.db.RepositoryImpl;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.ContractDetails;
-import org.ethereum.db.ContractDetailsCacheImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.jsontestsuite.model.AccountTck;
+import org.ethereum.vm.DataWord;
 
-import java.util.HashMap;
 import java.util.Map;
+
+import static org.ethereum.json.Utils.parseData;
+import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
 
 public class RepositoryBuilder {
 
     public static Repository build(Map<String, AccountTck> accounts){
-        HashMap<RskAddress, AccountState> stateBatch = new HashMap<>();
-        HashMap<RskAddress, ContractDetails> detailsBatch = new HashMap<>();
-        HashMapDB store = new HashMapDB();
-        TrieStorePoolOnMemory pool = new TrieStorePoolOnMemory(() -> store);
-
+        Repository repositoryDummy = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+        Repository track = repositoryDummy.startTracking();
         for (String address : accounts.keySet()) {
             RskAddress addr = new RskAddress(address);
-
             AccountTck accountTCK = accounts.get(address);
-            AccountBuilder.StateWrap stateWrap = AccountBuilder.build(accountTCK, store);
 
-            AccountState state = stateWrap.getAccountState();
-            ContractDetails details = stateWrap.getContractDetails();
-
-            stateBatch.put(addr, state);
-
-            ContractDetailsCacheImpl detailsCache = new ContractDetailsCacheImpl(details);
-            detailsCache.setDirty(true);
-
-            detailsBatch.put(addr, detailsCache);
+            AccountState state = new AccountState(
+                    unifiedNumericToBigInteger(accountTCK.getNonce()),
+                    new Coin(unifiedNumericToBigInteger(accountTCK.getBalance()))
+            );
+            track.updateAccountState(addr, state);
+            byte[] code = parseData(accountTCK.getCode());
+            if (accountTCK.isForcedContract() || code.length > 0 || !accountTCK.getStorage().isEmpty()) {
+                track.setupContract(addr);
+                track.saveCode(addr, code);
+                saveStorageValues(track, addr, accountTCK.getStorage());
+            }
         }
 
-        RepositoryImpl repositoryDummy = new RepositoryImpl(new Trie(new TrieStoreImpl(store), true), new HashMapDB(), pool);
-        Repository track = repositoryDummy.startTracking();
-        track.updateBatch(stateBatch, detailsBatch);
         track.commit();
 
         return repositoryDummy;
+    }
+
+    private static void saveStorageValues(Repository track, RskAddress addr, Map<String, String> storageTck) {
+        for (String keyTck : storageTck.keySet()) {
+            String valueTck = storageTck.get(keyTck);
+
+            DataWord key = DataWord.valueOf(parseData(keyTck));
+            byte[] value = parseData(valueTck);
+
+            track.addStorageBytes(addr, key, value);
+        }
     }
 }

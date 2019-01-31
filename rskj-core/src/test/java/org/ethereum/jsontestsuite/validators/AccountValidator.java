@@ -41,7 +41,7 @@ public class AccountValidator {
 
         List<String> results = new ArrayList<>();
         if (vStats!=null) vStats.accountChecks++;
-        if (currentState == null || !currentRepository.isContract(addr)) {
+        if (currentState == null) {
             String formattedString = String.format("Account: %s: expected but doesn't exist",
                     addr);
             results.add(formattedString);
@@ -49,19 +49,27 @@ public class AccountValidator {
         }
 
         if (vStats!=null) vStats.accountChecks++;
-        if (expectedState == null || !expectedRepository.isContract(addr)) {
+        if (expectedState == null) {
             String formattedString = String.format("Account: %s: unexpected account in the repository",
                     addr);
             results.add(formattedString);
             return results;
         }
 
+        if (currentRepository.isContract(addr) != expectedRepository.isContract(addr)) {
+            String formattedString = String.format("Account: %s: unexpected account state", addr);
+            results.add(formattedString);
+            return results;
+        }
         if (validateBalance) {
             if (vStats!=null) vStats.balancetChecks++;
             Coin expectedBalance = expectedState.getBalance();
             if (!currentState.getBalance().equals(expectedBalance)) {
                 String formattedString = String.format("Account: %s: has unexpected balance, expected balance: %s found balance: %s",
-                        addr, expectedBalance.toString(), currentState.getBalance().toString());
+                                                       addr,
+                                                       expectedBalance.toString(),
+                                                       currentState.getBalance().toString()
+                );
                 results.add(formattedString);
             }
         }
@@ -74,11 +82,8 @@ public class AccountValidator {
             results.add(formattedString);
         }
 
-        byte[] code = Arrays.equals(currentState.getCodeHash(), EMPTY_DATA_HASH) ?
-                new byte[0] : currentRepository.getCode(addr);
-
         if (vStats!=null) vStats.accountChecks++;
-        if (!Arrays.equals(expectedRepository.getCode(addr), code)) {
+        if (!Arrays.equals(expectedRepository.getCode(addr), currentRepository.getCode(addr))) {
             String formattedString = String.format("Account: %s: has unexpected code, expected code: %s found code: %s",
                     addr, Hex.toHexString(expectedRepository.getCode(addr)), Hex.toHexString(currentRepository.getCode(addr)));
             results.add(formattedString);

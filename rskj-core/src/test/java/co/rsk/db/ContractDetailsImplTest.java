@@ -18,23 +18,14 @@
 
 package co.rsk.db;
 
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.ContractDetails;
-import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
 
 import static org.ethereum.TestUtils.randomBytes;
-import static org.ethereum.TestUtils.randomDataWord;
-import static org.ethereum.util.ByteUtil.toHexString;
 
 /**
  * Created by ajlopez on 05/04/2017.
@@ -44,52 +35,21 @@ public class ContractDetailsImplTest {
 
     @Test
     public void getNullFromUnusedAddress() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         Assert.assertEquals(null, details.get(DataWord.ONE));
     }
 
     @Test
     public void newContractDetailsIsClean() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         Assert.assertFalse(details.isDirty());
     }
 
     @Test
-    public void hasExternalStorage() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
-
-        Assert.assertTrue(details.hasExternalStorage());
-    }
-
-    @Test
-    public void hasExternalStorageIfHasEnoughtKeys() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
-
-        int nkeys = IN_MEMORY_STORAGE_LIMIT;
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            details.put(DataWord.valueOf(k), DataWord.valueOf(k * 2));
-
-        Assert.assertTrue(details.hasExternalStorage());
-    }
-
-    @Test
-    public void hasExternalStorageIfHasEnoughtBytesKeys() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
-
-        int nkeys = IN_MEMORY_STORAGE_LIMIT;
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            details.putBytes(DataWord.valueOf(k), randomData());
-
-        Assert.assertTrue(details.hasExternalStorage());
-    }
-
-    @Test
     public void setDirty() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.setDirty(true);
         Assert.assertTrue(details.isDirty());
@@ -97,14 +57,14 @@ public class ContractDetailsImplTest {
 
     @Test
     public void newContractDetailsIsNotDeleted() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         Assert.assertFalse(details.isDeleted());
     }
 
     @Test
     public void setDeleted() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.setDeleted(true);
         Assert.assertTrue(details.isDeleted());
@@ -112,7 +72,7 @@ public class ContractDetailsImplTest {
 
     @Test
     public void putAndGetDataWord() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.put(DataWord.ONE, DataWord.valueOf(42));
 
@@ -122,39 +82,8 @@ public class ContractDetailsImplTest {
     }
 
     @Test
-    public void putDataWordWithoutLeadingZeroes() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
-
-        details.put(DataWord.ONE, DataWord.valueOf(42));
-
-        Trie trie = details.getTrie();
-
-        byte[] value = trie.get(DataWord.ONE.getData());
-
-        Assert.assertNotNull(value);
-        Assert.assertEquals(1, value.length);
-        Assert.assertEquals(42, value[0]);
-        Assert.assertEquals(1, details.getStorageSize());
-    }
-
-    @Test
-    public void putDataWordZeroAsDeleteValue() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
-
-        details.put(DataWord.ONE, DataWord.valueOf(42));
-        details.put(DataWord.ONE, DataWord.ZERO);
-
-        Trie trie = details.getTrie();
-
-        byte[] value = trie.get(DataWord.ONE.getData());
-
-        Assert.assertNull(value);
-        Assert.assertEquals(0, details.getStorageSize());
-    }
-
-    @Test
     public void getNullBytesFromUnusedAddress() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         Assert.assertNull(details.getBytes(DataWord.ONE));
     }
@@ -163,7 +92,7 @@ public class ContractDetailsImplTest {
     public void putAndGetBytes() {
         byte[] value = new byte[] { 0x01, 0x02, 0x03 };
 
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.putBytes(DataWord.ONE, value);
 
@@ -173,37 +102,8 @@ public class ContractDetailsImplTest {
     }
 
     @Test
-    public void putNullValueAsDeleteValue() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
-
-        details.putBytes(DataWord.ONE, new byte[] { 0x01, 0x02, 0x03 });
-        details.putBytes(DataWord.ONE, null);
-
-        Trie trie = details.getTrie();
-
-        byte[] value = trie.get(DataWord.ONE.getData());
-
-        Assert.assertNull(value);
-        Assert.assertEquals(0, details.getStorageSize());
-    }
-
-    @Test
-    public void getStorageRoot() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
-
-        details.put(DataWord.ONE, DataWord.valueOf(42));
-        details.put(DataWord.ZERO, DataWord.valueOf(1));
-
-        Trie trie = details.getTrie();
-
-        Assert.assertNotNull(trie.getHash().getBytes());
-
-        Assert.assertArrayEquals(trie.getHash().getBytes(), details.getStorageHash());
-    }
-
-    @Test
     public void getNullCode() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         Assert.assertNull(details.getCode());
     }
@@ -212,7 +112,7 @@ public class ContractDetailsImplTest {
     public void setAndGetCode() {
         byte[] code = new byte[] { 0x01, 0x02, 0x03 };
 
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.setCode(code);
 
@@ -221,14 +121,14 @@ public class ContractDetailsImplTest {
 
     @Test
     public void getStorageSizeInEmptyDetails() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         Assert.assertEquals(0, details.getStorageSize());
     }
 
     @Test
     public void getStorageSizeInNonEmptyDetails() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.put(DataWord.ZERO, DataWord.ONE);
         details.put(DataWord.ONE, DataWord.valueOf(42));
@@ -238,7 +138,7 @@ public class ContractDetailsImplTest {
 
     @Test
     public void getStorageKeysInNonEmptyDetails() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.put(DataWord.ZERO, DataWord.ONE);
         details.put(DataWord.ONE, DataWord.valueOf(42));
@@ -253,7 +153,7 @@ public class ContractDetailsImplTest {
 
     @Test
     public void getStorageKeysAfterDelete() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.put(DataWord.ZERO, DataWord.ONE);
         details.put(DataWord.ONE, DataWord.valueOf(42));
@@ -268,9 +168,9 @@ public class ContractDetailsImplTest {
 
     @Test
     public void getStorageFromEmptyDetails() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
-        Map<DataWord, DataWord> map = details.getStorage();
+        Map<DataWord, byte[]> map = details.getStorage();
 
         Assert.assertNotNull(map);
         Assert.assertTrue(map.isEmpty());
@@ -278,9 +178,9 @@ public class ContractDetailsImplTest {
 
     @Test
     public void getStorageUsingNullFromEmptyDetails() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
-        Map<DataWord, DataWord> map = details.getStorage(null);
+        Map<DataWord, byte[]> map = details.getStorage(null);
 
         Assert.assertNotNull(map);
         Assert.assertTrue(map.isEmpty());
@@ -288,12 +188,12 @@ public class ContractDetailsImplTest {
 
     @Test
     public void getStorageFromNonEmptyDetails() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.put(DataWord.ZERO, DataWord.ONE);
         details.put(DataWord.ONE, DataWord.valueOf(42));
 
-        Map<DataWord, DataWord> map = details.getStorage();
+        Map<DataWord, byte[]> map = details.getStorage();
 
         Assert.assertNotNull(map);
         Assert.assertFalse(map.isEmpty());
@@ -301,13 +201,13 @@ public class ContractDetailsImplTest {
         Assert.assertTrue(map.containsKey(DataWord.ZERO));
         Assert.assertTrue(map.containsKey(DataWord.ONE));
 
-        Assert.assertEquals(DataWord.ONE, map.get(DataWord.ZERO));
-        Assert.assertEquals(DataWord.valueOf(42), map.get(DataWord.ONE));
+        Assert.assertEquals(DataWord.ONE, DataWord.valueOf(map.get(DataWord.ZERO)));
+        Assert.assertEquals(DataWord.valueOf(42), DataWord.valueOf(map.get(DataWord.ONE)));
     }
 
     @Test
     public void getStorageFromNonEmptyDetailsUsingKeys() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.put(DataWord.ZERO, DataWord.ONE);
         details.put(DataWord.ONE, DataWord.valueOf(42));
@@ -318,7 +218,7 @@ public class ContractDetailsImplTest {
         keys.add(DataWord.ZERO);
         keys.add(DataWord.valueOf(3));
 
-        Map<DataWord, DataWord> map = details.getStorage(keys);
+        Map<DataWord, byte[]> map = details.getStorage(keys);
 
         Assert.assertNotNull(map);
         Assert.assertFalse(map.isEmpty());
@@ -327,14 +227,13 @@ public class ContractDetailsImplTest {
 
         Assert.assertTrue(map.containsKey(DataWord.ZERO));
         Assert.assertTrue(map.containsKey(DataWord.valueOf(3)));
-
-        Assert.assertEquals(DataWord.ONE, map.get(DataWord.ZERO));
-        Assert.assertEquals(DataWord.valueOf(144), map.get(DataWord.valueOf(3)));
+        Assert.assertEquals(DataWord.ONE, DataWord.valueOf(map.get(DataWord.ZERO)));
+        Assert.assertEquals(DataWord.valueOf(144), DataWord.valueOf(map.get(DataWord.valueOf(3))));
     }
 
     @Test
     public void getNullAddress() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         Assert.assertNull(details.getAddress());
     }
@@ -343,7 +242,7 @@ public class ContractDetailsImplTest {
     public void setAndGetAddress() {
         byte[] address = new byte[] { 0x01, 0x02, 0x03 };
 
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.setAddress(address);
 
@@ -355,14 +254,14 @@ public class ContractDetailsImplTest {
 
     @Test
     public void newContractDetailsIsNullObject() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         Assert.assertTrue(details.isNullObject());
     }
 
     @Test
     public void newContractDetailsWithEmptyCodeIsNullObject() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.setCode(new byte[0]);
 
@@ -371,7 +270,7 @@ public class ContractDetailsImplTest {
 
     @Test
     public void contractDetailsWithNonEmptyCodeIsNotNullObject() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.setCode(new byte[] { 0x01, 0x02, 0x03 });
 
@@ -380,7 +279,7 @@ public class ContractDetailsImplTest {
 
     @Test
     public void contractDetailsWithStorageDataIsNotNullObject() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
         details.put(DataWord.ONE, DataWord.valueOf(42));
 
@@ -389,370 +288,17 @@ public class ContractDetailsImplTest {
 
     @Test
     public void setStorageUsingMap() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
+        ContractDetailsImpl details = buildContractDetails();
 
-        Map<DataWord, DataWord> map = new HashMap<>();
+        Map<DataWord, byte[]> map = new HashMap<>();
 
-        map.put(DataWord.ZERO, DataWord.valueOf(42));
-        map.put(DataWord.ONE, DataWord.valueOf(144));
+        map.put(DataWord.ZERO, DataWord.valueOf(42).getData());
+        map.put(DataWord.ONE, DataWord.valueOf(144).getData());
 
         details.setStorage(map);
 
-        Assert.assertEquals(DataWord.valueOf(42), details.get(DataWord.ZERO));
-        Assert.assertEquals(DataWord.valueOf(144), details.get(DataWord.ONE));
-    }
-
-    @Test
-    public void getSnapshot() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
-
-        byte[] initialRoot = details.getStorageHash();
-
-        Map<DataWord, DataWord> firstStorage = new HashMap<>();
-        firstStorage.put(DataWord.ZERO, DataWord.valueOf(42));
-        firstStorage.put(DataWord.ONE, DataWord.valueOf(144));
-        details.setStorage(firstStorage);
-
-        byte[] root = details.getStorageHash();
-
-        Map<DataWord, DataWord> secondStorage = new HashMap<>();
-
-        secondStorage.put(DataWord.valueOf(2), DataWord.valueOf(1));
-        secondStorage.put(DataWord.valueOf(3), DataWord.valueOf(2));
-
-        details.setStorage(secondStorage);
-
-        ContractDetails result = details.getSnapshotTo(root);
-
-        Assert.assertEquals(DataWord.valueOf(42), result.get(DataWord.ZERO));
-        Assert.assertEquals(DataWord.valueOf(144), result.get(DataWord.ONE));
-        Assert.assertEquals(null, result.get(DataWord.valueOf(2)));
-        Assert.assertEquals(null, result.get(DataWord.valueOf(3)));
-
-        ContractDetails result2 = details.getSnapshotTo(initialRoot);
-
-        Assert.assertEquals(null, result2.get(DataWord.ZERO));
-        Assert.assertEquals(null, result2.get(DataWord.ONE));
-        Assert.assertEquals(null, result2.get(DataWord.valueOf(2)));
-        Assert.assertEquals(null, result2.get(DataWord.valueOf(3)));
-    }
-
-    @Test
-    public void getEncodedAndCreateClone() {
-        HashMapDB store = new HashMapDB();
-        ContractDetailsImpl details = buildContractDetails(store);
-
-        Map<DataWord, DataWord> storage = new HashMap<>();
-        storage.put(DataWord.ZERO, DataWord.valueOf(42));
-        storage.put(DataWord.ONE, DataWord.valueOf(144));
-
-        details.setStorage(storage);
-        details.syncStorage();
-
-        byte[] encoded = details.getEncoded();
-
-        Assert.assertNotNull(encoded);
-
-        ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory(() -> store));
-
-        Assert.assertEquals(DataWord.valueOf(42), result.get(DataWord.ZERO));
-        Assert.assertEquals(DataWord.valueOf(144), result.get(DataWord.ONE));
-        Assert.assertEquals(null, result.get(DataWord.valueOf(2)));
-        Assert.assertEquals(null, result.get(DataWord.valueOf(3)));
-    }
-
-    @Test
-    public void getOldEncodedAndCreateClone() {
-        HashMapDB store = new HashMapDB();
-        ContractDetailsImpl details = buildContractDetails(store);
-
-        Map<DataWord, DataWord> storage = new HashMap<>();
-        storage.put(DataWord.ZERO, DataWord.valueOf(42));
-        storage.put(DataWord.ONE, DataWord.valueOf(144));
-
-        details.setStorage(storage);
-
-        byte[] encoded = details.getEncodedOldFormat();
-
-        Assert.assertNotNull(encoded);
-
-        ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory());
-
-        Assert.assertEquals(DataWord.valueOf(42), result.get(DataWord.ZERO));
-        Assert.assertEquals(DataWord.valueOf(144), result.get(DataWord.ONE));
-        Assert.assertEquals(null, result.get(DataWord.valueOf(2)));
-        Assert.assertEquals(null, result.get(DataWord.valueOf(3)));
-
-        Assert.assertArrayEquals(details.getStorageHash(), result.getStorageHash());
-    }
-
-    @Test
-    public void getOldEncodedWithEmptyStorageAndCreateClone() {
-        HashMapDB store = new HashMapDB();
-        ContractDetailsImpl details = buildContractDetails(store);
-
-        byte[] encoded = details.getEncodedOldFormat();
-
-        Assert.assertNotNull(encoded);
-
-        ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory());
-
-        Assert.assertArrayEquals(details.getStorageHash(), result.getStorageHash());
-    }
-
-    @Test
-    public void getOldEncodedAndCreateCloneSettingStorage() {
-        HashMapDB store = new HashMapDB();
-        ContractDetailsImpl details = buildContractDetails(store);
-
-        DataWord value0 = DataWord.valueOf(42);
-        DataWord value1 = DataWord.valueOf(144);
-
-        details.put(DataWord.ZERO, value0);
-        details.put(DataWord.ONE, value1);
-
-        byte[] hash1 = details.getStorageHash();
-
-        details.put(DataWord.valueOf(10), value0);
-        details.put(DataWord.valueOf(11), value1);
-
-        byte[] hash2 = details.getStorageHash();
-
-        byte[] encoded = details.getEncodedOldFormat();
-
-        Assert.assertNotNull(encoded);
-
-        ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory());
-
-        ContractDetails result1 = result.getSnapshotTo(hash1);
-
-        Assert.assertNotNull(result1);
-        Assert.assertArrayEquals(hash1, result1.getStorageHash());
-
-        ContractDetails result2 = result.getSnapshotTo(hash2);
-
-        Assert.assertNotNull(result2);
-        Assert.assertArrayEquals(hash2, result2.getStorageHash());
-    }
-
-    @Test
-    public void syncStorageInEmptyDetails() {
-        ContractDetailsImpl details = buildContractDetails(new HashMapDB());
-
-        details.syncStorage();
-    }
-
-    @Test
-    public void syncStorageInDetailsWithTrieInMemory() {
-        HashMapDB store = new HashMapDB();
-        Trie trie = new Trie(new TrieStoreImpl(store), false);
-        byte[] accountAddress = randomAddress();
-        ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, new TrieStorePoolOnMemory(() -> store));
-
-        details.put(DataWord.valueOf(42), DataWord.ONE);
-
-        details.syncStorage();
-
-        Assert.assertNotNull(details.get(DataWord.valueOf(42)));
-    }
-
-    @Test
-    public void usingSameExternalStorage() {
-        HashMapDB store = new HashMapDB();
-        Trie trie = new Trie(new TrieStoreImpl(store), false);
-        byte[] accountAddress = randomAddress();
-        ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, new TrieStorePoolOnMemory());
-
-        int nkeys = IN_MEMORY_STORAGE_LIMIT;
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            details.put(DataWord.valueOf(k), DataWord.valueOf(k * 2));
-
-        Assert.assertTrue(details.hasExternalStorage());
-
-        details.syncStorage();
-
-        TrieStore.Pool pool = new TrieStorePoolOnMemory(() -> store);
-
-        ContractDetailsImpl details1 = new ContractDetailsImpl(details.getEncoded(), pool);
-        ContractDetailsImpl details2 = new ContractDetailsImpl(details.getEncoded(), pool);
-
-        Assert.assertTrue(details1.hasExternalStorage());
-        Assert.assertTrue(details2.hasExternalStorage());
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(details1.get(DataWord.valueOf(k)));
-        for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(details2.get(DataWord.valueOf(k)));
-
-        details1.syncStorage();
-        details2.syncStorage();
-    }
-
-    @Test
-    public void syncStorageWithExternalStorage() {
-        TrieStorePoolOnMemory trieStorePool = new TrieStorePoolOnMemory();
-        byte[] accountAddress = randomAddress();
-        String storeName = "details-storage/" + toHexString(accountAddress);
-        Trie trie = new Trie(trieStorePool.getInstanceFor(storeName), false);
-        ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, trieStorePool);
-
-        int nkeys = IN_MEMORY_STORAGE_LIMIT;
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            details.put(DataWord.valueOf(k), DataWord.valueOf(k * 2));
-
-        Assert.assertTrue(details.hasExternalStorage());
-
-        details.syncStorage();
-
-        int ssize = details.getStorageSize();
-
-        details = new ContractDetailsImpl(details.getEncoded(), trieStorePool);
-
-        Assert.assertEquals(ssize, details.getStorageSize());
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(details.get(DataWord.valueOf(k)));
-
-        ContractDetailsImpl clone = new ContractDetailsImpl(details.getEncoded(), trieStorePool);
-
-        Assert.assertNotNull(clone);
-        Assert.assertTrue(clone.hasExternalStorage());
-        Assert.assertEquals(details.getStorageSize(), clone.getStorageSize());
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(clone.get(DataWord.valueOf(k)));
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            clone.put(DataWord.valueOf(k), DataWord.valueOf(k * 3));
-
-        Assert.assertTrue(clone.hasExternalStorage());
-        Assert.assertEquals(details.getStorageSize(), clone.getStorageSize());
-
-        ContractDetailsImpl snapshot = (ContractDetailsImpl)clone.getSnapshotTo(clone.getStorageHash());
-        Assert.assertTrue(snapshot.hasExternalStorage());
-        Assert.assertEquals(clone.getStorageSize(), snapshot.getStorageSize());
-    }
-
-    @Test
-    public void syncStorageAndGetKeyValues() {
-        HashMapDB store = new HashMapDB();
-        Trie trie = new Trie(new TrieStoreImpl(store), false);
-        byte[] accountAddress = randomAddress();
-        ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, new TrieStorePoolOnMemory(() -> store));
-
-        int nkeys = IN_MEMORY_STORAGE_LIMIT;
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            details.put(DataWord.valueOf(k), DataWord.valueOf(k * 2));
-
-        Assert.assertTrue(details.hasExternalStorage());
-
-        details.syncStorage();
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(details.get(DataWord.valueOf(k)));
-
-        ContractDetailsImpl clone = new ContractDetailsImpl(details.getEncoded(), new TrieStorePoolOnMemory(() -> store));
-
-        Assert.assertNotNull(clone);
-        Assert.assertTrue(clone.hasExternalStorage());
-        Assert.assertEquals(details.getStorageSize(), clone.getStorageSize());
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(clone.get(DataWord.valueOf(k)));
-
-        for (int k = 1; k <= nkeys + 1; k++)
-            clone.put(DataWord.valueOf(k), DataWord.valueOf(k * 3));
-
-        Assert.assertTrue(clone.hasExternalStorage());
-        Assert.assertEquals(details.getStorageSize(), clone.getStorageSize());
-
-        ContractDetailsImpl snapshot = (ContractDetailsImpl)clone.getSnapshotTo(clone.getStorageHash());
-        Assert.assertTrue(snapshot.hasExternalStorage());
-        Assert.assertEquals(clone.getStorageSize(), snapshot.getStorageSize());
-    }
-
-    @Test @Ignore("From now on we always save to external storage")
-    public void testExternalStorageSerialization() {
-        byte[] address = randomAddress();
-        byte[] code = randomBytes(512);
-        Map<DataWord, DataWord> elements = new HashMap<>();
-
-        HashMapDB externalStorage = new HashMapDB();
-
-        ContractDetailsImpl original = new ContractDetailsImpl(address, new Trie(new TrieStoreImpl(externalStorage), true), code, new TrieStorePoolOnMemory());
-
-        for (int i = 0; i < IN_MEMORY_STORAGE_LIMIT + 10; i++) {
-            DataWord key = randomDataWord();
-            DataWord value = randomDataWord();
-
-            elements.put(key, value);
-            original.put(key, value);
-        }
-
-        original.syncStorage();
-
-        byte[] rlp = original.getEncoded();
-
-        ContractDetailsImpl deserialized = new ContractDetailsImpl(rlp, new TrieStorePoolOnMemory());
-
-        Assert.assertEquals(toHexString(address), toHexString(deserialized.getAddress()));
-        Assert.assertEquals(toHexString(code), toHexString(deserialized.getCode()));
-
-        Map<DataWord, DataWord> storage = deserialized.getStorage();
-        Assert.assertEquals(elements.size(), storage.size());
-        for (DataWord key : elements.keySet()) {
-            Assert.assertEquals(elements.get(key), storage.get(key));
-        }
-
-        DataWord deletedKey = elements.keySet().iterator().next();
-
-        deserialized.put(deletedKey, DataWord.ZERO);
-        deserialized.put(randomDataWord(), DataWord.ZERO);
-    }
-
-    @Test
-    public void externalStorageTransition() {
-        byte[] address = randomAddress();
-        byte[] code = randomBytes(512);
-        Map<DataWord, DataWord> elements = new HashMap<>();
-
-        HashMapDB externalStorage = new HashMapDB();
-
-        ContractDetailsImpl original = new ContractDetailsImpl(address, new Trie(new TrieStoreImpl(externalStorage), true), code, new TrieStorePoolOnMemory());
-
-        for (int i = 0; i < IN_MEMORY_STORAGE_LIMIT - 1; i++) {
-            DataWord key = randomDataWord();
-            DataWord value = randomDataWord();
-
-            elements.put(key, value);
-            original.put(key, value);
-        }
-
-        original.syncStorage();
-
-        ContractDetails deserialized = new ContractDetailsImpl(original.getEncoded(), new TrieStorePoolOnMemory(() -> externalStorage));
-
-        // adds keys for in-memory storage limit overflow
-        for (int i = 0; i < 10; i++) {
-            DataWord key = randomDataWord();
-            DataWord value = randomDataWord();
-
-            elements.put(key, value);
-            deserialized.put(key, value);
-        }
-
-        deserialized.syncStorage();
-
-        deserialized = new ContractDetailsImpl(deserialized.getEncoded(), new TrieStorePoolOnMemory(() -> externalStorage));
-
-        Map<DataWord, DataWord> storage = deserialized.getStorage();
-        Assert.assertEquals(elements.size(), storage.size());
-        for (DataWord key : elements.keySet()) {
-            Assert.assertEquals(elements.get(key), storage.get(key));
-        }
+        Assert.assertEquals(DataWord.valueOf(42), DataWord.valueOf(details.getBytes(DataWord.ZERO)));
+        Assert.assertEquals(DataWord.valueOf(144), DataWord.valueOf(details.getBytes(DataWord.ONE)));
     }
 
     @Test
@@ -766,27 +312,19 @@ public class ContractDetailsImplTest {
         byte[] key_2 = Hex.decode("222222");
         byte[] val_2 = Hex.decode("bbbbbb");
 
-        HashMapDB store = new HashMapDB();
-        TrieStore.Pool pool = new TrieStorePoolOnMemory(() -> store);
-
-        ContractDetailsImpl contractDetails = buildContractDetails(pool);
+        ContractDetailsImpl contractDetails = buildContractDetails();
         contractDetails.setCode(code);
         contractDetails.put(DataWord.valueOf(key_1), DataWord.valueOf(val_1));
         contractDetails.put(DataWord.valueOf(key_2), DataWord.valueOf(val_2));
-        contractDetails.syncStorage();
-
-        byte[] data = contractDetails.getEncoded();
-
-        ContractDetailsImpl contractDetails_ = new ContractDetailsImpl(data, pool);
 
         Assert.assertEquals(Hex.toHexString(code),
-                Hex.toHexString(contractDetails_.getCode()));
+                Hex.toHexString(contractDetails.getCode()));
 
         Assert.assertEquals(Hex.toHexString(val_1),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_1)).getNoLeadZeroesData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_1)).getNoLeadZeroesData()));
 
         Assert.assertEquals(Hex.toHexString(val_2),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_2)).getNoLeadZeroesData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_2)).getNoLeadZeroesData()));
     }
 
     @Test
@@ -838,8 +376,7 @@ public class ContractDetailsImplTest {
         byte[] val_13 = Hex.decode("0000000000000000000000000c6686f3d6ee27e285f2de7b68e8db25cf1b1063");
 
 
-        HashMapDB store = new HashMapDB();
-        ContractDetailsImpl contractDetails = buildContractDetails(store);
+        ContractDetailsImpl contractDetails = buildContractDetails();
         contractDetails.setCode(code);
         contractDetails.setAddress(address);
         contractDetails.put(DataWord.valueOf(key_0), DataWord.valueOf(val_0));
@@ -856,89 +393,58 @@ public class ContractDetailsImplTest {
         contractDetails.put(DataWord.valueOf(key_11), DataWord.valueOf(val_11));
         contractDetails.put(DataWord.valueOf(key_12), DataWord.valueOf(val_12));
         contractDetails.put(DataWord.valueOf(key_13), DataWord.valueOf(val_13));
-        contractDetails.syncStorage();
-
-        byte[] data = contractDetails.getEncoded();
-
-        ContractDetailsImpl contractDetails_ = new ContractDetailsImpl(data, new TrieStorePoolOnMemory(() -> store));
 
         Assert.assertEquals(Hex.toHexString(code),
-                Hex.toHexString(contractDetails_.getCode()));
+                Hex.toHexString(contractDetails.getCode()));
 
         Assert.assertEquals(Hex.toHexString(address),
-                Hex.toHexString(contractDetails_.getAddress()));
+                Hex.toHexString(contractDetails.getAddress()));
 
         Assert.assertEquals(Hex.toHexString(val_1),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_1)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_1)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_2),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_2)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_2)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_3),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_3)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_3)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_4),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_4)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_4)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_5),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_5)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_5)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_6),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_6)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_6)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_7),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_7)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_7)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_8),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_8)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_8)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_9),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_9)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_9)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_10),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_10)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_10)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_11),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_11)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_11)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_12),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_12)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_12)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_13),
-                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_13)).getData()));
+                Hex.toHexString(contractDetails.get(DataWord.valueOf(key_13)).getData()));
     }
 
-    private static byte[] randomData() {
-        byte[] bytes = new byte[32];
-
-        new Random().nextBytes(bytes);
-
-        return bytes;
-    }
-
-    private static byte[] randomAddress() {
-        byte[] bytes = new byte[20];
-
-        new Random().nextBytes(bytes);
-
-        return bytes;
-    }
-
-    private ContractDetailsImpl buildContractDetails(HashMapDB store) {
+    private ContractDetailsImpl buildContractDetails() {
         return new ContractDetailsImpl(
                 null,
-                new Trie(new TrieStoreImpl(store), true),
-                null,
-                new TrieStorePoolOnMemory()
-        );
-    }
-
-    private ContractDetailsImpl buildContractDetails(TrieStore.Pool pool) {
-        return new ContractDetailsImpl(
-                null,
-                new Trie(pool.getInstanceFor(null), true),
-                null,
-                pool
+                new HashMap<>(),
+                null
         );
     }
 }

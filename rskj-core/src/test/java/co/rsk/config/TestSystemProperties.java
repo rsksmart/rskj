@@ -22,6 +22,7 @@ import co.rsk.cli.CliArgs;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
+import org.ethereum.config.blockchain.regtest.RegTestSecondForkConfig;
 
 public class TestSystemProperties extends RskSystemProperties {
 
@@ -48,7 +49,7 @@ public class TestSystemProperties extends RskSystemProperties {
     public TestSystemProperties(int conf) {
         super(TEST_LOADER);
         if (conf == CODEREPLACE_PREORCHID) {
-            this.blockchainConfig = new RegTestOrchidConfig() {
+            this.blockchainConfig = new RegTestSecondForkConfig() {
                 @Override public boolean isRskip94() {
                     return false;
                 }

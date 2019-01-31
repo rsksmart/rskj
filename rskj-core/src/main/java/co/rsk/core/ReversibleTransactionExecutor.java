@@ -20,6 +20,7 @@
 package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.db.StateRootHandler;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -38,6 +39,7 @@ public class ReversibleTransactionExecutor {
     private final Repository track;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final StateRootHandler stateRootHandler;
     private final ProgramInvokeFactory programInvokeFactory;
     private final BlockFactory blockFactory;
 
@@ -46,12 +48,14 @@ public class ReversibleTransactionExecutor {
             Repository track,
             BlockStore blockStore,
             ReceiptStore receiptStore,
+            StateRootHandler stateRootHandler,
             BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory) {
         this.config = config;
         this.track = track;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.stateRootHandler = stateRootHandler;
         this.programInvokeFactory = programInvokeFactory;
         this.blockFactory = blockFactory;
     }
@@ -65,7 +69,8 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             RskAddress fromAddress) {
-        Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
+        byte[] stateRoot = stateRootHandler.translate(executionBlock.getHeader()).getBytes();
+        Repository repository = track.getSnapshotTo(stateRoot).startTracking();
 
         byte[] nonce = repository.getNonce(fromAddress).toByteArray();
         UnsignedTransaction tx = new UnsignedTransaction(

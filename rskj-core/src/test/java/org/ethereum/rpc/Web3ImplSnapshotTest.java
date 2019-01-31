@@ -188,7 +188,8 @@ public class Web3ImplSnapshotTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                stateRootHandler
         );
     }
 

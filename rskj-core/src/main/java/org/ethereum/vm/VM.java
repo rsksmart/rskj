@@ -768,7 +768,7 @@ public class VM {
             codeLength = DataWord.valueOf(program.getCode().length); // during initialization it will return the initialization code size
         } else {
             DataWord address = program.stackPop();
-            codeLength = DataWord.valueOf(program.getCodeAt(address).length);
+            codeLength = DataWord.valueOf(program.getCodeLengthAt(address));
             BlockchainConfig blockchainConfig = program.getBlockchainConfig();
             if (blockchainConfig.isRskip90()) {
                 PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, address);
@@ -1901,7 +1901,6 @@ public class VM {
                 }
 
                 op = OpCode.code(program.getCurrentOp());
-
                 checkOpcode();
                 program.setLastOp(op.val());
                 program.verifyStackSize(op.require());
