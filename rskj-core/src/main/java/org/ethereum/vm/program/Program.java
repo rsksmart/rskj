@@ -22,6 +22,7 @@ package org.ethereum.vm.program;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.pcc.NativeContract;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
@@ -260,11 +261,11 @@ public class Program {
 
 
     public DataWord sweepGetDataWord(int n) {
-          if (pc + n > ops.length) {
-              stop();
-              // In this case partial data is copied. At least Ethereumj does this
-              // Asummes LSBs are zero. assignDataRange undestands this semantics.
-          }
+        if (pc + n > ops.length) {
+            stop();
+            // In this case partial data is copied. At least Ethereumj does this
+            // Asummes LSBs are zero. assignDataRange undestands this semantics.
+        }
 
         DataWord dw = DataWord.valueOf(ops, pc, n);
         pc += n;
@@ -486,8 +487,8 @@ public class Program {
         if (programResult.getException() != null || programResult.isRevert()) {
             if (isLogEnabled) {
                 logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
-                      newAddress,
-                      programResult.getException());
+                        newAddress,
+                        programResult.getException());
             }
 
             if (internalTx == null) {
@@ -655,7 +656,7 @@ public class Program {
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
             getResult().addCallCreate(data, contextAddress.getBytes(),
-                        msg.getGas().longValueSafe(),
+                    msg.getGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
             return;
         }
@@ -718,8 +719,8 @@ public class Program {
         if (childResult.getException() != null || childResult.isRevert()) {
             if (isGasLogEnabled) {
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
-                    contextAddress,
-                    childResult .getException());
+                        contextAddress,
+                        childResult .getException());
             }
 
             internalTx.reject();
@@ -859,7 +860,7 @@ public class Program {
     }
 
     public DataWord getBlockHash(long index) {
-       long bn = this.getNumber().longValue();
+        long bn = this.getNumber().longValue();
         if ((index <  bn) && (index >= Math.max(0, bn - 256))) {
             return DataWord.valueOf(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData()));
         } else {
@@ -889,7 +890,7 @@ public class Program {
     }
 
     public DataWord getCallValue() {
-            return invoke.getCallValue();
+        return invoke.getCallValue();
     }
 
     public DataWord getDataSize() {
@@ -1228,8 +1229,8 @@ public class Program {
             return;
         }
 
-        // Special initialization for Bridge and Remasc contracts
-        if (contract instanceof Bridge || contract instanceof RemascContract) {
+        // Special initialization for Bridge, Remasc and NativeContract contracts
+        if (contract instanceof Bridge || contract instanceof RemascContract || contract instanceof NativeContract) {
             // CREATE CALL INTERNAL TRANSACTION
             InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
 
