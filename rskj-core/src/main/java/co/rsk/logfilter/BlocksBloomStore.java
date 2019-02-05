@@ -15,6 +15,10 @@ public class BlocksBloomStore {
         return this.blocksBloom.get(firstNumberInRange(number));
     }
 
+    public void setBlocksBloom(BlocksBloom blocksBloom) {
+        this.blocksBloom.put(blocksBloom.fromBlock(), blocksBloom);
+    }
+
     public static long firstNumberInRange(long number) {
         return number - (number % NO_BLOCKS);
     }
