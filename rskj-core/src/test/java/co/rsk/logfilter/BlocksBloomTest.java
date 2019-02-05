@@ -46,7 +46,7 @@ public class BlocksBloomTest {
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
-        bytes1[1] = 0x10;
+        bytes2[1] = 0x10;
 
         Bloom bloom1 = new Bloom(bytes1);
         Bloom bloom2 = new Bloom(bytes2);
@@ -69,7 +69,7 @@ public class BlocksBloomTest {
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
         byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
-        bytes1[1] = 0x10;
+        bytes2[1] = 0x10;
 
         Bloom bloom1 = new Bloom(bytes1);
         Bloom bloom2 = new Bloom(bytes2);
@@ -79,5 +79,48 @@ public class BlocksBloomTest {
 
         blocksBloom.addBlockBloom(1, bloom1);
         blocksBloom.addBlockBloom(3, bloom2);
+    }
+
+    @Test
+    public void matchesBloom() {
+        BlocksBloom blocksBloom = new BlocksBloom();
+
+        byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
+        bytes1[0] = 0x01;
+        byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
+        bytes2[1] = 0x10;
+
+        Bloom bloom1 = new Bloom(bytes1);
+        Bloom bloom2 = new Bloom(bytes2);
+
+        blocksBloom.addBlockBloom(1, bloom1);
+        blocksBloom.addBlockBloom(2, bloom2);
+
+        Assert.assertTrue(blocksBloom.matches(bloom1));
+        Assert.assertTrue(blocksBloom.matches(bloom2));
+
+        bloom1.or(bloom2);
+
+        Assert.assertTrue(blocksBloom.matches(bloom1));
+    }
+
+    @Test
+    public void doesNotMatchBloom() {
+        BlocksBloom blocksBloom = new BlocksBloom();
+
+        byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
+        bytes1[0] = 0x01;
+        byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
+        bytes2[1] = 0x10;
+
+        Bloom bloom1 = new Bloom(bytes1);
+        Bloom bloom2 = new Bloom(bytes2);
+
+        Assert.assertFalse(blocksBloom.matches(bloom1));
+        Assert.assertFalse(blocksBloom.matches(bloom2));
+
+        bloom1.or(bloom2);
+
+        Assert.assertFalse(blocksBloom.matches(bloom1));
     }
 }

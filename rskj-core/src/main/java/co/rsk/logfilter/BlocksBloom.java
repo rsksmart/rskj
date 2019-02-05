@@ -38,4 +38,8 @@ public class BlocksBloom {
 
         this.bloom.or(blockBloom);
     }
+
+    public boolean matches(Bloom bloom) {
+        return this.bloom.matches(bloom);
+    }
 }
