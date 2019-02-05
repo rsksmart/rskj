@@ -1,5 +1,6 @@
 package co.rsk.logfilter;
 
+import org.ethereum.core.Bloom;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,5 +32,26 @@ public class BlocksBloomStoreTest {
         Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(1));
         Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(BlocksBloomStore.NO_BLOCKS - 1));
         Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(BlocksBloomStore.NO_BLOCKS));
+    }
+
+    @Test
+    public void setBlocksBloom() {
+        BlocksBloom blocksBloom = new BlocksBloom();
+        byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
+        bytes1[0] = 0x01;
+        byte[] bytes2 = new byte[Bloom.BLOOM_BYTES];
+        bytes2[1] = 0x10;
+
+        Bloom bloom1 = new Bloom(bytes1);
+        Bloom bloom2 = new Bloom(bytes2);
+
+        blocksBloom.addBlockBloom(BlocksBloomStore.NO_BLOCKS, bloom1);
+        blocksBloom.addBlockBloom(BlocksBloomStore.NO_BLOCKS + 1, bloom2);
+
+        BlocksBloomStore blocksBloomStore = new BlocksBloomStore();
+
+        blocksBloomStore.setBlocksBloom(blocksBloom);
+
+        Assert.assertSame(blocksBloom, blocksBloomStore.getBlocksBloomByNumber(BlocksBloomStore.NO_BLOCKS));
     }
 }
