@@ -22,6 +22,7 @@ package org.ethereum.vm;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.pcc.bto.BTOUtils;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.SamplePrecompiledContract;
 import co.rsk.remasc.RemascContract;
@@ -57,11 +58,14 @@ public class PrecompiledContracts {
     public static final String SAMPLE_ADDR_STR = "0000000000000000000000000000000001000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
+    public static final String BTOUTILS_ADDR_STR = "0000000000000000000000000000000001000009";
 
     public static final RskAddress BRIDGE_ADDR = new RskAddress(BRIDGE_ADDR_STR);
     public static final RskAddress IDENTITY_ADDR = new RskAddress(IDENTITY_ADDR_STR);
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_STR);
     public static final RskAddress SAMPLE_ADDR = new RskAddress(SAMPLE_ADDR_STR);
+    public static final RskAddress BTOUTILS_ADDR = new RskAddress(BTOUTILS_ADDR_STR);
+
 
     public static final DataWord BRIDGE_ADDR_DW = new DataWord(BRIDGE_ADDR.getBytes());
     public static final DataWord IDENTITY_ADDR_DW = new DataWord(IDENTITY_ADDR.getBytes());
@@ -71,6 +75,7 @@ public class PrecompiledContracts {
     public static final DataWord RIPEMPD160_ADDR_DW = new DataWord(RIPEMPD160_ADDR);
     public static final DataWord BIG_INT_MODEXP_ADDR_DW = new DataWord(BIG_INT_MODEXP_ADDR);
     public static final DataWord SHA256_ADDR_DW = new DataWord(SHA256_ADDR);
+    public static final DataWord BTOUTILS_ADDR_DW = new DataWord(BTOUTILS_ADDR.getBytes());
 
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
@@ -115,6 +120,11 @@ public class PrecompiledContracts {
         }
         if (address.equals(REMASC_ADDR_DW)) {
             return new RemascContract(config, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName()), REMASC_ADDR);
+        }
+        // TODO: network upgrade handling needs to take place here to disable the contract before
+        // TODO: the corresponding block
+        if (address.equals(BTOUTILS_ADDR_DW)) {
+            return new BTOUtils(config, BTOUTILS_ADDR);
         }
 
         return null;
