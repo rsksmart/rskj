@@ -25,4 +25,9 @@ public class TestNetSecondForkConfig extends TestNetOrchid060Config {
     public boolean isRskip123() {
         return true;
     }
+
+    @Override
+    public boolean isRskip106() {
+        return true;
+    }
 }

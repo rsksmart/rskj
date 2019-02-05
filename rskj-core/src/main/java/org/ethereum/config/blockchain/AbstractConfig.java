@@ -164,7 +164,8 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
     }
 
     @Override
-    public boolean isRskip123() {
-        return false;
-    }
+    public boolean isRskip123() { return false; }
+
+    @Override
+    public boolean isRskip106() { return false; }
 }
