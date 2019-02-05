@@ -41,6 +41,7 @@ public class PrecompiledContractAddressTests {
     public static final String IDENTITY_ADDR_STR = "0000000000000000000000000000000000000004";
     public static final String BIG_INT_MODEXP_ADDR = "0000000000000000000000000000000000000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
+    public static final String BTOUTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
 
@@ -57,6 +58,7 @@ public class PrecompiledContractAddressTests {
         checkAddr(pcList,BRIDGE_ADDR_STR ,"Bridge");
         checkAddr(pcList,REMASC_ADDR_STR ,"RemascContract");
         checkAddr(pcList,BLOCK_HEADER_ADDR_STR,"BlockHeaderContract");
+        checkAddr(pcList,BTOUTILS_ADDR_STR,"BTOUtils");
     }
 
     void checkAddr(PrecompiledContracts pcList,String addr,String className) {
