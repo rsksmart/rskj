@@ -62,6 +62,10 @@ public abstract class NativeMethod {
         this.executionEnvironment = executionEnvironment;
     }
 
+    public ExecutionEnvironment getExecutionEnvironment() {
+        return executionEnvironment;
+    }
+
     public abstract CallTransaction.Function getFunction();
 
     public abstract Object execute(Object[] arguments);
