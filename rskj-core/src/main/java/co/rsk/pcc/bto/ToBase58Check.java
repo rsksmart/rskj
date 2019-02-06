@@ -28,31 +28,34 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
- * This is here since the bitcoinj Address class performs version
- * validation depending on the actual network passed in,
- * and the given constructor within VersionedChecksummedBytes is protected.
- */
-class VersionedChecksummedBytes extends co.rsk.bitcoinj.core.VersionedChecksummedBytes {
-    public VersionedChecksummedBytes(int version, byte[] bytes) {
-        super(version, bytes);
-    }
-}
-
-/**
  * This implements the "toBase58Check" method
  * that belongs to the BTOUtils native contract.
  *
  * @author Ariel Mendelzon
  */
 public class ToBase58Check extends NativeMethod {
+    /**
+     * This is here since the bitcoinj Address class performs version
+     * validation depending on the actual network passed in,
+     * and the given constructor within VersionedChecksummedBytes is protected.
+     */
+    private static class VersionedChecksummedBytes extends co.rsk.bitcoinj.core.VersionedChecksummedBytes {
+        public VersionedChecksummedBytes(int version, byte[] bytes) {
+            super(version, bytes);
+        }
+    }
+
     private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
             "toBase58Check",
-            new String[]{"bytes20", "uint8"},
+            new String[]{"bytes", "uint8"},
             new String[]{"string"}
     );
 
-    public ToBase58Check(ExecutionEnvironment executionEnvironment) {
+    private BTOUtilsHelper helper;
+
+    public ToBase58Check(ExecutionEnvironment executionEnvironment, BTOUtilsHelper helper) {
         super(executionEnvironment);
+        this.helper = helper;
     }
 
     @Override
@@ -63,17 +66,15 @@ public class ToBase58Check extends NativeMethod {
     @Override
     public Object execute(Object[] arguments) {
         byte[] hash = (byte[]) arguments[0];
-        if (hash.length < 20) {
-            throw new NativeContractIllegalArgumentException(String.format("Invalid hash160 '%s'", Hex.toHexString(hash)));
+        if (hash.length != 20) {
+            throw new NativeContractIllegalArgumentException(String.format(
+                    "Invalid hash160 '%s' (should be 20 bytes and is %d bytes)",
+                    Hex.toHexString(hash), hash.length
+            ));
         }
         hash = Arrays.copyOfRange(hash, 0, 20);
 
-        byte version;
-        try {
-            version = ((BigInteger) arguments[1]).byteValueExact();
-        } catch (ArithmeticException e) {
-            throw new NativeContractIllegalArgumentException(String.format("Invalid unsigned byte %d", arguments[1]), e);
-        }
+        byte version = helper.validateAndGetByteFromBigInteger((BigInteger) arguments[1]);
 
         return new VersionedChecksummedBytes(version, hash).toBase58();
     }
@@ -85,6 +86,6 @@ public class ToBase58Check extends NativeMethod {
 
     @Override
     public boolean onlyAllowsLocalCalls() {
-        return true;
+        return false;
     }
 }
