@@ -70,7 +70,7 @@ public abstract class NativeMethod {
         // By default, gas is twice the length of the original data passed in
         // This can (AND SHOULD) be overriden in implementing methods, although
         // the default can always be used on top.
-        // (e.g., "return 23000L + super(arguments);")
+        // (e.g., "return 23000L + super(parsedArguments, originalData);")
 
         return originalData == null ? 0 : originalData.length * 2;
     }
