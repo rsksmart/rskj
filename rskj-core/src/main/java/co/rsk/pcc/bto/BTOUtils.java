@@ -37,19 +37,25 @@ import java.util.Optional;
  * @author Ariel Mendelzon
  */
 public class BTOUtils extends NativeContract {
+    private final BTOUtilsHelper helper;
+
     public BTOUtils(RskSystemProperties config, RskAddress contractAddress) {
         super(config, contractAddress);
+        this.helper = new BTOUtilsHelper();
     }
 
     @Override
     public List<NativeMethod> getMethods() {
         return Arrays.asList(
-            new ToBase58Check(getExecutionEnvironment())
+            new ToBase58Check(getExecutionEnvironment(), helper),
+            new DeriveExtendedPublicKey(getExecutionEnvironment(), helper),
+            new ExtractPublicKeyFromExtendedPublicKey(getExecutionEnvironment(), helper),
+            new GetMultisigScriptHash(getExecutionEnvironment(), helper)
         );
     }
 
     @Override
     public Optional<NativeMethod> getDefaultMethod() {
-        return null;
+        return Optional.empty();
     }
 }
