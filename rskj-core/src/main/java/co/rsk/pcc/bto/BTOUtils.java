@@ -47,10 +47,10 @@ public class BTOUtils extends NativeContract {
     @Override
     public List<NativeMethod> getMethods() {
         return Arrays.asList(
-            new ToBase58Check(getExecutionEnvironment(), helper),
+            new ToBase58Check(getExecutionEnvironment()),
             new DeriveExtendedPublicKey(getExecutionEnvironment(), helper),
             new ExtractPublicKeyFromExtendedPublicKey(getExecutionEnvironment(), helper),
-            new GetMultisigScriptHash(getExecutionEnvironment(), helper)
+            new GetMultisigScriptHash(getExecutionEnvironment())
         );
     }
 
