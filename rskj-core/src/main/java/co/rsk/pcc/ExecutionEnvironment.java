@@ -83,6 +83,14 @@ public class ExecutionEnvironment {
         return repository;
     }
 
+    public BlockStore getBlockStore() {
+        return blockStore;
+    }
+
+    public ReceiptStore getReceiptStore() {
+        return receiptStore;
+    }
+
     public List<LogInfo> getLogs() {
         return logs;
     }
