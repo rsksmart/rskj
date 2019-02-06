@@ -22,6 +22,7 @@ package org.ethereum.vm.program;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.pcc.NativeContract;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
@@ -1572,8 +1573,8 @@ public class Program {
             return;
         }
 
-        // Special initialization for Bridge and Remasc contracts
-        if (contract instanceof Bridge || contract instanceof RemascContract) {
+        // Special initialization for Bridge, Remasc and NativeContract contracts
+        if (contract instanceof Bridge || contract instanceof RemascContract || contract instanceof NativeContract) {
             // CREATE CALL INTERNAL TRANSACTION
             InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
 
