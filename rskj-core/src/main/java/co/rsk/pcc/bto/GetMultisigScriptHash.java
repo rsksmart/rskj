@@ -49,6 +49,10 @@ public class GetMultisigScriptHash extends NativeMethod {
     private final int COMPRESSED_PUBLIC_KEY_LENGTH = 33;
     private final int UNCOMPRESSED_PUBLIC_KEY_LENGTH = 65;
 
+    // Enforced by the 520-byte size limit of the redeem script
+    // (see https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki#520byte_limitation_on_serialized_script_size)
+    private final int MAXIMUM_ALLOWED_SIGNATURES = 15;
+
     private BTOUtilsHelper helper;
 
     public GetMultisigScriptHash(ExecutionEnvironment executionEnvironment, BTOUtilsHelper helper) {
@@ -63,13 +67,28 @@ public class GetMultisigScriptHash extends NativeMethod {
 
     @Override
     public Object execute(Object[] arguments) {
-        byte minimumSignatures = helper.validateAndGetByteFromBigInteger((BigInteger) arguments[0]);
-
+        int minimumSignatures = ((BigInteger) arguments[0]).intValueExact();
         Object[] publicKeys = (Object[]) arguments[1];
+
+        if (minimumSignatures == 0) {
+            throw new NativeContractIllegalArgumentException("Minimum required signatures must be greater than zero");
+        }
+
+        if (publicKeys.length == 0) {
+            throw new NativeContractIllegalArgumentException("At least one public key is required");
+        }
+
         if (publicKeys.length < minimumSignatures) {
             throw new NativeContractIllegalArgumentException(String.format(
                     "Given public keys (%d) are less than the minimum required signatures (%d)",
                     publicKeys.length, minimumSignatures
+            ));
+        }
+
+        if (publicKeys.length > MAXIMUM_ALLOWED_SIGNATURES) {
+            throw new NativeContractIllegalArgumentException(String.format(
+                    "Given public keys (%d) are more than the maximum allowed signatures (%d)",
+                    publicKeys.length, MAXIMUM_ALLOWED_SIGNATURES
             ));
         }
 
