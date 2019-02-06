@@ -18,18 +18,12 @@
 
 package co.rsk.trie;
 
-import co.rsk.panic.PanicProcessor;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -42,10 +36,8 @@ import java.util.List;
  * Created by ajlopez on 08/01/2017.
  */
 public class TrieStoreImpl implements TrieStore {
-    private static final Logger logger = LoggerFactory.getLogger("triestore");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private static final String PANIC_TOPIC = "triestore";
-    private static final String ERROR_CREATING_STORE = "Error creating trie store";
+
+    private static final int LAST_BYTE_ONLY_MASK = 0x000000ff;
 
     // a key value data source to use
     private KeyValueDataSource store;
@@ -137,40 +129,54 @@ public class TrieStoreImpl implements TrieStore {
     }
 
     public static TrieStoreImpl deserialize(byte[] bytes) {
-        return deserialize(bytes, 0, bytes.length, new HashMapDB());
+        return deserialize(bytes, 0, new HashMapDB());
     }
 
-    public static TrieStoreImpl deserialize(byte[] bytes, int offset, int length, KeyValueDataSource ds) {
-        ByteArrayInputStream bstream = new ByteArrayInputStream(bytes, offset, length);
-        DataInputStream dstream = new DataInputStream(bstream);
+    public static TrieStoreImpl deserialize(byte[] bytes, int offset, KeyValueDataSource ds) {
+        int current = offset;
+        current += Short.BYTES; // version
 
-        try {
-            dstream.readShort(); // version
+        int nkeys = readInt(bytes, current);
+        current += Integer.BYTES;
 
-            int nkeys = dstream.readInt();
-
-            for (int k = 0; k < nkeys; k++) {
-                int lkey = dstream.readInt();
-                byte[] key = new byte[lkey];
-                if (dstream.read(key) != lkey) {
-                    throw new EOFException();
-                }
-
-                int lvalue = dstream.readInt();
-                byte[] value = new byte[lvalue];
-                if (dstream.read(value) != lvalue) {
-                    throw new EOFException();
-                }
-
-                ds.put(key, value);
+        for (int k = 0; k < nkeys; k++) {
+            int lkey = readInt(bytes, current);
+            current += Integer.BYTES;
+            if (lkey > bytes.length - current) {
+                throw new IllegalArgumentException(String.format(
+                        "Left bytes are too short for key expected:%d actual:%d total:%d",
+                        lkey, bytes.length - current, bytes.length));
             }
+            byte[] key = Arrays.copyOfRange(bytes, current, current + lkey);
+            current += lkey;
 
-            return new TrieStoreImpl(ds);
+            int lvalue = readInt(bytes, current);
+            current += Integer.BYTES;
+            if (lvalue > bytes.length - current) {
+                throw new IllegalArgumentException(String.format(
+                        "Left bytes are too short for value expected:%d actual:%d total:%d",
+                        lvalue, bytes.length - current, bytes.length));
+            }
+            byte[] value = Arrays.copyOfRange(bytes, current, current + lvalue);
+            current += lvalue;
+            ds.put(key, value);
         }
-        catch (IOException ex) {
-            logger.error(ERROR_CREATING_STORE, ex);
-            panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_STORE +": " + ex.getMessage());
-            throw new TrieSerializationException(ERROR_CREATING_STORE, ex);
+
+        return new TrieStoreImpl(ds);
+    }
+
+    // this methods reads a int as dataInputStream + byteArrayInputStream
+    private static int readInt(byte[] bytes, int position) {
+        int ch1 = bytes[position] & LAST_BYTE_ONLY_MASK;
+        int ch2 = bytes[position+1] & LAST_BYTE_ONLY_MASK;
+        int ch3 = bytes[position+2] & LAST_BYTE_ONLY_MASK;
+        int ch4 = bytes[position+3] & LAST_BYTE_ONLY_MASK;
+        if ((ch1 | ch2 | ch3 | ch4) < 0) {
+            throw new IllegalArgumentException(
+                    String.format("On position %d there are invalid bytes for a short value %s %s %s %s",
+                                  position, ch1, ch2, ch3, ch4));
+        } else {
+            return (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4);
         }
     }
 }
