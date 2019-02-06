@@ -146,10 +146,19 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
             after();
 
             // Special cases:
-            // - empty Optional<?> => null
             // - null => null
-            if (result == null || result.getClass() == Optional.class && !((Optional<?>)result).isPresent()) {
+            // - empty Optional<?> => null
+            // - nonempty Optional<?> => encoded ?
+            // Note: this is hacky, but ultimately very short and to the point.
+            if (result == null) {
                 return null;
+            } else if (result.getClass() == Optional.class) {
+                Optional<?> optionalResult = (Optional<?>) result;
+                if (!optionalResult.isPresent()) {
+                    return null;
+                } else {
+                    result = optionalResult.get();
+                }
             }
 
             return methodWithArguments.get().getMethod().getFunction().encodeOutputs(result);
@@ -164,7 +173,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
     private Optional<NativeMethod.WithArguments> parseData(byte[] data) {
         if (data != null && (data.length >= 1 && data.length <= 3)) {
             logger.warn("Invalid function signature {}.", Hex.toHexString(data));
-            return null;
+            return Optional.empty();
         }
 
         if ((data == null || data.length == 0) && getDefaultMethod().isPresent()) {
