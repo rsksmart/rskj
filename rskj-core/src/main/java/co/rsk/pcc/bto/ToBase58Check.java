@@ -51,11 +51,8 @@ public class ToBase58Check extends NativeMethod {
             new String[]{"string"}
     );
 
-    private BTOUtilsHelper helper;
-
-    public ToBase58Check(ExecutionEnvironment executionEnvironment, BTOUtilsHelper helper) {
+    public ToBase58Check(ExecutionEnvironment executionEnvironment) {
         super(executionEnvironment);
-        this.helper = helper;
     }
 
     @Override
@@ -74,7 +71,7 @@ public class ToBase58Check extends NativeMethod {
         }
         hash = Arrays.copyOfRange(hash, 0, 20);
 
-        byte version = helper.validateAndGetByteFromBigInteger((BigInteger) arguments[1]);
+        int version = ((BigInteger) arguments[1]).intValueExact();
 
         return new VersionedChecksummedBytes(version, hash).toBase58();
     }

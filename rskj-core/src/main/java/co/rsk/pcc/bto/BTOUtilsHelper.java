@@ -2,6 +2,7 @@ package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
+import com.google.common.primitives.UnsignedBytes;
 
 import java.math.BigInteger;
 
@@ -16,15 +17,5 @@ public class BTOUtilsHelper {
         } else {
             throw new NativeContractIllegalArgumentException(String.format("Invalid extended public key '%s'", xpub));
         }
-    }
-
-    public byte validateAndGetByteFromBigInteger(BigInteger value) {
-        byte result;
-        try {
-            result = value.byteValueExact();
-        } catch (ArithmeticException e) {
-            throw new NativeContractIllegalArgumentException(String.format("Invalid unsigned byte %d", value), e);
-        }
-        return result;
     }
 }

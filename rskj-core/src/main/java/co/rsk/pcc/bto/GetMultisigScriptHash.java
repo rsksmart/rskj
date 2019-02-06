@@ -53,11 +53,8 @@ public class GetMultisigScriptHash extends NativeMethod {
     // (see https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki#520byte_limitation_on_serialized_script_size)
     private final int MAXIMUM_ALLOWED_SIGNATURES = 15;
 
-    private BTOUtilsHelper helper;
-
-    public GetMultisigScriptHash(ExecutionEnvironment executionEnvironment, BTOUtilsHelper helper) {
+    public GetMultisigScriptHash(ExecutionEnvironment executionEnvironment) {
         super(executionEnvironment);
-        this.helper = helper;
     }
 
     @Override
