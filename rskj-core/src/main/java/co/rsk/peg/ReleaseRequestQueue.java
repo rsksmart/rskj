@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.Coin;
 
 import java.util.ArrayList;
@@ -34,15 +34,15 @@ import java.util.Objects;
  */
 public class ReleaseRequestQueue {
     public static class Entry {
-        private Address destination;
+        private LegacyAddress destination;
         private Coin amount;
 
-        public Entry(Address destination, Coin amount) {
+        public Entry(LegacyAddress destination, Coin amount) {
             this.destination = destination;
             this.amount = amount;
         }
 
-        public Address getDestination() {
+        public LegacyAddress getDestination() {
             return destination;
         }
 
@@ -82,7 +82,7 @@ public class ReleaseRequestQueue {
         return new ArrayList<>(entries);
     }
 
-    public void add(Address destination, Coin amount) {
+    public void add(LegacyAddress destination, Coin amount) {
         entries.add(new Entry(destination, amount));
     }
 

@@ -112,7 +112,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
 
             // Sender and amounts
             BtcECKey from = new BtcECKey();
-            Address fromAddress = from.toAddress(networkParameters);
+            LegacyAddress fromAddress = from.toAddress(networkParameters);
             Coin fromAmount = Coin.CENT.multiply(Helper.randomInRange(10, 100));
             Coin lockAmount = fromAmount.divide(Helper.randomInRange(2, 10));
             Coin changeAmount = fromAmount.subtract(lockAmount).subtract(Coin.MILLICOIN); // 1 millicoin fee simulation

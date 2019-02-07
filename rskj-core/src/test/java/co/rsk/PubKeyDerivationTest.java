@@ -1,9 +1,6 @@
 package co.rsk;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.Base58;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.ChildNumber;
 import co.rsk.bitcoinj.crypto.DeterministicKey;
 import co.rsk.bitcoinj.crypto.HDKeyDerivation;
@@ -54,7 +51,7 @@ public class PubKeyDerivationTest {
 
         Script script = ScriptBuilder.createP2SHOutputScript(redeemScript);
 
-        Address multisig = Address.fromP2SHScript(params, script);
+        LegacyAddress multisig = LegacyAddress.fromP2SHScript(params, script);
         assertEquals("3KwuACPswasN8iHybeJ7Vfs5rUBwQ5Y8UY", multisig.toString());
     }
 
@@ -103,7 +100,7 @@ public class PubKeyDerivationTest {
         Script p2sh_operations = new ScriptBuilder().smallNum(0).data(HashUtil.sha256(redeemScript.getProgram())).build();
         Script script = ScriptBuilder.createP2SHOutputScript(p2sh_operations);
 
-        Address multisig = Address.fromP2SHScript(params, script);
+        LegacyAddress multisig = LegacyAddress.fromP2SHScript(params, script);
         assertEquals("38xizxq4uQStrjZX2hQp15rGLAv867rtqL", multisig.toBase58());
     }
 
@@ -140,7 +137,7 @@ public class PubKeyDerivationTest {
         Script redeemScript = new ScriptBuilder().smallNum(0).data(child.getPubKeyHash()).build();
         Script script = ScriptBuilder.createP2SHOutputScript(redeemScript);
 
-        Address p2wpkh = Address.fromP2SHScript(params, script);
+        LegacyAddress p2wpkh = LegacyAddress.fromP2SHScript(params, script);
 
         assertEquals("2Mww8dCYPUpKHofjgcXcBCEGmniw9CoaiD2", p2wpkh.toBase58());
 

@@ -444,7 +444,7 @@ public class BridgeSupport {
 
             // Tx is a lock tx, check whether the sender is whitelisted
             BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
-            Address senderBtcAddress = new Address(btcContext.getParams(), senderBtcKey.getPubKeyHash());
+            LegacyAddress senderBtcAddress = new LegacyAddress(btcContext.getParams(), senderBtcKey.getPubKeyHash());
 
             // If the address is not whitelisted, then return the funds
             // using the exact same utxos sent to us.
@@ -573,7 +573,7 @@ public class BridgeSupport {
 
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
+        LegacyAddress btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
         Coin value = rskTx.getValue().toBitcoin();
         boolean addResult = requestRelease(btcDestinationAddress, value);
 
@@ -595,7 +595,7 @@ public class BridgeSupport {
      * considered dust and therefore ignored.
      * @throws IOException
      */
-    private boolean requestRelease(Address destinationAddress, Coin value) throws IOException {
+    private boolean requestRelease(LegacyAddress destinationAddress, Coin value) throws IOException {
         if (!value.isGreaterThan(bridgeConstants.getMinimumReleaseTxValue())) {
             return false;
         }
@@ -1257,7 +1257,7 @@ public class BridgeSupport {
      * Returns the federation bitcoin address.
      * @return the federation bitcoin address.
      */
-    public Address getFederationAddress() {
+    public LegacyAddress getFederationAddress() {
         return getActiveFederation().getAddress();
     }
 
@@ -1317,7 +1317,7 @@ public class BridgeSupport {
      * Returns the retiring federation bitcoin address.
      * @return the retiring federation bitcoin address, null if no retiring federation exists
      */
-    public Address getRetiringFederationAddress() {
+    public LegacyAddress getRetiringFederationAddress() {
         Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return null;
@@ -1798,7 +1798,7 @@ public class BridgeSupport {
      */
     public LockWhitelistEntry getLockWhitelistEntryByAddress(String addressBase58) {
         try {
-            Address address = getParsedAddress(addressBase58);
+            LegacyAddress address = getParsedAddress(addressBase58);
             return provider.getLockWhitelist().get(address);
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
@@ -1818,7 +1818,7 @@ public class BridgeSupport {
      */
     public Integer addOneOffLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
         try {
-            Address address = getParsedAddress(addressBase58);
+            LegacyAddress address = getParsedAddress(addressBase58);
             Coin maxTransferValueCoin = Coin.valueOf(maxTransferValue.longValueExact());
             return this.addLockWhitelistAddress(tx, new OneOffWhiteListEntry(address, maxTransferValueCoin));
         } catch (AddressFormatException e) {
@@ -1829,7 +1829,7 @@ public class BridgeSupport {
 
     public Integer addUnlimitedLockWhitelistAddress(Transaction tx, String addressBase58) {
         try {
-            Address address = getParsedAddress(addressBase58);
+            LegacyAddress address = getParsedAddress(addressBase58);
             return this.addLockWhitelistAddress(tx, new UnlimitedWhiteListEntry(address));
         } catch (AddressFormatException e) {
             logger.warn(INVALID_ADDRESS_FORMAT_MESSAGE, e);
@@ -1880,7 +1880,7 @@ public class BridgeSupport {
         LockWhitelist whitelist = provider.getLockWhitelist();
 
         try {
-            Address address = getParsedAddress(addressBase58);
+            LegacyAddress address = getParsedAddress(addressBase58);
 
             if (!whitelist.remove(address)) {
                 return -1;
@@ -2065,8 +2065,8 @@ public class BridgeSupport {
         }
     }
 
-    private Address getParsedAddress(String base58Address) throws AddressFormatException {
-        return Address.fromBase58(btcContext.getParams(), base58Address);
+    private LegacyAddress getParsedAddress(String base58Address) throws AddressFormatException {
+        return LegacyAddress.fromBase58(btcContext.getParams(), base58Address);
     }
 }
 

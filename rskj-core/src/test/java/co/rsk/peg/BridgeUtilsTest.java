@@ -33,7 +33,6 @@ import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
@@ -264,7 +263,7 @@ public class BridgeUtilsTest {
         toActiveFederationTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertThat(BridgeUtils.isMigrationTx(toActiveFederationTx, activeFederation, retiringFederation, btcContext, bridgeConstants), is(false));
 
-        Address randomAddress = Address.fromBase58(
+        Address randomAddress = LegacyAddress.fromBase58(
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
@@ -408,7 +407,7 @@ public class BridgeUtilsTest {
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         Federation federation = bridgeConstants.getGenesisFederation();
         List<BtcECKey> federationPrivateKeys = bridgeConstants.getFederatorPrivateKeys();
-        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        Address randomAddress = new LegacyAddress(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
 
         BtcTransaction releaseTx1 = new BtcTransaction(params);
         releaseTx1.addOutput(Coin.COIN, randomAddress);
@@ -429,7 +428,7 @@ public class BridgeUtilsTest {
     public void testChangeBetweenFederations() {
         NetworkParameters params = RegTestParams.get();
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        Address randomAddress = new LegacyAddress(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
         Context btcContext = new Context(params);
 
         List<BtcECKey> federation1Keys = Stream.of("fa01", "fa02")

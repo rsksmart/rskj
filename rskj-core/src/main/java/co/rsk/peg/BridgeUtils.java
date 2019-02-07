@@ -210,7 +210,7 @@ public class BridgeUtils {
         return moveFromRetiring && moveToActive;
     }
 
-    public static Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
+    public static LegacyAddress recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
         org.ethereum.crypto.ECKey key = tx.getKey();
         byte[] pubKey = key.getPubKey(true);
         return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);

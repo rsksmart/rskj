@@ -139,7 +139,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
 
             int size = Helper.randomInRange(minSize, maxSize);
             for (int i = 0; i < size; i++) {
-                Address address = new BtcECKey().toAddress(networkParameters);
+                LegacyAddress address = new BtcECKey().toAddress(networkParameters);
                 Coin value = Helper.randomCoin(Coin.COIN, 1, 30);
                 lockWhitelist.put(address, new OneOffWhiteListEntry(address, value));
             }

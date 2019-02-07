@@ -429,7 +429,7 @@ public class BridgeSerializationUtils {
         byte[][] serializedLockWhitelist = new byte[serializationSize][];
         for (int i = 0; i < entries.size(); i++) {
             OneOffWhiteListEntry entry = entries.get(i);
-            serializedLockWhitelist[2 * i] = RLP.encodeElement(entry.address().getHash160());
+            serializedLockWhitelist[2 * i] = RLP.encodeElement(entry.address().getHash());
             serializedLockWhitelist[2 * i + 1] = RLP.encodeBigInteger(BigInteger.valueOf(entry.maxTransferValue().longValue()));
         }
         serializedLockWhitelist[serializationSize - 1] = RLP.encodeBigInteger(BigInteger.valueOf(disableBlockHeight));
@@ -445,12 +445,12 @@ public class BridgeSerializationUtils {
         int serializationSize = entries.size();
         byte[][] serializedLockWhitelist = new byte[serializationSize][];
         for (int i = 0; i < entries.size(); i++) {
-            serializedLockWhitelist[i] = RLP.encodeElement(entries.get(i).address().getHash160());
+            serializedLockWhitelist[i] = RLP.encodeElement(entries.get(i).address().getHash());
         }
         return RLP.encodeList(serializedLockWhitelist);
     }
 
-    public static Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializeOneOffLockWhitelistAndDisableBlockHeight(byte[] data, NetworkParameters parameters) {
+    public static Pair<HashMap<LegacyAddress, OneOffWhiteListEntry>, Integer> deserializeOneOffLockWhitelistAndDisableBlockHeight(byte[] data, NetworkParameters parameters) {
         if (data == null || data.length == 0) {
             return null;
         }
@@ -462,18 +462,18 @@ public class BridgeSerializationUtils {
             throw new RuntimeException("deserializeLockWhitelist: expected an even number of addresses, but odd given");
         }
 
-        HashMap<Address, OneOffWhiteListEntry> entries = new HashMap<>(serializedAddressesSize / 2);
+        HashMap<LegacyAddress, OneOffWhiteListEntry> entries = new HashMap<>(serializedAddressesSize / 2);
         for (int i = 0; i < serializedAddressesSize; i = i + 2) {
             byte[] hash160 = rlpList.get(i).getRLPData();
             byte[] maxTransferValueData = rlpList.get(i + 1).getRLPData();
-            Address address = new Address(parameters, hash160);
+            LegacyAddress address = new LegacyAddress(parameters, hash160);
             entries.put(address, new OneOffWhiteListEntry(address, Coin.valueOf(safeToBigInteger(maxTransferValueData).longValueExact())));
         }
         int disableBlockHeight = safeToBigInteger(rlpList.get(serializedAddressesSize).getRLPData()).intValueExact();
         return Pair.of(entries, disableBlockHeight);
     }
 
-    public static Map<Address, UnlimitedWhiteListEntry> deserializeUnlimitedLockWhitelistEntries(byte[] data, NetworkParameters parameters) {
+    public static Map<LegacyAddress, UnlimitedWhiteListEntry> deserializeUnlimitedLockWhitelistEntries(byte[] data, NetworkParameters parameters) {
         if (data == null) {
             return new HashMap<>();
         }
@@ -481,11 +481,11 @@ public class BridgeSerializationUtils {
         RLPList unlimitedWhitelistEntriesRlpList = (RLPList)RLP.decode2(data).get(0);
         int unlimitedWhitelistEntriesSerializedAddressesSize = unlimitedWhitelistEntriesRlpList.size();
 
-        Map<Address, UnlimitedWhiteListEntry> entries = new HashMap<>(unlimitedWhitelistEntriesSerializedAddressesSize);
+        Map<LegacyAddress, UnlimitedWhiteListEntry> entries = new HashMap<>(unlimitedWhitelistEntriesSerializedAddressesSize);
 
         for (int j = 0; j < unlimitedWhitelistEntriesSerializedAddressesSize; j++) {
             byte[] hash160 = unlimitedWhitelistEntriesRlpList.get(j).getRLPData();
-            Address address = new Address(parameters, hash160);
+            LegacyAddress address = new LegacyAddress(parameters, hash160);
             entries.put(address, new UnlimitedWhiteListEntry(address));
         }
 
@@ -522,7 +522,7 @@ public class BridgeSerializationUtils {
         int n = 0;
 
         for (ReleaseRequestQueue.Entry entry : entries) {
-            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash160());
+            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash());
             bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getAmount().getValue()));
         }
 
@@ -548,7 +548,7 @@ public class BridgeSerializationUtils {
 
         for (int k = 0; k < n; k++) {
             byte[] addressBytes = rlpList.get(k * 2).getRLPData();
-            Address address = new Address(networkParameters, addressBytes);
+            LegacyAddress address = new LegacyAddress(networkParameters, addressBytes);
             Long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
             entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount)));

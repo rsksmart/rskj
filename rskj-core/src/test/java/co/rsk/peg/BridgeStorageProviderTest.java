@@ -1566,8 +1566,8 @@ public class BridgeStorageProviderTest {
         return mock;
     }
 
-    private Address getBtcAddress(String addr) {
-        return new Address(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams(), Hex.decode(addr));
+    private LegacyAddress getBtcAddress(String addr) {
+        return new LegacyAddress(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams(), Hex.decode(addr));
     }
 
     private Federation buildMockFederation(Integer... pks) {

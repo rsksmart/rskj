@@ -18,9 +18,9 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import org.junit.Assert;
 import org.junit.Before;
@@ -118,7 +118,7 @@ public class ReleaseRequestQueueTest {
         ), queue.getEntries());
     }
 
-    private Address mockAddress(int pk) {
+    private LegacyAddress mockAddress(int pk) {
         return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
     }
 }

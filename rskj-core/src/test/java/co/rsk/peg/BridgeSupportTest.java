@@ -1592,7 +1592,7 @@ public class BridgeSupportTest {
     public void registerBtcTransactionWithCrossFederationsChange() throws Exception {
         NetworkParameters params = RegTestParams.get();
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        Address randomAddress = new LegacyAddress(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
         Context btcContext = new Context(params);
 
         List<BtcECKey> activeFederationKeys = Stream.of("fa01", "fa02")
@@ -1738,9 +1738,9 @@ public class BridgeSupportTest {
 
         // Whitelist the addresses
         LockWhitelist whitelist = provider.getLockWhitelist();
-        Address address1 = srcKey1.toAddress(parameters);
-        Address address2 = srcKey2.toAddress(parameters);
-        Address address3 = srcKey3.toAddress(parameters);
+        LegacyAddress address1 = srcKey1.toAddress(parameters);
+        LegacyAddress address2 = srcKey2.toAddress(parameters);
+        LegacyAddress address3 = srcKey3.toAddress(parameters);
         whitelist.put(address1, new OneOffWhiteListEntry(address1, Coin.COIN.multiply(5)));
         whitelist.put(address2, new OneOffWhiteListEntry(address2, Coin.COIN.multiply(10)));
         whitelist.put(address3, new OneOffWhiteListEntry(address3, Coin.COIN.multiply(2).add(Coin.COIN.multiply(3))));
@@ -1841,7 +1841,7 @@ public class BridgeSupportTest {
 
         // Whitelist the addresses
         LockWhitelist whitelist = provider.getLockWhitelist();
-        Address address1 = srcKey1.toAddress(parameters);
+        LegacyAddress address1 = srcKey1.toAddress(parameters);
         whitelist.put(address1, new OneOffWhiteListEntry(address1, Coin.COIN.multiply(5)));
 
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
@@ -3252,7 +3252,7 @@ public class BridgeSupportTest {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.getSize()).thenReturn(4);
         List<LockWhitelistEntry> entries = Arrays.stream(new Integer[]{2,3,4,5}).map(i ->
-            new UnlimitedWhiteListEntry(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash()))
+            new UnlimitedWhiteListEntry(new LegacyAddress(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash()))
         ).collect(Collectors.toList());
         when(mockedWhitelist.getAll()).thenReturn(entries);
         for (int i = 0; i < 4; i++) {
@@ -3264,7 +3264,7 @@ public class BridgeSupportTest {
         Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(-1));
         Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(4));
         Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(5));
-        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByAddress(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(-1)).getPubKeyHash()).toBase58()));
+        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByAddress(new LegacyAddress(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(-1)).getPubKeyHash()).toBase58()));
         for (int i = 0; i < 4; i++) {
             Assert.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByIndex(i));
             Assert.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByAddress(entries.get(i).address().toBase58()));
@@ -3283,8 +3283,8 @@ public class BridgeSupportTest {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        when(mockedWhitelist.put(any(Address.class), any(OneOffWhiteListEntry.class))).then((InvocationOnMock m) -> {
-            Address address = m.getArgumentAt(0, Address.class);
+        when(mockedWhitelist.put(any(LegacyAddress.class), any(OneOffWhiteListEntry.class))).then((InvocationOnMock m) -> {
+            LegacyAddress address = m.getArgumentAt(0, LegacyAddress.class);
             Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
             return true;
         });
@@ -3304,8 +3304,8 @@ public class BridgeSupportTest {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        ArgumentCaptor<Address> argument = ArgumentCaptor.forClass(Address.class);
-        when(mockedWhitelist.isWhitelisted(any(Address.class))).thenReturn(true);
+        ArgumentCaptor<LegacyAddress> argument = ArgumentCaptor.forClass(LegacyAddress.class);
+        when(mockedWhitelist.isWhitelisted(any(LegacyAddress.class))).thenReturn(true);
 
         Assert.assertEquals(-1, bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
         verify(mockedWhitelist).isWhitelisted(argument.capture());
@@ -3505,8 +3505,8 @@ public class BridgeSupportTest {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        when(mockedWhitelist.remove(any(Address.class))).then((InvocationOnMock m) -> {
-            Address address = m.getArgumentAt(0, Address.class);
+        when(mockedWhitelist.remove(any(LegacyAddress.class))).then((InvocationOnMock m) -> {
+            LegacyAddress address = m.getArgumentAt(0, LegacyAddress.class);
             Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
             return true;
         });
@@ -3526,8 +3526,8 @@ public class BridgeSupportTest {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        when(mockedWhitelist.remove(any(Address.class))).then((InvocationOnMock m) -> {
-            Address address = m.getArgumentAt(0, Address.class);
+        when(mockedWhitelist.remove(any(LegacyAddress.class))).then((InvocationOnMock m) -> {
+            LegacyAddress address = m.getArgumentAt(0, LegacyAddress.class);
             Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
             return false;
         });

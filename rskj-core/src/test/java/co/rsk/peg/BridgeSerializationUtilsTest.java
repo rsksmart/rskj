@@ -28,7 +28,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
@@ -673,7 +672,7 @@ public class BridgeSerializationUtilsTest {
 
         LockWhitelist lockWhitelist = new LockWhitelist(
             Arrays.stream(addressesBytes)
-                .map(bytes -> new Address(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), bytes))
+                .map(bytes -> new LegacyAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), bytes))
                 .collect(Collectors.toMap(Function.identity(), k -> new OneOffWhiteListEntry(k, maxToTransfer))),
                 0);
 
@@ -713,13 +712,13 @@ public class BridgeSerializationUtilsTest {
         sampleBuilder.append("002a");
         byte[] sample = Hex.decode(sampleBuilder.toString());
 
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
+        Pair<HashMap<LegacyAddress, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
                 sample,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         Assert.assertThat(deserializedLockWhitelist.getLeft().size(), is(addressesBytes.length));
-        Assert.assertThat(deserializedLockWhitelist.getLeft().keySet().stream().map(Address::getHash160).collect(Collectors.toList()), containsInAnyOrder(addressesBytes));
+        Assert.assertThat(deserializedLockWhitelist.getLeft().keySet().stream().map(LegacyAddress::getHash160).collect(Collectors.toList()), containsInAnyOrder(addressesBytes));
         Set<Coin> deserializedCoins = deserializedLockWhitelist.getLeft().values().stream().map(entry -> ((OneOffWhiteListEntry)entry).maxTransferValue()).collect(Collectors.toSet());
         Assert.assertThat(deserializedCoins, hasSize(1));
         Assert.assertThat(deserializedCoins, hasItem(Coin.MILLICOIN));
@@ -731,14 +730,14 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.NONE);
 
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
+        Pair<HashMap<LegacyAddress, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
                 null,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         Assert.assertNull(deserializedLockWhitelist);
 
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist2 = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
+        Pair<HashMap<LegacyAddress, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist2 = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
                 new byte[]{},
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
@@ -749,8 +748,8 @@ public class BridgeSerializationUtilsTest {
     @Test
     public void serializeDeserializeOneOffLockWhitelistAndDisableBlockHeight() {
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Map<Address, LockWhitelistEntry> whitelist = new HashMap<>();
-        Address address = BtcECKey.fromPrivate(BigInteger.valueOf(100L)).toAddress(btcParams);
+        Map<LegacyAddress, LockWhitelistEntry> whitelist = new HashMap<>();
+        LegacyAddress address = BtcECKey.fromPrivate(BigInteger.valueOf(100L)).toAddress(btcParams);
         whitelist.put(address, new OneOffWhiteListEntry(address, Coin.COIN));
 
         LockWhitelist originalLockWhitelist = new LockWhitelist(whitelist, 0);
@@ -758,10 +757,10 @@ public class BridgeSerializationUtilsTest {
                 originalLockWhitelist.getAll(OneOffWhiteListEntry.class),
                 originalLockWhitelist.getDisableBlockHeight()
         ));
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(serializedLockWhitelist, btcParams);
+        Pair<HashMap<LegacyAddress, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(serializedLockWhitelist, btcParams);
 
-        List<Address> originalAddresses = originalLockWhitelist.getAddresses();
-        List<Address> deserializedAddresses = new ArrayList(deserializedLockWhitelist.getLeft().keySet());
+        List<LegacyAddress> originalAddresses = originalLockWhitelist.getAddresses();
+        List<LegacyAddress> deserializedAddresses = new ArrayList(deserializedLockWhitelist.getLeft().keySet());
         Assert.assertThat(originalAddresses, hasSize(1));
         Assert.assertThat(deserializedAddresses, hasSize(1));
         Assert.assertThat(originalAddresses, is(deserializedAddresses));
@@ -844,9 +843,9 @@ public class BridgeSerializationUtilsTest {
 
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
-        Address a1 = Address.fromBase58(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
-        Address a2 = Address.fromBase58(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
-        Address a3 = Address.fromBase58(params, "myw7AMh5mpKHao6MArhn7EvkeASGsGJzrZ");
+        LegacyAddress a1 = LegacyAddress.fromBase58(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
+        LegacyAddress a2 = LegacyAddress.fromBase58(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
+        LegacyAddress a3 = LegacyAddress.fromBase58(params, "myw7AMh5mpKHao6MArhn7EvkeASGsGJzrZ");
         List<ReleaseRequestQueue.Entry> expectedEntries = Arrays.asList(
                 new ReleaseRequestQueue.Entry(a1, Coin.valueOf(10)),
                 new ReleaseRequestQueue.Entry(a2, Coin.valueOf(7)),
@@ -855,11 +854,11 @@ public class BridgeSerializationUtilsTest {
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("06140114011401");
-        sampleBuilder.append(Hex.toHexString(a1.getHash160()));
+        sampleBuilder.append(Hex.toHexString(a1.getHash()));
         sampleBuilder.append("0a");
-        sampleBuilder.append(Hex.toHexString(a2.getHash160()));
+        sampleBuilder.append(Hex.toHexString(a2.getHash()));
         sampleBuilder.append("07");
-        sampleBuilder.append(Hex.toHexString(a3.getHash160()));
+        sampleBuilder.append(Hex.toHexString(a3.getHash()));
         sampleBuilder.append("08");
         byte[] sample = Hex.decode(sampleBuilder.toString());
         ReleaseRequestQueue result = BridgeSerializationUtils.deserializeReleaseRequestQueue(sample, params);
@@ -924,20 +923,20 @@ public class BridgeSerializationUtilsTest {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcTransaction input = new BtcTransaction(params);
-        input.addOutput(Coin.FIFTY_COINS, Address.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
+        input.addOutput(Coin.FIFTY_COINS, LegacyAddress.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
 
         BtcTransaction t1 = new BtcTransaction(params);
         t1.addInput(input.getOutput(0));
-        t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        t1.addOutput(Coin.COIN, LegacyAddress.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
         BtcTransaction t2 = new BtcTransaction(params);
         t2.addInput(input.getOutput(0));
-        t2.addOutput(Coin.COIN.multiply(10), Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        t2.addOutput(Coin.COIN.multiply(10), LegacyAddress.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
         BtcTransaction t3 = new BtcTransaction(params);
         t3.addInput(input.getOutput(0));
-        t3.addOutput(Coin.valueOf(15), Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        t3.addOutput(Coin.valueOf(15), LegacyAddress.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
         BtcTransaction t4 = new BtcTransaction(params);
         t4.addInput(input.getOutput(0));
-        t4.addOutput(Coin.MILLICOIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        t4.addOutput(Coin.MILLICOIN, LegacyAddress.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
 
         Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
                 new ReleaseTransactionSet.Entry(t1, 32L),
@@ -1013,9 +1012,9 @@ public class BridgeSerializationUtilsTest {
         Assert.assertEquals(1200, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(1200))).intValue());
     }
 
-    private Address mockAddressHash160(String hash160) {
-        Address result = mock(Address.class);
-        when(result.getHash160()).thenReturn(Hex.decode(hash160));
+    private LegacyAddress mockAddressHash160(String hash160) {
+        LegacyAddress result = mock(LegacyAddress.class);
+        when(result.getHash()).thenReturn(Hex.decode(hash160));
         return result;
     }
 

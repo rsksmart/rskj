@@ -370,7 +370,7 @@ public class BridgeStorageProvider {
             return lockWhitelist;
         }
 
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData =
+        Pair<HashMap<LegacyAddress, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData =
                 safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY,
                         data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters));
         if (oneOffWhitelistAndDisableBlockHeightData == null) {
@@ -378,7 +378,7 @@ public class BridgeStorageProvider {
             return lockWhitelist;
         }
 
-        Map<Address, LockWhitelistEntry> whitelistedAddresses = new HashMap<>();
+        Map<LegacyAddress, LockWhitelistEntry> whitelistedAddresses = new HashMap<>();
 
         whitelistedAddresses.putAll(oneOffWhitelistAndDisableBlockHeightData.getLeft());
 

@@ -1865,7 +1865,7 @@ public class BridgeTest {
         when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
-        Address address = new BtcECKey().toAddress(networkParameters);
+        LegacyAddress address = new BtcECKey().toAddress(networkParameters);
 
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
@@ -1889,8 +1889,8 @@ public class BridgeTest {
         Repository repository = createRepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        Address mockedAddressForUnlimited = new BtcECKey().toAddress(networkParameters);
-        Address mockedAddressForOneOff = new BtcECKey().toAddress(networkParameters);
+        LegacyAddress mockedAddressForUnlimited = new BtcECKey().toAddress(networkParameters);
+        LegacyAddress mockedAddressForOneOff = new BtcECKey().toAddress(networkParameters);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getLockWhitelistEntryByAddress(mockedAddressForUnlimited.toBase58()))
@@ -2155,7 +2155,7 @@ public class BridgeTest {
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
-        Address address = new BtcECKey().toAddress(networkParameters);
+        LegacyAddress address = new BtcECKey().toAddress(networkParameters);
         when(bridgeSupportMock.getFederationAddress()).thenReturn(address);
 
         byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});

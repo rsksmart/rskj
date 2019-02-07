@@ -679,7 +679,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     {
         logger.trace("getRetiringFederationAddress");
 
-        Address address = bridgeSupport.getRetiringFederationAddress();
+        LegacyAddress address = bridgeSupport.getRetiringFederationAddress();
 
         if (address == null) {
             // When there's no address, empty string is returned

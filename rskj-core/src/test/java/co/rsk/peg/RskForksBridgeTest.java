@@ -18,10 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.AddressFormatException;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
@@ -289,7 +286,7 @@ public class RskForksBridgeTest {
 
     private Transaction buildReleaseTx() throws AddressFormatException {
         String btcAddressString = "mhoDGMzHHDq2ZD6cFrKV9USnMfpxEtLwGm";
-        Address btcAddress = Address.fromBase58(RegTestParams.get(), btcAddressString);
+        LegacyAddress btcAddress = LegacyAddress.fromBase58(RegTestParams.get(), btcAddressString);
         long nonce = 2;
         long value = 1000000000000000000l;
         BigInteger gasPrice = BigInteger.valueOf(0);
