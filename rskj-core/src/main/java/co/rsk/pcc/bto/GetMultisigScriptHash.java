@@ -100,6 +100,7 @@ public class GetMultisigScriptHash extends NativeMethod {
 
         List<BtcECKey> btcPublicKeys = Arrays.stream(publicKeys)
                 .map(o -> BtcECKey.fromPublicOnly((byte[]) o))
+                .map(k -> BtcECKey.fromPublicOnly(k.getPubKeyPoint().getEncoded(true)))
                 .collect(Collectors.toList());
 
         Script multisigScript = ScriptBuilder.createP2SHOutputScript(minimumSignatures, btcPublicKeys);
