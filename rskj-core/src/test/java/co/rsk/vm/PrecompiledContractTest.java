@@ -19,12 +19,18 @@
 package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.pcc.bto.BTOUtils;
 import co.rsk.peg.Bridge;
+import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class PrecompiledContractTest {
 
@@ -49,5 +55,30 @@ public class PrecompiledContractTest {
         Assert.assertNotNull(bridge1);
         Assert.assertNotNull(bridge2);
         Assert.assertNotSame(bridge1, bridge2);
+    }
+
+    @Test
+    public void getBtoUtilsBeforeRskip106() {
+        BlockchainConfig afterRskip106 = mock(BlockchainConfig.class);
+        when(afterRskip106.isRskip106()).thenReturn(false);
+        DataWord btoUtilsAddress = new DataWord(PrecompiledContracts.BTOUTILS_ADDR.getBytes());
+        PrecompiledContract btoUtils = precompiledContracts.getContractForAddress(afterRskip106, btoUtilsAddress);
+
+        Assert.assertNull(btoUtils);
+    }
+
+    @Test
+    public void getBtoUtilsAfterRskip106() {
+        BlockchainConfig afterRskip106 = mock(BlockchainConfig.class);
+        when(afterRskip106.isRskip106()).thenReturn(true);
+        DataWord btoUtilsAddress = new DataWord(PrecompiledContracts.BTOUTILS_ADDR.getBytes());
+        PrecompiledContract btoUtils1 = precompiledContracts.getContractForAddress(afterRskip106, btoUtilsAddress);
+        PrecompiledContract btoUtils2 = precompiledContracts.getContractForAddress(afterRskip106, btoUtilsAddress);
+
+        Assert.assertNotNull(btoUtils1);
+        Assert.assertNotNull(btoUtils2);
+        Assert.assertEquals(BTOUtils.class, btoUtils1.getClass());
+        Assert.assertEquals(BTOUtils.class, btoUtils2.getClass());
+        Assert.assertNotSame(btoUtils1, btoUtils2);
     }
 }
