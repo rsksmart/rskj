@@ -121,9 +121,7 @@ public class PrecompiledContracts {
         if (address.equals(REMASC_ADDR_DW)) {
             return new RemascContract(config, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName()), REMASC_ADDR);
         }
-        // TODO: network upgrade handling needs to take place here to disable the contract before
-        // TODO: the corresponding block
-        if (address.equals(BTOUTILS_ADDR_DW)) {
+        if (blockchainConfig.isRskip106() && address.equals(BTOUTILS_ADDR_DW)) {
             return new BTOUtils(config, BTOUTILS_ADDR);
         }
 
