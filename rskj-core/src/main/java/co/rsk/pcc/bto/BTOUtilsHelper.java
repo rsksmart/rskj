@@ -2,9 +2,6 @@ package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
-import com.google.common.primitives.UnsignedBytes;
-
-import java.math.BigInteger;
 
 public class BTOUtilsHelper {
     public NetworkParameters validateAndExtractNetworkFromExtendedPublicKey(String xpub) {

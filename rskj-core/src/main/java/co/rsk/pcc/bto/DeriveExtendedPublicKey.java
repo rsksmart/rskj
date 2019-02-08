@@ -26,11 +26,8 @@ import co.rsk.bitcoinj.crypto.HDUtils;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 
-import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.List;
 
 /**

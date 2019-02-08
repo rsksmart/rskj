@@ -134,8 +134,6 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
 
             Object result;
             try {
-                // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
-                // If the user tries to call an non-existent function, parseData() will return null.
                 result = methodWithArguments.get().execute();
             } catch (NativeContractIllegalArgumentException ex) {
                 String errorMessage = String.format("Error executing: %s", methodWithArguments.get().getMethod().getName());
