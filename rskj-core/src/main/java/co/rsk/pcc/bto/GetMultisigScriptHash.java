@@ -19,8 +19,6 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.crypto.DeterministicKey;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.pcc.ExecutionEnvironment;

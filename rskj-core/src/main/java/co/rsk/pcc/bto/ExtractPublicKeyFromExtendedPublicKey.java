@@ -19,16 +19,11 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.crypto.ChildNumber;
 import co.rsk.bitcoinj.crypto.DeterministicKey;
-import co.rsk.bitcoinj.crypto.HDKeyDerivation;
-import co.rsk.bitcoinj.crypto.HDUtils;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
 import org.ethereum.core.CallTransaction;
-
-import java.util.List;
 
 /**
  * This implements the "extractPublicKeyFromExtendedPublicKey" method

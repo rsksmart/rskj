@@ -20,11 +20,8 @@ package co.rsk.pcc.bto;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.panic.PanicProcessor;
 import co.rsk.pcc.NativeContract;
 import co.rsk.pcc.NativeMethod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
