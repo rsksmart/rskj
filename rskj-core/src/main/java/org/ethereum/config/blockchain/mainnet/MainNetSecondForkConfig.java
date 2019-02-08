@@ -34,4 +34,9 @@ public class MainNetSecondForkConfig extends MainNetOrchid060Config {
     public boolean isRskipMultipleKeyFederateMembers() {
         return true;
     }
+
+    @Override
+    public boolean isRskip106() {
+        return true;
+    }
 }

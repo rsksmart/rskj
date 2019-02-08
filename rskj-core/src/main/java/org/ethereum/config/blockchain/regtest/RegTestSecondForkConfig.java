@@ -34,4 +34,9 @@ public class RegTestSecondForkConfig extends RegTestOrchidConfig {
     public boolean isRskipMultipleKeyFederateMembers() {
         return true;
     }
+
+    @Override
+    public boolean isRskip106() {
+        return true;
+    }
 }
