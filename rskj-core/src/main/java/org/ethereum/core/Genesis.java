@@ -58,7 +58,7 @@ public class Genesis extends Block {
     public Genesis(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                    byte[] difficulty, long number, long gasLimit,
                    long gasUsed, long timestamp,
-                   byte[] extraData, byte[] mixHash, byte[] nonce,
+                   byte[] extraData,
                    byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                    byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] minimumGasPrice){
         super(

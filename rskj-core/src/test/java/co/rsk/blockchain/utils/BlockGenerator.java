@@ -78,10 +78,6 @@ public class BlockGenerator {
     }
 
     private Genesis getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap, byte[] difficulty) {
-
-        byte[] nonce       = new byte[]{0};
-        byte[] mixHash     = new byte[]{0};
-
         /* Unimportant address. Because there is no subsidy
         ECKey ecKey;
         byte[] address;
@@ -104,7 +100,7 @@ public class BlockGenerator {
 
         Genesis genesis = new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
-                mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray());
 
         if (preMineMap != null) {

@@ -32,9 +32,7 @@ public class GenesisMapper {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     public Genesis mapFromJson(GenesisJson json, boolean rskFormat) {
-        byte[] nonce = Utils.parseData(json.nonce);
         byte[] difficulty = Utils.parseData(json.difficulty);
-        byte[] mixHash = Utils.parseData(json.mixhash);
         byte[] coinbase = Utils.parseData(json.coinbase);
 
         byte[] timestampBytes = Utils.parseData(json.timestamp);
@@ -60,7 +58,7 @@ public class GenesisMapper {
 
         return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, Genesis.getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
-                mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, minGasPrice);
     }
 }
