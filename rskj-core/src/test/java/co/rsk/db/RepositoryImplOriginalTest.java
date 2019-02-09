@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -39,6 +40,7 @@ import org.junit.runners.MethodSorters;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -350,9 +352,10 @@ public class RepositoryImplOriginalTest {
         Repository track = repository.startTracking();
 
         Genesis genesis = RskTestFactory.getGenesisInstance(config);
-        for (RskAddress addr : genesis.getPremine().keySet()) {
-            repository.createAccount(addr);
-            repository.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
+        for (Map.Entry<RskAddress, AccountState> accountsEntry : genesis.getAccounts().entrySet()) {
+            RskAddress accountAddress = accountsEntry.getKey();
+            repository.createAccount(accountAddress);
+            repository.addBalance(accountAddress, accountsEntry.getValue().getBalance());
         }
 
         track.commit();
