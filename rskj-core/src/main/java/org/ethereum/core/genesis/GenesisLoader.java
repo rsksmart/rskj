@@ -24,10 +24,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.ByteStreams;
-import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
 import org.ethereum.crypto.Keccak256Helper;
@@ -50,13 +47,7 @@ public class GenesisLoader {
 
     public static Genesis loadGenesis(RskSystemProperties config, BigInteger initialNonce, InputStream genesisJsonIS, boolean isRsk)  {
         try {
-
-            String json = new String(ByteStreams.toByteArray(genesisJsonIS));
-
-            ObjectMapper mapper = new ObjectMapper();
-            JavaType type = mapper.getTypeFactory().constructType(GenesisJson.class);
-
-            GenesisJson genesisJson  = new ObjectMapper().readValue(json, type);
+            GenesisJson genesisJson = new ObjectMapper().readValue(genesisJsonIS, GenesisJson.class);
 
             Genesis genesis = new GenesisMapper().mapFromJson(genesisJson, isRsk);
 
@@ -82,7 +73,7 @@ public class GenesisLoader {
         ContractDetailsMapper detailsMapper = new ContractDetailsMapper(config);
 
         for (Map.Entry<String, AllocatedAccount> accountEntry : alloc.entrySet()) {
-            if(!StringUtils.equals("00", accountEntry.getKey())) {
+            if(!"00".equals(accountEntry.getKey())) {
                 Coin balance = new Coin(new BigInteger(accountEntry.getValue().getBalance()));
                 BigInteger nonce;
 
