@@ -28,23 +28,17 @@ import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.peg.simples.SimpleRskTransaction;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
-import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.ethereum.core.Genesis.getZeroHash;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
@@ -74,7 +68,7 @@ public class BlockGenerator {
     }
 
     public Genesis getGenesisBlock() {
-        return getNewGenesisBlock(3141592, null, new byte[] { 2, 0, 0});
+        return getNewGenesisBlock(3141592, Collections.emptyMap(), new byte[] { 2, 0, 0});
     }
 
     private Genesis getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap, byte[] difficulty) {
@@ -98,41 +92,16 @@ public class BlockGenerator {
         byte[] bitcoinMergedMiningMerkleProof = null;
         byte[] bitcoinMergedMiningCoinbaseTransaction = null;
 
-        Genesis genesis = new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
+        Map<RskAddress, AccountState> accounts = new HashMap<>();
+        for (Map.Entry<byte[], BigInteger> accountEntry : preMineMap.entrySet()) {
+            AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(accountEntry.getValue()));
+            accounts.put(new RskAddress(accountEntry.getKey()), acctState);
+        }
+
+        return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray());
-
-        if (preMineMap != null) {
-            Map<RskAddress, InitialAddressState> preMineMap2 = generatePreMine(preMineMap);
-            genesis.setPremine(preMineMap2);
-
-            byte[] rootHash = generateRootHash(preMineMap2);
-            genesis.setStateRoot(rootHash);
-        }
-
-        return genesis;
-    }
-
-    private byte[] generateRootHash(Map<RskAddress, InitialAddressState> premine){
-        Trie state = new TrieImpl(null, true);
-
-        for (RskAddress addr : premine.keySet()) {
-            state = state.put(addr.getBytes(), premine.get(addr).getAccountState().getEncoded());
-        }
-
-        return state.getHash().getBytes();
-    }
-
-    private Map<RskAddress, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
-        Map<RskAddress, InitialAddressState> premine = new HashMap<>();
-
-        for (byte[] key : alloc.keySet()) {
-            AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(alloc.get(key)));
-            premine.put(new RskAddress(key), new InitialAddressState(acctState, null));
-        }
-
-        return premine;
+                bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray(), accounts, Collections.emptyMap(), Collections.emptyMap());
     }
 
     public Block getBlock(int number) {

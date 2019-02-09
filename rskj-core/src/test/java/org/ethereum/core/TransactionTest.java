@@ -595,7 +595,7 @@ public class TransactionTest {
          */
 
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
-        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(config, nonce,
+        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
@@ -665,7 +665,7 @@ public class TransactionTest {
          */
 
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
-        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(config, nonce,
+        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));

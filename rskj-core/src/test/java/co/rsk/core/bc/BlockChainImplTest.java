@@ -50,6 +50,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BlockChainImplTest {
 
@@ -951,11 +952,12 @@ public class BlockChainImplTest {
     public static Block getGenesisBlock(BlockChainImpl blockChain) {
         Repository repository = blockChain.getRepository();
 
-        Genesis genesis = GenesisLoader.loadGenesis(config, "rsk-unittests.json", BigInteger.ZERO, true);
+        Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true);
 
-        for (RskAddress addr : genesis.getPremine().keySet()) {
-            repository.createAccount(addr);
-            repository.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
+        for (Map.Entry<RskAddress, AccountState> accountsEntry : genesis.getAccounts().entrySet()) {
+            RskAddress accountAddress = accountsEntry.getKey();
+            repository.createAccount(accountAddress);
+            repository.addBalance(accountAddress, accountsEntry.getValue().getBalance());
         }
 
         genesis.setStateRoot(repository.getRoot());

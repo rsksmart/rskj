@@ -44,6 +44,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Anton Nashatyrev on 29.12.2015.
@@ -108,9 +109,10 @@ public class ImportLightTest {
 
         Repository track = repository.startTracking();
 
-        for (RskAddress addr : genesis.getPremine().keySet()) {
-            track.createAccount(addr);
-            track.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
+        for (Map.Entry<RskAddress, AccountState> accountsEntry : genesis.getAccounts().entrySet()) {
+            RskAddress accountAddress = accountsEntry.getKey();
+            track.createAccount(accountAddress);
+            track.addBalance(accountAddress, accountsEntry.getValue().getBalance());
         }
 
         track.commit();
