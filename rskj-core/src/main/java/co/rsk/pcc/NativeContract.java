@@ -32,6 +32,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.text.html.Option;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -174,8 +175,11 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
             return Optional.empty();
         }
 
-        if ((data == null || data.length == 0) && getDefaultMethod().isPresent()) {
-            return Optional.of(this.getDefaultMethod().get().new WithArguments(new Object[]{}, data));
+        if (data == null || data.length == 0) {
+            if (getDefaultMethod().isPresent()) {
+                return Optional.of(this.getDefaultMethod().get().new WithArguments(new Object[]{}, data));
+            }
+            return Optional.empty();
         } else {
             byte[] encodedSignature = Arrays.copyOfRange(data, 0, 4);
             Optional<NativeMethod> method = getMethods().stream()
