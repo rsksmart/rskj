@@ -185,8 +185,8 @@ public class Program {
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
 
-    boolean isLogEnabled;
-    boolean isGasLogEnabled;
+    private boolean isLogEnabled;
+    private boolean isGasLogEnabled;
 
     public Program(
             VmConfig config,
