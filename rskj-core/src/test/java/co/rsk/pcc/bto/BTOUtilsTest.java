@@ -82,7 +82,9 @@ public class BTOUtilsTest {
         Assert.assertTrue(method.isPresent());
         Assert.assertEquals(executionEnvironment, method.get().getExecutionEnvironment());
         if (withHelper) {
-            Assert.assertNotNull(Whitebox.getInternalState(method.get(), "helper"));
+            Object helper = Whitebox.getInternalState(method.get(), "helper");
+            Assert.assertNotNull(helper);
+            Assert.assertEquals(BTOUtilsHelper.class, helper.getClass());
         }
     }
 }
