@@ -113,6 +113,32 @@ public class NativeContractTest {
     }
 
     @Test
+    public void getGasForDataZeroWhenNullData() {
+        Assert.assertEquals(0L, contract.getGasForData(null));
+    }
+
+    @Test
+    public void getGasForDataZeroWhenEmptyData() {
+        Assert.assertEquals(0L, contract.getGasForData(null));
+    }
+
+    @Test
+    public void getGasForNullDataAndDefaultMethod() {
+        NativeMethod method = mock(NativeMethod.class);
+        when(method.getGas(any(), any())).thenReturn(10L);
+        defaultMethodProvider = () -> Optional.of(method);
+        Assert.assertEquals(10L, contract.getGasForData(null));
+    }
+
+    @Test
+    public void getGasForEmptyDataAndDefaultMethod() {
+        NativeMethod method = mock(NativeMethod.class);
+        when(method.getGas(any(), any())).thenReturn(10L);
+        defaultMethodProvider = () -> Optional.of(method);
+        Assert.assertEquals(10L, contract.getGasForData(new byte[]{}));
+    }
+
+    @Test
     public void getGasForDataZeroWhenInvalidSignature() {
         Assert.assertEquals(0L, contract.getGasForData(Hex.decode("aabb")));
     }
