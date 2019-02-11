@@ -72,34 +72,89 @@ public class DeriveExtendedPublicKeyTest {
                         "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
                         "M/2/3/4"
                 }));
+
+        Assert.assertEquals(
+                "tpubDJ28nwFGUypUD6i8eGCQfMkwNGxzzabA5Mh7AcUdwm6ziFxCSWjy4HyhPXH5uU2ovdMMYLT9W3g3MrGo52TrprMvX8o1dzT2ZGz1pwCPTNv",
+                method.execute(new Object[]{
+                        "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                        "M/0/0/0/0/0/0"
+                }));
+
+        Assert.assertEquals(
+                "tpubD8fY35uPCY1rUjMUZwhkGUFi33pwkffMEBaCsTSw1he2AbM6DMbPaRR2guvk5qTWDfE9ubFB5pzuUNnMtsqbCeKAAjfepSvEWyetyF9Q4fG",
+                method.execute(new Object[]{
+                        "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                        "M/2147483647"
+                }));
     }
 
     @Test
     public void validatesExtendedPublicKeyFormat() {
-        boolean failed = false;
-        try {
+        assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "this-is-not-an-xpub",
                     "this-doesnt-matter"
             });
-        } catch (NativeContractIllegalArgumentException e) {
-            failed = true;
-            Assert.assertTrue(e.getMessage().contains("Invalid extended public key"));
-        }
-        Assert.assertTrue(failed);
+        }, "Invalid extended public key");
     }
 
     @Test
     public void validatesPath() {
-        boolean failed = false;
-        try {
+        assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
                     "this-is-not-a-path"
             });
+        }, "Invalid path");
+    }
+
+    @Test
+    public void pathCannotBeEmpty() {
+        assertFailsWithMessage(() -> {
+            method.execute(new Object[]{
+                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                    "M"
+            });
+        }, "Invalid path");
+    }
+
+    @Test
+    public void pathCannotContainHardening() {
+        assertFailsWithMessage(() -> {
+            method.execute(new Object[]{
+                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                    "M/4'/5"
+            });
+        }, "Invalid path");
+    }
+
+    @Test
+    public void pathCannotContainNegativeNumbers() {
+        assertFailsWithMessage(() -> {
+            method.execute(new Object[]{
+                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                    "M/0/-1"
+            });
+        }, "Invalid path");
+    }
+
+    @Test
+    public void pathCannotContainPartsBiggerOrEqualThan2Pwr31() {
+        assertFailsWithMessage(() -> {
+            method.execute(new Object[]{
+                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                    "M/0/1/2/2147483648"
+            });
+        }, "Invalid path");
+    }
+
+    private void assertFailsWithMessage(Runnable statement, String message) {
+        boolean failed = false;
+        try {
+            statement.run();
         } catch (NativeContractIllegalArgumentException e) {
             failed = true;
-            Assert.assertTrue(e.getMessage().contains("Invalid path"));
+            Assert.assertTrue(e.getMessage().contains(message));
         }
         Assert.assertTrue(failed);
     }
