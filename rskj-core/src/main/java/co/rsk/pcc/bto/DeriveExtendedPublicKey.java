@@ -74,7 +74,12 @@ public class DeriveExtendedPublicKey extends NativeMethod {
             throw new NativeContractIllegalArgumentException(String.format("Invalid path '%s'", path));
         }
 
-        List<ChildNumber> pathList = HDUtils.parsePath(path);
+        List<ChildNumber> pathList;
+        try {
+            pathList = HDUtils.parsePath(path);
+        } catch (NumberFormatException e) {
+            throw new NativeContractIllegalArgumentException(String.format("Invalid path '%s'", path));
+        }
 
         DeterministicKey derived = key;
         for (int i = 0; i < pathList.size(); i++) {
