@@ -87,6 +87,11 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
 
     @Override
     public long getGasForData(byte[] data) {
+        // Preliminary validation: we need an execution environment
+        if (executionEnvironment == null) {
+            throw new RuntimeException("Execution environment is null");
+        }
+
         Optional<NativeMethod.WithArguments> methodWithArguments = parseData(data);
 
         if (!methodWithArguments.isPresent()) {
