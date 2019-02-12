@@ -21,6 +21,7 @@ package co.rsk.pcc;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import junit.framework.AssertionFailedError;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
@@ -113,17 +114,25 @@ public class NativeContractTest {
     }
 
     @Test
+    public void getGasForDataFailsWhenNoInit() {
+        assertFails(() -> contract.getGasForData(Hex.decode("aabb")));
+    }
+
+    @Test
     public void getGasForDataZeroWhenNullData() {
+        doInit();
         Assert.assertEquals(0L, contract.getGasForData(null));
     }
 
     @Test
     public void getGasForDataZeroWhenEmptyData() {
+        doInit();
         Assert.assertEquals(0L, contract.getGasForData(null));
     }
 
     @Test
     public void getGasForNullDataAndDefaultMethod() {
+        doInit();
         NativeMethod method = mock(NativeMethod.class);
         when(method.getGas(any(), any())).thenReturn(10L);
         defaultMethodProvider = () -> Optional.of(method);
@@ -132,6 +141,7 @@ public class NativeContractTest {
 
     @Test
     public void getGasForEmptyDataAndDefaultMethod() {
+        doInit();
         NativeMethod method = mock(NativeMethod.class);
         when(method.getGas(any(), any())).thenReturn(10L);
         defaultMethodProvider = () -> Optional.of(method);
@@ -140,16 +150,19 @@ public class NativeContractTest {
 
     @Test
     public void getGasForDataZeroWhenInvalidSignature() {
+        doInit();
         Assert.assertEquals(0L, contract.getGasForData(Hex.decode("aabb")));
     }
 
     @Test
     public void getGasForDataZeroWhenNoMappedMethod() {
+        doInit();
         Assert.assertEquals(0L, contract.getGasForData(Hex.decode("aabbccdd")));
     }
 
     @Test
     public void getGasForDataZeroWhenMethodDisabled() {
+        doInit();
         NativeMethod method = mock(NativeMethod.class);
         CallTransaction.Function fn = mock(CallTransaction.Function.class);
         when(fn.encodeSignature()).thenReturn(Hex.decode("00112233"));
@@ -162,6 +175,7 @@ public class NativeContractTest {
 
     @Test
     public void getGasForDataNonZeroWhenMethodMatches() {
+        doInit();
         NativeMethod method = mock(NativeMethod.class);
         CallTransaction.Function fn = mock(CallTransaction.Function.class);
         when(fn.encodeSignature()).thenReturn(Hex.decode("00112233"));
@@ -174,6 +188,8 @@ public class NativeContractTest {
 
     @Test
     public void getGasForDataNonZeroWhenMethodMatchesMoreThanOne() {
+        doInit();
+
         NativeMethod method1 = mock(NativeMethod.class);
         CallTransaction.Function fn1 = mock(CallTransaction.Function.class);
         when(fn1.encodeSignature()).thenReturn(Hex.decode("00112233"));
@@ -194,7 +210,7 @@ public class NativeContractTest {
 
     @Test
     public void executeThrowsWhenNoInit() {
-        assertExecutionFails("aabbccdd");
+        assertContractExecutionFails("aabbccdd");
         Assert.assertFalse(beforeRan);
         Assert.assertFalse(afterRan);
     }
@@ -203,7 +219,7 @@ public class NativeContractTest {
     public void executeThrowsWhenNoTransaction() {
         doInit();
         Whitebox.setInternalState(contract.getExecutionEnvironment(), "transaction", null);
-        assertExecutionFails("aabbccdd");
+        assertContractExecutionFails("aabbccdd");
         Assert.assertFalse(beforeRan);
         Assert.assertFalse(afterRan);
     }
@@ -211,7 +227,7 @@ public class NativeContractTest {
     @Test
     public void executeThrowsWhenInvalidSignature() {
         doInit();
-        assertExecutionFails("aa");
+        assertContractExecutionFails("aa");
         Assert.assertFalse(beforeRan);
         Assert.assertFalse(afterRan);
     }
@@ -227,7 +243,7 @@ public class NativeContractTest {
         when(method.isEnabled()).thenReturn(false);
         methodsProvider = () -> Arrays.asList(method);
 
-        assertExecutionFails("00112233");
+        assertContractExecutionFails("00112233");
         Assert.assertFalse(beforeRan);
         Assert.assertFalse(afterRan);
     }
@@ -244,7 +260,7 @@ public class NativeContractTest {
         when(method.isEnabled()).thenReturn(true);
         methodsProvider = () -> Arrays.asList(method);
 
-        assertExecutionFails("00112233");
+        assertContractExecutionFails("00112233");
         Assert.assertFalse(beforeRan);
         Assert.assertFalse(afterRan);
     }
@@ -262,7 +278,7 @@ public class NativeContractTest {
         when(tx.isLocalCallTransaction()).thenReturn(false);
         methodsProvider = () -> Arrays.asList(method);
 
-        assertExecutionFails("00112233");
+        assertContractExecutionFails("00112233");
         Assert.assertFalse(beforeRan);
         Assert.assertFalse(afterRan);
     }
@@ -314,7 +330,7 @@ public class NativeContractTest {
         });
         methodsProvider = () -> Arrays.asList(method);
 
-        assertExecutionFails("00112233");
+        assertContractExecutionFails("00112233");
         verify(method, times(1)).execute(any());
         Assert.assertTrue(beforeRan);
         Assert.assertFalse(afterRan);
@@ -408,13 +424,17 @@ public class NativeContractTest {
         contract.init(tx, block, repository, blockStore, receiptStore, logs);
     }
 
-    private void assertExecutionFails(String hexData) {
+    private void assertFails(Runnable statement) {
         boolean failed = false;
         try {
-            contract.execute(Hex.decode(hexData));
+            statement.run();
         } catch (RuntimeException e) {
             failed = true;
         }
         Assert.assertTrue(failed);
+    }
+
+    private void assertContractExecutionFails(String hexData) {
+        assertFails(() -> contract.execute(Hex.decode(hexData)));
     }
 }
