@@ -70,21 +70,21 @@ public class DeriveExtendedPublicKeyTest {
                 "tpubDCGMkPKredy7oh6zw8f4ExWFdTgQCrAHToF1ytny3gbVy9GkUNK2Nqh7NbKbh8dkd5VtjUiLJPkbEkeg29NVHwxYwzHJFt9SazGLZrrU4Y4",
                 method.execute(new Object[]{
                         "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                        "M/2/3/4"
+                        "2/3/4"
                 }));
 
         Assert.assertEquals(
                 "tpubDJ28nwFGUypUD6i8eGCQfMkwNGxzzabA5Mh7AcUdwm6ziFxCSWjy4HyhPXH5uU2ovdMMYLT9W3g3MrGo52TrprMvX8o1dzT2ZGz1pwCPTNv",
                 method.execute(new Object[]{
                         "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                        "M/0/0/0/0/0/0"
+                        "0/0/0/0/0/0"
                 }));
 
         Assert.assertEquals(
                 "tpubD8fY35uPCY1rUjMUZwhkGUFi33pwkffMEBaCsTSw1he2AbM6DMbPaRR2guvk5qTWDfE9ubFB5pzuUNnMtsqbCeKAAjfepSvEWyetyF9Q4fG",
                 method.execute(new Object[]{
                         "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                        "M/2147483647"
+                        "2147483647"
                 }));
     }
 
@@ -113,7 +113,17 @@ public class DeriveExtendedPublicKeyTest {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "M"
+                    ""
+            });
+        }, "Invalid path");
+    }
+
+    @Test
+    public void pathCannotContainALeadingM() {
+        assertFailsWithMessage(() -> {
+            method.execute(new Object[]{
+                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                    "M/0/1/2"
             });
         }, "Invalid path");
     }
