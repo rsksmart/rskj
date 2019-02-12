@@ -68,8 +68,8 @@ public class DeriveExtendedPublicKey extends NativeMethod {
             throw new NativeContractIllegalArgumentException(String.format("Invalid extended public key '%s", xpub), e);
         }
 
-        // Path must be of the form S, with S ::= M/P and P ::= n || n/P with n an unsigned integer
-        final String PATH_REGEX = "^M/((\\d)+/)*(\\d+)$";
+        // Path must be of the form S, with S ::= n || n/S with n an unsigned integer
+        final String PATH_REGEX = "^((\\d)+/)*(\\d+)$";
         if (!path.matches(PATH_REGEX)) {
             throw new NativeContractIllegalArgumentException(String.format("Invalid path '%s'", path));
         }
