@@ -28,7 +28,9 @@ import co.rsk.pcc.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
 import org.ethereum.core.CallTransaction;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * This implements the "deriveExtendedPublicKey" method
@@ -69,16 +71,17 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         }
 
         // Path must be of the form S, with S ::= n || n/S with n an unsigned integer
-        final String PATH_REGEX = "^((\\d)+/)*(\\d+)$";
-        if (!path.matches(PATH_REGEX)) {
+        Pattern digitOnly = Pattern.compile("^\\d+$");
+        String[] pathChunks = path.split("/");
+        if (Arrays.stream(pathChunks).anyMatch(s -> !digitOnly.matcher(s).matches())) {
             throw new NativeContractIllegalArgumentException(String.format("Invalid path '%s'", path));
         }
 
         List<ChildNumber> pathList;
         try {
             pathList = HDUtils.parsePath(path);
-        } catch (NumberFormatException e) {
-            throw new NativeContractIllegalArgumentException(String.format("Invalid path '%s'", path));
+        } catch (NumberFormatException ex) {
+            throw new NativeContractIllegalArgumentException(String.format("Invalid path '%s'", path), ex);
         }
 
         DeterministicKey derived = key;

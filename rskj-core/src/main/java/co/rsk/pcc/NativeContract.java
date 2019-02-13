@@ -127,10 +127,13 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
                 throw new NativeContractIllegalArgumentException(errorMessage);
             }
 
+            NativeMethod method = methodWithArguments.get().getMethod();
+
             // If this is not a local call, then first check whether the function
             // allows for non-local calls
-            if (!executionEnvironment.isLocalCall() && methodWithArguments.get().getMethod().onlyAllowsLocalCalls()) {
-                String errorMessage = String.format("Non-local-call to %s. Returning without execution.", methodWithArguments.get().getMethod().getName());
+
+            if (!executionEnvironment.isLocalCall() && method.onlyAllowsLocalCalls()) {
+                String errorMessage = String.format("Non-local-call to %s. Returning without execution.", method.getName());
                 logger.info(errorMessage);
                 throw new NativeContractIllegalArgumentException(errorMessage);
             }
@@ -141,9 +144,9 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
             try {
                 result = methodWithArguments.get().execute();
             } catch (NativeContractIllegalArgumentException ex) {
-                String errorMessage = String.format("Error executing: %s", methodWithArguments.get().getMethod().getName());
+                String errorMessage = String.format("Error executing: %s", method.getName());
                 logger.warn(errorMessage, ex);
-                throw new NativeContractIllegalArgumentException(errorMessage);
+                throw new NativeContractIllegalArgumentException(errorMessage, ex);
             }
 
             after();
@@ -164,9 +167,8 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
                 }
             }
 
-            return methodWithArguments.get().getMethod().getFunction().encodeOutputs(result);
-        }
-        catch(Exception ex) {
+            return method.getFunction().encodeOutputs(result);
+        } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("nativecontractexecute", ex.getMessage());
             throw new RuntimeException(String.format("Exception executing native contract: %s", ex.getMessage()), ex);
@@ -186,7 +188,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
             return Optional.empty();
         } else {
             byte[] encodedSignature = Arrays.copyOfRange(data, 0, 4);
-            Optional<NativeMethod> method = getMethods().stream()
+            Optional<NativeMethod> maybeMethod = getMethods().stream()
                     .filter(m ->
                             Arrays.equals(
                                     encodedSignature,
@@ -194,21 +196,23 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
                             )
                     ).findFirst();
 
-            if (!method.isPresent()) {
+            if (!maybeMethod.isPresent()) {
                 logger.warn("Invalid function signature {}.", Hex.toHexString(encodedSignature));
                 return Optional.empty();
             }
 
-            if (!method.get().isEnabled()) {
-                logger.warn("'{}' is not enabled", method.get().getName());
+            NativeMethod method = maybeMethod.get();
+
+            if (!method.isEnabled()) {
+                logger.warn("'{}' is not enabled", method.getName());
                 return Optional.empty();
             }
 
             try {
-                Object[] arguments = method.get().getFunction().decode(data);
-                return Optional.of(method.get().new WithArguments(arguments, data));
+                Object[] arguments = method.getFunction().decode(data);
+                return Optional.of(method.new WithArguments(arguments, data));
             } catch (Exception e) {
-                logger.warn("Invalid arguments {} for function {}.", Hex.toHexString(data), Hex.toHexString(encodedSignature));
+                logger.warn(String.format("Invalid arguments %s for function %s.", Hex.toHexString(data), Hex.toHexString(encodedSignature)), e);
                 return Optional.empty();
             }
         }

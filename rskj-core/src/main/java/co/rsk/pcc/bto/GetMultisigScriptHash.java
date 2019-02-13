@@ -45,12 +45,12 @@ public class GetMultisigScriptHash extends NativeMethod {
             new String[]{"bytes"}
     );
 
-    private final int COMPRESSED_PUBLIC_KEY_LENGTH = 33;
-    private final int UNCOMPRESSED_PUBLIC_KEY_LENGTH = 65;
+    private final static int COMPRESSED_PUBLIC_KEY_LENGTH = 33;
+    private final static int UNCOMPRESSED_PUBLIC_KEY_LENGTH = 65;
 
     // Enforced by the 520-byte size limit of the redeem script
     // (see https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki#520byte_limitation_on_serialized_script_size)
-    private final int MAXIMUM_ALLOWED_SIGNATURES = 15;
+    private final static int MAXIMUM_ALLOWED_SIGNATURES = 15;
 
     public GetMultisigScriptHash(ExecutionEnvironment executionEnvironment) {
         super(executionEnvironment);
