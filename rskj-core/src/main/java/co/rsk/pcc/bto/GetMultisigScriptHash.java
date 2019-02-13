@@ -28,9 +28,9 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This implements the "getMultisigScriptHash" method
@@ -88,6 +88,7 @@ public class GetMultisigScriptHash extends NativeMethod {
             ));
         }
 
+        List<BtcECKey> btcPublicKeys = new ArrayList<>();
         Arrays.stream(publicKeys).forEach(o -> {
             byte[] publicKey = (byte[]) o;
             if (publicKey.length != COMPRESSED_PUBLIC_KEY_LENGTH && publicKey.length != UNCOMPRESSED_PUBLIC_KEY_LENGTH) {
@@ -95,20 +96,20 @@ public class GetMultisigScriptHash extends NativeMethod {
                         "Invalid public key length: %d", publicKey.length
                 ));
             }
-        });
 
-        List<BtcECKey> btcPublicKeys = Arrays.stream(publicKeys)
-                .map(o -> {
-                    try {
-                        return BtcECKey.fromPublicOnly((byte[]) o);
-                    } catch (IllegalArgumentException e) {
-                        throw new NativeContractIllegalArgumentException(String.format(
-                                "Invalid public key format: %s", Hex.toHexString((byte[]) o)
-                        ), e);
-                    }
-                })
-                .map(k -> BtcECKey.fromPublicOnly(k.getPubKeyPoint().getEncoded(true)))
-                .collect(Collectors.toList());
+            // Avoid extra work by not recalculating compressed keys on already compressed keys
+            try {
+                BtcECKey btcPublicKey = BtcECKey.fromPublicOnly(publicKey);
+                if (publicKey.length == UNCOMPRESSED_PUBLIC_KEY_LENGTH) {
+                    btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
+                }
+                btcPublicKeys.add(btcPublicKey);
+            } catch (IllegalArgumentException e) {
+                throw new NativeContractIllegalArgumentException(String.format(
+                        "Invalid public key format: %s", Hex.toHexString(publicKey)
+                ), e);
+            }
+        });
 
         Script multisigScript = ScriptBuilder.createP2SHOutputScript(minimumSignatures, btcPublicKeys);
 
