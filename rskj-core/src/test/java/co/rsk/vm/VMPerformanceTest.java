@@ -240,7 +240,6 @@ public class VMPerformanceTest {
         // Delta time is de difference in thread time
         public long deltaTime_nS; // in nanoseconds.
         public long gas;
-
     }
 
     public interface ResultLogger {
@@ -281,6 +280,7 @@ public class VMPerformanceTest {
             // Al parecer el gc puede interrumpir en cualquier momento y hacer estragos
             // Mejor que repetir y tomar el promedio es ejecutar muchas veces y quedarse con
             // el menor tiempo logrado
+
             for (int loops = 0; loops < myLoops; loops++) {
                 vm.steps(program, insCount);
 
@@ -297,7 +297,6 @@ public class VMPerformanceTest {
 
             }
 
-
             long endTime = thread.getCurrentThreadCpuTime();
             long endRealTime = System.currentTimeMillis();
             long endGCTime = getGarbageCollectorTimeMillis();
@@ -309,7 +308,6 @@ public class VMPerformanceTest {
             pr.deltaGCTimeMillis = (endGCTime- startGCTime)*1000*1000/ maxLoops / divisor; // nanos
 
             long endUsedMemory = (rt.totalMemory() - rt.freeMemory());
-
 
             pr.deltaUsedMemory = endUsedMemory - startUsedMemory;
             if ((best == null) || (pr.deltaTime_nS < best.deltaTime_nS)) {
