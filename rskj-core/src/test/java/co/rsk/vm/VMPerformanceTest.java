@@ -249,6 +249,7 @@ public class VMPerformanceTest {
         // Delta time is de difference in thread time
         public long deltaTime_nS; // in nanoseconds.
         public long gas;
+        public int programCloneCount;
 
     }
 
@@ -280,6 +281,7 @@ public class VMPerformanceTest {
         PerfRes best = null;
         forceGc();
         PerfRes pr = new PerfRes();
+        pr.programCloneCount = cloneCount;
         for (int g = 0; g < maxGroups; g++) {
             long startUsedMemory = (rt.totalMemory() - rt.freeMemory());
             long startRealTime = System.currentTimeMillis();
@@ -326,6 +328,7 @@ public class VMPerformanceTest {
                 if (best.deltaTime_nS == 0)
                     System.out.println("bad time");
                 pr = new PerfRes();
+                pr.programCloneCount = cloneCount;
             }
         }
         long percent;

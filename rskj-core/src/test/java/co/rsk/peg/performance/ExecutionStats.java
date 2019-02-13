@@ -25,7 +25,7 @@ public class ExecutionStats {
     public Mean slotsWritten;
     public Mean slotsCleared;
 
-    public static long gasPerMicrosecond = 0;
+    public static long nanosecondsPerGasUnit = 0;
 
     public ExecutionStats(String name) {
         this.name = name;
@@ -36,7 +36,7 @@ public class ExecutionStats {
     }
 
     public long getEstimatedGas() {
-        return (executionTimes.getMean() / 1000) * gasPerMicrosecond;
+        return executionTimes.getMean() / nanosecondsPerGasUnit;
     }
 
     public String getPrintable() {
