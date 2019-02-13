@@ -51,7 +51,7 @@ import java.util.List;
 public class BridgePerformanceTest {
     private static List<ExecutionStats> statsList;
     private static boolean running = false;
-    private static Mean averageGasPerMicrosecond;
+    private static Mean averageNanosecondsPerGasUnit;
 
     @BeforeClass
     public static void setRunning() {
@@ -61,15 +61,21 @@ public class BridgePerformanceTest {
     @BeforeClass
     public static void estimateReferenceCost() {
         // Run VM tests and average
-        averageGasPerMicrosecond = new Mean();
+        averageNanosecondsPerGasUnit = new Mean();
         VMPerformanceTest.ResultLogger resultLogger = (String name, VMPerformanceTest.PerfRes result) -> {
-            long gasPerMicrosecond = result.gas *1000/ result.deltaTime_nS;
-            averageGasPerMicrosecond.add(gasPerMicrosecond);
+            long nanosecondsPerGasUnit = result.deltaTime_nS / result.gas;
+            averageNanosecondsPerGasUnit.add(nanosecondsPerGasUnit);
         };
         VMPerformanceTest.runWithLogging(resultLogger);
-        // Set reference cost on stats
-        ExecutionStats.gasPerMicrosecond = averageGasPerMicrosecond.getMean();
-        System.out.println(String.format("Reference cost: %d gas/us", ExecutionStats.gasPerMicrosecond));
+        // Set reference cost on stats (getMax(), getMean() or getMin() can be used depending on the desired
+        // reference value).
+        ExecutionStats.nanosecondsPerGasUnit = averageNanosecondsPerGasUnit.getMax();
+        System.out.println(String.format(
+                "Reference cost: %d ns/gas (min: %d ns/gas, max: %d ns/gas)",
+                ExecutionStats.nanosecondsPerGasUnit,
+                averageNanosecondsPerGasUnit.getMin(),
+                averageNanosecondsPerGasUnit.getMax()
+        ));
     }
 
     @AfterClass

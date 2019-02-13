@@ -21,13 +21,27 @@ package co.rsk.peg.performance;
 public class Mean {
     private long total = 0;
     private int samples = 0;
+    private long min;
+    private long max;
 
     public void add(long value) {
+        if (samples == 0 || value < min)
+            min = value;
+        if (samples == 0 || value > max)
+            max = value;
         total += value;
         samples++;
     }
 
     public long getMean() {
         return total / samples;
+    }
+
+    public long getMin() {
+        return min;
+    }
+
+    public long getMax() {
+        return max;
     }
 }
