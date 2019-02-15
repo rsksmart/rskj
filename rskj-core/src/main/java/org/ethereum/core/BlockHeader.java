@@ -315,15 +315,6 @@ public class BlockHeader {
         return gasLimit;
     }
 
-    public void setGasLimit(byte[] gasLimit) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter gas limit");
-        }
-
-        this.gasLimit = gasLimit;
-    }
-
     public long getGasUsed() {
         return gasUsed;
     }

@@ -242,21 +242,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockHeaderSetGasLimit() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setGasLimit(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter gas limit", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockHeaderSetPaidFees() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
