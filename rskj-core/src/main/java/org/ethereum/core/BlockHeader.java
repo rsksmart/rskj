@@ -220,10 +220,6 @@ public class BlockHeader {
         this.sealed = true;
     }
 
-    public BlockHeader cloneHeader() {
-        return new BlockHeader((RLPList) RLP.decode2(this.getEncoded()).get(0), false);
-    }
-
     public boolean isGenesis() {
         return this.getNumber() == Genesis.NUMBER;
     }
@@ -416,10 +412,6 @@ public class BlockHeader {
         return this.getEncoded(true, true);
     }
 
-    public byte[] getEncodedWithoutNonceMergedMiningFields() {
-        return this.getEncoded(false, false);
-    }
-
     @Nullable
     public Coin getMinimumGasPrice() {
         return this.minimumGasPrice;
@@ -521,10 +513,6 @@ public class BlockHeader {
         return RLP.encodeList(unclesEncoded);
     }
 
-    public byte[] getPowBoundary() {
-        return BigIntegers.asUnsignedByteArray(32, BigInteger.ONE.shiftLeft(256).divide(getDifficulty().asBigInteger()));
-    }
-
     public String toString() {
         return toStringWithSuffix("\n");
     }
@@ -552,16 +540,6 @@ public class BlockHeader {
         return toStringWithSuffix("");
     }
 
-    // TODO added to comply with SerializableObject
-
-    public Keccak256 getRawHash() {
-        return getHash();
-    }
-    // TODO added to comply with SerializableObject
-
-    public byte[] getEncodedRaw() {
-        return getEncoded();
-    }
     public byte[] getBitcoinMergedMiningHeader() {
         return bitcoinMergedMiningHeader;
     }
