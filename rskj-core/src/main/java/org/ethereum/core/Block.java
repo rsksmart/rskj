@@ -27,7 +27,9 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
-import org.ethereum.crypto.Keccak256Helper;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -35,9 +37,6 @@ import org.ethereum.util.RLPList;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -573,16 +572,6 @@ public class Block {
         return RLP.encodeList(unclesEncoded);
     }
 
-    public void addUncle(BlockHeader uncle) {
-        if (this.sealed) {
-            throw new SealedBlockException("trying to add uncle");
-        }
-
-        uncleList.add(uncle);
-        this.getHeader().setUnclesHash(Keccak256Helper.keccak256(getUnclesEncoded()));
-        rlpEncoded = null;
-    }
-
     public byte[] getEncoded() {
         if (rlpEncoded == null) {
             byte[] header = this.header.getEncoded();
@@ -594,20 +583,6 @@ public class Block {
             this.rlpEncoded = RLP.encodeList(elements);
         }
         return rlpEncoded;
-    }
-
-    public byte[] getEncodedWithoutNonce() {
-        if (!parsed) {
-            parseRLP();
-        }
-
-        return this.header.getEncodedWithoutNonceMergedMiningFields();
-    }
-
-    public byte[] getEncodedBody() {
-        List<byte[]> body = getBodyElements();
-        byte[][] elements = body.toArray(new byte[body.size()][]);
-        return RLP.encodeList(elements);
     }
 
     private List<byte[]> getBodyElements() {

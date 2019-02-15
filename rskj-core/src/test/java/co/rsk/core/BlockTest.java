@@ -107,23 +107,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockAddUncle() {
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Block block = blockGenerator.createBlock(10, 0);
-        Block uncle = blockGenerator.createBlock(9, 0);
-
-        block.seal();
-
-        try {
-            block.addUncle(uncle.getHeader());
-            Assert.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assert.assertEquals("Sealed block: trying to add uncle", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockSetStateRoot() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
