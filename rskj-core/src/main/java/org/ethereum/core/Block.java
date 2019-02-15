@@ -383,16 +383,6 @@ public class Block {
         return this.header.getExtraData();
     }
 
-  public void setExtraData(byte[] data) {
-      /* A sealed block is immutable, cannot be changed */
-      if (this.sealed) {
-          throw new SealedBlockException("trying to alter extra data");
-      }
-
-        this.header.setExtraData(data);
-        rlpEncoded = null;
-    }
-
     public List<Transaction> getTransactionsList() {
         if (!parsed) {
             parseRLP();

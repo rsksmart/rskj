@@ -141,9 +141,8 @@ public class BlockToMineBuilder {
 
         final List<Transaction> txsToRemove = new ArrayList<>();
         final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
-        final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice);
+        final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice, extraData);
 
-        newBlock.setExtraData(extraData);
         removePendingTransactions(txsToRemove);
         executor.executeAndFill(newBlock, newBlockParent);
         return newBlock;
@@ -172,8 +171,9 @@ public class BlockToMineBuilder {
             Block newBlockParent,
             List<BlockHeader> uncles,
             List<Transaction> txs,
-            Coin minimumGasPrice) {
-        final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice);
+            Coin minimumGasPrice,
+            byte[] extraData) {
+        final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice, extraData);
         final Block newBlock = new Block(newHeader, txs, uncles);
         return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, null);
     }
@@ -182,7 +182,8 @@ public class BlockToMineBuilder {
             Block newBlockParent,
             List<BlockHeader> uncles,
             List<Transaction> txs,
-            Coin minimumGasPrice) {
+            Coin minimumGasPrice,
+            byte[] extraData) {
         final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         final long timestampSeconds = clock.calculateTimestampForChild(newBlockParent);
@@ -206,7 +207,7 @@ public class BlockToMineBuilder {
                 gasLimit.toByteArray(),
                 0,
                 timestampSeconds,
-                new byte[]{},
+                extraData,
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
