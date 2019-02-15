@@ -311,15 +311,6 @@ public class BlockHeader {
         return number;
     }
 
-    public void setNumber(long number) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter number");
-        }
-
-        this.number = number;
-    }
-
     public byte[] getGasLimit() {
         return gasLimit;
     }
