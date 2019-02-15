@@ -390,15 +390,6 @@ public class BlockHeader {
         this.logsBloom = logsBloom;
     }
 
-    public void setExtraData(byte[] extraData) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter extra data");
-        }
-
-        this.extraData = extraData;
-    }
-
     public Keccak256 getHash() {
         return new Keccak256(HashUtil.keccak256(getEncoded(
                 true,

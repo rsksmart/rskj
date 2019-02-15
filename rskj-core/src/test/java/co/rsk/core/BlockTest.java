@@ -122,21 +122,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockSetExtraData() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.setExtraData(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assert.assertEquals("Sealed block: trying to alter extra data", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockSetTransactionList() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
@@ -343,21 +328,6 @@ public class BlockTest {
         }
         catch (SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter logs bloom", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockHeaderSetExtraData() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setExtraData(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter extra data", ex.getMessage());
         }
     }
 
