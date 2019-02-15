@@ -236,15 +236,6 @@ public class BlockHeader {
         return unclesHash;
     }
 
-    public void setUnclesHash(byte[] unclesHash) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter uncles hash");
-        }
-
-        this.unclesHash = unclesHash;
-    }
-
     public RskAddress getCoinbase() {
         return this.coinbase;
     }
