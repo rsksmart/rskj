@@ -37,6 +37,7 @@ import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -179,7 +180,7 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
-        block1.getHeader().setUnclesHash(new byte[]{0x01});
+        Whitebox.setInternalState(block1.getHeader(), "unclesHash", new byte[]{0x01});
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(null)
