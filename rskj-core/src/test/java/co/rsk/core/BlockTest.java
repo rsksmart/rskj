@@ -242,21 +242,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockHeaderSetNumber() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setNumber(10);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter number", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockHeaderSetGasLimit() {
         Block block = new BlockGenerator().createBlock(10, 0);
 

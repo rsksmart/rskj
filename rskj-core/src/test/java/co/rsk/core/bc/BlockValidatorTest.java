@@ -725,7 +725,7 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         Block block = new BlockBuilder().parent(genesis).build();
-        block.getHeader().setNumber(25L);
+        Whitebox.setInternalState(block.getHeader(), "number", 25L);
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addParentNumberRule()
                 .blockStore(store)
@@ -745,7 +745,7 @@ public class BlockValidatorTest {
         tx.sign(new byte[]{});
         txs.add(tx);
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
-        block.getHeader().setNumber(25L);
+        Whitebox.setInternalState(block.getHeader(), "number", 25L);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockTxsValidationRule(blockChain.getRepository())
