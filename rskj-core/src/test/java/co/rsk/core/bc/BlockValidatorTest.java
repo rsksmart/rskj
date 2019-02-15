@@ -138,7 +138,7 @@ public class BlockValidatorTest {
         Block block2 = blockGenerator.createChildBlock(block1);
         Block parent = blockGenerator.createChildBlock(block2);
 
-        parent.getHeader().setGasLimit(new byte[]{0x00});
+        Whitebox.setInternalState(parent.getHeader(), "gasLimit", new byte[]{0x00});
         Block block = blockGenerator.createChildBlock(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
