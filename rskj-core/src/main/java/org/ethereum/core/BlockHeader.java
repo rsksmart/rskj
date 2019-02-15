@@ -316,15 +316,6 @@ public class BlockHeader {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter timestamp");
-        }
-
-        this.timestamp = timestamp;
-    }
-
     public long getNumber() {
         return number;
     }

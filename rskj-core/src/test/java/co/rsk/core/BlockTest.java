@@ -242,21 +242,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockHeaderSetTimestamp() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setTimestamp(10);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter timestamp", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockHeaderSetNumber() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
