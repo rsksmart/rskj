@@ -18,15 +18,9 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.vm.VMPerformanceTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
@@ -48,55 +42,5 @@ import java.util.List;
         GetBtcTransactionConfirmations.class
 })
 @Ignore
-public class BridgePerformanceTest {
-    private static List<ExecutionStats> statsList;
-    private static boolean running = false;
-    private static Mean averageNanosecondsPerGasUnit;
-
-    @BeforeClass
-    public static void setRunning() {
-        running = true;
-    }
-
-    @BeforeClass
-    public static void estimateReferenceCost() {
-        // Run VM tests and average
-        averageNanosecondsPerGasUnit = new Mean();
-        VMPerformanceTest.ResultLogger resultLogger = (String name, VMPerformanceTest.PerfRes result) -> {
-            long nanosecondsPerGasUnit = result.deltaTime_nS / result.gas;
-            averageNanosecondsPerGasUnit.add(nanosecondsPerGasUnit);
-        };
-        VMPerformanceTest.runWithLogging(resultLogger);
-        // Set reference cost on stats (getMax(), getMean() or getMin() can be used depending on the desired
-        // reference value).
-        ExecutionStats.nanosecondsPerGasUnit = averageNanosecondsPerGasUnit.getMax();
-        System.out.println(String.format(
-                "Reference cost: %d ns/gas (min: %d ns/gas, max: %d ns/gas)",
-                ExecutionStats.nanosecondsPerGasUnit,
-                averageNanosecondsPerGasUnit.getMin(),
-                averageNanosecondsPerGasUnit.getMax()
-        ));
-    }
-
-    @AfterClass
-    public static void printStats() {
-        for (ExecutionStats stats : statsList) {
-            System.out.println(stats.getPrintable());
-        }
-    }
-
-    public static boolean isRunning() {
-        return running;
-    }
-
-    public static void addStats(ExecutionStats stats) {
-        ensureStatsCreated();
-        statsList.add(stats);
-    }
-
-    private static void ensureStatsCreated() {
-        if (statsList == null) {
-            statsList = new ArrayList<>();
-        }
-    }
+public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {
 }
