@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,23 +24,8 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        ReleaseBtcTest.class,
-        UpdateCollectionsTest.class,
-        ReceiveHeadersTest.class,
-        RegisterBtcTransactionTest.class,
-        AddSignatureTest.class,
-        BtcBlockchainTest.class,
-        LockTest.class,
-        ActiveFederationTest.class,
-        RetiringFederationTest.class,
-        PendingFederationTest.class,
-        FederationChangeTest.class,
-        VoteFeePerKbChangeTest.class,
-        GetFeePerKbTest.class,
-        LockWhitelistTest.class,
-        StateForBtcReleaseClientTest.class,
-        GetBtcTransactionConfirmations.class
+        IdentityPerformanceTestCase.class,
 })
 @Ignore
-public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {
+public class IdentityPerformanceTest extends PrecompiledContractPerformanceTest {
 }
