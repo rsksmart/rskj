@@ -27,7 +27,5 @@ public interface TrieStore {
 
     Trie retrieve(byte[] hash);
 
-    byte[] serialize();
-
     byte[] retrieveValue(byte[] hash);
 }

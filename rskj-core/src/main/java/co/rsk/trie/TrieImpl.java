@@ -22,7 +22,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
@@ -766,46 +765,6 @@ public class TrieImpl implements Trie {
         }
 
         this.hashes[n] = hash;
-    }
-
-    /**
-     * serialize returns the full trie data (this node and its subnodes)
-     * in a byte array
-     *
-     * @return full trie serialized as byte array
-     */
-    public byte[] serialize() {
-        this.save();
-
-        byte[] bytes = this.store.serialize();
-        byte[] root = this.getHash().getBytes();
-
-        ByteBuffer buffer = ByteBuffer.allocate(Short.BYTES + Keccak256Helper.DEFAULT_SIZE_BYTES + bytes.length);
-
-        buffer.putShort((short) 0);
-        buffer.put(root);
-        buffer.put(bytes);
-
-        return buffer.array();
-    }
-
-    /**
-     * deserialize returns a NewTrieImpl, from its serialized bytes
-     *
-     * @return full trie deserialized from byte array
-     */
-    public static Trie deserialize(byte[] bytes) {
-        final int keccakSize = Keccak256Helper.DEFAULT_SIZE_BYTES;
-        int expectedSize = Short.BYTES + keccakSize;
-        if (expectedSize > bytes.length) {
-            throw new IllegalArgumentException(
-                    String.format("Expected size is: %d actual size is %d", expectedSize, bytes.length));
-        }
-
-        byte[] root = Arrays.copyOfRange(bytes, Short.BYTES, expectedSize);
-        TrieStore store = TrieStoreImpl.deserialize(bytes, expectedSize, new HashMapDB());
-
-        return internalRetrieve(store, root);
     }
 
     /**
