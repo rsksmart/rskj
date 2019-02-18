@@ -58,8 +58,6 @@ public interface MutableTrie {
         MutableTrie getSnapshotTo(Keccak256 hash);
         void setSnapshotTo(Keccak256 hash);
 
-        byte[] serialize();
-
         boolean hasStore();
 
         Trie getTrie();
