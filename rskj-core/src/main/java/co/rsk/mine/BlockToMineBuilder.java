@@ -18,6 +18,7 @@
 
 package co.rsk.mine;
 
+import co.rsk.core.SignatureCache;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
@@ -78,7 +79,8 @@ public class BlockToMineBuilder {
             ReceiptStore receiptStore,
             MinerClock clock,
             BlockFactory blockFactory,
-            StateRootHandler stateRootHandler) {
+            StateRootHandler stateRootHandler,
+            SignatureCache signatureCache) {
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
         this.blockStore = Objects.requireNonNull(blockStore);
@@ -102,6 +104,7 @@ public class BlockToMineBuilder {
                 programInvokeFactory,
                 block1,
                 null,
+                signatureCache,
                 totalGasUsed1,
                 config.getVmConfig(),
                 config.getBlockchainConfig(),

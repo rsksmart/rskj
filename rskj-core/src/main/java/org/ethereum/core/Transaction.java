@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.SignatureCache;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -548,4 +549,13 @@ public class Transaction {
                 BigInteger.ZERO.equals(new BigInteger(1, getGasLimit())) &&
                 Coin.ZERO.equals(getGasPrice());
     }
+
+    public void computeSenderTxBroadcasted(SignatureCache signatureCache) {
+        sender = signatureCache.getSenderCacheInBroadcastTx(getRawHash().getBytes(), getSignature());
+    }
+
+    public void computeSenderTxInBlock(SignatureCache signatureCache) {
+        sender = signatureCache.getSenderCacheInBlock(getRawHash().getBytes(), getSignature());
+    }
+
 }

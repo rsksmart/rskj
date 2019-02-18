@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.SignatureCache;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -26,6 +27,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.remasc.RemascTransaction;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -84,6 +86,8 @@ public class TransactionExecutor {
     private final long gasUsedInTheBlock;
     private Coin paidFees;
     private boolean readyToExecute = false;
+    private final SignatureCache signatureCache;
+
 
     private final ProgramInvokeFactory programInvokeFactory;
     private final RskAddress coinbase;
@@ -105,8 +109,9 @@ public class TransactionExecutor {
 
     private boolean localCall = false;
 
+
     public TransactionExecutor(Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
-                               BlockFactory blockFactory, ProgramInvokeFactory programInvokeFactory, Block executionBlock, EthereumListener listener, long gasUsedInTheBlock,
+                               BlockFactory blockFactory, ProgramInvokeFactory programInvokeFactory, Block executionBlock, EthereumListener listener, SignatureCache signatureCache, long gasUsedInTheBlock,
                                VmConfig vmConfig, BlockchainNetConfig blockchainConfig, boolean playVm, boolean remascEnabled,
                                boolean vmTrace, PrecompiledContracts precompiledContracts, String databaseDir, String vmTraceDir, boolean vmTraceCompressed) {
         this.tx = tx;
@@ -120,6 +125,7 @@ public class TransactionExecutor {
         this.programInvokeFactory = programInvokeFactory;
         this.executionBlock = executionBlock;
         this.listener = listener;
+        this.signatureCache = signatureCache;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
@@ -161,6 +167,10 @@ public class TransactionExecutor {
         if (txGasLimit.compareTo(BigInteger.valueOf(basicTxCost)) < 0) {
             execError(String.format("Not enough gas for transaction execution: Require: %s Got: %s", basicTxCost, txGasLimit));
             return false;
+        }
+
+        if (!(tx instanceof RemascTransaction)) {
+            tx.computeSenderTxInBlock(signatureCache);
         }
 
         BigInteger reqNonce = track.getNonce(tx.getSender());
