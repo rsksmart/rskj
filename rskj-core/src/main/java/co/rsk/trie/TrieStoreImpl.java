@@ -18,13 +18,7 @@
 
 package co.rsk.trie;
 
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * TrieStoreImpl store and retrieve Trie node by hash
@@ -36,8 +30,6 @@ import java.util.List;
  * Created by ajlopez on 08/01/2017.
  */
 public class TrieStoreImpl implements TrieStore {
-
-    private static final int LAST_BYTE_ONLY_MASK = 0x000000ff;
 
     // a key value data source to use
     private KeyValueDataSource store;
@@ -100,102 +92,7 @@ public class TrieStoreImpl implements TrieStore {
         return this.store.put(key, value);
     }
 
-    @Override
-    public byte[] serialize() {
-        List<byte[]> keys = new ArrayList<>();
-        List<byte[]> values = new ArrayList<>();
-
-        int lkeys = 0;
-        int lvalues = 0;
-
-        for (byte[] key : this.store.keys()) {
-            byte[] value = this.store.get(key);
-
-            if (value == null || value.length == 0) {
-                continue;
-            }
-
-            keys.add(key);
-            values.add(value);
-
-            lkeys += key.length;
-            lvalues += value.length;
-        }
-
-        int nkeys = keys.size();
-
-        ByteBuffer buffer = ByteBuffer.allocate(Short.BYTES + Integer.BYTES + lkeys + lvalues + Integer.BYTES * nkeys * 2);
-
-        buffer.putShort((short)0);
-        buffer.putInt(nkeys);
-
-        for (int k = 0; k < nkeys; k++) {
-            byte[] key = keys.get(k);
-            byte[] value = values.get(k);
-
-            buffer.putInt(key.length);
-            buffer.put(key);
-
-            buffer.putInt(value.length);
-            buffer.put(value);
-        }
-
-        return buffer.array();
-    }
-
     public KeyValueDataSource getDataSource() {
         return this.store;
-    }
-
-    public static TrieStoreImpl deserialize(byte[] bytes) {
-        return deserialize(bytes, 0, new HashMapDB());
-    }
-
-    public static TrieStoreImpl deserialize(byte[] bytes, int offset, KeyValueDataSource ds) {
-        int current = offset;
-        current += Short.BYTES; // version
-
-        int nkeys = readInt(bytes, current);
-        current += Integer.BYTES;
-
-        for (int k = 0; k < nkeys; k++) {
-            int lkey = readInt(bytes, current);
-            current += Integer.BYTES;
-            if (lkey > bytes.length - current) {
-                throw new IllegalArgumentException(String.format(
-                        "Left bytes are too short for key expected:%d actual:%d total:%d",
-                        lkey, bytes.length - current, bytes.length));
-            }
-            byte[] key = Arrays.copyOfRange(bytes, current, current + lkey);
-            current += lkey;
-
-            int lvalue = readInt(bytes, current);
-            current += Integer.BYTES;
-            if (lvalue > bytes.length - current) {
-                throw new IllegalArgumentException(String.format(
-                        "Left bytes are too short for value expected:%d actual:%d total:%d",
-                        lvalue, bytes.length - current, bytes.length));
-            }
-            byte[] value = Arrays.copyOfRange(bytes, current, current + lvalue);
-            current += lvalue;
-            ds.put(key, value);
-        }
-
-        return new TrieStoreImpl(ds);
-    }
-
-    // this methods reads a int as dataInputStream + byteArrayInputStream
-    private static int readInt(byte[] bytes, int position) {
-        int ch1 = bytes[position] & LAST_BYTE_ONLY_MASK;
-        int ch2 = bytes[position+1] & LAST_BYTE_ONLY_MASK;
-        int ch3 = bytes[position+2] & LAST_BYTE_ONLY_MASK;
-        int ch4 = bytes[position+3] & LAST_BYTE_ONLY_MASK;
-        if ((ch1 | ch2 | ch3 | ch4) < 0) {
-            throw new IllegalArgumentException(
-                    String.format("On position %d there are invalid bytes for a short value %s %s %s %s",
-                                  position, ch1, ch2, ch3, ch4));
-        } else {
-            return (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4);
-        }
     }
 }

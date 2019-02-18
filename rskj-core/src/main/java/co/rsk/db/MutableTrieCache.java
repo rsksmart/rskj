@@ -287,12 +287,6 @@ public class MutableTrieCache implements MutableTrie {
         this.trie = trie.getSnapshotTo(hash);
     }
 
-
-    @Override
-    public byte[] serialize() {
-        return null;
-    }
-
     @Override
     public boolean hasStore() {
         return trie.hasStore();

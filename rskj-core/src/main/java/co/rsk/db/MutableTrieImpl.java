@@ -146,11 +146,6 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
-    public byte[] serialize() {
-        return trie.serialize();
-    }
-
-    @Override
     public boolean hasStore() {
         return trie.hasStore();
     }
