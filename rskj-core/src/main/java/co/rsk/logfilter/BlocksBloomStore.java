@@ -21,13 +21,14 @@ package co.rsk.logfilter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by ajlopez on 05/02/2019.
  */
 public class BlocksBloomStore {
     private final int noBlocks;
-    private final Map<Long, BlocksBloom> blocksBloom = new HashMap<>();
+    private final Map<Long, BlocksBloom> blocksBloom = new ConcurrentHashMap<>();
 
     public BlocksBloomStore(int noBlocks) {
         this.noBlocks = noBlocks;
