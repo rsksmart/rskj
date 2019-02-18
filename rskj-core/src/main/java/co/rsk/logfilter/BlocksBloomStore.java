@@ -34,6 +34,10 @@ public class BlocksBloomStore {
         this.noBlocks = noBlocks;
     }
 
+    public boolean hasBlockNumber(long blockNumber) {
+        return this.blocksBloom.containsKey(this.firstNumberInRange(blockNumber));
+    }
+
     public BlocksBloom getBlocksBloomByNumber(long number) {
         return this.blocksBloom.get(firstNumberInRange(number));
     }
