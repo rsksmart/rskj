@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.core.SignatureCache;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
@@ -71,6 +72,7 @@ public class RemascProcessMinerFeesTest {
     private static RskAddress coinbaseE = TestUtils.randomAddress();
     private static List<byte[]> accountsAddressesUpToD;
     private SignatureCache signatureCache;
+
 
     private Map<byte[], BigInteger> preMineMap = Collections.singletonMap(cowAddress, cowInitialBalance.asBigInteger());
 

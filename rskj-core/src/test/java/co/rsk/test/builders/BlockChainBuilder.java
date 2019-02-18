@@ -18,6 +18,7 @@
 
 package co.rsk.test.builders;
 
+import co.rsk.core.SignatureCache;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;

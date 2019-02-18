@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.core.SignatureCache;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;

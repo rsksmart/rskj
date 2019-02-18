@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import co.rsk.core.SignatureCache;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.AddressFormatException;
 import co.rsk.bitcoinj.core.BtcECKey;
@@ -80,7 +81,6 @@ public class RskForksBridgeTest {
         blockChain = world.getBlockChain();
         repository = blockChain.getRepository();
         signatureCache = world.getSignatureCache();
-
         whitelistManipulationKey = ECKey.fromPrivate(Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
 
         genesis = (Genesis)blockChain.getBestBlock();

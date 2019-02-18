@@ -18,6 +18,7 @@
 
 package co.rsk.test;
 
+import co.rsk.core.SignatureCache;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.SignatureCache;
 import co.rsk.core.bc.BlockChainImpl;
@@ -152,5 +153,7 @@ public class World {
         return this.blockChain.getRepository();
     }
 
-    public SignatureCache getSignatureCache() { return this.signatureCache; }
+    public SignatureCache getSignatureCache() {
+        return this.signatureCache;
+    }
 }
