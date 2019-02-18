@@ -24,6 +24,7 @@ import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.crypto.Keccak256;
+import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -95,6 +96,7 @@ public class Web3RskImplTest {
                 null,
                 networkStateExporter,
                 blockStore,
+                null,
                 null,
                 null,
                 null,

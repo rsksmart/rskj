@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
+import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -97,6 +98,8 @@ public class Web3Impl implements Web3 {
     private final FilterManager filterManager;
     private final BuildInfo buildInfo;
 
+    private final BlocksBloomStore blocksBloomStore;
+
     private final PersonalModule personalModule;
     private final EthModule ethModule;
     private final EvmModule evmModule;
@@ -126,7 +129,8 @@ public class Web3Impl implements Web3 {
             BlockProcessor nodeBlockProcessor,
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities,
-            BuildInfo buildInfo) {
+            BuildInfo buildInfo,
+            BlocksBloomStore blocksBloomStore) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -150,6 +154,7 @@ public class Web3Impl implements Web3 {
         this.config = config;
         filterManager = new FilterManager(eth);
         this.buildInfo = buildInfo;
+        this.blocksBloomStore = blocksBloomStore;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
         personalModule.init(this.config);

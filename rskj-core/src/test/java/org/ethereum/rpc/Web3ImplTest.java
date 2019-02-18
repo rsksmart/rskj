@@ -276,6 +276,7 @@ public class Web3ImplTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -956,6 +957,7 @@ public class Web3ImplTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -1275,6 +1277,7 @@ public class Web3ImplTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
     }
@@ -1330,7 +1333,8 @@ public class Web3ImplTest {
                 nodeBlockProcessor,
                 null,
                 configCapabilities,
-                new BuildInfo("test", "test")
+                new BuildInfo("test", "test"),
+                null
         );
     }
 
@@ -1363,6 +1367,7 @@ public class Web3ImplTest {
                 debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
+                null,
                 null,
                 null,
                 null,
@@ -1418,6 +1423,7 @@ public class Web3ImplTest {
                 debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
+                null,
                 null,
                 null,
                 null,
