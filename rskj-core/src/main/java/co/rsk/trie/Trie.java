@@ -75,8 +75,6 @@ public interface Trie {
 
     Trie getSnapshotTo(Keccak256 hash);
 
-    byte[] serialize();
-
     boolean hasStore();
 
     boolean hasLongValue();

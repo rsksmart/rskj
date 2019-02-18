@@ -201,28 +201,4 @@ public class TrieStoreImplTest {
 
         verify(map, times(size)).get(any());
     }
-
-    @Test
-    public void serializeDeserializeTrieStore() {
-        Trie trie = new TrieImpl(store, false)
-                .put("foo", "bar".getBytes())
-                .put("bar", "foo".getBytes());
-
-        byte[] root = trie.getHash().getBytes();
-
-        trie.save();
-
-        byte[] bytes = store.serialize();
-
-        TrieStoreImpl newStore = TrieStoreImpl.deserialize(bytes);
-
-        Assert.assertNotNull(newStore);
-
-        Trie result = newStore.retrieve(root);
-
-        Assert.assertEquals(trie.trieSize(), result.trieSize());
-
-        Assert.assertArrayEquals("bar".getBytes(), result.get("foo"));
-        Assert.assertArrayEquals("foo".getBytes(), result.get("bar"));
-    }
 }
