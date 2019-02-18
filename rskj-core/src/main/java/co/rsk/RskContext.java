@@ -195,6 +195,7 @@ public class RskContext implements NodeBootstrapper {
     private MinerServer minerServer;
     private SolidityCompiler solidityCompiler;
     private BlocksBloomStore blocksBloomStore;
+    private SignatureCache signatureCache;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -555,6 +556,14 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return blocksBloomStore;
+    }
+
+    public SignatureCache getSignatureCache() {
+        if (signatureCache == null) {
+            signatureCache = new SignatureCache();
+        }
+
+        return signatureCache;
     }
 
     protected NodeRunner buildNodeRunner() {
