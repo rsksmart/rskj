@@ -1,5 +1,6 @@
 package co.rsk.mine;
 
+import co.rsk.core.SignatureCache;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
