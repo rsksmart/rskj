@@ -84,7 +84,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
     }
 
     @BeforeClass
-    public static void setup() throws Exception {
+    public static void setupA() throws Exception {
         config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestGenesisConfig());
     }

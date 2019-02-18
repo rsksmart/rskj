@@ -47,7 +47,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
     protected static BridgeConstants bridgeConstants;
 
     @BeforeClass
-    public static void setup() throws Exception {
+    public static void setupB() throws Exception {
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         networkParameters = bridgeConstants.getBtcParams();
     }
