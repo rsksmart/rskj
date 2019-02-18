@@ -39,7 +39,7 @@ import org.junit.runners.Suite;
         GetFeePerKbTest.class,
         LockWhitelistTest.class,
         StateForBtcReleaseClientTest.class,
-        GetBtcTransactionConfirmations.class
+        GetBtcTransactionConfirmationsTest.class,
 })
 @Ignore
 public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {

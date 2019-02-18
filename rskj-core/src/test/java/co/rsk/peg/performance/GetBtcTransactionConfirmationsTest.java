@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Ignore
-public class GetBtcTransactionConfirmations extends BridgePerformanceTestCase {
+public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
     private BtcBlock blockWithTx;
     private int blockWithTxHeight;
     private BtcTransaction txToSearch;
