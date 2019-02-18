@@ -26,9 +26,12 @@ import java.util.Map;
  * Created by ajlopez on 05/02/2019.
  */
 public class BlocksBloomStore {
-    public static final int NO_BLOCKS = 64;
-
+    private final int noBlocks;
     private final Map<Long, BlocksBloom> blocksBloom = new HashMap<>();
+
+    public BlocksBloomStore(int noBlocks) {
+        this.noBlocks = noBlocks;
+    }
 
     public BlocksBloom getBlocksBloomByNumber(long number) {
         return this.blocksBloom.get(firstNumberInRange(number));
@@ -38,11 +41,15 @@ public class BlocksBloomStore {
         this.blocksBloom.put(blocksBloom.fromBlock(), blocksBloom);
     }
 
-    public static long firstNumberInRange(long number) {
-        return number - (number % NO_BLOCKS);
+    public long firstNumberInRange(long number) {
+        return number - (number % this.noBlocks);
     }
 
-    public static long lastNumberInRange(long number) {
-        return firstNumberInRange(number) + NO_BLOCKS - 1;
+    public long lastNumberInRange(long number) {
+        return firstNumberInRange(number) + this.noBlocks - 1;
+    }
+
+    public int getNoBlocks() {
+        return this.noBlocks;
     }
 }
