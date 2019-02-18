@@ -24,6 +24,7 @@ import co.rsk.core.RskImpl;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -699,7 +700,8 @@ public class Web3ImplLogsTest {
                 null,
                 null,
                 new SimpleConfigCapabilities(),
-                null
+                null,
+                new BlocksBloomStore(64)
         );
     }
 
