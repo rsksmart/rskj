@@ -275,6 +275,19 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void getLogsTwiceFromBlockchainWithThreeEmptyBlocks() throws Exception {
+        addTwoEmptyBlocks();
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        web3.eth_getLogs(fr);
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(0, logs.length);
+    }
+
+    @Test
     public void getLogsFromBlockchainWithContractCreation() throws Exception {
         addContractCreationWithoutEvents();
 
@@ -287,11 +300,42 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void getLogsTwiceFromBlockchainWithContractCreation() throws Exception {
+        addContractCreationWithoutEvents();
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        web3.eth_getLogs(fr);
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(0, logs.length);
+    }
+
+    @Test
     public void getLogsFromBlockchainWithEventInContractCreation() throws Exception {
         addEventInContractCreation();
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(1, logs.length);
+
+        String txhash = ((LogFilterElement)logs[0]).transactionHash;
+        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
+
+        Assert.assertEquals(txdto.contractAddress,((LogFilterElement)logs[0]).address);
+    }
+
+    @Test
+    public void getLogsTwiceFromBlockchainWithEventInContractCreation() throws Exception {
+        addEventInContractCreation();
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -321,6 +365,26 @@ public class Web3ImplLogsTest {
         Assert.assertEquals(txdto.contractAddress,((LogFilterElement)logs[1]).address);
     }
 
+
+    @Test
+    public void getLogsTwiceFromBlockchainWithInvokeContract() throws Exception {
+        addContractInvoke();
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        web3.eth_getLogs(fr);
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(2, logs.length);
+
+        String txhash = ((LogFilterElement)logs[0]).transactionHash;
+        TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
+
+        Assert.assertEquals(txdto.contractAddress,((LogFilterElement)logs[0]).address);
+        Assert.assertEquals(txdto.contractAddress,((LogFilterElement)logs[1]).address);
+    }
+
     @Test
     public void getLogsFromBlockchainWithCallContract() throws Exception {
         addContractCall();
@@ -334,12 +398,45 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void getLogsTwiceFromBlockchainWithCallContract() throws Exception {
+        addContractCall();
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        web3.eth_getLogs(fr);
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(3, logs.length);
+    }
+
+    @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByContractAddress() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.address = Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(3, logs.length);
+
+        String address = "0x" + fr.address;
+
+        Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
+        Assert.assertEquals(address,((LogFilterElement)logs[1]).address);
+        Assert.assertEquals(address,((LogFilterElement)logs[2]).address);
+    }
+
+    @Test
+    public void getLogsTwoceFromBlockchainWithCallContractAndFilterByContractAddress() throws Exception {
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.address = Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -368,6 +465,22 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void getLogsTwiceFromBlockchainWithCallContractAndFilterByUnknownContractAddress() throws Exception {
+        addContractCall();
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        List<String> addresses = new ArrayList<>();
+        addresses.add(Hex.toHexString(new byte[20]));
+        fr.address = addresses;
+        web3.eth_getLogs(fr);
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(0, logs.length);
+    }
+
+    @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByUnknownTopic() throws Exception {
         addContractCall();
 
@@ -375,6 +488,21 @@ public class Web3ImplLogsTest {
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
         fr.topics[0] = "0102030405060102030405060102030405060102030405060102030405060102";
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(0, logs.length);
+    }
+
+    @Test
+    public void getLogsTwiceFromBlockchainWithCallContractAndFilterByUnknownTopic() throws Exception {
+        addContractCall();
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[1];
+        fr.topics[0] = "0102030405060102030405060102030405060102030405060102030405060102";
+        web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -399,6 +527,24 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownTopic() throws Exception {
+        addContractCall();
+
+        Block block1 = blockChain.getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[1];
+        fr.topics[0] = GET_VALUED_EVENT_SIGNATURE;
+        web3.eth_getLogs(fr);
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        Assert.assertEquals(1, logs.length);
+        Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
+    }
+
+    @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByKnownTopicInList() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
@@ -408,6 +554,25 @@ public class Web3ImplLogsTest {
         List<String> topics = new ArrayList<>();
         topics.add(GET_VALUED_EVENT_SIGNATURE);
         fr.topics[0] = topics;
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        Assert.assertEquals(1, logs.length);
+        Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
+    }
+
+    @Test
+    public void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownTopicInList() throws Exception {
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[1];
+        List<String> topics = new ArrayList<>();
+        topics.add(GET_VALUED_EVENT_SIGNATURE);
+        fr.topics[0] = topics;
+        web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -439,6 +604,29 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownsTopicInList() throws Exception {
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[1];
+        List<String> topics = new ArrayList<>();
+        topics.add(GET_VALUED_EVENT_SIGNATURE);
+        topics.add(INC_EVENT_SIGNATURE);
+        fr.topics[0] = topics;
+        web3.eth_getLogs(fr);
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        Assert.assertEquals(2, logs.length);
+
+        for (int k = 0; k < logs.length; k++) {
+            Assert.assertEquals(address, ((LogFilterElement) logs[k]).address);
+        }
+    }
+
+    @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByKnownTopicInListWithNull() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
@@ -456,6 +644,24 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownTopicInListWithNull() throws Exception {
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[2];
+        fr.topics[0] = GET_VALUED_EVENT_SIGNATURE;
+        fr.topics[1] = null;
+        web3.eth_getLogs(fr);
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        Assert.assertEquals(1, logs.length);
+        Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
+    }
+
+    @Test
     public void getLogsFromBlockchainWithCallContractAndFilterWithNullTopic() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
@@ -463,6 +669,26 @@ public class Web3ImplLogsTest {
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
         fr.topics[0] = null;
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        Assert.assertEquals(3, logs.length);
+
+        for (int k = 0; k < logs.length; k++) {
+            Assert.assertEquals(address, ((LogFilterElement) logs[k]).address);
+        }
+    }
+
+    @Test
+    public void getLogsTwiceFromBlockchainWithCallContractAndFilterWithNullTopic() throws Exception {
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[1];
+        fr.topics[0] = null;
+        web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -495,6 +721,27 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void getLogsTwiceFromBlockchainWithCallContractAndFilterWithTwoTopics() throws Exception {
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[2];
+        fr.topics[0] = INC_EVENT_SIGNATURE;
+        fr.topics[1] = ONE_TOPIC;
+        web3.eth_getLogs(fr);
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        Assert.assertEquals(1, logs.length);
+
+        Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
+        Assert.assertEquals("0x" + INC_EVENT_SIGNATURE, ((LogFilterElement) logs[0]).topics[0]);
+        Assert.assertEquals("0x" + ONE_TOPIC, ((LogFilterElement) logs[0]).topics[1]);
+    }
+
+    @Test
     public void getLogsFromBlockchainWithCallContractAndFilterBySecondTopic() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
@@ -503,6 +750,27 @@ public class Web3ImplLogsTest {
         fr.topics = new Object[2];
         fr.topics[0] = null;
         fr.topics[1] = ONE_TOPIC;
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        Assert.assertEquals(1, logs.length);
+
+        Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
+        Assert.assertEquals("0x" + INC_EVENT_SIGNATURE, ((LogFilterElement) logs[0]).topics[0]);
+        Assert.assertEquals("0x" + ONE_TOPIC, ((LogFilterElement) logs[0]).topics[1]);
+    }
+
+    @Test
+    public void getLogsTwiceFromBlockchainWithCallContractAndFilterBySecondTopic() throws Exception {
+        addContractCall();
+        Block block1 = blockChain.getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[2];
+        fr.topics[0] = null;
+        fr.topics[1] = ONE_TOPIC;
+        web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -701,7 +969,7 @@ public class Web3ImplLogsTest {
                 null,
                 new SimpleConfigCapabilities(),
                 null,
-                new BlocksBloomStore(1)
+                new BlocksBloomStore(2)
         );
     }
 
