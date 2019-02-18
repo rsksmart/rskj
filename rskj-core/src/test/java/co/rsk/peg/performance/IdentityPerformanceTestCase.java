@@ -61,7 +61,8 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
                 abiEncoder,
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 BridgePerformanceTestCase.Helper.getRandomHeightProvider(10),
-                stats
+                stats,
+                null
         );
     }
 }

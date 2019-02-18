@@ -84,7 +84,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
     }
 
     @BeforeClass
-    public static void setup() throws Exception {
+    public static void setupA() throws Exception {
         config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestGenesisConfig());
     }
@@ -188,12 +188,15 @@ public abstract class PrecompiledContractPerformanceTestCase {
         void teardown();
     }
 
+    protected interface ResultCallback {
+        void callback(byte[] callResult);
+    }
+
     private ExecutionTracker execute(
             EnvironmentBuilder testEnvironment,
             ABIEncoder abiEncoder,
-            TxBuilder txBuilder,
-            HeightProvider heightProvider,
-            int executionIndex) {
+            int executionIndex,
+            ResultCallback resultCallback) {
 
         ExecutionTracker executionInfo = new ExecutionTracker(thread);
 
@@ -201,8 +204,12 @@ public abstract class PrecompiledContractPerformanceTestCase {
         EnvironmentBuilder.Environment environment = testEnvironment.initialize(executionIndex);
 
         executionInfo.startTimer();
-        environment.contract.execute(abiEncoder.encode(executionIndex));
+        byte[] executionResult = environment.contract.execute(abiEncoder.encode(executionIndex));
         executionInfo.endTimer();
+
+        if (resultCallback != null) {
+            resultCallback.callback(executionResult);
+        }
 
         testEnvironment.teardown();
 
@@ -211,18 +218,20 @@ public abstract class PrecompiledContractPerformanceTestCase {
         return executionInfo;
     }
 
-    protected ExecutionStats executeAndAverage(String name,
-           int times,
-           EnvironmentBuilder environmentBuilder,
-           ABIEncoder abiEncoder,
-           TxBuilder txBuilder,
-           HeightProvider heightProvider,
-           ExecutionStats stats) {
+    protected ExecutionStats executeAndAverage(
+            String name,
+            int times,
+            EnvironmentBuilder environmentBuilder,
+            ABIEncoder abiEncoder,
+            TxBuilder txBuilder,
+            HeightProvider heightProvider,
+            ExecutionStats stats,
+            ResultCallback resultCallback) {
 
         for (int i = 0; i < times; i++) {
             System.out.println(String.format("%s %d/%d", name, i+1, times));
 
-            ExecutionTracker tracker = execute(environmentBuilder, abiEncoder, txBuilder, heightProvider, i);
+            ExecutionTracker tracker = execute(environmentBuilder, abiEncoder, i, resultCallback);
 
             stats.executionTimes.add(tracker.getExecutionTime());
             stats.realExecutionTimes.add(tracker.getRealExecutionTime());

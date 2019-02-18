@@ -82,7 +82,7 @@ public class BridgeSupport {
 
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
-    private static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
+    public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();

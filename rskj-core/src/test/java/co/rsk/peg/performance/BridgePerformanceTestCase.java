@@ -47,7 +47,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
     protected static BridgeConstants bridgeConstants;
 
     @BeforeClass
-    public static void setup() throws Exception {
+    public static void setupB() throws Exception {
         bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         networkParameters = bridgeConstants.getBtcParams();
     }
@@ -124,13 +124,29 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
         void initialize(BridgeStorageProvider provider, Repository repository, int executionIndex);
     }
 
-    protected ExecutionStats executeAndAverage(String name,
-             int times,
-             ABIEncoder abiEncoder,
-             BridgeStorageProviderInitializer storageInitializer,
-             TxBuilder txBuilder,
-             HeightProvider heightProvider,
-             ExecutionStats stats) {
+    protected ExecutionStats executeAndAverage(
+            String name,
+            int times,
+            ABIEncoder abiEncoder,
+            BridgeStorageProviderInitializer storageInitializer,
+            TxBuilder txBuilder,
+            HeightProvider heightProvider,
+            ExecutionStats stats) {
+        return executeAndAverage(
+                name, times, abiEncoder, storageInitializer,
+                txBuilder, heightProvider, stats, null
+        );
+    }
+
+    protected ExecutionStats executeAndAverage(
+            String name,
+            int times,
+            ABIEncoder abiEncoder,
+            BridgeStorageProviderInitializer storageInitializer,
+            TxBuilder txBuilder,
+            HeightProvider heightProvider,
+            ExecutionStats stats,
+            ResultCallback resultCallback) {
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             private Bridge bridge;
@@ -177,7 +193,10 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 // does its initial writes to the repo for e.g. genesis block,
                 // federation, etc, etc. and we don't get
                 // those recorded in the actual execution.
+                boolean oldLocalCall = tx.isLocalCallTransaction();
+                tx.setLocalCallTransaction(true);
                 bridge.execute(Bridge.GET_FEDERATION_SIZE.encode());
+                tx.setLocalCallTransaction(oldLocalCall);
                 benchmarkerTrack.getStatistics().clear();
 
                 return new Environment(
@@ -191,6 +210,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 benchmarkerTrack.commit();
             }
         };
-        return super.executeAndAverage(name, times, environmentBuilder, abiEncoder, txBuilder, heightProvider, stats);
+
+        return super.executeAndAverage(name, times, environmentBuilder, abiEncoder, txBuilder, heightProvider, stats, resultCallback);
     }
 }
