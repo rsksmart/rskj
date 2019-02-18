@@ -701,7 +701,7 @@ public class Web3ImplLogsTest {
                 null,
                 new SimpleConfigCapabilities(),
                 null,
-                new BlocksBloomStore(64)
+                new BlocksBloomStore(1)
         );
     }
 

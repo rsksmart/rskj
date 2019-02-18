@@ -19,6 +19,8 @@
 package org.ethereum.rpc;
 
 import co.rsk.core.RskAddress;
+import co.rsk.logfilter.BlocksBloom;
+import co.rsk.logfilter.BlocksBloomStore;
 import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.LogInfo;
@@ -102,7 +104,7 @@ public class LogFilter extends Filter {
         //empty method
     }
 
-    public static LogFilter fromFilterRequest(Web3.FilterRequest fr, Blockchain blockchain) throws Exception {
+    public static LogFilter fromFilterRequest(Web3.FilterRequest fr, Blockchain blockchain, BlocksBloomStore blocksBloomStore) throws Exception {
         RskAddress[] addresses;
 
         // Now, there is an array of array of topics
@@ -175,12 +177,12 @@ public class LogFilter extends Filter {
 
         LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock);
 
-        retrieveHistoricalData(fr, blockchain, filter);
+        retrieveHistoricalData(fr, blockchain, filter, blocksBloomStore);
 
         return filter;
     }
 
-    private static void retrieveHistoricalData(Web3.FilterRequest fr, Blockchain blockchain, LogFilter filter) throws Exception {
+    private static void retrieveHistoricalData(Web3.FilterRequest fr, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) throws Exception {
         Block blockFrom = isBlockWord(fr.fromBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.fromBlock, blockchain);
         Block blockTo = isBlockWord(fr.toBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.toBlock, blockchain);
 
@@ -192,12 +194,41 @@ public class LogFilter extends Filter {
             // need to add historical data
             blockTo = blockTo == null ? blockchain.getBestBlock() : blockTo;
 
-            for (long blockNum = blockFrom.getNumber(); blockNum <= blockTo.getNumber(); blockNum++) {
-                filter.onBlock(blockchain.getBlockByNumber(blockNum));
-            }
+            processBlocks(blockFrom.getNumber(), blockTo.getNumber(), filter, blockchain, blocksBloomStore);
         }
         else if ("latest".equalsIgnoreCase(fr.fromBlock)) {
             filter.onBlock(blockchain.getBestBlock());
+        }
+    }
+
+    private static void processBlocks(long fromBlockNumber, long toBlockNumber, LogFilter filter, Blockchain blockchain, BlocksBloomStore blocksBloomStore) {
+        BlocksBloom auxiliaryBlocksBloom = null;
+
+        for (long blockNum = fromBlockNumber; blockNum <= toBlockNumber; blockNum++) {
+            if (blocksBloomStore.firstNumberInRange(blockNum) == blockNum) {
+                if (blocksBloomStore.hasBlockNumber(blockNum)) {
+                    BlocksBloom blocksBloom = blocksBloomStore.getBlocksBloomByNumber(blockNum);
+
+                    if (!filter.addressesTopicsFilter.matchBloom(blocksBloom.getBloom())) {
+                        blockNum = blocksBloomStore.lastNumberInRange(blockNum);
+                        continue;
+                    }
+                }
+
+                auxiliaryBlocksBloom = new BlocksBloom();
+            }
+
+            Block block = blockchain.getBlockByNumber(blockNum);
+
+            if (auxiliaryBlocksBloom != null) {
+                auxiliaryBlocksBloom.addBlockBloom(blockNum, new Bloom(block.getLogBloom()));
+            }
+
+            if (blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
+                blocksBloomStore.setBlocksBloom(auxiliaryBlocksBloom);
+            }
+
+            filter.onBlock(blockchain.getBlockByNumber(blockNum));
         }
     }
 

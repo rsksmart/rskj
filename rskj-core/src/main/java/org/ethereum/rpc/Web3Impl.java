@@ -846,7 +846,7 @@ public class Web3Impl implements Web3 {
         String str = null;
 
         try {
-            Filter filter = LogFilter.fromFilterRequest(fr, blockchain);
+            Filter filter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore);
             int id = filterManager.registerFilter(filter);
 
             return str = toJsonHex(id);
