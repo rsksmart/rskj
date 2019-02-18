@@ -1023,7 +1023,6 @@ public class Web3ImplLogsTest {
 
     public static void addEmptyBlockToBlockchain(Blockchain blockChain) {
         Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
-
         Block genesis = blockChain.getBlockByNumber(0);
         SignatureCache signatureCache = new SignatureCache();
         Transaction tx;

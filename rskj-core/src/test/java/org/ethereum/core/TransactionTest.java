@@ -609,7 +609,8 @@ public class TransactionTest {
         String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"homicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"multipleHomicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"payable\":true,\"type\":\"fallback\"}]";
 
         Transaction tx = createTx(blockchain, sender, new byte[0], Hex.decode(code));
-        executeTransaction(blockchain, tx);
+        SignatureCache signatureCache = new SignatureCache();
+        executeTransaction(blockchain, tx, signatureCache);
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
 
@@ -635,7 +636,7 @@ public class TransactionTest {
         }
 
         Transaction tx1 = createTx(blockchain, sender, contractAddress, callData, 0);
-        ProgramResult programResult = executeTransaction(blockchain, tx1).getResult();
+        ProgramResult programResult = executeTransaction(blockchain, tx1, signatureCache).getResult();
 
         // suicide of a single account should be counted only once
         Assert.assertEquals(24000, programResult.getFutureRefund());
@@ -682,17 +683,19 @@ public class TransactionTest {
         // Second contract ABI
         String abi2 = "[{\"constant\":false,\"inputs\":[{\"name\":\"invokedAddress\",\"type\":\"address\"}],\"name\":\"doIt\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"externalEvent\",\"type\":\"event\"}]";
 
+        SignatureCache signatureCache = new SignatureCache();
+
         Transaction tx1 = createTx(blockchain, sender, new byte[0], Hex.decode(code1));
-        executeTransaction(blockchain, tx1);
+        executeTransaction(blockchain, tx1, signatureCache);
 
         Transaction tx2 = createTx(blockchain, sender, new byte[0], Hex.decode(code2));
-        executeTransaction(blockchain, tx2);
+        executeTransaction(blockchain, tx2, signatureCache);
 
         CallTransaction.Contract contract2 = new CallTransaction.Contract(abi2);
         byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(tx1.getContractAddress().getBytes()));
 
         Transaction tx3 = createTx(blockchain, sender, tx2.getContractAddress().getBytes(), data);
-        TransactionExecutor executor = executeTransaction(blockchain, tx3);
+        TransactionExecutor executor = executeTransaction(blockchain, tx3, signatureCache);
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
         Assert.assertEquals(false, executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
@@ -716,7 +719,7 @@ public class TransactionTest {
         return tx;
     }
 
-    private TransactionExecutor executeTransaction(Blockchain blockchain, Transaction tx) {
+    private TransactionExecutor executeTransaction(Blockchain blockchain, Transaction tx, SignatureCache signatureCache) {
         Repository track = blockchain.getRepository().startTracking();
         TransactionExecutor executor = new TransactionExecutor(
                 tx,
@@ -729,7 +732,7 @@ public class TransactionTest {
                 new ProgramInvokeFactoryImpl(),
                 blockchain.getBestBlock(),
                 new EthereumListenerAdapter(),
-                new SignatureCache(),
+                signatureCache,
                 0,
                 config.getVmConfig(),
                 config.getBlockchainConfig(),

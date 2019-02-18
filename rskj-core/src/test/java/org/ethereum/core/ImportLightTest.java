@@ -45,6 +45,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
+import java.security.SignatureException;
 import java.util.HashMap;
 import java.util.Map;
 

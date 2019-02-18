@@ -64,6 +64,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
+import java.security.Signature;
 import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.shortHash;

@@ -60,6 +60,7 @@ public class Web3ImplSnapshotTest {
     private StateRootHandler stateRootHandler;
     private SignatureCache signatureCache;
 
+
     @Before
     public void setUp() {
         factory = new RskTestFactory(config);
@@ -67,6 +68,7 @@ public class Web3ImplSnapshotTest {
         blockFactory = factory.getBlockFactory();
         stateRootHandler = factory.getStateRootHandler();
         signatureCache = factory.getSignatureCache();
+
     }
 
     @Test
@@ -223,6 +225,7 @@ public class Web3ImplSnapshotTest {
                         blockFactory,
                         stateRootHandler,
                         signatureCache
+
                 ),
                 clock,
                 blockFactory,

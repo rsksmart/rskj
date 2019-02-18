@@ -45,7 +45,6 @@ public class BlockchainLoaderTest {
         objects.getBlockchain(); // calls loadBlockchain
         Repository repository = objects.getRepository();
 
-
         Assert.assertEquals(5, repository.getAccountsKeys().size());
 
         Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
