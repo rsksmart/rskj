@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.SignatureCache;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.db.StateRootHandler;
 import co.rsk.mine.*;
@@ -57,6 +58,7 @@ public class Web3ImplSnapshotTest {
     private Blockchain blockchain;
     private BlockFactory blockFactory;
     private StateRootHandler stateRootHandler;
+    private SignatureCache signatureCache;
 
     @Before
     public void setUp() {
@@ -64,6 +66,7 @@ public class Web3ImplSnapshotTest {
         blockchain = factory.getBlockchain();
         blockFactory = factory.getBlockFactory();
         stateRootHandler = factory.getStateRootHandler();
+        signatureCache = factory.getSignatureCache();
     }
 
     @Test
@@ -218,7 +221,8 @@ public class Web3ImplSnapshotTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        signatureCache
                 ),
                 clock,
                 blockFactory,

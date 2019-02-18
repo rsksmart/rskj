@@ -27,6 +27,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SignatureCache;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
@@ -71,12 +72,14 @@ public class RskForksBridgeTest {
     private Genesis genesis;
     private BlockChainImpl blockChain;
     private Block blockBase;
+    private SignatureCache signatureCache;
 
     @Before
     public void before() throws IOException, ClassNotFoundException {
         World world = new World();
         blockChain = world.getBlockChain();
         repository = blockChain.getRepository();
+        signatureCache = world.getSignatureCache();
 
         whitelistManipulationKey = ECKey.fromPrivate(Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
 
@@ -221,7 +224,7 @@ public class RskForksBridgeTest {
 
     private Block buildBlock(Block parent, long difficulty) {
         World world = new World(blockChain, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(difficulty).parent(parent);
+        BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(difficulty).parent(parent).signatureCache(signatureCache);
         return blockBuilder.build();
     }
 
@@ -232,7 +235,7 @@ public class RskForksBridgeTest {
     private Block buildBlock(Block parent, long difficulty, Transaction ... txs) {
         List<Transaction> txList = Arrays.asList(txs);
         World world = new World(blockChain, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
+        BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(difficulty).parent(parent).transactions(txList).signatureCache(signatureCache).uncles(new ArrayList<>());
         return blockBuilder.build();
     }
 
@@ -361,6 +364,7 @@ public class RskForksBridgeTest {
                 new ProgramInvokeFactoryImpl(),
                 blockChain.getBestBlock(),
                 new EthereumListenerAdapter(),
+                signatureCache,
                 0,
                 beforeBambooProperties.getVmConfig(),
                 beforeBambooProperties.getBlockchainConfig(),

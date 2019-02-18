@@ -25,6 +25,7 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.SignatureCache;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
@@ -128,7 +129,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -172,7 +174,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -240,7 +243,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -293,7 +297,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -349,7 +354,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -412,7 +418,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -467,7 +474,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -527,7 +535,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -569,7 +578,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -611,7 +621,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -657,7 +668,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        new SignatureCache()
                 ),
                 clock,
                 blockFactory,
@@ -747,7 +759,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 Mockito.mock(ReceiptStore.class),
                 Mockito.mock(MinerClock.class),
                 blockFactory,
-                stateRootHandler
+                stateRootHandler,
+                new SignatureCache()
         );
     }
 }

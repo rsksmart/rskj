@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SignatureCache;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -452,6 +453,7 @@ public class TransactionTest {
                             invokeFactory,
                             bestBlock,
                             new EthereumListenerAdapter(),
+                            new SignatureCache(),
                             0,
                             config.getVmConfig(),
                             config.getBlockchainConfig(),
@@ -727,6 +729,7 @@ public class TransactionTest {
                 new ProgramInvokeFactoryImpl(),
                 blockchain.getBestBlock(),
                 new EthereumListenerAdapter(),
+                new SignatureCache(),
                 0,
                 config.getVmConfig(),
                 config.getBlockchainConfig(),

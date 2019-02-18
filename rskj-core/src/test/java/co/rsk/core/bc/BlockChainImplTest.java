@@ -18,6 +18,7 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.core.SignatureCache;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
@@ -857,6 +858,8 @@ public class BlockChainImplTest {
                 .parent(genesis).build();
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        final SignatureCache signatureCache = new SignatureCache();
+
         BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
@@ -868,6 +871,7 @@ public class BlockChainImplTest {
                 programInvokeFactory,
                 block1,
                 null,
+                signatureCache,
                 totalGasUsed1,
                 config.getVmConfig(),
                 config.getBlockchainConfig(),
@@ -913,8 +917,9 @@ public class BlockChainImplTest {
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
+        SignatureCache signatureCache = new SignatureCache();
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, blockFactory, signatureCache, null, listener, 10, 100);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, blockFactory, null, listener, 10, 100);
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
         return new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
@@ -928,6 +933,7 @@ public class BlockChainImplTest {
                 programInvokeFactory,
                 block1,
                 listener,
+                signatureCache,
                 totalGasUsed1,
                 config.getVmConfig(),
                 config.getBlockchainConfig(),
@@ -971,6 +977,7 @@ public class BlockChainImplTest {
                 programInvokeFactory,
                 block1,
                 listener,
+                new SignatureCache(),
                 totalGasUsed1,
                 config.getVmConfig(),
                 config.getBlockchainConfig(),

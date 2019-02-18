@@ -5,6 +5,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SignatureCache;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
@@ -109,6 +110,7 @@ public class ContractRunner {
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = repository.startTracking();
         RskSystemProperties config = new TestSystemProperties();
+        SignatureCache signatureCache = new SignatureCache();
         TransactionExecutor executor = new TransactionExecutor(
                 transaction,
                 0,
@@ -120,6 +122,7 @@ public class ContractRunner {
                 new ProgramInvokeFactoryImpl(),
                 blockchain.getBestBlock(),
                 new EthereumListenerAdapter(),
+                signatureCache,
                 0,
                 config.getVmConfig(),
                 config.getBlockchainConfig(),

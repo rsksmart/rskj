@@ -20,6 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.SignatureCache;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
@@ -42,6 +43,7 @@ public class MinerHelper {
     private static final Logger logger = LoggerFactory.getLogger("minerhelper");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private final TestSystemProperties config = new TestSystemProperties();
+    private final SignatureCache signatureCache = new SignatureCache();
 
     private final Blockchain blockchain;
     private final Repository repository;
@@ -101,6 +103,7 @@ public class MinerHelper {
                     null,
                     block,
                     new EthereumListenerAdapter(),
+                    signatureCache,
                     totalGasUsed,
                     config.getVmConfig(),
                     config.getBlockchainConfig(),

@@ -77,6 +77,7 @@ public class CallContractTest {
                     new ProgramInvokeFactoryImpl(),
                     bestBlock,
                     new EthereumListenerAdapter(),
+                    world.getSignatureCache(),
                     0,
                     config.getVmConfig(),
                     config.getBlockchainConfig(),

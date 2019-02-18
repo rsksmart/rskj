@@ -19,6 +19,7 @@
 package co.rsk.test;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SignatureCache;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
@@ -49,6 +50,7 @@ public class World {
     private Map<String, Block> blocks = new HashMap<>();
     private Map<String, Account> accounts = new HashMap<>();
     private Map<String, Transaction> transactions = new HashMap<>();
+    private SignatureCache signatureCache = new SignatureCache();
 
     public World() {
         this(new BlockChainBuilder().build());
@@ -101,6 +103,7 @@ public class World {
                     programInvokeFactory,
                     block1,
                     null,
+                    signatureCache,
                     totalGasUsed1,
                     config.getVmConfig(),
                     config.getBlockchainConfig(),
@@ -148,4 +151,6 @@ public class World {
     public Repository getRepository() {
         return this.blockChain.getRepository();
     }
+
+    public SignatureCache getSignatureCache() { return this.signatureCache; }
 }
