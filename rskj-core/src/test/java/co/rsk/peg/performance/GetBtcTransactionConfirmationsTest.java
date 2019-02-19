@@ -4,37 +4,53 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import org.ethereum.config.blockchain.regtest.RegTestSecondForkConfig;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.powermock.reflect.Whitebox;
+
 import java.math.BigInteger;
 import java.util.*;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @Ignore
 public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
     private Sha256Hash blockHash;
     private Sha256Hash txHash;
-    private BigInteger merkleBranchPath;
+    private int merkleBranchPath;
     private List<Sha256Hash> merkleBranchHashes;
     private int expectedConfirmations;
+
+    @Before
+    public void setRskipToTrue() {
+        config.setBlockchainConfig(new RegTestSecondForkConfig());
+    }
 
     @Test
     public void getBtcTransactionConfirmations() {
         ExecutionStats stats = new ExecutionStats("getBtcTransactionConfirmations");
-        //Minimum value
-//        getBtcTransactionConfirmations_success(10, stats, 0,1,1);
-        //One day in BTC Blocks
-        //Avarage Btc block from https://www.blockchain.com/charts/n-transactions-per-block
+        // Minimum value
+        getBtcTransactionConfirmations_success(10, stats, 0,1,1);
+        // One day in BTC Blocks
+        // Average Btc block from https://www.blockchain.com/charts/n-transactions-per-block
         getBtcTransactionConfirmations_success(300, stats, 144, 750, 3000);
-        //Maximum value
-        //6000 transactions in a block. This value comes from considering the smallest transactions  giving an output of 10 tx/s
-//        getBtcTransactionConfirmations_success(10, stats, RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS, 6000, 6000);
+        // Maximum value
+        // 6000 transactions in a block. This value comes from considering the smallest transactions  giving an output of 10 tx/s
+        getBtcTransactionConfirmations_success(10, stats, BridgeSupport.BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH, 6000, 6000);
 
         BridgePerformanceTest.addStats(stats);
     }
@@ -57,14 +73,50 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 Helper.getRandomHeightProvider(10), stats,
                 (executionResult) -> {
                     byte[] res = executionResult;
-//                    Assert.assertTrue(Arrays.equals(executionResult, expectedConfirmations));
+                    int numberOfConfirmations = new BigInteger(executionResult).intValueExact();
+                    Assert.assertEquals(expectedConfirmations, numberOfConfirmations);
                 }
         );
     }
 
+    private byte[] encodeBytes32(Object value) {
+        final int Int32Size = 32;
+
+        if (value instanceof byte[]) {
+            byte[] bytes = (byte[]) value;
+            byte[] ret = new byte[Int32Size];
+            System.arraycopy(bytes, 0, ret, Int32Size - bytes.length, bytes.length);
+            return ret;
+        }
+
+        throw new RuntimeException("Can't encode java type " + value.getClass() + " to bytes32");
+    }
+
+    private byte[] encodeBytes32OnMock(InvocationOnMock m) {
+        return encodeBytes32(m.getArgumentAt(0, Object.class));
+    }
+
     private ABIEncoder getABIEncoder() {
+        // Hack to bypass buggy Bytes32Type::encode method (currently only supporting Number or String inputs!)
+        // This has been fixed in EthereumJ, we should probably pull that fix at some point.
+        CallTransaction.Function getBtcTransactionConfirmationsFn = CallTransaction.Function.fromSignature(
+                "getBtcTransactionConfirmations",
+                new String[]{"bytes32", "bytes32", "uint256", "bytes32[]"},
+                new String[]{"int256"}
+        );
+
+        SolidityType input0Type = spy(getBtcTransactionConfirmationsFn.inputs[0].type);
+        SolidityType input1Type = spy(getBtcTransactionConfirmationsFn.inputs[1].type);
+        SolidityType input3ElementType = spy((SolidityType) Whitebox.getInternalState(getBtcTransactionConfirmationsFn.inputs[3].type, "elementType"));
+        when(input0Type.encode(any())).thenAnswer(this::encodeBytes32OnMock);
+        when(input1Type.encode(any())).thenAnswer(this::encodeBytes32OnMock);
+        when(input3ElementType.encode(any())).thenAnswer(this::encodeBytes32OnMock);
+        getBtcTransactionConfirmationsFn.inputs[0].type = input0Type;
+        getBtcTransactionConfirmationsFn.inputs[1].type = input1Type;
+        Whitebox.setInternalState(getBtcTransactionConfirmationsFn.inputs[3].type, "elementType", input3ElementType);
+
         return (int executionIndex) ->
-                Bridge.GET_BTC_TRANSACTION_CONFIRMATIONS.encode(new Object[]{
+                getBtcTransactionConfirmationsFn.encode(new Object[]{
                         txHash.getBytes(),
                         blockHash.getBytes(),
                         merkleBranchPath,
@@ -107,9 +159,6 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 }
             }
 
-            // Add BTC confirmations on top
-            Helper.generateAndAddBlocks(btcBlockChain, numberOfConfirmations);
-
             // Calculate the merkle root by computing the merkle tree
             List<Sha256Hash> merkleTree = buildMerkleTree(allLeafHashes);
             Sha256Hash merkleRoot = merkleTree.get(merkleTree.size() - 1);
@@ -117,17 +166,19 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
             BtcBlock blockWithTx = Helper.generateBtcBlock(lastBlock, Collections.emptyList(), merkleRoot);
             btcBlockChain.add(blockWithTx);
 
-            MerkleBranch merkleBranch = buildMerkleBranch(merkleTree, numberOfTransactions, targetTxPosition);
+            // Add BTC confirmations on top
+            Helper.generateAndAddBlocks(btcBlockChain, numberOfConfirmations);
 
-            // Make sure calculations are sound
+            // Build the merkle branch, and make sure calculations are sound
+            MerkleBranch merkleBranch = buildMerkleBranch(merkleTree, numberOfTransactions, targetTxPosition);
             Assert.assertEquals(merkleRoot, merkleBranch.reduceFrom(targetTx.getHash()));
 
             // Parameters to the actual bridge method
             blockHash = blockWithTx.getHash();
             txHash = targetTx.getHash();
-            merkleBranchPath = BigInteger.valueOf(merkleBranch.getPath());
+            merkleBranchPath = merkleBranch.getPath();
             merkleBranchHashes = merkleBranch.getHashes();
-            expectedConfirmations = numberOfConfirmations;
+            expectedConfirmations = numberOfConfirmations + 1;
         };
     }
 
