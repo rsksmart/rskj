@@ -36,6 +36,10 @@ public class ExecutionStats {
     }
 
     public long getEstimatedGas() {
+        if (nanosecondsPerGasUnit == 0) {
+            return -1;
+        }
+
         return executionTimes.getMean() / nanosecondsPerGasUnit;
     }
 
