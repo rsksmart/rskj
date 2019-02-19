@@ -99,7 +99,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void validatesPath() {
+    public void pathCannotBeAnything() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -124,6 +124,26 @@ public class DeriveExtendedPublicKeyTest {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
                     "M/0/1/2"
+            });
+        }, "Invalid path");
+    }
+
+    @Test
+    public void pathCannotContainALeadingSlash() {
+        assertFailsWithMessage(() -> {
+            method.execute(new Object[]{
+                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                    "/0"
+            });
+        }, "Invalid path");
+    }
+
+    @Test
+    public void pathCannotContainATrailingSlash() {
+        assertFailsWithMessage(() -> {
+            method.execute(new Object[]{
+                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                    "0/"
             });
         }, "Invalid path");
     }
