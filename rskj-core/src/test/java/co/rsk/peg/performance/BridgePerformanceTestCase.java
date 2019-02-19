@@ -124,13 +124,29 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
         void initialize(BridgeStorageProvider provider, Repository repository, int executionIndex);
     }
 
-    protected ExecutionStats executeAndAverage(String name,
-             int times,
-             ABIEncoder abiEncoder,
-             BridgeStorageProviderInitializer storageInitializer,
-             TxBuilder txBuilder,
-             HeightProvider heightProvider,
-             ExecutionStats stats) {
+    protected ExecutionStats executeAndAverage(
+            String name,
+            int times,
+            ABIEncoder abiEncoder,
+            BridgeStorageProviderInitializer storageInitializer,
+            TxBuilder txBuilder,
+            HeightProvider heightProvider,
+            ExecutionStats stats) {
+        return executeAndAverage(
+                name, times, abiEncoder, storageInitializer,
+                txBuilder, heightProvider, stats, null
+        );
+    }
+
+    protected ExecutionStats executeAndAverage(
+            String name,
+            int times,
+            ABIEncoder abiEncoder,
+            BridgeStorageProviderInitializer storageInitializer,
+            TxBuilder txBuilder,
+            HeightProvider heightProvider,
+            ExecutionStats stats,
+            ResultCallback resultCallback) {
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             private Bridge bridge;
@@ -192,6 +208,6 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             }
         };
 
-        return super.executeAndAverage(name, times, environmentBuilder, abiEncoder, txBuilder, heightProvider, stats);
+        return super.executeAndAverage(name, times, environmentBuilder, abiEncoder, txBuilder, heightProvider, stats, resultCallback);
     }
 }
