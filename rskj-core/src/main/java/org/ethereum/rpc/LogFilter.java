@@ -203,32 +203,40 @@ public class LogFilter extends Filter {
 
     private static void processBlocks(long fromBlockNumber, long toBlockNumber, LogFilter filter, Blockchain blockchain, BlocksBloomStore blocksBloomStore) {
         BlocksBloom auxiliaryBlocksBloom = null;
+        long bestBlockNumber = blockchain.getBestBlock().getNumber();
 
         for (long blockNum = fromBlockNumber; blockNum <= toBlockNumber; blockNum++) {
-            if (blocksBloomStore.firstNumberInRange(blockNum) == blockNum) {
-                if (blocksBloomStore.hasBlockNumber(blockNum)) {
-                    BlocksBloom blocksBloom = blocksBloomStore.getBlocksBloomByNumber(blockNum);
+            boolean isConfirmedBlock = blockNum <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
 
-                    if (!filter.addressesTopicsFilter.matchBloom(blocksBloom.getBloom())) {
-                        blockNum = blocksBloomStore.lastNumberInRange(blockNum);
-                        continue;
+            if (isConfirmedBlock) {
+                if (blocksBloomStore.firstNumberInRange(blockNum) == blockNum) {
+                    if (blocksBloomStore.hasBlockNumber(blockNum)) {
+                        BlocksBloom blocksBloom = blocksBloomStore.getBlocksBloomByNumber(blockNum);
+
+                        if (!filter.addressesTopicsFilter.matchBloom(blocksBloom.getBloom())) {
+                            blockNum = blocksBloomStore.lastNumberInRange(blockNum);
+                            continue;
+                        }
                     }
+
+                    auxiliaryBlocksBloom = new BlocksBloom();
                 }
 
-                auxiliaryBlocksBloom = new BlocksBloom();
+                Block block = blockchain.getBlockByNumber(blockNum);
+
+                if (auxiliaryBlocksBloom != null) {
+                    auxiliaryBlocksBloom.addBlockBloom(blockNum, new Bloom(block.getLogBloom()));
+                }
+
+                if (blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
+                    blocksBloomStore.setBlocksBloom(auxiliaryBlocksBloom);
+                }
+
+                filter.onBlock(block);
             }
-
-            Block block = blockchain.getBlockByNumber(blockNum);
-
-            if (auxiliaryBlocksBloom != null) {
-                auxiliaryBlocksBloom.addBlockBloom(blockNum, new Bloom(block.getLogBloom()));
+            else {
+                filter.onBlock(blockchain.getBlockByNumber(blockNum));
             }
-
-            if (blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
-                blocksBloomStore.setBlocksBloom(auxiliaryBlocksBloom);
-            }
-
-            filter.onBlock(blockchain.getBlockByNumber(blockNum));
         }
     }
 

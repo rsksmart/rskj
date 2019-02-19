@@ -19,7 +19,6 @@
 
 package co.rsk.logfilter;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,10 +27,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BlocksBloomStore {
     private final int noBlocks;
+    private final int noConfirmations;
     private final Map<Long, BlocksBloom> blocksBloom = new ConcurrentHashMap<>();
 
-    public BlocksBloomStore(int noBlocks) {
+    public BlocksBloomStore(int noBlocks, int noConfirmations) {
         this.noBlocks = noBlocks;
+        this.noConfirmations = noConfirmations;
     }
 
     public boolean hasBlockNumber(long blockNumber) {
@@ -57,4 +58,6 @@ public class BlocksBloomStore {
     public int getNoBlocks() {
         return this.noBlocks;
     }
+
+    public int getNoConfirmations() { return this.noConfirmations; }
 }

@@ -264,7 +264,7 @@ public class RskFactory {
 
     @Bean
     public BlocksBloomStore getBlocksBloomStore() {
-        return new BlocksBloomStore(64);
+        return new BlocksBloomStore(64, 0);
     }
 
     @Bean
