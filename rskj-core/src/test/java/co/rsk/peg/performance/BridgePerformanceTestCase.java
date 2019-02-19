@@ -193,7 +193,10 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 // does its initial writes to the repo for e.g. genesis block,
                 // federation, etc, etc. and we don't get
                 // those recorded in the actual execution.
+                boolean oldLocalCall = tx.isLocalCallTransaction();
+                tx.setLocalCallTransaction(true);
                 bridge.execute(Bridge.GET_FEDERATION_SIZE.encode());
+                tx.setLocalCallTransaction(oldLocalCall);
                 benchmarkerTrack.getStatistics().clear();
 
                 return new Environment(

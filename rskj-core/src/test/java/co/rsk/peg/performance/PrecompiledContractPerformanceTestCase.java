@@ -195,8 +195,6 @@ public abstract class PrecompiledContractPerformanceTestCase {
     private ExecutionTracker execute(
             EnvironmentBuilder testEnvironment,
             ABIEncoder abiEncoder,
-            TxBuilder txBuilder,
-            HeightProvider heightProvider,
             int executionIndex,
             ResultCallback resultCallback) {
 
@@ -233,7 +231,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
         for (int i = 0; i < times; i++) {
             System.out.println(String.format("%s %d/%d", name, i+1, times));
 
-            ExecutionTracker tracker = execute(environmentBuilder, abiEncoder, txBuilder, heightProvider, i, resultCallback);
+            ExecutionTracker tracker = execute(environmentBuilder, abiEncoder, i, resultCallback);
 
             stats.executionTimes.add(tracker.getExecutionTime());
             stats.realExecutionTimes.add(tracker.getRealExecutionTime());
