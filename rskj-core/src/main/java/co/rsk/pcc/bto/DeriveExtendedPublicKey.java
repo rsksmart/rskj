@@ -30,7 +30,6 @@ import org.ethereum.core.CallTransaction;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * This implements the "deriveExtendedPublicKey" method
@@ -71,17 +70,25 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         }
 
         // Path must be of the form S, with S ::= n || n/S with n an unsigned integer
-        Pattern digitOnly = Pattern.compile("^\\d+$");
+
+        // Covering special case: upon splitting a string, if the string ends with the delimiter, then
+        // there is no empty string as a last element. Make sure that the whole path starts and ends with a digit
+        // just in case.
+        if (path.length() == 0 || !isDecimal(path.charAt(0)) || !isDecimal(path.charAt(path.length()-1))) {
+            throwInvalidPath(path);
+        }
+
         String[] pathChunks = path.split("/");
-        if (Arrays.stream(pathChunks).anyMatch(s -> !digitOnly.matcher(s).matches())) {
-            throw new NativeContractIllegalArgumentException(String.format("Invalid path '%s'", path));
+
+        if (Arrays.stream(pathChunks).anyMatch(s -> !isDecimal(s))) {
+            throwInvalidPath(path);
         }
 
         List<ChildNumber> pathList;
         try {
             pathList = HDUtils.parsePath(path);
         } catch (NumberFormatException ex) {
-            throw new NativeContractIllegalArgumentException(String.format("Invalid path '%s'", path), ex);
+            throw new NativeContractIllegalArgumentException(getInvalidPathErrorMessage(path), ex);
         }
 
         DeterministicKey derived = key;
@@ -100,5 +107,21 @@ public class DeriveExtendedPublicKey extends NativeMethod {
     @Override
     public boolean onlyAllowsLocalCalls() {
         return false;
+    }
+
+    private void throwInvalidPath(String path) {
+        throw new NativeContractIllegalArgumentException(getInvalidPathErrorMessage(path));
+    }
+
+    private String getInvalidPathErrorMessage(String path) {
+        return String.format("Invalid path '%s'", path);
+    }
+
+    private boolean isDecimal(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private boolean isDecimal(String s) {
+        return s.chars().mapToObj(c -> (char) c).allMatch(c -> isDecimal(c));
     }
 }
