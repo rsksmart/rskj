@@ -228,7 +228,7 @@ public class LogFilter extends Filter {
                     auxiliaryBlocksBloom.addBlockBloom(blockNum, new Bloom(block.getLogBloom()));
                 }
 
-                if (blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
+                if (auxiliaryBlocksBloom != null && blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
                     blocksBloomStore.setBlocksBloom(auxiliaryBlocksBloom);
                 }
 
