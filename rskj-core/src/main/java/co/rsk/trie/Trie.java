@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import co.rsk.bitcoinj.core.VarInt;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
@@ -78,6 +79,10 @@ public class Trie {
 
     // this node hash value
     private Keccak256 hash;
+
+    // this node hash value as calculated before RSKIP 107
+    // we need to cache it, otherwise TrieConverter is prohibitively slow.
+    private Keccak256 hashOrchid;
 
     // it is saved to store
     private boolean saved;
@@ -143,29 +148,26 @@ public class Trie {
     }
 
     /**
-     * Pool method, to create a NewTrie from a serialized message
-     * the store argument is used to retrieve any subnode
-     * of the subnode
-     *
-     * @param message   the content (arity, hashes, value) serializaced as byte array
-     * @param store     the store containing the rest of the trie nodes, to be used on retrieve them if they are needed in memory
+     * Deserialize a Trie, either using the original format or RSKIP 107 format, based on version flags.
+     * The original trie wasted the first byte by encoding the arity, which was always 2. We use this marker to
+     * recognize the old serialization format.
      */
     public static Trie fromMessage(byte[] message, TrieStore store) {
         if (message == null) {
             return null;
         }
 
-        return fromMessage(message, 0, message.length, store);
+        if (message[0] == ARITY) {
+            return fromMessageOrchid(message, store);
+        }
+
+        return fromMessageRskip107(ByteBuffer.wrap(message), store);
     }
 
     // this methods reads a short as dataInputStream + byteArrayInputStream
-    private static Trie fromMessage(byte[] message, int position, int msglength, TrieStore store) {
-        if (message == null) {
-            return null;
-        }
-
+    private static Trie fromMessageOrchid(byte[] message, TrieStore store) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
-        int current = position;
+        int current = 0;
         int arity = message[current];
         current += Byte.BYTES;
 
@@ -227,7 +229,7 @@ public class Trie {
             value = store.retrieveValue(valueHash);
             lvalue = value.length;
         } else {
-            lvalue = msglength - offset;
+            lvalue = message.length - offset;
             if (lvalue > 0) {
                 if (message.length - current  < lvalue) {
                     profiler.stop(metric);
@@ -248,6 +250,84 @@ public class Trie {
         }
 
         profiler.stop(metric);
+        return trie;
+    }
+
+    private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store) {
+        byte flags = message.get();
+        // if we reached here, we don't need to check the version flag
+        boolean hasLongVal = (flags & 0b00100000) == 0b00100000;
+        boolean sharedPrefixPresent = (flags & 0b00010000) == 0b00010000;
+        boolean leftNodePresent = (flags & 0b00001000) == 0b00001000;
+        boolean rightNodePresent = (flags & 0b00000100) == 0b00000100;
+        boolean leftNodeEmbedded = (flags & 0b00000010) == 0b00000010;
+        boolean rightNodeEmbedded = (flags & 0b00000001) == 0b00000001;
+
+        TrieKeySlice sharedPath = Trie.SharedPathSerializer.deserialize(message, sharedPrefixPresent);
+
+        NodeReference left = NodeReference.empty();
+        NodeReference right = NodeReference.empty();
+        if (leftNodePresent) {
+            if (leftNodeEmbedded) {
+                byte length = message.get();
+                byte[] serializedNode = new byte[length];
+                message.get(serializedNode);
+                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
+                left = new NodeReference(store, node, null);
+            } else {
+                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+                message.get(valueHash);
+                Keccak256 nodeHash = new Keccak256(valueHash);
+                left = new NodeReference(store, null, nodeHash);
+            }
+        }
+
+        if (rightNodePresent) {
+            if (rightNodeEmbedded) {
+                byte length = message.get();
+                byte[] serializedNode = new byte[length];
+                message.get(serializedNode);
+                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
+                right = new NodeReference(store, node, null);
+            } else {
+                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+                message.get(valueHash);
+                Keccak256 nodeHash = new Keccak256(valueHash);
+                right = new NodeReference(store, null, nodeHash);
+            }
+        }
+
+        byte[] value;
+        int lvalue;
+        byte[] valueHash;
+
+        if (hasLongVal) {
+            valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+            message.get(valueHash);
+            value = store.retrieveValue(valueHash);
+            lvalue = value.length;
+        } else {
+            lvalue = message.remaining();
+            if (lvalue != 0) {
+                value = new byte[lvalue];
+                message.get(value);
+                valueHash = Keccak256Helper.keccak256(value);
+            } else {
+                value = null;
+                valueHash = null;
+            }
+        }
+
+        if (message.hasRemaining()) {
+            throw new IllegalArgumentException("The message had more data than expected");
+        }
+
+        Trie trie = new Trie(sharedPath, value, left, right, store, lvalue, valueHash, true);
+
+        if (store != null) {
+            trie.saved = true;
+        }
+
         return trie;
     }
 
@@ -278,6 +358,25 @@ public class Trie {
         this.hash = new Keccak256(Keccak256Helper.keccak256(message));
 
         return this.hash.copy();
+    }
+
+    /**
+     * The hash based on pre-RSKIP 107 serialization
+     */
+    public Keccak256 getHashOrchid() {
+        if (this.hashOrchid != null) {
+            return this.hashOrchid.copy();
+        }
+
+        if (isEmptyTrie()) {
+            return emptyHash.copy();
+        }
+
+        byte[] message = this.toMessageOrchid();
+
+        this.hashOrchid = new Keccak256(Keccak256Helper.keccak256(message));
+
+        return this.hashOrchid.copy();
     }
 
     /**
@@ -388,13 +487,73 @@ public class Trie {
      * @return a byte array with the serialized info
      */
     public byte[] toMessage() {
+        int lvalue = this.valueLength;
+        boolean hasLongVal = this.hasLongValue();
+
+        SharedPathSerializer sharedPathSerializer = new SharedPathSerializer(this.sharedPath);
+
+        ByteBuffer buffer = ByteBuffer.allocate(
+                1 + // flags
+                sharedPathSerializer.serializedLength() +
+                this.left.serializedLength() +
+                this.right.serializedLength() +
+                (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue)
+        );
+
+        // current serialization version: 01
+        byte flags = 0b01000000;
+        if (hasLongVal) {
+            flags = (byte) (flags | 0b00100000);
+        }
+
+        if (sharedPathSerializer.isPresent()) {
+            flags = (byte) (flags | 0b00010000);
+        }
+
+        if (!this.left.isEmpty()) {
+            flags = (byte) (flags | 0b00001000);
+        }
+
+        if (!this.right.isEmpty()) {
+            flags = (byte) (flags | 0b00000100);
+        }
+
+        if (this.left.isEmbeddable()) {
+            flags = (byte) (flags | 0b00000010);
+        }
+
+        if (this.right.isEmbeddable()) {
+            flags = (byte) (flags | 0b00000001);
+        }
+
+        buffer.put(flags);
+
+        sharedPathSerializer.serializeInto(buffer);
+
+        this.left.serializeInto(buffer);
+
+        this.right.serializeInto(buffer);
+
+        if (hasLongVal) {
+            buffer.put(this.getValueHash());
+        } else if (lvalue > 0) {
+            buffer.put(this.value);
+        }
+
+        return buffer.array();
+    }
+
+    /**
+     * Serialize the node to bytes with the pre-RSKIP 107 format
+     */
+    private byte[] toMessageOrchid() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_TO_MESSAGE);
         int lvalue = this.valueLength;
         int lshared = this.sharedPath.length();
         int lencoded = PathEncoder.calculateEncodedLength(lshared);
         boolean hasLongVal = this.hasLongValue();
-        Optional<Keccak256> leftHashOpt = this.left.getHash();
-        Optional<Keccak256> rightHashOpt = this.right.getHash();
+        Optional<Keccak256> leftHashOpt = this.left.getHashOrchid();
+        Optional<Keccak256> rightHashOpt = this.right.getHashOrchid();
 
         int nnodes = 0;
         int bits = 0;
@@ -781,6 +940,10 @@ public class Trie {
         return this.store != null;
     }
 
+    public boolean isTerminal() {
+        return this.left.isEmpty() && this.right.isEmpty();
+    }
+
     public boolean isEmptyTrie() {
         return isEmptyTrie(this.valueLength, this.left, this.right);
     }
@@ -1154,6 +1317,105 @@ public class Trie {
                 ouput.append( b == 0 ? '0': '1');
             }
             return ouput.toString();
+        }
+    }
+
+    private static class SharedPathSerializer {
+        private final TrieKeySlice sharedPath;
+        private final int lshared;
+
+        private SharedPathSerializer(TrieKeySlice sharedPath) {
+            this.sharedPath = sharedPath;
+            this.lshared = this.sharedPath.length();
+        }
+
+        private int serializedLength() {
+            if (!isPresent()) {
+                return 0;
+            }
+
+            return lsharedSize() + PathEncoder.calculateEncodedLength(lshared);
+        }
+
+        public boolean isPresent() {
+            return lshared > 0;
+        }
+
+        private void serializeInto(ByteBuffer buffer) {
+            if (!isPresent()) {
+                return;
+            }
+
+            if (1 <= lshared && lshared <= 32) {
+                // first byte in [0..31]
+                buffer.put((byte) (lshared - 1));
+            } else if (160 <= lshared && lshared <= 382) {
+                // first byte in [32..254]
+                buffer.put((byte) (lshared - 128));
+            } else {
+                buffer.put((byte) 255);
+                buffer.put(new VarInt(lshared).encode());
+            }
+
+            buffer.put(this.sharedPath.encode());
+        }
+
+        private int lsharedSize() {
+            if (!isPresent()) {
+                return 0;
+            }
+
+            if (1 <= lshared && lshared <= 32) {
+                return 1;
+            }
+
+            if (160 <= lshared && lshared <= 382) {
+                return 1;
+            }
+
+            return 1 + VarInt.sizeOf(lshared);
+        }
+
+        private static TrieKeySlice deserialize(ByteBuffer message, boolean sharedPrefixPresent) {
+            if (!sharedPrefixPresent) {
+                return TrieKeySlice.empty();
+            }
+
+            int lshared;
+            // upgrade to int so we can compare positive values
+            int lsharedFirstByte = Byte.toUnsignedInt(message.get());
+            if (0 <= lsharedFirstByte && lsharedFirstByte <= 31) {
+                // lshared in [1..32]
+                lshared = lsharedFirstByte + 1;
+            } else if (32 <= lsharedFirstByte && lsharedFirstByte <= 254) {
+                // lshared in [160..382]
+                lshared = lsharedFirstByte + 128;
+            } else {
+                lshared = (int) readVarInt(message).value;
+            }
+
+            int lencoded = PathEncoder.calculateEncodedLength(lshared);
+            byte[] encodedKey = new byte[lencoded];
+            message.get(encodedKey);
+            return TrieKeySlice.fromEncoded(encodedKey, 0, lshared, lencoded);
+        }
+
+        private static VarInt readVarInt(ByteBuffer message) {
+            // read without touching the buffer position so when we read into bytes it contains the header
+            int first = Byte.toUnsignedInt(message.get(message.position()));
+            byte[] bytes;
+            if (first < 253) {
+                bytes = new byte[1];
+            } else if (first == 253) {
+                bytes = new byte[3];
+            } else if (first == 254) {
+                bytes = new byte[5];
+            } else {
+                bytes = new byte[9];
+            }
+
+            message.get(bytes);
+            return new VarInt(bytes, 0);
         }
     }
 }

@@ -3,7 +3,6 @@ package co.rsk.core.bc;
 import co.rsk.trie.Trie;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 
 import java.util.List;
@@ -11,42 +10,25 @@ import java.util.List;
 public class BlockHashesHelper {
 
     public static byte[] calculateReceiptsTrieRoot(List<TransactionReceipt> receipts, boolean isRskipUnitrieEnabled) {
+        Trie trie = calculateReceiptsTrieRootFor(receipts);
         if (isRskipUnitrieEnabled) {
-            return calculateReceiptsTrieRootNew(receipts);
+            return trie.getHash().getBytes();
         }
 
-        return calculateReceiptsTrieRootOld(receipts);
+        return trie.getHashOrchid().getBytes();
     }
 
-    public static byte[] calculateReceiptsTrieRootNew(List<TransactionReceipt> receipts) {
-        return calculateReceiptsTrieRootFor(receipts, new Trie(false));
-    }
-
-    public static byte[] calculateReceiptsTrieRootOld(List<TransactionReceipt> receipts) {
-        return (calculateReceiptsTrieRootFor(receipts, new Trie(false)));
-    }
-
-    public static byte[] calculateReceiptsTrieRootFor(List<TransactionReceipt> receipts, Trie receiptsTrie) {
-        if (receipts.isEmpty()) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
+    private static Trie calculateReceiptsTrieRootFor(List<TransactionReceipt> receipts) {
+        Trie receiptsTrie = new Trie(false);
         for (int i = 0; i < receipts.size(); i++) {
             receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
         }
 
-        return receiptsTrie.getHash().getBytes();
+        return receiptsTrie;
     }
 
-    public static Trie getTxTrieOld(List<Transaction> transactions){
-        return getTxTrieFor(transactions, new Trie(false));
-    }
-
-    public static Trie getTxTrieNew(List<Transaction> transactions){
-        return getTxTrieFor(transactions, new Trie(false));
-    }
-
-    public static Trie getTxTrieFor(List<Transaction> transactions, Trie txsState){
+    private static Trie getTxTrieFor(List<Transaction> transactions) {
+        Trie txsState = new Trie(false);
         if (transactions == null) {
             return txsState;
         }
@@ -59,14 +41,12 @@ public class BlockHashesHelper {
         return txsState;
     }
 
-    public static byte[] getTxTrieRoot(List<Transaction> transactions, boolean isRskipUnitrieEnabled){
-        Trie trie;
+    public static byte[] getTxTrieRoot(List<Transaction> transactions, boolean isRskipUnitrieEnabled) {
+        Trie trie = getTxTrieFor(transactions);
         if (isRskipUnitrieEnabled) {
-            trie = getTxTrieNew(transactions);
-        } else {
-            trie = getTxTrieOld(transactions);
+            return trie.getHash().getBytes();
         }
 
-        return trie.getHash().getBytes();
+        return trie.getHashOrchid().getBytes();
     }
 }
