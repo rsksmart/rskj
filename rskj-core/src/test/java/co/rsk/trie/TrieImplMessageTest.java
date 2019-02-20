@@ -33,6 +33,7 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
+        // TODO(mc): the new encoding is different
         Assert.assertEquals(6, message.length);
         Assert.assertEquals(2, message[0]);
         Assert.assertEquals(0, message[1]);
@@ -49,6 +50,7 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
+        // TODO(mc): the new encoding is different
         Assert.assertEquals(10, message.length);
         Assert.assertEquals(2, message[0]);
         Assert.assertEquals(0, message[1]);
@@ -69,6 +71,7 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
+        // TODO(mc): the new encoding is different
         Assert.assertEquals(38, message.length);
         Assert.assertEquals(2, message[0]);
         Assert.assertEquals(2, message[1]);
@@ -91,6 +94,7 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
+        // TODO(mc): the new encoding is different
         Assert.assertEquals(11, message.length);
         Assert.assertEquals(2, message[0]);
         Assert.assertEquals(0, message[1]);
@@ -116,6 +120,7 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
+        // TODO(mc): the new encoding is different
         Assert.assertEquals(6 + 1 + 2 * Keccak256Helper.DEFAULT_SIZE_BYTES, message.length);
         Assert.assertEquals(2, message[0]);
         Assert.assertEquals(0, message[1]);

@@ -23,8 +23,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
-
 /**
  * Created by ajlopez on 03/04/2017.
  */
@@ -36,6 +34,7 @@ public class SecureTrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
+        // TODO(mc): the new encoding is different
         Assert.assertEquals(6, message.length);
         Assert.assertEquals(2, message[0]);
         Assert.assertEquals(1, message[1]);

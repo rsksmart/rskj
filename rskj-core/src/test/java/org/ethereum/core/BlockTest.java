@@ -94,6 +94,7 @@ public class BlockTest {
         }
 
         logger.info("root: {}", state.getHash());
+        // TODO(mc): the new encoding is different so the genesis hash is different too
         assertEquals(GENESIS_STATE_ROOT, state.getHash());
     }
 

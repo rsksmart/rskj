@@ -222,6 +222,7 @@ public class SecureTrieImplStoreTest {
 
         Assert.assertEquals(size, trie2.trieSize());
 
+        // TODO(mc): this changes with node embedding
         verify(map, times(size)).get(any());
     }
 
@@ -235,6 +236,7 @@ public class SecureTrieImplStoreTest {
 
         store.retrieve(trie.getHash().getBytes());
 
+        // TODO(mc): this changes with node embedding
         verify(map, times(1)).get(any());
     }
 }

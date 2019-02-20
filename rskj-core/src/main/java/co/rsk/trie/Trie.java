@@ -31,6 +31,8 @@ import java.util.stream.Stream;
 public interface Trie {
     Keccak256 getHash();
 
+    Keccak256 getHashOrchid();
+
     byte[] get(byte[] key);
 
     byte[] get(String key);

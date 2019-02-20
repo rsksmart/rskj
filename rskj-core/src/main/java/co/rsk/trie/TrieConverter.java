@@ -27,8 +27,8 @@ public class TrieConverter {
             REMASC_SENDER_UNITRIE_EXPANDED_KEY, REMASC_SENDER_UNITRIE_EXPANDED_KEY.length * Byte.SIZE
     );
 
-    private final Map<Keccak256, Keccak256> cacheHashes;
-    private final Map<Keccak256, byte[]> cacheStorage;
+    private final Map<Keccak256, byte[]> cacheHashes;
+    private final Map<Keccak256, TrieImpl> cacheStorage;
 //    private final List<String> dump = new ArrayList<>();
 
     public TrieConverter() {
@@ -38,7 +38,6 @@ public class TrieConverter {
 
     public byte[] getOrchidAccountTrieRoot(TrieImpl src) {
 //        dump.clear();
-        byte[] oldAccountTrieRoot = getOrchidAccountTrieRoot(new byte[]{}, src, true);
 //        try {
 //            FileWriter writer = new FileWriter("output.txt");
 //            for(String str: dump) {
@@ -48,17 +47,15 @@ public class TrieConverter {
 //        } catch (Exception e) {
 //            System.out.println("SALIO MAL");
 //        }
-        return oldAccountTrieRoot;
+        return cacheHashes.computeIfAbsent(src.getHash(), k -> {
+            TrieImpl trie = getOrchidAccountTrieRoot(new byte[]{}, src, true);
+            return trie == null ? HashUtil.EMPTY_TRIE_HASH : trie.getHashOrchid().getBytes();
+        });
     }
 
-    private byte[] getOrchidAccountTrieRoot(byte[] key, TrieImpl src, boolean removeFirst8bits) {
+    private TrieImpl getOrchidAccountTrieRoot(byte[] key, TrieImpl src, boolean removeFirst8bits) {
         if (src == null) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        Keccak256 cacheHash = cacheHashes.get(src.getHash());
-        if (cacheHash != null) {
-            return cacheHash.getBytes();
+            return null;
         }
 
         // TODO(mc) use the TrieKeySlice native operations
@@ -76,9 +73,9 @@ public class TrieConverter {
             encodedSharedPath = Arrays.copyOfRange(encodedSharedPath,1, encodedSharedPath.length);
         }
         TrieImpl child0 = (TrieImpl) src.retrieveNode(0);
-        byte[] child0Hash = null;
+        TrieImpl child0Hash = null;
         TrieImpl child1 = (TrieImpl) src.retrieveNode(1);
-        byte[] child1Hash = null;
+        TrieImpl child1Hash = null;
 
         boolean isRemascAccount = key.length == (1 + MutableRepository.SECURE_KEY_SIZE + RemascTransaction.REMASC_ADDRESS.getBytes().length) * Byte.SIZE;
         if ((key.length == (1 + MutableRepository.SECURE_KEY_SIZE + RskAddress.LENGTH_IN_BYTES) * Byte.SIZE || isRemascAccount) && src.getValue() != null) {
@@ -123,8 +120,7 @@ public class TrieConverter {
             );
 //            dump.add(key.toString() + "\n");
 //            dump.add(newNode.toString());
-            cacheHashes.put(src.getHash(), newNode.getHash());
-            return newNode.getHash().getBytes();
+            return newNode;
         }
 
         if (child0 != null) {
@@ -135,33 +131,32 @@ public class TrieConverter {
             child1Hash = getOrchidAccountTrieRoot(concat(key, RIGHT_CHILD_IMPLICIT_KEY), child1, false);
         }
 
-        Keccak256[] hashes = new Keccak256[] {
-                child0Hash == null ? null : new Keccak256(child0Hash),
-                child1Hash == null ? null : new Keccak256(child1Hash)
-        };
+        TrieImpl[] nodes = new TrieImpl[]{child0Hash, child1Hash};
 
         TrieImpl newNode = new TrieImpl(
                 encodedSharedPath == null ? TrieKeySlice.empty() : TrieKeySlice.fromEncoded(encodedSharedPath, 0, sharedPathLength, encodedSharedPath.length),
-                src.getValue(), null, hashes, null, src.valueLength,
+                src.getValue(), nodes, null, null, src.valueLength,
                 src.getValueHash(), src.isSecure()
         );
 //        dump.add(key.toString());
 //        dump.add(newNode.toString());
 
-        cacheHashes.put(src.getHash(), newNode.getHash());
-        return newNode.getHash().getBytes();
+        return newNode;
     }
 
     private byte[] getOrchidStateRoot(TrieImpl unitrieStorageRoot) {
-        return getOrchidStateRoot(new byte[] {}, unitrieStorageRoot, true, false, LEFT_CHILD_IMPLICIT_KEY);
+        TrieImpl trie = getOrchidStateRoot(new byte[] {}, unitrieStorageRoot, true, false, LEFT_CHILD_IMPLICIT_KEY);
+        return trie == null ? HashUtil.EMPTY_TRIE_HASH : trie.getHashOrchid().getBytes();
     }
 
-    private byte[] getOrchidStateRoot(byte[] key, TrieImpl unitrieStorageRoot, boolean removeFirstNodePrefix, boolean onlyChild, byte ancestor) {
-        if (unitrieStorageRoot == null) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
+    private TrieImpl getOrchidStateRoot(
+            byte[] key,
+            TrieImpl unitrieStorageRoot,
+            boolean removeFirstNodePrefix,
+            boolean onlyChild,
+            byte ancestor) {
 
-        byte[] storageNodeHash = cacheStorage.get(unitrieStorageRoot.getHash());
+        TrieImpl storageNodeHash = cacheStorage.get(unitrieStorageRoot.getHash());
         if (storageNodeHash != null && !onlyChild  && !removeFirstNodePrefix) {
             return storageNodeHash;
         }
@@ -181,20 +176,17 @@ public class TrieConverter {
         TrieImpl child0 = (TrieImpl) unitrieStorageRoot.retrieveNode(0);
         TrieImpl child1 = (TrieImpl) unitrieStorageRoot.retrieveNode(1);
 
-        byte[] child0Hash = null;
+        TrieImpl child0Hash = null;
         if (child0 != null) {
             child0Hash = getOrchidStateRoot(concat(key, LEFT_CHILD_IMPLICIT_KEY), child0, false, removeFirstNodePrefix && child1 == null, LEFT_CHILD_IMPLICIT_KEY);
         }
 
-        byte[] child1Hash = null;
+        TrieImpl child1Hash = null;
         if (child1 != null) {
             child1Hash = getOrchidStateRoot(concat(key, RIGHT_CHILD_IMPLICIT_KEY), child1, false, removeFirstNodePrefix && child0 == null, RIGHT_CHILD_IMPLICIT_KEY);
         }
 
-        Keccak256[] hashes = new Keccak256[] {
-                child0Hash == null ? null : new Keccak256(child0Hash),
-                child1Hash == null ? null : new Keccak256(child1Hash)
-        };
+        TrieImpl[] nodes = new TrieImpl[]{child0Hash, child1Hash};
 
         if (removeFirstNodePrefix) {
             encodedSharedPath = null;
@@ -226,20 +218,21 @@ public class TrieConverter {
         }
 
 
-        if ((hashes[0]==null) && (hashes[1]==null)) { // terminal node
+        if ((nodes[0]==null) && (nodes[1]==null)) { // terminal node
             byte[] expandedSharedPath = extractOrchidStorageKeyPathFromUnitrieKey(key ,sharedPathLength);
             encodedSharedPath = PathEncoder.encode(expandedSharedPath);
             sharedPathLength = expandedSharedPath.length;
         }
+
         TrieImpl newNode = new TrieImpl(
                 encodedSharedPath == null ? TrieKeySlice.empty() : TrieKeySlice.fromEncoded(encodedSharedPath, 0, sharedPathLength, encodedSharedPath.length),
-                value, null, hashes, null,
+                value, nodes, null, null,
                 valueLength, valueHash, unitrieStorageRoot.isSecure()
         );
         if (!onlyChild) {
-            cacheStorage.put(unitrieStorageRoot.getHash(), newNode.getHash().getBytes());
+            cacheStorage.put(unitrieStorageRoot.getHash(), newNode);
         }
-        return newNode.getHash().getBytes();
+        return newNode;
     }
 
     private static byte[] concat(byte[] first, byte b) {

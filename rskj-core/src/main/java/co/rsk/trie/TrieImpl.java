@@ -81,6 +81,10 @@ public class TrieImpl implements Trie {
     // this node hash value
     protected Keccak256 hash;
 
+    // this node hash value as calculated before RSKIP 107
+    // we need to cache it, otherwise TrieConverter is prohibitively slow.
+    private Keccak256 hashOrchid;
+
     // it is saved to store
     protected boolean saved;
 
@@ -147,27 +151,25 @@ public class TrieImpl implements Trie {
     }
 
     /**
-     * Pool method, to create a NewTrie from a serialized message
-     * the store argument is used to retrieve any subnode
-     * of the subnode
-     *
-     * @param message   the content (arity, hashes, value) serializaced as byte array
-     * @param store     the store containing the rest of the trie nodes, to be used on retrieve them if they are needed in memory
+     * Deserialize a Trie, either using the original format or RSKIP 107 format, based on version flags.
+     * The original trie wasted the first byte by encoding the arity, which was always 2. We use this marker to
+     * recognize the old serialization format.
      */
     public static TrieImpl fromMessage(byte[] message, TrieStore store) {
         if (message == null) {
             return null;
         }
 
-        return fromMessage(message, 0, message.length, store);
+        if (message[0] == ARITY) {
+            return fromMessageOrchid(message, store);
+        }
+
+        return fromMessageRskip107(ByteBuffer.wrap(message), store);
     }
 
     // this methods reads a short as dataInputStream + byteArrayInputStream
-    private static TrieImpl fromMessage(byte[] message, int position, int msglength, TrieStore store) {
-        if (message == null) {
-            return null;
-        }
-        int current = position;
+    private static TrieImpl fromMessageOrchid(byte[] message, TrieStore store) {
+        int current = 0;
         int arity = message[current];
         current += Byte.BYTES;
 
@@ -235,7 +237,7 @@ public class TrieImpl implements Trie {
             value = store.retrieveValue(valueHash);
             lvalue = value.length;
         } else {
-            lvalue = msglength - offset;
+            lvalue = message.length - offset;
             if (lvalue > 0) {
                 if (message.length - current  < lvalue) {
                     throw new IllegalArgumentException(String.format(
@@ -256,18 +258,99 @@ public class TrieImpl implements Trie {
         return trie;
     }
 
+    private static TrieImpl fromMessageRskip107(ByteBuffer message, TrieStore store) {
+        byte flags = message.get();
+        boolean nodeVersion = (flags & 0b00000001) == 0b00000001;
+        boolean hasLongVal = (flags & 0b00000010) == 0b00000010;
+        boolean sharedPrefixLengthSize1 = (flags & 0b00000100) == 0b00000100;
+        boolean sharedPrefixLengthSize2 = (flags & 0b00001000) == 0b00001000;
+        boolean leftNodePresent = (flags & 0b00010000) == 0b00010000;
+        boolean rightNodePresent = (flags & 0b00100000) == 0b00100000;
+        boolean leftNodeEmbedded = (flags & 0b01000000) == 0b01000000;
+        boolean rightNodeEmbedded = (flags & 0b10000000) == 0b10000000;
+
+        // 00 -> 0
+        // 01 -> 1
+        // 10 -> 2
+        // 11 -> unused, defaults to 2
+        // TODO(mc) implement lshared encoding
+        int sharedPrefixLengthSize = sharedPrefixLengthSize1 ? 2 : (sharedPrefixLengthSize2 ? 1 : 0);
+
+        // TODO(mc) implement lshared encoding
+        int lshared = message.getShort();
+
+        TrieKeySlice sharedPath = TrieKeySlice.empty();
+        int lencoded = PathEncoder.calculateEncodedLength(lshared);
+        if (lencoded > 0) {
+            byte[] encodedKey = new byte[lencoded];
+            message.get(encodedKey);
+            sharedPath = TrieKeySlice.fromEncoded(encodedKey, 0, lshared, lencoded);
+        }
+
+        Keccak256[] hashes = new Keccak256[ARITY];
+        TrieImpl[] nodes = new TrieImpl[ARITY];
+        if (leftNodePresent) {
+            if (leftNodeEmbedded) {
+                byte length = message.get();
+                byte[] serializedNode = new byte[length];
+                message.get(serializedNode);
+                nodes[0] = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
+            } else {
+                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+                message.get(valueHash);
+                hashes[0] = new Keccak256(valueHash);
+            }
+        }
+
+        if (rightNodePresent) {
+            if (rightNodeEmbedded) {
+                byte length = message.get();
+                byte[] serializedNode = new byte[length];
+                message.get(serializedNode);
+                nodes[1] = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
+            } else {
+                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+                message.get(valueHash);
+                hashes[1] = new Keccak256(valueHash);
+            }
+        }
+
+        byte[] value;
+        int lvalue;
+        byte[] valueHash;
+
+        if (hasLongVal) {
+            valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+            message.get(valueHash);
+            value = store.retrieveValue(valueHash);
+            lvalue = value.length;
+        } else {
+            lvalue = message.remaining();
+            if (lvalue != 0) {
+                value = new byte[lvalue];
+                message.get(value);
+                valueHash = Keccak256Helper.keccak256(value);
+            } else {
+                value = null;
+                valueHash = null;
+            }
+        }
+
+        if (message.hasRemaining()) {
+            throw new IllegalArgumentException("The message had more data than expected");
+        }
+
+        TrieImpl trie = new TrieImpl(sharedPath, value, nodes, hashes, store, lvalue, valueHash, true);
+
+        if (store != null) {
+            trie.saved = true;
+        }
+
+        return trie;
+    }
+
     /**
-     * getHash calculates and/or returns the hash associated with this node content
-     *
-     * the internal variable hash could contains the cached hash.
-     *
-     * This method is not synchronized because the result of it's execution
-     *
-     * disregarding the lazy initialization is idempotent. It's better to keep
-     *
-     * it out of synchronized.
-     *
-     * @return  a byte array with the node serialized to bytes
+     * The hash based on RSKIP 107 serialization
      */
     @Override
     public Keccak256 getHash() {
@@ -284,6 +367,26 @@ public class TrieImpl implements Trie {
         this.hash = new Keccak256(Keccak256Helper.keccak256(message));
 
         return this.hash.copy();
+    }
+
+    /**
+     * The hash based on pre-RSKIP 107 serialization
+     */
+    @Override
+    public Keccak256 getHashOrchid() {
+        if (this.hashOrchid != null) {
+            return this.hashOrchid.copy();
+        }
+
+        if (isEmptyTrie(this.valueLength, this.nodes, this.hashes)) {
+            return emptyHash.copy();
+        }
+
+        byte[] message = this.toMessageOrchid();
+
+        this.hashOrchid = new Keccak256(Keccak256Helper.keccak256(message));
+
+        return this.hashOrchid.copy();
     }
 
     /**
@@ -386,20 +489,76 @@ public class TrieImpl implements Trie {
     }
 
     /**
-     * toMessage serialize the node to bytes. Used to persist the node in a key-value store
-     * like levelDB or redis.
-     *
-     * The serialization includes:
-     * - arity: byte
-     * - bits with present hashes: two bytes (example: 0x0203 says that the node has
-     * hashes at index 0, 1, 9 (the other subnodes are null)
-     * - present hashes: 32 bytes each
-     * - associated value: remainder bytes (no bytes if null)
-     *
-     * @return a byte array with the serialized info
+     * Serialize the node to bytes as specified in RSKIP 107
      */
     @Override
     public byte[] toMessage() {
+        int lvalue = this.valueLength;
+        int lshared = this.sharedPath.length();
+        int lencoded = PathEncoder.calculateEncodedLength(lshared);
+        boolean hasLongVal = this.hasLongValue();
+
+        NodeSerializer leftNodeSerializer = new NodeSerializer(getHash(0), getNode(0));
+        NodeSerializer rightNodeSerializer = new NodeSerializer(getHash(1), getNode(1));
+
+        ByteBuffer buffer = ByteBuffer.allocate(
+                1 + // flags
+                Short.BYTES + // lshared size, TODO(mc) implement lshared encoding
+                lencoded +
+                leftNodeSerializer.serializedLength() +
+                rightNodeSerializer.serializedLength() +
+                (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue)
+        );
+
+        byte flags = 0;
+        // TODO(mc) version
+        // force a value different than ARITY with the unused nodeVersion flag
+        flags = (byte) (flags | 0b00000001);
+        if (hasLongVal) {
+            flags = (byte) (flags | 0b00000010);
+        }
+
+        if (leftNodeSerializer.isPresent()) {
+            flags = (byte) (flags | 0b00010000);
+        }
+
+        if (rightNodeSerializer.isPresent()) {
+            flags = (byte) (flags | 0b00100000);
+        }
+
+        if (leftNodeSerializer.isEmbeddable()) {
+            flags = (byte) (flags | 0b01000000);
+        }
+
+        if (rightNodeSerializer.isEmbeddable()) {
+            flags = (byte) (flags | 0b10000000);
+        }
+
+        buffer.put(flags);
+        // TODO(mc) implement lshared encoding
+        buffer.putShort((short) lshared);
+
+        if (lencoded > 0) {
+            buffer.put(this.sharedPath.encode());
+        }
+
+        leftNodeSerializer.serializeInto(buffer);
+
+        rightNodeSerializer.serializeInto(buffer);
+
+        if (hasLongVal) {
+            buffer.put(this.getValueHash());
+        } else if (lvalue > 0) {
+            buffer.put(this.value);
+        }
+
+        return buffer.array();
+    }
+
+    /**
+     * Serialize the node to bytes with the pre-RSKIP 107 format
+     */
+    private byte[] toMessageOrchid() {
         int lvalue = this.valueLength;
         int nnodes = 0;
         int lshared = this.sharedPath.length();
@@ -409,7 +568,7 @@ public class TrieImpl implements Trie {
         int bits = 0;
 
         for (int k = 0; k < ARITY; k++) {
-            Keccak256 nodeHash = this.getHash(k);
+            Keccak256 nodeHash = this.getHashOrchid(k);
 
             if (nodeHash == null) {
                 continue;
@@ -443,7 +602,7 @@ public class TrieImpl implements Trie {
         }
 
         for (int k = 0; k < ARITY; k++) {
-            Keccak256 nodeHash = this.getHash(k);
+            Keccak256 nodeHash = this.getHashOrchid(k);
 
             if (nodeHash == null) {
                 continue;
@@ -463,6 +622,7 @@ public class TrieImpl implements Trie {
 
         return buffer.array();
     }
+
 
     /**
      * save saves the unsaved current trie and subnodes to their associated store
@@ -726,6 +886,14 @@ public class TrieImpl implements Trie {
         this.setHash(n, localHash);
 
         return localHash;
+    }
+
+    /**
+     * The hash based on pre-RSKIP 107 serialization
+     */
+    private Keccak256 getHashOrchid(int n) {
+        Trie node = getNode(n);
+        return node == null ? null : node.getHashOrchid();
     }
 
     /**
@@ -1293,5 +1461,63 @@ public class TrieImpl implements Trie {
             traversedPath = concat(traversedPath, sharedPath);
         }
         return concat(traversedPath, new byte[] { childSuffix });
+    }
+
+    private static class NodeSerializer {
+        private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 40;
+
+        private final Keccak256 hash;
+        private final TrieImpl node;
+        private byte[] lazySerialized;
+
+        private NodeSerializer(Keccak256 hash, TrieImpl node) {
+            this.hash = hash;
+            this.node = node;
+        }
+
+        private boolean isPresent() {
+            return hash != null;
+        }
+
+        private byte[] getSerialized() {
+            if (lazySerialized == null) {
+                lazySerialized = node.toMessage();
+            }
+
+            return lazySerialized;
+        }
+
+        private boolean isEmbeddable() {
+            // if the node is embeddable then it will always be present
+            if (node == null || node.getNodeCount() != 0) {
+                return false;
+            }
+
+            return getSerialized().length <= MAX_EMBEDDED_NODE_SIZE_IN_BYTES;
+        }
+
+        private int serializedLength() {
+            if (isPresent()) {
+                if (isEmbeddable()) {
+                    return getSerialized().length + 1;
+                }
+
+                return Keccak256Helper.DEFAULT_SIZE_BYTES;
+            }
+
+            return 0;
+        }
+
+        private void serializeInto(ByteBuffer buffer) {
+            if (isPresent()) {
+                if (isEmbeddable()) {
+                    byte[] serialized = getSerialized();
+                    buffer.put((byte) serialized.length);
+                    buffer.put(serialized);
+                } else {
+                    buffer.put(hash.getBytes());
+                }
+            }
+        }
     }
 }
