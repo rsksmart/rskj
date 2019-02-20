@@ -75,7 +75,7 @@ public class BlockTest {
         Set keys = genesisMap.keySet();
 
         // Tries are not secure anymore. What is secure is the repository that contains them.
-        Trie state = new Trie(null, true);
+        Trie state = new Trie(null);
 
         for (Object key : keys) {
 
@@ -94,7 +94,7 @@ public class BlockTest {
 
         logger.info("root: {}", state.getHash());
         // TODO(mc): the new encoding is different so the genesis hash is different too
-        assertEquals(GENESIS_STATE_ROOT, state.getHashOrchid());
+        assertEquals(GENESIS_STATE_ROOT, state.getHashOrchid(true));
     }
 
 }

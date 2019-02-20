@@ -76,7 +76,7 @@ public class TrieIteratorTest {
      *    3   5
      */
     private static Trie buildTestTrie() {
-        Trie trie = new Trie(true);
+        Trie trie = new Trie();
         trie = trie.put(decode("0a"), new byte[] { 0x06 });
         trie = trie.put(decode("0a00"), new byte[] { 0x02 });
         trie = trie.put(decode("0a80"), new byte[] { 0x07 });

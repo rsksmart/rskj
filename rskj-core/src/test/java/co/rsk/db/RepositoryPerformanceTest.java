@@ -61,7 +61,7 @@ public class RepositoryPerformanceTest {
     @Ignore
     @Test
     public void testAccountCreation(  ) {
-        Repository repository = createRepository(true);
+        Repository repository = createRepositoryWithCache();
         subtestAccountCreation(repository,false);
     }
 
@@ -117,7 +117,7 @@ public class RepositoryPerformanceTest {
     @Ignore
     @Test
     public void testStorageRowsCreation() {
-        Repository repository = createRepository(true);
+        Repository repository = createRepositoryWithCache();
         subtestStorageRowsCreation(repository ,false);
     }
 
@@ -200,11 +200,11 @@ public class RepositoryPerformanceTest {
 
     }
 
-    public static Repository createRepository(boolean isSecure) {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(isSecure))));
+    public static Repository createRepositoryWithCache() {
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
     }
 
     public static Repository createRepository(TrieStore store) {
-        return new MutableRepository(new MutableTrieImpl(new Trie(store, true)));
+        return new MutableRepository(new MutableTrieImpl(new Trie(store)));
     }
 }

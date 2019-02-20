@@ -202,7 +202,7 @@ public class TrieKeyValueTest {
 
     @Test
     public void putAndGetOneHundredKeyValues() {
-        Trie trie = new Trie(false);
+        Trie trie = new Trie();
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(k + "", (k + "").getBytes());
@@ -217,7 +217,7 @@ public class TrieKeyValueTest {
 
     @Test
     public void putAndGetOneHundredKeyLongValues() {
-        Trie trie = new Trie(false);
+        Trie trie = new Trie();
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(k + "", TrieValueTest.makeValue(k + 100));

@@ -56,8 +56,7 @@ public class RepositoryBuilder {
             detailsBatch.put(addr, details);
         }
 
-        // It must not be secure in order to be able to collect keys later
-        Repository repositoryDummy = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()), false)));
+        Repository repositoryDummy = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         Repository track = repositoryDummy.startTracking();
         track.updateBatch(stateBatch);
         track.updateBatchDetails(detailsBatch);

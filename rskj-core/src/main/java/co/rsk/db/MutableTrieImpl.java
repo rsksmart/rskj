@@ -45,11 +45,6 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
-    public boolean isSecure() {
-        return trie.isSecure();
-    }
-
-    @Override
     public byte[] get(byte[] key) {
         return trie.get(key);
     }

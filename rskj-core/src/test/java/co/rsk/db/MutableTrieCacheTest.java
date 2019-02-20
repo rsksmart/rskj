@@ -61,7 +61,7 @@ public class MutableTrieCacheTest {
 
     @Test
     public void testPuts() {
-        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie(false));
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
 
         // First put some strings in the base
         baseMutableTrie.put("ALICE",toBytes("alice"));
@@ -95,12 +95,12 @@ public class MutableTrieCacheTest {
 
     @Test
     public void testAccountBehavior(){
-        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie(false));
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         // when account is deleted any key in that account is deleted
         StringBuilder accountLikeKey = new StringBuilder("HAL");
-        int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.DOMAIN_PREFIX.length;
+        int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.DOMAIN_PREFIX.length + TrieKeyMapper.SECURE_KEY_SIZE;
         for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
         mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
         mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
@@ -121,12 +121,12 @@ public class MutableTrieCacheTest {
 
     @Test
     public void testNestedCaches() {
-        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie(false));
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         // when account is deleted any key in that account is deleted
         StringBuilder accountLikeKey = new StringBuilder("HAL");
-        int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.DOMAIN_PREFIX.length;
+        int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.DOMAIN_PREFIX.length + TrieKeyMapper.SECURE_KEY_SIZE;
         for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
         mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
         mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));

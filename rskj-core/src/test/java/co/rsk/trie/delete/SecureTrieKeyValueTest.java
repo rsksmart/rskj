@@ -36,7 +36,7 @@ public class SecureTrieKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
-        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie().put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(oneKey);
@@ -50,7 +50,7 @@ public class SecureTrieKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
-        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie().put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(zeroKey);
@@ -64,7 +64,7 @@ public class SecureTrieKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
-        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie().put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(zeroKey);
@@ -90,7 +90,7 @@ public class SecureTrieKeyValueTest {
         List<byte[]> keys = Arrays.asList(key0, key1, key2, key3, key4);
         List<byte[]> values = Arrays.asList(msg0, msg1, msg2, msg3, msg4);
 
-        Trie trie = new Trie(false);
+        Trie trie = new Trie();
         trie = trie.put(keys.get(0), values.get(0));
         int trieSize = trie.trieSize();
 
@@ -119,7 +119,7 @@ public class SecureTrieKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
-        Trie trie = new Trie(true);
+        Trie trie = new Trie();
         byte[] msgZero ="So, first of all, let me assert my firm belief that".getBytes();
         trie = trie.put(zeroKey,msgZero );
         Assert.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));

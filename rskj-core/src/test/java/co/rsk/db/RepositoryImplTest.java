@@ -78,7 +78,7 @@ public class RepositoryImplTest {
     @Test
     public void syncToRootAfterCreatingAnAccount() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store, true)));
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
 
         repository.flush();
 
@@ -427,7 +427,7 @@ public class RepositoryImplTest {
         RskAddress accAddress1 = randomAccountAddress();
         RskAddress accAddress2 = randomAccountAddress();
 
-        Repository repository = createRepository(true);
+        Repository repository = createRepositoryWithCache();
 
         repository.createAccount(accAddress1);
         repository.createAccount(accAddress2);
@@ -447,7 +447,7 @@ public class RepositoryImplTest {
         RskAddress accAddress2 = randomAccountAddress();
 
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store, true)));
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
 
         repository.createAccount(accAddress1);
         repository.flush();
@@ -468,7 +468,7 @@ public class RepositoryImplTest {
     @Test
     public void flushNoReconnect() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store, true)));
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
 
         RskAddress accAddress = randomAccountAddress();
         byte[] initialRoot = repository.getRoot();
@@ -500,11 +500,11 @@ public class RepositoryImplTest {
         return new RskAddress(bytes);
     }
 
-    private static Repository createRepository(boolean isSecure) {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(isSecure))));
+    private static Repository createRepositoryWithCache() {
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieImpl(new Trie(false)));
+        return new MutableRepository(new MutableTrieImpl(new Trie()));
     }
 }

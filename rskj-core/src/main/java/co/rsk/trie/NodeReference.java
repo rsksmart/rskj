@@ -99,8 +99,8 @@ public class NodeReference {
      * The hash or empty if this is an empty reference.
      * If the hash is not present but its node is known, it will be calculated.
      */
-    public Optional<Keccak256> getHashOrchid() {
-        return getNode().map(Trie::getHashOrchid);
+    public Optional<Keccak256> getHashOrchid(boolean isSecure) {
+        return getNode().map(trie -> trie.getHashOrchid(isSecure));
     }
 
     private byte[] getSerialized() {

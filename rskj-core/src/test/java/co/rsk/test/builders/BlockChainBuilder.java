@@ -125,7 +125,7 @@ public class BlockChainBuilder {
         }
 
         if (repository == null) {
-            repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true));
+            repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB().setClearOnClose(false))));
         }
 
         if (stateRootHandler == null) {

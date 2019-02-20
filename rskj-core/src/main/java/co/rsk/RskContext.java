@@ -666,7 +666,7 @@ public class RskContext implements NodeBootstrapper {
             ds = new DataSourceWithCache(ds, statesCacheSize);
         }
 
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(new TrieStoreImpl(ds), true))));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(new TrieStoreImpl(ds)))));
     }
 
     protected org.ethereum.db.BlockStore buildBlockStore() {

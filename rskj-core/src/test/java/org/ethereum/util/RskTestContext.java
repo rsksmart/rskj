@@ -50,7 +50,7 @@ public class RskTestContext extends RskContext {
 
     @Override
     protected Repository buildRepository() {
-        return new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true)));
+        return new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
     }
 
     @Override

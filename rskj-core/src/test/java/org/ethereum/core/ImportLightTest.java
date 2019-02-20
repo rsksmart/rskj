@@ -63,7 +63,7 @@ public class ImportLightTest {
         BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true)));
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
 

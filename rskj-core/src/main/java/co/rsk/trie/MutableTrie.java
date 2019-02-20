@@ -56,8 +56,6 @@ public interface MutableTrie {
 
     void rollback();
 
-    boolean isSecure();
-
     Set<ByteArrayWrapper> collectKeys(int size);
 
     MutableTrie getSnapshotTo(Keccak256 hash);

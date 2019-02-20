@@ -696,13 +696,8 @@ public class RepositoryImplOriginalTest {
     }
     @Test
     public void test19() {
-        testTrie19(false);
-        testTrie19(true);
-    }
-
-    public void testTrie19(boolean isSecure) {
         // Creates a repository without store
-        Repository repository = createRepository(isSecure);
+        Repository repository = createRepository();
 
         // Problem: the store is probably not copied into the track, which is good
         // BUT how takes care of saving items ?
@@ -751,7 +746,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void test20() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store, true)));
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
         byte[] root = repository.getRoot();
 
         DataWord cowKey1 = DataWord.valueFromHex("c1");
@@ -802,7 +797,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store, true)));
+        final Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
 
         final DataWord cowKey1 = DataWord.valueFromHex("c1");
         final DataWord cowKey2 = DataWord.valueFromHex("c2");
@@ -876,11 +871,7 @@ public class RepositoryImplOriginalTest {
         }
     }
 
-    private static Repository createRepository(boolean isSecure) {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(isSecure))));
-    }
-
     private static Repository createRepository() {
-        return createRepository(false);
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
     }
 }

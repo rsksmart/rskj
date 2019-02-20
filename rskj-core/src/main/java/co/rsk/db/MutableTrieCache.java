@@ -56,11 +56,6 @@ public class MutableTrieCache implements MutableTrie {
     }
 
     @Override
-    public boolean isSecure() {
-        return trie.isSecure();
-    }
-
-    @Override
     public Keccak256 getHash() {
         return trie.getHash();
     }
@@ -69,8 +64,7 @@ public class MutableTrieCache implements MutableTrie {
     public byte[] get(byte[] key) {
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
         CacheItem cacheItem = cache.get(wrap);
-        int size = TrieKeyMapper.DOMAIN_PREFIX.length + TrieKeyMapper.ACCOUNT_KEY_SIZE +
-                (trie.isSecure() ? TrieKeyMapper.SECURE_KEY_SIZE : 0);
+        int size = TrieKeyMapper.DOMAIN_PREFIX.length + TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.SECURE_KEY_SIZE;
         ByteArrayWrapper deleteWrap = key.length == size ? wrap : new ByteArrayWrapper(Arrays.copyOf(key, size));
         Integer order = deleteRecursiveCache.get(deleteWrap);
 

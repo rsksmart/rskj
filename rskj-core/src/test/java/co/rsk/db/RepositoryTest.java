@@ -166,7 +166,7 @@ public class RepositoryTest {
 
     @Test
     public void test16() {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()),true)));
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -477,7 +477,7 @@ public class RepositoryTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStoreImpl store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store, true)));
+        final Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
 
         final DataWord cowKey1 = DataWord.valueFromHex("c1");
         final DataWord cowKey2 = DataWord.valueFromHex("c2");
@@ -590,10 +590,10 @@ public class RepositoryTest {
     }
 
     public static Repository createRepository() {
-        return new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true)));
+        return createRepository(new TrieStoreImpl(new HashMapDB()));
     }
 
     private static Repository createRepository(TrieStoreImpl store) {
-        return new MutableRepository(new MutableTrieImpl(new Trie(store, true)));
+        return new MutableRepository(new MutableTrieImpl(new Trie(store)));
     }
 }

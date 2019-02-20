@@ -25,7 +25,7 @@ public class RepositoryMigrationTest {
         final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         final BigInteger accountNonce = BigInteger.valueOf(9);
 
-        Repository repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB()), true));
+        Repository repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB())));
         AccountState accountState = repository.createAccount(COW);
         accountState.setNonce(accountNonce);
         repository.updateAccountState(COW, accountState);

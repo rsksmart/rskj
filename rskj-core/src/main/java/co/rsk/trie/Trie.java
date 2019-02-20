@@ -105,9 +105,6 @@ public class Trie {
     // note that we use a long because an int would allow only up to 4GB of state to be stored.
     private VarInt treeSize;
 
-    // sha3 is applied to keys
-    private final boolean isSecure;
-
     // associated store, to store or retrieve nodes in the trie
     private TrieStore store;
 
@@ -116,27 +113,23 @@ public class Trie {
 
     // default constructor, no secure
     public Trie() {
-        this(false);
+        this(null);
     }
 
-    public Trie(boolean isSecure) {
-        this(null, isSecure);
+    public Trie(TrieStore store) {
+        this(store, TrieKeySlice.empty(), null);
     }
 
-    public Trie(TrieStore store, boolean isSecure) {
-        this(store, TrieKeySlice.empty(), null, isSecure);
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value) {
+        this(store, sharedPath, value, value == null ? Uint24.ZERO : new Uint24(value.length), null);
     }
 
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure) {
-        this(store, sharedPath, value, isSecure, value == null ? Uint24.ZERO : new Uint24(value.length), null);
-    }
-
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure, Uint24 valueLength, byte[] valueHash) {
-        this(sharedPath, value, NodeReference.empty(), NodeReference.empty(), store, valueLength, valueHash, new VarInt(0), isSecure);
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, Uint24 valueLength, byte[] valueHash) {
+        this(sharedPath, value, NodeReference.empty(), NodeReference.empty(), store, valueLength, valueHash, new VarInt(0));
     }
 
     // full constructor
-    public Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store, Uint24 valueLength, byte[] valueHash, VarInt treeSize, boolean isSecure) {
+    public Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store, Uint24 valueLength, byte[] valueHash, VarInt treeSize) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -145,12 +138,7 @@ public class Trie {
         this.valueLength = valueLength;
         this.valueHash = valueHash;
         this.treeSize = treeSize;
-        this.isSecure = isSecure;
         checkValueLength();
-    }
-
-    public boolean isSecure() {
-        return isSecure;
     }
 
     /**
@@ -185,7 +173,6 @@ public class Trie {
         int flags = message[current];
         current += Byte.BYTES;
 
-        boolean isSecure = (flags & 0x01) == 1;
         boolean hasLongVal = (flags & 0x02) == 2;
         int bhashes = readShort(message, current);
         current += Short.BYTES;
@@ -253,7 +240,7 @@ public class Trie {
         }
 
         // it doesn't need to clone value since it's retrieved from store or created from message
-        Trie trie = new Trie(sharedPath, value, left, right, store, lvalue, valueHash, null, isSecure);
+        Trie trie = new Trie(sharedPath, value, left, right, store, lvalue, valueHash, null);
 
         if (store != null) {
             trie.saved = true;
@@ -341,7 +328,7 @@ public class Trie {
             throw new IllegalArgumentException("The message had more data than expected");
         }
 
-        Trie trie = new Trie(sharedPath, value, left, right, store, lvalue, valueHash, treeSize, true);
+        Trie trie = new Trie(sharedPath, value, left, right, store, lvalue, valueHash, treeSize);
 
         if (store != null) {
             trie.saved = true;
@@ -382,7 +369,7 @@ public class Trie {
     /**
      * The hash based on pre-RSKIP 107 serialization
      */
-    public Keccak256 getHashOrchid() {
+    public Keccak256 getHashOrchid(boolean isSecure) {
         if (this.hashOrchid != null) {
             return this.hashOrchid.copy();
         }
@@ -391,7 +378,7 @@ public class Trie {
             return emptyHash.copy();
         }
 
-        byte[] message = this.toMessageOrchid();
+        byte[] message = this.toMessageOrchid(isSecure);
 
         this.hashOrchid = new Keccak256(Keccak256Helper.keccak256(message));
 
@@ -441,7 +428,7 @@ public class Trie {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
         Trie trie = put(keySlice, value, false);
 
-        return trie == null ? new Trie(this.store, this.isSecure) : trie;
+        return trie == null ? new Trie(this.store) : trie;
     }
 
     public Trie put(ByteArrayWrapper key, byte[] value) {
@@ -478,7 +465,7 @@ public class Trie {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
         Trie trie = put(keySlice, value, true);
 
-        return trie == null ? new Trie(this.store, this.isSecure) : trie;
+        return trie == null ? new Trie(this.store) : trie;
     }
 
     /**
@@ -572,14 +559,14 @@ public class Trie {
     /**
      * Serialize the node to bytes with the pre-RSKIP 107 format
      */
-    private byte[] toMessageOrchid() {
+    public byte[] toMessageOrchid(boolean isSecure) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_TO_MESSAGE);
         Uint24 lvalue = this.valueLength;
         int lshared = this.sharedPath.length();
         int lencoded = PathEncoder.calculateEncodedLength(lshared);
         boolean hasLongVal = this.hasLongValue();
-        Optional<Keccak256> leftHashOpt = this.left.getHashOrchid();
-        Optional<Keccak256> rightHashOpt = this.right.getHashOrchid();
+        Optional<Keccak256> leftHashOpt = this.left.getHashOrchid(isSecure);
+        Optional<Keccak256> rightHashOpt = this.right.getHashOrchid(isSecure);
 
         int nnodes = 0;
         int bits = 0;
@@ -601,7 +588,7 @@ public class Trie {
 
         byte flags = 0;
 
-        if (this.isSecure) {
+        if (isSecure) {
             flags |= 1;
         }
 
@@ -840,7 +827,7 @@ public class Trie {
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        return new Trie(newSharedPath, child.value, child.left, child.right, child.store, child.valueLength, child.valueHash, null, child.isSecure);
+        return new Trie(newSharedPath, child.value, child.left, child.right, child.store, child.valueLength, child.valueHash, null);
     }
 
     private static Uint24 getDataLength(byte[] value) {
@@ -874,7 +861,7 @@ public class Trie {
             }
 
             if (isRecursiveDelete) {
-                return new Trie(this.store, this.sharedPath, null, this.isSecure, Uint24.ZERO, null);
+                return new Trie(this.store, this.sharedPath, null, Uint24.ZERO, null);
             }
 
             if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
@@ -889,8 +876,7 @@ public class Trie {
                     this.store,
                     getDataLength(value),
                     null,
-                    null,
-                    this.isSecure
+                    null
             );
         }
 
@@ -903,8 +889,7 @@ public class Trie {
                     this.store,
                     getDataLength(value),
                     null,
-                    null,
-                    this.isSecure
+                    null
             );
         }
 
@@ -913,7 +898,7 @@ public class Trie {
 
         Trie node = retrieveNode(pos);
         if (node == null) {
-            node = new Trie(this.store, this.isSecure);
+            node = new Trie(this.store);
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
@@ -939,13 +924,13 @@ public class Trie {
             return null;
         }
 
-        return new Trie(this.sharedPath, this.value, newLeft, newRight, this.store, this.valueLength, this.valueHash, null, this.isSecure);
+        return new Trie(this.sharedPath, this.value, newLeft, newRight, this.store, this.valueLength, this.valueHash, null);
     }
 
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        Trie newChildTrie = new Trie(newChildSharedPath, this.value, this.left, this.right, this.store, this.valueLength, this.valueHash, null, this.isSecure);
+        Trie newChildTrie = new Trie(newChildSharedPath, this.value, this.left, this.right, this.store, this.valueLength, this.valueHash, null);
         NodeReference newChildReference = new NodeReference(this.store, newChildTrie, null);
 
         // this bit will be implicit and not present in a shared path
@@ -961,7 +946,7 @@ public class Trie {
             newRight = newChildReference;
         }
 
-        return new Trie(commonPath, null, newLeft, newRight, this.store, Uint24.ZERO, null, null, this.isSecure);
+        return new Trie(commonPath, null, newLeft, newRight, this.store, Uint24.ZERO, null, null);
     }
 
     public boolean hasStore() {
@@ -995,7 +980,7 @@ public class Trie {
 
     public Trie getSnapshotTo(Keccak256 hash) {
         if (emptyHash.equals(hash)) {
-            return new Trie(this.store, this.isSecure);
+            return new Trie(this.store);
         }
 
         // check if saved to only return this when we know it is in disk storage

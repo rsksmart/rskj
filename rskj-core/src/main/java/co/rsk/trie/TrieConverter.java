@@ -50,7 +50,7 @@ public class TrieConverter {
 //        }
         return cacheHashes.computeIfAbsent(src.getHash(), k -> {
             Trie trie = getOrchidAccountTrieRoot(src.getSharedPath(), src, true);
-            return trie == null ? HashUtil.EMPTY_TRIE_HASH : trie.getHashOrchid().getBytes();
+            return trie == null ? HashUtil.EMPTY_TRIE_HASH : trie.getHashOrchid(true).getBytes();
         });
     }
 
@@ -96,7 +96,7 @@ public class TrieConverter {
                 // 0 and another with 1.
                 TrieKeySlice child0Key = key.rebuildSharedPath(LEFT_CHILD_IMPLICIT_KEY, child0.getSharedPath());
                 Trie root = getOrchidStateRoot(child0Key, child0, true, false);
-                oldState.setStateRoot(root.getHashOrchid().getBytes());
+                oldState.setStateRoot(root.getHashOrchid(true).getBytes());
             } else if (isRemascAccount) {
                 oldState.setStateRoot(Keccak256Helper.keccak256(RLP.encodeElement(new byte[0])));
             }
@@ -111,7 +111,7 @@ public class TrieConverter {
 
             Trie newNode = new Trie(
                     orchidKey, avalue, NodeReference.empty(), NodeReference.empty(), null,
-                    new Uint24(avalue.length), null, null, src.isSecure()
+                    new Uint24(avalue.length), null, null
             );
 //            dump.add(key.toString() + "\n");
 //            dump.add(newNode.toString());
@@ -133,7 +133,7 @@ public class TrieConverter {
 
         Trie newNode = new Trie(
                 sharedPath, src.getValue(), left, right, null,
-                src.getValueLength(), src.getValueHash(), null, src.isSecure()
+                src.getValueLength(), src.getValueHash(), null
         );
 //        dump.add(key.toString());
 //        dump.add(newNode.toString());
@@ -196,7 +196,7 @@ public class TrieConverter {
         NodeReference right = new NodeReference(null, child1Hash, null);
         Trie newNode = new Trie(
                 sharedPath, value, left, right, null,
-                valueLength, valueHash, null, unitrieStorageRoot.isSecure()
+                valueLength, valueHash, null
         );
         if (!onlyChild) {
             cacheStorage.put(unitrieStorageRoot.getHash(), newNode);

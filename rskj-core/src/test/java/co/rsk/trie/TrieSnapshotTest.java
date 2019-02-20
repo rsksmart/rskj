@@ -33,7 +33,7 @@ public class TrieSnapshotTest {
     @Test
     public void getSnapshotToTrie() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
 
@@ -59,7 +59,7 @@ public class TrieSnapshotTest {
     @Test
     public void getSnapshotToTrieWithLongValues() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
 
         trie = trie.put("foo".getBytes(), TrieValueTest.makeValue(100));
 
@@ -84,7 +84,7 @@ public class TrieSnapshotTest {
     @Test
     public void getSnapshotToTheSameTrie() {
         TrieStore store = mock(TrieStore.class);
-        Trie trie = new Trie(store, false);
+        Trie trie = new Trie(store);
         trie = trie.put("key", "value".getBytes());
         trie.save();
 

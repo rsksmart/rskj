@@ -15,11 +15,11 @@ public class BlockHashesHelper {
             return trie.getHash().getBytes();
         }
 
-        return trie.getHashOrchid().getBytes();
+        return trie.getHashOrchid(false).getBytes();
     }
 
     private static Trie calculateReceiptsTrieRootFor(List<TransactionReceipt> receipts) {
-        Trie receiptsTrie = new Trie(false);
+        Trie receiptsTrie = new Trie();
         for (int i = 0; i < receipts.size(); i++) {
             receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
         }
@@ -28,7 +28,7 @@ public class BlockHashesHelper {
     }
 
     private static Trie getTxTrieFor(List<Transaction> transactions) {
-        Trie txsState = new Trie(false);
+        Trie txsState = new Trie();
         if (transactions == null) {
             return txsState;
         }
@@ -47,6 +47,6 @@ public class BlockHashesHelper {
             return trie.getHash().getBytes();
         }
 
-        return trie.getHashOrchid().getBytes();
+        return trie.getHashOrchid(false).getBytes();
     }
 }
