@@ -126,7 +126,7 @@ public class MutableTrieCacheTest {
 
         // when account is deleted any key in that account is deleted
         StringBuilder accountLikeKey = new StringBuilder("HAL");
-        int keySize = MutableRepository.ACCOUNT_KEY_SIZE + MutableRepository.DOMAIN_PREFIX.length;
+        int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.DOMAIN_PREFIX.length;
         for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
         mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
         mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));

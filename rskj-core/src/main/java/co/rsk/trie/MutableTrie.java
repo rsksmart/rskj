@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import co.rsk.core.types.Uint24;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -68,7 +69,7 @@ public interface MutableTrie {
     // This is for optimizing EXTCODESIZE. It returns the size of the value
     // without the need to retrieve the value itself. Implementors can fallback to
     // getting the value and then returning its size.
-    int getValueLength(byte[] key);
+    Uint24 getValueLength(byte[] key);
 
     // This is for optimizing EXTCODEHASH. It returns the hash digest of the value
     // without the need to retrieve the value itself. Implementors can fallback to

@@ -18,6 +18,8 @@
 
 package co.rsk.trie;
 
+import co.rsk.bitcoinj.core.VarInt;
+import co.rsk.core.types.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
@@ -79,6 +81,10 @@ public class Trie {
     // this node hash value
     private Keccak256 hash;
 
+    // this node hash value as calculated before RSKIP 107
+    // we need to cache it, otherwise TrieConverter is prohibitively slow.
+    private Keccak256 hashOrchid;
+
     // it is saved to store
     private boolean saved;
 
@@ -90,10 +96,14 @@ public class Trie {
     // This trie structure does not distinguish between empty arrays
     // and nulls. Storing an empty byte array has the same effect as removing the node.
     //
-    private int valueLength;
+    private final Uint24 valueLength;
 
     // For lazy retrieval and also for cache.
     private byte[] valueHash;
+
+    // the size of this node along with its children (in bytes)
+    // note that we use a long because an int would allow only up to 4GB of state to be stored.
+    private VarInt treeSize;
 
     // sha3 is applied to keys
     private final boolean isSecure;
@@ -118,15 +128,15 @@ public class Trie {
     }
 
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure) {
-        this(store, sharedPath, value, isSecure, value == null ? 0 : value.length, null);
+        this(store, sharedPath, value, isSecure, value == null ? Uint24.ZERO : new Uint24(value.length), null);
     }
 
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure, int valueLength, byte[] valueHash) {
-        this(sharedPath, value, NodeReference.empty(), NodeReference.empty(), store, valueLength, valueHash, isSecure);
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure, Uint24 valueLength, byte[] valueHash) {
+        this(sharedPath, value, NodeReference.empty(), NodeReference.empty(), store, valueLength, valueHash, new VarInt(0), isSecure);
     }
 
     // full constructor
-    public Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store, int valueLength, byte[] valueHash, boolean isSecure) {
+    public Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store, Uint24 valueLength, byte[] valueHash, VarInt treeSize, boolean isSecure) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -134,6 +144,7 @@ public class Trie {
         this.sharedPath = sharedPath;
         this.valueLength = valueLength;
         this.valueHash = valueHash;
+        this.treeSize = treeSize;
         this.isSecure = isSecure;
         checkValueLength();
     }
@@ -143,29 +154,26 @@ public class Trie {
     }
 
     /**
-     * Pool method, to create a NewTrie from a serialized message
-     * the store argument is used to retrieve any subnode
-     * of the subnode
-     *
-     * @param message   the content (arity, hashes, value) serializaced as byte array
-     * @param store     the store containing the rest of the trie nodes, to be used on retrieve them if they are needed in memory
+     * Deserialize a Trie, either using the original format or RSKIP 107 format, based on version flags.
+     * The original trie wasted the first byte by encoding the arity, which was always 2. We use this marker to
+     * recognize the old serialization format.
      */
     public static Trie fromMessage(byte[] message, TrieStore store) {
         if (message == null) {
             return null;
         }
 
-        return fromMessage(message, 0, message.length, store);
+        if (message[0] == ARITY) {
+            return fromMessageOrchid(message, store);
+        }
+
+        return fromMessageRskip107(ByteBuffer.wrap(message), store);
     }
 
     // this methods reads a short as dataInputStream + byteArrayInputStream
-    private static Trie fromMessage(byte[] message, int position, int msglength, TrieStore store) {
-        if (message == null) {
-            return null;
-        }
-
+    private static Trie fromMessageOrchid(byte[] message, TrieStore store) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
-        int current = position;
+        int current = 0;
         int arity = message[current];
         current += Byte.BYTES;
 
@@ -216,38 +224,129 @@ public class Trie {
         }
 
         int offset = MESSAGE_HEADER_LENGTH + lencoded + nhashes * keccakSize;
-        byte[] value = null;
-        int lvalue;
-        byte[] valueHash = null;
+        byte[] value;
+        Uint24 lvalue;
+        byte[] valueHash;
 
         if (hasLongVal) {
             valueHash = readHash(message, current).getBytes();
-            // current += keccakSize; current position is not more needed
-
             value = store.retrieveValue(valueHash);
-            lvalue = value.length;
+            lvalue = new Uint24(value.length);
         } else {
-            lvalue = msglength - offset;
-            if (lvalue > 0) {
-                if (message.length - current  < lvalue) {
+            int remaining = message.length - offset;
+            if (remaining > 0) {
+                if (message.length - current  < remaining) {
                     profiler.stop(metric);
                     throw new IllegalArgumentException(String.format(
                             "Left message is too short for value expected:%d actual:%d total:%d",
-                            lvalue, message.length - current, message.length));
+                            remaining, message.length - current, message.length));
                 }
-                value = Arrays.copyOfRange(message, current, current + lvalue);
-                //current += lvalue; current position is not more needed
+
+                value = Arrays.copyOfRange(message, current, current + remaining);
+                valueHash = null;
+                lvalue = new Uint24(remaining);
+            } else {
+                value = null;
+                valueHash = null;
+                lvalue = Uint24.ZERO;
             }
         }
 
         // it doesn't need to clone value since it's retrieved from store or created from message
-        Trie trie = new Trie(sharedPath, value, left, right, store, lvalue, valueHash, isSecure);
+        Trie trie = new Trie(sharedPath, value, left, right, store, lvalue, valueHash, null, isSecure);
 
         if (store != null) {
             trie.saved = true;
         }
 
         profiler.stop(metric);
+        return trie;
+    }
+
+    private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store) {
+        byte flags = message.get();
+        // if we reached here, we don't need to check the version flag
+        boolean hasLongVal = (flags & 0b00100000) == 0b00100000;
+        boolean sharedPrefixPresent = (flags & 0b00010000) == 0b00010000;
+        boolean leftNodePresent = (flags & 0b00001000) == 0b00001000;
+        boolean rightNodePresent = (flags & 0b00000100) == 0b00000100;
+        boolean leftNodeEmbedded = (flags & 0b00000010) == 0b00000010;
+        boolean rightNodeEmbedded = (flags & 0b00000001) == 0b00000001;
+
+        TrieKeySlice sharedPath = SharedPathSerializer.deserialize(message, sharedPrefixPresent);
+
+        NodeReference left = NodeReference.empty();
+        NodeReference right = NodeReference.empty();
+        if (leftNodePresent) {
+            if (leftNodeEmbedded) {
+                byte length = message.get();
+                byte[] serializedNode = new byte[length];
+                message.get(serializedNode);
+                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
+                left = new NodeReference(store, node, null);
+            } else {
+                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+                message.get(valueHash);
+                Keccak256 nodeHash = new Keccak256(valueHash);
+                left = new NodeReference(store, null, nodeHash);
+            }
+        }
+
+        if (rightNodePresent) {
+            if (rightNodeEmbedded) {
+                byte length = message.get();
+                byte[] serializedNode = new byte[length];
+                message.get(serializedNode);
+                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
+                right = new NodeReference(store, node, null);
+            } else {
+                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+                message.get(valueHash);
+                Keccak256 nodeHash = new Keccak256(valueHash);
+                right = new NodeReference(store, null, nodeHash);
+            }
+        }
+
+        VarInt treeSize = new VarInt(0);
+        if (leftNodePresent || rightNodePresent) {
+            treeSize = readVarInt(message);
+        }
+
+        byte[] value;
+        Uint24 lvalue;
+        byte[] valueHash;
+
+        if (hasLongVal) {
+            value = null;
+            valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+            message.get(valueHash);
+            byte[] lvalueBytes = new byte[Uint24.BYTES];
+            message.get(lvalueBytes);
+            lvalue = Uint24.decode(lvalueBytes, 0);
+        } else {
+            int remaining = message.remaining();
+            if (remaining != 0) {
+                value = new byte[remaining];
+                message.get(value);
+                valueHash = Keccak256Helper.keccak256(value);
+                lvalue = new Uint24(remaining);
+            } else {
+                value = null;
+                valueHash = null;
+                lvalue = Uint24.ZERO;
+            }
+        }
+
+        if (message.hasRemaining()) {
+            throw new IllegalArgumentException("The message had more data than expected");
+        }
+
+        Trie trie = new Trie(sharedPath, value, left, right, store, lvalue, valueHash, treeSize, true);
+
+        if (store != null) {
+            trie.saved = true;
+        }
+
         return trie;
     }
 
@@ -278,6 +377,25 @@ public class Trie {
         this.hash = new Keccak256(Keccak256Helper.keccak256(message));
 
         return this.hash.copy();
+    }
+
+    /**
+     * The hash based on pre-RSKIP 107 serialization
+     */
+    public Keccak256 getHashOrchid() {
+        if (this.hashOrchid != null) {
+            return this.hashOrchid.copy();
+        }
+
+        if (isEmptyTrie()) {
+            return emptyHash.copy();
+        }
+
+        byte[] message = this.toMessageOrchid();
+
+        this.hashOrchid = new Keccak256(Keccak256Helper.keccak256(message));
+
+        return this.hashOrchid.copy();
     }
 
     /**
@@ -388,13 +506,80 @@ public class Trie {
      * @return a byte array with the serialized info
      */
     public byte[] toMessage() {
+        Uint24 lvalue = this.valueLength;
+        boolean hasLongVal = this.hasLongValue();
+
+        SharedPathSerializer sharedPathSerializer = new SharedPathSerializer(this.sharedPath);
+        VarInt treeSize = getTreeSize();
+
+        ByteBuffer buffer = ByteBuffer.allocate(
+                1 + // flags
+                sharedPathSerializer.serializedLength() +
+                this.left.serializedLength() +
+                this.right.serializedLength() +
+                (this.isTerminal() ? 0 : treeSize.getSizeInBytes()) +
+                (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue())
+        );
+
+        // current serialization version: 01
+        byte flags = 0b01000000;
+        if (hasLongVal) {
+            flags = (byte) (flags | 0b00100000);
+        }
+
+        if (sharedPathSerializer.isPresent()) {
+            flags = (byte) (flags | 0b00010000);
+        }
+
+        if (!this.left.isEmpty()) {
+            flags = (byte) (flags | 0b00001000);
+        }
+
+        if (!this.right.isEmpty()) {
+            flags = (byte) (flags | 0b00000100);
+        }
+
+        if (this.left.isEmbeddable()) {
+            flags = (byte) (flags | 0b00000010);
+        }
+
+        if (this.right.isEmbeddable()) {
+            flags = (byte) (flags | 0b00000001);
+        }
+
+        buffer.put(flags);
+
+        sharedPathSerializer.serializeInto(buffer);
+
+        this.left.serializeInto(buffer);
+
+        this.right.serializeInto(buffer);
+
+        if (!this.isTerminal()) {
+            buffer.put(treeSize.encode());
+        }
+
+        if (hasLongVal) {
+            buffer.put(this.getValueHash());
+            buffer.put(lvalue.encode());
+        } else if (lvalue.compareTo(Uint24.ZERO) > 0) {
+            buffer.put(this.value);
+        }
+
+        return buffer.array();
+    }
+
+    /**
+     * Serialize the node to bytes with the pre-RSKIP 107 format
+     */
+    private byte[] toMessageOrchid() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_TO_MESSAGE);
-        int lvalue = this.valueLength;
+        Uint24 lvalue = this.valueLength;
         int lshared = this.sharedPath.length();
         int lencoded = PathEncoder.calculateEncodedLength(lshared);
         boolean hasLongVal = this.hasLongValue();
-        Optional<Keccak256> leftHashOpt = this.left.getHash();
-        Optional<Keccak256> rightHashOpt = this.right.getHash();
+        Optional<Keccak256> leftHashOpt = this.left.getHashOrchid();
+        Optional<Keccak256> rightHashOpt = this.right.getHashOrchid();
 
         int nnodes = 0;
         int bits = 0;
@@ -410,7 +595,7 @@ public class Trie {
 
         ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH  + (lshared > 0 ? lencoded: 0) // TODO(sergio): check if lencoded is 0 when lshared is zero
                 + nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES
-                + (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue)); //TODO(sergio) check lvalue == 0 case
+                + (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue.intValue())); //TODO(sergio) check lvalue == 0 case
 
         buffer.put((byte) ARITY);
 
@@ -436,7 +621,7 @@ public class Trie {
 
         rightHashOpt.ifPresent(h -> buffer.put(h.getBytes()));
 
-        if (lvalue > 0) {
+        if (lvalue.compareTo(Uint24.ZERO) > 0) {
             if (hasLongVal) {
                 buffer.put(this.getValueHash());
             }
@@ -489,7 +674,7 @@ public class Trie {
             return;
         }
 
-        if (valueLength != 0) {
+        if (valueLength.compareTo(Uint24.ZERO) > 0) {
             if (collectKeyLen == Integer.MAX_VALUE || key.length() == collectKeyLen) {
                 // convert bit string into byte[]
                 set.add(new ByteArrayWrapper(key.encode()));
@@ -630,7 +815,7 @@ public class Trie {
         }
 
         // only coalesce if node has only one child and no value
-        if (trie.valueLength != 0) {
+        if (trie.valueLength.compareTo(Uint24.ZERO) > 0) {
             return trie;
         }
 
@@ -655,15 +840,15 @@ public class Trie {
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        return new Trie(newSharedPath, child.value, child.left, child.right, child.store, child.valueLength, child.valueHash, child.isSecure);
+        return new Trie(newSharedPath, child.value, child.left, child.right, child.store, child.valueLength, child.valueHash, null, child.isSecure);
     }
 
-    private static int getDataLength(byte[] value) {
+    private static Uint24 getDataLength(byte[] value) {
         if (value == null) {
-            return 0;
+            return Uint24.ZERO;
         }
 
-        return value.length;
+        return new Uint24(value.length);
     }
 
     private Trie internalPut(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
@@ -682,14 +867,14 @@ public class Trie {
             // if not already done so. We could also compare by hash, to avoid retrieval
             // We do a small optimization here: if sizes are not equal, then values
             // obviously are not.
-            if (this.valueLength == getDataLength(value)) {
+            if (this.valueLength.equals(getDataLength(value))) {
                 if (Arrays.equals(this.getValue(), value)) {
                     return this;
                 }
             }
 
             if (isRecursiveDelete) {
-                return new Trie(this.store, this.sharedPath, null, this.isSecure, 0, null);
+                return new Trie(this.store, this.sharedPath, null, this.isSecure, Uint24.ZERO, null);
             }
 
             if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
@@ -704,6 +889,7 @@ public class Trie {
                     this.store,
                     getDataLength(value),
                     null,
+                    null,
                     this.isSecure
             );
         }
@@ -716,6 +902,7 @@ public class Trie {
                     NodeReference.empty(),
                     this.store,
                     getDataLength(value),
+                    null,
                     null,
                     this.isSecure
             );
@@ -752,13 +939,13 @@ public class Trie {
             return null;
         }
 
-        return new Trie(this.sharedPath, this.value, newLeft, newRight, this.store, this.valueLength, this.valueHash, this.isSecure);
+        return new Trie(this.sharedPath, this.value, newLeft, newRight, this.store, this.valueLength, this.valueHash, null, this.isSecure);
     }
 
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        Trie newChildTrie = new Trie(newChildSharedPath, this.value, this.left, this.right, this.store, this.valueLength, this.valueHash, this.isSecure);
+        Trie newChildTrie = new Trie(newChildSharedPath, this.value, this.left, this.right, this.store, this.valueLength, this.valueHash, null, this.isSecure);
         NodeReference newChildReference = new NodeReference(this.store, newChildTrie, null);
 
         // this bit will be implicit and not present in a shared path
@@ -774,11 +961,15 @@ public class Trie {
             newRight = newChildReference;
         }
 
-        return new Trie(commonPath, null, newLeft, newRight, this.store, 0, null, this.isSecure);
+        return new Trie(commonPath, null, newLeft, newRight, this.store, Uint24.ZERO, null, null, this.isSecure);
     }
 
     public boolean hasStore() {
         return this.store != null;
+    }
+
+    public boolean isTerminal() {
+        return this.left.isEmpty() && this.right.isEmpty();
     }
 
     public boolean isEmptyTrie() {
@@ -794,8 +985,8 @@ public class Trie {
      *
      * @return true if no data
      */
-    private static boolean isEmptyTrie(int valueLength, NodeReference left, NodeReference right) {
-        if (valueLength != 0) {
+    private static boolean isEmptyTrie(Uint24 valueLength, NodeReference left, NodeReference right) {
+        if (valueLength.compareTo(Uint24.ZERO) > 0) {
             return false;
         }
 
@@ -820,10 +1011,10 @@ public class Trie {
     }
 
     public boolean hasLongValue() {
-        return this.valueLength > 32;
+        return this.valueLength.compareTo(new Uint24(32)) > 0;
     }
 
-    public int getValueLength() {
+    public Uint24 getValueLength() {
         return this.valueLength;
     }
 
@@ -832,7 +1023,7 @@ public class Trie {
     // the node.
     public byte[] getValueHash() {
         if (valueHash == null) {
-            if (this.valueLength != 0) {
+            if (this.valueLength.compareTo(Uint24.ZERO) > 0) {
                 valueHash = Keccak256Helper.keccak256(this.value);
             }
             // For empty values (valueLength==0) we return the null hash because
@@ -844,12 +1035,27 @@ public class Trie {
     }
 
     public byte[] getValue() {
-        if (valueLength != 0 && value == null) {
+        if (valueLength.compareTo(Uint24.ZERO) > 0 && value == null) {
             this.value = retrieveLongValue();
             checkValueLengthAfterRetrieve();
         }
 
         return cloneArray(this.value);
+    }
+
+    /**
+     * @return the tree size in bytes as specified in RSKIP107
+     */
+    public VarInt getTreeSize() {
+        if (treeSize == null) {
+            if (isTerminal()) {
+                treeSize = new VarInt(0);
+            } else {
+                treeSize = new VarInt(this.left.referenceSize() + this.right.referenceSize());
+            }
+        }
+
+        return treeSize;
     }
 
     private byte[] retrieveLongValue() {
@@ -858,7 +1064,7 @@ public class Trie {
 
     private void checkValueLengthAfterRetrieve() {
         // At this time value==null and value.length!=null is really bad.
-        if (value == null && valueLength != 0) {
+        if (value == null && valueLength.compareTo(Uint24.ZERO) > 0) {
             // Serious DB inconsistency here
             throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
         }
@@ -867,12 +1073,12 @@ public class Trie {
     }
 
     private void checkValueLength() {
-        if (value != null && value.length != valueLength) {
+        if (value != null && value.length != valueLength.intValue()) {
             // Serious DB inconsistency here
             throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
         }
 
-        if (value == null && valueLength != 0 && (valueHash == null || valueHash.length == 0)) {
+        if (value == null && valueLength.compareTo(Uint24.ZERO) > 0 && (valueHash == null || valueHash.length == 0)) {
             // Serious DB inconsistency here
             throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
         }
@@ -966,6 +1172,24 @@ public class Trie {
             s += name + ": " + Hex.toHexString(param.getBytes()) + "\n";
         }
         return s;
+    }
+
+    private static VarInt readVarInt(ByteBuffer message) {
+        // read without touching the buffer position so when we read into bytes it contains the header
+        int first = Byte.toUnsignedInt(message.get(message.position()));
+        byte[] bytes;
+        if (first < 253) {
+            bytes = new byte[1];
+        } else if (first == 253) {
+            bytes = new byte[3];
+        } else if (first == 254) {
+            bytes = new byte[5];
+        } else {
+            bytes = new byte[9];
+        }
+
+        message.get(bytes);
+        return new VarInt(bytes, 0);
     }
 
     /**
@@ -1154,6 +1378,87 @@ public class Trie {
                 ouput.append( b == 0 ? '0': '1');
             }
             return ouput.toString();
+        }
+    }
+
+    private static class SharedPathSerializer {
+        private final TrieKeySlice sharedPath;
+        private final int lshared;
+
+        private SharedPathSerializer(TrieKeySlice sharedPath) {
+            this.sharedPath = sharedPath;
+            this.lshared = this.sharedPath.length();
+        }
+
+        private int serializedLength() {
+            if (!isPresent()) {
+                return 0;
+            }
+
+            return lsharedSize() + PathEncoder.calculateEncodedLength(lshared);
+        }
+
+        public boolean isPresent() {
+            return lshared > 0;
+        }
+
+        private void serializeInto(ByteBuffer buffer) {
+            if (!isPresent()) {
+                return;
+            }
+
+            if (1 <= lshared && lshared <= 32) {
+                // first byte in [0..31]
+                buffer.put((byte) (lshared - 1));
+            } else if (160 <= lshared && lshared <= 382) {
+                // first byte in [32..254]
+                buffer.put((byte) (lshared - 128));
+            } else {
+                buffer.put((byte) 255);
+                buffer.put(new VarInt(lshared).encode());
+            }
+
+            buffer.put(this.sharedPath.encode());
+        }
+
+        private int lsharedSize() {
+            if (!isPresent()) {
+                return 0;
+            }
+
+            if (1 <= lshared && lshared <= 32) {
+                return 1;
+            }
+
+            if (160 <= lshared && lshared <= 382) {
+                return 1;
+            }
+
+            return 1 + VarInt.sizeOf(lshared);
+        }
+
+        private static TrieKeySlice deserialize(ByteBuffer message, boolean sharedPrefixPresent) {
+            if (!sharedPrefixPresent) {
+                return TrieKeySlice.empty();
+            }
+
+            int lshared;
+            // upgrade to int so we can compare positive values
+            int lsharedFirstByte = Byte.toUnsignedInt(message.get());
+            if (0 <= lsharedFirstByte && lsharedFirstByte <= 31) {
+                // lshared in [1..32]
+                lshared = lsharedFirstByte + 1;
+            } else if (32 <= lsharedFirstByte && lsharedFirstByte <= 254) {
+                // lshared in [160..382]
+                lshared = lsharedFirstByte + 128;
+            } else {
+                lshared = (int) readVarInt(message).value;
+            }
+
+            int lencoded = PathEncoder.calculateEncodedLength(lshared);
+            byte[] encodedKey = new byte[lencoded];
+            message.get(encodedKey);
+            return TrieKeySlice.fromEncoded(encodedKey, 0, lshared, lencoded);
         }
     }
 }

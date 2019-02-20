@@ -199,6 +199,7 @@ public class TrieStoreImplTest {
 
         Assert.assertEquals(size, trie2.trieSize());
 
+        // TODO(mc): this changes with node embedding
         verify(map, times(size)).get(any());
     }
 }

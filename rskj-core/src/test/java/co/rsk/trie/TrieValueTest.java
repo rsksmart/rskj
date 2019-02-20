@@ -44,7 +44,7 @@ public class TrieValueTest {
 
         Assert.assertFalse(trie.hasLongValue());
         Assert.assertArrayEquals(trie.getValueHash(),valueHash);
-        Assert.assertEquals(value.length, trie.getValueLength());
+        Assert.assertEquals(value.length, trie.getValueLength().intValue());
         Assert.assertArrayEquals(value, trie.getValue());
     }
 
@@ -60,7 +60,7 @@ public class TrieValueTest {
 
         Assert.assertFalse(trie.hasLongValue());
         Assert.assertNotNull(trie.getValueHash());
-        Assert.assertEquals(value.length, trie.getValueLength());
+        Assert.assertEquals(value.length, trie.getValueLength().intValue());
         Assert.assertArrayEquals(value, trie.getValue());
     }
 

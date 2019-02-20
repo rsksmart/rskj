@@ -20,6 +20,7 @@ package org.ethereum.db;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.types.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
@@ -81,7 +82,7 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized boolean isExist(RskAddress addr) {
         // Here we assume size !=0 means the account exists
-        return this.trie.getValueLength(trieKeyMapper.getAccountKey(addr)) > 0;
+        return this.trie.getValueLength(trieKeyMapper.getAccountKey(addr)).compareTo(Uint24.ZERO) > 0;
     }
 
     @Override
@@ -173,7 +174,7 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        return this.trie.getValueLength(key);
+        return this.trie.getValueLength(key).intValue();
     }
 
 

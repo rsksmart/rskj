@@ -18,12 +18,13 @@
 
 package co.rsk.db;
 
+import co.rsk.core.types.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.db.MutableRepository;
+import org.ethereum.db.TrieKeyMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -68,8 +69,8 @@ public class MutableTrieCache implements MutableTrie {
     public byte[] get(byte[] key) {
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
         CacheItem cacheItem = cache.get(wrap);
-        int size = MutableRepository.DOMAIN_PREFIX.length + MutableRepository.ACCOUNT_KEY_SIZE +
-                (trie.isSecure() ? MutableRepository.SECURE_KEY_SIZE : 0);
+        int size = TrieKeyMapper.DOMAIN_PREFIX.length + TrieKeyMapper.ACCOUNT_KEY_SIZE +
+                (trie.isSecure() ? TrieKeyMapper.SECURE_KEY_SIZE : 0);
         ByteArrayWrapper deleteWrap = key.length == size ? wrap : new ByteArrayWrapper(Arrays.copyOf(key, size));
         Integer order = deleteRecursiveCache.get(deleteWrap);
 
@@ -204,9 +205,9 @@ public class MutableTrieCache implements MutableTrie {
     }
 
     @Override
-    public int getValueLength(byte[] key) {
+    public Uint24 getValueLength(byte[] key) {
         byte[] value = this.get(key);
-        return value != null ? value.length : 0;
+        return value != null ? new Uint24(value.length) : Uint24.ZERO;
     }
 
     @Override

@@ -18,6 +18,7 @@
 
 package co.rsk.db;
 
+import co.rsk.core.types.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
@@ -69,10 +70,10 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
-    public int getValueLength(byte[] key) {
+    public Uint24 getValueLength(byte[] key) {
         Trie atrie = trie.find(key);
         if (atrie == null) {
-            return 0;
+            return Uint24.ZERO;
         }
 
         return atrie.getValueLength();
