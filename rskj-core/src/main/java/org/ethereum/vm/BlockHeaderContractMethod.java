@@ -36,73 +36,73 @@ public enum BlockHeaderContractMethod {
     GET_COINBASE(
             CallTransaction.Function.fromSignature(
                     "getCoinbaseAddress",
-                    new String[]{"uint"},
+                    new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            15000L,
+            500L,
             (BlockHeaderMethodExecutorTyped) BlockHeaderContract::getCoinbaseAddress
     ),
     GET_BLOCK_HASH(
             CallTransaction.Function.fromSignature(
                     "getBlockHash",
-                    new String[]{"uint"},
+                    new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            15000L,
+            500L,
             (BlockHeaderMethodExecutorTyped) BlockHeaderContract::getBlockHash
     ),
     GET_MIN_GAS_PRICE(
             CallTransaction.Function.fromSignature(
                     "getMinGasPrice",
-                    new String[]{"uint"},
+                    new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            15000L,
+            500L,
             (BlockHeaderMethodExecutorTyped) BlockHeaderContract::getMinGasPrice
     ),
     GET_MERGED_MINING_TAGS(
             CallTransaction.Function.fromSignature(
                     "getMergedMiningTags",
-                    new String[]{"uint"},
+                    new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            15000L,
+            500L,
             (BlockHeaderMethodExecutorTyped) BlockHeaderContract::getMergedMiningTags
     ),
     GET_GAS_LIMIT(
             CallTransaction.Function.fromSignature(
                     "getGasLimit",
-                    new String[]{"uint"},
+                    new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            15000L,
+            500L,
             (BlockHeaderMethodExecutorTyped) BlockHeaderContract::getGasLimit
     ),
     GET_GAS_USED(
             CallTransaction.Function.fromSignature(
                     "getGasUsed",
-                    new String[]{"uint"},
+                    new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            15000L,
+            500L,
             (BlockHeaderMethodExecutorTyped) BlockHeaderContract::getGasUsed
     ),
     GET_RSK_DIFFICULTY(
             CallTransaction.Function.fromSignature(
                     "getRSKDifficulty",
-                    new String[]{"uint"},
+                    new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            15000L,
+            500L,
             (BlockHeaderMethodExecutorTyped) BlockHeaderContract::getRSKDifficulty
     ),
     GET_BITCOIN_HEADER(
             CallTransaction.Function.fromSignature(
                     "getBitcoinHeader",
-                    new String[]{"uint"},
+                    new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            15000L,
+            500L,
             (BlockHeaderMethodExecutorTyped) BlockHeaderContract::getBitcoinHeader
     );
 

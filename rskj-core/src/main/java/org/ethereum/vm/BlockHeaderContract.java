@@ -47,25 +47,15 @@ public class BlockHeaderContract extends PrecompiledContracts.PrecompiledContrac
 
     private static final long MAX_DEPTH = 4000;
     private BlockStore blockStore;
+    private Block currentExecutionBlock;
 
-    private Block getBlock(int blockDepth) {
-        /*
-        If blockDepth is bigger or equal to the max depth or the resulting block number is not a
-        positive value, return null.
-        */
-        long bestBlockNumber = this.blockStore.getBestBlock().getHeader().getNumber();
-        long blockNumber = bestBlockNumber - blockDepth;
-        if (blockDepth >= MAX_DEPTH || blockNumber < 0) {
+    private Block getBlock(long blockDepth) {
+        // If blockDepth is bigger or equal to the max depth, return null.
+        if (blockDepth >= MAX_DEPTH) {
             return null;
         }
 
-        // Get the block with block number blockNumber and check if it exists, if not, return null.
-        Block block = this.blockStore.getChainBlockByNumber(blockNumber);
-        if (block == null) {
-            return null;
-        }
-
-        return block;
+        return blockStore.getBlockAtDepthStartingAt(blockDepth, currentExecutionBlock.getParentHash().getBytes());
     }
 
     public byte[] getCoinbaseAddress(Object[] args) {
@@ -202,6 +192,7 @@ public class BlockHeaderContract extends PrecompiledContracts.PrecompiledContrac
     @Override
     public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
         this.blockStore = blockStore;
+        this.currentExecutionBlock = executionBlock;
     }
 
     @Override

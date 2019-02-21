@@ -136,6 +136,60 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
+    public Block getBlockAtDepthStartingAt(long depth, byte[] hash) {
+        Block start = this.getBlockByHash(hash);
+
+        if (start.getNumber() <= depth) {
+            return null;
+        }
+
+        Block block = start;
+
+        for (long i = 0; i < depth; i++) {
+            if (isBlockInMainChain(block.getNumber(), block.getHash())) {
+                return getChainBlockByNumber(start.getNumber() - depth);
+            }
+
+            block = this.getBlockByHash(block.getParentHash().getBytes());
+        }
+
+        return block;
+    }
+
+    public boolean isBlockInMainChain(long blockNumber, Keccak256 blockHash){
+        List<BlockInfo> blockInfos = index.get(blockNumber);
+        if (blockInfos == null) {
+            return false;
+        }
+
+        for (BlockInfo blockInfo : blockInfos) {
+            if (blockInfo.isMainChain() && blockHash.equals(blockInfo.getHash())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public synchronized Block getChainBlockByNumberFast(long number){
+        List<BlockInfo> blockInfos = index.get(number);
+        if (blockInfos == null) {
+            return null;
+        }
+
+        for (BlockInfo blockInfo : blockInfos) {
+
+            if (blockInfo.isMainChain()) {
+
+                byte[] hash = blockInfo.getHash().getBytes();
+                return getBlockByHash(hash);
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public synchronized void flush() {
         long t1 = System.nanoTime();
 
