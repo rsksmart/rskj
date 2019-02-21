@@ -168,7 +168,7 @@ public enum BridgeMethods {
             22000L, //TODO ESTIMATE GAS
             (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
             blockchainConfig -> blockchainConfig.isRskipGetBtcTransactionConfirmations(),
-            true
+            false
     ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
             CallTransaction.Function.fromSignature(

@@ -33,6 +33,15 @@ public class Mean {
         samples++;
     }
 
+    public void addFrom(Mean otherMean) {
+        // Note that this would yield a weighted mean, as
+        // opposed to a mean of means
+        this.total += otherMean.total;
+        this.samples += otherMean.samples;
+        this.max = Math.max(this.max, otherMean.max);
+        this.min = Math.max(this.min, otherMean.min);
+    }
+
     public long getMean() {
         return total / samples;
     }

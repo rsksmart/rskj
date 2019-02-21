@@ -32,6 +32,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -153,7 +154,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             private RepositoryTrackWithBenchmarking benchmarkerTrack;
 
             private RepositoryImpl createRepositoryImpl() {
-                return new RepositoryImpl(new Trie(true), null, new TrieStorePoolOnMemory());
+                return new RepositoryImpl(new Trie(true), new HashMapDB(), new TrieStorePoolOnMemory());
             }
 
             @Override

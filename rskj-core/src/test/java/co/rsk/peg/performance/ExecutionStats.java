@@ -18,6 +18,8 @@
 
 package co.rsk.peg.performance;
 
+import java.util.Optional;
+
 public class ExecutionStats {
     public String name;
     public Mean executionTimes;
@@ -35,19 +37,19 @@ public class ExecutionStats {
         this.slotsCleared = new Mean();
     }
 
-    public long getEstimatedGas() {
+    public Optional<Long> getEstimatedGas() {
         if (nanosecondsPerGasUnit == 0) {
-            return -1;
+            return Optional.empty();
         }
 
-        return executionTimes.getMean() / nanosecondsPerGasUnit;
+        return Optional.of(executionTimes.getMean() / nanosecondsPerGasUnit);
     }
 
     public String getPrintable() {
         return String.format(
-                "%-45s\tgas: %d\t\tcpu(us): %d\t\treal(us): %d\t\twrt(slots): %d\t\tclr(slots): %d",
+                "%-45s\tgas: %s\t\tcpu(us): %d\t\treal(us): %d\t\twrt(slots): %d\t\tclr(slots): %d",
                 name,
-                getEstimatedGas(),
+                getEstimatedGas().map(Object::toString).orElse("N/A"),
                 executionTimes.getMean() / 1000,
                 realExecutionTimes.getMean() / 1000,
                 slotsWritten.getMean(),

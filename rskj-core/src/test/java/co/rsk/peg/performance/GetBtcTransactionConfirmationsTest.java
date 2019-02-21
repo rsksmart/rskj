@@ -42,20 +42,32 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
     @Test
     public void getBtcTransactionConfirmations() {
-        ExecutionStats stats = new ExecutionStats("getBtcTransactionConfirmations");
-        // Minimum value
-        getBtcTransactionConfirmations_success(10, stats, 0,1,1);
-        // One day in BTC Blocks
-        // Average Btc block from https://www.blockchain.com/charts/n-transactions-per-block
-        getBtcTransactionConfirmations_success(300, stats, 144, 750, 3000);
-        // Maximum value
-        // 6000 transactions in a block. This value comes from considering the smallest transactions  giving an output of 10 tx/s
-        getBtcTransactionConfirmations_success(10, stats, BridgeSupport.BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH, 6000, 6000);
+        CombinedExecutionStats stats = new CombinedExecutionStats("getBtcTransactionConfirmations");
+
+        // Doing an initial estimation gets some things cached and speeds up the rest,
+        // so that we get even numbers at the end
+        System.out.print("Doing an initial pass... ");
+        setQuietMode(true);
+        estimateGetBtcTransactionConfirmations(20, 4000, 750, 1000);
+        setQuietMode(false);
+        System.out.print("Done!\n");
+
+        // We always consider the average BTC block case from https://www.blockchain.com/charts/n-transactions-per-block
+
+        // One day of BTC blocks
+        stats.add(estimateGetBtcTransactionConfirmations(300, 144, 750, 3000));
+        // Maximum number of confirmations
+        stats.add(estimateGetBtcTransactionConfirmations(10, BridgeSupport.BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH, 750, 3000));
+        // Single confirmation
+        stats.add(estimateGetBtcTransactionConfirmations(10, 0,750,3000));
 
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void getBtcTransactionConfirmations_success(int times, ExecutionStats stats, int confirmations, int  minTransactions, int maxTransactions) {
+    private ExecutionStats estimateGetBtcTransactionConfirmations(
+            int times, int confirmations, int  minTransactions,
+            int maxTransactions) {
+
         BridgeStorageProviderInitializer storageInitializer = generateBlockChainInitializer(
                 1000,
                 2000,
@@ -64,19 +76,25 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 maxTransactions
         );
 
+        String name = String.format("getBtcTransactionConfirmations-confirmations-%d", confirmations);
+        ExecutionStats stats = new ExecutionStats(name);
+
         executeAndAverage(
-                String.format("getBtcTransactionConfirmations-success-confirmations-%d", confirmations),
+                name,
                 times,
                 getABIEncoder(),
                 storageInitializer,
                 Helper.getZeroValueRandomSenderTxBuilder(),
-                Helper.getRandomHeightProvider(10), stats,
+                Helper.getRandomHeightProvider(10),
+                stats,
                 (executionResult) -> {
                     byte[] res = executionResult;
                     int numberOfConfirmations = new BigInteger(executionResult).intValueExact();
                     Assert.assertEquals(expectedConfirmations, numberOfConfirmations);
                 }
         );
+
+        return stats;
     }
 
     private byte[] encodeBytes32(Object value) {
@@ -93,7 +111,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     private byte[] encodeBytes32OnMock(InvocationOnMock m) {
-        return encodeBytes32(m.getArgumentAt(0, Object.class));
+        return encodeBytes32(m.getArgument(0));
     }
 
     private ABIEncoder getABIEncoder() {

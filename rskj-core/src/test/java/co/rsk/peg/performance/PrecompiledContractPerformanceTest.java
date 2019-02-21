@@ -21,9 +21,6 @@ package co.rsk.peg.performance;
 import co.rsk.vm.VMPerformanceTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +45,7 @@ public class PrecompiledContractPerformanceTest {
             // time of a single VM *instruction* (each *instruction* is actually a n*PUSH + OP + m*POP program
             // that measures the cost of pushing n operands to the stack, executing the operation and then
             // popping m results from the stack).
-            long nanosecondsPerGasUnit = result.deltaTime / (result.gas / result.programCloneCount);
+            long nanosecondsPerGasUnit = result.deltaTime_nS / result.gas;
             averageNanosecondsPerGasUnit.add(nanosecondsPerGasUnit);
         };
         VMPerformanceTest.runWithLogging(resultLogger);
