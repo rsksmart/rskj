@@ -42,6 +42,21 @@ public abstract class PrecompiledContractPerformanceTestCase {
 
     private boolean oldCpuTimeEnabled;
     private ThreadMXBean thread;
+    private boolean quiet;
+
+    protected void setQuietMode(boolean quiet) {
+        this.quiet = quiet;
+    }
+
+    protected boolean isInQuietMode() {
+        return quiet;
+    }
+
+    private void printLine(String line) {
+        if (!this.isInQuietMode()) {
+            System.out.println(line);
+        }
+    }
 
     protected class ExecutionTracker {
         private static final long MILLION = 1_000_000;
@@ -117,7 +132,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
         long sm = Runtime.getRuntime().freeMemory();
         VMPerformanceTest.forceGc();
         long em = Runtime.getRuntime().freeMemory();
-        System.out.println(String.format("GC - free mem before: %d, after: %d", sm, em));
+        printLine(String.format("GC - free mem before: %d, after: %d", sm, em));
     }
 
     protected static class Helper {
@@ -229,7 +244,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
             ResultCallback resultCallback) {
 
         for (int i = 0; i < times; i++) {
-            System.out.println(String.format("%s %d/%d", name, i+1, times));
+            printLine(String.format("%s %d/%d", name, i + 1, times));
 
             ExecutionTracker tracker = execute(environmentBuilder, abiEncoder, i, resultCallback);
 
