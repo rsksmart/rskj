@@ -139,7 +139,7 @@ public class IndexedBlockStore implements BlockStore {
     public Block getBlockAtDepthStartingAt(long depth, byte[] hash) {
         Block start = this.getBlockByHash(hash);
 
-        if (start.getNumber() <= depth) {
+        if (start == null || start.getNumber() <= depth) {
             return null;
         }
 

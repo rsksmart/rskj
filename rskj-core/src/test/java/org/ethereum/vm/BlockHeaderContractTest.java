@@ -1,6 +1,5 @@
 package org.ethereum.vm;
 
-import co.rsk.asm.EVMAssembler;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.blockchain.utils.BlockGenerator;
@@ -8,35 +7,27 @@ import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
-import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.test.World;
 import co.rsk.util.DifficultyUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.program.Program;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Diego Masini
@@ -52,7 +43,7 @@ public class BlockHeaderContractTest {
     private static final long DIFFICULTY_TARGET = 562036735;
     private static final String DATA = "80af2871";
     private static final String BLOCK_HEADER_CONTRACT_ADDRESS = "0000000000000000000000000000000000000000000000000000000001000009";
-    private static final byte[] ADDITIONAL_TAG = {'A','L','T','B','L','O','C','K',':'};
+    private static final byte[] ADDITIONAL_TAG = {'A', 'L', 'T', 'B', 'L', 'O', 'C', 'K', ':'};
 
     private TestSystemProperties config;
     private PrecompiledContracts precompiledContracts;
@@ -61,7 +52,7 @@ public class BlockHeaderContractTest {
     private World world;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         config = new TestSystemProperties();
         precompiledContracts = new PrecompiledContracts(config);
         vmConfig = config.getVmConfig();
@@ -112,8 +103,7 @@ public class BlockHeaderContractTest {
 
     @Test
     public void getCoinbase() {
-        Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
-        world.getBlockChain().tryToConnect(block);
+        buildBlockchainOfLength(2);
 
         Transaction rskTx = new Transaction(config, PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
@@ -130,8 +120,7 @@ public class BlockHeaderContractTest {
 
     @Test
     public void getMinGasPrice() {
-        Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
-        world.getBlockChain().tryToConnect(block);
+        buildBlockchainOfLength(2);
 
         Transaction rskTx = new Transaction(config, PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
@@ -142,13 +131,14 @@ public class BlockHeaderContractTest {
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
         byte[] minGasPriceBytes = contract.getMinGasPrice(new Object[]{new BigInteger("0")});
 
+
+        assertTrue(minGasPriceBytes.length > 0);
         assertEquals(MIN_GAS_PRICE, new BigInteger(minGasPriceBytes));
     }
 
     @Test
     public void getBlockHash() {
-        Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
-        world.getBlockChain().tryToConnect(block);
+        buildBlockchainOfLength(2);
 
         Transaction rskTx = new Transaction(config, PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
@@ -158,15 +148,14 @@ public class BlockHeaderContractTest {
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
         byte[] blockHash = contract.getBlockHash(new Object[]{new BigInteger("0")});
-        byte[] expectedHash = world.getBlockChain().getBestBlock().getHash().getBytes();
+        byte[] expectedHash = world.getBlockChain().getBestBlock().getParentHash().getBytes();
 
         assertEquals(Hex.toHexString(expectedHash), Hex.toHexString(blockHash));
     }
 
     @Test
     public void getTags() {
-        Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
-        world.getBlockChain().tryToConnect(block);
+        buildBlockchainOfLength(2);
 
         Transaction rskTx = new Transaction(config, PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
@@ -199,8 +188,7 @@ public class BlockHeaderContractTest {
 
     @Test
     public void getGasLimit() {
-        Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
-        world.getBlockChain().tryToConnect(block);
+        buildBlockchainOfLength(2);
 
         Transaction rskTx = new Transaction(config, PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
@@ -211,14 +199,13 @@ public class BlockHeaderContractTest {
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
         byte[] gasLimit = contract.getGasLimit(new Object[]{new BigInteger("0")});
 
+        assertTrue(gasLimit.length > 0);
         assertEquals(GAS_LIMIT, new BigInteger(gasLimit));
     }
 
     @Test
     public void getGasUsed() {
-        Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
-        world.getBlockChain().tryToConnect(block);
-
+        buildBlockchainOfLength(2);
         Transaction rskTx = new Transaction(config, PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
@@ -228,13 +215,13 @@ public class BlockHeaderContractTest {
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
         byte[] gasUsed = contract.getGasUsed(new Object[]{new BigInteger("0")});
 
+        assertTrue(gasUsed.length > 0);
         assertEquals(GAS_USED, new BigInteger(gasUsed));
     }
 
     @Test
     public void getRSKDifficulty() {
-        Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
-        world.getBlockChain().tryToConnect(block);
+        buildBlockchainOfLength(2);
 
         Transaction rskTx = new Transaction(config, PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
@@ -245,13 +232,13 @@ public class BlockHeaderContractTest {
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
         byte[] gasUsed = contract.getRSKDifficulty(new Object[]{new BigInteger("0")});
 
+        assertTrue(gasUsed.length > 0);
         assertEquals(RSK_DIFFICULTY, new BigInteger(gasUsed));
     }
 
     @Test
     public void getBitcoinHeader() {
-        Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
-        world.getBlockChain().tryToConnect(block);
+        buildBlockchainOfLength(2);
 
         Transaction rskTx = new Transaction(config, PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
@@ -261,6 +248,8 @@ public class BlockHeaderContractTest {
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
         byte[] bitcoinHeader = contract.getBitcoinHeader(new Object[]{new BigInteger("0")});
+
+        assertTrue(bitcoinHeader.length > 0);
 
         NetworkParameters bitcoinNetworkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(bitcoinHeader);
@@ -272,7 +261,7 @@ public class BlockHeaderContractTest {
     @Test
     public void getRSKDifficultyForBlockAtDepth1000() {
 
-        for (int i = 0; i < 4000; i++){
+        for (int i = 0; i < 4000; i++) {
             Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
             world.getBlockChain().tryToConnect(block);
         }
@@ -290,20 +279,33 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void invalidBlockDepth() {
-        for (int i = 0; i < 5000; i++){
-            Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
-            world.getBlockChain().tryToConnect(block);
-        }
+    public void blockBeyondMaximumBlockDepth() {
+        buildBlockchainOfLength(5000);
 
         Transaction rskTx = new Transaction(config, PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         DataWord address = new DataWord(BLOCK_HEADER_CONTRACT_ADDRESS);
-        BlockHeaderContract contract = (BlockHeaderContract)precompiledContracts.getContractForAddress(null, address);
+        BlockHeaderContract contract = (BlockHeaderContract) precompiledContracts.getContractForAddress(null, address);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
         byte[] tags = contract.getCoinbaseAddress(new Object[]{new BigInteger("4992")});
+
+        assertEquals(tags, ByteUtil.EMPTY_BYTE_ARRAY);
+    }
+
+    @Test
+    public void invalidBlockDepth() {
+        buildBlockchainOfLength(300);
+
+        Transaction rskTx = new Transaction(config, PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(new ECKey().getPrivKeyBytes());
+
+        DataWord address = new DataWord(BLOCK_HEADER_CONTRACT_ADDRESS);
+        BlockHeaderContract contract = (BlockHeaderContract) precompiledContracts.getContractForAddress(null, address);
+
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        byte[] tags = contract.getCoinbaseAddress(new Object[]{new BigInteger("500")});
 
         assertEquals(tags, ByteUtil.EMPTY_BYTE_ARRAY);
     }
@@ -342,5 +344,14 @@ public class BlockHeaderContractTest {
         newBlock.setBitcoinMergedMiningMerkleProof(merkleProof);
 
         return newBlock;
+    }
+
+    private void buildBlockchainOfLength(int length) {
+        if (length < 0) return;
+
+        for (int i = 0; i < length; i++) {
+            Block block = mineBlockWithCoinbaseTransaction(world.getBlockChain().getBestBlock());
+            world.getBlockChain().tryToConnect(block);
+        }
     }
 }
