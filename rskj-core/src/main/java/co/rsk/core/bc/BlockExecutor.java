@@ -21,14 +21,12 @@ package co.rsk.core.bc;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.StateRootHandler;
-import co.rsk.trie.Trie;
-import org.bouncycastle.util.encoders.Hex;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,14 +49,17 @@ public class BlockExecutor {
     private final Repository repository;
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final StateRootHandler stateRootHandler;
+    private final BlockchainNetConfig blockchainConfig;
 
     public BlockExecutor(
             Repository repository,
             TransactionExecutorFactory transactionExecutorFactory,
-            StateRootHandler stateRootHandler) {
+            StateRootHandler stateRootHandler,
+            BlockchainNetConfig blockchainConfig) {
         this.repository = repository;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.stateRootHandler = stateRootHandler;
+        this.blockchainConfig = blockchainConfig;
     }
 
     /**
@@ -86,13 +87,15 @@ public class BlockExecutor {
 
     private void fill(Block block, BlockResult result) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.FILLING_EXECUTED_BLOCK);
-        block.setTransactionsList(result.getExecutedTransactions());
         BlockHeader header = block.getHeader();
-        header.setTransactionsRoot(Block.getTxTrieRoot(block.getTransactionsList(), Block.isHardFork9999(block.getNumber())));
+        block.setTransactionsList(result.getExecutedTransactions());
+        boolean isRskipUnitrieEnabled = blockchainConfig.getConfigForBlock(block.getNumber()).isRskipUnitrie();
+        header.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskipUnitrieEnabled));
         header.setReceiptsRoot(result.getReceiptsRoot());
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
-        block.setStateRoot(result.getStateRoot());
+        block.setStateRoot(stateRootHandler.convert(header, result.getFinalState()).getBytes());
+
         header.setLogsBloom(result.getLogsBloom());
 
         block.flushRLP();
@@ -293,16 +296,16 @@ public class BlockExecutor {
         // All data saved to store
         initialRepository.save();
 
-        lastStateRootHash = initialRepository.getRoot();
-        boolean hardfork9999 = Block.isHardFork9999(block.getNumber());
+        boolean isRskipUnitrieEnabled = blockchainConfig.getConfigForBlock(block.getNumber()).isRskipUnitrie();
         BlockResult result = new BlockResult(
                 executedTransactions,
                 receipts,
                 initialRepository.getRoot(),
                 totalGasUsed,
                 totalPaidFees,
-                calcReceiptsTrie(receipts, hardfork9999),
-                calculateLogsBloom(receipts)
+                BlockHashesHelper.calculateReceiptsTrieRoot(receipts, isRskipUnitrieEnabled),
+                calculateLogsBloom(receipts),
+                initialRepository.getMutableTrie().getTrie()
         );
         profiler.stop(metric);
         return result;
@@ -316,26 +319,6 @@ public class BlockExecutor {
         }
 
         return logBloom.getData();
-    }
-
-    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts, boolean hardfork9999) {
-        if (hardfork9999) {
-            return calcReceiptsTrie(receipts, new Trie());
-        }
-
-        return calcReceiptsTrie(receipts, new Trie());
-    }
-
-    private static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts, Trie receiptsTrie) {
-        if (receipts.isEmpty()) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
-        }
-
-        return receiptsTrie.getHash().getBytes();
     }
 
     public interface TransactionExecutorFactory {

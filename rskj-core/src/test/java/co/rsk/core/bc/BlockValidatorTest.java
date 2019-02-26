@@ -481,7 +481,7 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
 
         Block genesis = blockGenerator.getGenesisBlock();
-        Block uncle1a = blockGenerator.createChildBlock(new Block(
+        Block uncle1a = blockGenerator.createChildBlock(blockFactory.newBlock(
                 blockFactory.newHeader(
                         null, null, TestUtils.randomAddress().getBytes(),
                         null, HashUtil.EMPTY_TRIE_HASH, null,

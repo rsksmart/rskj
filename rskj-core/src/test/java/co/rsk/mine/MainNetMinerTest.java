@@ -2,7 +2,7 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.TestSystemProperties;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
@@ -10,9 +10,9 @@ import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
@@ -38,7 +38,7 @@ public class MainNetMinerTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
-    private TestSystemProperties config;
+    private RskSystemProperties config;
     private TransactionPool transactionPool;
     private BlockStore blockStore;
     private NodeBlockProcessor blockProcessor;
@@ -48,9 +48,8 @@ public class MainNetMinerTest {
 
     @Before
     public void setup() {
-        config = new TestSystemProperties();
-        config.setBlockchainConfig(new FallbackMainNetConfig());
-        RskTestFactory factory = new RskTestFactory(config);
+        RskTestFactory factory = new RskTestFactory();
+        config = factory.getRskSystemProperties();
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
         blockStore = factory.getBlockStore();

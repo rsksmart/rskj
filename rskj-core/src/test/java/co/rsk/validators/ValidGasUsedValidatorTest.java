@@ -39,7 +39,7 @@ public class ValidGasUsedValidatorTest {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(20L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
-        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
+        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList(), true);
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
@@ -53,7 +53,7 @@ public class ValidGasUsedValidatorTest {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(120L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
-        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
+        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList(), true);
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
@@ -67,7 +67,7 @@ public class ValidGasUsedValidatorTest {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(-120L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
-        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
+        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList(), true);
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 

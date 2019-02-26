@@ -797,7 +797,8 @@ public class Web3Impl implements Web3 {
             Block uncle = blockchain.getBlockByHash(uncleHeader.getHash().getBytes());
 
             if (uncle == null) {
-                uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList());
+                boolean isRskipUnitrie = config.getBlockchainConfig().getConfigForBlock(uncleHeader.getNumber()).isRskipUnitrie();
+                uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList(), isRskipUnitrie);
             }
 
             return s = getBlockResult(uncle, false);

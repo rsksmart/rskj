@@ -68,7 +68,12 @@ public class BlockFactory {
                 .map(uncleHeader -> newHeader((RLPList) uncleHeader, sealed))
                 .collect(Collectors.toList());
 
-        return new Block(header, transactionList, uncleList);
+        return newBlock(header, transactionList, uncleList);
+    }
+
+    public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList) {
+        boolean rskipUnitrie = blockchainConfig.getConfigForBlock(header.getNumber()).isRskipUnitrie();
+        return new Block(header, transactionList, uncleList, rskipUnitrie);
     }
 
     public BlockHeader newHeader(

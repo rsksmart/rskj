@@ -18,7 +18,6 @@
 
 package co.rsk.trie;
 
-
 public interface TrieStore {
     void save(Trie trie);
 

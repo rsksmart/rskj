@@ -30,6 +30,7 @@ import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
@@ -111,7 +112,7 @@ public class World {
                     config.databaseDir(),
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
-            ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+            ), new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>()), config.getBlockchainConfig());
         }
 
         return this.blockExecutor;

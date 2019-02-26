@@ -50,7 +50,7 @@ public class CodeReplaceTest {
     public void replaceCodeTest1() throws InterruptedException {
 
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
-        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
+        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true, true));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -108,7 +108,7 @@ public class CodeReplaceTest {
 
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
-                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
+                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true, true));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -135,7 +135,7 @@ public class CodeReplaceTest {
         TestSystemProperties oldConfig = config;
         config = new TestSystemProperties();
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
-        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
+        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true, true));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));

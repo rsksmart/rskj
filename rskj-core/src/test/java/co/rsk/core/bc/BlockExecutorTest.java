@@ -26,8 +26,8 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
-import com.google.common.collect.Lists;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
@@ -126,7 +126,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(
-                BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts(), Block.isHardFork9999(block.getNumber())),
+                calculateReceiptsTrieRoot(result.getTransactionReceipts(), block.getNumber()),
                 result.getReceiptsRoot()
         );
 
@@ -185,7 +185,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(
-                BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts(), Block.isHardFork9999(block.getNumber())),
+                calculateReceiptsTrieRoot(result.getTransactionReceipts(), block.getNumber()),
                 result.getReceiptsRoot()
         );
 
@@ -197,8 +197,9 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getLogsBloom());
         Assert.assertEquals(256, result.getLogsBloom().length);
-        for (int k = 0; k < result.getLogsBloom().length; k++)
+        for (int k = 0; k < result.getLogsBloom().length; k++) {
             Assert.assertEquals(0, result.getLogsBloom()[k]);
+        }
 
         AccountState accountState = repository.getAccountState(account);
 
@@ -242,7 +243,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
         executor.executeAndFill(block, parent.getHeader());
@@ -292,10 +293,20 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
-        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
-        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
+        Transaction tx = createTransaction(
+                account,
+                account2,
+                BigInteger.TEN,
+                repository.getNonce(account.getAddress())
+        );
+        Transaction tx2 = createTransaction(
+                account3,
+                account2,
+                BigInteger.TEN,
+                repository.getNonce(account3.getAddress())
+        );
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -313,10 +324,10 @@ public class BlockExecutorTest {
         Assert.assertEquals(1, block.getTransactionsList().size());
         Assert.assertEquals(tx, block.getTransactionsList().get(0));
         Assert.assertArrayEquals(
-                Block.getTxTrieRoot(Lists.newArrayList(tx), Block.isHardFork9999(block.getNumber())),
+                calculateTxTrieRoot(Collections.singletonList(tx), block.getNumber()),
                 block.getTxTrieRoot()
         );
-        
+
         Assert.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
@@ -356,10 +367,20 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
-        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
-        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
+        Transaction tx = createTransaction(
+                account,
+                account2,
+                BigInteger.TEN,
+                repository.getNonce(account.getAddress())
+        );
+        Transaction tx2 = createTransaction(
+                account3,
+                account2,
+                BigInteger.TEN,
+                repository.getNonce(account3.getAddress())
+        );
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -403,7 +424,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
         Assert.assertTrue(executor.executeAndValidate(block, parent.getHeader()));
     }
@@ -435,10 +456,10 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
         byte[] stateRoot = block.getStateRoot();
-        stateRoot[0] = (byte)((stateRoot[0] + 1) % 256);
+        stateRoot[0] = (byte) ((stateRoot[0] + 1) % 256);
 
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
@@ -470,10 +491,10 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
         byte[] receiptsRoot = block.getReceiptsRoot();
-        receiptsRoot[0] = (byte)((receiptsRoot[0] + 1) % 256);
+        receiptsRoot[0] = (byte) ((receiptsRoot[0] + 1) % 256);
 
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
@@ -505,7 +526,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
         block.getHeader().setGasUsed(0);
 
@@ -539,7 +560,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
         block.getHeader().setPaidFees(Coin.ZERO);
 
@@ -573,10 +594,10 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
         byte[] logBloom = block.getLogBloom();
-        logBloom[0] = (byte)((logBloom[0] + 1) % 256);
+        logBloom[0] = (byte) ((logBloom[0] + 1) % 256);
 
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
@@ -616,9 +637,14 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
-        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
+        Transaction tx = createTransaction(
+                account,
+                account2,
+                BigInteger.TEN,
+                repository.getNonce(account.getAddress())
+        );
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
@@ -632,13 +658,13 @@ public class BlockExecutorTest {
         // Returns the root state prior block execution but after loading
         // some sample accounts (account/account2) and the premined accounts
         // in genesis.
-        byte[] rootPriorExecution =repository.getRoot();
+        byte[] rootPriorExecution = repository.getRoot();
 
         Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFill(block, genesis.getHeader());
 
-        return new TestObjects(repository, block, genesis, tx, account,rootPriorExecution );
+        return new TestObjects(repository, block, genesis, tx, account, rootPriorExecution);
     }
 
     private Block getBlockWithOneTransaction() {
@@ -729,7 +755,10 @@ public class BlockExecutorTest {
         executeBlockWithOneStrangeTransaction(false, false, generateBlockWithOneStrangeTransaction(2));
     }
 
-    public void executeBlockWithOneStrangeTransaction(boolean mustFailValidation, boolean mustFailExecution, TestObjects objects) {
+    public void executeBlockWithOneStrangeTransaction(
+            boolean mustFailValidation,
+            boolean mustFailExecution,
+            TestObjects objects) {
         SimpleEthereumListener listener = new SimpleEthereumListener();
         Block parent = objects.getParent();
         Block block = objects.getBlock();
@@ -755,7 +784,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
         Repository repository = objects.getRepository();
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
@@ -795,7 +824,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(
-                BlockExecutor.calcReceiptsTrie(result.getTransactionReceipts(),Block.isHardFork9999(block.getNumber())),
+                calculateReceiptsTrieRoot(result.getTransactionReceipts(), block.getNumber()),
                 result.getReceiptsRoot()
         );
 
@@ -803,8 +832,9 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getLogsBloom());
         Assert.assertEquals(256, result.getLogsBloom().length);
-        for (int k = 0; k < result.getLogsBloom().length; k++)
+        for (int k = 0; k < result.getLogsBloom().length; k++) {
             Assert.assertEquals(0, result.getLogsBloom()[k]);
+        }
 
         AccountState accountState = repository.getAccountState(account.getAddress());
 
@@ -819,7 +849,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
     }
 
-    public static TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
+    public TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
 
         BlockChainImpl blockchain = new BlockChainBuilder().build();
         Repository repository = blockchain.getRepository();
@@ -855,10 +885,16 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), getStateRootHandler());
+        ), getStateRootHandler(), config.getBlockchainConfig());
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = createStrangeTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()), strangeTransactionType);
+        Transaction tx = createStrangeTransaction(
+                account,
+                account2,
+                BigInteger.TEN,
+                repository.getNonce(account.getAddress()),
+                strangeTransactionType
+        );
         txs.add(tx);
 
         List<BlockHeader> uncles = new ArrayList<>();
@@ -872,23 +908,38 @@ public class BlockExecutorTest {
         return new TestObjects(repository, block, genesis, tx, account);
     }
 
-    private static Transaction createStrangeTransaction(Account sender, Account receiver,
-                                                        BigInteger value, BigInteger nonce, int strangeTransactionType) {
+    private byte[] calculateTxTrieRoot(List<Transaction> transactions, long blockNumber) {
+        return BlockHashesHelper.getTxTrieRoot(
+                transactions,
+                config.getBlockchainConfig().getConfigForBlock(blockNumber).isRskipUnitrie()
+        );
+    }
+
+    private byte[] calculateReceiptsTrieRoot(List<TransactionReceipt> transactionReceipts, long blockNumber) {
+        return BlockHashesHelper.calculateReceiptsTrieRoot(
+                transactionReceipts,
+                config.getBlockchainConfig().getConfigForBlock(blockNumber).isRskipUnitrie()
+        );
+    }
+
+    private static Transaction createStrangeTransaction(
+            Account sender, Account receiver,
+            BigInteger value, BigInteger nonce, int strangeTransactionType) {
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         byte[] to = receiver.getAddress().getBytes();
         byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21000));
         byte[] valueData = BigIntegers.asUnsignedByteArray(value);
 
-        if (strangeTransactionType==0) {
+        if (strangeTransactionType == 0) {
             to = new byte[1]; // one zero
             to[0] = 127;
-        } else if (strangeTransactionType==1) {
+        } else if (strangeTransactionType == 1) {
             to = new byte[1024];
             java.util.Arrays.fill(to, (byte) -1); // fill with 0xff
         } else {
             // Bad encoding for value
             byte[] newValueData = new byte[1024];
-            System.arraycopy(valueData,0,newValueData ,1024- valueData.length,valueData.length);
+            System.arraycopy(valueData, 0, newValueData, 1024 - valueData.length, valueData.length);
             valueData = newValueData;
         }
 
@@ -898,19 +949,20 @@ public class BlockExecutorTest {
                 gasLimitData, // gasLimit
                 to,
                 valueData,
-                null); // no data
+                null
+        ); // no data
         tx.sign(privateKeyBytes);
         return tx;
     }
 
     private static byte[] sha3(byte[] input) {
-        Keccak256 digest =  new Keccak256();
+        Keccak256 digest = new Keccak256();
         digest.update(input);
         return digest.digest();
     }
 
     private static StateRootHandler getStateRootHandler() {
-        return new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        return new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>());
     }
 
     public static class TestObjects {
@@ -933,7 +985,14 @@ public class BlockExecutorTest {
             this.transaction = transaction;
             this.account = account;
         }
-        public TestObjects(Repository repository, Block block, Block parent, Transaction transaction, Account account,byte[]rootPriorExecution) {
+
+        public TestObjects(
+                Repository repository,
+                Block block,
+                Block parent,
+                Transaction transaction,
+                Account account,
+                byte[] rootPriorExecution) {
             this.repository = repository;
             this.block = block;
             this.parent = parent;
@@ -1029,9 +1088,13 @@ public class BlockExecutorTest {
             latestReceipts = receipts;
         }
 
-        public Block getLatestBlock() { return latestBlock; }
+        public Block getLatestBlock() {
+            return latestBlock;
+        }
 
-        public List<TransactionReceipt> getLatestReceipts() { return latestReceipts; }
+        public List<TransactionReceipt> getLatestReceipts() {
+            return latestReceipts;
+        }
 
         @Override
         public void onPeerDisconnect(String host, long port) {

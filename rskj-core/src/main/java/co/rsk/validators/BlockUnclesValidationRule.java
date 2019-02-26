@@ -18,12 +18,12 @@
 
 package co.rsk.validators;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
@@ -54,18 +54,18 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     public static final String INVALIDUNCLE = "invaliduncle";
 
+    private final BlockFactory blockFactory;
     private final BlockStore blockStore;
     private final int uncleListLimit;
     private final int uncleGenerationLimit;
     private final BlockValidationRule validations;
     private final BlockParentDependantValidationRule parentValidations;
     private final BlockUnclesHashValidationRule blockValidationRule;
-    private final RskSystemProperties config;
 
-    public BlockUnclesValidationRule(RskSystemProperties config, BlockStore blockStore, int uncleListLimit,
+    public BlockUnclesValidationRule(BlockFactory blockFactory, BlockStore blockStore, int uncleListLimit,
                                      int uncleGenerationLimit, BlockValidationRule validations,
                                      BlockParentDependantValidationRule parentValidations) {
-        this.config = config;
+        this.blockFactory = blockFactory;
         this.blockStore = blockStore;
         this.uncleListLimit = uncleListLimit;
         this.uncleGenerationLimit = uncleGenerationLimit;
@@ -118,7 +118,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
 
         for (BlockHeader uncle : uncles) {
 
-            Block blockForUncleHeader = new Block(uncle, Collections.emptyList(), Collections.emptyList());
+            Block blockForUncleHeader = blockFactory.newBlock(uncle, Collections.emptyList(), Collections.emptyList());
 
             if (!this.validations.isValid(blockForUncleHeader)
                     || !validateParentNumber(uncle, blockNumber)) {

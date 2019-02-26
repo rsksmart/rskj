@@ -35,6 +35,7 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.bouncycastle.util.encoders.Hex;
@@ -139,7 +140,7 @@ public class TransactionModuleTest {
         for (int i = 1; i < 100; i++) {
             String tx = sendTransaction(web3, repository);
             Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, tx);
-
+            repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
             Assert.assertEquals(i, blockchain.getBestBlock().getNumber());
             Assert.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
             Assert.assertEquals(tx, txInBlock.getHash().toJsonString());
@@ -276,7 +277,7 @@ public class TransactionModuleTest {
                         receiptStore,
                         minerClock,
                         blockFactory,
-                        new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                        new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>())
                 ),
                 minerClock,
                 blockFactory,

@@ -21,7 +21,9 @@ package co.rsk.core.bc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.*;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -35,6 +37,8 @@ import java.util.HashMap;
 public class BlockValidatorBuilder {
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+
     private BlockTxsValidationRule blockTxsValidationRule;
 
     private BlockTxsFieldsValidationRule blockTxsFieldsValidationRule;
@@ -71,7 +75,7 @@ public class BlockValidatorBuilder {
     public BlockValidatorBuilder addBlockTxsValidationRule(Repository repository) {
         this.blockTxsValidationRule = new BlockTxsValidationRule(
                 repository,
-                new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>())
         );
         return this;
     }
@@ -105,12 +109,12 @@ public class BlockValidatorBuilder {
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockValidationRule validationRule, BlockParentDependantValidationRule parentValidationRule) {
         int uncleListLimit = config.getBlockchainConfig().getCommonConstants().getUncleListLimit();
         int uncleGenLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
-        this.blockUnclesValidationRule = new BlockUnclesValidationRule(config, blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
+        this.blockUnclesValidationRule = new BlockUnclesValidationRule(blockFactory, blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
         return this;
     }
 
     public BlockValidatorBuilder addBlockRootValidationRule() {
-        this.blockRootValidationRule = new BlockRootValidationRule();
+        this.blockRootValidationRule = new BlockRootValidationRule(config);
         return this;
     }
 

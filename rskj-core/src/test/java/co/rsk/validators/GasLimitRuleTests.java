@@ -66,6 +66,6 @@ public class GasLimitRuleTests {
                 null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
                 0, null, null, 0);
 
-        return new Block(header, Collections.emptyList(), Collections.emptyList());
+        return blockFactory.newBlock(header, Collections.emptyList(), Collections.emptyList());
     }
 }
