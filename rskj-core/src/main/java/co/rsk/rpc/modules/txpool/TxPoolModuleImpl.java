@@ -23,13 +23,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.rpc.TypeConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 @Component
@@ -84,17 +88,19 @@ public class TxPoolModuleImpl implements TxPoolModule {
 
     private JsonNode fullSerializer(Transaction tx) {
         ObjectNode txNode = jsonNodeFactory.objectNode();
-        txNode.put("blockhash", "0x0000000000000000000000000000000000000000000000000000000000000000");
-        txNode.putNull("blocknumber");
-        txNode.put("from", tx.getSender().toString());
-        txNode.put("gas", tx.getGasLimitAsInteger().toString());
-        txNode.put("gasPrice", tx.getGasPrice().toString());
-        txNode.put("hash", tx.getHash().toHexString());
-        txNode.put("input", tx.getData());
-        txNode.put("nonce", tx.getNonceAsInteger().toString());
-        txNode.put("to", tx.getReceiveAddress().toString());
+
+        txNode.put("blockHash", "0x0000000000000000000000000000000000000000000000000000000000000000");
+        txNode.putNull("blockNumber");
         txNode.putNull("transactionIndex");
-        txNode.put("value", tx.getValue().toString());
+
+        txNode.put("from", TypeConverter.toJsonHex(tx.getSender().getBytes()));
+        txNode.put("gas", TypeConverter.toJsonHex(tx.getGasLimitAsInteger()));
+        txNode.put("gasPrice", TypeConverter.toJsonHex(tx.getGasPrice().getBytes()));
+        txNode.put("hash", TypeConverter.toJsonHex(tx.getHash().toHexString()));
+        txNode.put("input", TypeConverter.toJsonHex(tx.getData()));
+        txNode.put("nonce", TypeConverter.toJsonHex(tx.getNonceAsInteger()));
+        txNode.put("to", TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes()));
+        txNode.put("value", TypeConverter.toJsonHex(tx.getValue().getBytes()));
 
         return txNode;
     }
