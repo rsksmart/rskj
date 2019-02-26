@@ -54,14 +54,14 @@ public class TxPoolModuleImpl implements TxPoolModule {
      * "{"pending": {}, "queued": {}}"
      */
     @Override
-    public String content() {
+    public JsonNode content() {
         Map<String, JsonNode> contentProps = new HashMap<>();
         Map<RskAddress, Map<BigInteger, List<Transaction>>> pendingGrouped = groupTransactions(transactionPool.getPendingTransactions());
         Map<RskAddress, Map<BigInteger, List<Transaction>>> queuedGrouped = groupTransactions(transactionPool.getQueuedTransactions());
         contentProps.put(PENDING, serializeTransactions(pendingGrouped, this::fullSerializer));
         contentProps.put(QUEUED, serializeTransactions(queuedGrouped, this::fullSerializer));
         JsonNode node = jsonNodeFactory.objectNode().setAll(contentProps);
-        return node.toString();
+        return node;
     }
 
     private JsonNode serializeTransactions(
@@ -137,14 +137,14 @@ public class TxPoolModuleImpl implements TxPoolModule {
      * "{"pending": {}, "queued": {}}"
      */
     @Override
-    public String inspect() {
+    public JsonNode inspect() {
         Map<String, JsonNode> contentProps = new HashMap<>();
         Map<RskAddress, Map<BigInteger, List<Transaction>>> pendingGrouped = groupTransactions(transactionPool.getPendingTransactions());
         Map<RskAddress, Map<BigInteger, List<Transaction>>> queuedGrouped = groupTransactions(transactionPool.getQueuedTransactions());
         contentProps.put(PENDING, serializeTransactions(pendingGrouped, this::summarySerializer));
         contentProps.put(QUEUED, serializeTransactions(queuedGrouped, this::summarySerializer));
         JsonNode node = jsonNodeFactory.objectNode().setAll(contentProps);
-        return node.toString();
+        return node;
     }
 
     /**
@@ -155,11 +155,11 @@ public class TxPoolModuleImpl implements TxPoolModule {
      * "{"pending": 0, "queued": 0}"
      */
     @Override
-    public String status() {
+    public JsonNode status() {
         Map<String, JsonNode> txProps = new HashMap<>();
         txProps.put(PENDING, jsonNodeFactory.numberNode(transactionPool.getPendingTransactions().size()));
         txProps.put(QUEUED, jsonNodeFactory.numberNode(transactionPool.getQueuedTransactions().size()));
         JsonNode node = jsonNodeFactory.objectNode().setAll(txProps);
-        return node.toString();
+        return node;
     }
 }

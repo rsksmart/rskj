@@ -20,11 +20,10 @@ package co.rsk.rpc.modules.txpool;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.ethereum.core.Account;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.Web3Mocks;
 import org.junit.Assert;
 import org.junit.Before;
@@ -94,27 +93,21 @@ public class TxPoolModuleImplTest {
 
     @Test
     public void txpool_content_basic() throws IOException {
-        String result = txPoolModule.content();
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.content();
         checkFieldIsObject(node,"pending");
         checkFieldIsObject(node,"queued");
     }
 
     @Test
     public void txpool_inspect_basic() throws IOException {
-        String result = txPoolModule.inspect();
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.inspect();
         checkFieldIsObject(node,"pending");
         checkFieldIsObject(node,"queued");
     }
 
     @Test
     public void txpool_status_basic() throws IOException {
-        String result = txPoolModule.status();
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.status();
         checkFieldIsNumber(node,"pending");
         checkFieldIsNumber(node,"queued");
     }
@@ -123,10 +116,7 @@ public class TxPoolModuleImplTest {
     public void txpool_content_oneTx() throws Exception {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
-        String result = txPoolModule.content();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.content();
 
         checkFieldIsEmpty(node, "queued");
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
@@ -139,10 +129,7 @@ public class TxPoolModuleImplTest {
     public void txpool_inspect_oneTx() throws Exception {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
-        String result = txPoolModule.inspect();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.inspect();
 
         checkFieldIsEmpty(node, "queued");
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
@@ -158,10 +145,7 @@ public class TxPoolModuleImplTest {
         Transaction tx3 = createSampleTransaction();
         List<Transaction> transactions = Arrays.asList(tx1, tx2, tx3);
         when(transactionPool.getPendingTransactions()).thenReturn(transactions);
-        String result = txPoolModule.content();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.content();
 
         checkFieldIsEmpty(node, "queued");
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
@@ -183,10 +167,7 @@ public class TxPoolModuleImplTest {
         Transaction tx3 = createSampleTransaction();
         List<Transaction> transactions = Arrays.asList(tx1, tx2, tx3);
         when(transactionPool.getPendingTransactions()).thenReturn(transactions);
-        String result = txPoolModule.inspect();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.inspect();
 
         checkFieldIsEmpty(node, "queued");
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
@@ -213,10 +194,7 @@ public class TxPoolModuleImplTest {
         List<Transaction> txs = Arrays.asList(tx4, tx5);
         when(transactionPool.getPendingTransactions()).thenReturn(transactions);
         when(transactionPool.getQueuedTransactions()).thenReturn(txs);
-        String result = txPoolModule.content();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.content();
 
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
         JsonNode queuedNode = checkFieldIsObject(node, "queued");
@@ -237,10 +215,7 @@ public class TxPoolModuleImplTest {
         List<Transaction> txs = Arrays.asList(tx4, tx5);
         when(transactionPool.getPendingTransactions()).thenReturn(transactions);
         when(transactionPool.getQueuedTransactions()).thenReturn(txs);
-        String result = txPoolModule.inspect();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.inspect();
 
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
         JsonNode queuedNode = checkFieldIsObject(node, "queued");
@@ -264,10 +239,7 @@ public class TxPoolModuleImplTest {
         List<Transaction> txs = Arrays.asList(tx7, tx8, tx6);
         when(transactionPool.getPendingTransactions()).thenReturn(transactions);
         when(transactionPool.getQueuedTransactions()).thenReturn(txs);
-        String result = txPoolModule.content();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.content();
 
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
         JsonNode queuedNode = checkFieldIsObject(node, "queued");
@@ -291,10 +263,7 @@ public class TxPoolModuleImplTest {
         List<Transaction> txs = Arrays.asList(tx7, tx8, tx6);
         when(transactionPool.getPendingTransactions()).thenReturn(transactions);
         when(transactionPool.getQueuedTransactions()).thenReturn(txs);
-        String result = txPoolModule.inspect();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.inspect();
 
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
         JsonNode queuedNode = checkFieldIsObject(node, "queued");
@@ -307,10 +276,7 @@ public class TxPoolModuleImplTest {
     public void txpool_status_oneTx() throws Exception {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
-        String result = txPoolModule.status();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.status();
 
         JsonNode queuedNode = checkFieldIsNumber(node, "queued");
         JsonNode pendingNode = checkFieldIsNumber(node, "pending");
@@ -325,10 +291,7 @@ public class TxPoolModuleImplTest {
         Transaction tx3 = createSampleTransaction();
         List<Transaction> transactions = Arrays.asList(tx1, tx2, tx3);
         when(transactionPool.getPendingTransactions()).thenReturn(transactions);
-        String result = txPoolModule.status();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.status();
 
         JsonNode queuedNode = checkFieldIsNumber(node, "queued");
         JsonNode pendingNode = checkFieldIsNumber(node, "pending");
@@ -347,10 +310,7 @@ public class TxPoolModuleImplTest {
 
         when(transactionPool.getPendingTransactions()).thenReturn(transactions);
         when(transactionPool.getQueuedTransactions()).thenReturn(txs);
-        String result = txPoolModule.status();
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode node = om.reader().forType(JsonNode.class).readValue(result);
+        JsonNode node = txPoolModule.status();
 
         JsonNode queuedNode = checkFieldIsNumber(node, "queued");
         JsonNode pendingNode = checkFieldIsNumber(node, "pending");
