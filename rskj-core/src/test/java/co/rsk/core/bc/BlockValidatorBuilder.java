@@ -20,10 +20,14 @@ package co.rsk.core.bc;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.validators.*;
 import org.ethereum.core.Repository;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.mockito.Mockito;
+
+import java.util.HashMap;
 
 /**
  * Created by mario on 19/01/17.
@@ -65,7 +69,9 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockTxsValidationRule(Repository repository) {
-        this.blockTxsValidationRule = new BlockTxsValidationRule(repository);
+        this.blockTxsValidationRule = new BlockTxsValidationRule(repository, config,
+                     new StateRootTranslator(new HashMapDB(), new HashMap<>())
+        );
         return this;
     }
 
@@ -103,7 +109,7 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockRootValidationRule() {
-        this.blockRootValidationRule = new BlockRootValidationRule();
+        this.blockRootValidationRule = new BlockRootValidationRule(config);
         return this;
     }
 

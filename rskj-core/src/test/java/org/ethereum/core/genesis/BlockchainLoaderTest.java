@@ -24,9 +24,12 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.TrieImpl;
+import co.rsk.db.StateRootTranslator;
+import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.regtest.RegTest070ForkConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -40,6 +43,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.HashMap;
 
 public class BlockchainLoaderTest {
 
@@ -62,17 +66,16 @@ public class BlockchainLoaderTest {
         //    "0000000000000000000000000000000000000000000000000000000000000000" : "01"
         //}
 
-        TestSystemProperties systemProperties = Mockito.mock(TestSystemProperties.class);
+        TestSystemProperties config = Mockito.spy(new TestSystemProperties());
 
         Constants constants = Mockito.mock(Constants.class);
         Mockito.when(constants.getInitialNonce()).thenReturn(BigInteger.ZERO);
 
-        BlockchainNetConfig blockchainNetConfig = Mockito.mock(BlockchainNetConfig.class);
+        BlockchainNetConfig blockchainNetConfig = Mockito.spy(new RegTest070ForkConfig());
         Mockito.when(blockchainNetConfig.getCommonConstants()).thenReturn(constants);
 
-        Mockito.when(systemProperties.databaseDir()).thenReturn(new TestSystemProperties().databaseDir());
-        Mockito.when(systemProperties.getBlockchainConfig()).thenReturn(blockchainNetConfig);
-        Mockito.when(systemProperties.genesisInfo()).thenReturn(jsonFile);
+        Mockito.when(config.getBlockchainConfig()).thenReturn(blockchainNetConfig);
+        Mockito.when(config.genesisInfo()).thenReturn(jsonFile);
 
         BlockStore blockStore = Mockito.mock(BlockStore.class);
         Mockito.when(blockStore.getBestBlock()).thenReturn(null);
@@ -82,8 +85,9 @@ public class BlockchainLoaderTest {
         // To use getAccountsKeys() the trie must not be secure
         Repository repository = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true)));
 
-        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null,
-                                                                 RskTestFactory.getGenesisInstance(systemProperties)
+        BlockChainLoader blockChainLoader = new BlockChainLoader(config, repository, blockStore, null, null, ethereumListener, null,
+                                                                 RskTestFactory.getGenesisInstance(config),
+                     new StateRootTranslator(new HashMapDB(), new HashMap<>()), new TrieConverter()
         );
 
         blockChainLoader.loadBlockchain();

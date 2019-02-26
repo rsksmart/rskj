@@ -24,11 +24,18 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.StateRootTranslator;
+import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieImpl;
 import co.rsk.validators.BlockValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.DataWord;
@@ -40,10 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * Created by mario on 13/01/17.
@@ -61,6 +65,8 @@ public class BlockChainLoader {
     private final EthereumListener listener;
     private final BlockValidator blockValidator;
     private final Genesis genesis;
+    private final StateRootTranslator stateRootTranslator;
+    private final TrieConverter trieConverter;
 
     @Autowired
     public BlockChainLoader(
@@ -71,7 +77,9 @@ public class BlockChainLoader {
             TransactionPool transactionPool,
             EthereumListener listener,
             BlockValidator blockValidator,
-            Genesis genesis) {
+            Genesis genesis, 
+            StateRootTranslator stateRootTranslator,
+            TrieConverter trieConverter) {
 
         this.config = config;
         this.blockStore = blockStore;
@@ -81,6 +89,8 @@ public class BlockChainLoader {
         this.listener = listener;
         this.blockValidator = blockValidator;
         this.genesis = genesis;
+        this.stateRootTranslator = stateRootTranslator;
+        this.trieConverter = trieConverter;
     }
 
     public BlockChainImpl loadBlockchain() {
@@ -95,7 +105,7 @@ public class BlockChainLoader {
                 config.isFlushEnabled(),
                 config.flushNumberOfBlocks(),
                 new BlockExecutor(
-                    repository,
+                    repository, stateRootTranslator, trieConverter,
                         (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                             tx1,
                             txindex1,
@@ -124,29 +134,8 @@ public class BlockChainLoader {
         if (bestBlock == null) {
             logger.info("DB is empty - adding Genesis");
 
-            // first we need to create the accounts, which creates also the associated ContractDetails
-            for (RskAddress accounts : genesis.getAccounts().keySet()) {
-                repository.createAccount(accounts);
-            }
-
-            // second we create contracts whom only have code modifying the preexisting ContractDetails instance
-            for (Map.Entry<RskAddress, byte[]> codeEntry : genesis.getCodes().entrySet()) {
-                RskAddress contractAddress = codeEntry.getKey();
-                repository.saveCode(contractAddress, codeEntry.getValue());
-                Map<DataWord, byte[]> contractStorage = genesis.getStorages().get(contractAddress);
-                for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
-                    repository.addStorageBytes(contractAddress, storageEntry.getKey(), storageEntry.getValue());
-                }
-            }
-
-            // given the accounts had the proper storage root set from the genesis construction we update the account state
-            for (Map.Entry<RskAddress, AccountState> accountEntry : genesis.getAccounts().entrySet()) {
-                repository.updateAccountState(accountEntry.getKey(), accountEntry.getValue());
-            }
-
-            genesis.setStateRoot(repository.getRoot());
-            genesis.flushRLP();
-
+            loadRepository(this.repository);
+            updateGenesis(this.repository);
             blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
             blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
@@ -159,7 +148,15 @@ public class BlockChainLoader {
             blockchain.setStatus(bestBlock, totalDifficulty);
 
             // we need to do this because when bestBlock == null we touch the genesis' state root
-            genesis.setStateRoot(repository.getSnapshotTo(genesis.getStateRoot()).getRoot());
+            Repository genesisRepo = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new TrieImpl(true))));
+            loadRepository(genesisRepo);
+            updateGenesis(genesisRepo);
+            if (config.getBlockchainConfig().getConfigForBlock(bestBlock.getNumber()).isRskipUnitrie()) {
+                Keccak256 stateRootKeccak = stateRootTranslator.get(new Keccak256(bestBlock.getStateRoot()));
+                if (stateRootKeccak == null) {
+                    throw new IllegalStateException("Restart blockchain or run migrator");
+                }
+            }
 
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     blockchain.getBestBlock().getNumber(),
@@ -169,21 +166,47 @@ public class BlockChainLoader {
 
         String rootHash = config.rootHashStart();
         if (StringUtils.isNotBlank(rootHash)) {
-
             // update world state by dummy hash
             byte[] rootHashArray = Hex.decode(rootHash);
             logger.info("Loading root hash from property file: [{}]", rootHash);
             this.repository.syncToRoot(rootHashArray);
-
-        } else {
-
-            // Update world state to latest loaded block from db
-            // if state is not generated from empty premine list
-            // todo this is just a workaround, move EMPTY_TRIE_HASH logic to Trie implementation
-            if (!Arrays.equals(blockchain.getBestBlock().getStateRoot(), EMPTY_TRIE_HASH)) {
-                this.repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
-            }
         }
         return blockchain;
+    }
+
+    private void updateGenesis(Repository repository) {
+        byte[] stateRootHash;
+        if (!config.getBlockchainConfig().getConfigForBlock(0).isRskipUnitrie()) {
+            stateRootHash = trieConverter.getOrchidAccountTrieRoot((TrieImpl) repository.getMutableTrie().getTrie());
+            stateRootTranslator.put(new Keccak256(stateRootHash), new Keccak256(repository.getRoot()));
+        } else {
+            stateRootHash = repository.getRoot();
+        }
+        genesis.setStateRoot(stateRootHash);
+        genesis.flushRLP();
+    }
+
+    private void loadRepository(Repository repository) {
+        // first we need to create the accounts, which creates also the associated ContractDetails
+        for (RskAddress accounts : genesis.getAccounts().keySet()) {
+            repository.createAccount(accounts);
+        }
+
+        // second we create contracts whom only have code modifying the preexisting ContractDetails instance
+        for (Map.Entry<RskAddress, byte[]> codeEntry : genesis.getCodes().entrySet()) {
+            RskAddress contractAddress = codeEntry.getKey();
+            repository.saveCode(contractAddress, codeEntry.getValue());
+            Map<DataWord, byte[]> contractStorage = genesis.getStorages().get(contractAddress);
+            for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
+                repository.addStorageBytes(contractAddress, storageEntry.getKey(), storageEntry.getValue());
+            }
+        }
+
+        // given the accounts had the proper storage root set from the genesis construction we update the account state
+        for (Map.Entry<RskAddress, AccountState> accountEntry : genesis.getAccounts().entrySet()) {
+            repository.updateAccountState(accountEntry.getKey(), accountEntry.getValue());
+        }
+
+        repository.commit();
     }
 }

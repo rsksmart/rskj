@@ -18,10 +18,6 @@
 
 package co.rsk.trie;
 
-
-/**
- * Created by ajlopez on 29/03/2017.
- */
 public interface TrieStore {
     void save(Trie trie);
 

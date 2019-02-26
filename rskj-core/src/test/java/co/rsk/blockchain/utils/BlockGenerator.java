@@ -23,6 +23,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;
@@ -133,11 +134,11 @@ public class BlockGenerator {
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
-                parent.getHash().getBytes(), // parent hash
-                unclesListHash, // uncle hash
+                parent.getHash().getBytes(),// parent hash
+                unclesListHash,// uncle hash
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
-                difficulty, // difficulty
+                difficulty,// difficulty
                 parent.getNumber() + 1,
                 parent.getGasLimit(),
                 parent.getGasUsed(),
@@ -146,10 +147,10 @@ public class BlockGenerator {
                 EMPTY_BYTE_ARRAY,   // mixHash
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
-                Block.getTxTrieRoot(txs, Block.isHardFork9999(parent.getNumber() + 1)),  // transaction root
-                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                uncles,        // uncle list
+                BlockHashesHelper.getTxTrieRoot(txs, BlockHashesHelper.isRskipUnitrie(parent.getNumber() + 1)),// transaction root
+                ByteUtils.clone(parent.getStateRoot()),//EMPTY_TRIE_HASH,   // state root
+                txs,// transaction list
+                uncles,// uncle list
                 null,
                 Coin.valueOf(fees)
         );
@@ -168,11 +169,11 @@ public class BlockGenerator {
         }
 
         return new Block(
-                parent.getHash().getBytes(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
-                coinbase, // coinbase
-                logBloom.getData(), // logs bloom
-                parent.getDifficulty().getBytes(), // difficulty
+                parent.getHash().getBytes(),// parent hash
+                EMPTY_LIST_HASH,// uncle hash
+                coinbase,// coinbase
+                logBloom.getData(),// logs bloom
+                parent.getDifficulty().getBytes(),// difficulty
                 parent.getNumber() + 1,
                 parent.getGasLimit(),
                 parent.getGasUsed(),
@@ -181,7 +182,7 @@ public class BlockGenerator {
                 EMPTY_BYTE_ARRAY,   // mixHash
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
-                Block.getTxTrieRoot(txs, Block.isHardFork9999(parent.getNumber() + 1)),  // transaction root
+                BlockHashesHelper.getTxTrieRoot(txs, BlockHashesHelper.isRskipUnitrie(parent.getNumber() + 1)),// transaction root
                 stateRoot, //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
@@ -251,7 +252,7 @@ public class BlockGenerator {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
-        newHeader.setTransactionsRoot(Block.getTxTrieRoot(txs, Block.isHardFork9999(newHeader.getNumber())));
+        newHeader.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(txs, BlockHashesHelper.isRskipUnitrie(newHeader.getNumber())));
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 

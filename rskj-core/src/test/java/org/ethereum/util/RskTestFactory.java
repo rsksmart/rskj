@@ -3,20 +3,18 @@ package org.ethereum.util;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.core.RskAddress;
 import co.rsk.core.RskImpl;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.test.builders.AccountBuilder;
-import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
@@ -25,13 +23,10 @@ import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
 import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 
 /**
@@ -72,64 +67,6 @@ public class RskTestFactory {
         return GenesisLoader.loadGenesis(config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false);
     }
 
-    public ProgramResult executeRawContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {
-        Account sender = new AccountBuilder(getBlockchain())
-                .name("sender")
-                // a large balance will allow running any contract
-                .balance(Coin.valueOf(10000000L))
-                .build();
-        BigInteger nonceCreate = getRepository().getNonce(sender.getAddress());
-        Transaction creationTx = new TransactionBuilder()
-                .gasLimit(BigInteger.valueOf(3000000))
-                .sender(sender)
-                .data(bytecode)
-                .nonce(nonceCreate.longValue())
-                .build();
-        executeTransaction(creationTx);
-        BigInteger nonceExecute = getRepository().getNonce(sender.getAddress());
-        Transaction transaction = new TransactionBuilder()
-                // a large gas limit will allow running any contract
-                .gasLimit(BigInteger.valueOf(3000000))
-                .sender(sender)
-                .receiverAddress(creationTx.getContractAddress().getBytes())
-                .data(encodedCall)
-                .nonce(nonceExecute.longValue())
-                .value(value)
-                .build();
-        return executeTransaction(transaction).getResult();
-    }
-
-    private TransactionExecutor executeTransaction(Transaction transaction) {
-        Repository track = getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(
-                transaction,
-                0,
-                RskAddress.nullAddress(),
-                getRepository(),
-                getBlockStore(),
-                getReceiptStore(),
-                getProgramInvokeFactory(),
-                getBlockchain().getBestBlock(),
-                new EthereumListenerAdapter(),
-                0,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        );
-        executor.init();
-        executor.execute();
-        executor.go();
-        executor.finalization();
-        track.commit();
-        return executor;
-    }
-
     private ProgramInvokeFactoryImpl getProgramInvokeFactory() {
         if (programInvokeFactory == null) {
             programInvokeFactory = new ProgramInvokeFactoryImpl();
@@ -150,27 +87,29 @@ public class RskTestFactory {
                     new DummyBlockValidator(),
                     false,
                     1,
-                    new BlockExecutor(getRepository(), (tx, txindex, coinbase, repository, block, totalGasUsed) -> new TransactionExecutor(
-                            tx,
-                            txindex,
-                            block.getCoinbase(),
-                            repository,
-                            getBlockStore(),
-                            getReceiptStore(),
-                            programInvokeFactory1,
-                            block,
-                            getCompositeEthereumListener(),
-                            totalGasUsed,
-                            config.getVmConfig(),
-                            config.getBlockchainConfig(),
-                            config.playVM(),
-                            config.isRemascEnabled(),
-                            config.vmTrace(),
-                            new PrecompiledContracts(config),
-                            config.databaseDir(),
-                            config.vmTraceDir(),
-                            config.vmTraceCompressed()
-                    ))
+                    new BlockExecutor(getRepository(),
+                            new StateRootTranslator(new HashMapDB(), new HashMap<>()), new TrieConverter(), (tx, txindex, coinbase, repository, block, totalGasUsed) -> new TransactionExecutor(
+                                tx,
+                                txindex,
+                                block.getCoinbase(),
+                                repository,
+                                getBlockStore(),
+                                getReceiptStore(),
+                                programInvokeFactory1,
+                                block,
+                                getCompositeEthereumListener(),
+                                totalGasUsed,
+                                config.getVmConfig(),
+                                config.getBlockchainConfig(),
+                                config.playVM(),
+                                config.isRemascEnabled(),
+                                config.vmTrace(),
+                                new PrecompiledContracts(config),
+                                config.databaseDir(),
+                                config.vmTraceDir(),
+                                config.vmTraceCompressed()
+                        )
+                    )
             );
         }
 
@@ -224,7 +163,7 @@ public class RskTestFactory {
     public Repository getRepository() {
         if (repository == null) {
             HashMapDB stateStore = new HashMapDB();
-            repository = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(stateStore),true)));
+            repository = new MutableRepository(new MutableTrieImpl(new TrieImpl(new TrieStoreImpl(stateStore), true)));
         }
 
         return repository;

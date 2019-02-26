@@ -10,6 +10,8 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.util.RLP;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class TrieConverter {
@@ -25,6 +27,12 @@ public class TrieConverter {
             REMASC_SENDER_UNITRIE_EXPANDED_KEY, REMASC_SENDER_UNITRIE_EXPANDED_KEY.length * Byte.SIZE
     );
 
+    private final Map<Keccak256, Keccak256> cacheHashes;
+
+    public TrieConverter() {
+        cacheHashes = new HashMap<>();
+    }
+
     public byte[] getOrchidAccountTrieRoot(TrieImpl src) {
         return getOrchidAccountTrieRoot(new byte[]{}, src, true);
     }
@@ -32,6 +40,11 @@ public class TrieConverter {
     private byte[] getOrchidAccountTrieRoot(byte[] key, TrieImpl src, boolean removeFirst8bits) {
         if (src == null) {
             return HashUtil.EMPTY_TRIE_HASH;
+        }
+
+        Keccak256 cacheHash = cacheHashes.get(src.getHash());
+        if (cacheHash != null) {
+            return cacheHash.getBytes();
         }
 
         // TODO(mc) use the TrieKeySlice native operations
@@ -92,8 +105,10 @@ public class TrieConverter {
             TrieImpl newNode = new TrieImpl(
                     TrieKeySlice.fromEncoded(encodedSharedPath, 0, orchidKey.length, encodedSharedPath.length),
                     avalue, null, null, null,
-                    avalue.length,null).withSecure(src.isSecure());
+                    avalue.length, null, src.isSecure()
+            );
 
+            cacheHashes.put(src.getHash(), newNode.getHash());
             return newNode.getHash().getBytes();
         }
 
@@ -105,13 +120,18 @@ public class TrieConverter {
             child1Hash = getOrchidAccountTrieRoot(concat(key, RIGHT_CHILD_IMPLICIT_KEY), child1, false);
         }
 
-        Keccak256[] hashes = Stream.of(child0Hash, child1Hash).map(hash -> hash==null? null : new Keccak256(hash)).toArray(Keccak256[]::new);
+        Keccak256[] hashes = new Keccak256[] {
+                child0Hash == null ? null : new Keccak256(child0Hash),
+                child1Hash == null ? null : new Keccak256(child1Hash)
+        };
 
         TrieImpl newNode = new TrieImpl(
                 encodedSharedPath == null ? TrieKeySlice.empty() : TrieKeySlice.fromEncoded(encodedSharedPath, 0, sharedPathLength, encodedSharedPath.length),
                 src.getValue(), null, hashes, null, src.valueLength,
-                src.getValueHash()).withSecure(src.isSecure());
+                src.getValueHash(), src.isSecure()
+        );
 
+        cacheHashes.put(src.getHash(), newNode.getHash());
         return newNode.getHash().getBytes();
     }
 
@@ -122,6 +142,11 @@ public class TrieConverter {
     private byte[] getOrchidStateRoot(byte[] key, TrieImpl unitrieStorageRoot, boolean removeFirstNodePrefix, boolean onlyChild, byte ancestor) {
         if (unitrieStorageRoot == null) {
             return HashUtil.EMPTY_TRIE_HASH;
+        }
+
+        Keccak256 cacheHash = cacheHashes.get(unitrieStorageRoot.getHash());
+        if (cacheHash != null) {
+            return cacheHash.getBytes();
         }
 
         // shared Path
@@ -188,7 +213,10 @@ public class TrieConverter {
         TrieImpl newNode = new TrieImpl(
                 encodedSharedPath == null ? TrieKeySlice.empty() : TrieKeySlice.fromEncoded(encodedSharedPath, 0, sharedPathLength, encodedSharedPath.length),
                 value, null, hashes, null,
-                valueLength,valueHash).withSecure(unitrieStorageRoot.isSecure());
+                valueLength, valueHash, unitrieStorageRoot.isSecure()
+        );
+
+        cacheHashes.put(unitrieStorageRoot.getHash(), newNode.getHash());
         return newNode.getHash().getBytes();
     }
 
