@@ -24,6 +24,7 @@ import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.vm.VMPerformanceTest;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
@@ -36,6 +37,9 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
 import java.util.Random;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public abstract class PrecompiledContractPerformanceTestCase {
     protected static TestSystemProperties config;
@@ -171,6 +175,12 @@ public abstract class PrecompiledContractPerformanceTestCase {
         public static HeightProvider getRandomHeightProvider(int min, int max) {
             return (int executionIndex) -> randomInRange(min, max);
         }
+
+        public static Block getMockBlock(long blockNumber) {
+            Block block = mock(Block.class);
+            when(block.getNumber()).thenReturn(blockNumber);
+            return block;
+        }
     }
 
     protected interface TxBuilder {
@@ -199,7 +209,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
             }
         }
 
-        Environment initialize(int executionIndex);
+        Environment initialize(int executionIndex, Transaction tx, int height);
         void teardown();
     }
 
@@ -210,13 +220,19 @@ public abstract class PrecompiledContractPerformanceTestCase {
     private ExecutionTracker execute(
             EnvironmentBuilder testEnvironment,
             ABIEncoder abiEncoder,
+            TxBuilder txBuilder,
+            HeightProvider heightProvider,
             int executionIndex,
             ResultCallback resultCallback) {
 
         ExecutionTracker executionInfo = new ExecutionTracker(thread);
 
         // Initialize the environment, obtaining a fresh contract ready for execution
-        EnvironmentBuilder.Environment environment = testEnvironment.initialize(executionIndex);
+        EnvironmentBuilder.Environment environment = testEnvironment.initialize(
+                executionIndex,
+                txBuilder.build(executionIndex),
+                heightProvider.getHeight(executionIndex)
+        );
 
         executionInfo.startTimer();
         byte[] executionResult = environment.contract.execute(abiEncoder.encode(executionIndex));
@@ -246,7 +262,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
         for (int i = 0; i < times; i++) {
             printLine(String.format("%s %d/%d", name, i + 1, times));
 
-            ExecutionTracker tracker = execute(environmentBuilder, abiEncoder, i, resultCallback);
+            ExecutionTracker tracker = execute(environmentBuilder, abiEncoder, txBuilder, heightProvider, i, resultCallback);
 
             stats.executionTimes.add(tracker.getExecutionTime());
             stats.realExecutionTimes.add(tracker.getRealExecutionTime());

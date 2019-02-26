@@ -19,6 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.db.BenchmarkedRepository;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
@@ -34,7 +35,7 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             @Override
-            public Environment initialize(int executionIndex) {
+            public Environment initialize(int executionIndex, Transaction tx, int height) {
                 return new Environment(
                         new PrecompiledContracts.Identity(),
                         () -> new BenchmarkedRepository.Statistics()
@@ -60,7 +61,7 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
                 environmentBuilder,
                 abiEncoder,
                 Helper.getZeroValueTxBuilder(new ECKey()),
-                BridgePerformanceTestCase.Helper.getRandomHeightProvider(10),
+                Helper.getRandomHeightProvider(10),
                 stats,
                 null
         );
