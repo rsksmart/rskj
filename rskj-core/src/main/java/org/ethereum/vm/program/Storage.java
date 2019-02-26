@@ -231,6 +231,11 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public void syncTo(Trie root) {
+        repository.syncTo(root);
+    }
+
+    @Override
     public boolean isClosed() {
         return repository.isClosed();
     }

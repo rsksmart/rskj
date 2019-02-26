@@ -18,25 +18,31 @@
 
 package co.rsk.remasc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -122,26 +128,29 @@ class RemascTestRunner {
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(),
-                (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
-                    tx,
-                    txindex,
-                    block.getCoinbase(),
-                    track,
-                    blockchain.getBlockStore(),
-                    null,
-                    programInvokeFactory,
-                    block,
-                    null,
-                    totalGasUsed,
-                    builder.getConfig().getVmConfig(),
-                    builder.getConfig().getBlockchainConfig(),
-                    builder.getConfig().playVM(),
-                    builder.getConfig().isRemascEnabled(),
-                    builder.getConfig().vmTrace(),
-                    new PrecompiledContracts(builder.getConfig()),
-                    builder.getConfig().databaseDir(),
-                    builder.getConfig().vmTraceDir(),
-                    builder.getConfig().vmTraceCompressed())
+                new StateRootTranslator(new HashMapDB(), new HashMap<>()), new TrieConverter(), (tx, txindex, coinbase, track, block, totalGasUsed) -> {
+                    RskSystemProperties config = builder.getConfig();
+                    return new TransactionExecutor(
+                            tx,
+                            txindex,
+                            block.getCoinbase(),
+                            track,
+                            blockchain.getBlockStore(),
+                            null,
+                            programInvokeFactory,
+                            block,
+                            null,
+                            totalGasUsed,
+                            config.getVmConfig(),
+                            config.getBlockchainConfig(),
+                            config.playVM(),
+                            config.isRemascEnabled(),
+                            config.vmTrace(),
+                            new PrecompiledContracts(config),
+                            config.databaseDir(),
+                            config.vmTraceDir(),
+                            config.vmTraceCompressed());
+                }
         );
 
         for(int i = 0; i <= this.initialHeight; i++) {
@@ -185,6 +194,7 @@ class RemascTestRunner {
 
             System.out.println(result);
         }
+        this.blockchain.getRepository().syncToRoot(blockchain.getBestBlock().getStateRoot());
     }
 
     public Blockchain getBlockChain() {
@@ -264,11 +274,11 @@ class RemascTestRunner {
         }
 
         Block block =  new Block(
-                parentBlock.getHash().getBytes(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
-                coinbase.getBytes(),            // fixedCoinbase
-                new Bloom().getData(),          // logs bloom
-                diffBytes,    // difficulty
+                parentBlock.getHash().getBytes(),// parent hash
+                EMPTY_LIST_HASH,// uncle hash
+                coinbase.getBytes(),// fixedCoinbase
+                new Bloom().getData(),// logs bloom
+                diffBytes,// difficulty
                 parentBlock.getNumber() + 1,
                 parentBlock.getGasLimit(),
                 parentBlock.getGasUsed(),
@@ -277,7 +287,7 @@ class RemascTestRunner {
                 new byte[0],                    // mixHash
                 BigInteger.ZERO.toByteArray(),         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                Block.getTxTrieRoot(txs, Block.isHardFork9999(parentBlock.getNumber() + 1)), // transaction root
+                BlockHashesHelper.getTxTrieRoot(txs, new TestSystemProperties().getBlockchainConfig().getConfigForBlock(parentBlock.getNumber() + 1).isRskipUnitrie()),// transaction root
                 genesis.getStateRoot(),         //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 uncles,                          // uncle list

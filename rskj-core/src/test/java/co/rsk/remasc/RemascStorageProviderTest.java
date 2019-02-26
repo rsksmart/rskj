@@ -27,13 +27,14 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryImplForTesting;
+import co.rsk.db.StateRootTranslator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
-
 import org.ethereum.config.blockchain.mainnet.MainNetAfterBridgeSyncConfig;
 import org.ethereum.config.blockchain.mainnet.MainNetOrchidConfig;
 import org.ethereum.config.blockchain.testnet.TestNetBeforeBridgeSyncConfig;
@@ -41,6 +42,7 @@ import org.ethereum.config.blockchain.testnet.TestNetDifficultyDropEnabledConfig
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
@@ -62,7 +64,6 @@ import static org.mockito.Mockito.when;
  */
 public class RemascStorageProviderTest {
 
-    private final TestSystemProperties config = new TestSystemProperties();
     private ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
     private Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
     private long initialGasLimit = 10000000L;
@@ -661,31 +662,34 @@ public class RemascStorageProviderTest {
         Repository repository = blockchain.getRepository();
         BlockStore blockStore = blockchain.getBlockStore();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(repository, (tx, txindex, coinbase1, track, block, totalGasUsed) -> new TransactionExecutor(
-                tx,
-                txindex,
-                block.getCoinbase(),
-                track,
-                blockStore,
-                null,
-                programInvokeFactory,
-                block,
-                null,
-                totalGasUsed,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
+        BlockExecutor blockExecutor = new BlockExecutor(repository,
+                new StateRootTranslator(new HashMapDB(), new HashMap<>()), new TrieConverter(), (tx, txindex, coinbase1, track, block, totalGasUsed) -> new TransactionExecutor(
+                    tx,
+                    txindex,
+                    block.getCoinbase(),
+                    track,
+                    blockStore,
+                    null,
+                    programInvokeFactory,
+                    block,
+                    null,
+                    totalGasUsed,
+                    config.getVmConfig(),
+                    config.getBlockchainConfig(),
+                    config.playVM(),
+                    config.isRemascEnabled(),
+                    config.vmTrace(),
+                    new PrecompiledContracts(config),
+                    config.databaseDir(),
+                    config.vmTraceDir(),
+                    config.vmTraceCompressed()
+                )
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
             Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
+            blockchain.getRepository().syncToRoot(b.getStateRoot());
 
             long blockNumber = blockchain.getBestBlock().getNumber();
             if (blockNumber == 24){ // before first special block

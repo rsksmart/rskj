@@ -231,6 +231,7 @@ public class Web3ImplTest {
         txs.add(tx);
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
+        blockChain.getRepository().syncToRoot(block1.getStateRoot());
 
         Web3Impl web3 = createWeb3(world, transactionPool, null);
         web3.repository = world.getBlockChain().getRepository();
