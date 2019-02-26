@@ -69,7 +69,7 @@ public class ToBase58Check extends NativeMethod {
                     Hex.toHexString(hash), hash.length
             ));
         }
-        hash = Arrays.copyOfRange(hash, 0, 20);
+//        hash = Arrays.copyOfRange(hash, 0, 20);
 
         int version = ((BigInteger) arguments[1]).intValueExact();
 
