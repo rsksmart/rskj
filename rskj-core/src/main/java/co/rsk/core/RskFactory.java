@@ -42,6 +42,10 @@ import co.rsk.rpc.netty.*;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
+import co.rsk.trie.TrieConverter;
+import co.rsk.validators.BlockCompositeRule;
+import co.rsk.validators.BlockRootValidationRule;
+import co.rsk.validators.BlockUnclesHashValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.net.RegTestConfig;
@@ -133,11 +137,18 @@ public class RskFactory {
                                           ChannelManager channelManager,
                                           SyncConfiguration syncConfiguration,
                                           DifficultyCalculator difficultyCalculator,
-                                          ProofOfWorkRule proofOfWorkRule) {
+                                          ProofOfWorkRule proofOfWorkRule,
+                                          RskSystemProperties config) {
+
+        BlockCompositeRule blockValidationRule = new BlockCompositeRule(
+                new BlockUnclesHashValidationRule(),
+                new BlockRootValidationRule(config)
+        );
 
         // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
         return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, channelManager,
-                syncConfiguration, proofOfWorkRule, difficultyCalculator);
+                                 syncConfiguration, proofOfWorkRule, blockValidationRule, difficultyCalculator
+        );
     }
 
     @Bean
@@ -351,6 +362,11 @@ public class RskFactory {
                                                                                   MessageRecorder messageRecorder){
         return () -> new RskWireProtocol(config, peerScoringManager, messageHandler, blockchain, ethereumListener,
                                          genesis, messageRecorder);
+    }
+
+    @Bean
+    public TrieConverter getTrieConverter() {
+        return new TrieConverter();
     }
 
     @Bean

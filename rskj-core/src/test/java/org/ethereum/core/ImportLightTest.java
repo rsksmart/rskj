@@ -27,6 +27,8 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.TrieImpl;
+import co.rsk.db.StateRootTranslator;
+import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.blockchain.GenesisConfig;
@@ -80,27 +82,29 @@ public class ImportLightTest {
                 new DummyBlockValidator(),
                 false,
                 1,
-                new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                        tx1,
-                        txindex1,
-                        block1.getCoinbase(),
-                        track1,
-                        blockStore,
-                        receiptStore,
-                        programInvokeFactory,
-                        block1,
-                        listener,
-                        totalGasUsed1,
-                        config.getVmConfig(),
-                        config.getBlockchainConfig(),
-                        config.playVM(),
-                        config.isRemascEnabled(),
-                        config.vmTrace(),
-                        new PrecompiledContracts(config),
-                        config.databaseDir(),
-                        config.vmTraceDir(),
-                        config.vmTraceCompressed()
-                ))
+                new BlockExecutor(repository,
+                        new StateRootTranslator(new HashMapDB(), new HashMap<>()), new TrieConverter(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
+                          tx1,
+                          txindex1,
+                          block1.getCoinbase(),
+                          track1,
+                          blockStore,
+                          receiptStore,
+                          programInvokeFactory,
+                          block1,
+                          listener,
+                          totalGasUsed1,
+                          config.getVmConfig(),
+                          config.getBlockchainConfig(),
+                          config.playVM(),
+                          config.isRemascEnabled(),
+                          config.vmTrace(),
+                          new PrecompiledContracts(config),
+                          config.databaseDir(),
+                          config.vmTraceDir(),
+                          config.vmTraceCompressed()
+                  )
+                )
         );
 
         blockchain.setNoValidation(true);

@@ -22,11 +22,10 @@ package org.ethereum.core;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -152,7 +151,7 @@ public class Block {
 
         this.header.setPaidFees(paidFees);
 
-        byte[] calculatedRoot = getTxTrieRoot(transactionsList, isHardFork9999(number));
+        byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, BlockHashesHelper.isRskipUnitrie(number));
         this.header.setTransactionsRoot(calculatedRoot);
         this.checkExpectedRoot(transactionsRoot, calculatedRoot);
 
@@ -222,7 +221,7 @@ public class Block {
         // Parse Transactions
         RLPList txTransactions = (RLPList) block.get(1);
         this.transactionsList = parseTxs(txTransactions);
-        byte[] calculatedRoot = getTxTrieRoot(this.transactionsList,isHardFork9999(this.header.getNumber()));
+        byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(this.transactionsList, BlockHashesHelper.isRskipUnitrie(this.header.getNumber()));
         this.checkExpectedRoot(this.header.getTxTrieRoot(), calculatedRoot);
 
         // Parse Uncles
@@ -691,42 +690,6 @@ public class Block {
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         rlpEncoded = null;
-    }
-
-    public static boolean isHardFork9999(long number) {
-        return number >= 9999;
-    }
-
-    public static byte[] getTxTrieRoot(List<Transaction> transactions, boolean hardfork9999) {
-        Trie trie;
-        if (hardfork9999) {
-            trie = getTxTrieNew(transactions);
-        } else {
-            trie = getTxTrieOld(transactions);
-        }
-
-        return trie.getHash().getBytes();
-    }
-
-    private static Trie getTxTrieOld(List<Transaction> transactions) {
-        return getTxTrieFor(transactions, new TrieImpl());
-    }
-
-    private static Trie getTxTrieNew(List<Transaction> transactions) {
-        return getTxTrieFor(transactions, new TrieImpl());
-    }
-
-    private static Trie getTxTrieFor(List<Transaction> transactions, Trie txsState) {
-        if (transactions == null) {
-            return txsState;
-        }
-
-        for (int i = 0; i < transactions.size(); i++) {
-            Transaction transaction = transactions.get(i);
-            txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());
-        }
-
-        return txsState;
     }
 
     public BigInteger getGasLimitAsInteger() {

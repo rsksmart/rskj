@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
 
@@ -195,6 +196,7 @@ public interface Repository extends AccountInformationProvider {
      */
     void syncToRoot(byte[] root);
 
+    void syncTo(Trie root);
     /**
      * Check to see if the current repository has an open connection to the database
      *

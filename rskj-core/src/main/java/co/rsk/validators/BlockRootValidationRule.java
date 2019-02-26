@@ -18,7 +18,10 @@
 
 package co.rsk.validators;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,19 +40,27 @@ public class BlockRootValidationRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private final BlockchainNetConfig config;
+
+    public BlockRootValidationRule(RskSystemProperties config) {
+        this.config = config.getBlockchainConfig();
+    }
 
     @Override
     public boolean isValid(Block block) {
-        byte[] trieHash = block.getTxTrieRoot();
-        byte[] trieListHash = Block.getTxTrieRoot(block.getTransactionsList(),Block.isHardFork9999(block.getNumber()));
+        boolean isRskipUnitrieEnabled = config.getConfigForBlock(block.getNumber()).isRskipUnitrie();
+        byte[] blockTxRootHash = block.getTxTrieRoot();
+        byte[] txListRootHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskipUnitrieEnabled);
 
-        boolean isValid = true;
+        if (!Arrays.equals(blockTxRootHash, txListRootHash)) {
+            String message = String.format("Block's given Trie Hash doesn't match: %s != %s",
+                      Hex.toHexString(blockTxRootHash), Hex.toHexString(txListRootHash));
 
-        if (!Arrays.equals(trieHash,trieListHash)) {
-            logger.warn("Block's given Trie Hash doesn't match: {} != {}", Hex.toHexString(trieHash), Hex.toHexString(trieListHash));
-            panicProcessor.panic("invalidtrie", String.format("Block's given Trie Hash doesn't match: %s != %s", Hex.toHexString(trieHash), Hex.toHexString(trieListHash)));
-            isValid = false;
+            logger.warn(message);
+            panicProcessor.panic("invalidtrie", message);
+            return false;
         }
-        return isValid;
+
+        return true;
     }
 }
