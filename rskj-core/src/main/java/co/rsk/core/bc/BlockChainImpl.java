@@ -19,7 +19,6 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.validators.BlockValidator;
@@ -261,7 +260,7 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("block: num: [{}] hash: [{}], executed after: [{}]nano", block.getNumber(), block.getShortHash(), totalTime);
 
             // the block is valid at this point
-            stateRootHandler.register(block.getHeader(), new Keccak256(result.getStateRoot()));
+            stateRootHandler.register(block.getHeader(), result.getFinalState());
         }
 
         // the new accumulated difficulty
@@ -344,8 +343,6 @@ public class BlockChainImpl implements Blockchain {
         synchronized (accessLock) {
             status = new BlockChainStatus(block, totalDifficulty);
             blockStore.saveBlock(block, totalDifficulty, true);
-            Keccak256 root = stateRootHandler.translate(block.getHeader());
-            repository.syncToRoot(root.getBytes());
         }
     }
 
@@ -444,12 +441,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
-        synchronized (accessLock) {
-            storeBlock(block, totalDifficulty, true);
-            status = new BlockChainStatus(block, totalDifficulty);
-            Keccak256 root = stateRootHandler.translate(block.getHeader());
-            repository.syncToRoot(root.getBytes());
-        }
+        setStatus(block, totalDifficulty);
     }
 
     private void extendAlternativeBlockChain(Block block, BlockDifficulty totalDifficulty) {
@@ -492,10 +484,6 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private boolean isValid(Block block) {
-        if (block.isGenesis()) {
-            return true;
-        }
-
         return blockValidator.isValid(block);
     }
 

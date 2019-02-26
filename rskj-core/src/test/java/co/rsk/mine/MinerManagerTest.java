@@ -24,6 +24,8 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootTranslator;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
@@ -284,7 +286,7 @@ public class MinerManagerTest {
                         config,
                         null,
                         clock,
-                        new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                        new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()

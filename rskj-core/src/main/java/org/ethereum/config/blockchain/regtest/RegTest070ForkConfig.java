@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,22 +17,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.config.net;
+package org.ethereum.config.blockchain.regtest;
 
-import org.ethereum.config.blockchain.mainnet.*;
+public class RegTest070ForkConfig extends RegTestOrchidConfig {
 
-
-/**
- * Created by Anton Nashatyrev on 25.02.2016.
- */
-public class MainNetConfig extends AbstractNetConfig {
-    public MainNetConfig() {
-        add(0, new MainNetBeforeBridgeSyncConfig());
-        // 60 days of 1 block every 14 seconds.
-        // On blockchain launch blocks will be faster until difficulty is adjusted to available hashing power.
-        add(370_000, new MainNetAfterBridgeSyncConfig());
-        add(729_000, new MainNetOrchidConfig());
-        add(1_052_700, new MainNetOrchid060Config());
-        add(1_500_000, new MainNet070Config());
+    @Override
+    public boolean isRskipUnitrie() {
+        return true;
     }
+
 }

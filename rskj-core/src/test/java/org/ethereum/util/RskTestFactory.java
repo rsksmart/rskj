@@ -80,7 +80,7 @@ public class RskTestFactory extends RskContext {
 
     @Override
     public StateRootHandler buildStateRootHandler() {
-        return new StateRootHandler(getRskSystemProperties(), new HashMapDB(), new HashMap<>());
+        return new StateRootHandler(getRskSystemProperties(), getTrieConverter(), new HashMapDB(), new HashMap<>());
     }
 
     @Override

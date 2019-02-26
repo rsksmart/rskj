@@ -131,6 +131,7 @@ public class Trie {
         this.valueLength = valueLength;
         this.valueHash = valueHash;
         this.isSecure = isSecure;
+        checkValueLength();
     }
 
     public boolean isSecure() {

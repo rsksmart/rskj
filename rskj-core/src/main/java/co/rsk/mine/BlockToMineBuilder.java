@@ -24,11 +24,13 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
 import org.apache.commons.collections4.CollectionUtils;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -63,6 +65,7 @@ public class BlockToMineBuilder {
     private final BlockExecutor executor;
 
     private final Coin minerMinGasPriceTarget;
+    private final BlockchainNetConfig blockchainConfig;
 
     public BlockToMineBuilder(
             MiningConfig miningConfig,
@@ -110,6 +113,7 @@ public class BlockToMineBuilder {
         ), stateRootHandler);
 
         this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
+        this.blockchainConfig = config.getBlockchainConfig();
     }
 
     /**
@@ -212,7 +216,9 @@ public class BlockToMineBuilder {
                 CollectionUtils.size(uncles)
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
-        newHeader.setTransactionsRoot(Block.getTxTrieRoot(txs,Block.isHardFork9999(newHeader.getNumber())));
+        newHeader.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(
+                txs, blockchainConfig.getConfigForBlock(newHeader.getNumber()).isRskipUnitrie()
+        ));
         return newHeader;
     }
 }

@@ -21,11 +21,10 @@ package co.rsk.core.bc;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.StateRootHandler;
-import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +46,7 @@ public class BlockExecutor {
     private final Repository repository;
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final StateRootHandler stateRootHandler;
+    private final BlockchainNetConfig blockchainConfig;
 
     public BlockExecutor(
             Repository repository,
@@ -55,6 +55,8 @@ public class BlockExecutor {
         this.repository = repository;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.stateRootHandler = stateRootHandler;
+        // TODO(lsebrie): properly inject configuration
+        this.blockchainConfig = SystemProperties.DONOTUSE_blockchainConfig;
     }
 
     /**
@@ -83,7 +85,8 @@ public class BlockExecutor {
     private void fill(Block block, BlockResult result) {
         block.setTransactionsList(result.getExecutedTransactions());
         BlockHeader header = block.getHeader();
-        header.setTransactionsRoot(Block.getTxTrieRoot(block.getTransactionsList(), Block.isHardFork9999(block.getNumber())));
+        boolean isRskipUnitrieEnabled = blockchainConfig.getConfigForBlock(block.getNumber()).isRskipUnitrie();
+        header.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskipUnitrieEnabled));
         header.setReceiptsRoot(result.getReceiptsRoot());
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
@@ -277,16 +280,16 @@ public class BlockExecutor {
         // All data saved to store
         initialRepository.save();
 
-        lastStateRootHash = initialRepository.getRoot();
-        boolean hardfork9999 = Block.isHardFork9999(block.getNumber());
+        boolean isRskipUnitrieEnabled = blockchainConfig.getConfigForBlock(block.getNumber()).isRskipUnitrie();
         return new BlockResult(
                 executedTransactions,
                 receipts,
                 initialRepository.getRoot(),
                 totalGasUsed,
                 totalPaidFees,
-                calcReceiptsTrie(receipts, hardfork9999),
-                calculateLogsBloom(receipts)
+                BlockHashesHelper.calculateReceiptsTrieRoot(receipts, isRskipUnitrieEnabled),
+                calculateLogsBloom(receipts),
+                initialRepository.getMutableTrie().getTrie()
         );
     }
 
@@ -298,26 +301,6 @@ public class BlockExecutor {
         }
 
         return logBloom.getData();
-    }
-
-    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts, boolean hardfork9999) {
-        if (hardfork9999) {
-            return calcReceiptsTrie(receipts, new Trie());
-        }
-
-        return calcReceiptsTrie(receipts, new Trie());
-    }
-
-    private static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts, Trie receiptsTrie) {
-        if (receipts.isEmpty()) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
-        }
-
-        return receiptsTrie.getHash().getBytes();
     }
 
     public interface TransactionExecutorFactory {

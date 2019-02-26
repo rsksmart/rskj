@@ -33,6 +33,7 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Block;
@@ -214,7 +215,7 @@ public class Web3ImplSnapshotTest {
                         config,
                         null,
                         clock,
-                        new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                        new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()

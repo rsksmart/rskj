@@ -57,6 +57,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
 
     @Override
     public boolean isValid(Block block, Block parent) {
+
         if(block == null || parent == null) {
             logger.warn("BlockTxsValidationRule - block or parent are null");
             return false;

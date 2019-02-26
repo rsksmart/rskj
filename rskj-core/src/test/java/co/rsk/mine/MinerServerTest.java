@@ -28,6 +28,7 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -83,6 +84,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         Repository repository = Mockito.mock(Repository.class);
         Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
         Mockito.when(repository.getRoot()).thenReturn(this.repository.getRoot());
+        Mockito.when(repository.getMutableTrie()).thenReturn(this.repository.getMutableTrie());
         Mockito.when(repository.startTracking()).thenReturn(repository);
 
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
@@ -722,6 +724,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     private StateRootHandler getStateRootHandler() {
-        return new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        return new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>());
     }
 }

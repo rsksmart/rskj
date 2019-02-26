@@ -20,6 +20,7 @@
 package org.ethereum.config.net;
 
 
+import org.ethereum.config.blockchain.testnet.TestNet070ForkConfig;
 import org.ethereum.config.blockchain.testnet.TestNetBeforeBridgeSyncConfig;
 import org.ethereum.config.blockchain.testnet.TestNetDifficultyDropEnabledConfig;
 import org.ethereum.config.blockchain.testnet.TestNetOrchid060Config;
@@ -33,5 +34,7 @@ public class TestNetConfig extends AbstractNetConfig {
         add(114_000, new TestNetDifficultyDropEnabledConfig());
         // Static call fix.
         add(233_000, new TestNetOrchid060Config());
+        // unitrie
+        add(750_000, new TestNet070ForkConfig());
     }
 }

@@ -24,6 +24,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -188,6 +189,7 @@ class RemascTestRunner {
 
             System.out.println(result);
         }
+        this.blockchain.getRepository().syncToRoot(blockchain.getBestBlock().getStateRoot());
     }
 
     public Blockchain getBlockChain() {
@@ -267,11 +269,11 @@ class RemascTestRunner {
         }
 
         Block block =  new Block(
-                parentBlock.getHash().getBytes(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
-                coinbase.getBytes(),            // fixedCoinbase
-                new Bloom().getData(),          // logs bloom
-                diffBytes,    // difficulty
+                parentBlock.getHash().getBytes(),// parent hash
+                EMPTY_LIST_HASH,// uncle hash
+                coinbase.getBytes(),// fixedCoinbase
+                new Bloom().getData(),// logs bloom
+                diffBytes,// difficulty
                 parentBlock.getNumber() + 1,
                 parentBlock.getGasLimit(),
                 parentBlock.getGasUsed(),
@@ -280,7 +282,7 @@ class RemascTestRunner {
                 new byte[0],                    // mixHash
                 BigInteger.ZERO.toByteArray(),         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                Block.getTxTrieRoot(txs, Block.isHardFork9999(parentBlock.getNumber() + 1)), // transaction root
+                BlockHashesHelper.getTxTrieRoot(txs, new TestSystemProperties().getBlockchainConfig().getConfigForBlock(parentBlock.getNumber() + 1).isRskipUnitrie()),// transaction root
                 genesis.getStateRoot(),         //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 uncles,                          // uncle list

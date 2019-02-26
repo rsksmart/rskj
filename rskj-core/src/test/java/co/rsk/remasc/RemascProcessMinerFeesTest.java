@@ -30,6 +30,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieConverter;
 import com.google.common.collect.Lists;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -95,7 +96,7 @@ public class RemascProcessMinerFeesTest {
 
     @Before
     public void setup() {
-        stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        stateRootHandler = new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>());
         blockchainBuilder = new BlockChainBuilder()
                 .setStateRootHandler(stateRootHandler)
                 .setGenesis(genesisBlock)
@@ -147,10 +148,7 @@ public class RemascProcessMinerFeesTest {
                 config.vmTraceCompressed()
         ), stateRootHandler);
 
-        for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
-            blockchain.tryToConnect(b);
-        }
+        executeBlocks(blockchain, blocks, blockExecutor);
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), blockchain.getRepository().getAccountState(new RskAddress(cowAddress)).getBalance());
 
@@ -166,6 +164,7 @@ public class RemascProcessMinerFeesTest {
         blockchain.tryToConnect(newblock);
 
         repository = blockchain.getRepository();
+        repository.syncToRoot(newblock.getStateRoot());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
@@ -209,10 +208,7 @@ public class RemascProcessMinerFeesTest {
                 config.vmTraceCompressed()
         ), stateRootHandler);
 
-        for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
-            blockchain.tryToConnect(b);
-        }
+        executeBlocks(blockchain, blocks, blockExecutor);
 
         Repository repository = blockchain.getRepository();
 
@@ -230,8 +226,8 @@ public class RemascProcessMinerFeesTest {
 
         blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(newblock);
-
         repository = blockchain.getRepository();
+        repository.syncToRoot(newblock.getStateRoot());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
@@ -285,10 +281,7 @@ public class RemascProcessMinerFeesTest {
                 config.vmTraceCompressed()
         ), stateRootHandler);
 
-        for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
-            blockchain.tryToConnect(b);
-        }
+        executeBlocks(blockchain, blocks, blockExecutor);
 
         Repository repository = blockchain.getRepository();
 
@@ -312,6 +305,7 @@ public class RemascProcessMinerFeesTest {
         blockchain.tryToConnect(newblock);
 
         repository = blockchain.getRepository();
+        repository.syncToRoot(newblock.getStateRoot());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
 
@@ -403,10 +397,7 @@ public class RemascProcessMinerFeesTest {
                         config.vmTraceCompressed()
                 ), stateRootHandler);
 
-        for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
-            blockchain.tryToConnect(b);
-        }
+        executeBlocks(blockchain, blocks, blockExecutor);
 
         // validate that the blockchain's and REMASC's initial states are correct
         Coin cowRemainingBalance = cowInitialBalance.subtract(Coin.valueOf(
@@ -423,6 +414,7 @@ public class RemascProcessMinerFeesTest {
         blockchain.tryToConnect(blockToPayFeesOnHeightFour);
 
         Repository repository = blockchain.getRepository();
+        repository.syncToRoot(blockToPayFeesOnHeightFour.getStateRoot());
 
         // -- After executing REMASC's contract for paying height 4 block
         // validate that account's balances are correct
@@ -461,6 +453,7 @@ public class RemascProcessMinerFeesTest {
         blockchain.tryToConnect(blockToPayFeesOnHeightFive);
 
         repository = blockchain.getRepository();
+        repository.syncToRoot(blockToPayFeesOnHeightFive.getStateRoot());
 
         // -- After executing REMASC's contract for paying height 5 block
         // validate that account's balances are correct
@@ -496,6 +489,14 @@ public class RemascProcessMinerFeesTest {
         // TODO review value + 1
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, expectedBurnedBalance.add(Coin.valueOf(1)), 0L);
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2, blockToPayFeesOnHeightFive);
+    }
+
+    private void executeBlocks(Blockchain blockchain, List<Block> blocks, BlockExecutor blockExecutor) {
+        for (Block b : blocks) {
+            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
+            blockchain.tryToConnect(b);
+        }
+        blockchain.getRepository().syncToRoot(blocks.get(blocks.size()-1).getStateRoot());
     }
 
     @Test
@@ -538,10 +539,7 @@ public class RemascProcessMinerFeesTest {
                 config.vmTraceCompressed()
         ), stateRootHandler);
 
-        for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
-            blockchain.tryToConnect(b);
-        }
+        executeBlocks(blockchain, blocks, blockExecutor);
 
         // validate that the blockchain's and REMASC's initial states are correct
         Coin cowRemainingBalance = cowInitialBalance.subtract(Coin.valueOf(minerFee * NUMBER_OF_TXS_WITH_FEES + txValue * NUMBER_OF_TXS_WITH_FEES));
@@ -555,6 +553,7 @@ public class RemascProcessMinerFeesTest {
         blockchain.tryToConnect(blockToPayFeesOnHeightFour);
 
         Repository repository = blockchain.getRepository();
+        repository.syncToRoot(blockToPayFeesOnHeightFour.getStateRoot());
 
         // -- After executing REMASC's contract for paying height 4 block
         // validate that account's balances are correct
@@ -633,10 +632,7 @@ public class RemascProcessMinerFeesTest {
                         config.vmTraceCompressed()
                 ), stateRootHandler);
 
-        for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
-            blockchain.tryToConnect(b);
-        }
+        executeBlocks(blockchain, blocks, blockExecutor);
 
         // validate that the blockchain's and REMASC's initial states are correct
         Coin cowRemainingBalance = cowInitialBalance.subtract(Coin.valueOf(minerFee * NUMBER_OF_TXS_WITH_FEES + txValue * NUMBER_OF_TXS_WITH_FEES));
@@ -648,6 +644,7 @@ public class RemascProcessMinerFeesTest {
         Block blockToPayFeesOnHeightFive = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size() - 1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
         blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFive, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(blockToPayFeesOnHeightFive);
+        blockchain.getRepository().syncToRoot(blockToPayFeesOnHeightFive.getStateRoot());
 
         // -- After executing REMASC's contract for paying height 5 blocks
         // validate that account's balances are correct
@@ -677,6 +674,7 @@ public class RemascProcessMinerFeesTest {
         Block blockToPayFeesOnHeightSix = RemascTestRunner.createBlock(this.genesisBlock, blockToPayFeesOnHeightFive, PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
         blockExecutor.executeAndFillAll(blockToPayFeesOnHeightSix, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(blockToPayFeesOnHeightSix);
+        blockchain.getRepository().syncToRoot(blockToPayFeesOnHeightSix.getStateRoot());
 
         // -- After executing REMASC's contract for paying height 6 blocks
         // validate that account's balances are correct
@@ -736,10 +734,7 @@ public class RemascProcessMinerFeesTest {
                 config.vmTraceCompressed()
         ), stateRootHandler);
 
-        for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
-            blockchain.tryToConnect(b);
-        }
+        executeBlocks(blockchain, blocks, blockExecutor);
 
         Repository repository = blockchain.getRepository();
 
@@ -768,6 +763,7 @@ public class RemascProcessMinerFeesTest {
         blockchain.tryToConnect(newblock);
 
         repository = blockchain.getRepository();
+        repository.syncToRoot(newblock.getStateRoot());
 
         // Check "hack" tx makes no changes to the remasc state, sender pays fees, and value is added to remasc account balance
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue+minerFee)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
@@ -826,6 +822,7 @@ public class RemascProcessMinerFeesTest {
         }
 
         Repository repository = blockchain.getRepository();
+        repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
@@ -876,6 +873,7 @@ public class RemascProcessMinerFeesTest {
         blockchain.tryToConnect(newblock);
 
         repository = blockchain.getRepository();
+        blockchain.getRepository().syncToRoot(newblock.getStateRoot());
 
         // Check "hack" tx makes no changes to the remasc state, sender pays fees, and value is added to remasc account balance
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(txCreateContractGasLimit+txCallRemascGasLimit+txValue+minerFee)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
