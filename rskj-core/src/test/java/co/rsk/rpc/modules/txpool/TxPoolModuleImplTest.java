@@ -24,11 +24,11 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Mocks;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -368,28 +368,28 @@ public class TxPoolModuleImplTest {
     }
 
     private void assertFullTransaction(Transaction tx, JsonNode transactionNode) {
-        Assert.assertTrue(transactionNode.has("blockhash"));
-        Assert.assertEquals(transactionNode.get("blockhash").asText(), "0x0000000000000000000000000000000000000000000000000000000000000000");
-        Assert.assertTrue(transactionNode.has("blocknumber"));
-        Assert.assertEquals(transactionNode.get("blocknumber"), jsonNodeFactory.nullNode());
+        Assert.assertTrue(transactionNode.has("blockHash"));
+        Assert.assertEquals(transactionNode.get("blockHash").asText(), "0x0000000000000000000000000000000000000000000000000000000000000000");
+        Assert.assertTrue(transactionNode.has("blockNumber"));
+        Assert.assertEquals(transactionNode.get("blockNumber"), jsonNodeFactory.nullNode());
         Assert.assertTrue(transactionNode.has("from"));
-        Assert.assertEquals(transactionNode.get("from").asText(), tx.getSender().toString());
+        Assert.assertEquals(transactionNode.get("from").asText(), TypeConverter.toJsonHex(tx.getSender().getBytes()));
         Assert.assertTrue(transactionNode.has("gas"));
-        Assert.assertEquals(transactionNode.get("gas").asText(), tx.getGasLimitAsInteger().toString());
+        Assert.assertEquals(transactionNode.get("gas").asText(), TypeConverter.toJsonHex(tx.getGasLimitAsInteger()));
         Assert.assertTrue(transactionNode.has("gasPrice"));
-        Assert.assertEquals(transactionNode.get("gasPrice").asText(), tx.getGasPrice().toString());
+        Assert.assertEquals(transactionNode.get("gasPrice").asText(), TypeConverter.toJsonHex(tx.getGasPrice().getBytes()));
         Assert.assertTrue(transactionNode.has("hash"));
-        Assert.assertEquals(transactionNode.get("hash").asText(), tx.getHash().toHexString());
+        Assert.assertEquals(transactionNode.get("hash").asText(), TypeConverter.toJsonHex(tx.getHash().toHexString()));
         Assert.assertTrue(transactionNode.has("input"));
-        Assert.assertEquals(transactionNode.get("input").asText(), Hex.toHexString(tx.getData()));
+        Assert.assertEquals(transactionNode.get("input").asText(), TypeConverter.toJsonHex(tx.getData()));
         Assert.assertTrue(transactionNode.has("nonce"));
-        Assert.assertEquals(transactionNode.get("nonce").asText(), tx.getNonceAsInteger().toString());
+        Assert.assertEquals(transactionNode.get("nonce").asText(), TypeConverter.toJsonHex(tx.getNonceAsInteger()));
         Assert.assertTrue(transactionNode.has("to"));
-        Assert.assertEquals(transactionNode.get("to").asText(), tx.getReceiveAddress().toString());
+        Assert.assertEquals(transactionNode.get("to").asText(), TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes()));
         Assert.assertTrue(transactionNode.has("transactionIndex"));
         Assert.assertEquals(transactionNode.get("transactionIndex"), jsonNodeFactory.nullNode());
         Assert.assertTrue(transactionNode.has("value"));
-        Assert.assertEquals(transactionNode.get("value").asText(), tx.getValue().toString());
+        Assert.assertEquals(transactionNode.get("value").asText(), TypeConverter.toJsonHex(tx.getValue().getBytes()));
     }
 
     private void assertSummaryTransaction(Transaction tx, JsonNode summaryNode) {
