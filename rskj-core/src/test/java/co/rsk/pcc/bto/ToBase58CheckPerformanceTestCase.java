@@ -38,11 +38,11 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
     private static final int MIN_ADDRESS_LENGTH = 26;
     private static final int MAX_ADDRESS_LENGTH = 35;
 
-    private CallTransaction.Function toBase58CheckFunction;
+    private CallTransaction.Function function;
 
     @Test
     public void toBase58Check() throws IOException {
-        toBase58CheckFunction = new ToBase58Check(null).getFunction();
+        function = new ToBase58Check(null).getFunction();
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             @Override
@@ -65,7 +65,7 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
     }
 
     private ExecutionStats estimateToBase58Check(int times, EnvironmentBuilder environmentBuilder) {
-        String name = "toBase58Check";
+        String name = function.name;
         ExecutionStats stats = new ExecutionStats(name);
         Random rnd = new Random();
         int[] versions = new int[] {
@@ -79,7 +79,7 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
             rnd.nextBytes(hash);
             int version = versions[rnd.nextInt(versions.length)];
 
-            return toBase58CheckFunction.encode(new Object[] { hash, version });
+            return function.encode(new Object[] { hash, version });
         };
 
         executeAndAverage(
@@ -91,7 +91,7 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (byte[] result) -> {
-                    Object[] decodedResult = toBase58CheckFunction.decodeResult(result);
+                    Object[] decodedResult = function.decodeResult(result);
                     Assert.assertEquals(String.class, decodedResult[0].getClass());
                     String address = (String) decodedResult[0];
                     Assert.assertTrue(MIN_ADDRESS_LENGTH <= address.length());

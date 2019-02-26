@@ -43,11 +43,11 @@ import java.util.stream.Collectors;
 public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private static final int MAX_CHILD = (2 << 30) - 1;
 
-    private CallTransaction.Function deriveExtendedPublicKeyFunction;
+    private CallTransaction.Function function;
 
     @Test
     public void deriveExtendedPublicKey() throws IOException {
-        deriveExtendedPublicKeyFunction = new DeriveExtendedPublicKey(null, null).getFunction();
+        function = new DeriveExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             @Override
@@ -73,7 +73,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
         System.out.print("Done!\n");
         setQuietMode(false);
 
-        CombinedExecutionStats stats = new CombinedExecutionStats("deriveExtendedPublicKey");
+        CombinedExecutionStats stats = new CombinedExecutionStats(function.name);
 
         stats.add(estimateDeriveExtendedPublicKey(500, 1, environmentBuilder));
         stats.add(estimateDeriveExtendedPublicKey(2000, 2, environmentBuilder));
@@ -83,7 +83,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
     }
 
     private ExecutionStats estimateDeriveExtendedPublicKey(int times, int pathLength, EnvironmentBuilder environmentBuilder) {
-        String name = String.format("deriveExtendedPublicKey-%d", pathLength);
+        String name = String.format("%s-%d", function.name, pathLength);
         ExecutionStats stats = new ExecutionStats(name);
         Random rnd = new Random();
         byte[] chainCode = new byte[32];
@@ -102,7 +102,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
             String path = String.join("/", Arrays.stream(pathParts)
                     .mapToObj(i -> String.format("%d", i)).collect(Collectors.toList()));
 
-            return deriveExtendedPublicKeyFunction.encode(new Object[] {
+            return function.encode(new Object[] {
                     key.serializePubB58(networkParameters), path
             });
         };
@@ -116,7 +116,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (byte[] result) -> {
-                    Object[] decodedResult = deriveExtendedPublicKeyFunction.decodeResult(result);
+                    Object[] decodedResult = function.decodeResult(result);
                     Assert.assertEquals(String.class, decodedResult[0].getClass());
                     String address = (String) decodedResult[0];
                     Assert.assertTrue(address.startsWith("xpub"));
