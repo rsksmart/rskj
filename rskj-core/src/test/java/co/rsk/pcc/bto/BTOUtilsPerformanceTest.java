@@ -27,6 +27,8 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
         ToBase58CheckPerformanceTestCase.class,
         DeriveExtendedPublicKeyPerformanceTestCase.class,
+        ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase.class,
+        GetMultisigScriptHashPerformanceTestCase.class
 })
 @Ignore
 public class BTOUtilsPerformanceTest extends PrecompiledContractPerformanceTest {
