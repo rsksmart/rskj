@@ -11,6 +11,8 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TrieConverter {
 
@@ -25,6 +27,12 @@ public class TrieConverter {
             REMASC_SENDER_UNITRIE_EXPANDED_KEY, REMASC_SENDER_UNITRIE_EXPANDED_KEY.length * Byte.SIZE
     );
 
+    private final Map<Keccak256, Keccak256> cacheHashes;
+
+    public TrieConverter() {
+        cacheHashes = new HashMap<>();
+    }
+
     public byte[] getOrchidAccountTrieRoot(Trie src) {
         return getOrchidAccountTrieRoot(src.getSharedPath(), src, true);
     }
@@ -32,6 +40,11 @@ public class TrieConverter {
     private byte[] getOrchidAccountTrieRoot(TrieKeySlice key, Trie src, boolean removeFirst8bits) {
         if (src == null) {
             return HashUtil.EMPTY_TRIE_HASH;
+        }
+
+        Keccak256 cacheHash = cacheHashes.get(src.getHash());
+        if (cacheHash != null) {
+            return cacheHash.getBytes();
         }
 
         TrieKeySlice sharedPath = src.getSharedPath();
@@ -85,10 +98,11 @@ public class TrieConverter {
             }
 
             Trie newNode = new Trie(
-                    orchidKey, avalue, null, null, null,
+                    orchidKey, avalue, NodeReference.empty(), NodeReference.empty(), null,
                     avalue.length, null, src.isSecure()
             );
 
+            cacheHashes.put(src.getHash(), newNode.getHash());
             return newNode.getHash().getBytes();
         }
 
@@ -110,12 +124,18 @@ public class TrieConverter {
                 src.getValueLength(), src.getValueHash(), src.isSecure()
         );
 
+        cacheHashes.put(src.getHash(), newNode.getHash());
         return newNode.getHash().getBytes();
     }
 
     private byte[] getOrchidStateRoot(TrieKeySlice key, Trie unitrieStorageRoot, boolean removeFirstNodePrefix, boolean onlyChild) {
         if (unitrieStorageRoot == null) {
             return HashUtil.EMPTY_TRIE_HASH;
+        }
+
+        Keccak256 cacheHash = cacheHashes.get(unitrieStorageRoot.getHash());
+        if (cacheHash != null) {
+            return cacheHash.getBytes();
         }
 
         Trie child0 = unitrieStorageRoot.getNodeReference(LEFT_CHILD_IMPLICIT_KEY).getNode().orElse(null);
@@ -164,6 +184,8 @@ public class TrieConverter {
                 sharedPath, value, left, right, null,
                 valueLength, valueHash, unitrieStorageRoot.isSecure()
         );
+
+        cacheHashes.put(unitrieStorageRoot.getHash(), newNode.getHash());
         return newNode.getHash().getBytes();
     }
 

@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
@@ -128,7 +129,7 @@ public class BlockChainBuilder {
         }
 
         if (stateRootHandler == null) {
-            stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+            stateRootHandler = new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>());
         }
         
         if (genesis == null) {
@@ -162,7 +163,13 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, blockFactory, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, ,
+                                                                      blockFactory,
+                                                                      new ProgramInvokeFactoryImpl(),
+                                                                      new TestCompositeEthereumListener(),
+                                                                      10,
+                                                                      100
+        );
 
         BlockChainImpl blockChain = new BlockChainLoader(
                 config,
@@ -205,7 +212,7 @@ public class BlockChainBuilder {
                     config.databaseDir(),
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
-            ), stateRootHandler);
+            ), stateRootHandler, config.getBlockchainConfig());
 
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());

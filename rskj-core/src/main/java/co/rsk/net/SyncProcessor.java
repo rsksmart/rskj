@@ -6,12 +6,10 @@ import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.validators.BlockCompositeRule;
 import co.rsk.validators.BlockHeaderValidationRule;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockIdentifier;
-import org.ethereum.core.Blockchain;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.validator.DependentBlockHeaderRule;
@@ -39,6 +37,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private final PeerScoringManager peerScoringManager;
     private final ChannelManager channelManager;
     private final SyncConfiguration syncConfiguration;
+    private final BlockFactory blockFactory;
     private final PeersInformation peerStatuses;
 
     private final Map<Long, MessageType> pendingMessages;
@@ -53,14 +52,17 @@ public class SyncProcessor implements SyncEventsHandler {
                          PeerScoringManager peerScoringManager,
                          ChannelManager channelManager,
                          SyncConfiguration syncConfiguration,
+                         BlockFactory blockFactory,
                          BlockHeaderValidationRule blockHeaderValidationRule,
+                         BlockCompositeRule blockValidationRule,
                          DifficultyCalculator difficultyCalculator) {
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
         this.peerScoringManager = peerScoringManager;
         this.channelManager = channelManager;
         this.syncConfiguration = syncConfiguration;
-        this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule, difficultyCalculator);
+        this.blockFactory = blockFactory;
+        this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule, blockValidationRule, difficultyCalculator);
         this.peerStatuses = new PeersInformation(syncInformation, channelManager, syncConfiguration);
         this.pendingMessages = new LinkedHashMap<Long, MessageType>() {
             @Override
@@ -230,7 +232,7 @@ public class SyncProcessor implements SyncEventsHandler {
             blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
         }
 
-        setSyncState(new DownloadingBodiesSyncState(this.syncConfiguration, this, syncInformation, pendingHeaders, skeletons));
+        setSyncState(new DownloadingBodiesSyncState(this.syncConfiguration, this, syncInformation, this.blockFactory, pendingHeaders, skeletons));
     }
 
     @Override
@@ -365,10 +367,15 @@ public class SyncProcessor implements SyncEventsHandler {
 
         private final DependentBlockHeaderRule blockParentValidationRule;
         private final BlockHeaderValidationRule blockHeaderValidationRule;
+        private final BlockCompositeRule blockValidationRule;
 
-        public SyncInformationImpl(BlockHeaderValidationRule blockHeaderValidationRule, DifficultyCalculator difficultyCalculator) {
+        public SyncInformationImpl(
+                BlockHeaderValidationRule blockHeaderValidationRule,
+                BlockCompositeRule blockValidationRule,
+                DifficultyCalculator difficultyCalculator) {
             this.blockHeaderValidationRule = blockHeaderValidationRule;
             this.blockParentValidationRule = new DifficultyRule(difficultyCalculator);
+            this.blockValidationRule = blockValidationRule;
         }
 
         public boolean isKnownBlock(byte[] hash) {
@@ -415,6 +422,11 @@ public class SyncProcessor implements SyncEventsHandler {
             }
 
             return blockParentValidationRule.validate(header, parentHeader);
+        }
+
+        @Override
+        public boolean blockIsValid(Block block) {
+            return blockValidationRule.isValid(block);
         }
 
         @CheckForNull

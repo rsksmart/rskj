@@ -57,7 +57,7 @@ public class BlockChainImplTest {
         objects = new RskTestFactory() {
             @Override
             public Genesis buildGenesis() {
-                return GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true);
+                return GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
             }
 
             @Override
@@ -654,7 +654,7 @@ public class BlockChainImplTest {
     public static Block getGenesisBlock(Blockchain blockChain) {
         Repository repository = blockChain.getRepository();
 
-        Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true);
+        Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
 
         for (Map.Entry<RskAddress, AccountState> accountsEntry : genesis.getAccounts().entrySet()) {
             RskAddress accountAddress = accountsEntry.getKey();

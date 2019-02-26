@@ -28,6 +28,7 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
@@ -203,6 +204,7 @@ public class WorldDslProcessor {
             block.seal();
 
             latestImportResult = blockChain.tryToConnect(block);
+            blockChain.getRepository().syncToRoot(block.getStateRoot());
         }
     }
 
@@ -266,7 +268,8 @@ public class WorldDslProcessor {
                                                                config.vmTraceDir(),
                                                                config.vmTraceCompressed()
                                                        ),
-                    new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                    new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                    config.getBlockchainConfig()
             );
             executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);

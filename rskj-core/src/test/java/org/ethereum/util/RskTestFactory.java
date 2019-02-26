@@ -57,7 +57,8 @@ public class RskTestFactory extends RskTestContext {
             blockExecutor = new BlockExecutor(
                     getRepository(),
                     getTransactionExecutorFactory(),
-                    getStateRootHandler()
+                    getStateRootHandler(),
+                    getRskSystemProperties().getBlockchainConfig()
             );
         }
 
@@ -104,6 +105,7 @@ public class RskTestFactory extends RskTestContext {
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {
         boolean useRskip92Encoding = config.getBlockchainConfig().getConfigForBlock(0).isRskip92();
-        return GenesisLoader.loadGenesis(config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false, useRskip92Encoding);
+        boolean rskipUnitrie = config.getBlockchainConfig().getConfigForBlock(0).isRskipUnitrie();
+        return GenesisLoader.loadGenesis(config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false, useRskip92Encoding, rskipUnitrie);
     }
 }

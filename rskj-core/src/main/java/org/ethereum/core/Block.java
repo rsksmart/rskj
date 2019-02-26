@@ -22,9 +22,9 @@ package org.ethereum.core;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.trie.Trie;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -63,8 +63,8 @@ public class Block {
     /* Indicates if this block can or cannot be changed */
     private volatile boolean sealed;
 
-    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-        byte[] calculatedRoot = getTxTrieRoot(transactionsList, isHardFork9999(header.getNumber()));
+    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskipUnitrie, boolean sealed) {
+        byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskipUnitrie);
         if (!Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
             String message = String.format(
                     "Transactions trie root validation failed for block %d %s", header.getNumber(), header.getHash()
@@ -76,6 +76,7 @@ public class Block {
         this.header = header;
         this.transactionsList = Collections.unmodifiableList(transactionsList);
         this.uncleList = Collections.unmodifiableList(uncleList);
+        this.sealed = sealed;
     }
 
     public void seal() {
@@ -363,42 +364,6 @@ public class Block {
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         rlpEncoded = null;
-    }
-
-    public static boolean isHardFork9999(long number) {
-        return number >= 9999;
-    }
-
-    public static byte[] getTxTrieRoot(List<Transaction> transactions, boolean hardfork9999) {
-        Trie trie;
-        if (hardfork9999) {
-            trie = getTxTrieNew(transactions);
-        } else {
-            trie = getTxTrieOld(transactions);
-        }
-
-        return trie.getHash().getBytes();
-    }
-
-    private static Trie getTxTrieOld(List<Transaction> transactions) {
-        return getTxTrieFor(transactions, new Trie());
-    }
-
-    private static Trie getTxTrieNew(List<Transaction> transactions) {
-        return getTxTrieFor(transactions, new Trie());
-    }
-
-    private static Trie getTxTrieFor(List<Transaction> transactions, Trie txsState) {
-        if (transactions == null) {
-            return txsState;
-        }
-
-        for (int i = 0; i < transactions.size(); i++) {
-            Transaction transaction = transactions.get(i);
-            txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());
-        }
-
-        return txsState;
     }
 
     public BigInteger getGasLimitAsInteger() {

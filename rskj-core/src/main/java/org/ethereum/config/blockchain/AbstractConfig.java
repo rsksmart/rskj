@@ -156,7 +156,8 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
     @Override
     public boolean isRskip93() { return false; }
 
-    @Override public boolean isRskip94() { return false; }
+    @Override
+    public boolean isRskip94() { return false; }
 
     @Override
     public boolean isRskip98() {
@@ -167,4 +168,10 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
     public boolean isRskip123() {
         return false;
     }
+
+    @Override
+    public boolean isRskipUnitrie() {
+        return false;
+    }
+
 }

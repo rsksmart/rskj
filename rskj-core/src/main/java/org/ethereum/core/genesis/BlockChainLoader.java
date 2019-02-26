@@ -24,7 +24,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
@@ -43,10 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * Created by mario on 13/01/17.
@@ -125,7 +122,8 @@ public class BlockChainLoader {
                             config.vmTraceDir(),
                             config.vmTraceCompressed()
                         ),
-                    stateRootHandler
+                    stateRootHandler,
+                    config.getBlockchainConfig()
                 ),
                 stateRootHandler
         );
@@ -134,9 +132,8 @@ public class BlockChainLoader {
         if (bestBlock == null) {
             logger.info("DB is empty - adding Genesis");
 
-            loadRepository(repository);
-            updateGenesis(repository);
-
+            loadRepository(this.repository);
+            updateGenesis(this.repository);
             blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
             blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
@@ -160,29 +157,19 @@ public class BlockChainLoader {
 
         String rootHash = config.rootHashStart();
         if (StringUtils.isNotBlank(rootHash)) {
-
             // update world state by dummy hash
             byte[] rootHashArray = Hex.decode(rootHash);
             logger.info("Loading root hash from property file: [{}]", rootHash);
             this.repository.syncToRoot(rootHashArray);
-
-        } else {
-
-            // Update world state to latest loaded block from db
-            // if state is not generated from empty premine list
-            // todo this is just a workaround, move EMPTY_TRIE_HASH logic to Trie implementation
-            BlockHeader bestBlockHeader = blockchain.getBestBlock().getHeader();
-            Keccak256 bestBlockStateRoot = stateRootHandler.translate(bestBlockHeader);
-            if (!Arrays.equals(bestBlockStateRoot.getBytes(), EMPTY_TRIE_HASH)) {
-                repository.syncToRoot(bestBlockStateRoot.getBytes());
-            }
         }
+
         return blockchain;
     }
 
     private void updateGenesis(Repository repository) {
-        genesis.setStateRoot(repository.getRoot());
+        genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), repository.getMutableTrie().getTrie()).getBytes());
         genesis.flushRLP();
+        stateRootHandler.register(genesis.getHeader(), repository.getMutableTrie().getTrie());
     }
 
     private void loadRepository(Repository repository) {
@@ -205,5 +192,8 @@ public class BlockChainLoader {
         for (Map.Entry<RskAddress, AccountState> accountEntry : genesis.getAccounts().entrySet()) {
             repository.updateAccountState(accountEntry.getKey(), accountEntry.getValue());
         }
+
+        repository.commit();
+        repository.save();
     }
 }

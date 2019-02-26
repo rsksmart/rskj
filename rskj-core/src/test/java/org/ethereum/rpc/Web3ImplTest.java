@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.db.StateRootHandler;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
@@ -166,7 +167,7 @@ public class Web3ImplTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
-        Web3Impl web3 = createWeb3();
+        Web3Impl web3 = createWeb3(world);
 
         web3.repository = world.getBlockChain().getRepository();
 
@@ -220,7 +221,13 @@ public class Web3ImplTest {
     public void getBalanceWithAccountAndBlockWithTransaction() throws Exception {
         World world = new World();
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, blockFactory, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, ,
+                                                                  blockFactory,
+                                                                  null,
+                                                                  null,
+                                                                  10,
+                                                                  100
+        );
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000000)).build();
         Account acc2 = new AccountBuilder(world).name("acc2").build();
         Block genesis = world.getBlockByName("g00");
@@ -230,6 +237,7 @@ public class Web3ImplTest {
         txs.add(tx);
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
+        blockChain.getRepository().syncToRoot(block1.getStateRoot());
 
         Web3Impl web3 = createWeb3(world, transactionPool, null);
         web3.repository = world.getBlockChain().getRepository();
@@ -270,6 +278,7 @@ public class Web3ImplTest {
                 debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
+                null,
                 null,
                 null,
                 null,
@@ -415,7 +424,13 @@ public class Web3ImplTest {
         World world = new World(receiptStore);
 
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, blockFactory, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, ,
+                                                                  blockFactory,
+                                                                  null,
+                                                                  null,
+                                                                  10,
+                                                                  100
+        );
         transactionPool.processBest(blockChain.getBestBlock());
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
@@ -957,6 +972,7 @@ public class Web3ImplTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -1176,7 +1192,7 @@ public class Web3ImplTest {
     }
 
     private Web3Impl createWeb3() {
-        return createWeb3(Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockTransactionPool(), Web3Mocks.getMockBlockStore(), null, null, null);
+        return createWeb3(Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockTransactionPool(), Web3Mocks.getMockBlockStore(), null, null, null, null);
     }
 
     @Test
@@ -1186,7 +1202,13 @@ public class Web3ImplTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, blockFactory, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, ,
+                                                                  blockFactory,
+                                                                  null,
+                                                                  null,
+                                                                  10,
+                                                                  100
+        );
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
         // **** Initializes data ******************
@@ -1277,27 +1299,52 @@ public class Web3ImplTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
     }
 
     private Web3Impl createWeb3(Ethereum eth, World world, ReceiptStore receiptStore) {
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, blockFactory, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, ,
+                                                                  blockFactory,
+                                                                  null,
+                                                                  null,
+                                                                  10,
+                                                                  100
+        );
         return createWeb3(eth, world, transactionPool, receiptStore);
     }
 
     private Web3Impl createWeb3(Ethereum eth, World world, TransactionPool transactionPool, ReceiptStore receiptStore) {
-        return createWeb3(eth, world.getBlockChain(), transactionPool, world.getBlockChain().getBlockStore(), null, new SimpleConfigCapabilities(), receiptStore);
+        return createWeb3(eth, world.getBlockChain(), transactionPool, world.getBlockChain().getBlockStore(), null, new SimpleConfigCapabilities(), receiptStore,
+                          world.getStateRootHandler()
+        );
     }
 
     private Web3Impl createWeb3(World world, BlockProcessor blockProcessor, ReceiptStore receiptStore) {
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, blockFactory, null, null, 10, 100);
-        return createWeb3(Web3Mocks.getMockEthereum(), blockChain, transactionPool, blockChain.getBlockStore(), blockProcessor, new SimpleConfigCapabilities(), receiptStore);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, ,
+                                                                  blockFactory,
+                                                                  null,
+                                                                  null,
+                                                                  10,
+                                                                  100
+        );
+        return createWeb3(Web3Mocks.getMockEthereum(), blockChain, transactionPool, blockChain.getBlockStore(), blockProcessor, new SimpleConfigCapabilities(), receiptStore,
+                          world.getStateRootHandler()
+        );
     }
 
-    private Web3Impl createWeb3(Ethereum eth, Blockchain blockchain, TransactionPool transactionPool, BlockStore blockStore, BlockProcessor nodeBlockProcessor, ConfigCapabilities configCapabilities, ReceiptStore receiptStore) {
+    private Web3Impl createWeb3(
+            Ethereum eth,
+            Blockchain blockchain,
+            TransactionPool transactionPool,
+            BlockStore blockStore,
+            BlockProcessor nodeBlockProcessor,
+            ConfigCapabilities configCapabilities,
+            ReceiptStore receiptStore,
+            StateRootHandler stateRootHandler) {
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
@@ -1333,7 +1380,8 @@ public class Web3ImplTest {
                 null,
                 configCapabilities,
                 new BuildInfo("test", "test"),
-                null
+                null,
+                stateRootHandler
         );
     }
 
@@ -1366,6 +1414,7 @@ public class Web3ImplTest {
                 debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
+                null,
                 null,
                 null,
                 null,
@@ -1422,6 +1471,7 @@ public class Web3ImplTest {
                 debugModule,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepository(),
+                null,
                 null,
                 null,
                 null,

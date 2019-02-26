@@ -28,6 +28,7 @@ import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.blockchain.GenesisConfig;
@@ -70,10 +71,16 @@ public class ImportLightTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, blockFactory, null, listener, 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, ,
+                                                                      blockFactory,
+                                                                      null,
+                                                                      listener,
+                                                                      10,
+                                                                      100
+        );
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>());
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
@@ -104,7 +111,7 @@ public class ImportLightTest {
                         config.databaseDir(),
                         config.vmTraceDir(),
                         config.vmTraceCompressed()
-                ), stateRootHandler),
+                ), stateRootHandler, config.getBlockchainConfig()),
                 stateRootHandler
         );
 

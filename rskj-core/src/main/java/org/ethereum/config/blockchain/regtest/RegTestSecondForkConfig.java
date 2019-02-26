@@ -24,4 +24,8 @@ public class RegTestSecondForkConfig extends RegTestOrchidConfig {
     public boolean isRskip123() {
         return true;
     }
+    @Override
+    public boolean isRskipUnitrie() {
+        return true;
+    }
 }

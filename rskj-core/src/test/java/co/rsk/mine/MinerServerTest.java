@@ -89,6 +89,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         Repository repository = Mockito.mock(Repository.class);
         Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
         Mockito.when(repository.getRoot()).thenReturn(this.repository.getRoot());
+        Mockito.when(repository.getMutableTrie()).thenReturn(this.repository.getMutableTrie());
         Mockito.when(repository.startTracking()).thenReturn(repository);
 
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);

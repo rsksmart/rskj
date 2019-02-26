@@ -53,7 +53,13 @@ public class TransactionPoolImplTest {
         blockChain = factory.getBlockchain();
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
         blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
-        transactionPool = new TransactionPoolImpl(config, factory.getRepository(), null, null, factory.getBlockFactory(), new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
+        transactionPool = new TransactionPoolImpl(config, factory.getRepository(), null, null, ,
+                                                  factory.getBlockFactory(),
+                                                  new ProgramInvokeFactoryImpl(),
+                                                  new TestCompositeEthereumListener(),
+                                                  10,
+                                                  100
+        );
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
     }

@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
+import co.rsk.trie.Trie;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -38,7 +39,8 @@ public class BlockResult {
             0,
             Coin.ZERO,
             HashUtil.EMPTY_TRIE_HASH,
-            new Bloom().getData()
+            new Bloom().getData(),
+            null
     );
 
     private final List<Transaction> executedTransactions;
@@ -49,8 +51,12 @@ public class BlockResult {
     private final Coin paidFees;
     private final byte[] logsBloom;
 
+    // It is for optimizing switching between states. Instead of using the "stateRoot" field,
+    // which requires regenerating the trie, using the finalState field does not.
+    private final Trie finalState;
+
     public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts,
-                       byte[] stateRoot, long gasUsed, Coin paidFees, byte[] receiptsRoot, byte[] logsBloom) {
+                       byte[] stateRoot, long gasUsed, Coin paidFees, byte[] receiptsRoot, byte[] logsBloom, Trie finalState) {
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
         this.stateRoot = stateRoot;
@@ -58,6 +64,7 @@ public class BlockResult {
         this.paidFees = paidFees;
         this.receiptsRoot = receiptsRoot;
         this.logsBloom = logsBloom;
+        this.finalState = finalState;
     }
 
     public List<Transaction> getExecutedTransactions() { return executedTransactions; }
@@ -68,6 +75,10 @@ public class BlockResult {
 
     public byte[] getStateRoot() {
         return this.stateRoot;
+    }
+
+    public Trie getFinalState() {
+        return this.finalState;
     }
 
     public byte[] getReceiptsRoot() {

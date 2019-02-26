@@ -52,7 +52,7 @@ public class BlockFactory {
         return decodeBlock(rawData, true);
     }
 
-    public Block decodeBlock(byte[] rawData, boolean sealed) {
+    private Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
         if (block.size() != 3) {
             throw new IllegalArgumentException("A block must have 3 exactly items");
@@ -68,7 +68,16 @@ public class BlockFactory {
                 .map(uncleHeader -> decodeHeader((RLPList) uncleHeader, sealed))
                 .collect(Collectors.toList());
 
-        return new Block(header, transactionList, uncleList);
+        return newBlock(header, transactionList, uncleList, sealed);
+    }
+
+    public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList) {
+        return newBlock(header, transactionList, uncleList, true);
+    }
+
+    public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList, boolean sealed) {
+        boolean rskipUnitrie = blockchainConfig.getConfigForBlock(header.getNumber()).isRskipUnitrie();
+        return new Block(header, transactionList, uncleList, rskipUnitrie, sealed);
     }
 
     public BlockHeader newHeader(

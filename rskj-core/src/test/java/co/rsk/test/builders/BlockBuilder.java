@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.test.World;
+import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -126,7 +127,7 @@ public class BlockBuilder {
                     config.databaseDir(),
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
-            ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+            ), new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>()), config.getBlockchainConfig());
             executor.executeAndFill(block, parent.getHeader());
         }
 

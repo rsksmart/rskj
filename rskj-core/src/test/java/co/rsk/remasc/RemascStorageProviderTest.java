@@ -31,6 +31,7 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -527,11 +528,12 @@ public class RemascStorageProviderTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+        ), builder.getStateRootHandler(), config.getBlockchainConfig());
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
+            blockchain.getRepository().syncToRoot(builder.getStateRootHandler().translate(b.getHeader()).getBytes());
 
             long blockNumber = blockchain.getBestBlock().getNumber();
             if (blockNumber == 24){ // before first special block

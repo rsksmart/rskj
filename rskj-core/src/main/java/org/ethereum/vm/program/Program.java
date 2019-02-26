@@ -30,7 +30,10 @@ import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
@@ -48,7 +51,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Optional;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.*;
@@ -1264,7 +1270,7 @@ public class Program {
             // Propagate the "local call" nature of the originating transaction down to the callee
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
 
-            Block executionBlock = new Block(
+            Block executionBlock = blockFactory.newBlock(
                     blockFactory.newHeader(
                             getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(),
                             ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),

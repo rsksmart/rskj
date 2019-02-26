@@ -120,7 +120,7 @@ public final class TestUtils {
             byte[] difficutly = new BigInteger(8, new Random()).toByteArray();
             byte[] newHash = HashUtil.randomHash();
 
-            Block block = new Block(
+            Block block = blockFactory.newBlock(
                     blockFactory.newHeader(
                             lastHash, newHash, RskAddress.nullAddress().getBytes(),
                             HashUtil.randomHash(), EMPTY_TRIE_HASH, null,

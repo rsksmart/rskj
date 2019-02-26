@@ -39,7 +39,8 @@ public class BlockchainLoaderTest {
             @Override
             public Genesis buildGenesis() {
                 boolean useRskip92Encoding = getRskSystemProperties().getBlockchainConfig().getConfigForBlock(0).isRskip92();
-                return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true, useRskip92Encoding);
+                boolean rskipUnitrie = getRskSystemProperties().getBlockchainConfig().getConfigForBlock(0).isRskipUnitrie();
+                return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true, useRskip92Encoding, rskipUnitrie);
             }
         };
         objects.getBlockchain(); // calls loadBlockchain

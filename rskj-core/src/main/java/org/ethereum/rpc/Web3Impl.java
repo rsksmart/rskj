@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
@@ -106,6 +107,7 @@ public class Web3Impl implements Web3 {
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
     private final DebugModule debugModule;
+    private StateRootHandler stateRootHandler;
 
     protected Web3Impl(
             Ethereum eth,
@@ -130,7 +132,8 @@ public class Web3Impl implements Web3 {
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
-            BlocksBloomStore blocksBloomStore) {
+            BlocksBloomStore blocksBloomStore,
+            StateRootHandler stateRootHandler) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -152,9 +155,10 @@ public class Web3Impl implements Web3 {
         this.hashRateCalculator = hashRateCalculator;
         this.configCapabilities = configCapabilities;
         this.config = config;
-        filterManager = new FilterManager(eth);
+        this.filterManager = new FilterManager(eth);
         this.buildInfo = buildInfo;
         this.blocksBloomStore = blocksBloomStore;
+        this.stateRootHandler = stateRootHandler;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
         personalModule.init(this.config);
@@ -391,8 +395,14 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getBalance(String address) throws Exception {
+        AccountInformationProvider accountInformationProvider = getAccountInformationProvider("latest");
+
+        if (accountInformationProvider == null) {
+            throw new NullPointerException();
+        }
+
         RskAddress addr = new RskAddress(address);
-        BigInteger balance = this.repository.getBalance(addr).asBigInteger();
+        BigInteger balance = accountInformationProvider.getBalance(addr).asBigInteger();
 
         return toJsonHex(balance);
     }
@@ -797,7 +807,8 @@ public class Web3Impl implements Web3 {
             Block uncle = blockchain.getBlockByHash(uncleHeader.getHash().getBytes());
 
             if (uncle == null) {
-                uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList());
+                boolean isRskipUnitrie = config.getBlockchainConfig().getConfigForBlock(uncleHeader.getNumber()).isRskipUnitrie();
+                uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList(), isRskipUnitrie, true);
             }
 
             return s = getBlockResult(uncle, false);
@@ -1033,7 +1044,7 @@ public class Web3Impl implements Web3 {
         } else {
             Block block = getByJsonBlockId(id);
             if (block != null) {
-                return this.repository.getSnapshotTo(block.getStateRoot());
+                return this.repository.getSnapshotTo(stateRootHandler.translate(block.getHeader()).getBytes());
             } else {
                 return null;
             }

@@ -24,10 +24,12 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -65,6 +67,8 @@ public class BlockToMineBuilder {
     private final BlockExecutor executor;
 
     private final Coin minerMinGasPriceTarget;
+    private final BlockchainNetConfig blockchainConfig;
+    private final StateRootHandler stateRootHandler;
 
     public BlockToMineBuilder(
             MiningConfig miningConfig,
@@ -112,9 +116,11 @@ public class BlockToMineBuilder {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), stateRootHandler);
+        ), stateRootHandler, config.getBlockchainConfig());
 
+        this.stateRootHandler = stateRootHandler;
         this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
+        this.blockchainConfig = config.getBlockchainConfig();
     }
 
     /**
@@ -160,7 +166,7 @@ public class BlockToMineBuilder {
 
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
 
-        Repository originalRepo = repository.getSnapshotTo(parent.getStateRoot());
+        Repository originalRepo = repository.getSnapshotTo(stateRootHandler.translate(parent.getHeader()).getBytes());
 
         return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }
@@ -176,8 +182,8 @@ public class BlockToMineBuilder {
             Coin minimumGasPrice,
             byte[] extraData) {
         final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice, extraData);
-        final Block newBlock = new Block(newHeader, txs, uncles);
-        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, Collections.emptyList());
+        final Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, false);
+        return validationRules.isValid(newBlock) ? newBlock : blockFactory.newBlock(newHeader, txs, Collections.emptyList(), false);
     }
 
     private BlockHeader createHeader(
@@ -204,7 +210,9 @@ public class BlockToMineBuilder {
                 unclesListHash,
                 miningConfig.getCoinbaseAddress().getBytes(),
                 EMPTY_TRIE_HASH,
-                Block.getTxTrieRoot(txs, Block.isHardFork9999(newBlockParent.getNumber() + 1)),
+                BlockHashesHelper.getTxTrieRoot(
+                        txs, blockchainConfig.getConfigForBlock(newBlockParent.getNumber() + 1).isRskipUnitrie()
+                ),
                 EMPTY_TRIE_HASH,
                 new Bloom().getData(),
                 new byte[]{1},

@@ -30,6 +30,7 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.DummyBlockValidator;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
@@ -118,10 +119,16 @@ public class TestRunner {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, blockFactory, null, listener, 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, ,
+                                                                      blockFactory,
+                                                                      null,
+                                                                      listener,
+                                                                      10,
+                                                                      100
+        );
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config, new TrieConverter(), new HashMapDB(), new HashMap<>());
         BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, null, new DummyBlockValidator(), false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
@@ -143,7 +150,7 @@ public class TestRunner {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), stateRootHandler), stateRootHandler);
+        ), stateRootHandler, config.getBlockchainConfig()), stateRootHandler);
 
         blockchain.setNoValidation(true);
         blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
@@ -667,7 +674,7 @@ public class TestRunner {
             transactions.add(TransactionBuilder.build(tx));
 
         BlockHeader blockHeader = buildHeader(blockFactory, header);
-        return new Block(blockHeader, transactions, uncles);
+        return blockFactory.newBlock(blockHeader, transactions, uncles);
     }
 
 
