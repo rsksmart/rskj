@@ -123,7 +123,7 @@ public class PeerExplorer {
         }
 
         if (type == DiscoveryMessageType.PONG) {
-            this.handlePong(event.getAddressIp(), (PongPeerMessage) event.getMessage());
+            this.handlePong(event.getAddress(), (PongPeerMessage) event.getMessage());
         }
 
         if (type == DiscoveryMessageType.FIND_NODE) {
@@ -131,7 +131,7 @@ public class PeerExplorer {
         }
 
         if (type == DiscoveryMessageType.NEIGHBORS) {
-            this.handleNeighborsMessage((NeighborsPeerMessage) event.getMessage());
+            this.handleNeighborsMessage(event.getAddress(), (NeighborsPeerMessage) event.getMessage());
         }
     }
 
@@ -147,14 +147,14 @@ public class PeerExplorer {
         }
     }
 
-    public void handlePong(String ip, PongPeerMessage message) {
+    public void handlePong(InetSocketAddress pongAddress, PongPeerMessage message) {
         PeerDiscoveryRequest request = this.pendingPingRequests.get(message.getMessageId());
 
-        if (request != null && request.validateMessageResponse(message)) {
+        if (request != null && request.validateMessageResponse(pongAddress, message)) {
             this.pendingPingRequests.remove(message.getMessageId());
             NodeChallenge challenge = this.challengeManager.removeChallenge(message.getMessageId());
             if (challenge == null) {
-                this.addConnection(message, ip, message.getPort());
+                this.addConnection(message, request.getAddress().getHostString(), request.getAddress().getPort());
             }
         }
     }
@@ -171,14 +171,14 @@ public class PeerExplorer {
         }
     }
 
-    public void handleNeighborsMessage(NeighborsPeerMessage message) {
+    public void handleNeighborsMessage(InetSocketAddress neighborsResponseAddress, NeighborsPeerMessage message) {
         Node connectedNode = this.establishedConnections.get(message.getNodeId());
 
         if (connectedNode != null) {
             logger.debug("Neighbors received from [{}]", connectedNode.getHexIdShort());
             PeerDiscoveryRequest request = this.pendingFindNodeRequests.remove(message.getMessageId());
 
-            if (request != null && request.validateMessageResponse(message)) {
+            if (request != null && request.validateMessageResponse(neighborsResponseAddress, message)) {
                 List<Node> nodes = (message.countNodes() > MAX_NODES_PER_MSG) ? message.getNodes().subList(0, MAX_NODES_PER_MSG -1) : message.getNodes();
                 nodes.stream().filter(n -> !StringUtils.equals(n.getHexId(), this.localNode.getHexId()))
                         .forEach(node -> this.bootNodes.add(node.getAddress()));

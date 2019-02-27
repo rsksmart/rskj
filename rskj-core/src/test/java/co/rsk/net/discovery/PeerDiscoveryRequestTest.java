@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
-import java.util.OptionalInt;
 import java.util.UUID;
 
 /**
@@ -50,7 +49,7 @@ public class PeerDiscoveryRequestTest {
                 .expirationPeriod(1000).attemptNumber(1).build();
 
         Assert.assertNotNull(request);
-        Assert.assertTrue(request.validateMessageResponse(pongPeerMessage));
-        Assert.assertFalse(request.validateMessageResponse(pingPeerMessage));
+        Assert.assertTrue(request.validateMessageResponse(address, pongPeerMessage));
+        Assert.assertFalse(request.validateMessageResponse(address, pingPeerMessage));
     }
 }
