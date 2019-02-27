@@ -66,8 +66,8 @@ public class PeerDiscoveryRequest {
         return relatedNode;
     }
 
-    public boolean validateMessageResponse(PeerDiscoveryMessage message) {
-        return this.expectedResponse == message.getMessageType() && !this.hasExpired();
+    public boolean validateMessageResponse(InetSocketAddress responseAddress, PeerDiscoveryMessage message) {
+        return this.expectedResponse == message.getMessageType() && !this.hasExpired() && getAddress().equals(responseAddress);
     }
 
     public boolean hasExpired() {
