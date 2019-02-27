@@ -309,7 +309,6 @@ public class RskFactory {
     @Bean
     public Genesis getGenesis(RskSystemProperties config) {
         return GenesisLoader.loadGenesis(
-                config,
                 config.genesisInfo(),
                 config.getBlockchainConfig().getCommonConstants().getInitialNonce(),
                 true

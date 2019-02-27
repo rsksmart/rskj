@@ -43,6 +43,7 @@ import org.junit.Assert;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -172,9 +173,10 @@ public class BlockChainBuilder {
         }
 
         if (this.genesis != null) {
-            for (RskAddress addr : this.genesis.getPremine().keySet()) {
-                this.repository.createAccount(addr);
-                this.repository.addBalance(addr, this.genesis.getPremine().get(addr).getAccountState().getBalance());
+            for (Map.Entry<RskAddress, AccountState> accountsEntry : genesis.getAccounts().entrySet()) {
+                RskAddress accountAddress = accountsEntry.getKey();
+                repository.createAccount(accountAddress);
+                repository.addBalance(accountAddress, accountsEntry.getValue().getBalance());
             }
 
             Repository track = this.repository.startTracking();
