@@ -19,19 +19,20 @@
 
 package org.ethereum.core.genesis;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.ByteStreams;
-import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.db.ContractDetails;
+import org.ethereum.json.Utils;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,32 +41,22 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.ethereum.core.AccountState.EMPTY_DATA_HASH;
+
 public class GenesisLoader {
+
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
     private static final Logger logger = LoggerFactory.getLogger("genesisloader");
 
-    public static Genesis loadGenesis(RskSystemProperties config, String genesisFile, BigInteger initialNonce, boolean isRsk)  {
+    public static Genesis loadGenesis(String genesisFile, BigInteger initialNonce, boolean isRsk)  {
         InputStream is = GenesisLoader.class.getResourceAsStream("/genesis/" + genesisFile);
-        return loadGenesis(config, initialNonce, is, isRsk);
+        return loadGenesis(initialNonce, is, isRsk);
     }
 
-    public static Genesis loadGenesis(RskSystemProperties config, BigInteger initialNonce, InputStream genesisJsonIS, boolean isRsk)  {
+    public static Genesis loadGenesis(BigInteger initialNonce, InputStream genesisJsonIS, boolean isRsk)  {
         try {
-
-            String json = new String(ByteStreams.toByteArray(genesisJsonIS));
-
-            ObjectMapper mapper = new ObjectMapper();
-            JavaType type = mapper.getTypeFactory().constructType(GenesisJson.class);
-
-            GenesisJson genesisJson  = new ObjectMapper().readValue(json, type);
-
-            Genesis genesis = new GenesisMapper().mapFromJson(genesisJson, isRsk);
-
-            Map<RskAddress, InitialAddressState> premine = generatePreMine(config, initialNonce, genesisJson.getAlloc());
-            genesis.setPremine(premine);
-
-            byte[] rootHash = generateRootHash(premine);
-            genesis.setStateRoot(rootHash);
-
+            GenesisJson genesisJson = new ObjectMapper().readValue(genesisJsonIS, GenesisJson.class);
+            Genesis genesis = mapFromJson(initialNonce, genesisJson, isRsk);
             genesis.flushRLP();
 
             return genesis;
@@ -77,50 +68,77 @@ public class GenesisLoader {
         }
     }
 
-    private static Map<RskAddress, InitialAddressState> generatePreMine(RskSystemProperties config, BigInteger initialNonce, Map<String, AllocatedAccount> alloc){
-        Map<RskAddress, InitialAddressState> premine = new HashMap<>();
-        ContractDetailsMapper detailsMapper = new ContractDetailsMapper(config);
+    private static Genesis mapFromJson(BigInteger initialNonce, GenesisJson json, boolean rskFormat) {
+        byte[] difficulty = Utils.parseData(json.difficulty);
+        byte[] coinbase = Utils.parseData(json.coinbase);
 
+        byte[] timestampBytes = Utils.parseData(json.timestamp);
+        long timestamp = ByteUtil.byteArrayToLong(timestampBytes);
+
+        byte[] parentHash = Utils.parseData(json.parentHash);
+        byte[] extraData = Utils.parseData(json.extraData);
+
+        byte[] gasLimitBytes = Utils.parseData(json.gasLimit);
+        long gasLimit = ByteUtil.byteArrayToLong(gasLimitBytes);
+
+        byte[] bitcoinMergedMiningHeader = null;
+        byte[] bitcoinMergedMiningMerkleProof = null;
+        byte[] bitcoinMergedMiningCoinbaseTransaction = null;
+        byte[] minGasPrice = null;
+
+        if (rskFormat) {
+            bitcoinMergedMiningHeader = Utils.parseData(json.bitcoinMergedMiningHeader);
+            bitcoinMergedMiningMerkleProof = Utils.parseData(json.bitcoinMergedMiningMerkleProof);
+            bitcoinMergedMiningCoinbaseTransaction = Utils.parseData(json.bitcoinMergedMiningCoinbaseTransaction);
+            minGasPrice = Utils.parseData(json.getMinimumGasPrice());
+        }
+
+        Map<RskAddress, AccountState> accounts = new HashMap<>();
+        Map<RskAddress, byte[]> codes = new HashMap<>();
+        Map<RskAddress, Map<DataWord, byte[]>> storages = new HashMap<>();
+        Map<String, AllocatedAccount> alloc = json.getAlloc();
         for (Map.Entry<String, AllocatedAccount> accountEntry : alloc.entrySet()) {
-            if(!StringUtils.equals("00", accountEntry.getKey())) {
+            if(!"00".equals(accountEntry.getKey())) {
                 Coin balance = new Coin(new BigInteger(accountEntry.getValue().getBalance()));
-                BigInteger nonce;
+                BigInteger accountNonce;
 
                 if (accountEntry.getValue().getNonce() != null) {
-                    nonce = new BigInteger(accountEntry.getValue().getNonce());
+                    accountNonce = new BigInteger(accountEntry.getValue().getNonce());
                 } else {
-                    nonce = initialNonce;
+                    accountNonce = initialNonce;
                 }
 
-                AccountState acctState = new AccountState(nonce, balance);
-                ContractDetails contractDetails = null;
+                AccountState acctState = new AccountState(accountNonce, balance);
                 Contract contract = accountEntry.getValue().getContract();
 
+                RskAddress address = new RskAddress(accountEntry.getKey());
                 if (contract != null) {
-                    contractDetails = detailsMapper.mapFromContract(contract);
-
-                    if (contractDetails.getCode() != null) {
-                        acctState.setCodeHash(Keccak256Helper.keccak256(contractDetails.getCode()));
+                    byte[] code = Hex.decode(contract.getCode());
+                    codes.put(address, code);
+                    acctState.setCodeHash(code == null ? EMPTY_DATA_HASH : Keccak256Helper.keccak256(code));
+                    Map<DataWord, byte[]> storage = new HashMap<>(contract.getData().size());
+                    for (Map.Entry<String, String> storageData : contract.getData().entrySet()) {
+                        storage.put(new DataWord(Hex.decode(storageData.getKey())), Hex.decode(storageData.getValue()));
                     }
-
-                    acctState.setStateRoot(contractDetails.getStorageHash());
+                    storages.put(address, storage);
+                    acctState.setStateRoot(calculateStateRoot(storage));
                 }
-
-                premine.put(new RskAddress(accountEntry.getKey()), new InitialAddressState(acctState, contractDetails));
+                accounts.put(address, acctState);
             }
         }
 
-        return premine;
+        return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, Genesis.getZeroHash(),
+                difficulty, 0, gasLimit, 0, timestamp, extraData,
+                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction, minGasPrice, accounts, codes, storages);
     }
 
-    private static byte[] generateRootHash(Map<RskAddress, InitialAddressState> premine){
-        Trie state = new TrieImpl(null, true);
-
-        for (RskAddress addr : premine.keySet()) {
-            state = state.put(addr.getBytes(), premine.get(addr).getAccountState().getEncoded());
+    private static byte[] calculateStateRoot(Map<DataWord, byte[]> contractStorage) {
+        Trie trie = new TrieImpl(true);
+        for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
+            trie = trie.put(storageEntry.getKey().getData(), storageEntry.getValue());
         }
-
-        return state.getHash().getBytes();
+        return trie.getHash().getBytes();
     }
 
 }

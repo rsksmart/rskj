@@ -70,7 +70,7 @@ public class RskTestFactory {
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {
-        return GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false);
+        return GenesisLoader.loadGenesis(config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false);
     }
 
     public ProgramResult executeRawContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {
