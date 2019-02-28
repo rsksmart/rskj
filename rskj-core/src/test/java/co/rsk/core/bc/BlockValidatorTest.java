@@ -37,6 +37,7 @@ import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -137,7 +138,7 @@ public class BlockValidatorTest {
         Block block2 = blockGenerator.createChildBlock(block1);
         Block parent = blockGenerator.createChildBlock(block2);
 
-        parent.getHeader().setGasLimit(new byte[]{0x00});
+        Whitebox.setInternalState(parent.getHeader(), "gasLimit", new byte[]{0x00});
         Block block = blockGenerator.createChildBlock(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
@@ -179,7 +180,7 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
-        block1.getHeader().setUnclesHash(new byte[]{0x01});
+        Whitebox.setInternalState(block1.getHeader(), "unclesHash", new byte[]{0x01});
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(null)
@@ -724,7 +725,7 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         Block block = new BlockBuilder().parent(genesis).build();
-        block.getHeader().setNumber(25L);
+        Whitebox.setInternalState(block.getHeader(), "number", 25L);
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addParentNumberRule()
                 .blockStore(store)
@@ -744,7 +745,7 @@ public class BlockValidatorTest {
         tx.sign(new byte[]{});
         txs.add(tx);
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
-        block.getHeader().setNumber(25L);
+        Whitebox.setInternalState(block.getHeader(), "number", 25L);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockTxsValidationRule(blockChain.getRepository())

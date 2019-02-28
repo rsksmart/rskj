@@ -26,6 +26,7 @@ import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.PrecompiledContracts;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -152,7 +153,7 @@ public class MinerHelper {
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit, false);
 
-        newBlock.getHeader().setGasLimit(gasLimit.toByteArray());
+        Whitebox.setInternalState(newBlock.getHeader(), "gasLimit", gasLimit.toByteArray());
         newBlock.getHeader().setPaidFees(totalPaidFees);
     }
 }

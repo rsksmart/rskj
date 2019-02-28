@@ -45,6 +45,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mapdb.DB;
+import org.mockito.internal.util.reflection.Whitebox;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -309,7 +310,7 @@ public class BlockChainImplTest {
         Block genesis = getGenesisBlock(blockChain);
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        block1.getHeader().setUnclesHash(HashUtil.randomHash());
+        Whitebox.setInternalState(block1.getHeader(), "unclesHash", HashUtil.randomHash());
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
