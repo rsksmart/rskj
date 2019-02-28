@@ -38,10 +38,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -339,9 +338,9 @@ public class TrieImpl implements Trie {
     @Override
     public Trie put(byte[] key, byte[] value) {
         ExpandedKey keyBytes = ExpandedKey.expandKey(key);
-        Trie trie = put(keyBytes, keyBytes.length(), 0, value);
+        Trie trie = put(keyBytes, keyBytes.length(), 0, value, false);
 
-        return trie == null ? getInstance(this.store, this.isSecure) : trie;
+        return trie == null ? new TrieImpl(this.store, this.isSecure) : trie;
     }
 
     @Override
@@ -377,18 +376,12 @@ public class TrieImpl implements Trie {
     }
 
     @Override
-    // This is O(1). The node with exact key "key" MUST exists.
+    // This is O(1). The node with exact key “key” MUST exists.
     public Trie deleteRecursive(byte[] key) {
-        //ExpandedKey keyBytes = bytesToExpandedKey(key);
+        ExpandedKey keyBytes = ExpandedKey.expandKey(key);
+        Trie trie = put(keyBytes, keyBytes.length(), 0, value, true);
 
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        // do a node delete just to pass tests
-
-        return delete(key);
+        return trie == null ? new TrieImpl(this.store, this.isSecure) : trie;
     }
 
     /**
@@ -969,17 +962,17 @@ public class TrieImpl implements Trie {
      * @return the new NewTrie containing the tree with the new key value association
      *
      */
-    private TrieImpl put(ExpandedKey key, int length, int keyPosition, byte[] value) {
+    private TrieImpl put(ExpandedKey key, int length, int keyPosition, byte[] value, boolean isRecursiveDelete) {
         // First of all, setting the value as an empty byte array is equivalent
         // to removing the key/value. This is because other parts of the trie make
         // this equivalent. Use always null to mark a node for deletion.
         if ((value!=null) && (value.length==0))
             value =null;
-        TrieImpl trie = this.internalPut(key, length, keyPosition, value);
+        TrieImpl trie = this.internalPut(key, length, keyPosition, value, isRecursiveDelete);
 
         // the following code coalesces nodes if needed for delete operation
 
-        // it's null or it is not a delete operation
+        // it’s null or it is not a delete operation
         if (trie == null || value != null) {
             return trie;
         }
@@ -1038,7 +1031,7 @@ public class TrieImpl implements Trie {
         return value.length;
     }
 
-    private TrieImpl internalPut(ExpandedKey key, int length, int keyPosition, byte[] value) {
+    private TrieImpl internalPut(ExpandedKey key, int length, int keyPosition, byte[] value, boolean isRecursiveDelete) {
         int position = keyPosition;
 
         if (this.encodedSharedPath != null) {
@@ -1050,7 +1043,7 @@ public class TrieImpl implements Trie {
                 position += sharedPath.length;
             }
             else {
-                return this.split(k).put(key, length, position, value);
+                return this.split(k).put(key, length, position, value, isRecursiveDelete);
             }
         }
 
@@ -1065,25 +1058,27 @@ public class TrieImpl implements Trie {
                 }
             }
 
-            TrieImpl[] newNodes = cloneNodes(false);
-            Keccak256[] newHashes = cloneHashes();
+            TrieImpl[] newNodes = null;
+            Keccak256[] newHashes = null;
+            if (!isRecursiveDelete) {
+                newNodes = cloneNodes(false);
+                newHashes = cloneHashes();
 
-            if (isEmptyTrie(getDataLength(value), newNodes, newHashes)) {
-                return null;
+                if (isEmptyTrie(getDataLength(value), newNodes, newHashes)) {
+                    return null;
+                }
             }
 
-            return getInstance(this.encodedSharedPath, this.sharedPathLength,
-                    value, newNodes, newHashes, this.store,
-                    getDataLength(value), null, this.isSecure);
+            return new TrieImpl(this.encodedSharedPath, this.sharedPathLength,
+                                value, newNodes, newHashes, this.store,
+                                getDataLength(value),null, this.isSecure);
         }
 
         if (isEmptyTrie(this.valueLength, this.nodes, this.hashes)) {
             int lshared = length - position;
             byte[] shared = new byte[lshared];
-            key.copy(position, shared, 0, lshared);
-
-            return getInstance(PathEncoder.encode(shared), lshared, value, null, null,
-                                          this.store, getDataLength(value),null, this.isSecure);
+            key.copy(position,shared, 0, lshared);
+            return new TrieImpl(this.store, PathEncoder.encode(shared), lshared, value, this.isSecure,getDataLength(value),null);
         }
 
         TrieImpl[] newNodes = cloneNodes(true);
@@ -1094,10 +1089,10 @@ public class TrieImpl implements Trie {
         TrieImpl node = (TrieImpl)retrieveNode(pos);
 
         if (node == null) {
-            node = getInstance(this.store, this.isSecure);
+            node = new TrieImpl(this.store, this.isSecure);
         }
 
-        TrieImpl newNode = node.put(key, length, position + 1, value);
+        TrieImpl newNode = node.put(key, length, position + 1, value, isRecursiveDelete);
 
         // reference equality
         if (newNode == node) {
@@ -1114,7 +1109,7 @@ public class TrieImpl implements Trie {
             return null;
         }
 
-        return getInstance(this.encodedSharedPath, this.sharedPathLength, this.value, newNodes, newHashes, this.store,this.valueLength,this.valueHash, this.isSecure);
+        return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, newNodes, newHashes, this.store,this.valueLength,this.valueHash, this.isSecure);
     }
 
     protected TrieImpl getInstance(TrieStore store, boolean isSecure) {
@@ -1366,11 +1361,16 @@ public class TrieImpl implements Trie {
     }
 
     // These two functions are for converting the trie to the old format
-    protected byte[] getEncodedSharedPath() {
+    public byte[] getEncodedSharedPath() {
         return encodedSharedPath;
     }
-    protected int getSharedPathLength() {
+    public int getSharedPathLength() {
         return sharedPathLength;
+    }
+
+    @Override
+    public Iterator<IterationElement> getInOrderIterator() {
+        return new InOrderIterator(new byte[]{}, this);
     }
 
     private static class ExpandedKey {
@@ -1427,5 +1427,146 @@ public class TrieImpl implements Trie {
         private static ExpandedKey expandKey(byte[] bytes) {
             return new ExpandedKey(TrieImpl.expandKey(bytes));
         }
+    }
+
+    @Override
+    public String toString() {
+        String s = printParam("TRIE: ", "value", value);
+        if (hashes != null){
+            s = printParam(s, "hash0", hashes[0]);
+            s = printParam(s, "hash1", hashes[1]);
+        }
+        s = printParam(s, "hash", getHash());
+        s = printParam(s, "valueHash", valueHash);
+        s = printParam(s, "encodedSharedPath", encodedSharedPath);
+        s += "sharedPathLength: " + sharedPathLength + "\n";
+        return s;
+    }
+
+    private String printParam(String s, String name, byte[] param) {
+        if (param != null){
+            s += name + ": " + Hex.toHexString(param) + "\n";
+        }
+        return s;
+    }
+
+    private String printParam(String s, String name, Keccak256 param) {
+        if (param != null){
+            s += name + ": " + Hex.toHexString(param.getBytes()) + "\n";
+        }
+        return s;
+    }
+
+    static class IterationElement {
+
+        private final byte[] traversedPath;
+        private final Trie node;
+
+        public IterationElement(final byte[] traversedPath, final Trie node) {
+            this.traversedPath = traversedPath;
+            this.node = node;
+        }
+
+        public final Trie getNode() {
+            return node;
+        }
+
+        public final byte[] getTraversedPath() {
+            return traversedPath;
+        }
+
+        public final byte[] getExpandedPath() {
+            byte[] encodedFullKey = getTraversedPath();
+            if (node.getEncodedSharedPath() != null) {
+                encodedFullKey = concat(getTraversedPath(), PathEncoder.decode(node.getEncodedSharedPath(), node.getSharedPathLength()));
+            }
+            return encodedFullKey;
+        }
+
+        public String toString() {
+            byte[] encodedFullKey = getExpandedPath();
+            StringBuilder ouput = new StringBuilder();
+            for (byte b : encodedFullKey) {
+                ouput.append( b == 0 ? '0': '1');
+            }
+            return ouput.toString();
+        }
+    }
+
+    /**
+     * Returns the leftmost node that has not yet been visited that node is normally on top of the stack
+     */
+    private static class InOrderIterator implements Iterator<IterationElement> {
+
+        private final Deque<IterationElement> visiting;
+
+        public InOrderIterator(byte[] traversedPath, TrieImpl root) {
+            Objects.requireNonNull(root);
+            this.visiting = new LinkedList<>();
+            // find the leftmost node, pushing all the intermediate nodes onto the visiting stack
+            pushLeftmostNode(traversedPath, root);
+            // now the leftmost unvisited node is on top of the visiting stack
+        }
+
+        /**
+         * return the leftmost node that has not yet been visited that node is normally on top of the stack
+         */
+        @Override
+        public IterationElement next() {
+            IterationElement visitingElement = visiting.pop();
+            TrieImpl node = (TrieImpl) visitingElement.getNode();
+            // if the node has a right child, its leftmost node is next
+            Trie rightNode = node.retrieveNode(1);
+            if (rightNode != null) {
+                pushLeftmostNode( // find the leftmost node of the right child
+                                  concatKeys(visitingElement.getTraversedPath(), node, (byte) 0x01),
+                                  (TrieImpl) rightNode
+                );
+                // note "node" has been replaced on the stack by its right child
+            } // else: no right subtree, go back up the stack
+            // next node on stack will be next returned
+            return visitingElement;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !visiting.isEmpty(); // no next node left
+        }
+
+        /**
+         * Find the leftmost node from this root, pushing all the intermediate nodes onto the visiting stack
+         *
+         * @param traversedPath
+         * @param node the root of the subtree for which we are trying to reach the leftmost node
+         */
+        private void pushLeftmostNode(byte[] traversedPath, TrieImpl node) {
+            // find the leftmost node
+            if (node != null) {
+                visiting.push(new IterationElement(traversedPath, node)); // push this node
+                pushLeftmostNode( // recurse on next left node
+                                  concatKeys(traversedPath, node, (byte) 0x00),
+                                  (TrieImpl) node.retrieveNode(0)
+                );
+            }
+        }
+    }
+
+    private static byte[] concat(byte[]... arrays) {
+        int length = Stream.of(arrays).mapToInt(array -> array.length).sum();
+        byte[] result = new byte[length];
+        int pos = 0;
+        for (byte[] array : arrays) {
+            System.arraycopy(array, 0, result, pos, array.length);
+            pos += array.length;
+        }
+        return result;
+    }
+
+    private static byte[] concatKeys(byte[] traversedPath, TrieImpl node, byte childSuffix) {
+        if (node.encodedSharedPath != null) {
+            byte[] sharedPath = PathEncoder.decode(node.encodedSharedPath, node.sharedPathLength);
+            traversedPath = concat(traversedPath, sharedPath);
+        }
+        return concat(traversedPath, new byte[] { childSuffix });
     }
 }
