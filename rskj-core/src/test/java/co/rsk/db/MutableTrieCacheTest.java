@@ -123,5 +123,43 @@ public class MutableTrieCacheTest {
     public void testNestedCaches() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie(false));
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+
+        // when account is deleted any key in that account is deleted
+        StringBuilder accountLikeKey = new StringBuilder("HAL");
+        int keySize = MutableRepository.ACCOUNT_KEY_SIZE + MutableRepository.DOMAIN_PREFIX.length;
+        for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
+        mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
+        mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
+        mtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
+        mtCache.deleteRecursive(toBytes(accountLikeKey.toString()));
+
+        // after commit puts on superior levels are reflected on lower levels
+        MutableTrieCache otherCache = new MutableTrieCache(mtCache);
+        otherCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
+        Assert.assertNotNull(otherCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        otherCache.commit();
+        Assert.assertNotNull(otherCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+
+        mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
+        mtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
+        otherCache.deleteRecursive(toBytes(accountLikeKey.toString()));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "125")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString())));
+
+        // before commit lower level cache is not affected
+        Assert.assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        Assert.assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "125")));
+        Assert.assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
+
+        otherCache.commit();
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "125")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString())));
     }
 }

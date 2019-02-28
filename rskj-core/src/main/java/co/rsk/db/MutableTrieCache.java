@@ -23,25 +23,29 @@ import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.MutableRepository;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class MutableTrieCache implements MutableTrie {
 
     private MutableTrie trie;
     // We use a single cache to mark both changed elements and removed elements.
     // null value means the element has been removed.
-    private final HashMap<ByteArrayWrapper, byte[]> cache;
+    private final Map<ByteArrayWrapper, CacheItem> cache;
 
-    private final Set<ByteArrayWrapper> deleteRecursiveCache;
+    private final List<LogItem> logOps;
+
+    private final Map<ByteArrayWrapper, Integer> deleteRecursiveCache;
+
+    private int currentOrder = 0;
 
     public MutableTrieCache(MutableTrie parentTrie) {
         trie = parentTrie;
         cache = new HashMap<>();
-        deleteRecursiveCache = new HashSet<>();
+        logOps = new ArrayList<>();
+        deleteRecursiveCache = new HashMap<>();
     }
 
     @Override
@@ -62,40 +66,39 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override
     public byte[] get(byte[] key) {
-        // Note that after deleteRecursive without commits
-        // get()s will still find the elements.
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
+        CacheItem cacheItem = cache.get(wrap);
+        int size = MutableRepository.DOMAIN_PREFIX.length + MutableRepository.ACCOUNT_KEY_SIZE +
+                (trie.isSecure() ? MutableRepository.SECURE_KEY_SIZE : 0);
+        ByteArrayWrapper deleteWrap = key.length == size ? wrap : new ByteArrayWrapper(Arrays.copyOf(key, size));
+        Integer order = deleteRecursiveCache.get(deleteWrap);
 
-        // Does not contain key, check parent
-        if (!cache.containsKey(wrap)) {
-            return trie.get(key);
+        if (cacheItem != null) {
+            return order == null || order < cacheItem.order ? cacheItem.value : null;
         }
 
-        byte[] value = cache.get(wrap);
-
-        if (value == null) {
-            return null; // erased
-        }
-
-        return value;
-    }
-
-    @Override
-    public void put(String key, byte[] value) {
-        put(key.getBytes(StandardCharsets.UTF_8), value);
+        return order != null ? null : trie.get(key);
     }
 
     @Override
     public void put(byte[] key, byte[] value) {
-        // If value==null, do we have the choice to either store it
-        // in cache with null or in deleteCache. Here we have the choice to
-        // to add it to cache with null value or to deleteCache.
         put(new ByteArrayWrapper(key), value);
     }
 
+    // This method optimizes cache-to-cache transfers
     @Override
-    public void put(ByteArrayWrapper key, byte[] value) {
-        cache.put(key, value);
+    public void put(ByteArrayWrapper wrap, byte[] value) {
+        // If value==null, do we have the choice to either store it
+        // in cache with null or in deleteCache. Here we have the choice to
+        // to add it to cache with null value or to deleteCache.
+        cache.put(wrap, new CacheItem(value, ++currentOrder));
+        logOps.add(new LogItem(wrap, LogOp.PUT));
+    }
+
+    @Override
+    public void put(String key, byte[] value) {
+        byte[] keybytes = key.getBytes(StandardCharsets.UTF_8);
+        put(keybytes, value);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////
@@ -118,31 +121,29 @@ public class MutableTrieCache implements MutableTrie {
         // with SSTORE. This will be stored in the cache as a put(). The cache later receives a
         // deleteRecursive, BUT NEVER IN THE OTHER order.
         // See TransactionExecutor.finalization(), when it iterates the list with getDeleteAccounts().forEach()
-
-        // We could iterate the puts() and remove those that have the
-        // deleteCache key prefix. However we don't care much about the puts,
-        // because in commit() we're going to execute the deleteRecurse() operations
-        // last. However we must make sure we don't remove the "key" item,
-        // as deleteRecursive() requires this item to be found on the trie.
-        deleteRecursiveCache.add(wrap);
-        cache.remove(wrap);
+        deleteRecursiveCache.put(wrap, ++currentOrder);
+        logOps.add(new LogItem(wrap, LogOp.DELETE));
     }
 
     @Override
     public void commit() {
         // all cached items must be transferred to parent
-        // some items will represend deletions (null values)
-        for (ByteArrayWrapper item : cache.keySet()) {
-            this.trie.put(item, cache.get(item));
+        // some items will represent deletions (null values)
+        if (deleteRecursiveCache.isEmpty()) {
+            cache.forEach((key, value) -> this.trie.put(key.getData(), value.value));
+        } else {
+            logOps.forEach(log -> {
+                if (log.logOp == LogOp.PUT) {
+                    this.trie.put(log.key.getData(), cache.get(log.key).value);
+                } else {
+                    this.trie.deleteRecursive(log.key.getData());
+                }
+            });
         }
 
-        // now remove all elements recursively
-        for (ByteArrayWrapper item : deleteRecursiveCache) {
-            this.trie.deleteRecursive(item.getData());
-        }
-
-        cache.clear();
         deleteRecursiveCache.clear();
+        cache.clear();
+        logOps.clear();
     }
 
     @Override
@@ -160,6 +161,7 @@ public class MutableTrieCache implements MutableTrie {
     public void rollback() {
         cache.clear();
         deleteRecursiveCache.clear();
+        logOps.clear();
     }
 
     @Override
@@ -203,38 +205,37 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override
     public int getValueLength(byte[] key) {
-        ByteArrayWrapper wrap = new ByteArrayWrapper(key);
-
-        if (!cache.containsKey(wrap)) {
-            return trie.getValueLength(key);
-        }
-
-        // Contains key
-        byte[] value = cache.get(wrap);
-
-        if (value == null) {
-            return 0; // erased
-        }
-
-        return value.length;
+        byte[] value = this.get(key);
+        return value != null ? value.length : 0;
     }
 
     @Override
     public byte[] getValueHash(byte[] key) {
-        ByteArrayWrapper wrap = new ByteArrayWrapper(key);
+        byte[] value = this.get(key);
+        return value != null ? Keccak256Helper.keccak256(value) : null;
+    }
 
-        if (!cache.containsKey(wrap)) {
-            return trie.getValueHash(key);
+    private static class CacheItem {
+        public final byte[] value;
+        public final int order;
+
+        public CacheItem(byte[] value, int order) {
+            this.value = value;
+            this.order = order;
         }
+    }
 
-        // Contains key
-        byte[] value = cache.get(wrap);
+    private static class LogItem {
+        public final ByteArrayWrapper key;
+        public final LogOp logOp;
 
-        if (value == null) {
-            return null; // erased
+        public LogItem(ByteArrayWrapper key, LogOp logOp) {
+            this.key = key;
+            this.logOp = logOp;
         }
+    }
 
-        // Note that is is inefficient because the hash is not cached
-        return Keccak256Helper.keccak256(value);
+    private enum LogOp {
+        PUT, DELETE
     }
 }
