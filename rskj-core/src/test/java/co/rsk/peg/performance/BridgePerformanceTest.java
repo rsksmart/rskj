@@ -62,7 +62,7 @@ public class BridgePerformanceTest {
         // Run VM tests and average
         averageGasPerMicrosecond = new Mean();
         VMPerformanceTest.ResultLogger resultLogger = (String name, VMPerformanceTest.PerfRes result) -> {
-            long gasPerMicrosecond = result.gas / result.deltaTime;
+            long gasPerMicrosecond = result.gas *1000/ result.deltaTime_nS;
             averageGasPerMicrosecond.add(gasPerMicrosecond);
         };
         VMPerformanceTest.runWithLogging(resultLogger);

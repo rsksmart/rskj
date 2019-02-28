@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program.invoke;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImplForTesting;
 import org.ethereum.core.Repository;
@@ -67,6 +68,11 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         this.repository.createAccount(this.contractAddress);
         this.repository.saveCode(this.contractAddress, contractCode);
         this.txindex = DataWord.ZERO;
+    }
+
+    public void addAccount(RskAddress accountAddress,Coin balance) {
+        this.repository.createAccount(accountAddress);
+        this.repository.addBalance(accountAddress, balance);
     }
 
     public ProgramInvokeMockImpl() {
