@@ -28,13 +28,26 @@ public class TrieConverter {
     );
 
     private final Map<Keccak256, Keccak256> cacheHashes;
+//    private final List<String> dump = new ArrayList<>();
 
     public TrieConverter() {
         cacheHashes = new HashMap<>();
     }
 
     public byte[] getOrchidAccountTrieRoot(TrieImpl src) {
-        return getOrchidAccountTrieRoot(src.getSharedPath(), src, true);
+//        dump.clear();
+        byte[] oldAccountTrieRoot = getOrchidAccountTrieRoot(src.getSharedPath(), src, true);
+//        try {
+//            FileWriter writer = new FileWriter("output.txt");
+//            for(String str: dump) {
+//                writer.write(str);
+//            }
+//            writer.close();
+//        } catch (Exception e) {
+//            System.out.println("SALIO MAL");
+//        }
+
+        return oldAccountTrieRoot;
     }
 
     private byte[] getOrchidAccountTrieRoot(TrieKeySlice key, TrieImpl src, boolean removeFirst8bits) {
@@ -101,7 +114,8 @@ public class TrieConverter {
                     orchidKey, avalue, null, null, null,
                     avalue.length, null, src.isSecure()
             );
-
+//            dump.add(key.toString() + "\n");
+//            dump.add(newNode.toString());
             cacheHashes.put(src.getHash(), newNode.getHash());
             return newNode.getHash().getBytes();
         }
@@ -125,6 +139,8 @@ public class TrieConverter {
                 sharedPath, src.getValue(), null, hashes, null, src.valueLength,
                 src.getValueHash(), src.isSecure()
         );
+//        dump.add(key.toString());
+//        dump.add(newNode.toString());
 
         cacheHashes.put(src.getHash(), newNode.getHash());
         return newNode.getHash().getBytes();
@@ -187,7 +203,6 @@ public class TrieConverter {
                 valueLength, valueHash, unitrieStorageRoot.isSecure()
         );
 
-        cacheHashes.put(unitrieStorageRoot.getHash(), newNode.getHash());
         return newNode.getHash().getBytes();
     }
 

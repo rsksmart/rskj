@@ -327,7 +327,7 @@ public class TrieImpl implements Trie {
     @Override
     public Trie put(byte[] key, byte[] value) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        Trie trie = put(keySlice, value);
+        Trie trie = put(keySlice, value, false);
 
         return trie == null ? new TrieImpl(this.store, this.isSecure) : trie;
     }
@@ -367,15 +367,10 @@ public class TrieImpl implements Trie {
     @Override
     // This is O(1). The node with exact key "key" MUST exists.
     public Trie deleteRecursive(byte[] key) {
-        //ExpandedKey keyBytes = bytesToExpandedKey(key);
+        TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
+        Trie trie = put(keySlice, value, true);
 
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        // do a node delete just to pass tests
-        return delete(key);
+        return trie == null ? new TrieImpl(this.store, this.isSecure) : trie;
     }
 
     /**
@@ -778,7 +773,7 @@ public class TrieImpl implements Trie {
      * @return the new NewTrie containing the tree with the new key value association
      *
      */
-    private TrieImpl put(TrieKeySlice key, byte[] value) {
+    private TrieImpl put(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
         // First of all, setting the value as an empty byte array is equivalent
         // to removing the key/value. This is because other parts of the trie make
         // this equivalent. Use always null to mark a node for deletion.
@@ -786,7 +781,7 @@ public class TrieImpl implements Trie {
             value = null;
         }
 
-        TrieImpl trie = this.internalPut(key, value);
+        TrieImpl trie = this.internalPut(key, value, isRecursiveDelete);
 
         // the following code coalesces nodes if needed for delete operation
 
@@ -830,10 +825,10 @@ public class TrieImpl implements Trie {
         return value.length;
     }
 
-    private TrieImpl internalPut(TrieKeySlice key, byte[] value) {
+    private TrieImpl internalPut(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
         TrieKeySlice commonPath = key.commonPath(sharedPath);
         if (commonPath.length() < sharedPath.length()) {
-            return this.split(commonPath).put(key, value);
+            return this.split(commonPath).put(key, value, isRecursiveDelete);
         }
 
         if (sharedPath.length() >= key.length()) {
@@ -847,11 +842,15 @@ public class TrieImpl implements Trie {
                 }
             }
 
-            TrieImpl[] newNodes = cloneNodes(false);
-            Keccak256[] newHashes = cloneHashes();
+            TrieImpl[] newNodes = null;
+            Keccak256[] newHashes = null;
+            if (!isRecursiveDelete) {
+                newNodes = cloneNodes(false);
+                newHashes = cloneHashes();
 
-            if (isEmptyTrie(getDataLength(value), newNodes, newHashes)) {
-                return null;
+                if (isEmptyTrie(getDataLength(value), newNodes, newHashes)) {
+                    return null;
+                }
             }
 
             return new TrieImpl(this.sharedPath, value, newNodes, newHashes, this.store, getDataLength(value), null, this.isSecure);
@@ -874,7 +873,7 @@ public class TrieImpl implements Trie {
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        TrieImpl newNode = node.put(subKey, value);
+        TrieImpl newNode = node.put(subKey, value, isRecursiveDelete);
 
         // reference equality
         if (newNode == node) {
@@ -1123,6 +1122,34 @@ public class TrieImpl implements Trie {
     @Override
     public int getSharedPathLength() {
         return sharedPath.length();
+    }
+
+    @Override
+    public String toString() {
+        String s = printParam("TRIE: ", "value", value);
+        if (hashes != null){
+            s = printParam(s, "hash0", hashes[0]);
+            s = printParam(s, "hash1", hashes[1]);
+        }
+        s = printParam(s, "hash", getHash());
+        s = printParam(s, "valueHash", valueHash);
+        s = printParam(s, "encodedSharedPath", getEncodedSharedPath());
+        s += "sharedPathLength: " + getSharedPathLength() + "\n";
+        return s;
+    }
+
+    private String printParam(String s, String name, byte[] param) {
+        if (param != null){
+            s += name + ": " + Hex.toHexString(param) + "\n";
+        }
+        return s;
+    }
+
+    private String printParam(String s, String name, Keccak256 param) {
+        if (param != null){
+            s += name + ": " + Hex.toHexString(param.getBytes()) + "\n";
+        }
+        return s;
     }
 
     /**
