@@ -307,7 +307,7 @@ public class Trie {
      */
     public Trie put(byte[] key, byte[] value) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        Trie trie = put(keySlice, value);
+        Trie trie = put(keySlice, value, false);
 
         return trie == null ? new Trie(this.store, this.isSecure) : trie;
     }
@@ -343,13 +343,10 @@ public class Trie {
 
     // This is O(1). The node with exact key "key" MUST exists.
     public Trie deleteRecursive(byte[] key) {
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        /* Something Angel must do here !*/
-        // do a node delete just to pass tests
-        return delete(key);
+        TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
+        Trie trie = put(keySlice, value, true);
+
+        return trie == null ? new Trie(this.store, this.isSecure) : trie;
     }
 
     /**
@@ -605,7 +602,7 @@ public class Trie {
      * @return the new NewTrie containing the tree with the new key value association
      *
      */
-    private Trie put(TrieKeySlice key, byte[] value) {
+    private Trie put(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
         // First of all, setting the value as an empty byte array is equivalent
         // to removing the key/value. This is because other parts of the trie make
         // this equivalent. Use always null to mark a node for deletion.
@@ -613,7 +610,7 @@ public class Trie {
             value = null;
         }
 
-        Trie trie = this.internalPut(key, value);
+        Trie trie = this.internalPut(key, value, isRecursiveDelete);
 
         // the following code coalesces nodes if needed for delete operation
 
@@ -663,7 +660,7 @@ public class Trie {
         return value.length;
     }
 
-    private Trie internalPut(TrieKeySlice key, byte[] value) {
+    private Trie internalPut(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
         TrieKeySlice commonPath = key.commonPath(sharedPath);
         if (commonPath.length() < sharedPath.length()) {
             // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
@@ -671,7 +668,7 @@ public class Trie {
                 return this;
             }
 
-            return this.split(commonPath).put(key, value);
+            return this.split(commonPath).put(key, value, isRecursiveDelete);
         }
 
         if (sharedPath.length() >= key.length()) {
@@ -683,6 +680,10 @@ public class Trie {
                 if (Arrays.equals(this.getValue(), value)) {
                     return this;
                 }
+            }
+
+            if (isRecursiveDelete) {
+                return new Trie(this.store, this.sharedPath, null, this.isSecure, 0, null);
             }
 
             if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
@@ -705,7 +706,7 @@ public class Trie {
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        Trie newNode = node.put(subKey, value);
+        Trie newNode = node.put(subKey, value, isRecursiveDelete);
 
         // reference equality
         if (newNode == node) {
@@ -915,6 +916,32 @@ public class Trie {
         }
 
         return new Keccak256(Arrays.copyOfRange(bytes, position, position + keccakSize));
+    }
+
+    @Override
+    public String toString() {
+        String s = printParam("TRIE: ", "value", value);
+        s = printParam(s, "hash0", left.getHash().orElse(null));
+        s = printParam(s, "hash1", right.getHash().orElse(null));
+        s = printParam(s, "hash", getHash());
+        s = printParam(s, "valueHash", valueHash);
+        s = printParam(s, "encodedSharedPath", getEncodedSharedPath());
+        s += "sharedPathLength: " + getSharedPathLength() + "\n";
+        return s;
+    }
+
+    private String printParam(String s, String name, byte[] param) {
+        if (param != null){
+            s += name + ": " + Hex.toHexString(param) + "\n";
+        }
+        return s;
+    }
+
+    private String printParam(String s, String name, Keccak256 param) {
+        if (param != null){
+            s += name + ": " + Hex.toHexString(param.getBytes()) + "\n";
+        }
+        return s;
     }
 
     /**
