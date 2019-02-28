@@ -220,10 +220,6 @@ public class BlockHeader {
         this.sealed = true;
     }
 
-    public BlockHeader cloneHeader() {
-        return new BlockHeader((RLPList) RLP.decode2(this.getEncoded()).get(0), false);
-    }
-
     public boolean isGenesis() {
         return this.getNumber() == Genesis.NUMBER;
     }
@@ -238,15 +234,6 @@ public class BlockHeader {
 
     public byte[] getUnclesHash() {
         return unclesHash;
-    }
-
-    public void setUnclesHash(byte[] unclesHash) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter uncles hash");
-        }
-
-        this.unclesHash = unclesHash;
     }
 
     public RskAddress getCoinbase() {
@@ -320,39 +307,12 @@ public class BlockHeader {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter timestamp");
-        }
-
-        this.timestamp = timestamp;
-    }
-
     public long getNumber() {
         return number;
     }
 
-    public void setNumber(long number) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter number");
-        }
-
-        this.number = number;
-    }
-
     public byte[] getGasLimit() {
         return gasLimit;
-    }
-
-    public void setGasLimit(byte[] gasLimit) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter gas limit");
-        }
-
-        this.gasLimit = gasLimit;
     }
 
     public long getGasUsed() {
@@ -394,15 +354,6 @@ public class BlockHeader {
         this.logsBloom = logsBloom;
     }
 
-    public void setExtraData(byte[] extraData) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter extra data");
-        }
-
-        this.extraData = extraData;
-    }
-
     public Keccak256 getHash() {
         return new Keccak256(HashUtil.keccak256(getEncoded(
                 true,
@@ -414,10 +365,6 @@ public class BlockHeader {
         // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
         // calculating RSKIP92 block hashes
         return this.getEncoded(true, true);
-    }
-
-    public byte[] getEncodedWithoutNonceMergedMiningFields() {
-        return this.getEncoded(false, false);
     }
 
     @Nullable
@@ -521,10 +468,6 @@ public class BlockHeader {
         return RLP.encodeList(unclesEncoded);
     }
 
-    public byte[] getPowBoundary() {
-        return BigIntegers.asUnsignedByteArray(32, BigInteger.ONE.shiftLeft(256).divide(getDifficulty().asBigInteger()));
-    }
-
     public String toString() {
         return toStringWithSuffix("\n");
     }
@@ -552,16 +495,6 @@ public class BlockHeader {
         return toStringWithSuffix("");
     }
 
-    // TODO added to comply with SerializableObject
-
-    public Keccak256 getRawHash() {
-        return getHash();
-    }
-    // TODO added to comply with SerializableObject
-
-    public byte[] getEncodedRaw() {
-        return getEncoded();
-    }
     public byte[] getBitcoinMergedMiningHeader() {
         return bitcoinMergedMiningHeader;
     }

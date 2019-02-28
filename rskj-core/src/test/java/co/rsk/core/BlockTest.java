@@ -107,23 +107,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockAddUncle() {
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Block block = blockGenerator.createBlock(10, 0);
-        Block uncle = blockGenerator.createBlock(9, 0);
-
-        block.seal();
-
-        try {
-            block.addUncle(uncle.getHeader());
-            Assert.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assert.assertEquals("Sealed block: trying to add uncle", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockSetStateRoot() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
@@ -135,21 +118,6 @@ public class BlockTest {
         }
         catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter state root", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockSetExtraData() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.setExtraData(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assert.assertEquals("Sealed block: trying to alter extra data", ex.getMessage());
         }
     }
 
@@ -274,51 +242,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockHeaderSetTimestamp() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setTimestamp(10);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter timestamp", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockHeaderSetNumber() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setNumber(10);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter number", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockHeaderSetGasLimit() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setGasLimit(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter gas limit", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockHeaderSetPaidFees() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
@@ -360,21 +283,6 @@ public class BlockTest {
         }
         catch (SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter logs bloom", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockHeaderSetExtraData() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setExtraData(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter extra data", ex.getMessage());
         }
     }
 
