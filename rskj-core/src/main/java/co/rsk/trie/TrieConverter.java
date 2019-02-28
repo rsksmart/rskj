@@ -6,9 +6,10 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 
 import java.util.Arrays;
-import java.util.stream.Stream;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.FileWriter;
+import java.util.*;
 
 /**
  * Created by SerAdmin on 10/23/2018.
@@ -16,6 +17,7 @@ import java.util.Map;
 public class TrieConverter {
     private final TrieStoreImpl store;
     private final Map<Keccak256, Keccak256> cacheHashes;
+//    private final List<String> dump = new ArrayList<>();
 
     public TrieConverter() {
         store = new TrieStoreImpl(new HashMapDB());
@@ -32,8 +34,24 @@ public class TrieConverter {
         return result;
     }
 
+    // This method converts and new trie into an old trie hash, but it works for tx tries
+    // or receipt tries. It dosn't work for the account trie because it doesn't translate
+    // new AccountStates into old AccountStates. For that, use computeOldAccountTrieRoot()
+
     public byte[] getOrchidAccountTrieRoot(TrieImpl src) {
-        return getOrchidAccountTrieRoot(new byte[]{}, src, true);
+//        dump.clear();
+        byte[] oldAccountTrieRoot = getOrchidAccountTrieRoot(new byte[]{}, src, true);
+//        try {
+//            FileWriter writer = new FileWriter("output.txt");
+//            for(String str: dump) {
+//                writer.write(str);
+//            }
+//            writer.close();
+//        } catch (Exception e) {
+//            System.out.println("SALIO MAL");
+//        }
+
+        return oldAccountTrieRoot;
     }
 
     private byte[] getOrchidAccountTrieRoot(byte[] key, TrieImpl src, boolean removeFirst8bits) {
@@ -96,7 +114,8 @@ public class TrieConverter {
                     avalue, null, null, store,
                     avalue.length, null, src.isSecure()
             );
-
+//            dump.add(key.toString() + "\n");
+//            dump.add(newNode.toString());
             cacheHashes.put(src.getHash(), newNode.getHash());
             return newNode.getHash().getBytes();
         }
@@ -119,6 +138,8 @@ public class TrieConverter {
                 src.getValue(), null, hashes, store, src.valueLength,
                 src.getValueHash(), src.isSecure()
         );
+//        dump.add(key.toString());
+//        dump.add(newNode.toString());
 
         cacheHashes.put(src.getHash(), newNode.getHash());
         return newNode.getHash().getBytes();
@@ -136,11 +157,6 @@ public class TrieConverter {
 
         if (unitrieStorageRoot == null) {
             return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        Keccak256 cacheHash = cacheHashes.get(unitrieStorageRoot.getHash().getBytes()) ;
-        if (cacheHash != null){
-            return cacheHash.getBytes();
         }
 
         TrieImpl child0 = (TrieImpl) unitrieStorageRoot.retrieveNode(0);
@@ -197,7 +213,6 @@ public class TrieConverter {
                 valueLength, valueHash, unitrieStorageRoot.isSecure()
         );
 
-        cacheHashes.put(unitrieStorageRoot.getHash(), newNode.getHash());
         return newNode.getHash().getBytes();
     }
 }

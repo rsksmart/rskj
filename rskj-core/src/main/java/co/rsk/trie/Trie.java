@@ -21,6 +21,7 @@ package co.rsk.trie;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.db.ByteArrayWrapper;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.function.BiFunction;
 
@@ -85,6 +86,12 @@ public interface Trie {
     int getValueLength();
 
     byte[] getValue();
+
+    byte[] getEncodedSharedPath();
+
+    int getSharedPathLength();
+
+    Iterator<TrieImpl.IterationElement> getInOrderIterator();
 
     // find allows to explore a subtree
     Trie find(byte[] key);
