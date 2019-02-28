@@ -26,9 +26,10 @@ public class MutableRepository implements Repository {
     // in bytes
     public static final int SECURE_KEY_SIZE = 10;
     // in bytes
-    public static final int ACCOUNT_KEY_SIZE = SECURE_KEY_SIZE + RskAddress.LENGTH_IN_BYTES;
+    public static final int ACCOUNT_KEY_SIZE = RskAddress.LENGTH_IN_BYTES;
+    public static final int SECURE_ACCOUNT_KEY_SIZE = SECURE_KEY_SIZE + ACCOUNT_KEY_SIZE;
     public static final int REMASC_ACCOUNT_KEY_SIZE = SECURE_KEY_SIZE + RemascTransaction.REMASC_ADDRESS.getBytes().length;
-    public static final int STORAGE_KEY_SIZE = ACCOUNT_KEY_SIZE + Byte.BYTES + SECURE_KEY_SIZE + 32; //TODO(diegoll): add a constant to DataWord and use that instead of 32
+    public static final int STORAGE_KEY_SIZE = SECURE_ACCOUNT_KEY_SIZE + Byte.BYTES + SECURE_KEY_SIZE + 32; //TODO(diegoll): add a constant to DataWord and use that instead of 32
 
     public static final byte[] DOMAIN_PREFIX = new byte[] { 0x00 };
 
