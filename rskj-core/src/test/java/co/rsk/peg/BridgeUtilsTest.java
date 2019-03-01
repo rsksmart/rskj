@@ -32,9 +32,11 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Transaction;
 import org.ethereum.util.RskTestFactory;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
@@ -58,9 +60,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class BridgeUtilsTest {
-
-    private static final Logger logger = LoggerFactory.getLogger("test");
-
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger AMOUNT = new BigInteger("1");
     private static final BigInteger NONCE = new BigInteger("0");

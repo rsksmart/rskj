@@ -28,8 +28,8 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
 import co.rsk.peg.FederationTestUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -37,14 +37,12 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

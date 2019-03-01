@@ -21,13 +21,36 @@ package co.rsk.peg.performance;
 public class Mean {
     private long total = 0;
     private int samples = 0;
+    private long min;
+    private long max;
 
     public void add(long value) {
+        if (samples == 0 || value < min)
+            min = value;
+        if (samples == 0 || value > max)
+            max = value;
         total += value;
         samples++;
     }
 
+    public void addFrom(Mean otherMean) {
+        // Note that this would yield a weighted mean, as
+        // opposed to a mean of means
+        this.total += otherMean.total;
+        this.samples += otherMean.samples;
+        this.max = Math.max(this.max, otherMean.max);
+        this.min = Math.max(this.min, otherMean.min);
+    }
+
     public long getMean() {
         return total / samples;
+    }
+
+    public long getMin() {
+        return min;
+    }
+
+    public long getMax() {
+        return max;
     }
 }

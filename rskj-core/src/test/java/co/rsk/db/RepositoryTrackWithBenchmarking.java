@@ -25,43 +25,8 @@ import org.ethereum.core.Repository;
 import org.ethereum.db.RepositoryTrack;
 import org.ethereum.vm.DataWord;
 
-public class RepositoryTrackWithBenchmarking extends RepositoryTrack {
-    public class Statistics {
-        private final int SLOT_SIZE_BYTES = 32;
-        private int slotsWritten;
-        private int slotsCleared;
-
-        public Statistics() {
-            clear();
-        }
-
-        public void clear() {
-            slotsWritten = 0;
-            slotsCleared = 0;
-        }
-
-        public void recordWrite(byte[] oldValue, byte[] newValue) {
-            int oldValueLength = oldValue == null ? 0 : oldValue.length;
-            int newValueLength = newValue == null ? 0 : newValue.length;
-            int delta = newValueLength - oldValueLength;
-            int slots = (int) Math.ceil((double)Math.abs(delta) / (double)SLOT_SIZE_BYTES);
-            if (delta > 0) {
-                slotsWritten += slots;
-            } else {
-                slotsCleared += slots;
-            }
-        }
-
-        public int getSlotsWritten() {
-            return slotsWritten;
-        }
-
-        public int getSlotsCleared() {
-            return slotsCleared;
-        }
-    }
-
-    private final Statistics statistics;
+public class RepositoryTrackWithBenchmarking extends RepositoryTrack implements BenchmarkedRepository {
+    protected final Statistics statistics;
 
     public RepositoryTrackWithBenchmarking(Repository repository) {
         super(repository);

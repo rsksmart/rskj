@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,13 +31,11 @@ import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
