@@ -8,8 +8,6 @@ import org.ethereum.datasource.HashMapDB;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.FileWriter;
-import java.util.*;
 
 /**
  * Created by SerAdmin on 10/23/2018.
@@ -17,11 +15,13 @@ import java.util.*;
 public class TrieConverter {
     private final TrieStoreImpl store;
     private final Map<Keccak256, Keccak256> cacheHashes;
+    private final Map<Keccak256, byte[]> cacheStorage;
 //    private final List<String> dump = new ArrayList<>();
 
     public TrieConverter() {
         store = new TrieStoreImpl(new HashMapDB());
         cacheHashes = new HashMap<>();
+        cacheStorage = new HashMap<>();
     }
 
     private static byte[] concat(byte[] first, byte b) {
@@ -50,7 +50,6 @@ public class TrieConverter {
 //        } catch (Exception e) {
 //            System.out.println("SALIO MAL");
 //        }
-
         return oldAccountTrieRoot;
     }
 
@@ -159,8 +158,22 @@ public class TrieConverter {
             return HashUtil.EMPTY_TRIE_HASH;
         }
 
+        byte[] storageNodeHash = cacheStorage.get(unitrieStorageRoot.getHash());
+        if (storageNodeHash != null && !onlyChild  && !removeFirstNodePrefix) {
+            return storageNodeHash;
+        }
+
+        // shared Path
+        byte[] encodedSharedPath = unitrieStorageRoot.getEncodedSharedPath();
+        int sharedPathLength = unitrieStorageRoot.getSharedPathLength();
+
+        byte[] value = unitrieStorageRoot.getValue();
+        int valueLength = unitrieStorageRoot.valueLength;
+        byte[] valueHash = unitrieStorageRoot.getValueHash();
+
         TrieImpl child0 = (TrieImpl) unitrieStorageRoot.retrieveNode(0);
         TrieImpl child1 = (TrieImpl) unitrieStorageRoot.retrieveNode(1);
+
         byte[] child0Hash = null;
         if (child0 != null) {
             child0Hash = getOrchidStateRoot(child0, false, removeFirstNodePrefix && child1 == null, (byte) 0);
@@ -171,18 +184,10 @@ public class TrieConverter {
             child1Hash = getOrchidStateRoot(child1, false, removeFirstNodePrefix && child0 == null, (byte) 1);
         }
 
-        // shared Path
-        byte[] encodedSharedPath = unitrieStorageRoot.getEncodedSharedPath();
-        int sharedPathLength = unitrieStorageRoot.getSharedPathLength();
-
         Keccak256[] hashes = new Keccak256[] {
                 child0Hash == null ? null : new Keccak256(child0Hash),
                 child1Hash == null ? null : new Keccak256(child1Hash)
         };
-
-        byte[] value = unitrieStorageRoot.getValue();
-        int valueLength = unitrieStorageRoot.valueLength;
-        byte[] valueHash = unitrieStorageRoot.getValueHash();
 
         if (removeFirstNodePrefix) {
             encodedSharedPath = null;
@@ -212,7 +217,9 @@ public class TrieConverter {
                 value, null, hashes, store,
                 valueLength, valueHash, unitrieStorageRoot.isSecure()
         );
-
+        if (!onlyChild) {
+            cacheStorage.put(unitrieStorageRoot.getHash(), newNode.getHash().getBytes());
+        }
         return newNode.getHash().getBytes();
     }
 }

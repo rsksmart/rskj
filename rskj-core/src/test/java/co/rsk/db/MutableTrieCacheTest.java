@@ -73,6 +73,75 @@ public class MutableTrieCacheTest {
         result = getKeysFrom(baseMutableTrie);
         Assert.assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
 
+        mtCache.delete(toBytes("CAROL"));
+        Assert.assertNull(mtCache.get(toBytes("CAROL")));
+    }
 
+    @Test
+    public void testAccountBehavior(){
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new TrieImpl(false));
+        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+
+        // when account is deleted any key in that account is deleted
+        StringBuilder accountLikeKey = new StringBuilder("HAL");
+        for (int i = 0; i < 30; i++) accountLikeKey.append("0");
+        mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
+        mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
+        mtCache.deleteRecursive(toBytes(accountLikeKey.toString()));
+        Assert.assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
+        Assert.assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        Assert.assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+
+        // if a key is inserted after a recursive delete is visible
+        mtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
+        Assert.assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "125")));
+        Assert.assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        Assert.assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
+
+        mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
+        Assert.assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
+    }
+
+    @Test
+    public void testNestedCaches() {
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new TrieImpl(false));
+        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+
+        // when account is deleted any key in that account is deleted
+        StringBuilder accountLikeKey = new StringBuilder("HAL");
+        for (int i = 0; i < 30; i++) accountLikeKey.append("0");
+        mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
+        mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
+        mtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
+        mtCache.deleteRecursive(toBytes(accountLikeKey.toString()));
+
+        // after commit puts on superior levels are reflected on lower levels
+        MutableTrieCache otherCache = new MutableTrieCache(mtCache);
+        otherCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
+        Assert.assertNotNull(otherCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        otherCache.commit();
+        Assert.assertNotNull(otherCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+
+        mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
+        mtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
+        otherCache.deleteRecursive(toBytes(accountLikeKey.toString()));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "125")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString())));
+
+        // before commit lower level cache is not affected
+        Assert.assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        Assert.assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "125")));
+        Assert.assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
+
+        otherCache.commit();
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "125")));
+        Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString())));
     }
 }
