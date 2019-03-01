@@ -28,10 +28,12 @@ public class TrieConverter {
     );
 
     private final Map<Keccak256, Keccak256> cacheHashes;
+    private final Map<Keccak256, byte[]> cacheStorage;
 //    private final List<String> dump = new ArrayList<>();
 
     public TrieConverter() {
         cacheHashes = new HashMap<>();
+        cacheStorage = new HashMap<>();
     }
 
     public byte[] getOrchidAccountTrieRoot(TrieImpl src) {
@@ -46,7 +48,6 @@ public class TrieConverter {
 //        } catch (Exception e) {
 //            System.out.println("SALIO MAL");
 //        }
-
         return oldAccountTrieRoot;
     }
 
@@ -151,9 +152,9 @@ public class TrieConverter {
             return HashUtil.EMPTY_TRIE_HASH;
         }
 
-        Keccak256 cacheHash = cacheHashes.get(unitrieStorageRoot.getHash());
-        if (cacheHash != null) {
-            return cacheHash.getBytes();
+        byte[] storageNodeHash = cacheStorage.get(unitrieStorageRoot.getHash());
+        if (storageNodeHash != null && !onlyChild  && !removeFirstNodePrefix) {
+            return storageNodeHash;
         }
 
         TrieImpl child0 = (TrieImpl) unitrieStorageRoot.retrieveNode(0);
@@ -170,8 +171,10 @@ public class TrieConverter {
             child1Hash = getOrchidStateRoot(child1Key, child1, false, removeFirstNodePrefix && child0 == null);
         }
 
-        Keccak256[] hashes = Stream.of(child0Hash, child1Hash).map(hash -> hash==null? null : new Keccak256(hash)).toArray(Keccak256[]::new);
-
+        Keccak256[] hashes = new Keccak256[] {
+                child0Hash == null ? null : new Keccak256(child0Hash),
+                child1Hash == null ? null : new Keccak256(child1Hash)
+        };
         TrieKeySlice sharedPath = unitrieStorageRoot.getSharedPath();
         byte[] value = unitrieStorageRoot.getValue();
         int valueLength = unitrieStorageRoot.valueLength;
@@ -202,7 +205,9 @@ public class TrieConverter {
                 sharedPath, value, null, hashes, null,
                 valueLength, valueHash, unitrieStorageRoot.isSecure()
         );
-
+        if (!onlyChild) {
+            cacheStorage.put(unitrieStorageRoot.getHash(), newNode.getHash().getBytes());
+        }
         return newNode.getHash().getBytes();
     }
 
