@@ -19,9 +19,11 @@
 
 package org.ethereum.config.net;
 
+import co.rsk.bitcoinj.core.BtcECKey;
 import org.ethereum.config.blockchain.HardForkActivationConfig;
 import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 
+import java.util.List;
 
 /**
  * Created by Anton Nashatyrev on 25.02.2016.
@@ -39,7 +41,13 @@ public class RegTestConfig extends AbstractNetConfig {
         return config;
     }
 
-    public static RegTestConfig getFromConfig(HardForkActivationConfig hardForkActivationConfig) {
+    public static RegTestConfig getFromConfig(HardForkActivationConfig hardForkActivationConfig, List<BtcECKey> genesisFederatorsPublicKeys) {
+        RegTestConfig customConfig = getHardForkConfig(hardForkActivationConfig);
+        customConfig.setGenesisFederationPublicKeys(genesisFederatorsPublicKeys);
+        return customConfig;
+    }
+
+    private static RegTestConfig getHardForkConfig(HardForkActivationConfig hardForkActivationConfig) {
         if (hardForkActivationConfig == null) {
             return getDefaultRegTestConfig();
         }

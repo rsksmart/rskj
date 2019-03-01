@@ -47,7 +47,6 @@ import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieStoreImpl;
 import com.google.common.collect.Lists;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -57,14 +56,14 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.config.blockchain.regtest.RegTestOrchidConfig;
+import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -1339,13 +1338,15 @@ public class BridgeSupportTest {
 
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
         doReturn(btcParams).when(bridgeConstants).getBtcParams();
+        TestSystemProperties mockSystemProperties = mock(TestSystemProperties.class);
+        when(mockSystemProperties.getBlockchainConfig()).thenReturn(config.getBlockchainConfig());
         StoredBlock storedBlock = mock(StoredBlock.class);
         doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
         BtcBlockstoreWithCache btcBlockStore = mock(BtcBlockstoreWithCache.class);
         doReturn(storedBlock).when(btcBlockStore).getChainHead();
 
         BridgeSupport bridgeSupport = new BridgeSupport(
-                mock(TestSystemProperties.class),
+                mockSystemProperties,
                 mock(Repository.class),
                 mock(BridgeEventLogger.class),
                 bridgeConstants,
@@ -3173,6 +3174,7 @@ public class BridgeSupportTest {
 
         BridgeConstants constantsMock = mock(BridgeConstants.class);
         when(constantsMock.getGenesisFederation()).thenReturn(mockedGenesisFederation);
+
         when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         when(constantsMock.getFederationChangeAuthorizer()).thenReturn(BridgeRegTestConstants.getInstance().getFederationChangeAuthorizer());
         when(constantsMock.getFederationActivationAge()).thenReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge());
@@ -3236,6 +3238,10 @@ public class BridgeSupportTest {
             holder.setPendingFederation(m.getArgumentAt(0, PendingFederation.class));
             return null;
         }).when(providerMock).setPendingFederation(any());
+
+        BlockchainNetConfig blockchainNetConfig = spy(RegTestConfig.getDefaultRegTestConfig());
+        when(blockchainNetConfig.getGenesisFederation()).thenReturn(mockedGenesisFederation);
+        config.setBlockchainConfig(blockchainNetConfig);
 
         return new BridgeSupport(config, null, eventLogger, constantsMock, providerMock, null, null, executionBlock);
     }

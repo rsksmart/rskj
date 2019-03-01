@@ -181,7 +181,7 @@ public class BridgeSupport {
                 bridgeConstants,
                 eventLogger,
                 btcContext,
-                new FederationSupport(provider, bridgeConstants, executionBlock),
+                new FederationSupport(provider, config.getBlockchainConfig(), executionBlock),
                 btcBlockStore,
                 btcBlockChain
         );
