@@ -28,11 +28,13 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieImpl;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.BeforeClass;
@@ -153,7 +155,12 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             private RepositoryTrackWithBenchmarking benchmarkerTrack;
 
             private RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-                return new RepositoryImpl(null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+                return new RepositoryImpl(
+                        new TrieImpl(null, true),
+                        new HashMapDB(),
+                        new TrieStorePoolOnMemory(),
+                        config.detailsInMemoryStorageLimit()
+                );
             }
 
             @Override
@@ -176,10 +183,10 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
                 List<LogInfo> logs = new ArrayList<>();
 
-                benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+                benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
 
                 bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-                Blockchain blockchain = BlockChainBuilder.ofSizeWithNoTransactionPoolCleaner(heightProvider.getHeight(executionIndex));
+                Blockchain blockchain = BlockChainBuilder.ofSize(heightProvider.getHeight(executionIndex));
                 bridge.init(
                         tx,
                         blockchain.getBestBlock(),

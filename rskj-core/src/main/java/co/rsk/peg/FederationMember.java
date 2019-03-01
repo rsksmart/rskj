@@ -83,14 +83,6 @@ public final class FederationMember {
         return pks.stream().map(pk -> getFederationMemberFromKey(pk)).collect(Collectors.toList());
     }
 
-    // To be removed when different keys per federation member feature is implemented. This is just a helper
-    // method to make it easier w.r.t. compatibility with the current approach
-    public static List<FederationMember> getFederationMembersFromKeys(List<BtcECKey> pks) {
-        return pks.stream().map(pk ->
-                new FederationMember(pk, ECKey.fromPublicOnly(pk.getPubKey()))
-        ).collect(Collectors.toList());
-    }
-
     /**
      * Compares federation members based on their underlying keys.
      *
