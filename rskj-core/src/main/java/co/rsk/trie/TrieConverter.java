@@ -28,10 +28,12 @@ public class TrieConverter {
     );
 
     private final Map<Keccak256, Keccak256> cacheHashes;
+    private final Map<Keccak256, byte[]> cacheStorage;
 //    private final List<String> dump = new ArrayList<>();
 
     public TrieConverter() {
         cacheHashes = new HashMap<>();
+        cacheStorage = new HashMap<>();
     }
 
     public byte[] getOrchidAccountTrieRoot(TrieImpl src) {
@@ -46,7 +48,6 @@ public class TrieConverter {
 //        } catch (Exception e) {
 //            System.out.println("SALIO MAL");
 //        }
-
         return oldAccountTrieRoot;
     }
 
@@ -160,9 +161,9 @@ public class TrieConverter {
             return HashUtil.EMPTY_TRIE_HASH;
         }
 
-        Keccak256 cacheHash = cacheHashes.get(unitrieStorageRoot.getHash());
-        if (cacheHash != null) {
-            return cacheHash.getBytes();
+        byte[] storageNodeHash = cacheStorage.get(unitrieStorageRoot.getHash());
+        if (storageNodeHash != null && !onlyChild  && !removeFirstNodePrefix) {
+            return storageNodeHash;
         }
 
         // shared Path
@@ -173,8 +174,13 @@ public class TrieConverter {
             key = concat(key, sharedPath);
         }
 
+        byte[] value = unitrieStorageRoot.getValue();
+        int valueLength = unitrieStorageRoot.valueLength;
+        byte[] valueHash = unitrieStorageRoot.getValueHash();
+
         TrieImpl child0 = (TrieImpl) unitrieStorageRoot.retrieveNode(0);
         TrieImpl child1 = (TrieImpl) unitrieStorageRoot.retrieveNode(1);
+
         byte[] child0Hash = null;
         if (child0 != null) {
             child0Hash = getOrchidStateRoot(concat(key, LEFT_CHILD_IMPLICIT_KEY), child0, false, removeFirstNodePrefix && child1 == null, LEFT_CHILD_IMPLICIT_KEY);
@@ -185,11 +191,10 @@ public class TrieConverter {
             child1Hash = getOrchidStateRoot(concat(key, RIGHT_CHILD_IMPLICIT_KEY), child1, false, removeFirstNodePrefix && child0 == null, RIGHT_CHILD_IMPLICIT_KEY);
         }
 
-        Keccak256[] hashes = Stream.of(child0Hash, child1Hash).map(hash -> hash==null? null : new Keccak256(hash)).toArray(Keccak256[]::new);
-
-        byte[] value = unitrieStorageRoot.getValue();
-        int valueLength = unitrieStorageRoot.valueLength;
-        byte[] valueHash = unitrieStorageRoot.getValueHash();
+        Keccak256[] hashes = new Keccak256[] {
+                child0Hash == null ? null : new Keccak256(child0Hash),
+                child1Hash == null ? null : new Keccak256(child1Hash)
+        };
 
         if (removeFirstNodePrefix) {
             encodedSharedPath = null;
@@ -231,7 +236,9 @@ public class TrieConverter {
                 value, null, hashes, null,
                 valueLength, valueHash, unitrieStorageRoot.isSecure()
         );
-
+        if (!onlyChild) {
+            cacheStorage.put(unitrieStorageRoot.getHash(), newNode.getHash().getBytes());
+        }
         return newNode.getHash().getBytes();
     }
 
