@@ -28,10 +28,12 @@ public class TrieConverter {
     );
 
     private final Map<Keccak256, Keccak256> cacheHashes;
+    private final Map<Keccak256, byte[]> cacheStorage;
 //    private final List<String> dump = new ArrayList<>();
 
     public TrieConverter() {
         cacheHashes = new HashMap<>();
+        cacheStorage = new HashMap<>();
     }
 
     public byte[] getOrchidAccountTrieRoot(Trie src) {
@@ -46,7 +48,6 @@ public class TrieConverter {
 //        } catch (Exception e) {
 //            System.out.println("SALIO MAL");
 //        }
-
         return oldAccountTrieRoot;
     }
 
@@ -149,9 +150,9 @@ public class TrieConverter {
             return HashUtil.EMPTY_TRIE_HASH;
         }
 
-        Keccak256 cacheHash = cacheHashes.get(unitrieStorageRoot.getHash());
-        if (cacheHash != null) {
-            return cacheHash.getBytes();
+        byte[] storageNodeHash = cacheStorage.get(unitrieStorageRoot.getHash());
+        if (storageNodeHash != null && !onlyChild  && !removeFirstNodePrefix) {
+            return storageNodeHash;
         }
 
         Trie child0 = unitrieStorageRoot.getNodeReference(LEFT_CHILD_IMPLICIT_KEY).getNode().orElse(null);
@@ -200,7 +201,9 @@ public class TrieConverter {
                 sharedPath, value, left, right, null,
                 valueLength, valueHash, unitrieStorageRoot.isSecure()
         );
-
+        if (!onlyChild) {
+            cacheStorage.put(unitrieStorageRoot.getHash(), newNode.getHash().getBytes());
+        }
         return newNode.getHash().getBytes();
     }
 
