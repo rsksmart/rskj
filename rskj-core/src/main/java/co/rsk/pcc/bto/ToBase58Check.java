@@ -25,7 +25,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * This implements the "toBase58Check" method
@@ -69,7 +68,6 @@ public class ToBase58Check extends NativeMethod {
                     Hex.toHexString(hash), hash.length
             ));
         }
-//        hash = Arrays.copyOfRange(hash, 0, 20);
 
         int version = ((BigInteger) arguments[1]).intValueExact();
 
