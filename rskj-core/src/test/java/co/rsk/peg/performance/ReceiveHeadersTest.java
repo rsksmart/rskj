@@ -42,10 +42,17 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
 
     @Test
     public void receiveHeadersSingleBlock() throws IOException {
+        setQuietMode(true);
+        System.out.print("Doing a few initial passes... ");
+        doReceiveHeaders(100, 1);
+        setQuietMode(false);
+        System.out.print("Done!\n");
+
+
         ExecutionStats stats = new ExecutionStats("receiveHeaders-singleBlock");
 
         executeAndAverage(
-                "receiveHeaders-singleBlock", 200,
+                "receiveHeaders-singleBlock", 2000,
                 generateABIEncoder(1, 1),
                 buildInitializer(1000, 2000),
                 Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
