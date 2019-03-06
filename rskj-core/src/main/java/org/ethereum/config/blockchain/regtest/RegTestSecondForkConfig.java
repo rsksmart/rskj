@@ -39,4 +39,9 @@ public class RegTestSecondForkConfig extends RegTestOrchidConfig {
     public boolean isRskip106() {
         return true;
     }
+
+    @Override
+    public boolean isRskipPublicReceiveHeaders() {
+        return true;
+    }
 }
