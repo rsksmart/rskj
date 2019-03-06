@@ -393,6 +393,7 @@ public class BlockchainGenerator {
 
 
         List<BlockInfo> transferBlocks = transferBlocks(transactionsStartBlock-1 ,trxBuilder, coinbase);
+        System.out.println("First Block with transfers: [" + transferBlocks.get(0).getBlockNumber()+"]");
 
         List<BlockInfo> blocks = new ArrayList<>();
         blocks.addAll(contractCreationBlocks);

@@ -3,7 +3,6 @@ package co.rsk.metrics.block.builder;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.metrics.block.ValueGenerator;
-import co.rsk.metrics.block.builder.metadata.MetadataWriter;
 import co.rsk.metrics.block.tests.ContractData;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
@@ -17,7 +16,7 @@ import java.util.*;
 
 public class MockTransactionsBuilder {
 
-    private long maxTrxsPerType, tokenTrx, normalTrx;
+    private long tokenTrx, normalTrx;
     private BigInteger contractNonce;
     private ValueGenerator valueGenerator;
     private Vector<AccountStatus> accounts;
@@ -31,7 +30,20 @@ public class MockTransactionsBuilder {
 
     public MockTransactionsBuilder(double blockFillPercentage,GasLimits gasLimits, ValueGenerator datasource, Vector<AccountStatus> accounts, TestSystemProperties config, AccountStatus tokensOwner, boolean includeTokenTransfers) {
 
-        this.maxTrxsPerType = Math.round(blockFillPercentage*gasLimits.getBlockLimit().divide(gasLimits.getCoinTransferLimit().add(gasLimits.getTokenTransferLimit())).longValue());
+        if(includeTokenTransfers){
+            //We want same amout of both types of trxs
+            // maxTrxPairPerBlockPerType = FillPercentage * [blockLimit/(tokenLimit + normalLimit)]
+            long maxTrxsPerType = Math.round(blockFillPercentage*gasLimits.getBlockLimit().divide(gasLimits.getCoinTransferLimit().add(gasLimits.getTokenTransferLimit())).longValue());
+            this.normalTrx = maxTrxsPerType;
+            this.tokenTrx = maxTrxsPerType;
+        }
+        else{
+            //We don't have token transactions, only normal transactions
+            //maxTokenTrx = FillPercentage * (blockLimit / normalLimit)
+            this.normalTrx = Math.round(blockFillPercentage*gasLimits.getBlockLimit().divide(gasLimits.getCoinTransferLimit()).longValue());
+            this.tokenTrx = 0;
+        }
+
         this.valueGenerator = datasource;
         this.accounts = accounts;
         this.config = config;
@@ -44,9 +56,6 @@ public class MockTransactionsBuilder {
     }
 
     public List<Transaction> generateTransactions() {
-
-        normalTrx = includeTokenTransfers?maxTrxsPerType:maxTrxsPerType*2;
-        tokenTrx = includeTokenTransfers?maxTrxsPerType:0;
 
         long maxTrxsPerBlock = tokenTrx + normalTrx;
 

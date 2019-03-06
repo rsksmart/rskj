@@ -15,7 +15,7 @@ import java.io.IOException;
 public class BlockchainGeneratorTests {
 
     @Test
-    public void testBlockchainCreateFullBlocks() throws IOException, InvalidGenesisFileException {
+    public void generate_100Capacity_NoRemasc_YesERC20_YesSpCases() throws IOException, InvalidGenesisFileException {
         ValueGenerator valueGenerator = new ValueGenerator(TestContext.DATASOURCE_DIR);
         MetadataWriter metadataWriter = new FileMetadataWriter(TestContext.METADATA_PATH);
         TestSystemProperties config = new TestSystemProperties();
@@ -27,7 +27,7 @@ public class BlockchainGeneratorTests {
     }
 
     @Test
-    public void testBlockchainCreateFullBlocksWithoutTokenTransfer() throws IOException, InvalidGenesisFileException {
+    public void generate_100Capacity_NoRemasc_NoERC20_YesSpCases() throws IOException, InvalidGenesisFileException {
         ValueGenerator valueGenerator = new ValueGenerator(TestContext.DATASOURCE_DIR);
         MetadataWriter metadataWriter = new FileMetadataWriter(TestContext.METADATA_PATH);
         TestSystemProperties config = new TestSystemProperties();
@@ -41,7 +41,7 @@ public class BlockchainGeneratorTests {
 
 
     @Test
-    public void testBlockchainCreateFullBlocksWithRemasc() throws IOException, InvalidGenesisFileException {
+    public void generate_100Capacity_YesRemasc_YesERC20_YesSpCases() throws IOException, InvalidGenesisFileException {
         ValueGenerator valueGenerator = new ValueGenerator(TestContext.DATASOURCE_DIR);
         MetadataWriter metadataWriter = new FileMetadataWriter(TestContext.METADATA_PATH+".remasc");
         TestSystemProperties config = new TestSystemProperties();
@@ -55,11 +55,6 @@ public class BlockchainGeneratorTests {
 
     }
 
-    @Test
-    public void testAllFullBlockBlockchainsCreation() throws IOException, InvalidGenesisFileException {
-        testBlockchainCreateFullBlocks();
-        testBlockchainCreateFullBlocksWithRemasc();
-    }
     @Test
     public void testBlockchainCreateFiftyPercentBlocks() throws IOException, InvalidGenesisFileException {
         ValueGenerator valueGenerator = new ValueGenerator(TestContext.DATASOURCE_DIR);

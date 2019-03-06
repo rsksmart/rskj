@@ -50,7 +50,7 @@ public class BlockchainPlayerTests {
 
 
     @Test
-    public void testPlaySingleBlockchainWithoutRemasc() throws InvalidGenesisFileException, IOException, ProfilingException {
+    public void playSingle_NoRemasc_YesERC20() throws InvalidGenesisFileException, IOException, ProfilingException {
         ExecutionProfiler.singleton().clean();
         ProfilerFactory.configure(ExecutionProfiler.singleton());
         ExecutionProfiler.singleton().newBlock(-4,0);
@@ -65,6 +65,22 @@ public class BlockchainPlayerTests {
         config.setGenesisInfo(TestContext.GENESIS_FILE);
         playBlockchain_DetailedProfiler(sourceBlockStore, TestContext.PLAY_DB_FILE+"_"+run, TestContext.BLOCK_REPLAY_DIR+"/playRun_"+run+".json", config, false);
 
+    }
+
+    @Test
+    public void playSingle_NoRemasc_NoERC20() throws InvalidGenesisFileException, IOException, ProfilingException {
+        ProfilerFactory.configure(ExecutionProfiler.singleton());
+        ExecutionProfiler.singleton().newBlock(-4,0);
+
+        DefaultConfig defaultConfig = new DefaultConfig();
+        BlockStore sourceRemascBlockStore = defaultConfig.buildBlockStore(TestContext.BLOCK_DB_DIR+"-no-token-transfers");
+        int run =0;
+        TestSystemProperties config = new TestSystemProperties();
+        config.setBlockchainConfig(new RegTestGenesisConfig());
+        config.setGenesisInfo(TestContext.GENESIS_FILE);
+
+        playBlockchain_DetailedProfiler(sourceRemascBlockStore, TestContext.PLAY_DB_FILE+"-no-token-transfers"+run, TestContext.BLOCK_REPLAY_DIR+"/playRunNoTokens_"+run+".json", config, false);
+        System.gc();
     }
 
 
@@ -91,7 +107,7 @@ public class BlockchainPlayerTests {
     }
 
     @Test
-    public void testPlaySingleBlockchainWithRemasc_DetailedProfiler() throws InvalidGenesisFileException, IOException, ProfilingException {
+    public void playSingle_YesRemasc_YesERC20() throws InvalidGenesisFileException, IOException, ProfilingException {
         //ExecutionProfiler.singleton().clean();
         ProfilerFactory.configure(ExecutionProfiler.singleton());
         ExecutionProfiler.singleton().newBlock(-4,0);
@@ -107,21 +123,6 @@ public class BlockchainPlayerTests {
         System.gc();
     }
 
-    @Test
-    public void testPlaySingleBlockchainWithoutTokenTransfer() throws InvalidGenesisFileException, IOException, ProfilingException {
-        ProfilerFactory.configure(ExecutionProfiler.singleton());
-        ExecutionProfiler.singleton().newBlock(-4,0);
-
-        DefaultConfig defaultConfig = new DefaultConfig();
-        BlockStore sourceRemascBlockStore = defaultConfig.buildBlockStore(TestContext.BLOCK_DB_DIR+"-no-token-transfers");
-        int run =0;
-        TestSystemProperties config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestGenesisConfig());
-        config.setGenesisInfo(TestContext.GENESIS_FILE);
-
-        playBlockchain_DetailedProfiler(sourceRemascBlockStore, TestContext.PLAY_DB_FILE+"-no-token-transfers"+run, TestContext.BLOCK_REPLAY_DIR+"/playRunNoTokens_"+run+".json", config, false);
-        System.gc();
-    }
 
 
 
