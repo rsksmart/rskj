@@ -281,8 +281,8 @@ public class TrieImpl implements Trie {
      */
     @Override
     public byte[] get(byte[] key) {
-        byte[] keyBytes = this.isSecure ? bytesToKey(Keccak256Helper.keccak256(key)) : bytesToKey(key);
-        return get(keyBytes, keyBytes.length, 0);
+        TrieKeySlice keySlice = TrieKeySlice.fromKey(this.isSecure ? Keccak256Helper.keccak256(key) : key);
+        return get(keySlice, 0);
     }
 
     /**
@@ -308,8 +308,8 @@ public class TrieImpl implements Trie {
      */
     @Override
     public Trie put(byte[] key, byte[] value) {
-        byte[] keyBytes = this.isSecure ? bytesToKey(Keccak256Helper.keccak256(key)) : bytesToKey(key);
-        Trie trie = put(keyBytes, keyBytes.length, 0, value);
+        TrieKeySlice keySlice = TrieKeySlice.fromKey(this.isSecure ? Keccak256Helper.keccak256(key) : key);
+        Trie trie = put(keySlice, 0, value);
 
         return trie == null ? new TrieImpl(this.store, this.isSecure) : trie;
     }
@@ -498,14 +498,14 @@ public class TrieImpl implements Trie {
      * get retrieves the associated value given the key
      *
      * @param key   full key
-     * @param length key total length
      * @param keyPosition  position of key being examined/added
      *
      * @return the associated value, null if the key is not found
      *
      */
     @Nullable
-    private byte[] get(byte[] key, int length, int keyPosition) {
+    private byte[] get(TrieKeySlice key, int keyPosition) {
+        int length = key.length();
         int position = keyPosition;
 
         if (position >= length) {
@@ -520,7 +520,7 @@ public class TrieImpl implements Trie {
                     return null;
                 }
 
-                if (key[position] != sharedPath[k]) {
+                if (key.get(position) != sharedPath[k]) {
                     return null;
                 }
             }
@@ -530,13 +530,13 @@ public class TrieImpl implements Trie {
             }
         }
 
-        Trie node = this.retrieveNode(key[position]);
+        Trie node = this.retrieveNode(key.get(position));
 
         if (node == null) {
             return null;
         }
 
-        return ((TrieImpl)node).get(key, length, position + 1);
+        return ((TrieImpl)node).get(key, position + 1);
     }
 
     /**
@@ -714,15 +714,14 @@ public class TrieImpl implements Trie {
      * put key with associated value, returning a new NewTrie
      *
      * @param key   key to be updated
-     * @param length    total length of key
      * @param keyPosition  current position of the key to be processed
      * @param value     associated value
      *
      * @return the new NewTrie containing the tree with the new key value association
      *
      */
-    private TrieImpl put(byte[] key, int length, int keyPosition, byte[] value) {
-        TrieImpl trie = this.internalPut(key, length, keyPosition, value);
+    private TrieImpl put(TrieKeySlice key, int keyPosition, byte[] value) {
+        TrieImpl trie = this.internalPut(key, keyPosition, value);
 
         // the following code coalesces nodes if needed for delete operation
 
@@ -779,19 +778,20 @@ public class TrieImpl implements Trie {
         return newTrie;
     }
 
-    private TrieImpl internalPut(byte[] key, int length, int keyPosition, byte[] value) {
+    private TrieImpl internalPut(TrieKeySlice key, int keyPosition, byte[] value) {
+        int length = key.length();
         int position = keyPosition;
 
         if (this.encodedSharedPath != null) {
             byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.sharedPathLength);
 
-            int k = lengthOfCommonPath(key, length, keyPosition, sharedPath);
+            int k = key.lengthOfCommonPath(keyPosition, sharedPath);
 
             if (k >= sharedPath.length) {
                 position += sharedPath.length;
             }
             else {
-                return this.split(k).put(key, length, position, value);
+                return this.split(k).put(key, position, value);
             }
         }
 
@@ -812,15 +812,14 @@ public class TrieImpl implements Trie {
 
         if (isEmptyTrie(this.value, this.nodes, this.hashes)) {
             int lshared = length - position;
-            byte[] shared = new byte[lshared];
-            System.arraycopy(key, position, shared, 0, lshared);
-            return new TrieImpl(this.store, PathEncoder.encode(shared), lshared, value, this.isSecure);
+            byte[] sharedEncoded = key.slice(position, length).encode();
+            return new TrieImpl(this.store, sharedEncoded, lshared, value, this.isSecure);
         }
 
         TrieImpl[] newNodes = cloneNodes(true);
         Keccak256[] newHashes = cloneHashes();
 
-        int pos = key[position];
+        int pos = key.get(position);
 
         TrieImpl node = (TrieImpl)retrieveNode(pos);
 
@@ -828,7 +827,7 @@ public class TrieImpl implements Trie {
             node = new TrieImpl(this.store, this.isSecure);
         }
 
-        TrieImpl newNode = node.put(key, length, position + 1, value);
+        TrieImpl newNode = node.put(key, position + 1, value);
 
         // reference equality
         if (newNode == node) {
@@ -846,18 +845,6 @@ public class TrieImpl implements Trie {
         }
 
         return new TrieImpl(this.encodedSharedPath, this.sharedPathLength, this.value, newNodes, newHashes, this.store).withSecure(this.isSecure);
-    }
-
-    private int lengthOfCommonPath(byte[] key, int length, int position, byte[] sharedPath) {
-        int k;
-
-        for (k = 0; k < sharedPath.length && position + k < length; k++) {
-            if (sharedPath[k] != key[position + k]) {
-                break;
-            }
-        }
-
-        return k;
     }
 
     private TrieImpl split(int nshared) {
@@ -973,37 +960,6 @@ public class TrieImpl implements Trie {
         }
 
         return true;
-    }
-
-    /**
-     * bytesToKey expand key to bytes according to node arity
-     * Example: if arity is 16 (16 subnodes per node) each key byte is expanded to
-     * two bytes, representing two nibbles
-     * if arity is 2 (binary trie) each original byte is expanded 8 bytes, each representing
-     * a bit value of the original byte
-     *
-     * @param bytes original key
-     *
-     * @return expanded key
-     */
-    public static byte[] bytesToKey(byte[] bytes) {
-        int factor = 8;
-        int mask = 0x01;
-        int nbits = 1;
-
-        byte[] keyBytes = new byte[bytes.length * factor];
-        int l = bytes.length;
-        int j = 0;
-
-        for (int k = 0; k < l; k++) {
-            byte b = bytes[k];
-
-            for (int i = 0; i < factor; i++) {
-                keyBytes[j++] = (byte) ((b >> (nbits * (factor - i - 1))) & mask);
-            }
-        }
-
-        return keyBytes;
     }
 
     public Trie getSnapshotTo(Keccak256 hash) {
