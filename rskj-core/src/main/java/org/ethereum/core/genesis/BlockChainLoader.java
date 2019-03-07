@@ -161,6 +161,9 @@ public class BlockChainLoader {
             BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
             blockchain.setStatus(bestBlock, totalDifficulty);
 
+            // we need to do this because when bestBlock == null we touch the genesis' state root
+            genesis.setStateRoot(repository.getSnapshotTo(genesis.getStateRoot()).getRoot());
+
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     blockchain.getBestBlock().getNumber(),
                     blockchain.getTotalDifficulty().toString(),
