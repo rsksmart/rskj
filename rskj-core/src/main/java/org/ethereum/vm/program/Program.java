@@ -1439,6 +1439,11 @@ public class Program {
         // Charge for endowment - is not reversible by rollback
         track.transfer(senderAddress, contextAddress, new Coin(msg.getEndowment().getData()));
 
+        // we are assuming that transfer is already creating destination account even if the amount is zero
+        if (!track.isContract(codeAddress)) {
+            track.setupContract(codeAddress);
+        }
+
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
             this.getResult().addCallCreate(data,
