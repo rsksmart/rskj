@@ -247,10 +247,14 @@ public class TestRunner {
             byte[] gaslimit = env.getCurrentGasLimit();
 
             // Origin and caller need to exist in order to be able to execute
-            if (repository.getAccountState(new RskAddress(origin)) == null)
-                repository.createAccount(new RskAddress(origin));
-            if (repository.getAccountState(new RskAddress(caller)) == null)
-                repository.createAccount(new RskAddress(caller));
+            RskAddress originAddress = new RskAddress(origin);
+            if (repository.getAccountState(originAddress) == null) {
+                repository.createAccount(originAddress);
+            }
+            RskAddress callerAddress = new RskAddress(caller);
+            if (repository.getAccountState(callerAddress) == null) {
+                repository.createAccount(callerAddress);
+            }
 
             ProgramInvoke programInvoke = new ProgramInvokeImpl(address, origin, caller, balance,
                     gasPrice, gas, callValue, msgData, lastHash, coinbase,
@@ -639,7 +643,7 @@ public class TestRunner {
 
             track.addBalance(addr, accountState.getBalance());
             track.setNonce(addr, new BigInteger(1, accountState.getNonce()));
-
+            track.setupContract(addr);
             track.saveCode(addr, accountState.getCode());
 
             for (DataWord storageKey : accountState.getStorage().keySet()) {
