@@ -2614,6 +2614,48 @@ public class BridgeTest {
         });
     }
 
+    @Test
+    public void receiveHeadersGasCost_beforeDynamicCost() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskipPublicReceiveHeaders()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        Transaction txMock = mock(Transaction.class);
+        when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
+        Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
+        for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
+            byte[][] headers = new byte[numberOfHeaders][];
+            for (int i = 0; i < numberOfHeaders; i++) headers[i] = Hex.decode("00112233445566778899");
+
+            byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+
+            Assert.assertEquals(22000L + 2 * data.length, bridge.getGasForData(data));
+        }
+    }
+
+    @Test
+    public void receiveHeadersGasCost_afterDynamicCost() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskipPublicReceiveHeaders()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Transaction txMock = mock(Transaction.class);
+        when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
+        Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
+        for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
+            byte[][] headers = new byte[numberOfHeaders][];
+            for (int i = 0; i < numberOfHeaders; i++) headers[i] = Hex.decode("00112233445566778899");
+
+            byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+
+            Assert.assertEquals(100_000L + 2 * data.length + 100 * numberOfHeaders, bridge.getGasForData(data));
+        }
+    }
+
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
         return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
