@@ -69,19 +69,46 @@ public class TrieKeySlice {
         return new TrieKeySlice(expandedKey, newOffset, newLimit);
     }
 
-    public int lengthOfCommonPath(int position, byte[] sharedPath) {
-        int maxCommonLengthPossible = Math.min(length() - position, sharedPath.length);
+    public TrieKeySlice commonPath(TrieKeySlice other) {
+        int maxCommonLengthPossible = Math.min(length(), other.length());
         for (int i = 0; i < maxCommonLengthPossible; i++) {
-            if (sharedPath[i] != get(position + i)) {
-                return i;
+            if (get(i) != other.get(i)) {
+                return slice(0, i);
             }
         }
 
-        return maxCommonLengthPossible;
+        return slice(0, maxCommonLengthPossible);
+    }
+
+    /**
+     * Rebuild a shared path as [...this, implicitByte, ...childSharedPath]
+     */
+    public TrieKeySlice rebuildSharedPath(byte implicitByte, TrieKeySlice childSharedPath) {
+        int length = length();
+        int childSharedPathLength = childSharedPath.length();
+        int newLength = length + 1 + childSharedPathLength;
+        byte[] newExpandedKey = Arrays.copyOfRange(expandedKey, offset, offset + newLength);
+        newExpandedKey[length] = implicitByte;
+        System.arraycopy(
+                childSharedPath.expandedKey, childSharedPath.offset,
+                newExpandedKey, length + 1, childSharedPathLength
+        );
+        return new TrieKeySlice(newExpandedKey, 0, newExpandedKey.length);
     }
 
     public static TrieKeySlice fromKey(byte[] key) {
         byte[] expandedKey = PathEncoder.decode(key, key.length * 8);
         return new TrieKeySlice(expandedKey, 0, expandedKey.length);
+    }
+
+    public static TrieKeySlice fromEncoded(byte[] src, int offset, int keyLength, int encodedLength) {
+        // TODO(mc) avoid copying by passing the indices to PathEncoder.decode
+        byte[] encodedKey = Arrays.copyOfRange(src, offset, offset + encodedLength);
+        byte[] expandedKey = PathEncoder.decode(encodedKey, keyLength);
+        return new TrieKeySlice(expandedKey, 0, expandedKey.length);
+    }
+
+    public static TrieKeySlice empty() {
+        return new TrieKeySlice(new byte[0], 0, 0);
     }
 }
