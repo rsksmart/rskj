@@ -227,10 +227,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Long functionCost;
         Long totalCost;
         if (bridgeParsedData == null) {
-            functionCost = BridgeMethods.RELEASE_BTC.getCost();
+            functionCost = BridgeMethods.RELEASE_BTC.getCost(this, activations, new Object[0]);
             totalCost = functionCost;
         } else {
-            functionCost = bridgeParsedData.bridgeMethod.getCost();
+            functionCost = bridgeParsedData.bridgeMethod.getCost(this, activations, bridgeParsedData.args);
             int dataCost = data == null ? 0 : data.length * 2;
 
             totalCost = functionCost + dataCost;
@@ -288,6 +288,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.rskExecutionBlock = rskExecutionBlock;
         this.repository = repository;
         this.logs = logs;
+        this.bridgeSupport = setup();
     }
 
     @Override
@@ -319,8 +320,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 logger.info(errorMessage);
                 throw new BridgeIllegalArgumentException(errorMessage);
             }
-
-            this.bridgeSupport = setup();
 
             Optional<?> result;
             try {
@@ -567,6 +566,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return blockHash.getBytes();
+    }
+
+    public long getBtcTransactionConfirmationsGetCost(Object[] args) {
+        Sha256Hash btcBlockHash = Sha256Hash.wrap((byte[]) args[1]);
+
+        return bridgeSupport.getBtcTransactionConfirmationsGetCost(btcBlockHash);
     }
 
     public int getBtcTransactionConfirmations(Object[] args)
