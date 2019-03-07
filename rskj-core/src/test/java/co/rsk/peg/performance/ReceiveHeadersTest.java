@@ -40,6 +40,21 @@ import java.util.List;
 public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     private BtcBlock lastBlock;
 
+    // This is here for profiling with any external tools (e.g., visualVM)
+    public static void main(String args[]) throws Exception {
+        setupA();
+        setupB();
+        ReceiveHeadersTest test = new ReceiveHeadersTest();
+        test.setupCpuTime();
+
+        System.out.println("Ready\n");
+        System.in.read();
+        System.out.println("Going!\n");
+        test.receiveHeadersSingleBlock();
+
+        test.teardownCpuTime();
+    }
+
     @Test
     public void receiveHeadersSingleBlock() throws IOException {
         setQuietMode(true);
@@ -47,7 +62,6 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         doReceiveHeaders(100, 1);
         setQuietMode(false);
         System.out.print("Done!\n");
-
 
         ExecutionStats stats = new ExecutionStats("receiveHeaders-singleBlock");
 
