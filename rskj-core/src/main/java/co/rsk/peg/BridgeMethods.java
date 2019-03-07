@@ -167,9 +167,9 @@ public enum BridgeMethods {
                     new String[]{"bytes32", "bytes32", "uint256", "bytes32[]"},
                     new String[]{"int256"}
             ),
-            22000L, //TODO ESTIMATE GAS
+            fromMethod(Bridge::getBtcTransactionConfirmationsGetCost),
             (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
-            blockchainConfig -> blockchainConfig.isRskipGetBtcTransactionConfirmations(),
+            activations -> activations.isActive(RSKIP122),
             false
     ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(

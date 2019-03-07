@@ -53,6 +53,7 @@ public class ActivationConfigTest {
             "    rskip119: secondFork,",
             "    rskip106: secondFork,",
             "    rskip120: secondFork,",
+            "    rskip122: secondFork,",
             "    rskip123: secondFork,",
             "    rskip124: secondFork,",
             "    rskip125: secondFork",
