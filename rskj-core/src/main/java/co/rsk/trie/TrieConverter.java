@@ -1,6 +1,7 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
@@ -20,8 +21,8 @@ public class TrieConverter {
 
     public TrieConverter() {
         store = new TrieStoreImpl(new HashMapDB());
-        cacheHashes = new HashMap<>();
-        cacheStorage = new HashMap<>();
+        cacheHashes = new MaxSizeHashMap<>(1_000_000, true);
+        cacheStorage = new MaxSizeHashMap<>(1_000_000, true);
     }
 
     private static byte[] concat(byte[] first, byte b) {

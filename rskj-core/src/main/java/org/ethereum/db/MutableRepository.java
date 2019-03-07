@@ -264,7 +264,8 @@ public class MutableRepository implements Repository {
 
     @Override
     public boolean isContract(RskAddress addr) {
-        return getContractDetails(addr) != null;
+        byte[] prefix = getAccountStoragePrefixKey(addr, trie.isSecure());
+        return this.trie.get(prefix)!=null;
     }
 
 
