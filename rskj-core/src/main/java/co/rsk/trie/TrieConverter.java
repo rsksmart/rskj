@@ -3,6 +3,7 @@ package co.rsk.trie;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -10,7 +11,6 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.util.RLP;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -32,8 +32,8 @@ public class TrieConverter {
 //    private final List<String> dump = new ArrayList<>();
 
     public TrieConverter() {
-        cacheHashes = new HashMap<>();
-        cacheStorage = new HashMap<>();
+        cacheHashes = new MaxSizeHashMap<>(500_000, true);
+        cacheStorage = new MaxSizeHashMap<>(600_000, true);
     }
 
     public byte[] getOrchidAccountTrieRoot(TrieImpl src) {

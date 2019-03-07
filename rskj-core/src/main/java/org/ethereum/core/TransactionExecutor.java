@@ -281,6 +281,12 @@ public class TransactionExecutor {
                 try {
                     byte[] out = precompiledContract.execute(tx.getData());
                     result.setHReturn(out);
+                    if (!track.isExist(targetAddress)) {
+                        track.createAccount(targetAddress);
+                        track.setupContract(targetAddress);
+                    } else if (!track.isContract(targetAddress)) {
+                        track.setupContract(targetAddress);
+                    }
                 } catch (RuntimeException e) {
                     result.setException(e);
                 }
