@@ -488,6 +488,7 @@ public class RepositoryImplTest {
         RskAddress rskAddress = TestUtils.randomAddress();
 
         repository.createAccount(rskAddress);
+        repository.setupContract(rskAddress);
         repository.saveCode(rskAddress, TestUtils.randomBytes(32));
 
         Assert.assertThat(repository.isContract(rskAddress), is(true));
