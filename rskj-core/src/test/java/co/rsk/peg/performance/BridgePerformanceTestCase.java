@@ -138,6 +138,20 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             BridgeStorageProviderInitializer storageInitializer,
             TxBuilder txBuilder,
             HeightProvider heightProvider,
+            ExecutionStats stats) {
+        return executeAndAverage(
+                name, times, abiEncoder, storageInitializer,
+                txBuilder, heightProvider, stats, null
+        );
+    }
+
+    protected ExecutionStats executeAndAverage(
+            String name,
+            int times,
+            ABIEncoder abiEncoder,
+            BridgeStorageProviderInitializer storageInitializer,
+            TxBuilder txBuilder,
+            HeightProvider heightProvider,
             ExecutionStats stats,
             ResultCallback resultCallback) {
 

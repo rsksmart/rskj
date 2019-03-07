@@ -49,6 +49,7 @@ import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
@@ -434,6 +435,8 @@ public class BridgeTest {
         when(btcParamsMock.getDefaultSerializer()).thenReturn(spySerializer);
 
         Whitebox.setInternalState(bridge, "bridgeConstants", bridgeConstantsMock);
+
+        bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         bridge.execute(Bridge.RECEIVE_HEADERS.encode(new Object[]{headersSerialized}));
 
@@ -1301,10 +1304,12 @@ public class BridgeTest {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
+
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.getFederatorPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
+        bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         Assert.assertTrue(Arrays.equals(new byte[]{10},
                 (byte[]) BridgeMethods.GET_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
@@ -1356,12 +1361,14 @@ public class BridgeTest {
 
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
+
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.getFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Number>getArgument(0).longValue()).toString()
                         .concat((invocation.<FederationMember.KeyType>getArgument(1)).getValue()).getBytes()
         );
+        bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         Assert.assertTrue(Arrays.equals("10btc".getBytes(),
                 (byte[]) BridgeMethods.GET_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().decodeResult(
@@ -1430,10 +1437,13 @@ public class BridgeTest {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
+
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.getRetiringFederatorPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
+        bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
+
 
         Assert.assertTrue(Arrays.equals(new byte[]{10},
                 (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
@@ -1483,12 +1493,14 @@ public class BridgeTest {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
+
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.getRetiringFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Number>getArgument(0).longValue()).toString()
                         .concat((invocation.<FederationMember.KeyType>getArgument(1)).getValue()).getBytes()
         );
+        bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         Assert.assertTrue(Arrays.equals("10btc".getBytes(),
                 (byte[]) BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().decodeResult(
@@ -1525,10 +1537,12 @@ public class BridgeTest {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
+
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.getPendingFederatorPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
+        bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         Assert.assertTrue(Arrays.equals(new byte[]{10},
                 (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
@@ -1578,12 +1592,14 @@ public class BridgeTest {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
+
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.getPendingFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class))).then((InvocationOnMock invocation) ->
                 BigInteger.valueOf(invocation.<Number>getArgument(0).longValue()).toString()
                         .concat((invocation.<FederationMember.KeyType>getArgument(1)).getValue()).getBytes()
         );
+        bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         Assert.assertTrue(Arrays.equals("10btc".getBytes(),
                 (byte[]) BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().decodeResult(
@@ -1621,12 +1637,15 @@ public class BridgeTest {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
         Transaction txMock = mock(Transaction.class);
+
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("add", new byte[][] { Hex.decode("aabbccdd") })))
                 .thenReturn(123);
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         Assert.assertEquals(123,
                 ((BigInteger)BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
@@ -1676,13 +1695,16 @@ public class BridgeTest {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
         Transaction txMock = mock(Transaction.class);
+
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("add-multi", new byte[][] {
                 Hex.decode("aabb"), Hex.decode("ccdd"), Hex.decode("eeff")
         }))).thenReturn(123);
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         Assert.assertEquals(123,
                 ((BigInteger)BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY.getFunction().decodeResult(
@@ -2033,6 +2055,7 @@ public class BridgeTest {
     public void executeMethodWithOnlyLocalCallsAllowed_localCallTx() throws Exception {
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(true);
+
         Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         spiedBridge.init(tx, getGenesisBlock(), null, null, null, null);
 
@@ -2054,6 +2077,7 @@ public class BridgeTest {
 
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(false);
+
         Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         spiedBridge.init(tx, getGenesisBlock(), null, null, null, null);
 
@@ -2101,6 +2125,7 @@ public class BridgeTest {
     private void executeAndCheckMethodWithAnyCallsAllowed(boolean localCall) throws Exception {
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(localCall);
+
         Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
         spiedBridge.init(tx, getGenesisBlock(), null, null, null, null);
 
@@ -2135,17 +2160,15 @@ public class BridgeTest {
 
     @Test
     //TODO RENAME when SecondFork is renamed
-    public void getBtcTransactionConfirmationsBeforeSecondFork() throws IOException {
-        GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(false);
-        config.setBlockchainConfig(mockedConfig);
+    public void getBtcTransactionConfirmationsBeforeSecondFork() throws Exception {
+        ActivationConfig spiedActivationConfig = spy(activationConfig);
+        when(spiedActivationConfig.isActive(RSKIP122,anyLong())).thenReturn(false);
 
-        Repository repository = createRepositoryImpl(config);
-        Repository track = repository.startTracking();
-
-        Transaction mockedTransaction = mock(Transaction.class);
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
+        Transaction txMock = mock(Transaction.class);
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
 
         Object[] params = new Object[]{ new byte[0], new byte[0], BigInteger.valueOf(1), new byte[3][] };
         Assert.assertNull(bridge.execute(Bridge.GET_BTC_TRANSACTION_CONFIRMATIONS.encode(params)));
@@ -2153,14 +2176,12 @@ public class BridgeTest {
 
     @Test
     public void getBtcTransactionConfirmationsAfterSecondFork_ok() throws Exception {
-        GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
-        config.setBlockchainConfig(mockedConfig);
-
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, getGenesisBlock(), null, null, null, null);
+        Transaction txMock = mock(Transaction.class);
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
 
         byte[] btcTxHash = Sha256Hash.of(Hex.decode("aabbcc")).getBytes();
         byte[] btcBlockHash = Sha256Hash.of(Hex.decode("ddeeff")).getBytes();
@@ -2210,12 +2231,9 @@ public class BridgeTest {
 
     @Test
     public void getBtcTransactionConfirmationsAfterSecondFork_errorInBridgeSupport() throws Exception {
-        GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
-        config.setBlockchainConfig(mockedConfig);
-
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, getGenesisBlock(), null, null, null, null);
+        Transaction txMock = mock(Transaction.class);
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
 
@@ -2274,12 +2292,9 @@ public class BridgeTest {
 
     @Test
     public void getBtcTransactionConfirmationsAfterSecondFork_merkleBranchConstructionError() throws Exception {
-        GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
-        config.setBlockchainConfig(mockedConfig);
-
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, getGenesisBlock(), null, null, null, null);
+        Transaction txMock = mock(Transaction.class);
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
 
@@ -2320,6 +2335,64 @@ public class BridgeTest {
             Assert.assertEquals(InvalidMerkleBranchException.class, e.getCause().getClass());
             verify(bridgeSupportMock, never()).getBtcTransactionConfirmations(any(), any(), any());
         }
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_gasCost() throws Exception {
+        PowerMockito.mockStatic(BridgeUtils.class);
+
+        Transaction txMock = mock(Transaction.class);
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+
+        PowerMockito.when(BridgeUtils.isContractTx(any(Transaction.class))).thenReturn(false);
+        //PowerMockito.when(BridgeUtils.isFreeBridgeTx(any(Transaction.class), any(long.class), any(BlockchainNetConfig.class))).thenReturn(false);
+
+        byte[] btcTxHash = Sha256Hash.of(Hex.decode("aabbcc")).getBytes();
+        byte[] btcBlockHash = Sha256Hash.of(Hex.decode("ddeeff")).getBytes();
+        byte[][] merkleBranchHashes = new byte[][] {
+                Sha256Hash.of(Hex.decode("11")).getBytes(),
+                Sha256Hash.of(Hex.decode("22")).getBytes(),
+                Sha256Hash.of(Hex.decode("33")).getBytes(),
+        };
+        BigInteger merkleBranchBits = BigInteger.valueOf(123);
+
+        when(bridgeSupportMock.getBtcTransactionConfirmationsGetCost(Sha256Hash.wrap(btcBlockHash))).thenReturn(1234L);
+
+        CallTransaction.Function fn = BridgeMethods.GET_BTC_TRANSACTION_CONFIRMATIONS.getFunction();
+
+        // *** Hack to bypass a current bytes32 solidity type encoding bug *** //
+        SolidityType.Bytes32Type bytes32Spy = spy((SolidityType.Bytes32Type) fn.inputs[0].type);
+        when(bytes32Spy.encode(any(Object.class))).thenAnswer((InvocationOnMock m) -> m.getArgument(0));
+
+        // Overwriting bytes32 types inputs with a spy that uses the identity function as the encoding method (which is what we need)
+        SolidityType oldArg0, oldArg1, oldArg3ElementType;
+
+        oldArg0 = fn.inputs[0].type;
+        oldArg1 = fn.inputs[1].type;
+        oldArg3ElementType = (SolidityType) Whitebox.getInternalState(fn.inputs[3].type, "elementType");
+
+        fn.inputs[0].type = bytes32Spy;
+        fn.inputs[1].type = bytes32Spy;
+        Whitebox.setInternalState(fn.inputs[3].type, "elementType", bytes32Spy);
+        // *** End of hack *** //
+
+        byte[] data = fn.encode(new Object[]{
+                btcTxHash,
+                btcBlockHash,
+                merkleBranchBits,
+                merkleBranchHashes
+        });
+
+        // *** Unhack! *** //
+        fn.inputs[0].type = oldArg0;
+        fn.inputs[1].type = oldArg1;
+        Whitebox.setInternalState(fn.inputs[3].type, "elementType", oldArg3ElementType);
+        // *** End of unhack! *** //
+
+        Assert.assertEquals(2*data.length + 1234L, bridge.getGasForData(data));
     }
 
     @Test

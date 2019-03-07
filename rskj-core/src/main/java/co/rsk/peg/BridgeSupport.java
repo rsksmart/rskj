@@ -1069,6 +1069,42 @@ public class BridgeSupport {
         return current.getHeader().getHash();
     }
 
+    public Long getBtcTransactionConfirmationsGetCost(Sha256Hash btcBlockHash) {
+        final long BASIC_COST = 13_600;
+        final long STEP_COST = 70;
+
+        // Dynamic cost based on the depth of the block that contains
+        // the transaction. Find such depth first, then calculate
+        // the cost.
+        Context.propagate(btcContext);
+        try {
+            this.ensureBtcBlockStore();
+            final StoredBlock block = btcBlockStore.getFromCache(btcBlockHash);
+
+            // Block not found, default to basic cost
+            if (block == null) {
+                return BASIC_COST;
+            }
+
+            final int bestChainHeight = getBtcBlockchainBestChainHeight();
+
+            // Make sure calculated depth is >= 0
+            final int blockDepth = Math.max(0, bestChainHeight - block.getHeight());
+
+            // Block too deep, default to basic cost
+            if (blockDepth > BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH) {
+                return BASIC_COST;
+            }
+
+            return BASIC_COST + blockDepth*STEP_COST;
+        } catch (IOException | BlockStoreException e) {
+            logger.warn("getBtcTransactionConfirmations: there was a problem " +
+                    "gathering the block depth while calculating the gas cost. " +
+                    "Defaulting to basic cost.", e);
+            return BASIC_COST;
+        }
+    }
+
     /**
      * @param btcTxHash The BTC transaction Hash
      * @param btcBlockHash The BTC block hash
