@@ -37,7 +37,7 @@ public enum BridgeMethods {
                     new String[]{"bytes"},
                     new String[]{"int256"}
             ),
-            13000L,
+            fixedCost(13000L),
             (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKey,
             blockchainConfig -> !blockchainConfig.isRskip123(),
             false
@@ -48,7 +48,7 @@ public enum BridgeMethods {
                     new String[]{"bytes", "bytes", "bytes"},
                     new String[]{"int256"}
             ),
-            13000L,
+            fixedCost(13000L),
             (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKeyMultikey,
             blockchainConfig -> blockchainConfig.isRskip123(),
             false
@@ -59,7 +59,7 @@ public enum BridgeMethods {
                     new String[]{"string", "int256"},
                     new String[]{"int256"}
             ),
-            25000L,
+            fixedCost(25000L),
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
             blockChainConfig -> !blockChainConfig.isRskip87(),
             false
@@ -70,7 +70,7 @@ public enum BridgeMethods {
                     new String[]{"string", "int256"},
                     new String[]{"int256"}
             ),
-            25000L, // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
+            fixedCost(25000L), // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
             blockChainConfig -> blockChainConfig.isRskip87(),
             false
@@ -81,7 +81,7 @@ public enum BridgeMethods {
                     new String[]{"string"},
                     new String[]{"int256"}
             ),
-            25000L, // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
+            fixedCost(25000L), // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
             (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
             blockChainConfig -> blockChainConfig.isRskip87(),
             false
@@ -92,7 +92,7 @@ public enum BridgeMethods {
                     new String[]{"bytes", "bytes[]", "bytes"},
                     new String[]{}
             ),
-            70000L,
+            fixedCost(70000L),
             Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::addSignature, "addSignature"),
             false
     ),
@@ -102,7 +102,7 @@ public enum BridgeMethods {
                     new String[]{"bytes"},
                     new String[]{"int256"}
             ),
-            38000L,
+            fixedCost(38000L),
             (BridgeMethodExecutorTyped) Bridge::commitFederation,
             false
     ),
@@ -112,7 +112,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            11000L,
+            fixedCost(11000L),
             (BridgeMethodExecutorTyped) Bridge::createFederation,
             false
     ),
@@ -122,7 +122,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int"}
             ),
-            19000L,
+            fixedCost(19000L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestChainHeight,
             true
     ),
@@ -132,7 +132,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int"}
             ),
-            20000L,
+            fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight,
             blockchainConfig -> blockchainConfig.isRskip89(),
             true
@@ -143,7 +143,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"string[]"}
             ),
-            76000L,
+            fixedCost(76000L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockLocator,
             blockchainConfig -> !blockchainConfig.isRskip89(),
             true
@@ -154,7 +154,7 @@ public enum BridgeMethods {
                     new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            20000L,
+            fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth,
             blockchainConfig -> blockchainConfig.isRskip89(),
             true
@@ -165,7 +165,7 @@ public enum BridgeMethods {
                     new String[]{"bytes32", "bytes32", "uint256", "bytes32[]"},
                     new String[]{"int256"}
             ),
-            22000L, //TODO ESTIMATE GAS
+            fixedCost(22000L), //TODO ESTIMATE GAS
             (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
             blockchainConfig -> blockchainConfig.isRskipGetBtcTransactionConfirmations(),
             false
@@ -176,7 +176,7 @@ public enum BridgeMethods {
                     new String[]{"string"},
                     new String[]{"int64"}
             ),
-            22000L,
+            fixedCost(22000L),
             (BridgeMethodExecutorTyped) Bridge::getBtcTxHashProcessedHeight,
             true
     ),
@@ -186,7 +186,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"string"}
             ),
-            11000L,
+            fixedCost(11000L),
             (BridgeMethodExecutorTyped) Bridge::getFederationAddress,
             true
     ),
@@ -196,7 +196,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            10000L,
+            fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::getFederationCreationBlockNumber,
             true
     ),
@@ -206,7 +206,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            10000L,
+            fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::getFederationCreationTime,
             true
     ),
@@ -216,7 +216,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            10000L,
+            fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::getFederationSize,
             true
     ),
@@ -226,7 +226,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            11000L,
+            fixedCost(11000L),
             (BridgeMethodExecutorTyped) Bridge::getFederationThreshold,
             true
     ),
@@ -236,7 +236,7 @@ public enum BridgeMethods {
                     new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            10000L,
+            fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKey,
             blockChainConfig -> !blockChainConfig.isRskip123(),
             true
@@ -247,7 +247,7 @@ public enum BridgeMethods {
                     new String[]{"int256", "string"},
                     new String[]{"bytes"}
             ),
-            10000L,
+            fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyOfType,
             blockChainConfig -> blockChainConfig.isRskip123(),
             true
@@ -258,7 +258,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            2000L,
+            fixedCost(2000L),
             (BridgeMethodExecutorTyped) Bridge::getFeePerKb,
             true
     ),
@@ -268,7 +268,7 @@ public enum BridgeMethods {
                     new String[]{"int256"},
                     new String[]{"string"}
             ),
-            16000L,
+            fixedCost(16000L),
             (BridgeMethodExecutorTyped) Bridge::getLockWhitelistAddress,
             true
     ),
@@ -278,7 +278,7 @@ public enum BridgeMethods {
                     new String[]{"string"},
                     new String[]{"int256"}
             ),
-            16000L,
+            fixedCost(16000L),
             (BridgeMethodExecutorTyped) Bridge::getLockWhitelistEntryByAddress,
             blockchainConfig -> blockchainConfig.isRskip87(),
             true
@@ -289,7 +289,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            16000L,
+            fixedCost(16000L),
             (BridgeMethodExecutorTyped) Bridge::getLockWhitelistSize,
             true
     ),
@@ -299,7 +299,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int"}
             ),
-            2000L,
+            fixedCost(2000L),
             (BridgeMethodExecutorTyped) Bridge::getMinimumLockTxValue,
             true
     ),
@@ -309,7 +309,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"bytes"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getPendingFederationHash,
             true
     ),
@@ -319,7 +319,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getPendingFederationSize,
             true
     ),
@@ -329,7 +329,7 @@ public enum BridgeMethods {
                     new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKey,
             blockChainConfig -> !blockChainConfig.isRskip123(),
             true
@@ -340,7 +340,7 @@ public enum BridgeMethods {
                     new String[]{"int256", "string"},
                     new String[]{"bytes"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKeyOfType,
             blockChainConfig -> blockChainConfig.isRskip123(),
             true
@@ -351,7 +351,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"string"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederationAddress,
             true
     ),
@@ -361,7 +361,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederationCreationBlockNumber,
             true
     ),
@@ -371,7 +371,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederationCreationTime,
             true
     ),
@@ -381,7 +381,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederationSize,
             true
     ),
@@ -391,7 +391,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederationThreshold,
             true
     ),
@@ -401,7 +401,7 @@ public enum BridgeMethods {
                     new String[]{"int256"},
                     new String[]{"bytes"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKey,
             blockChainConfig -> !blockChainConfig.isRskip123(),
             true
@@ -412,7 +412,7 @@ public enum BridgeMethods {
                     new String[]{"int256", "string"},
                     new String[]{"bytes"}
             ),
-            3000L,
+            fixedCost(3000L),
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKeyOfType,
             blockChainConfig -> blockChainConfig.isRskip123(),
             true
@@ -423,7 +423,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"bytes"}
             ),
-            4000L,
+            fixedCost(4000L),
             (BridgeMethodExecutorTyped) Bridge::getStateForBtcReleaseClient,
             true
     ),
@@ -433,7 +433,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"bytes"}
             ),
-            3_000_000L,
+            fixedCost(3_000_000L),
             (BridgeMethodExecutorTyped) Bridge::getStateForDebugging,
             true
     ),
@@ -443,7 +443,7 @@ public enum BridgeMethods {
                     new String[]{"string"},
                     new String[]{"bool"}
             ),
-            23000L,
+            fixedCost(23000L),
             (BridgeMethodExecutorTyped) Bridge::isBtcTxHashAlreadyProcessed,
             true
     ),
@@ -453,7 +453,7 @@ public enum BridgeMethods {
                     new String[]{"bytes[]"},
                     new String[]{}
             ),
-            22000L,
+            fromMethod(Bridge::receiveHeadersGetCost),
             Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::receiveHeaders, "receiveHeaders"),
             false
     ),
@@ -463,7 +463,7 @@ public enum BridgeMethods {
                     new String[]{"bytes", "int", "bytes"},
                     new String[]{}
             ),
-            22000L,
+            fixedCost(22000L),
             Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::registerBtcTransaction, "registerBtcTransaction"),
             false
     ),
@@ -473,7 +473,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{}
             ),
-            23000L,
+            fixedCost(23000L),
             (BridgeMethodExecutorVoid) Bridge::releaseBtc,
             false
     ),
@@ -483,7 +483,7 @@ public enum BridgeMethods {
                     new String[]{"string"},
                     new String[]{"int256"}
             ),
-            24000L,
+            fixedCost(24000L),
             (BridgeMethodExecutorTyped) Bridge::removeLockWhitelistAddress,
             false
     ),
@@ -493,7 +493,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            12000L,
+            fixedCost(12000L),
             (BridgeMethodExecutorTyped) Bridge::rollbackFederation,
             false
     ),
@@ -503,7 +503,7 @@ public enum BridgeMethods {
                     new String[]{"int256"},
                     new String[]{"int256"}
             ),
-            24000L,
+            fixedCost(24000L),
             (BridgeMethodExecutorTyped) Bridge::setLockWhitelistDisableBlockDelay,
             false
     ),
@@ -513,7 +513,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{}
             ),
-            48000L,
+            fixedCost(48000L),
             Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::updateCollections, "updateCollections"),
             false
     ),
@@ -523,10 +523,26 @@ public enum BridgeMethods {
                     new String[]{"int256"},
                     new String[]{"int256"}
             ),
-            10000L,
+            fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::voteFeePerKbChange,
             false
     );
+
+    private interface CostProvider {
+        long getCost(Bridge bridge, BlockchainConfig config, Object[] args);
+    }
+
+    private interface BridgeCostProvider {
+        long getCost(Bridge bridge, Object[] args);
+    }
+
+    private static CostProvider fixedCost(long cost) {
+        return (Bridge bridge, BlockchainConfig config, Object[] args) -> cost;
+    }
+
+    private static CostProvider fromMethod(BridgeCostProvider bridgeCostProvider) {
+        return (Bridge bridge, BlockchainConfig config, Object[] args) -> bridgeCostProvider.getCost(bridge, args);
+    }
 
     private static final Map<ByteArrayWrapper, BridgeMethods> SIGNATURES = Stream.of(BridgeMethods.values())
                         .collect(Collectors.toMap(
@@ -534,18 +550,18 @@ public enum BridgeMethods {
                             Function.identity()
                         ));
     private final CallTransaction.Function function;
-    private final long cost;
+    private final CostProvider costProvider;
     private final Function<BlockchainConfig, Boolean> isEnabledFunction;
     private final BridgeMethodExecutor executor;
     private final boolean onlyAllowsLocalCalls;
 
-    BridgeMethods(CallTransaction.Function function, long cost, BridgeMethodExecutor executor, boolean onlyAllowsLocalCalls) {
-        this(function, cost, executor, blockchainConfig -> Boolean.TRUE, onlyAllowsLocalCalls);
+    BridgeMethods(CallTransaction.Function function, CostProvider costProvider, BridgeMethodExecutor executor, boolean onlyAllowsLocalCalls) {
+        this(function, costProvider, executor, blockchainConfig -> Boolean.TRUE, onlyAllowsLocalCalls);
     }
 
-    BridgeMethods(CallTransaction.Function function, long cost, BridgeMethodExecutor executor, Function<BlockchainConfig, Boolean> isEnabled, boolean onlyAllowsLocalCalls) {
+    BridgeMethods(CallTransaction.Function function, CostProvider costProvider, BridgeMethodExecutor executor, Function<BlockchainConfig, Boolean> isEnabled, boolean onlyAllowsLocalCalls) {
         this.function = function;
-        this.cost = cost;
+        this.costProvider = costProvider;
         this.executor = executor;
         this.isEnabledFunction = isEnabled;
         this.onlyAllowsLocalCalls = onlyAllowsLocalCalls;
@@ -562,8 +578,8 @@ public enum BridgeMethods {
         return this.isEnabledFunction.apply(blockchainConfig);
     }
 
-    public long getCost() {
-        return cost;
+    public long getCost(Bridge bridge, BlockchainConfig config, Object[] args) {
+        return costProvider.getCost(bridge, config, args);
     }
 
     public BridgeMethodExecutor getExecutor() {

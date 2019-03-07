@@ -227,10 +227,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Long functionCost;
         Long totalCost;
         if (bridgeParsedData == null) {
-            functionCost = BridgeMethods.RELEASE_BTC.getCost();
+            functionCost = BridgeMethods.RELEASE_BTC.getCost(this, blockchainConfig, new Object[0]);
             totalCost = functionCost;
         } else {
-            functionCost = bridgeParsedData.bridgeMethod.getCost();
+            functionCost = bridgeParsedData.bridgeMethod.getCost(this, blockchainConfig, bridgeParsedData.args);
             int dataCost = data == null ? 0 : data.length * 2;
 
             totalCost = functionCost + dataCost;
@@ -367,6 +367,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             logger.warn("Exception onBlock", e);
             throw new RuntimeException("Exception onBlock", e);
         }
+    }
+
+    public long receiveHeadersGetCost(Object[] args) {
+        // Old, private method fixed cost. Only applies before the corresponding RSKIP
+        if (!blockchainConfig.isRskipPublicReceiveHeaders()) {
+            return 22000L;
+        }
+
+        // Dynamic cost based on the number of headers
+        // TODO: define and implement this. At the moment the cost is set to a higher fixed value
+        // TODO: plus the number of headers actually received times 100
+        final int numberOfHeaders = ((Object[]) args[0]).length;
+        return 100_000L + numberOfHeaders * 100;
     }
 
     public void receiveHeaders(Object[] args)
