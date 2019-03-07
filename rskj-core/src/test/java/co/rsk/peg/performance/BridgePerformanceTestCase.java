@@ -95,7 +95,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 try {
                     block = new BtcBlock(
                             networkParameters,
-                            BtcBlock.BLOCK_VERSION_BIP66,
+                            BtcBlock.BLOCK_VERSION_BIP65,
                             prevBlock.getHash(),
                             merkleRoot,
                             prevBlock.getTimeSeconds() + 10,
