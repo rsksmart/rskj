@@ -50,6 +50,7 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RskTestFactory;
@@ -78,6 +79,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -2622,7 +2624,7 @@ public class BridgeTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
@@ -2643,7 +2645,7 @@ public class BridgeTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
@@ -2654,6 +2656,99 @@ public class BridgeTest {
 
             Assert.assertEquals(100_000L + 2 * data.length + 100 * numberOfHeaders, bridge.getGasForData(data));
         }
+    }
+
+    @Test
+    public void receiveHeadersAccess_beforePublic_noAccessIfNotFromFederationMember() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskipPublicReceiveHeaders()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        RskAddress sender = new RskAddress("2acc95758f8b5f583470ba265eb685a8f45fc9d5");
+        Transaction txMock = mock(Transaction.class);
+        when(txMock.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
+        when(txMock.getSender()).thenReturn(sender);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
+
+        Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
+        byte[][] headers = new byte[][] { Hex.decode(
+                "0000002006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910ff698ee112158f5573a90b7403cfba074addd61c547b3639c6afdcf52588eb8e2a1ef825cffff7f2000000000"
+        ) };
+
+        byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+
+        boolean failed = false;
+        try {
+            bridge.execute(data);
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Sender is not part of the active"));
+            failed = true;
+        }
+        Assert.assertTrue(failed);
+        verify(bridgeSupportMock, never()).receiveHeaders(any(BtcBlock[].class));
+    }
+
+    @Test
+    public void receiveHeadersAccess_beforePublic_accessIfFromFederationMember() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskipPublicReceiveHeaders()).thenReturn(false);
+        config.setBlockchainConfig(mockedConfig);
+
+        RskAddress sender = new RskAddress(ECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))).getAddress());
+        Transaction txMock = mock(Transaction.class);
+        when(txMock.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
+        when(txMock.getSender()).thenReturn(sender);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
+
+        Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
+        byte[][] headers = new byte[][] { Hex.decode(
+                "0000002006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910ff698ee112158f5573a90b7403cfba074addd61c547b3639c6afdcf52588eb8e2a1ef825cffff7f2000000000"
+        ) };
+
+        byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+
+        Assert.assertNull(bridge.execute(data));
+        verify(bridgeSupportMock, times(1)).receiveHeaders(any(BtcBlock[].class));
+    }
+
+    @Test
+    public void receiveHeadersAccess_afterPublic_accessFromAnyone() throws Exception {
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskipPublicReceiveHeaders()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Transaction txMock = mock(Transaction.class);
+        when(txMock.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
+        when(txMock.getSender()).thenReturn(new RskAddress(new ECKey().getAddress()));
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
+
+        Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
+        byte[][] headers = new byte[][] { Hex.decode(
+                "0000002006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910ff698ee112158f5573a90b7403cfba074addd61c547b3639c6afdcf52588eb8e2a1ef825cffff7f2000000000"
+        ) };
+
+        byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+
+        Assert.assertNull(bridge.execute(data));
+        verify(bridgeSupportMock, times(1)).receiveHeaders(any(BtcBlock[].class));
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
