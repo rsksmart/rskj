@@ -454,7 +454,11 @@ public enum BridgeMethods {
                     new String[]{}
             ),
             fromMethod(Bridge::receiveHeadersGetCost),
-            Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::receiveHeaders, "receiveHeaders"),
+            Bridge.executeIfElse(
+                    Bridge::receiveHeadersIsPublic,
+                    (BridgeMethodExecutorVoid) Bridge::receiveHeaders,
+                    Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::receiveHeaders, "receiveHeaders")
+            ),
             false
     ),
     REGISTER_BTC_TRANSACTION(
@@ -588,6 +592,10 @@ public enum BridgeMethods {
 
     public boolean onlyAllowsLocalCalls() {
         return onlyAllowsLocalCalls;
+    }
+
+    public interface BridgeCondition {
+        boolean isTrue(Bridge bridge);
     }
 
     public interface BridgeMethodExecutor {

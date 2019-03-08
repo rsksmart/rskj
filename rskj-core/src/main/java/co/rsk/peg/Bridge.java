@@ -371,6 +371,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public boolean receiveHeadersIsPublic() {
+        return blockchainConfig.isRskipPublicReceiveHeaders();
+    }
+
     public long receiveHeadersGetCost(Object[] args) {
         // Old, private method fixed cost. Only applies before the corresponding RSKIP
         if (!blockchainConfig.isRskipPublicReceiveHeaders()) {
@@ -1020,7 +1024,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFeePerKb().getValue();
     }
 
-
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
@@ -1034,6 +1037,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return decoratee.execute(self, args);
         };
     }
+
+    public static BridgeMethods.BridgeMethodExecutor executeIfElse(
+            BridgeMethods.BridgeCondition condition,
+            BridgeMethods.BridgeMethodExecutor ifTrue,
+            BridgeMethods.BridgeMethodExecutor ifFalse) {
+
+        return (self, args) -> {
+            if (condition.isTrue(self)) {
+                return ifTrue.execute(self, args);
+            } else {
+                return ifFalse.execute(self, args);
+            }
+        };
+    }
+
 
     private boolean isLocalCall() {
         return rskTx.isLocalCallTransaction();
