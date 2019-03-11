@@ -91,7 +91,7 @@ public class BlockHeader {
      * With the exception of the genesis block, this must be 32 bytes or fewer */
     private byte[] extraData;
 
-    /* The 81-byte bitcoin block header for merged mining */
+    /* The 80-byte bitcoin block header for merged mining */
     private byte[] bitcoinMergedMiningHeader;
     /* The bitcoin merkle proof of coinbase tx for merged mining */
     private byte[] bitcoinMergedMiningMerkleProof;
