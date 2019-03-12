@@ -171,7 +171,7 @@ public class DeriveExtendedPublicKeyTest {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "M/4'/5"
+                    "4'/5"
             });
         }, "Invalid path");
     }
@@ -181,7 +181,7 @@ public class DeriveExtendedPublicKeyTest {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "M/0/-1"
+                    "0/-1"
             });
         }, "Invalid path");
     }
@@ -191,9 +191,19 @@ public class DeriveExtendedPublicKeyTest {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "M/0/1/2/2147483648"
+                    "0/1/2/2147483648"
             });
         }, "Invalid path");
+    }
+
+    @Test
+    public void pathCannotContainMoreThanTenParts() {
+        assertFailsWithMessage(() -> {
+            method.execute(new Object[]{
+                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                    "0/1/2/3/4/5/6/7/8/9/10"
+            });
+        }, "Path should contain 10 levels at most");
     }
 
     private void assertFailsWithMessage(Runnable statement, String message) {

@@ -46,9 +46,6 @@ public class DeriveExtendedPublicKey extends NativeMethod {
 
     private final HDWalletUtilsHelper helper;
 
-    private final String XPUB_AND_PATH_NULL = "Must provide xpub and path arguments. None was provided.";
-    private final String INVALID_XPUB = "Invalid extended public key '%s";
-
     public DeriveExtendedPublicKey(ExecutionEnvironment executionEnvironment, HDWalletUtilsHelper helper) {
         super(executionEnvironment);
         this.helper = helper;
@@ -62,7 +59,7 @@ public class DeriveExtendedPublicKey extends NativeMethod {
     @Override
     public Object execute(Object[] arguments) {
         if (arguments == null) {
-            throw new NativeContractIllegalArgumentException(XPUB_AND_PATH_NULL);
+            throw new NativeContractIllegalArgumentException("Must provide xpub and path arguments. None was provided");
         }
         String xpub = (String) arguments[0];
         String path = (String) arguments[1];
@@ -72,7 +69,7 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         try {
             key = DeterministicKey.deserializeB58(xpub, params);
         } catch (IllegalArgumentException e) {
-            throw new NativeContractIllegalArgumentException(String.format(INVALID_XPUB, xpub), e);
+            throw new NativeContractIllegalArgumentException("Invalid extended public key", e);
         }
 
         // Path must be of the form S, with S ::= n || n/S with n an unsigned integer
@@ -80,11 +77,15 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         // Covering special case: upon splitting a string, if the string ends with the delimiter, then
         // there is no empty string as a last element. Make sure that the whole path starts and ends with a digit
         // just in case.
-        if (path == null || path.length() == 0 || !isDecimal(path.charAt(0)) || !isDecimal(path.charAt(path.length()-1))) {
+        if (path == null || path.length() == 0 || !isDecimal(path.substring(0,1)) || !isDecimal(path.substring(path.length()-1, path.length()))) {
             throwInvalidPath(path);
         }
 
         String[] pathChunks = path.split("/");
+
+        if (pathChunks.length > 10) {
+            throw new NativeContractIllegalArgumentException("Path should contain 10 levels at most");
+        }
 
         if (Arrays.stream(pathChunks).anyMatch(s -> !isDecimal(s))) {
             throwInvalidPath(path);
@@ -115,6 +116,11 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         return false;
     }
 
+    @Override
+    public long getGas(Object[] parsedArguments, byte[] originalData) {
+        return 55_000L;
+    }
+
     private void throwInvalidPath(String path) {
         throw new NativeContractIllegalArgumentException(getInvalidPathErrorMessage(path));
     }
@@ -123,11 +129,11 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         return String.format("Invalid path '%s'", path);
     }
 
-    private boolean isDecimal(char c) {
-        return c >= '0' && c <= '9';
-    }
-
     private boolean isDecimal(String s) {
-        return s.chars().mapToObj(c -> (char) c).allMatch(this::isDecimal);
+        try {
+            return Integer.parseInt(s) >= 0;
+        } catch(NumberFormatException e) {
+            return false;
+        }
     }
 }

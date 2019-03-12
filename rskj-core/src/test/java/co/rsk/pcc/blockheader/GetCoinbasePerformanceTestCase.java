@@ -52,22 +52,12 @@ public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerforman
     public void getCoinbase() throws IOException {
         ExecutionStats stats = new ExecutionStats("getCoinbase");
 
-        EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
-            @Override
-            public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
+        EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
                 World world = buildWorld(6000, 500, 6);
                 BlockHeaderContract contract = new BlockHeaderContract(activationConfig, new RskAddress("0000000000000000000000000000000001000010"));
                 contract.init(txBuilder.build(executionIndex), world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
 
-                return new EnvironmentBuilder.Environment(
-                        contract,
-                        () -> new BenchmarkedRepository.Statistics()
-                );
-            }
-
-            @Override
-            public void teardown() {
-            }
+                return EnvironmentBuilder.Environment.withContract(contract);
         };
 
         doGetCoinbase(environmentBuilder, stats, 4000);

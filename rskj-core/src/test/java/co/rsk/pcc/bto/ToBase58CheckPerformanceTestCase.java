@@ -19,7 +19,6 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.db.BenchmarkedRepository;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
@@ -42,21 +41,11 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
     public void toBase58Check() {
         function = new ToBase58Check(null).getFunction();
 
-        EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
-            @Override
-            public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
-                HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
-                contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
+        EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
+            HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
+            contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
 
-                return new Environment(
-                        contract,
-                        BenchmarkedRepository.Statistics::new
-                );
-            }
-
-            @Override
-            public void teardown() {
-            }
+            return EnvironmentBuilder.Environment.withContract(contract);
         };
 
         HDWalletUtilsPerformanceTest.addStats(estimateToBase58Check(2000, environmentBuilder));
@@ -88,7 +77,7 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                (byte[] result) -> {
+                (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
                     Assert.assertEquals(String.class, decodedResult[0].getClass());
                     String address = (String) decodedResult[0];

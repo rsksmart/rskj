@@ -124,7 +124,7 @@ public class PrecompiledContracts {
         }
 
         if (activations.isActive(ConsensusRule.RSKIP106) && address.equals(HD_WALLET_UTILS_ADDR_DW)) {
-            return new BlockHeaderContract(config.getActivationConfig(), HD_WALLET_UTILS_ADDR);
+            return new HDWalletUtils(config.getActivationConfig(), HD_WALLET_UTILS_ADDR);
         }
 
         return null;

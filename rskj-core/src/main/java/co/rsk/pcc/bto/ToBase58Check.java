@@ -38,8 +38,10 @@ public class ToBase58Check extends NativeMethod {
      * validation depending on the actual network passed in,
      * and the given constructor within VersionedChecksummedBytes is protected.
      */
-    private static class VersionedChecksummedBytes extends co.rsk.bitcoinj.core.VersionedChecksummedBytes {
-        public VersionedChecksummedBytes(int version, byte[] bytes) {
+    private static class ExtendedVersionedChecksummedBytes extends co.rsk.bitcoinj.core.VersionedChecksummedBytes {
+        private static final long serialVersionUID = 3721215336363685421L;
+
+        public ExtendedVersionedChecksummedBytes(int version, byte[] bytes) {
             super(version, bytes);
         }
     }
@@ -50,9 +52,9 @@ public class ToBase58Check extends NativeMethod {
             new String[]{"string"}
     );
 
-    private final String HASH_NOT_PRESENT = "hash160 must be present";
-    private final String HASH_INVALID = "Invalid hash160 '%s' (should be 20 bytes and is %d bytes)";
-    private final String INVALID_VERSION = "version must be a numeric value between 0 and 255";
+    private final static String HASH_NOT_PRESENT = "hash160 must be present";
+    private final static String HASH_INVALID = "Invalid hash160 '%s' (should be 20 bytes and is %d bytes)";
+    private final static String INVALID_VERSION = "version must be a numeric value between 0 and 255";
 
     public ToBase58Check(ExecutionEnvironment executionEnvironment) {
         super(executionEnvironment);
@@ -84,7 +86,7 @@ public class ToBase58Check extends NativeMethod {
             throw new NativeContractIllegalArgumentException(INVALID_VERSION);
         }
 
-        return new VersionedChecksummedBytes(version, hash).toBase58();
+        return new ExtendedVersionedChecksummedBytes(version, hash).toBase58();
     }
 
     @Override
@@ -95,5 +97,10 @@ public class ToBase58Check extends NativeMethod {
     @Override
     public boolean onlyAllowsLocalCalls() {
         return false;
+    }
+
+    @Override
+    public long getGas(Object[] parsedArguments, byte[] originalData) {
+        return 8_000L;
     }
 }

@@ -22,6 +22,7 @@ package co.rsk.pcc.bto;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
@@ -141,31 +142,27 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void mustProvideAtLeastOnePublicKey() {
+    public void mustProvideAtLeastTwoPublicKey() {
         assertFails(
                 () -> method.execute(new Object[]{
                         BigInteger.ONE,
                         new Object[]{}
                 }),
-                "At least one public key"
+                "At least 2 public keys"
         );
         assertFails(
                 () -> method.execute(new Object[]{
                         BigInteger.ONE,
                         null
                 }),
-                "At least one public key"
+                "At least 2 public keys"
         );
-    }
-
-    @Test
-    public void publicKeyCannotBeNull() {
         assertFails(
                 () -> method.execute(new Object[]{
                         BigInteger.ONE,
-                        null,
+                        new Object[]{Hex.decode("02566d5ded7c7db1aa7ee4ef6f76989fb42527fcfdcddcd447d6793b7d869e46f7")}
                 }),
-                "At least one public key"
+                "At least 2 public keys"
         );
     }
 
@@ -225,6 +222,32 @@ public class GetMultisigScriptHashTest {
                 }),
                 "Invalid public key format"
         );
+    }
+
+    @Test
+    public void gasIsBaseIfLessThanOrEqualstoTwoKeysPassed() {
+        Assert.assertEquals(13_500L, method.getGas(new Object[]{
+                BigInteger.valueOf(1L),
+                null
+        }, new byte[]{}));
+        Assert.assertEquals(13_500L, method.getGas(new Object[]{
+                BigInteger.valueOf(1L),
+                new Object[]{
+                }
+        }, new byte[]{}));
+        Assert.assertEquals(13_500L, method.getGas(new Object[]{
+                BigInteger.valueOf(1L),
+                new Object[]{
+                        Hex.decode("02566d5ded7c7db1aa7ee4ef6f76989fb42527fcfdcddcd447d6793b7d869e46f7")
+                }
+        }, new byte[]{}));
+        Assert.assertEquals(13_500L, method.getGas(new Object[]{
+                BigInteger.valueOf(1L),
+                new Object[]{
+                        Hex.decode("02566d5ded7c7db1aa7ee4ef6f76989fb42527fcfdcddcd447d6793b7d869e46f7"),
+                        Hex.decode("aabbcc")
+                }
+        }, new byte[]{}));
     }
 
     private void assertFails(Runnable runnable, Consumer<Exception> exceptionHandler) {

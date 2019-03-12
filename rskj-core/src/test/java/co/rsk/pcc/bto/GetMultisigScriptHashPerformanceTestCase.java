@@ -21,7 +21,6 @@ package co.rsk.pcc.bto;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.db.BenchmarkedRepository;
 import co.rsk.peg.performance.CombinedExecutionStats;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
@@ -29,6 +28,7 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -40,42 +40,52 @@ import java.util.stream.Collectors;
 @Ignore
 public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private CallTransaction.Function function;
+    private EnvironmentBuilder environmentBuilder;
+
+    @Before
+    public void setFunctionAndBuilder() {
+        function = new GetMultisigScriptHash(null).getFunction();
+        environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
+            HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
+            contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
+
+            return EnvironmentBuilder.Environment.withContract(contract);
+        };
+    }
 
     @Test
-    public void getMultisigScriptHash() {
-        function = new GetMultisigScriptHash(null).getFunction();
+    public void getMultisigScriptHash_Weighed() {
+        warmUp();
 
-        EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
-            @Override
-            public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
-                HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
-                contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
-
-                return new Environment(
-                        contract,
-                        BenchmarkedRepository.Statistics::new
-                );
-            }
-
-            @Override
-            public void teardown() {
-            }
-        };
-
-        // Get rid of outliers by executing some cases beforehand
-        setQuietMode(true);
-        System.out.print("Doing an initial pass... ");
-        estimateGetMultisigScriptHash(100, 15, environmentBuilder);
-        System.out.print("Done!\n");
-        setQuietMode(false);
-
-        CombinedExecutionStats stats = new CombinedExecutionStats(function.name);
+        CombinedExecutionStats stats = new CombinedExecutionStats(String.format("%s-weighed", function.name));
 
         stats.add(estimateGetMultisigScriptHash(500, 2, environmentBuilder));
         stats.add(estimateGetMultisigScriptHash(2000, 8, environmentBuilder));
         stats.add(estimateGetMultisigScriptHash(1000, 15, environmentBuilder));
 
         HDWalletUtilsPerformanceTest.addStats(stats);
+    }
+
+    @Test
+    public void getMultisigScriptHash_Even() {
+        warmUp();
+
+        CombinedExecutionStats stats = new CombinedExecutionStats(String.format("%s-even", function.name));
+
+        for (int numberOfKeys = 2; numberOfKeys <= 15; numberOfKeys++) {
+            stats.add(estimateGetMultisigScriptHash(500, numberOfKeys, environmentBuilder));
+        }
+
+        HDWalletUtilsPerformanceTest.addStats(stats);
+    }
+
+    private void warmUp() {
+        // Get rid of outliers by executing some cases beforehand
+        setQuietMode(true);
+        System.out.print("Doing an initial pass... ");
+        estimateGetMultisigScriptHash(100, 15, environmentBuilder);
+        System.out.print("Done!\n");
+        setQuietMode(false);
     }
 
     private ExecutionStats estimateGetMultisigScriptHash(int times, int numberOfKeys, EnvironmentBuilder environmentBuilder) {
@@ -106,7 +116,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                (byte[] result) -> {
+                (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
                     Assert.assertEquals(byte[].class, decodedResult[0].getClass());
                     String hexHash = Hex.toHexString((byte[]) decodedResult[0]);

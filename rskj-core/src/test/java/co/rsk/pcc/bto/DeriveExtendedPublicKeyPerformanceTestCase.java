@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.crypto.DeterministicKey;
 import co.rsk.bitcoinj.crypto.HDKeyDerivation;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.db.BenchmarkedRepository;
 import co.rsk.peg.performance.CombinedExecutionStats;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
@@ -47,21 +46,11 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
     public void deriveExtendedPublicKey() {
         function = new DeriveExtendedPublicKey(null, null).getFunction();
 
-        EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
-            @Override
-            public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
-                HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
-                contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
+        EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
+            HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
+            contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
 
-                return new Environment(
-                        contract,
-                        BenchmarkedRepository.Statistics::new
-                );
-            }
-
-            @Override
-            public void teardown() {
-            }
+            return EnvironmentBuilder.Environment.withContract(contract);
         };
 
         // Get rid of outliers by executing some cases beforehand
@@ -76,6 +65,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
         stats.add(estimateDeriveExtendedPublicKey(500, 1, environmentBuilder));
         stats.add(estimateDeriveExtendedPublicKey(2000, 2, environmentBuilder));
         stats.add(estimateDeriveExtendedPublicKey(500, 4, environmentBuilder));
+        stats.add(estimateDeriveExtendedPublicKey(500, 10, environmentBuilder));
 
         HDWalletUtilsPerformanceTest.addStats(stats);
     }
@@ -113,7 +103,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                (byte[] result) -> {
+                (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
                     Assert.assertEquals(String.class, decodedResult[0].getClass());
                     String address = (String) decodedResult[0];
