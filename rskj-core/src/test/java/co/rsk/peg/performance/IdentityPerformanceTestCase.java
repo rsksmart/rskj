@@ -18,7 +18,6 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.db.BenchmarkedRepository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
@@ -33,19 +32,8 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
     public void identity() throws IOException {
         ExecutionStats stats = new ExecutionStats("identity");
 
-        EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
-            @Override
-            public Environment initialize(int executionIndex, Transaction tx, int height) {
-                return new Environment(
-                        new PrecompiledContracts.Identity(),
-                        () -> new BenchmarkedRepository.Statistics()
-                );
-            }
-
-            @Override
-            public void teardown() {
-            }
-        };
+        EnvironmentBuilder environmentBuilder = (int executionIndex, Transaction tx, int height) ->
+                EnvironmentBuilder.Environment.withContract(new PrecompiledContracts.Identity());
 
         doIdentity(environmentBuilder, stats, 2000);
 

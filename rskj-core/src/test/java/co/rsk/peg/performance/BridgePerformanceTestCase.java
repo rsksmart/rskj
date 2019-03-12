@@ -21,6 +21,7 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.db.TrieStorePoolOnMemory;
@@ -164,24 +165,22 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             }
 
             @Override
-            public Environment initialize(int executionIndex, Transaction tx, int height) {
+            public Environment build(int executionIndex, Transaction tx, int height) {
                 RepositoryImpl repository = createRepositoryImpl(config);
-                Repository track = repository.startTracking();
                 BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(executionIndex));
-                BridgeStorageProvider storageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,bridgeStorageConfigurationAtThisHeight);
 
-                storageInitializer.initialize(storageProvider, track, executionIndex);
-
+                benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
+                BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,bridgeStorageConfigurationAtThisHeight);
+                storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex);
                 try {
                     storageProvider.save();
                 } catch (Exception e) {
                     throw new RuntimeException("Error trying to save the storage after initialization", e);
                 }
-                track.commit();
-
-                List<LogInfo> logs = new ArrayList<>();
+                benchmarkerTrack.commit();
 
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
+                List<LogInfo> logs = new ArrayList<>();
 
                 bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
                 Blockchain blockchain = BlockChainBuilder.ofSize(height);
@@ -204,16 +203,23 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 tx.setLocalCallTransaction(oldLocalCall);
                 benchmarkerTrack.getStatistics().clear();
 
-                return new Environment(
-                        bridge,
-                        benchmarkerTrack
-                );
-            }
+                return new Environment() {
+                    @Override
+                    public PrecompiledContracts.PrecompiledContract getContract() {
+                        return bridge;
+                    }
 
-            @Override
-            public void teardown() {
-                benchmarkerTrack.commit();
-            }
+                    @Override
+                    public BenchmarkedRepository getBenchmarkedRepository() {
+                        return benchmarkerTrack;
+                    }
+
+                    @Override
+                    public void finalise() {
+                        benchmarkerTrack.commit();
+                    }
+                };
+            };
         };
 
         return super.executeAndAverage(name, times, environmentBuilder, abiEncoder, txBuilder, heightProvider, stats, resultCallback);

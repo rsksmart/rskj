@@ -87,7 +87,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 Helper.getZeroValueRandomSenderTxBuilder(),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                (executionResult) -> {
+                (EnvironmentBuilder.Environment environment, byte[] executionResult) -> {
                     byte[] res = executionResult;
                     int numberOfConfirmations = new BigInteger(executionResult).intValueExact();
                     Assert.assertEquals(expectedConfirmations, numberOfConfirmations);

@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.crypto.DeterministicKey;
 import co.rsk.bitcoinj.crypto.HDKeyDerivation;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.db.BenchmarkedRepository;
 import co.rsk.peg.performance.CombinedExecutionStats;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
@@ -49,21 +48,11 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
     public void deriveExtendedPublicKey() throws IOException {
         function = new DeriveExtendedPublicKey(null, null).getFunction();
 
-        EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
-            @Override
-            public Environment initialize(int executionIndex, Transaction tx, int height) {
-                BTOUtils contract = new BTOUtils(new TestSystemProperties(), PrecompiledContracts.BTOUTILS_ADDR);
-                contract.init(tx, Helper.getMockBlock(1), null, null, null, null);
+        EnvironmentBuilder environmentBuilder = (int executionIndex, Transaction tx, int height) -> {
+            BTOUtils contract = new BTOUtils(new TestSystemProperties(), PrecompiledContracts.BTOUTILS_ADDR);
+            contract.init(tx, Helper.getMockBlock(1), null, null, null, null);
 
-                return new Environment(
-                        contract,
-                        () -> new BenchmarkedRepository.Statistics()
-                );
-            }
-
-            @Override
-            public void teardown() {
-            }
+            return EnvironmentBuilder.Environment.withContract(contract);
         };
 
         // Get rid of outliers by executing some cases beforehand
@@ -115,7 +104,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                (byte[] result) -> {
+                (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
                     Assert.assertEquals(String.class, decodedResult[0].getClass());
                     String address = (String) decodedResult[0];
