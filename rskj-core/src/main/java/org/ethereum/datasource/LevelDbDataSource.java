@@ -20,6 +20,7 @@
 package org.ethereum.datasource;
 
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.db.ByteArrayWrapper;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -39,10 +41,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static java.lang.System.getProperty;
 import static org.fusesource.leveldbjni.JniDBFactory.factory;
 
-/**
- * @author Roman Mandeleil
- * @since 18.01.2015
- */
 public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
@@ -77,9 +75,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 return;
             }
 
-            if (name == null) {
-                throw new NullPointerException("no name set to the db");
-            }
+            Objects.requireNonNull(name, "no name set to the db");
 
             Options options = new Options();
             options.createIfMissing(true);
@@ -147,16 +143,17 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public byte[] get(byte[] key) {
+        Objects.requireNonNull(key);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key));
+                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name,  Hex.toHexString(key));
             }
 
             try {
                 byte[] ret = db.get(key);
                 if (logger.isTraceEnabled()) {
-                    logger.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key) + ", " + (ret == null ? "null" : ret.length));
+                    logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
                 }
 
                 return ret;
@@ -165,7 +162,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 try {
                     byte[] ret = db.get(key);
                     if (logger.isTraceEnabled()) {
-                        logger.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key) + ", " + (ret == null ? "null" : ret.length));
+                        logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
                     }
 
                     return ret;
@@ -182,15 +179,18 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public byte[] put(byte[] key, byte[] value) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
+
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.put(): " + name + ", key: " + Hex.toHexString(key) + ", " + (value == null ? "null" : value.length));
+                logger.trace("~> LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
             }
 
             db.put(key, value);
             if (logger.isTraceEnabled()) {
-                logger.trace("<~ LevelDbDataSource.put(): " + name + ", key: " + Hex.toHexString(key) + ", " + (value == null ? "null" : value.length));
+                logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
             }
 
             return value;
@@ -204,12 +204,12 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.delete(): " + name + ", key: " + Hex.toHexString(key));
+                logger.trace("~> LevelDbDataSource.delete(): {}, key: {}", name, Hex.toHexString(key));
             }
 
             db.delete(key);
             if (logger.isTraceEnabled()) {
-                logger.trace("<~ LevelDbDataSource.delete(): " + name + ", key: " + Hex.toHexString(key));
+                logger.trace("<~ LevelDbDataSource.delete(): {}, key: {}", name, Hex.toHexString(key));
             }
 
         } finally {
@@ -222,7 +222,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.keys(): " + name);
+                logger.trace("~> LevelDbDataSource.keys(): {}", name);
             }
 
             try (DBIterator iterator = db.iterator()) {
@@ -231,7 +231,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                     result.add(iterator.peekNext().getKey());
                 }
                 if (logger.isTraceEnabled()) {
-                    logger.trace("<~ LevelDbDataSource.keys(): " + name + ", " + result.size());
+                    logger.trace("<~ LevelDbDataSource.keys(): {}, {}", name, result.size());
                 }
 
                 return result;
@@ -245,38 +245,50 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
-    private void updateBatchInternal(Map<byte[], byte[]> rows) throws IOException {
+    private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) throws IOException {
+        if (rows.containsKey(null) || rows.containsValue(null)) {
+            throw new IllegalArgumentException("Cannot update null values");
+        }
+        // Note that this is not atomic.
         try (WriteBatch batch = db.createWriteBatch()) {
-            for (Map.Entry<byte[], byte[]> entry : rows.entrySet()) {
-                batch.put(entry.getKey(), entry.getValue());
+            for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
+                batch.put(entry.getKey().getData(), entry.getValue());
+            }
+            for (ByteArrayWrapper deleteKey : deleteKeys) {
+                batch.delete(deleteKey.getData());
             }
             db.write(batch);
         }
     }
 
     @Override
-    public void updateBatch(Map<byte[], byte[]> rows) {
+    public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
+        if (rows.containsKey(null)) {
+            throw new IllegalArgumentException("Cannot update null values");
+        }
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
+                logger.trace("~> LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
             }
 
             try {
-                updateBatchInternal(rows);
+                updateBatchInternal(rows, deleteKeys);
                 if (logger.isTraceEnabled()) {
-                    logger.trace("<~ LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
+                    logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
                 }
-
+            } catch (IllegalArgumentException iae) {
+                throw iae;
             } catch (Exception e) {
                 logger.error("Error, retrying one more time...", e);
                 // try one more time
                 try {
-                    updateBatchInternal(rows);
+                    updateBatchInternal(rows, deleteKeys);
                     if (logger.isTraceEnabled()) {
-                        logger.trace("<~ LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
+                        logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
                     }
-
+                } catch (IllegalArgumentException iae) {
+                    throw iae;
                 } catch (Exception e1) {
                     logger.error("Error", e);
                     panicProcessor.panic("leveldb", String.format("Error %s", e.getMessage()));
@@ -308,5 +320,10 @@ public class LevelDbDataSource implements KeyValueDataSource {
         } finally {
             resetDbLock.writeLock().unlock();
         }
+    }
+
+    @Override
+    public void flush(){
+        // All is flushed immediately: there is no uncommittedCache to flush
     }
 }

@@ -20,10 +20,13 @@
 package org.ethereum.datasource;
 
 import co.rsk.config.TestSystemProperties;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.util.ByteUtil;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,9 +50,9 @@ public class LevelDbDataSourceTest {
         dataSource.init();
 
         final int batchSize = 100;
-        Map<byte[], byte[]> batch = createBatch(batchSize);
+        Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
         
-        dataSource.updateBatch(batch);
+        dataSource.updateBatch(batch, Collections.emptySet());
 
         assertEquals(batchSize, dataSource.keys().size());
         
@@ -70,10 +73,10 @@ public class LevelDbDataSourceTest {
         dataSource.close();
     }
 
-    private static Map<byte[], byte[]> createBatch(int batchSize) {
-        HashMap<byte[], byte[]> result = new HashMap<>();
+    private static Map<ByteArrayWrapper, byte[]> createBatch(int batchSize) {
+        HashMap<ByteArrayWrapper, byte[]> result = new HashMap<>();
         for (int i = 0; i < batchSize; i++) {
-            result.put(randomBytes(32), randomBytes(32));
+            result.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
         }
         return result;
     }

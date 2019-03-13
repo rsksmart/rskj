@@ -426,6 +426,14 @@ public class TrieImpl implements Trie {
         return buffer.array();
     }
 
+    @Override
+    public void flush() {
+        if (this.store==null) {
+            return;
+        }
+        this.store.flush();
+    }
+
     /**
      * save saves the unsaved current trie and subnodes to their associated store
      *
@@ -894,6 +902,9 @@ public class TrieImpl implements Trie {
     public Trie getSnapshotTo(Keccak256 hash) {
         // This call shouldn't be needed since internally try can know it should store data
         //this.save();
+        if (getHash().equals(hash)) {
+            return this;
+        }
 
         if (emptyHash.equals(hash)) {
             return new TrieImpl(this.store, this.isSecure);

@@ -303,6 +303,7 @@ public class RepositoryImpl implements Repository {
 
         if (this.trie.hasStore()) {
             this.trie.save();
+            this.trie.flush();
         }
     }
 
