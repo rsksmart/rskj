@@ -222,10 +222,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Long functionCost;
         Long totalCost;
         if (bridgeParsedData == null) {
-            functionCost = BridgeMethods.RELEASE_BTC.getCost();
+            functionCost = BridgeMethods.RELEASE_BTC.getCost(this, activations, new Object[0]);
             totalCost = functionCost;
         } else {
-            functionCost = bridgeParsedData.bridgeMethod.getCost();
+            functionCost = bridgeParsedData.bridgeMethod.getCost(this, activations, bridgeParsedData.args);
             int dataCost = data == null ? 0 : data.length * 2;
 
             totalCost = functionCost + dataCost;
@@ -371,6 +371,31 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             logger.warn("Exception onBlock", e);
             throw new RuntimeException("Exception onBlock", e);
         }
+    }
+
+    public boolean receiveHeadersIsPublic() {
+        return activations.isActive(ConsensusRule.RSKIP124);
+    }
+
+    public long receiveHeadersGetCost(Object[] args) {
+        // Old, private method fixed cost. Only applies before the corresponding RSKIP
+        if (!activations.isActive(ConsensusRule.RSKIP124)) {
+            return 22000L;
+        }
+
+        final long BASE_COST = 66_000L;
+        if (args == null) {
+            return BASE_COST;
+        }
+
+        final int numberOfHeaders = ((Object[]) args[0]).length;
+
+        if (numberOfHeaders == 0) {
+            return BASE_COST;
+        }
+        // Dynamic cost based on the number of headers
+        // We add each additional header times 1650 to the base cost
+        return BASE_COST + (numberOfHeaders - 1) * 1650;
     }
 
     public void receiveHeaders(Object[] args)
@@ -993,7 +1018,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFeePerKb().getValue();
     }
 
-
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
@@ -1007,6 +1031,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return decoratee.execute(self, args);
         };
     }
+
+    public static BridgeMethods.BridgeMethodExecutor executeIfElse(
+            BridgeMethods.BridgeCondition condition,
+            BridgeMethods.BridgeMethodExecutor ifTrue,
+            BridgeMethods.BridgeMethodExecutor ifFalse) {
+
+        return (self, args) -> {
+            if (condition.isTrue(self)) {
+                return ifTrue.execute(self, args);
+            } else {
+                return ifFalse.execute(self, args);
+            }
+        };
+    }
+
 
     private boolean isLocalCall() {
         return rskTx.isLocalCallTransaction();
