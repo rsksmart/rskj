@@ -234,6 +234,7 @@ task jar(type:Jar, overwrite: true, dependsOn: generateResources) {
     }
     from sourceSets.main.output.classesDirs
     from sourceSets.main.output.resourcesDir
+    from sourceSets.test.output.classesDirs
     from generatedResources
 }
 

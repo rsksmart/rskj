@@ -54,7 +54,7 @@ public class BlockchainPlayer {
         builder.setRepository(repository);
         builder.setConfig(config);
 
-
+        Block block0 = sourceBlockStore.getChainBlockByNumber(0);
         GenesisLoader genesisLoader = GenesisLoader.newGenesisLoader(config, TestContext.GENESIS_FILE_ROOT);
 
         builder.setGenesis(genesisLoader.loadGenesis());
