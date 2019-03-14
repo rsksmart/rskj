@@ -79,7 +79,7 @@ public class Trie {
     private boolean saved;
 
     // sha3 is applied to keys
-    private boolean isSecure;
+    private final boolean isSecure;
 
     // associated store, to store or retrieve nodes in the trie
     private TrieStore store;
@@ -89,37 +89,29 @@ public class Trie {
 
     // default constructor, no secure
     public Trie() {
-        this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), null);
-        this.isSecure = false;
+        this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), null, false);
     }
 
     public Trie(boolean isSecure) {
-        this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), null);
-        this.isSecure = isSecure;
+        this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), null, isSecure);
     }
 
     public Trie(TrieStore store, boolean isSecure) {
-        this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), store);
-        this.isSecure = isSecure;
+        this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), store, isSecure);
     }
 
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure) {
-        this(sharedPath, value, NodeReference.empty(), NodeReference.empty(), store);
-        this.isSecure = isSecure;
+        this(sharedPath, value, NodeReference.empty(), NodeReference.empty(), store, isSecure);
     }
 
     // full constructor
-    private Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store) {
+    private Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store, boolean isSecure) {
         this.value = value;
         this.left = left;
         this.right = right;
         this.store = store;
         this.sharedPath = sharedPath;
-    }
-
-    private Trie withSecure(boolean isSecure) {
         this.isSecure = isSecure;
-        return this;
     }
 
     /**
@@ -212,7 +204,7 @@ public class Trie {
             }
         }
 
-        Trie trie = new Trie(sharedPath, value, left, right, store).withSecure(isSecure);
+        Trie trie = new Trie(sharedPath, value, left, right, store, isSecure);
 
         if (store != null) {
             trie.saved = true;
@@ -581,7 +573,7 @@ public class Trie {
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        return new Trie(newSharedPath, child.value, child.left, child.right, child.store).withSecure(child.isSecure);
+        return new Trie(newSharedPath, child.value, child.left, child.right, child.store, child.isSecure);
     }
 
     private Trie internalPut(TrieKeySlice key, byte[] value) {
@@ -599,7 +591,7 @@ public class Trie {
                 return null;
             }
 
-            return new Trie(this.sharedPath, value, this.left, this.right, this.store).withSecure(this.isSecure);
+            return new Trie(this.sharedPath, value, this.left, this.right, this.store, this.isSecure);
         }
 
         if (isEmptyTrie()) {
@@ -637,13 +629,13 @@ public class Trie {
             return null;
         }
 
-        return new Trie(this.sharedPath, this.value, newLeft, newRight, this.store).withSecure(this.isSecure);
+        return new Trie(this.sharedPath, this.value, newLeft, newRight, this.store, this.isSecure);
     }
 
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        Trie newChildTrie = new Trie(newChildSharedPath, this.value, this.left, this.right, this.store).withSecure(this.isSecure);
+        Trie newChildTrie = new Trie(newChildSharedPath, this.value, this.left, this.right, this.store, this.isSecure);
         NodeReference newChildReference = new NodeReference(this.store, newChildTrie, null);
 
         // this bit will be implicit and not present in a shared path
@@ -659,7 +651,7 @@ public class Trie {
             newRight = newChildReference;
         }
 
-        return new Trie(commonPath, null, newLeft, newRight, this.store).withSecure(this.isSecure);
+        return new Trie(commonPath, null, newLeft, newRight, this.store, this.isSecure);
     }
 
     public boolean hasStore() {
