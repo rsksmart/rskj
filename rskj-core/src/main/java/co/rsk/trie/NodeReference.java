@@ -67,7 +67,7 @@ public class NodeReference {
         }
 
         lazyNode = Objects.requireNonNull(
-                (TrieImpl) store.retrieve(lazyHash.getBytes()),
+                store.retrieve(lazyHash.getBytes()),
                 "The node with this hash is not present in the trie store"
         );
         return Optional.of(lazyNode);

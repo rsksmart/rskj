@@ -24,7 +24,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.TrieImpl;
-import co.rsk.trie.TrieImplHashTest;
+import co.rsk.trie.TrieHashTest;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
@@ -43,7 +43,7 @@ import java.util.Set;
  * Created by ajlopez on 29/03/2017.
  */
 public class RepositoryImplTest {
-    private static Keccak256 emptyHash = TrieImplHashTest.makeEmptyHash();
+    private static Keccak256 emptyHash = TrieHashTest.makeEmptyHash();
     private final TestSystemProperties config = new TestSystemProperties();
 
     @Test

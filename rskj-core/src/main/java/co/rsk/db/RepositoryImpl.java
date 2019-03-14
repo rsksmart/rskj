@@ -21,7 +21,7 @@ package co.rsk.db;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.Trie;
+import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -50,13 +50,13 @@ public class RepositoryImpl implements Repository {
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
-    private Trie trie;
+    private TrieImpl trie;
     protected DetailsDataStore detailsDataStore;
     private TrieStore.Pool trieStorePool;
     private int memoryStorageLimit;
 
     public RepositoryImpl(
-            Trie trie,
+            TrieImpl trie,
             KeyValueDataSource detailsDS,
             TrieStore.Pool trieStorePool,
             int memoryStorageLimit) {
@@ -65,7 +65,7 @@ public class RepositoryImpl implements Repository {
     }
 
     private RepositoryImpl(
-            Trie trie,
+            TrieImpl trie,
             DetailsDataStore detailsDataStore,
             TrieStore.Pool trieStorePool,
             int memoryStorageLimit) {
@@ -408,7 +408,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized Repository getSnapshotTo(byte[] root) {
-        Trie snapshotTrie = this.trie.getSnapshotTo(new Keccak256(root));
+        TrieImpl snapshotTrie = this.trie.getSnapshotTo(new Keccak256(root));
         return new RepositoryImpl(snapshotTrie, this.detailsDataStore, this.trieStorePool, this.memoryStorageLimit);
     }
 

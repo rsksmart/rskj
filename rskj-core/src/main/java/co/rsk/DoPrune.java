@@ -22,7 +22,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.RskFactory;
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -124,7 +123,7 @@ public class DoPrune {
                 Keccak256 trieRoot = new Keccak256(accountState.getStateRoot());
                 logger.info("Trie root {}", trieRoot);
 
-                Trie contractStorage = sourceTrie.getSnapshotTo(trieRoot);
+                TrieImpl contractStorage = sourceTrie.getSnapshotTo(trieRoot);
                 contractStorage.copyTo(targetStore);
                 logger.info("Trie root {}", contractStorage.getHash());
             }

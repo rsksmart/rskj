@@ -35,15 +35,15 @@ import static org.mockito.Mockito.verify;
 /**
  * Created by ajlopez on 05/04/2017.
  */
-public class TrieImplSnapshotTest {
+public class TrieSnapshotTest {
     private static Keccak256 emptyHash = makeEmptyHash();
 
     @Test
     public void getSnapshotToEmptyTrie() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, false);
 
-        Trie snapshot = trie.getSnapshotTo(trie.getHash());
+        TrieImpl snapshot = trie.getSnapshotTo(trie.getHash());
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(trie.trieSize(), snapshot.trieSize());
@@ -53,7 +53,7 @@ public class TrieImplSnapshotTest {
     @Test
     public void getSnapshotToTrie() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, false);
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
 
@@ -66,7 +66,7 @@ public class TrieImplSnapshotTest {
         Assert.assertNotNull(trie.get("foo".getBytes()));
         Assert.assertNotNull(trie.get("bar".getBytes()));
 
-        Trie snapshot = trie.getSnapshotTo(hash);
+        TrieImpl snapshot = trie.getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(hash, snapshot.getHash());
@@ -79,20 +79,20 @@ public class TrieImplSnapshotTest {
     @Test
     public void getSnapshotToTrieWithLongValues() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, false);
 
-        trie = trie.put("foo".getBytes(), TrieImplValueTest.makeValue(100));
+        trie = trie.put("foo".getBytes(), TrieValueTest.makeValue(100));
 
         Keccak256 hash = trie.getHash();
 
         trie.save();
 
-        trie = trie.put("bar".getBytes(), TrieImplValueTest.makeValue(200));
+        trie = trie.put("bar".getBytes(), TrieValueTest.makeValue(200));
 
         Assert.assertNotNull(trie.get("foo".getBytes()));
         Assert.assertNotNull(trie.get("bar".getBytes()));
 
-        Trie snapshot = trie.getSnapshotTo(hash);
+        TrieImpl snapshot = trie.getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(hash, snapshot.getHash());
@@ -104,7 +104,7 @@ public class TrieImplSnapshotTest {
     @Test
     public void getSnapshotToTrieUsingDeserializedTrie() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, false);
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
 
@@ -117,7 +117,7 @@ public class TrieImplSnapshotTest {
         Assert.assertNotNull(trie.get("foo".getBytes()));
         Assert.assertNotNull(trie.get("bar".getBytes()));
 
-        Trie snapshot = TrieImpl.deserialize(trie.serialize()).getSnapshotTo(hash);
+        TrieImpl snapshot = TrieImpl.deserialize(trie.serialize()).getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(hash, snapshot.getHash());
@@ -129,10 +129,10 @@ public class TrieImplSnapshotTest {
     @Test
     public void getSnapshotToTheSameTrie() {
         TrieStore store = mock(TrieStore.class);
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, false);
         trie = trie.put("key", "value".getBytes());
 
-        Trie snapshotTrie = trie.getSnapshotTo(trie.getHash());
+        TrieImpl snapshotTrie = trie.getSnapshotTo(trie.getHash());
 
         Assert.assertThat(snapshotTrie, is(trie));
         verify(store, never()).retrieve(any(byte[].class));
@@ -140,11 +140,11 @@ public class TrieImplSnapshotTest {
 
     @Test
     public void getSnapshotToTrieUsingDeserializedTrieWithLongValues() {
-        byte[] value1 = TrieImplValueTest.makeValue(100);
-        byte[] value2 = TrieImplValueTest.makeValue(200);
+        byte[] value1 = TrieValueTest.makeValue(100);
+        byte[] value2 = TrieValueTest.makeValue(200);
 
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, false);
 
         trie = trie.put("foo".getBytes(), value1);
 
@@ -159,7 +159,7 @@ public class TrieImplSnapshotTest {
         Assert.assertNotNull(trie.get("bar".getBytes()));
         Assert.assertArrayEquals(value2, trie.get("bar".getBytes()));
 
-        Trie snapshot = TrieImpl.deserialize(trie.serialize()).getSnapshotTo(hash);
+        TrieImpl snapshot = TrieImpl.deserialize(trie.serialize()).getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(hash, snapshot.getHash());

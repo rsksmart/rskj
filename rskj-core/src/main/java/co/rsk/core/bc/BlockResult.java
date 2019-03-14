@@ -19,7 +19,6 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
@@ -83,7 +82,7 @@ public class BlockResult {
     // from original BlockchainImpl
     private static byte[] calculateReceiptsTrie(List<TransactionReceipt> receipts) {
         //TODO Fix Trie hash for receipts - doesnt match cpp
-        Trie receiptsTrie = new TrieImpl();
+        TrieImpl receiptsTrie = new TrieImpl();
 
         if (receipts.isEmpty()) {
             return HashUtil.EMPTY_TRIE_HASH;

@@ -36,24 +36,21 @@ import java.util.Optional;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
- * TrieImpl is the trie node.
+ * A binary trie node.
  *
- * Each node have 2, 4 or 16 subnodes (depending on arity variable value)
- * and an optional associated value (a byte array)
+ * Each node has an optional associated value (a byte array)
  *
  * A node is referenced via a key (a byte array)
  *
  * A node can be serialized to/from a message (a byte array)
  *
- * A node has a hash (Sha3 of its serialization)
+ * A node has a hash (keccak256 of its serialization)
  *
  * A node is immutable: to add/change a value or key, a new node is created
  *
  * An empty node has no subnodes and a null value
- *
- * Created by ajlopez on 22/08/2016.
  */
-public class TrieImpl implements Trie {
+public class TrieImpl {
     private static final int ARITY = 2;
 
     private static final Logger logger = LoggerFactory.getLogger("newtrie");
@@ -237,7 +234,6 @@ public class TrieImpl implements Trie {
      *
      * @return  a byte array with the node serialized to bytes
      */
-    @Override
     public Keccak256 getHash() {
         if (this.hash != null) {
             return this.hash.copy();
@@ -261,7 +257,6 @@ public class TrieImpl implements Trie {
      *
      * @return  the associated value, a byte array, or null if there is no associated value to the key
      */
-    @Override
     public byte[] get(byte[] key) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(this.isSecure ? Keccak256Helper.keccak256(key) : key);
         return get(keySlice);
@@ -273,7 +268,6 @@ public class TrieImpl implements Trie {
      * @param key   a string, that is converted to a byte array
      * @return a byte array with the associated value
      */
-    @Override
     public byte[] get(String key) {
         return this.get(key.getBytes(StandardCharsets.UTF_8));
     }
@@ -288,10 +282,9 @@ public class TrieImpl implements Trie {
      * key-value association. The original node is immutable, a new tree
      * is build, adding some new nodes
      */
-    @Override
-    public Trie put(byte[] key, byte[] value) {
+    public TrieImpl put(byte[] key, byte[] value) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(this.isSecure ? Keccak256Helper.keccak256(key) : key);
-        Trie trie = put(keySlice, value);
+        TrieImpl trie = put(keySlice, value);
 
         return trie == null ? new TrieImpl(this.store, this.isSecure) : trie;
     }
@@ -306,8 +299,7 @@ public class TrieImpl implements Trie {
      * @return  a new NewTrie, the top node of a new trie having the key
      * value association
      */
-    @Override
-    public Trie put(String key, byte[] value) {
+    public TrieImpl put(String key, byte[] value) {
         return put(key.getBytes(StandardCharsets.UTF_8), value);
     }
 
@@ -319,8 +311,7 @@ public class TrieImpl implements Trie {
      * @return the new top node of the trie with the association removed
      *
      */
-    @Override
-    public Trie delete(byte[] key) {
+    public TrieImpl delete(byte[] key) {
         return put(key, null);
     }
 
@@ -331,8 +322,7 @@ public class TrieImpl implements Trie {
      *
      * @return the new top node of the trie with the key removed
      */
-    @Override
-    public Trie delete(String key) {
+    public TrieImpl delete(String key) {
         return delete(key.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -349,7 +339,6 @@ public class TrieImpl implements Trie {
      *
      * @return a byte array with the serialized info
      */
-    @Override
     public byte[] toMessage() {
         int lvalue = this.value == null ? 0 : this.value.length;
         int lshared = this.sharedPath.length();
@@ -408,7 +397,10 @@ public class TrieImpl implements Trie {
         return buffer.array();
     }
 
-    @Override
+    /**
+     * sends all data to disk. This applies to the store and all keys saved into the
+     * store, not only to this node.
+     */
     public void flush() {
         if (this.store==null) {
             return;
@@ -420,7 +412,6 @@ public class TrieImpl implements Trie {
      * save saves the unsaved current trie and subnodes to their associated store
      *
      */
-    @Override
     public void save() {
         if (this.saved) {
             return;
@@ -433,7 +424,6 @@ public class TrieImpl implements Trie {
         this.saved = true;
     }
 
-    @Override
     public void copyTo(TrieStore target) {
         if (target.retrieve(this.getHash().getBytes()) != null) {
             return;
@@ -450,10 +440,9 @@ public class TrieImpl implements Trie {
      *
      * @return the number of tries nodes, includes the current one
      */
-    @Override
     public int trieSize() {
-        return 1 + this.left.getNode().map(Trie::trieSize).orElse(0)
-                + this.right.getNode().map(Trie::trieSize).orElse(0);
+        return 1 + this.left.getNode().map(TrieImpl::trieSize).orElse(0)
+                + this.right.getNode().map(TrieImpl::trieSize).orElse(0);
     }
 
     /**
@@ -490,8 +479,8 @@ public class TrieImpl implements Trie {
         return implicitByte == 0 ? this.left.getNode().orElse(null) : this.right.getNode().orElse(null);
     }
 
-    private static Trie internalRetrieve(TrieStore store, byte[] root) {
-        Trie newTrie = store.retrieve(root);
+    private static TrieImpl internalRetrieve(TrieStore store, byte[] root) {
+        TrieImpl newTrie = store.retrieve(root);
 
         if (newTrie == null) {
             String log = String.format(ERROR_NON_EXISTENT_TRIE, Hex.toHexString(root));
@@ -529,7 +518,7 @@ public class TrieImpl implements Trie {
      *
      * @return full trie deserialized from byte array
      */
-    public static Trie deserialize(byte[] bytes) {
+    public static TrieImpl deserialize(byte[] bytes) {
         final int keccakSize = Keccak256Helper.DEFAULT_SIZE_BYTES;
         int expectedSize = Short.BYTES + keccakSize;
         if (expectedSize > bytes.length) {
@@ -673,7 +662,6 @@ public class TrieImpl implements Trie {
         return new TrieImpl(commonPath, null, newLeft, newRight, this.store).withSecure(this.isSecure);
     }
 
-    @Override
     public boolean hasStore() {
         return this.store != null;
     }
@@ -699,7 +687,7 @@ public class TrieImpl implements Trie {
         return left.isEmpty() && right.isEmpty();
     }
 
-    public Trie getSnapshotTo(Keccak256 hash) {
+    public TrieImpl getSnapshotTo(Keccak256 hash) {
         // This call shouldn't be needed since internally try can know it should store data
         //this.save();
         if (getHash().equals(hash)) {

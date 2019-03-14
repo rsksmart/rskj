@@ -24,7 +24,6 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RskTestFactory;
@@ -50,7 +49,7 @@ public class StateTest {
     @Ignore //TODO #POC9
     @Test
     public void testGenesisAccounts() {
-        Trie trie = generateGenesisState();
+        TrieImpl trie = generateGenesisState();
         assertEquals(GENESIS_STATE_ROOT, trie.getHash());
     }
 
@@ -65,7 +64,7 @@ public class StateTest {
         // 3) minner gets the gas + coinbase ==> 6260000000000000 + 1500000000000000000
         // 4) calc the root
 
-        Trie trie = generateGenesisState();
+        TrieImpl trie = generateGenesisState();
         Keccak256 expected = new Keccak256("c12b4d771fbcc0d56ec106f8d465d24b9d4c36d60275bbafa7d69694d6708660");
 
         // Get and update sender in world state
@@ -132,8 +131,8 @@ public class StateTest {
         assertEquals(expected, trie.getHash());
     }
 
-    private Trie generateGenesisState() {
-        Trie trie = new TrieImpl();
+    private TrieImpl generateGenesisState() {
+        TrieImpl trie = new TrieImpl();
         Genesis genesis = RskTestFactory.getGenesisInstance(new TestSystemProperties());
 
         for (Map.Entry<RskAddress, AccountState> accountsEntry : genesis.getAccounts().entrySet()) {

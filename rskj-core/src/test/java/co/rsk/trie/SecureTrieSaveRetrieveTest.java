@@ -23,22 +23,22 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Created by ajlopez on 11/01/2017.
+ * Created by ajlopez on 03/04/2017.
  */
-public class TrieImplSaveRetrieveTest {
+public class SecureTrieSaveRetrieveTest {
     @Test
     public void updateSaveRetrieveAndGetOneThousandKeyValues() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, true);
 
         for (int k = 0; k < 1000; k++)
             trie = trie.put(k + "", (k + "").getBytes());
 
         trie.save();
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        TrieImpl trie2 = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -56,14 +56,14 @@ public class TrieImplSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, true);
 
         for (int k = 0; k < 1000; k++)
-            trie = trie.put(k + "", TrieImplValueTest.makeValue(k + 200));
+            trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
         trie.save();
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        TrieImpl trie2 = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -81,14 +81,14 @@ public class TrieImplSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, true);
 
         for (int k = 0; k < 1000; k++)
             trie = trie.put(k + "", (k + "").getBytes());
 
         trie.save();
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        TrieImpl trie2 = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -106,14 +106,14 @@ public class TrieImplSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, true);
 
         for (int k = 0; k < 1000; k++)
-            trie = trie.put(k + "", TrieImplValueTest.makeValue(k + 200));
+            trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
         trie.save();
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        TrieImpl trie2 = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -131,14 +131,14 @@ public class TrieImplSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, true);
 
         for (int k = 1000; k > 0; k--)
             trie = trie.put(k + "", (k + "").getBytes());
 
         trie.save();
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        TrieImpl trie2 = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -156,64 +156,14 @@ public class TrieImplSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false);
+        TrieImpl trie = new TrieImpl(store, true);
 
         for (int k = 1000; k > 0; k--)
-            trie = trie.put(k + "", TrieImplValueTest.makeValue(k + 200));
+            trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
         trie.save();
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
-
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
-
-        for (int k = 1000; k > 0; k--) {
-            String key = k + "";
-            byte[] expected = trie.get(key);
-            byte[] value = trie2.get(key);
-            Assert.assertArrayEquals(expected, value);
-        }
-    }
-
-    @Test
-    public void updateSaveRetrieveAndGetOneThousandKeyValuesInverseOrderUsingBinaryTree() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false);
-
-        for (int k = 1000; k > 0; k--)
-            trie = trie.put(k + "", (k + "").getBytes());
-
-        trie.save();
-
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
-
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
-
-        for (int k = 1000; k > 0; k--) {
-            String key = k + "";
-            byte[] expected = trie.get(key);
-            byte[] value = trie2.get(key);
-            Assert.assertArrayEquals(expected, value);
-        }
-    }
-
-    @Test
-    public void updateSaveRetrieveAndGetOneThousandKeyLongValuesInverseOrderUsingBinaryTree() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false);
-
-        for (int k = 1000; k > 0; k--)
-            trie = trie.put(k + "", TrieImplValueTest.makeValue(k + 200));
-
-        trie.save();
-
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        TrieImpl trie2 = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -231,7 +181,8 @@ public class TrieImplSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes())
+        TrieImpl trie = new TrieImpl(store, true)
+                .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes())
                 .put("answer", "42".getBytes());
 
@@ -246,9 +197,10 @@ public class TrieImplSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes())
-                .put("bar", TrieImplValueTest.makeValue(100))
-                .put("answer", TrieImplValueTest.makeValue(200));
+        TrieImpl trie = new TrieImpl(store, true)
+                .put("foo", "bar".getBytes())
+                .put("bar", TrieValueTest.makeValue(100))
+                .put("answer", TrieValueTest.makeValue(200));
 
         trie.save();
 
@@ -261,13 +213,14 @@ public class TrieImplSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes())
+        TrieImpl trie = new TrieImpl(store, true)
+                .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes())
                 .put("answer", "42".getBytes());
 
         trie.save();
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        TrieImpl trie2 = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.trieSize(), trie2.trieSize());
@@ -283,13 +236,14 @@ public class TrieImplSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes())
-                .put("bar", TrieImplValueTest.makeValue(100))
-                .put("answer", TrieImplValueTest.makeValue(200));
+        TrieImpl trie = new TrieImpl(store, true)
+                .put("foo", "bar".getBytes())
+                .put("bar", TrieValueTest.makeValue(100))
+                .put("answer", TrieValueTest.makeValue(200));
 
         trie.save();
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        TrieImpl trie2 = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.trieSize(), trie2.trieSize());

@@ -19,7 +19,6 @@
 package co.rsk.db;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -129,7 +128,7 @@ public class ContractDetailsImplTest {
 
         details.put(DataWord.ONE, new DataWord(42));
 
-        Trie trie = details.getTrie();
+        TrieImpl trie = details.getTrie();
 
         byte[] value = trie.get(DataWord.ONE.getData());
 
@@ -146,7 +145,7 @@ public class ContractDetailsImplTest {
         details.put(DataWord.ONE, new DataWord(42));
         details.put(DataWord.ONE, DataWord.ZERO);
 
-        Trie trie = details.getTrie();
+        TrieImpl trie = details.getTrie();
 
         byte[] value = trie.get(DataWord.ONE.getData());
 
@@ -181,7 +180,7 @@ public class ContractDetailsImplTest {
         details.putBytes(DataWord.ONE, new byte[] { 0x01, 0x02, 0x03 });
         details.putBytes(DataWord.ONE, null);
 
-        Trie trie = details.getTrie();
+        TrieImpl trie = details.getTrie();
 
         byte[] value = trie.get(DataWord.ONE.getData());
 
@@ -196,7 +195,7 @@ public class ContractDetailsImplTest {
         details.put(DataWord.ONE, new DataWord(42));
         details.put(DataWord.ZERO, new DataWord(1));
 
-        Trie trie = details.getTrie();
+        TrieImpl trie = details.getTrie();
 
         Assert.assertNotNull(trie.getHash().getBytes());
 
@@ -547,7 +546,7 @@ public class ContractDetailsImplTest {
     @Test
     public void syncStorageInDetailsWithTrieInMemory() {
         HashMapDB store = new HashMapDB();
-        Trie trie = new TrieImpl(new TrieStoreImpl(store), false);
+        TrieImpl trie = new TrieImpl(new TrieStoreImpl(store), false);
         byte[] accountAddress = randomAddress();
         ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, new TrieStorePoolOnMemory(() -> store), config.detailsInMemoryStorageLimit());
 
@@ -561,7 +560,7 @@ public class ContractDetailsImplTest {
     @Test
     public void usingSameExternalStorage() {
         HashMapDB store = new HashMapDB();
-        Trie trie = new TrieImpl(new TrieStoreImpl(store), false);
+        TrieImpl trie = new TrieImpl(new TrieStoreImpl(store), false);
         byte[] accountAddress = randomAddress();
         ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
@@ -596,7 +595,7 @@ public class ContractDetailsImplTest {
         TrieStorePoolOnMemory trieStorePool = new TrieStorePoolOnMemory();
         byte[] accountAddress = randomAddress();
         String storeName = "details-storage/" + toHexString(accountAddress);
-        Trie trie = new TrieImpl(trieStorePool.getInstanceFor(storeName), false);
+        TrieImpl trie = new TrieImpl(trieStorePool.getInstanceFor(storeName), false);
         ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, trieStorePool, config.detailsInMemoryStorageLimit());
 
         int nkeys = IN_MEMORY_STORAGE_LIMIT;
@@ -640,7 +639,7 @@ public class ContractDetailsImplTest {
     @Test
     public void syncStorageAndGetKeyValues() {
         HashMapDB store = new HashMapDB();
-        Trie trie = new TrieImpl(new TrieStoreImpl(store), false);
+        TrieImpl trie = new TrieImpl(new TrieStoreImpl(store), false);
         byte[] accountAddress = randomAddress();
         ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, new TrieStorePoolOnMemory(() -> store), config.detailsInMemoryStorageLimit());
 

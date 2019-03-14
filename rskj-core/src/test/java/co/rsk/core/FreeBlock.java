@@ -1,6 +1,5 @@
 package co.rsk.core;
 
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
@@ -256,12 +255,12 @@ public class FreeBlock {
 
         return body;
     }
-    public static Trie getTxTrie(List<Transaction> transactions){
+    public static TrieImpl getTxTrie(List<Transaction> transactions){
         if (transactions == null) {
             return new TrieImpl();
         }
 
-        Trie txsState = new TrieImpl();
+        TrieImpl txsState = new TrieImpl();
         for (int i = 0; i < transactions.size(); i++) {
             Transaction transaction = transactions.get(i);
             txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());

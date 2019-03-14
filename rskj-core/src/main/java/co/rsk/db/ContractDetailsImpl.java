@@ -48,7 +48,7 @@ import static org.ethereum.util.ByteUtil.wrap;
 public class ContractDetailsImpl implements ContractDetails {
     private static final Logger logger = LoggerFactory.getLogger("contractdetails");
 
-    private Trie trie;
+    private TrieImpl trie;
     private byte[] code;
     private byte[] address;
     private boolean dirty;
@@ -65,7 +65,7 @@ public class ContractDetailsImpl implements ContractDetails {
         decode(encoded);
     }
 
-    public ContractDetailsImpl(byte[] address, Trie trie, byte[] code, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
+    public ContractDetailsImpl(byte[] address, TrieImpl trie, byte[] code, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
         this.address = ByteUtils.clone(address);
         this.trie = trie;
         this.code = ByteUtils.clone(code);
@@ -202,7 +202,7 @@ public class ContractDetailsImpl implements ContractDetails {
             this.trie = this.newTrie().getSnapshotTo(snapshotHash);
         } else {
             TrieImpl newTrie = this.newTrie();
-            TrieImpl tempTrie = (TrieImpl)TrieImpl.deserialize(root);
+            TrieImpl tempTrie = TrieImpl.deserialize(root);
             newTrie.getStore().copyFrom(tempTrie.getStore());
             this.trie = newTrie.getSnapshotTo(tempTrie.getHash());
         }
@@ -380,7 +380,7 @@ public class ContractDetailsImpl implements ContractDetails {
         return this.codeHash;
     }
 
-    public Trie getTrie() {
+    public TrieImpl getTrie() {
         return this.trie;
     }
 
@@ -417,7 +417,7 @@ public class ContractDetailsImpl implements ContractDetails {
 
         logger.trace("reopening contract details data source");
         TrieStoreImpl newStore = (TrieStoreImpl) trieStorePool.getInstanceFor(getDataSourceName());
-        Trie newTrie = newStore.retrieve(this.trie.getHash().getBytes());
+        TrieImpl newTrie = newStore.retrieve(this.trie.getHash().getBytes());
         this.trie = newTrie;
         this.closed = false;
     }

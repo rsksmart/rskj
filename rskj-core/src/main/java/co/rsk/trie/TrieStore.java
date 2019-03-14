@@ -21,11 +21,11 @@ package co.rsk.trie;
 import org.ethereum.datasource.KeyValueDataSource;
 
 public interface TrieStore {
-    void save(Trie trie);
+    void save(TrieImpl trie);
 
     void flush();
 
-    Trie retrieve(byte[] hash);
+    TrieImpl retrieve(byte[] hash);
 
     byte[] serialize();
 

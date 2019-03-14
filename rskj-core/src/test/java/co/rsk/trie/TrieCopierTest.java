@@ -58,7 +58,7 @@ public class TrieCopierTest {
         int nvalues = 10;
         byte[][] values = createValues(nvalues, 100);
 
-        Trie trie = new TrieImpl(store1, true);
+        TrieImpl trie = new TrieImpl(store1, true);
 
         for (int k = 0; k < nvalues; k++)
             trie = trie.put(k + "", values[k]);
@@ -67,7 +67,7 @@ public class TrieCopierTest {
 
         TrieCopier.trieStateCopy(store1, store2, trie.getHash());
 
-        Trie result = store2.retrieve(trie.getHash().getBytes());
+        TrieImpl result = store2.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(result);
         Assert.assertEquals(trie.getHash(), result.getHash());
@@ -86,7 +86,7 @@ public class TrieCopierTest {
         int nvalues = 30;
         byte[][] values = createValues(nvalues, 100);
 
-        Trie trie = new TrieImpl(store1, true);
+        TrieImpl trie = new TrieImpl(store1, true);
 
         for (int k = 0; k < nvalues - 2; k++)
             trie = trie.put(k + "", values[k]);
@@ -106,7 +106,7 @@ public class TrieCopierTest {
         TrieCopier.trieStateCopy(store1, store2, hash2);
         TrieCopier.trieStateCopy(store1, store2, hash3);
 
-        Trie result1 = store2.retrieve(hash1.getBytes());
+        TrieImpl result1 = store2.retrieve(hash1.getBytes());
 
         Assert.assertNotNull(result1);
         Assert.assertEquals(hash1, result1.getHash());
@@ -114,14 +114,14 @@ public class TrieCopierTest {
         for (int k = 0; k < nvalues - 2; k++)
             Assert.assertArrayEquals(trie.get(k + ""), result1.get(k + ""));
 
-        Trie result2 = store2.retrieve(hash2.getBytes());
+        TrieImpl result2 = store2.retrieve(hash2.getBytes());
 
         Assert.assertNotNull(result2);
         Assert.assertEquals(hash2, result2.getHash());
         Assert.assertNull(result1.get((nvalues - 2) + ""));
         Assert.assertArrayEquals(trie.get((nvalues - 2) + ""), result2.get((nvalues - 2) + ""));
 
-        Trie result3 = store2.retrieve(hash3.getBytes());
+        TrieImpl result3 = store2.retrieve(hash3.getBytes());
 
         Assert.assertNotNull(result3);
         Assert.assertEquals(hash3, result3.getHash());

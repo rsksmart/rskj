@@ -37,7 +37,7 @@ public class TrieCopier {
     }
 
     public static void trieStateCopy(TrieStore source, TrieStore target, Keccak256 hash) {
-        Trie trie = source.retrieve(hash.getBytes());
+        TrieImpl trie = source.retrieve(hash.getBytes());
         trie.copyTo(target);
     }
 
@@ -67,7 +67,7 @@ public class TrieCopier {
                 AccountState accountState = stateRepository.getAccountState(contractAddress);
 
                 ContractDetailsImpl contractDetails = (ContractDetailsImpl)stateRepository.getContractDetails(contractAddress);
-                TrieImpl trie = (TrieImpl)contractDetails.getTrie();
+                TrieImpl trie = contractDetails.getTrie();
                 trieStateCopy(trie.getStore(), target, new Keccak256(accountState.getStateRoot()));
             }
 
