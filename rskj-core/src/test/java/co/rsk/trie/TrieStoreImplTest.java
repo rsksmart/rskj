@@ -43,21 +43,21 @@ public class TrieStoreImplTest {
 
     @Test
     public void hasStore() {
-        TrieImpl trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store, false).put("foo", "bar".getBytes());
 
         Assert.assertTrue(trie.hasStore());
     }
 
     @Test
     public void hasNoStore() {
-        TrieImpl trie = new TrieImpl(null, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(null, false).put("foo", "bar".getBytes());
 
         Assert.assertFalse(trie.hasStore());
     }
 
     @Test
     public void saveTrieNode() {
-        TrieImpl trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store, false).put("foo", "bar".getBytes());
 
         store.save(trie);
 
@@ -67,14 +67,14 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveAndRetrieveTrieNodeWith32BytesKey() {
-        TrieImpl trie = new TrieImpl(store, false).put(Keccak256Helper.keccak256("foo".getBytes()), "bar".getBytes());
+        Trie trie = new Trie(store, false).put(Keccak256Helper.keccak256("foo".getBytes()), "bar".getBytes());
 
         store.save(trie);
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
         verifyNoMoreInteractions(map);
 
-        TrieImpl newTrie = store.retrieve(trie.getHash().getBytes());
+        Trie newTrie = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
@@ -86,7 +86,7 @@ public class TrieStoreImplTest {
         byte[] key = Keccak256Helper.keccak256("foo".getBytes());
         byte[] value = new byte[33];
 
-        TrieImpl trie = new TrieImpl(store, false).put(key, value);
+        Trie trie = new Trie(store, false).put(key, value);
 
         store.save(trie);
 
@@ -94,7 +94,7 @@ public class TrieStoreImplTest {
         verify(map, times(1)).put(trie.getValueHash(), trie.getValue());
         verifyNoMoreInteractions(map);
 
-        TrieImpl newTrie = store.retrieve(trie.getHash().getBytes());
+        Trie newTrie = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
@@ -104,7 +104,7 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveFullTrie() {
-        TrieImpl trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store, false).put("foo", "bar".getBytes());
 
         trie.save();
 
@@ -114,7 +114,7 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveFullTrieWithLongValue() {
-        TrieImpl trie = new TrieImpl(store, false).put("foo", TrieValueTest.makeValue(100));
+        Trie trie = new Trie(store, false).put("foo", TrieValueTest.makeValue(100));
 
         trie.save();
 
@@ -125,7 +125,7 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveFullTrieWithTwoLongValues() {
-        TrieImpl trie = new TrieImpl(store, false)
+        Trie trie = new Trie(store, false)
                 .put("foo", TrieValueTest.makeValue(100))
                 .put("bar", TrieValueTest.makeValue(200));
 
@@ -137,7 +137,7 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveFullTrieTwice() {
-        TrieImpl trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store, false).put("foo", "bar".getBytes());
 
         trie.save();
 
@@ -150,7 +150,7 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveFullTrieUpdateAndSaveAgainUsingBinaryTrie() {
-        TrieImpl trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store, false).put("foo", "bar".getBytes());
 
         trie.save();
 
@@ -166,7 +166,7 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveFullTrieUpdateAndSaveAgain() {
-        TrieImpl trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store, false).put("foo", "bar".getBytes());
 
         trie.save();
 
@@ -187,13 +187,13 @@ public class TrieStoreImplTest {
 
     @Test
     public void retrieveTrieByHash() {
-        TrieImpl trie = new TrieImpl(store, false).put("bar", "foo".getBytes())
+        Trie trie = new Trie(store, false).put("bar", "foo".getBytes())
                 .put("foo", "bar".getBytes());
 
         trie.save();
         int size = trie.trieSize();
 
-        TrieImpl trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
         verify(map, times(1)).get(any());
 
@@ -204,7 +204,7 @@ public class TrieStoreImplTest {
 
     @Test
     public void serializeDeserializeTrieStore() {
-        TrieImpl trie = new TrieImpl(store, false)
+        Trie trie = new Trie(store, false)
                 .put("foo", "bar".getBytes())
                 .put("bar", "foo".getBytes());
 
@@ -218,7 +218,7 @@ public class TrieStoreImplTest {
 
         Assert.assertNotNull(newStore);
 
-        TrieImpl result = newStore.retrieve(root);
+        Trie result = newStore.retrieve(root);
 
         Assert.assertEquals(trie.trieSize(), result.trieSize());
 

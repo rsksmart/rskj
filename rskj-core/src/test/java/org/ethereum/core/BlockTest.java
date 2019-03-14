@@ -21,7 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -74,7 +74,7 @@ public class BlockTest {
 
         Set keys = genesisMap.keySet();
 
-        TrieImpl state = new TrieImpl(null, true);
+        Trie state = new Trie(null, true);
 
         for (Object key : keys) {
 

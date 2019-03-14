@@ -28,7 +28,7 @@ import org.junit.Test;
 public class TrieMessageTest {
     @Test
     public void emptyTrieToMessage() {
-        TrieImpl trie = new TrieImpl();
+        Trie trie = new Trie();
 
         byte[] message = trie.toMessage();
 
@@ -44,7 +44,7 @@ public class TrieMessageTest {
 
     @Test
     public void trieWithValueToMessage() {
-        TrieImpl trie = new TrieImpl().put(new byte[0], new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(new byte[0], new byte[] { 1, 2, 3, 4 });
 
         byte[] message = trie.toMessage();
 
@@ -64,7 +64,7 @@ public class TrieMessageTest {
 
     @Test
     public void trieWithLongValueToMessage() {
-        TrieImpl trie = new TrieImpl().put(new byte[0], TrieValueTest.makeValue(33));
+        Trie trie = new Trie().put(new byte[0], TrieValueTest.makeValue(33));
 
         byte[] message = trie.toMessage();
 
@@ -86,7 +86,7 @@ public class TrieMessageTest {
 
     @Test
     public void trieWithSubtrieAndNoValueToMessage() {
-        TrieImpl trie = new TrieImpl().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 });
 
         byte[] message = trie.toMessage();
 
@@ -110,7 +110,7 @@ public class TrieMessageTest {
 
     @Test
     public void trieWithSubtriesAndNoValueToMessage() {
-        TrieImpl trie = new TrieImpl().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
+        Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
                 .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
 
         byte[] message = trie.toMessage();

@@ -23,7 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.db.ContractDetailsImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
@@ -44,7 +44,7 @@ public class AccountBuilder {
 
         TestSystemProperties config = new TestSystemProperties();
         ContractDetailsImpl details = new ContractDetailsImpl(null,
-                                                              new TrieImpl(new TrieStoreImpl(store), true),
+                                                              new Trie(new TrieStoreImpl(store), true),
                                                               null,
                                                               new TrieStorePoolOnMemory(),
                                                               config.detailsInMemoryStorageLimit());

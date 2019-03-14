@@ -51,7 +51,7 @@ public class TrieStoreImpl implements TrieStore {
      * @param trie
      */
     @Override
-    public void save(TrieImpl trie) {
+    public void save(Trie trie) {
         this.store.put(trie.getHash().getBytes(), trie.toMessage());
 
         if (trie.hasLongValue()) {
@@ -86,10 +86,10 @@ public class TrieStoreImpl implements TrieStore {
      * @return  the retrieved Trie, null if key does not exist
      */
     @Override
-    public TrieImpl retrieve(byte[] hash) {
+    public Trie retrieve(byte[] hash) {
         byte[] message = this.store.get(hash);
 
-        return TrieImpl.fromMessage(message, this);
+        return Trie.fromMessage(message, this);
     }
 
     public byte[] retrieveValue(byte[] hash) {

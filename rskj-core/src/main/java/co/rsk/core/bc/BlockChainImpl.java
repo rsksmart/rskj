@@ -22,7 +22,7 @@ import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
@@ -537,7 +537,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
-        TrieImpl receiptsTrie = new TrieImpl();
+        Trie receiptsTrie = new Trie();
 
         if (receipts == null || receipts.isEmpty()) {
             return HashUtil.EMPTY_TRIE_HASH;

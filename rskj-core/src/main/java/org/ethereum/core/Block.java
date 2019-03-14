@@ -25,7 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -692,12 +692,12 @@ public class Block {
         rlpEncoded = null;
     }
 
-    public static TrieImpl getTxTrie(List<Transaction> transactions){
+    public static Trie getTxTrie(List<Transaction> transactions){
         if (transactions == null) {
-            return new TrieImpl();
+            return new Trie();
         }
 
-        TrieImpl txsState = new TrieImpl();
+        Trie txsState = new Trie();
         for (int i = 0; i < transactions.size(); i++) {
             Transaction transaction = transactions.get(i);
             txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());

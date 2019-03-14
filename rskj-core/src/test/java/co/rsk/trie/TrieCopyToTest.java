@@ -16,13 +16,13 @@ public class TrieCopyToTest {
         HashMapDB map2 = new HashMapDB();
         TrieStoreImpl store2 = new TrieStoreImpl(map2);
 
-        TrieImpl trie = new TrieImpl(store1, true);
+        Trie trie = new Trie(store1, true);
 
         trie.save();
 
         trie.copyTo(store2);
 
-        TrieImpl result = store2.retrieve(trie.getHash().getBytes());
+        Trie result = store2.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(result);
         Assert.assertEquals(trie.getHash(), result.getHash());
@@ -36,7 +36,7 @@ public class TrieCopyToTest {
         HashMapDB map2 = new HashMapDB();
         TrieStoreImpl store2 = new TrieStoreImpl(map2);
 
-        TrieImpl trie = new TrieImpl(store1, true);
+        Trie trie = new Trie(store1, true);
 
         for (int k = 0; k < 100; k++) {
             trie = trie.put(k + "", (k + "").getBytes());
@@ -46,7 +46,7 @@ public class TrieCopyToTest {
 
         trie.copyTo(store2);
 
-        TrieImpl result = store2.retrieve(trie.getHash().getBytes());
+        Trie result = store2.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(result);
         Assert.assertEquals(trie.getHash(), result.getHash());
@@ -64,7 +64,7 @@ public class TrieCopyToTest {
         HashMapDB map2 = new HashMapDB();
         TrieStoreImpl store2 = new TrieStoreImpl(map2);
 
-        TrieImpl trie = new TrieImpl(store1, true);
+        Trie trie = new Trie(store1, true);
 
         for (int k = 0; k < 100; k++) {
             trie = trie.put(k + "", (k + "").getBytes());
@@ -76,7 +76,7 @@ public class TrieCopyToTest {
 
         trie.copyTo(store2);
 
-        TrieImpl result = store2.retrieve(trie.getHash().getBytes());
+        Trie result = store2.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(result);
         Assert.assertEquals(trie.getHash(), result.getHash());
@@ -94,8 +94,8 @@ public class TrieCopyToTest {
         HashMapDB map2 = new HashMapDB();
         TrieStoreImpl store2 = new TrieStoreImpl(map2);
 
-        TrieImpl trie1 = new TrieImpl(store1, true);
-        TrieImpl trie2 = new TrieImpl(store1, true);
+        Trie trie1 = new Trie(store1, true);
+        Trie trie2 = new Trie(store1, true);
 
         for (int k = 0; k < 100; k++) {
             trie1 = trie1.put(k + "", (k + "").getBytes());
@@ -108,7 +108,7 @@ public class TrieCopyToTest {
         trie1.copyTo(store2);
         trie2.copyTo(store2);
 
-        TrieImpl result1 = store2.retrieve(trie1.getHash().getBytes());
+        Trie result1 = store2.retrieve(trie1.getHash().getBytes());
 
         Assert.assertNotNull(result1);
         Assert.assertEquals(trie1.getHash(), result1.getHash());
@@ -117,7 +117,7 @@ public class TrieCopyToTest {
             Assert.assertArrayEquals((k + "").getBytes(), result1.get(k + ""));
         }
 
-        TrieImpl result2 = store2.retrieve(trie2.getHash().getBytes());
+        Trie result2 = store2.retrieve(trie2.getHash().getBytes());
 
         Assert.assertNotNull(result2);
         Assert.assertEquals(trie2.getHash(), result2.getHash());

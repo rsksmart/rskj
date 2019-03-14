@@ -41,7 +41,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void saveTrieNode() {
-        TrieImpl trie = new TrieImpl(store, true).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store, true).put("foo", "bar".getBytes());
 
         store.save(trie);
 
@@ -54,7 +54,7 @@ public class SecureTrieStoreTest {
         byte[] key = "foo".getBytes();
         byte[] value = new byte[33];
 
-        TrieImpl trie = new TrieImpl(store, true).put(key, value);
+        Trie trie = new Trie(store, true).put(key, value);
 
         store.save(trie);
 
@@ -62,7 +62,7 @@ public class SecureTrieStoreTest {
         verify(map, times(1)).put(trie.getValueHash(), trie.getValue());
         verifyNoMoreInteractions(map);
 
-        TrieImpl newTrie = store.retrieve(trie.getHash().getBytes());
+        Trie newTrie = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
@@ -72,7 +72,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void saveFullTrie() {
-        TrieImpl trie = new TrieImpl(store, true).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store, true).put("foo", "bar".getBytes());
 
         trie.save();
 
@@ -82,7 +82,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void saveFullTrieWithLongValue() {
-        TrieImpl trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", TrieValueTest.makeValue(100));
 
         trie.save();
@@ -94,7 +94,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void saveFullTrieWithTwoLongValues() {
-        TrieImpl trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", TrieValueTest.makeValue(100))
                 .put("bar", TrieValueTest.makeValue(200));
 
@@ -106,7 +106,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void saveFullTrieTwice() {
-        TrieImpl trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", "bar".getBytes());
 
         trie.save();
@@ -120,7 +120,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void saveFullTrieWithLongValueTwice() {
-        TrieImpl trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", TrieValueTest.makeValue(100));
 
         trie.save();
@@ -135,7 +135,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void saveFullTrieUpdateAndSaveAgainUsingBinaryTrie() {
-        TrieImpl trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", "bar".getBytes());
 
         trie.save();
@@ -152,7 +152,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void saveFullTrieWithLongValueUpdateAndSaveAgainUsingBinaryTrie() {
-        TrieImpl trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", TrieValueTest.makeValue(100));
 
         trie.save();
@@ -169,7 +169,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void saveFullTrieUpdateAndSaveAgain() {
-        TrieImpl trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", "bar".getBytes());
 
         trie.save();
@@ -186,7 +186,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void saveFullTrieWithLongValueUpdateAndSaveAgain() {
-        TrieImpl trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", TrieValueTest.makeValue(100));
 
         trie.save();
@@ -208,7 +208,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void retrieveTrieByHash() {
-        TrieImpl trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("bar", "foo".getBytes())
                 .put("foo", "bar".getBytes());
 
@@ -216,7 +216,7 @@ public class SecureTrieStoreTest {
         trie.save();
         int size = trie.trieSize();
 
-        TrieImpl trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
         verify(map, times(1)).get(any());
 
@@ -227,7 +227,7 @@ public class SecureTrieStoreTest {
 
     @Test
     public void retrieveTrieWithLongValuesByHash() {
-        TrieImpl trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("bar", TrieValueTest.makeValue(100))
                 .put("foo", TrieValueTest.makeValue(200));
 

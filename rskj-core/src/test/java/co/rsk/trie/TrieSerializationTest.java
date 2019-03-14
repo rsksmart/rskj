@@ -40,7 +40,7 @@ public class TrieSerializationTest {
 
     @Test
     public void serializeEmptyTrie() throws IOException {
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false);
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), false);
 
         byte[] bytes = trie.serialize();
 
@@ -59,7 +59,7 @@ public class TrieSerializationTest {
 
     @Test
     public void serializeTrieWithTwoValues() throws IOException {
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), false)
                 .put("foo".getBytes(), "bar".getBytes())
                 .put("bar".getBytes(), "foo".getBytes());
 
@@ -83,7 +83,7 @@ public class TrieSerializationTest {
         byte[] value1 = TrieValueTest.makeValue(100);
         byte[] value2 = TrieValueTest.makeValue(200);
 
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), false)
                 .put("foo".getBytes(), value1)
                 .put("bar".getBytes(), value2);
 
@@ -104,11 +104,11 @@ public class TrieSerializationTest {
 
     @Test
     public void deserializeEmptyTrie() {
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false);
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), false);
 
         byte[] bytes = trie.serialize();
 
-        TrieImpl result = TrieImpl.deserialize(bytes);
+        Trie result = Trie.deserialize(bytes);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.trieSize());
@@ -117,13 +117,13 @@ public class TrieSerializationTest {
 
     @Test
     public void deserializeTrieWithTwoValues() {
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), false)
                 .put("foo".getBytes(), "bar".getBytes())
                 .put("bar".getBytes(), "foo".getBytes());
 
         byte[] bytes = trie.serialize();
 
-        TrieImpl result = TrieImpl.deserialize(bytes);
+        Trie result = Trie.deserialize(bytes);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(3, result.trieSize());
@@ -138,13 +138,13 @@ public class TrieSerializationTest {
         byte[] value1 = TrieValueTest.makeValue(100);
         byte[] value2 = TrieValueTest.makeValue(200);
 
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), false)
                 .put("foo".getBytes(), value1)
                 .put("bar".getBytes(), value2);
 
         byte[] bytes = trie.serialize();
 
-        TrieImpl result = TrieImpl.deserialize(bytes);
+        Trie result = Trie.deserialize(bytes);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(3, result.trieSize());
@@ -156,13 +156,13 @@ public class TrieSerializationTest {
 
     @Test
     public void deserializeSecureTrieWithTwoValues() {
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), false)
                 .put("foo".getBytes(), "bar".getBytes())
                 .put("bar".getBytes(), "foo".getBytes());
 
         byte[] bytes = trie.serialize();
 
-        TrieImpl result = TrieImpl.deserialize(bytes);
+        Trie result = Trie.deserialize(bytes);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(3, result.trieSize());
@@ -177,13 +177,13 @@ public class TrieSerializationTest {
         byte[] value1 = TrieValueTest.makeValue(100);
         byte[] value2 = TrieValueTest.makeValue(200);
 
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false)
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), false)
                 .put("foo".getBytes(), value1)
                 .put("bar".getBytes(), value2);
 
         byte[] bytes = trie.serialize();
 
-        TrieImpl result = TrieImpl.deserialize(bytes);
+        Trie result = Trie.deserialize(bytes);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(3, result.trieSize());
@@ -195,14 +195,14 @@ public class TrieSerializationTest {
 
     @Test
     public void deserializeTrieWithOneHundredValues() {
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false);
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), false);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(("foo" + k).getBytes(), ("bar" + k).getBytes());
 
         byte[] bytes = trie.serialize();
 
-        TrieImpl result = TrieImpl.deserialize(bytes);
+        Trie result = Trie.deserialize(bytes);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(trie.trieSize(), result.trieSize());
@@ -214,14 +214,14 @@ public class TrieSerializationTest {
 
     @Test
     public void deserializeTrieWithOneHundredLongValues() {
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), false);
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), false);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(("foo" + k).getBytes(), TrieValueTest.makeValue(k + 200));
 
         byte[] bytes = trie.serialize();
 
-        TrieImpl result = TrieImpl.deserialize(bytes);
+        Trie result = Trie.deserialize(bytes);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(trie.trieSize(), result.trieSize());
@@ -233,14 +233,14 @@ public class TrieSerializationTest {
 
     @Test
     public void deserializeSecureTrieWithOneHundredValues() {
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), true);
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), true);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(("foo" + k).getBytes(), ("bar" + k).getBytes());
 
         byte[] bytes = trie.serialize();
 
-        TrieImpl result = TrieImpl.deserialize(bytes);
+        Trie result = Trie.deserialize(bytes);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(trie.trieSize(), result.trieSize());
@@ -252,14 +252,14 @@ public class TrieSerializationTest {
 
     @Test
     public void deserializeSecureTrieWithOneHundredLongValues() {
-        TrieImpl trie = new TrieImpl(new TrieStoreImpl(new HashMapDB()), true);
+        Trie trie = new Trie(new TrieStoreImpl(new HashMapDB()), true);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(("foo" + k).getBytes(), TrieValueTest.makeValue(k + 200));
 
         byte[] bytes = trie.serialize();
 
-        TrieImpl result = TrieImpl.deserialize(bytes);
+        Trie result = Trie.deserialize(bytes);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(trie.trieSize(), result.trieSize());

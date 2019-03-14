@@ -27,7 +27,7 @@ import org.junit.Test;
 public class TrieValueTest {
     @Test
     public void noLongValueInEmptyTrie() {
-        TrieImpl trie = new TrieImpl();
+        Trie trie = new Trie();
 
         Assert.assertFalse(trie.hasLongValue());
         Assert.assertNull(trie.getValueHash());
@@ -38,7 +38,7 @@ public class TrieValueTest {
     public void noLongValueInTrieWithShortValue() {
         byte[] value = new byte[] { 0x01, 0x02, 0x03 };
         byte[] key = new byte[] { 0x04, 0x05 };
-        TrieImpl trie = new TrieImpl().put(key, value);
+        Trie trie = new Trie().put(key, value);
 
         Assert.assertFalse(trie.hasLongValue());
         Assert.assertNull(trie.getValueHash());
@@ -53,7 +53,7 @@ public class TrieValueTest {
             value[k] = (byte)(k + 1);
 
         byte[] key = new byte[] { 0x04, 0x05 };
-        TrieImpl trie = new TrieImpl().put(key, value);
+        Trie trie = new Trie().put(key, value);
 
         Assert.assertFalse(trie.hasLongValue());
         Assert.assertNull(trie.getValueHash());
@@ -68,7 +68,7 @@ public class TrieValueTest {
             value[k] = (byte)(k + 1);
 
         byte[] key = new byte[] { 0x04, 0x05 };
-        TrieImpl trie = new TrieImpl().put(key, value);
+        Trie trie = new Trie().put(key, value);
 
         Assert.assertTrue(trie.hasLongValue());
         Assert.assertNotNull(trie.getValueHash());

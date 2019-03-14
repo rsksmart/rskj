@@ -48,7 +48,7 @@ import static org.ethereum.util.ByteUtil.wrap;
 public class ContractDetailsImpl implements ContractDetails {
     private static final Logger logger = LoggerFactory.getLogger("contractdetails");
 
-    private TrieImpl trie;
+    private Trie trie;
     private byte[] code;
     private byte[] address;
     private boolean dirty;
@@ -65,7 +65,7 @@ public class ContractDetailsImpl implements ContractDetails {
         decode(encoded);
     }
 
-    public ContractDetailsImpl(byte[] address, TrieImpl trie, byte[] code, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
+    public ContractDetailsImpl(byte[] address, Trie trie, byte[] code, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
         this.address = ByteUtils.clone(address);
         this.trie = trie;
         this.code = ByteUtils.clone(code);
@@ -82,9 +82,9 @@ public class ContractDetailsImpl implements ContractDetails {
         return code == null ? EMPTY_DATA_HASH : Keccak256Helper.keccak256(code);
     }
 
-    private TrieImpl newTrie() {
+    private Trie newTrie() {
         TrieStore store = new ContractStorageStoreFactory(this.trieStorePool).getTrieStore(this.address);
-        return new TrieImpl(store, true);
+        return new Trie(store, true);
     }
 
     @Override
@@ -201,8 +201,8 @@ public class ContractDetailsImpl implements ContractDetails {
             Keccak256 snapshotHash = new Keccak256(root);
             this.trie = this.newTrie().getSnapshotTo(snapshotHash);
         } else {
-            TrieImpl newTrie = this.newTrie();
-            TrieImpl tempTrie = TrieImpl.deserialize(root);
+            Trie newTrie = this.newTrie();
+            Trie tempTrie = Trie.deserialize(root);
             newTrie.getStore().copyFrom(tempTrie.getStore());
             this.trie = newTrie.getSnapshotTo(tempTrie.getHash());
         }
@@ -380,7 +380,7 @@ public class ContractDetailsImpl implements ContractDetails {
         return this.codeHash;
     }
 
-    public TrieImpl getTrie() {
+    public Trie getTrie() {
         return this.trie;
     }
 
@@ -417,7 +417,7 @@ public class ContractDetailsImpl implements ContractDetails {
 
         logger.trace("reopening contract details data source");
         TrieStoreImpl newStore = (TrieStoreImpl) trieStorePool.getInstanceFor(getDataSourceName());
-        TrieImpl newTrie = newStore.retrieve(this.trie.getHash().getBytes());
+        Trie newTrie = newStore.retrieve(this.trie.getHash().getBytes());
         this.trie = newTrie;
         this.closed = false;
     }

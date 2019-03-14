@@ -18,7 +18,7 @@
 
 package co.rsk.trie.delete;
 
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,12 +31,12 @@ public class TrieHashTest {
 
     @Test
     public void removeOrNeverInsertShouldBringSameHash() {
-        TrieImpl trie1 = new TrieImpl().put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie1 = new Trie().put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
                 .put("roosevelt", "the only thing we have to fear is... fear itself ".getBytes())
                 .put("roosevilt", "42".getBytes())
                 .delete("roosevelt");
 
-        TrieImpl trie2 = new TrieImpl().put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie2 = new Trie().put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
                 .put("roosevilt", "42".getBytes());
 
         Assert.assertTrue(Arrays.equals(trie1.get("roosevalt"), "So, first of all, let me assert my firm belief that".getBytes()));
@@ -47,12 +47,12 @@ public class TrieHashTest {
 
     @Test
     public void sonWithNoSiblingsAndOnlyOneSonShouldBringSameHashBaseCase() {
-        TrieImpl trie1 = new TrieImpl().put("roose", "42".getBytes())
+        Trie trie1 = new Trie().put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes())
                 .delete("roosevalt");
 
-        TrieImpl trie2 = new TrieImpl().put("roose", "42".getBytes())
+        Trie trie2 = new Trie().put("roose", "42".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes());
 
         Assert.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
@@ -63,14 +63,14 @@ public class TrieHashTest {
 
     @Test
     public void sonWithNoSiblingsAndOnlyOneSonShouldBringSameHashRecursionCase() {
-        TrieImpl trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes())
                 .delete("roosevalt");
 
-        TrieImpl trie2 = new TrieImpl()
+        Trie trie2 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes());
@@ -84,13 +84,13 @@ public class TrieHashTest {
 
     @Test
     public void sonWithNoSiblingsAndOnlyOneSonWithSonsShouldBringSameHashBaseCase() {
-        TrieImpl trie1 = new TrieImpl().put("roose", "42".getBytes())
+        Trie trie1 = new Trie().put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes())
                 .put("roosevaltroosevaltroosevaltroosevalt", "42434445".getBytes())
                 .delete("roosevalt");
 
-        TrieImpl trie2 = new TrieImpl().put("roose", "42".getBytes())
+        Trie trie2 = new Trie().put("roose", "42".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes())
                 .put("roosevaltroosevaltroosevaltroosevalt", "42434445".getBytes());
 
@@ -103,7 +103,7 @@ public class TrieHashTest {
 
     @Test
     public void sonWithNoSiblingsAndOnlyOneSonWithSonsShouldBringSameHashRecursionCase() {
-        TrieImpl trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
@@ -111,7 +111,7 @@ public class TrieHashTest {
                 .put("roosevaltroosevaltroosevaltroosevalt", "42434445".getBytes())
                 .delete("roosevalt");
 
-        TrieImpl trie2 = new TrieImpl()
+        Trie trie2 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes())
@@ -127,13 +127,13 @@ public class TrieHashTest {
 
     @Test
     public void sonWithNoSiblingsAndTwoSonsShouldBringSameHashBaseCase() {
-        TrieImpl trie1 = new TrieImpl().put("roose", "42".getBytes())
+        Trie trie1 = new Trie().put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
                 .put("roosevalt0oosevalt", "424344".getBytes())
                 .put("roosevalt1oosevalt", "42434445".getBytes())
                 .delete("roosevalt");
 
-        TrieImpl trie2 = new TrieImpl().put("roose", "42".getBytes())
+        Trie trie2 = new Trie().put("roose", "42".getBytes())
                 .put("roosevalt0oosevalt", "424344".getBytes())
                 .put("roosevalt1oosevalt", "42434445".getBytes());
 
@@ -146,7 +146,7 @@ public class TrieHashTest {
 
     @Test
     public void sonWithNoSiblingsAndTwoSonsShouldBringSameHashRecursionCase() {
-        TrieImpl trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
@@ -154,7 +154,7 @@ public class TrieHashTest {
                 .put("roosevalt1oosevalt", "42434445".getBytes())
                 .delete("roosevalt");
 
-        TrieImpl trie2 = new TrieImpl()
+        Trie trie2 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
                 .put("roosevalt0oosevalt", "424344".getBytes())
@@ -170,13 +170,13 @@ public class TrieHashTest {
 
     @Test
     public void sonWithSiblingAndOnlyOneGrandsonShouldBringSameHashBaseCase() {
-        TrieImpl trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("roosevalt", "4243".getBytes())
                 .put("rooseval_", "424344".getBytes())
                 .put("roosevaltroosevalt", "42434445".getBytes())
                 .delete("roosevalt");
 
-        TrieImpl trie2 = new TrieImpl()
+        Trie trie2 = new Trie()
                 .put("rooseval_", "424344".getBytes())
                 .put("roosevaltroosevalt", "42434445".getBytes());
 

@@ -18,7 +18,7 @@
 
 package co.rsk.trie.delete;
 
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,7 +34,7 @@ public class SecureTrieKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
-        TrieImpl trie = new TrieImpl(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(oneKey);
@@ -48,7 +48,7 @@ public class SecureTrieKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
-        TrieImpl trie = new TrieImpl(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(zeroKey);
@@ -62,7 +62,7 @@ public class SecureTrieKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
-        TrieImpl trie = new TrieImpl(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(zeroKey);
@@ -76,7 +76,7 @@ public class SecureTrieKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
-        TrieImpl trie = new TrieImpl(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(oneKey);

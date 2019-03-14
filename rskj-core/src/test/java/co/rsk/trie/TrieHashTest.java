@@ -34,23 +34,23 @@ public class TrieHashTest {
 
     @Test
     public void getNotNullHashOnEmptyTrie() {
-        TrieImpl trie = new TrieImpl();
+        Trie trie = new Trie();
 
         Assert.assertNotNull(trie.getHash().getBytes());
     }
 
     @Test
     public void getHashAs32BytesOnEmptyTrie() {
-        TrieImpl trie = new TrieImpl();
+        Trie trie = new Trie();
 
         Assert.assertEquals(32, trie.getHash().getBytes().length);
     }
 
     @Test
     public void emptyTriesHasTheSameHash() {
-        TrieImpl trie1 = new TrieImpl();
-        TrieImpl trie2 = new TrieImpl();
-        TrieImpl trie3 = new TrieImpl();
+        Trie trie1 = new Trie();
+        Trie trie2 = new Trie();
+        Trie trie3 = new Trie();
 
         Assert.assertEquals(trie1.getHash(), trie1.getHash());
         Assert.assertEquals(trie1.getHash(), trie2.getHash());
@@ -59,14 +59,14 @@ public class TrieHashTest {
 
     @Test
     public void emptyHashForEmptyTrie() {
-        TrieImpl trie = new TrieImpl();
+        Trie trie = new Trie();
 
         Assert.assertEquals(emptyHash, trie.getHash());
     }
 
     @Test
     public void nonEmptyHashForNonEmptyTrie() {
-        TrieImpl trie = new TrieImpl();
+        Trie trie = new Trie();
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
 
@@ -75,7 +75,7 @@ public class TrieHashTest {
 
     @Test
     public void nonEmptyHashForNonEmptyTrieWithLongValue() {
-        TrieImpl trie = new TrieImpl();
+        Trie trie = new Trie();
 
         trie = trie.put("foo".getBytes(), TrieValueTest.makeValue(100));
 
@@ -84,9 +84,9 @@ public class TrieHashTest {
 
     @Test
     public void triesWithSameKeyValuesHaveSameHash() {
-        TrieImpl trie1 = new TrieImpl().put("foo", "bar".getBytes())
+        Trie trie1 = new Trie().put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
-        TrieImpl trie2 = new TrieImpl().put("foo", "bar".getBytes())
+        Trie trie2 = new Trie().put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
 
         Assert.assertEquals(trie1.getHash(), trie2.getHash());
@@ -94,9 +94,9 @@ public class TrieHashTest {
 
     @Test
     public void triesWithSameKeyLongValuesHaveSameHash() {
-        TrieImpl trie1 = new TrieImpl().put("foo", "bar".getBytes())
+        Trie trie1 = new Trie().put("foo", "bar".getBytes())
                 .put("bar", TrieValueTest.makeValue(100));
-        TrieImpl trie2 = new TrieImpl().put("foo", "bar".getBytes())
+        Trie trie2 = new Trie().put("foo", "bar".getBytes())
                 .put("bar", TrieValueTest.makeValue(100));
 
         Assert.assertEquals(trie1.getHash(), trie2.getHash());
@@ -104,10 +104,10 @@ public class TrieHashTest {
 
     @Test
     public void triesWithSameKeyValuesInsertedInDifferentOrderHaveSameHash() {
-        TrieImpl trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
-        TrieImpl trie2 = new TrieImpl()
+        Trie trie2 = new Trie()
                 .put("bar", "baz".getBytes())
                 .put("foo", "bar".getBytes());
 
@@ -116,10 +116,10 @@ public class TrieHashTest {
 
     @Test
     public void triesWithSameKeyLongValuesInsertedInDifferentOrderHaveSameHash() {
-        TrieImpl trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("foo", TrieValueTest.makeValue(100))
                 .put("bar", TrieValueTest.makeValue(200));
-        TrieImpl trie2 = new TrieImpl()
+        Trie trie2 = new Trie()
                 .put("bar", TrieValueTest.makeValue(200))
                 .put("foo", TrieValueTest.makeValue(100));
 
@@ -128,15 +128,15 @@ public class TrieHashTest {
 
     @Test
     public void threeTriesWithSameKeyValuesInsertedInDifferentOrderHaveSameHash() {
-        TrieImpl trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes())
                 .put("baz", "foo".getBytes());
-        TrieImpl trie2 = new TrieImpl()
+        Trie trie2 = new Trie()
                 .put("bar", "baz".getBytes())
                 .put("baz", "foo".getBytes())
                 .put("foo", "bar".getBytes());
-        TrieImpl trie3 = new TrieImpl()
+        Trie trie3 = new Trie()
                 .put("baz", "foo".getBytes())
                 .put("bar", "baz".getBytes())
                 .put("foo", "bar".getBytes());
@@ -147,15 +147,15 @@ public class TrieHashTest {
 
     @Test
     public void threeTriesWithSameKeyLongValuesInsertedInDifferentOrderHaveSameHash() {
-        TrieImpl trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("foo", TrieValueTest.makeValue(100))
                 .put("bar", TrieValueTest.makeValue(200))
                 .put("baz", TrieValueTest.makeValue(300));
-        TrieImpl trie2 = new TrieImpl()
+        Trie trie2 = new Trie()
                 .put("bar", TrieValueTest.makeValue(200))
                 .put("baz", TrieValueTest.makeValue(300))
                 .put("foo", TrieValueTest.makeValue(100));
-        TrieImpl trie3 = new TrieImpl()
+        Trie trie3 = new Trie()
                 .put("baz", TrieValueTest.makeValue(300))
                 .put("bar", TrieValueTest.makeValue(200))
                 .put("foo", TrieValueTest.makeValue(100));
@@ -166,10 +166,10 @@ public class TrieHashTest {
 
     @Test
     public void triesWithDifferentKeyValuesHaveDifferentHashes() {
-        TrieImpl trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("foo", "bar".getBytes())
                 .put("bar", "42".getBytes());
-        TrieImpl trie2 = new TrieImpl()
+        Trie trie2 = new Trie()
                 .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
 
@@ -178,10 +178,10 @@ public class TrieHashTest {
 
     @Test
     public void triesWithDifferentKeyLongValuesHaveDifferentHashes() {
-        TrieImpl trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("foo", TrieValueTest.makeValue(100))
                 .put("bar", TrieValueTest.makeValue(200));
-        TrieImpl trie2 = new TrieImpl()
+        Trie trie2 = new Trie()
                 .put("foo", TrieValueTest.makeValue(150))
                 .put("bar", TrieValueTest.makeValue(250));
 

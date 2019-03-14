@@ -50,7 +50,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  *
  * An empty node has no subnodes and a null value
  */
-public class TrieImpl {
+public class Trie {
     private static final int ARITY = 2;
 
     private static final Logger logger = LoggerFactory.getLogger("newtrie");
@@ -88,28 +88,28 @@ public class TrieImpl {
     private final TrieKeySlice sharedPath;
 
     // default constructor, no secure
-    public TrieImpl() {
+    public Trie() {
         this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), null);
         this.isSecure = false;
     }
 
-    public TrieImpl(boolean isSecure) {
+    public Trie(boolean isSecure) {
         this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), null);
         this.isSecure = isSecure;
     }
 
-    public TrieImpl(TrieStore store, boolean isSecure) {
+    public Trie(TrieStore store, boolean isSecure) {
         this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), store);
         this.isSecure = isSecure;
     }
 
-    private TrieImpl(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure) {
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure) {
         this(sharedPath, value, NodeReference.empty(), NodeReference.empty(), store);
         this.isSecure = isSecure;
     }
 
     // full constructor
-    private TrieImpl(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store) {
+    private Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -117,7 +117,7 @@ public class TrieImpl {
         this.sharedPath = sharedPath;
     }
 
-    private TrieImpl withSecure(boolean isSecure) {
+    private Trie withSecure(boolean isSecure) {
         this.isSecure = isSecure;
         return this;
     }
@@ -130,7 +130,7 @@ public class TrieImpl {
      * @param message   the content (arity, hashes, value) serializaced as byte array
      * @param store     the store containing the rest of the trie nodes, to be used on retrieve them if they are needed in memory
      */
-    public static TrieImpl fromMessage(byte[] message, TrieStore store) {
+    public static Trie fromMessage(byte[] message, TrieStore store) {
         if (message == null) {
             return null;
         }
@@ -139,7 +139,7 @@ public class TrieImpl {
     }
 
     // this methods reads a short as dataInputStream + byteArrayInputStream
-    private static TrieImpl fromMessage(byte[] message, int position, int msglength, TrieStore store) {
+    private static Trie fromMessage(byte[] message, int position, int msglength, TrieStore store) {
         if (message == null) {
             return null;
         }
@@ -212,7 +212,7 @@ public class TrieImpl {
             }
         }
 
-        TrieImpl trie = new TrieImpl(sharedPath, value, left, right, store).withSecure(isSecure);
+        Trie trie = new Trie(sharedPath, value, left, right, store).withSecure(isSecure);
 
         if (store != null) {
             trie.saved = true;
@@ -282,11 +282,11 @@ public class TrieImpl {
      * key-value association. The original node is immutable, a new tree
      * is build, adding some new nodes
      */
-    public TrieImpl put(byte[] key, byte[] value) {
+    public Trie put(byte[] key, byte[] value) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(this.isSecure ? Keccak256Helper.keccak256(key) : key);
-        TrieImpl trie = put(keySlice, value);
+        Trie trie = put(keySlice, value);
 
-        return trie == null ? new TrieImpl(this.store, this.isSecure) : trie;
+        return trie == null ? new Trie(this.store, this.isSecure) : trie;
     }
 
     /**
@@ -299,7 +299,7 @@ public class TrieImpl {
      * @return  a new NewTrie, the top node of a new trie having the key
      * value association
      */
-    public TrieImpl put(String key, byte[] value) {
+    public Trie put(String key, byte[] value) {
         return put(key.getBytes(StandardCharsets.UTF_8), value);
     }
 
@@ -311,7 +311,7 @@ public class TrieImpl {
      * @return the new top node of the trie with the association removed
      *
      */
-    public TrieImpl delete(byte[] key) {
+    public Trie delete(byte[] key) {
         return put(key, null);
     }
 
@@ -322,7 +322,7 @@ public class TrieImpl {
      *
      * @return the new top node of the trie with the key removed
      */
-    public TrieImpl delete(String key) {
+    public Trie delete(String key) {
         return delete(key.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -441,8 +441,8 @@ public class TrieImpl {
      * @return the number of tries nodes, includes the current one
      */
     public int trieSize() {
-        return 1 + this.left.getNode().map(TrieImpl::trieSize).orElse(0)
-                + this.right.getNode().map(TrieImpl::trieSize).orElse(0);
+        return 1 + this.left.getNode().map(Trie::trieSize).orElse(0)
+                + this.right.getNode().map(Trie::trieSize).orElse(0);
     }
 
     /**
@@ -467,7 +467,7 @@ public class TrieImpl {
             return value;
         }
 
-        TrieImpl node = this.retrieveNode(key.get(commonPathLength));
+        Trie node = this.retrieveNode(key.get(commonPathLength));
         if (node == null) {
             return null;
         }
@@ -475,12 +475,12 @@ public class TrieImpl {
         return node.get(key.slice(commonPathLength + 1, key.length()));
     }
 
-    private TrieImpl retrieveNode(byte implicitByte) {
+    private Trie retrieveNode(byte implicitByte) {
         return implicitByte == 0 ? this.left.getNode().orElse(null) : this.right.getNode().orElse(null);
     }
 
-    private static TrieImpl internalRetrieve(TrieStore store, byte[] root) {
-        TrieImpl newTrie = store.retrieve(root);
+    private static Trie internalRetrieve(TrieStore store, byte[] root) {
+        Trie newTrie = store.retrieve(root);
 
         if (newTrie == null) {
             String log = String.format(ERROR_NON_EXISTENT_TRIE, Hex.toHexString(root));
@@ -518,7 +518,7 @@ public class TrieImpl {
      *
      * @return full trie deserialized from byte array
      */
-    public static TrieImpl deserialize(byte[] bytes) {
+    public static Trie deserialize(byte[] bytes) {
         final int keccakSize = Keccak256Helper.DEFAULT_SIZE_BYTES;
         int expectedSize = Short.BYTES + keccakSize;
         if (expectedSize > bytes.length) {
@@ -541,8 +541,8 @@ public class TrieImpl {
      * @return the new NewTrie containing the tree with the new key value association
      *
      */
-    private TrieImpl put(TrieKeySlice key, byte[] value) {
-        TrieImpl trie = this.internalPut(key, value);
+    private Trie put(TrieKeySlice key, byte[] value) {
+        Trie trie = this.internalPut(key, value);
 
         // the following code coalesces nodes if needed for delete operation
 
@@ -560,8 +560,8 @@ public class TrieImpl {
             return trie;
         }
 
-        Optional<TrieImpl> leftOpt = trie.left.getNode();
-        Optional<TrieImpl> rightOpt = trie.right.getNode();
+        Optional<Trie> leftOpt = trie.left.getNode();
+        Optional<Trie> rightOpt = trie.right.getNode();
         if (leftOpt.isPresent() && rightOpt.isPresent()) {
             return trie;
         }
@@ -570,7 +570,7 @@ public class TrieImpl {
             return trie;
         }
 
-        TrieImpl child;
+        Trie child;
         byte childImplicitByte;
         if (leftOpt.isPresent()) {
             child = leftOpt.get();
@@ -581,10 +581,10 @@ public class TrieImpl {
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        return new TrieImpl(newSharedPath, child.value, child.left, child.right, child.store).withSecure(child.isSecure);
+        return new Trie(newSharedPath, child.value, child.left, child.right, child.store).withSecure(child.isSecure);
     }
 
-    private TrieImpl internalPut(TrieKeySlice key, byte[] value) {
+    private Trie internalPut(TrieKeySlice key, byte[] value) {
         TrieKeySlice commonPath = key.commonPath(sharedPath);
         if (commonPath.length() < sharedPath.length()) {
             return this.split(commonPath).put(key, value);
@@ -599,23 +599,23 @@ public class TrieImpl {
                 return null;
             }
 
-            return new TrieImpl(this.sharedPath, value, this.left, this.right, this.store).withSecure(this.isSecure);
+            return new Trie(this.sharedPath, value, this.left, this.right, this.store).withSecure(this.isSecure);
         }
 
         if (isEmptyTrie()) {
-            return new TrieImpl(this.store, key, value, this.isSecure);
+            return new Trie(this.store, key, value, this.isSecure);
         }
 
         // this bit will be implicit and not present in a shared path
         byte pos = key.get(sharedPath.length());
 
-        TrieImpl node = retrieveNode(pos);
+        Trie node = retrieveNode(pos);
         if (node == null) {
-            node = new TrieImpl(this.store, this.isSecure);
+            node = new Trie(this.store, this.isSecure);
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        TrieImpl newNode = node.put(subKey, value);
+        Trie newNode = node.put(subKey, value);
 
         // reference equality
         if (newNode == node) {
@@ -637,13 +637,13 @@ public class TrieImpl {
             return null;
         }
 
-        return new TrieImpl(this.sharedPath, this.value, newLeft, newRight, this.store).withSecure(this.isSecure);
+        return new Trie(this.sharedPath, this.value, newLeft, newRight, this.store).withSecure(this.isSecure);
     }
 
-    private TrieImpl split(TrieKeySlice commonPath) {
+    private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        TrieImpl newChildTrie = new TrieImpl(newChildSharedPath, this.value, this.left, this.right, this.store).withSecure(this.isSecure);
+        Trie newChildTrie = new Trie(newChildSharedPath, this.value, this.left, this.right, this.store).withSecure(this.isSecure);
         NodeReference newChildReference = new NodeReference(this.store, newChildTrie, null);
 
         // this bit will be implicit and not present in a shared path
@@ -659,7 +659,7 @@ public class TrieImpl {
             newRight = newChildReference;
         }
 
-        return new TrieImpl(commonPath, null, newLeft, newRight, this.store).withSecure(this.isSecure);
+        return new Trie(commonPath, null, newLeft, newRight, this.store).withSecure(this.isSecure);
     }
 
     public boolean hasStore() {
@@ -687,7 +687,7 @@ public class TrieImpl {
         return left.isEmpty() && right.isEmpty();
     }
 
-    public TrieImpl getSnapshotTo(Keccak256 hash) {
+    public Trie getSnapshotTo(Keccak256 hash) {
         // This call shouldn't be needed since internally try can know it should store data
         //this.save();
         if (getHash().equals(hash)) {
@@ -695,7 +695,7 @@ public class TrieImpl {
         }
 
         if (emptyHash.equals(hash)) {
-            return new TrieImpl(this.store, this.isSecure);
+            return new Trie(this.store, this.isSecure);
         }
 
         return internalRetrieve(this.store, hash.getBytes());

@@ -22,7 +22,7 @@ package org.ethereum.config;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -71,7 +71,7 @@ public class CommonConfig {
         }
 
         return new RepositoryImpl(
-                new TrieImpl(new TrieStoreImpl(ds), true),
+                new Trie(new TrieStoreImpl(ds), true),
                 detailsDS,
                 new TrieStorePoolOnDisk(databaseDir),
                 memoryStorageLimit
