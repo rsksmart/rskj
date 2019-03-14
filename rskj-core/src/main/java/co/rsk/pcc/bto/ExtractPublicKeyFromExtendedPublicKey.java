@@ -74,4 +74,9 @@ public class ExtractPublicKeyFromExtendedPublicKey extends NativeMethod {
     public boolean onlyAllowsLocalCalls() {
         return false;
     }
+
+    @Override
+    public long getGas(Object[] parsedArguments, byte[] originalData) {
+        return 6_800L;
+    }
 }
