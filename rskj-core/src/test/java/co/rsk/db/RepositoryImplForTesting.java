@@ -19,7 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.core.RskAddress;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
@@ -33,7 +33,7 @@ import static org.ethereum.core.AccountState.EMPTY_DATA_HASH;
 public class RepositoryImplForTesting extends RepositoryImpl {
 
     public RepositoryImplForTesting() {
-        super(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), 1000);
+        super(new Trie(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), 1000);
     }
 
     @Override

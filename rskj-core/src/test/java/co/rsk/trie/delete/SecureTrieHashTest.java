@@ -19,7 +19,6 @@
 package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,17 +27,17 @@ import java.util.Arrays;
 /**
  * Created by martin.medina on 03/04/2017.
  */
-public class SecureTrieImplHashTest {
+public class SecureTrieHashTest {
 
     @Test
     public void removeOrNeverInsertShouldBringSameHashWithSecureTrie() {
-        Trie trie1 = new TrieImpl(true)
+        Trie trie1 = new Trie(true)
                 .put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
                 .put("roosevelt", "the only thing we have to fear is... fear itself ".getBytes())
                 .put("roosevilt", "42".getBytes())
                 .delete("roosevelt");
 
-        Trie trie2 = new TrieImpl(true)
+        Trie trie2 = new Trie(true)
                 .put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
                 .put("roosevilt", "42".getBytes());
 

@@ -82,9 +82,9 @@ public class ContractDetailsImpl implements ContractDetails {
         return code == null ? EMPTY_DATA_HASH : Keccak256Helper.keccak256(code);
     }
 
-    private TrieImpl newTrie() {
+    private Trie newTrie() {
         TrieStore store = new ContractStorageStoreFactory(this.trieStorePool).getTrieStore(this.address);
-        return new TrieImpl(store, true);
+        return new Trie(store, true);
     }
 
     @Override
@@ -201,8 +201,8 @@ public class ContractDetailsImpl implements ContractDetails {
             Keccak256 snapshotHash = new Keccak256(root);
             this.trie = this.newTrie().getSnapshotTo(snapshotHash);
         } else {
-            TrieImpl newTrie = this.newTrie();
-            TrieImpl tempTrie = (TrieImpl)TrieImpl.deserialize(root);
+            Trie newTrie = this.newTrie();
+            Trie tempTrie = Trie.deserialize(root);
             newTrie.getStore().copyFrom(tempTrie.getStore());
             this.trie = newTrie.getSnapshotTo(tempTrie.getHash());
         }

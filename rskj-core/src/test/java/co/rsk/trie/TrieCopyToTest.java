@@ -16,7 +16,7 @@ public class TrieCopyToTest {
         HashMapDB map2 = new HashMapDB();
         TrieStoreImpl store2 = new TrieStoreImpl(map2);
 
-        Trie trie = new TrieImpl(store1, true);
+        Trie trie = new Trie(store1, true);
 
         trie.save();
 
@@ -36,7 +36,7 @@ public class TrieCopyToTest {
         HashMapDB map2 = new HashMapDB();
         TrieStoreImpl store2 = new TrieStoreImpl(map2);
 
-        Trie trie = new TrieImpl(store1, true);
+        Trie trie = new Trie(store1, true);
 
         for (int k = 0; k < 100; k++) {
             trie = trie.put(k + "", (k + "").getBytes());
@@ -64,7 +64,7 @@ public class TrieCopyToTest {
         HashMapDB map2 = new HashMapDB();
         TrieStoreImpl store2 = new TrieStoreImpl(map2);
 
-        Trie trie = new TrieImpl(store1, true);
+        Trie trie = new Trie(store1, true);
 
         for (int k = 0; k < 100; k++) {
             trie = trie.put(k + "", (k + "").getBytes());
@@ -94,8 +94,8 @@ public class TrieCopyToTest {
         HashMapDB map2 = new HashMapDB();
         TrieStoreImpl store2 = new TrieStoreImpl(map2);
 
-        Trie trie1 = new TrieImpl(store1, true);
-        Trie trie2 = new TrieImpl(store1, true);
+        Trie trie1 = new Trie(store1, true);
+        Trie trie2 = new Trie(store1, true);
 
         for (int k = 0; k < 100; k++) {
             trie1 = trie1.put(k + "", (k + "").getBytes());

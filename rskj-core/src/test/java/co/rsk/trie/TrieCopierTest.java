@@ -58,7 +58,7 @@ public class TrieCopierTest {
         int nvalues = 10;
         byte[][] values = createValues(nvalues, 100);
 
-        Trie trie = new TrieImpl(store1, true);
+        Trie trie = new Trie(store1, true);
 
         for (int k = 0; k < nvalues; k++)
             trie = trie.put(k + "", values[k]);
@@ -86,7 +86,7 @@ public class TrieCopierTest {
         int nvalues = 30;
         byte[][] values = createValues(nvalues, 100);
 
-        Trie trie = new TrieImpl(store1, true);
+        Trie trie = new Trie(store1, true);
 
         for (int k = 0; k < nvalues - 2; k++)
             trie = trie.put(k + "", values[k]);
@@ -134,7 +134,7 @@ public class TrieCopierTest {
     public void copyBlockchainHeightTwoStates() {
         TrieStore store = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
         TrieStore store2 = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
-        Repository repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new Trie(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
         World world = new World(repository);
 
         Blockchain blockchain = createBlockchain(world);
@@ -147,7 +147,7 @@ public class TrieCopierTest {
         TrieCopier.trieStateCopy(store, store2, blockchain, 9);
 
         Repository repository91 = repository.getSnapshotTo(state9);
-        Repository repository92 = new RepositoryImpl(new TrieImpl(store2, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit()).getSnapshotTo(state9);
+        Repository repository92 = new RepositoryImpl(new Trie(store2, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit()).getSnapshotTo(state9);
 
         Assert.assertNotNull(repository91);
         Assert.assertNotNull(repository92);
@@ -165,7 +165,7 @@ public class TrieCopierTest {
     public void copyBlockchainHeightTwoContractStates() {
         TrieStore store = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
         TrieStore store2 = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
-        Repository repository = new RepositoryImpl(new TrieImpl(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new Trie(store, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
         World world = new World(repository);
 
         Blockchain blockchain = createBlockchain(world);

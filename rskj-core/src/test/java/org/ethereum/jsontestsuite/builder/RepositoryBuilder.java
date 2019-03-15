@@ -23,7 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.TrieStorePoolOnMemory;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -61,7 +61,7 @@ public class RepositoryBuilder {
         }
 
         final TestSystemProperties testSystemProperties = new TestSystemProperties();
-        RepositoryImpl repositoryDummy = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(store), true), new HashMapDB(), pool, testSystemProperties.detailsInMemoryStorageLimit());
+        RepositoryImpl repositoryDummy = new RepositoryImpl(new Trie(new TrieStoreImpl(store), true), new HashMapDB(), pool, testSystemProperties.detailsInMemoryStorageLimit());
         Repository track = repositoryDummy.startTracking();
         track.updateBatch(stateBatch, detailsBatch);
         track.commit();

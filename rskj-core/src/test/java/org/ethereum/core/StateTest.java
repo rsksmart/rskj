@@ -25,7 +25,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Ignore;
@@ -133,7 +132,7 @@ public class StateTest {
     }
 
     private Trie generateGenesisState() {
-        Trie trie = new TrieImpl();
+        Trie trie = new Trie();
         Genesis genesis = RskTestFactory.getGenesisInstance(new TestSystemProperties());
 
         for (Map.Entry<RskAddress, AccountState> accountsEntry : genesis.getAccounts().entrySet()) {

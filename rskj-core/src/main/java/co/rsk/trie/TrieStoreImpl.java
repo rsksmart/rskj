@@ -89,7 +89,7 @@ public class TrieStoreImpl implements TrieStore {
     public Trie retrieve(byte[] hash) {
         byte[] message = this.store.get(hash);
 
-        return TrieImpl.fromMessage(message, this);
+        return Trie.fromMessage(message, this);
     }
 
     public byte[] retrieveValue(byte[] hash) {

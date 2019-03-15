@@ -23,7 +23,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.RskFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
@@ -88,7 +87,7 @@ public class DoPrune {
         logger.info("Datasource Name {}", dataSourceName);
         logger.info("Blockchain height {}", height);
 
-        TrieImpl source = new TrieImpl(new TrieStoreImpl(levelDbByName(dataSourceName, this.rskSystemProperties.databaseDir())), true);
+        Trie source = new Trie(new TrieStoreImpl(levelDbByName(dataSourceName, this.rskSystemProperties.databaseDir())), true);
         String targetDataSourceName = dataSourceName + "B";
         KeyValueDataSource targetDataSource = levelDbByName(targetDataSourceName, this.rskSystemProperties.databaseDir());
         TrieStore targetStore = new TrieStoreImpl(targetDataSource);
@@ -98,7 +97,7 @@ public class DoPrune {
         closeDataSource(targetDataSourceName);
     }
 
-    private void processBlocks(long from, TrieImpl sourceTrie, RskAddress contractAddress, TrieStore targetStore) {
+    private void processBlocks(long from, Trie sourceTrie, RskAddress contractAddress, TrieStore targetStore) {
         long n = from;
 
         if (n <= 0) {

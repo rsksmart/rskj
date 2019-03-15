@@ -29,28 +29,28 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 /**
  * Created by ajlopez on 03/04/2017.
  */
-public class SecureTrieImplHashTest {
+public class SecureTrieHashTest {
     private static Keccak256 emptyHash = makeEmptyHash();
 
     @Test
     public void getNotNullHashOnEmptyTrie() {
-        Trie trie = new TrieImpl(true);
+        Trie trie = new Trie(true);
 
         Assert.assertNotNull(trie.getHash().getBytes());
     }
 
     @Test
     public void getHashAs32BytesOnEmptyTrie() {
-        Trie trie = new TrieImpl(true);
+        Trie trie = new Trie(true);
 
         Assert.assertEquals(32, trie.getHash().getBytes().length);
     }
 
     @Test
     public void emptyTriesHasTheSameHash() {
-        Trie trie1 = new TrieImpl(true);
-        Trie trie2 = new TrieImpl(true);
-        Trie trie3 = new TrieImpl(true);
+        Trie trie1 = new Trie(true);
+        Trie trie2 = new Trie(true);
+        Trie trie3 = new Trie(true);
 
         Assert.assertEquals(trie1.getHash(), trie1.getHash());
         Assert.assertEquals(trie1.getHash(), trie2.getHash());
@@ -59,14 +59,14 @@ public class SecureTrieImplHashTest {
 
     @Test
     public void emptyHashForEmptyTrie() {
-        Trie trie = new TrieImpl(true);
+        Trie trie = new Trie(true);
 
         Assert.assertEquals(emptyHash, trie.getHash());
     }
 
     @Test
     public void nonEmptyHashForNonEmptyTrie() {
-        Trie trie = new TrieImpl(true);
+        Trie trie = new Trie(true);
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
 
@@ -75,10 +75,10 @@ public class SecureTrieImplHashTest {
 
     @Test
     public void triesWithSameKeyValuesHaveSameHash() {
-        Trie trie1 = new TrieImpl(true)
+        Trie trie1 = new Trie(true)
                 .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
-        Trie trie2 = new TrieImpl(true)
+        Trie trie2 = new Trie(true)
                 .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
 
@@ -87,13 +87,13 @@ public class SecureTrieImplHashTest {
 
     @Test
     public void triesWithSameKeyLongValuesHaveSameHash() {
-        byte[] value1 = TrieImplValueTest.makeValue(100);
-        byte[] value2 = TrieImplValueTest.makeValue(200);
+        byte[] value1 = TrieValueTest.makeValue(100);
+        byte[] value2 = TrieValueTest.makeValue(200);
 
-        Trie trie1 = new TrieImpl(true)
+        Trie trie1 = new Trie(true)
                 .put("foo", value1)
                 .put("bar", value2);
-        Trie trie2 = new TrieImpl(true)
+        Trie trie2 = new Trie(true)
                 .put("foo", value1)
                 .put("bar", value2);
 
@@ -102,10 +102,10 @@ public class SecureTrieImplHashTest {
 
     @Test
     public void triesWithSameKeyValuesInsertedInDifferentOrderHaveSameHash() {
-        Trie trie1 = new TrieImpl(true)
+        Trie trie1 = new Trie(true)
                 .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
-        Trie trie2 = new TrieImpl(true)
+        Trie trie2 = new Trie(true)
                 .put("bar", "baz".getBytes())
                 .put("foo", "bar".getBytes());
 
@@ -114,13 +114,13 @@ public class SecureTrieImplHashTest {
 
     @Test
     public void triesWithSameKeyLongValuesInsertedInDifferentOrderHaveSameHash() {
-        byte[] value1 = TrieImplValueTest.makeValue(100);
-        byte[] value2 = TrieImplValueTest.makeValue(200);
+        byte[] value1 = TrieValueTest.makeValue(100);
+        byte[] value2 = TrieValueTest.makeValue(200);
 
-        Trie trie1 = new TrieImpl(true)
+        Trie trie1 = new Trie(true)
                 .put("foo", value1)
                 .put("bar", value2);
-        Trie trie2 = new TrieImpl(true)
+        Trie trie2 = new Trie(true)
                 .put("bar", value2)
                 .put("foo", value1);
 
@@ -129,15 +129,15 @@ public class SecureTrieImplHashTest {
 
     @Test
     public void threeTriesWithSameKeyValuesInsertedInDifferentOrderHaveSameHash() {
-        Trie trie1 = new TrieImpl(true)
+        Trie trie1 = new Trie(true)
                 .put("foo".getBytes(), "bar".getBytes())
                 .put("bar".getBytes(), "baz".getBytes())
                 .put("baz".getBytes(), "foo".getBytes());
-        Trie trie2 = new TrieImpl(true)
+        Trie trie2 = new Trie(true)
                 .put("bar".getBytes(), "baz".getBytes())
                 .put("baz".getBytes(), "foo".getBytes())
                 .put("foo".getBytes(), "bar".getBytes());
-        Trie trie3 = new TrieImpl(true)
+        Trie trie3 = new Trie(true)
                 .put("baz".getBytes(), "foo".getBytes())
                 .put("bar".getBytes(), "baz".getBytes())
                 .put("foo".getBytes(), "bar".getBytes());
@@ -148,19 +148,19 @@ public class SecureTrieImplHashTest {
 
     @Test
     public void threeTriesWithSameKeyLongValuesInsertedInDifferentOrderHaveSameHash() {
-        byte[] value1 = TrieImplValueTest.makeValue(100);
-        byte[] value2 = TrieImplValueTest.makeValue(150);
-        byte[] value3 = TrieImplValueTest.makeValue(200);
+        byte[] value1 = TrieValueTest.makeValue(100);
+        byte[] value2 = TrieValueTest.makeValue(150);
+        byte[] value3 = TrieValueTest.makeValue(200);
 
-        Trie trie1 = new TrieImpl(true)
+        Trie trie1 = new Trie(true)
                 .put("foo".getBytes(), value1)
                 .put("bar".getBytes(), value2)
                 .put("baz".getBytes(), value3);
-        Trie trie2 = new TrieImpl(true)
+        Trie trie2 = new Trie(true)
                 .put("bar".getBytes(), value2)
                 .put("baz".getBytes(), value3)
                 .put("foo".getBytes(), value1);
-        Trie trie3 = new TrieImpl(true)
+        Trie trie3 = new Trie(true)
                 .put("baz".getBytes(), value3)
                 .put("bar".getBytes(), value2)
                 .put("foo".getBytes(), value1);
@@ -171,10 +171,10 @@ public class SecureTrieImplHashTest {
 
     @Test
     public void triesWithDifferentKeyValuesHaveDifferentHashes() {
-        Trie trie1 = new TrieImpl(true)
+        Trie trie1 = new Trie(true)
                 .put("foo", "bar".getBytes())
                 .put("bar", "42".getBytes());
-        Trie trie2 = new TrieImpl(true)
+        Trie trie2 = new Trie(true)
                 .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
 
@@ -183,12 +183,12 @@ public class SecureTrieImplHashTest {
 
     @Test
     public void triesWithDifferentKeyLongValuesHaveDifferentHashes() {
-        Trie trie1 = new TrieImpl(true)
-                .put("foo", TrieImplValueTest.makeValue(100))
-                .put("bar", TrieImplValueTest.makeValue(110));
-        Trie trie2 = new TrieImpl(true)
-                .put("foo", TrieImplValueTest.makeValue(120))
-                .put("bar", TrieImplValueTest.makeValue(130));
+        Trie trie1 = new Trie(true)
+                .put("foo", TrieValueTest.makeValue(100))
+                .put("bar", TrieValueTest.makeValue(110));
+        Trie trie2 = new Trie(true)
+                .put("foo", TrieValueTest.makeValue(120))
+                .put("bar", TrieValueTest.makeValue(130));
 
         Assert.assertNotEquals(trie1.getHash(), trie2.getHash());
     }

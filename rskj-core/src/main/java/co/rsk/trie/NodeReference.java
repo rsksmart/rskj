@@ -26,10 +26,10 @@ import java.util.Optional;
 public class NodeReference {
     private final TrieStore store;
 
-    private TrieImpl lazyNode;
+    private Trie lazyNode;
     private Keccak256 lazyHash;
 
-    public NodeReference(TrieStore store, @Nullable TrieImpl node, @Nullable Keccak256 hash) {
+    public NodeReference(TrieStore store, @Nullable Trie node, @Nullable Keccak256 hash) {
         this.store = store;
         if (node != null && node.isEmptyTrie()) {
             this.lazyNode = null;
@@ -57,7 +57,7 @@ public class NodeReference {
      * The node or empty if this is an empty reference.
      * If the node is not present but its hash is known, it will be retrieved from the store.
      */
-    public Optional<TrieImpl> getNode() {
+    public Optional<Trie> getNode() {
         if (lazyNode != null) {
             return Optional.of(lazyNode);
         }
@@ -67,7 +67,7 @@ public class NodeReference {
         }
 
         lazyNode = Objects.requireNonNull(
-                (TrieImpl) store.retrieve(lazyHash.getBytes()),
+                store.retrieve(lazyHash.getBytes()),
                 "The node with this hash is not present in the trie store"
         );
         return Optional.of(lazyNode);

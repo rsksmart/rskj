@@ -24,10 +24,10 @@ import org.junit.Test;
 /**
  * Created by ajlopez on 04/12/2017.
  */
-public class TrieImplValueTest {
+public class TrieValueTest {
     @Test
     public void noLongValueInEmptyTrie() {
-        Trie trie = new TrieImpl();
+        Trie trie = new Trie();
 
         Assert.assertFalse(trie.hasLongValue());
         Assert.assertNull(trie.getValueHash());
@@ -38,7 +38,7 @@ public class TrieImplValueTest {
     public void noLongValueInTrieWithShortValue() {
         byte[] value = new byte[] { 0x01, 0x02, 0x03 };
         byte[] key = new byte[] { 0x04, 0x05 };
-        Trie trie = new TrieImpl().put(key, value);
+        Trie trie = new Trie().put(key, value);
 
         Assert.assertFalse(trie.hasLongValue());
         Assert.assertNull(trie.getValueHash());
@@ -53,7 +53,7 @@ public class TrieImplValueTest {
             value[k] = (byte)(k + 1);
 
         byte[] key = new byte[] { 0x04, 0x05 };
-        Trie trie = new TrieImpl().put(key, value);
+        Trie trie = new Trie().put(key, value);
 
         Assert.assertFalse(trie.hasLongValue());
         Assert.assertNull(trie.getValueHash());
@@ -68,7 +68,7 @@ public class TrieImplValueTest {
             value[k] = (byte)(k + 1);
 
         byte[] key = new byte[] { 0x04, 0x05 };
-        Trie trie = new TrieImpl().put(key, value);
+        Trie trie = new Trie().put(key, value);
 
         Assert.assertTrue(trie.hasLongValue());
         Assert.assertNotNull(trie.getValueHash());

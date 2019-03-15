@@ -24,7 +24,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -432,7 +431,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private Block createFakePendingBlock(Block best) {
-        Trie txsTrie = new TrieImpl();
+        Trie txsTrie = new Trie();
 
         // creating fake lightweight calculated block with no hashes calculations
         return new Block(best.getHash().getBytes(),

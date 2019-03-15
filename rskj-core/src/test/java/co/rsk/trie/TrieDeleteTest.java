@@ -11,10 +11,10 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 /**
  * Created by ajlopez on 06/05/2017.
  */
-public class TrieImplDeleteTest {
+public class TrieDeleteTest {
     @Test
     public void deleteValueGivintEmptyTrie() {
-        Trie trie = new TrieImpl().put("key", "value".getBytes());
+        Trie trie = new Trie().put("key", "value".getBytes());
 
         trie = trie.delete("key".getBytes());
 
@@ -23,44 +23,44 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteOneValueGivesTheSameHash() {
-        Trie trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("key1", "value1".getBytes())
                 .put("key2", "value2".getBytes())
                 .delete("key1");
 
-        Trie trie2 = new TrieImpl().put("key2", "value2".getBytes());
+        Trie trie2 = new Trie().put("key2", "value2".getBytes());
 
         Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
     public void deleteOneLongValueGivesTheSameHash() {
-        Trie trie1 = new TrieImpl()
-                .put("key1", TrieImplValueTest.makeValue(1024))
+        Trie trie1 = new Trie()
+                .put("key1", TrieValueTest.makeValue(1024))
                 .put("key2", "value2".getBytes())
                 .delete("key1");
 
-        Trie trie2 = new TrieImpl().put("key2", "value2".getBytes());
+        Trie trie2 = new Trie().put("key2", "value2".getBytes());
 
         Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
     public void deleteOneValueTwiceGivesTheSameHash() {
-        Trie trie1 = new TrieImpl()
+        Trie trie1 = new Trie()
                 .put("key1", "value1".getBytes())
                 .put("key2", "value2".getBytes())
                 .put("key2", "value2".getBytes())
                 .delete("key1");
 
-        Trie trie2 = new TrieImpl().put("key2", "value2".getBytes());
+        Trie trie2 = new Trie().put("key2", "value2".getBytes());
 
         Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
     public void deleteOneHundredValuesGivesTheSameHash() {
-        Trie trie1 = new TrieImpl();
+        Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, ("value" + k).getBytes());
@@ -68,7 +68,7 @@ public class TrieImplDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Trie trie2 = new TrieImpl();
+        Trie trie2 = new Trie();
 
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, ("value" + k).getBytes());
@@ -78,25 +78,25 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteOneHundredLongValuesGivesTheSameHash() {
-        Trie trie1 = new TrieImpl();
+        Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
-            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 100));
+            trie1 = trie1.put("key" + k, TrieValueTest.makeValue(k + 100));
 
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Trie trie2 = new TrieImpl();
+        Trie trie2 = new Trie();
 
         for (int k = 0; k < 200; k += 2)
-            trie2 = trie2.put("key" + k, TrieImplValueTest.makeValue(k + 100));
+            trie2 = trie2.put("key" + k, TrieValueTest.makeValue(k + 100));
 
         Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
     public void deleteOneHundredValuesGivesTheSameHashUsingSecureKeys() {
-        Trie trie1 = new TrieImpl(true);
+        Trie trie1 = new Trie(true);
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, ("value" + k).getBytes());
@@ -104,7 +104,7 @@ public class TrieImplDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Trie trie2 = new TrieImpl(true);
+        Trie trie2 = new Trie(true);
 
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, ("value" + k).getBytes());
@@ -114,25 +114,25 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteOneHundredLongValuesGivesTheSameHashUsingSecureKeys() {
-        Trie trie1 = new TrieImpl(true);
+        Trie trie1 = new Trie(true);
 
         for (int k = 0; k < 200; k++)
-            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+            trie1 = trie1.put("key" + k, TrieValueTest.makeValue(k + 200));
 
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Trie trie2 = new TrieImpl(true);
+        Trie trie2 = new Trie(true);
 
         for (int k = 0; k < 200; k += 2)
-            trie2 = trie2.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+            trie2 = trie2.put("key" + k, TrieValueTest.makeValue(k + 200));
 
         Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
     public void deleteTwoHundredValuesGivesTheEmptyHash() {
-        Trie trie1 = new TrieImpl();
+        Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, ("value" + k).getBytes());
@@ -145,10 +145,10 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteTwoHundredLongValuesGivesTheEmptyHash() {
-        Trie trie1 = new TrieImpl();
+        Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
-            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+            trie1 = trie1.put("key" + k, TrieValueTest.makeValue(k + 200));
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.delete("key" + k);
@@ -158,7 +158,7 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHash() {
-        Trie trie1 = new TrieImpl();
+        Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, ("value" + k).getBytes());
@@ -174,10 +174,10 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHash() {
-        Trie trie1 = new TrieImpl();
+        Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
-            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+            trie1 = trie1.put("key" + k, TrieValueTest.makeValue(k + 200));
 
         for (int k = 0; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
@@ -190,7 +190,7 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHashUsingSecureKeys() {
-        Trie trie1 = new TrieImpl(true);
+        Trie trie1 = new Trie(true);
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, ("value" + k).getBytes());
@@ -206,10 +206,10 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHashUsingSecureKeys() {
-        Trie trie1 = new TrieImpl(true);
+        Trie trie1 = new Trie(true);
 
         for (int k = 0; k < 200; k++)
-            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+            trie1 = trie1.put("key" + k, TrieValueTest.makeValue(k + 200));
 
         for (int k = 0; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);

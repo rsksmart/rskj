@@ -21,7 +21,6 @@ package org.ethereum.db;
 
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import org.apache.commons.collections4.MapUtils;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
@@ -124,7 +123,7 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
     @Override
     public byte[] getStorageHash() { // todo: unsupported
-        Trie storageTrie = new TrieImpl(null, true);
+        Trie storageTrie = new Trie(null, true);
 
         for (DataWord key : storage.keySet()) {
 

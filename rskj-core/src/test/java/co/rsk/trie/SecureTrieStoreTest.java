@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 03/04/2017.
  */
-public class SecureTrieImplStoreTest {
+public class SecureTrieStoreTest {
 
     private HashMapDB map;
     private TrieStoreImpl store;
@@ -41,7 +41,7 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void saveTrieNode() {
-        Trie trie = new TrieImpl(store, true).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store, true).put("foo", "bar".getBytes());
 
         store.save(trie);
 
@@ -54,7 +54,7 @@ public class SecureTrieImplStoreTest {
         byte[] key = "foo".getBytes();
         byte[] value = new byte[33];
 
-        Trie trie = new TrieImpl(store, true).put(key, value);
+        Trie trie = new Trie(store, true).put(key, value);
 
         store.save(trie);
 
@@ -72,7 +72,7 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void saveFullTrie() {
-        Trie trie = new TrieImpl(store, true).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store, true).put("foo", "bar".getBytes());
 
         trie.save();
 
@@ -82,8 +82,8 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void saveFullTrieWithLongValue() {
-        Trie trie = new TrieImpl(store, true)
-                .put("foo", TrieImplValueTest.makeValue(100));
+        Trie trie = new Trie(store, true)
+                .put("foo", TrieValueTest.makeValue(100));
 
         trie.save();
 
@@ -94,9 +94,9 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void saveFullTrieWithTwoLongValues() {
-        Trie trie = new TrieImpl(store, true)
-                .put("foo", TrieImplValueTest.makeValue(100))
-                .put("bar", TrieImplValueTest.makeValue(200));
+        Trie trie = new Trie(store, true)
+                .put("foo", TrieValueTest.makeValue(100))
+                .put("bar", TrieValueTest.makeValue(200));
 
         trie.save();
 
@@ -106,7 +106,7 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void saveFullTrieTwice() {
-        Trie trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", "bar".getBytes());
 
         trie.save();
@@ -120,8 +120,8 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void saveFullTrieWithLongValueTwice() {
-        Trie trie = new TrieImpl(store, true)
-                .put("foo", TrieImplValueTest.makeValue(100));
+        Trie trie = new Trie(store, true)
+                .put("foo", TrieValueTest.makeValue(100));
 
         trie.save();
 
@@ -135,7 +135,7 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void saveFullTrieUpdateAndSaveAgainUsingBinaryTrie() {
-        Trie trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", "bar".getBytes());
 
         trie.save();
@@ -152,14 +152,14 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void saveFullTrieWithLongValueUpdateAndSaveAgainUsingBinaryTrie() {
-        Trie trie = new TrieImpl(store, true)
-                .put("foo", TrieImplValueTest.makeValue(100));
+        Trie trie = new Trie(store, true)
+                .put("foo", TrieValueTest.makeValue(100));
 
         trie.save();
 
         verify(map, times(2)).put(any(), any());
 
-        trie = trie.put("foo", TrieImplValueTest.makeValue(200));
+        trie = trie.put("foo", TrieValueTest.makeValue(200));
 
         trie.save();
 
@@ -169,7 +169,7 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void saveFullTrieUpdateAndSaveAgain() {
-        Trie trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("foo", "bar".getBytes());
 
         trie.save();
@@ -186,14 +186,14 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void saveFullTrieWithLongValueUpdateAndSaveAgain() {
-        Trie trie = new TrieImpl(store, true)
-                .put("foo", TrieImplValueTest.makeValue(100));
+        Trie trie = new Trie(store, true)
+                .put("foo", TrieValueTest.makeValue(100));
 
         trie.save();
 
         verify(map, times(2)).put(any(), any());
 
-        trie = trie.put("foo", TrieImplValueTest.makeValue(200));
+        trie = trie.put("foo", TrieValueTest.makeValue(200));
 
         trie.save();
 
@@ -208,7 +208,7 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void retrieveTrieByHash() {
-        Trie trie = new TrieImpl(store, true)
+        Trie trie = new Trie(store, true)
                 .put("bar", "foo".getBytes())
                 .put("foo", "bar".getBytes());
 
@@ -227,9 +227,9 @@ public class SecureTrieImplStoreTest {
 
     @Test
     public void retrieveTrieWithLongValuesByHash() {
-        Trie trie = new TrieImpl(store, true)
-                .put("bar", TrieImplValueTest.makeValue(100))
-                .put("foo", TrieImplValueTest.makeValue(200));
+        Trie trie = new Trie(store, true)
+                .put("bar", TrieValueTest.makeValue(100))
+                .put("foo", TrieValueTest.makeValue(200));
 
         trie.save();
 
