@@ -625,7 +625,7 @@ public class Trie {
             newRight = newNodeReference;
         }
 
-        if (isEmptyTrie(value, newLeft, newRight)) {
+        if (isEmptyTrie(this.value, newLeft, newRight)) {
             return null;
         }
 
@@ -682,10 +682,6 @@ public class Trie {
     public Trie getSnapshotTo(Keccak256 hash) {
         // This call shouldn't be needed since internally try can know it should store data
         //this.save();
-        if (getHash().equals(hash)) {
-            return this;
-        }
-
         if (emptyHash.equals(hash)) {
             return new Trie(this.store, this.isSecure);
         }
