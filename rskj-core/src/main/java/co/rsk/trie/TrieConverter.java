@@ -32,8 +32,8 @@ public class TrieConverter {
 //    private final List<String> dump = new ArrayList<>();
 
     public TrieConverter() {
-        cacheHashes = new MaxSizeHashMap<>(500_000, true);
-        cacheStorage = new MaxSizeHashMap<>(600_000, true);
+        cacheHashes = new MaxSizeHashMap<>(1_000_000, true);
+        cacheStorage = new MaxSizeHashMap<>(1_000_000, true);
     }
 
     public byte[] getOrchidAccountTrieRoot(TrieImpl src) {
