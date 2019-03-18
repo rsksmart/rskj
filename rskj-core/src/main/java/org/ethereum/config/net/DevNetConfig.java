@@ -19,7 +19,6 @@
 
 package org.ethereum.config.net;
 
-import co.rsk.bitcoinj.core.BtcECKey;
 import org.ethereum.config.blockchain.HardForkActivationConfig;
 import org.ethereum.config.blockchain.devnet.DevNetGenesisConfig;
 import org.ethereum.config.blockchain.devnet.DevNetOrchid060Config;
@@ -37,17 +36,12 @@ public class DevNetConfig extends AbstractNetConfig {
      */
     public static DevNetConfig getDefaultDevNetConfig() {
         DevNetConfig config = new DevNetConfig();
+
         config.add(0, new DevNetOrchidConfig());
         return config;
     }
 
-    public static DevNetConfig getFromConfig(HardForkActivationConfig hardForkActivationConfig, List<BtcECKey> genesisFederatorsPublicKeys) {
-        DevNetConfig customConfig = getHardForkConfig(hardForkActivationConfig);
-        customConfig.setGenesisFederationPublicKeys(genesisFederatorsPublicKeys);
-        return customConfig;
-    }
-
-    public static DevNetConfig getHardForkConfig(HardForkActivationConfig hardForkActivationConfig) {
+    public static DevNetConfig getFromConfig(HardForkActivationConfig hardForkActivationConfig) {
         if (hardForkActivationConfig == null) {
             return getDefaultDevNetConfig();
         }
