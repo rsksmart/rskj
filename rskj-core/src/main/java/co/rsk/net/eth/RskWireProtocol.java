@@ -113,8 +113,6 @@ public class RskWireProtocol extends EthHandler {
             return;
         }
 
-        Metrics.messageBytes(messageSender.getPeerNodeID(), msg.getEncoded().length);
-
         switch (msg.getCommand()) {
             case STATUS:
                 processStatus((org.ethereum.net.eth.message.StatusMessage) msg, ctx);
