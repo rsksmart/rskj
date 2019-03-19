@@ -23,6 +23,7 @@ import co.rsk.trie.TrieImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.vm.DataWord;
 
 import static org.ethereum.core.AccountState.EMPTY_DATA_HASH;

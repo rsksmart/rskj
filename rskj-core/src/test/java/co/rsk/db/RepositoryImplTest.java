@@ -30,6 +30,7 @@ import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;

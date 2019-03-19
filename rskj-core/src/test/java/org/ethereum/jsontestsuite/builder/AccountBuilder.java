@@ -22,19 +22,18 @@ package org.ethereum.jsontestsuite.builder;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.db.ContractDetailsImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.jsontestsuite.model.AccountTck;
 import org.ethereum.vm.DataWord;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.json.Utils.parseData;
 import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
 

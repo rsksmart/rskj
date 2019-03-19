@@ -28,7 +28,6 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.TrieImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.BlockchainConfig;

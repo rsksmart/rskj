@@ -22,7 +22,6 @@ package org.ethereum.jsontestsuite.builder;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
@@ -30,6 +29,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ContractDetailsCacheImpl;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.jsontestsuite.model.AccountTck;
 
 import java.util.HashMap;
