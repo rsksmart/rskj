@@ -19,7 +19,6 @@
 
 package org.ethereum.vm.trace;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.Memory;
@@ -50,16 +49,8 @@ public class Op {
         this.op = op;
     }
 
-    public int getDepth() {
-        return depth;
-    }
-
     public void setDepth(int depth) {
         this.depth = depth;
-    }
-
-    public int getPc() {
-        return pc;
     }
 
     public void setPc(int pc) {
