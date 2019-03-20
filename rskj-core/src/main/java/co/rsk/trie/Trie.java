@@ -579,6 +579,11 @@ public class Trie {
     private Trie internalPut(TrieKeySlice key, byte[] value) {
         TrieKeySlice commonPath = key.commonPath(sharedPath);
         if (commonPath.length() < sharedPath.length()) {
+            // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
+            if (value == null) {
+                return this;
+            }
+
             return this.split(commonPath).put(key, value);
         }
 
