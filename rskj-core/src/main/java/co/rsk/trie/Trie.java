@@ -685,14 +685,13 @@ public class Trie {
     }
 
     public Trie getSnapshotTo(Keccak256 hash) {
-        // This call shouldn't be needed since internally try can know it should store data
-        //this.save();
-        if (getHash().equals(hash)) {
-            return this;
-        }
-
         if (emptyHash.equals(hash)) {
             return new Trie(this.store, this.isSecure);
+        }
+
+        // check if saved to only return this when we know it is in disk storage
+        if (this.saved && getHash().equals(hash)) {
+            return this;
         }
 
         return internalRetrieve(this.store, hash.getBytes());
