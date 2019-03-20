@@ -424,7 +424,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             }
         }
 
-        List<Transaction> acceptedTxs = transactionGateway.receiveTransactionsFrom(txs, sender.getPeerNodeID());
+        transactionGateway.receiveTransactionsFrom(txs, sender.getPeerNodeID());
 
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }
