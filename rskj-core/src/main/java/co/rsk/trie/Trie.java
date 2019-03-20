@@ -630,7 +630,7 @@ public class Trie {
             newRight = newNodeReference;
         }
 
-        if (isEmptyTrie(value, newLeft, newRight)) {
+        if (isEmptyTrie(this.value, newLeft, newRight)) {
             return null;
         }
 
