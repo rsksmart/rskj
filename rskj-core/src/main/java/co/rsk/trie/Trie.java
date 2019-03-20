@@ -106,7 +106,7 @@ public class Trie {
 
     // full constructor
     private Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store, boolean isSecure) {
-        this.value = value;
+        this.value = cloneArray(value);
         this.left = left;
         this.right = right;
         this.store = store;
@@ -251,7 +251,7 @@ public class Trie {
      */
     public byte[] get(byte[] key) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(this.isSecure ? Keccak256Helper.keccak256(key) : key);
-        return get(keySlice);
+        return cloneArray(get(keySlice));
     }
 
     /**
@@ -709,7 +709,13 @@ public class Trie {
         return null;
     }
 
-    public byte[] getValue() { return this.value; }
+    public byte[] getValue() {
+        return cloneArray(this.value);
+    }
+
+    private static byte[] cloneArray(byte[] array) {
+        return array == null ? null : Arrays.copyOf(array, array.length);
+    }
 
     /**
      * makeEmpyHash creates the hash associated to empty nodes
