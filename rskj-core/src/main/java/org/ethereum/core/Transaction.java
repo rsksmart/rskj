@@ -23,6 +23,9 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -61,6 +64,7 @@ public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
     private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
     /**
@@ -257,8 +261,10 @@ public class Transaction {
 
     public Keccak256 getHash() {
         if (hash == null) {
+            Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRX_GET_HASH);
             byte[] plainMsg = this.getEncoded();
             this.hash = new Keccak256(HashUtil.keccak256(plainMsg));
+            profiler.stop(metric);
         }
 
         return this.hash;
@@ -266,8 +272,10 @@ public class Transaction {
 
     public Keccak256 getRawHash() {
         if (rawHash == null) {
+            Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRX_GET_HASH);
             byte[] plainMsg = this.getEncodedRaw();
             this.rawHash = new Keccak256(HashUtil.keccak256(plainMsg));
+            profiler.stop(metric);
         }
 
         return this.rawHash;
@@ -374,6 +382,8 @@ public class Transaction {
             return sender;
         }
 
+
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         try {
             ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature());
             sender = new RskAddress(key.getAddress());
@@ -381,6 +391,9 @@ public class Transaction {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("transaction", e.getMessage());
             sender = RskAddress.nullAddress();
+        }
+        finally {
+            profiler.stop(metric);
         }
 
         return sender;
@@ -428,6 +441,7 @@ public class Transaction {
     }
 
     public byte[] getEncoded() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.GET_ENCODED_TRX);
         if (this.rlpEncoding == null) {
             byte[] v;
             byte[] r;
@@ -446,7 +460,9 @@ public class Transaction {
             this.rlpEncoding = encode(v, r, s);
         }
 
-        return ByteUtil.cloneBytes(this.rlpEncoding);
+        byte[] result =  ByteUtil.cloneBytes(this.rlpEncoding);
+        profiler.stop(metric);
+        return  result;
     }
 
     private byte[] encode(byte[] v, byte[] r, byte[] s) {

@@ -19,6 +19,9 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
@@ -54,6 +57,7 @@ public class Trie {
     private static final int ARITY = 2;
 
     private static final Logger logger = LoggerFactory.getLogger("newtrie");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final String PANIC_TOPIC = "newtrie";
     private static final String INVALID_ARITY = "Invalid arity";
@@ -131,11 +135,14 @@ public class Trie {
         if (message == null) {
             return null;
         }
+
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
         int current = position;
         int arity = message[current];
         current += Byte.BYTES;
 
         if (arity != ARITY) {
+            profiler.stop(metric);
             throw new IllegalArgumentException(INVALID_ARITY);
         }
 
@@ -153,6 +160,7 @@ public class Trie {
         int lencoded = PathEncoder.calculateEncodedLength(lshared);
         if (lencoded > 0) {
             if (message.length - current < lencoded) {
+                profiler.stop(metric);
                 throw new IllegalArgumentException(String.format(
                         "Left message is too short for encoded shared path expected:%d actual:%d total:%d",
                         lencoded, message.length - current, message.length));
@@ -191,6 +199,7 @@ public class Trie {
             int lvalue = msglength - offset;
             if (lvalue > 0) {
                 if (message.length - current  < lvalue) {
+                    profiler.stop(metric);
                     throw new IllegalArgumentException(String.format(
                             "Left message is too short for value expected:%d actual:%d total:%d",
                             lvalue, message.length - current, message.length));
@@ -207,6 +216,7 @@ public class Trie {
             trie.saved = true;
         }
 
+        profiler.stop(metric);
         return trie;
     }
 
@@ -247,8 +257,11 @@ public class Trie {
      * @return  the associated value, a byte array, or null if there is no associated value to the key
      */
     public byte[] get(byte[] key) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_GET_VALUE_FROM_KEY);
         TrieKeySlice keySlice = TrieKeySlice.fromKey(this.isSecure ? Keccak256Helper.keccak256(key) : key);
-        return cloneArray(get(keySlice));
+        byte[] result = cloneArray(get(keySlice));
+        profiler.stop(metric);
+        return result;
     }
 
     /**
@@ -329,6 +342,7 @@ public class Trie {
      * @return a byte array with the serialized info
      */
     public byte[] toMessage() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_TO_MESSAGE);
         int lvalue = this.value == null ? 0 : this.value.length;
         int lshared = this.sharedPath.length();
         int lencoded = PathEncoder.calculateEncodedLength(lshared);
@@ -383,6 +397,7 @@ public class Trie {
             }
         }
 
+        profiler.stop(metric); //buffer.array() is negligible
         return buffer.array();
     }
 

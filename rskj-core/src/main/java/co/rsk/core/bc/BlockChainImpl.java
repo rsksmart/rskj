@@ -21,6 +21,9 @@ package co.rsk.core.bc;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
@@ -74,6 +77,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 
 public class BlockChainImpl implements Blockchain {
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
@@ -497,7 +501,10 @@ public class BlockChainImpl implements Blockchain {
             return true;
         }
 
-        return blockValidator.isValid(block);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_VALIDATION);
+        boolean validation =  blockValidator.isValid(block);
+        profiler.stop(metric);
+        return validation;
     }
 
     // Rolling counter that helps doing flush every RskSystemProperties.CONFIG.flushNumberOfBlocks() flush attempts

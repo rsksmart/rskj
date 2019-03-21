@@ -21,6 +21,9 @@ package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.BlockCache;
 import co.rsk.remasc.Sibling;
 import co.rsk.util.MaxSizeHashMap;
@@ -47,6 +50,7 @@ import static co.rsk.core.BlockDifficulty.ZERO;
 public class IndexedBlockStore implements BlockStore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final BlockCache blockCache;
     private final MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache;
@@ -137,15 +141,14 @@ public class IndexedBlockStore implements BlockStore {
 
     @Override
     public synchronized void flush() {
-        long t1 = System.nanoTime();
-
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        
+        //long t1 = System.nanoTime();
         if (indexDB != null) {
             indexDB.commit();
         }
-
-        long t2 = System.nanoTime();
-
-        logger.info("Flush block store in: {} ms", ((float)(t2 - t1) / 1_000_000));
+        //long t2 = System.nanoTime(); logger.info("Flush block store in: {} ms", ((float)(t2 - t1) / 1_000_000));
+        profiler.stop(metric);
     }
 
     @Override
