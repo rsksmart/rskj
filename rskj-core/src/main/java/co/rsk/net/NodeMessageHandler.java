@@ -314,18 +314,18 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
 
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
-        tryRelayBlock(sender, block, result);
+        tryRelayBlock(block, result);
         recordEvent(sender, EventType.VALID_BLOCK);
     }
 
-    private void tryRelayBlock(@Nonnull MessageChannel sender, Block block, BlockProcessResult result) {
+    private void tryRelayBlock(Block block, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
         if (result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
-            relayBlock(sender, block);
+            relayBlock(block);
         }
     }
 
-    private void relayBlock(@Nonnull MessageChannel sender, Block block) {
+    private void relayBlock(Block block) {
         byte[] blockHash = block.getHash().getBytes();
         final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
         final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(blockHash);
