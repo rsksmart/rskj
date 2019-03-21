@@ -22,13 +22,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
 import org.ethereum.vm.DataWord;
-import org.bouncycastle.util.BigIntegers;
 
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
 
 /**
  * Responsible for persisting the remasc state into the contract state
@@ -50,7 +46,6 @@ class RemascStorageProvider {
     private Coin rewardBalance;
     private Coin burnedBalance;
     private Coin federationBalance;
-    private SortedMap<Long, List<Sibling>> siblings;
     private Boolean brokenSelectionRule;
 
     public RemascStorageProvider(Repository repository, RskAddress contractAddress) {
@@ -154,95 +149,11 @@ class RemascStorageProvider {
         this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.burnedBalance.getBytes()));
     }
 
-    public SortedMap<Long, List<Sibling>> getSiblings() {
-        if (siblings != null) {
-            return siblings;
-        }
-
-        DataWord address = new DataWord(SIBLINGS_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] bytes = this.repository.getStorageBytes(this.contractAddress, address);
-
-        siblings = getSiblingsFromBytes(bytes);
-
-        return siblings;
-    }
-
-    public static SortedMap<Long, List<Sibling>> getSiblingsFromBytes(byte[] bytes) {
-        SortedMap<Long, List<Sibling>> siblings = new TreeMap<>();
-
-        if (bytes == null || bytes.length == 0) {
-            return siblings;
-        }
-
-        RLPList rlpList = (RLPList) RLP.decode2(bytes).get(0);
-
-        int nentries = rlpList.size() / 2;
-
-        for (int k = 0; k < nentries; k++) {
-            byte[] bytesKey = rlpList.get(k * 2).getRLPData();
-            byte[] bytesValue = rlpList.get(k * 2 + 1).getRLPData();
-
-            long longKey = bytesKey == null ? 0 : BigIntegers.fromUnsignedByteArray(bytesKey).longValue();
-
-            Long key = Long.valueOf(longKey);
-
-            RLPList rlpSiblingList = (RLPList) RLP.decode2(bytesValue).get(0);
-
-            int nsiblings = rlpSiblingList.size();
-
-            List<Sibling> list = new ArrayList<>();
-
-            for (int j = 0; j < nsiblings; j++) {
-                byte[] bytesSibling = rlpSiblingList.get(j).getRLPData();
-                Sibling sibling = Sibling.create(bytesSibling);
-                list.add(sibling);
-            }
-
-            siblings.put(key, list);
-        }
-
-        return siblings;
-    }
-
     private void saveSiblings() {
-        if (this.siblings == null) {
-            return;
-        }
-
-        byte[] bytes = getSiblingsBytes(this.siblings);
-
         DataWord address = new DataWord(SIBLINGS_KEY.getBytes(StandardCharsets.UTF_8));
 
-        this.repository.addStorageBytes(this.contractAddress, address, bytes);
-    }
-
-    public static byte[] getSiblingsBytes(SortedMap<Long, List<Sibling>> siblings) {
-        int nentries = siblings.size();
-
-        byte[][] entriesBytes = new byte[nentries * 2][];
-
-        int n = 0;
-
-        for (Map.Entry<Long, List<Sibling>> entry : siblings.entrySet()) {
-            entriesBytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getKey()));
-
-            List<Sibling> list = entry.getValue();
-
-            int nsiblings = list.size();
-
-            byte[][] siblingsBytes = new byte[nsiblings][];
-
-            int j = 0;
-
-            for (Sibling element : list) {
-                siblingsBytes[j++] = element.getEncoded();
-            }
-
-            entriesBytes[n++] = RLP.encodeList(siblingsBytes);
-        }
-
-        return RLP.encodeList(entriesBytes);
+        // we add an empty list because Remasc state expects to have an empty siblings list after 0.5.0 activation
+        this.repository.addStorageBytes(this.contractAddress, address, RLP.encodedEmptyList());
     }
 
     public Boolean getBrokenSelectionRule() {
@@ -289,6 +200,7 @@ class RemascStorageProvider {
     public void save() {
         saveRewardBalance();
         saveBurnedBalance();
+        // This could be done only once because it will never change
         saveSiblings();
         saveBrokenSelectionRule();
         saveFederationBalance();

@@ -168,7 +168,6 @@ public class RemascProcessMinerFeesTest {
         RemascStorageProvider remascStorageProvider = getRemascStorageProvider(blockchain);
         assertEquals(Coin.valueOf(minerFee), remascStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
-        assertEquals(0, remascStorageProvider.getSiblings().size());
     }
 
     @Test
@@ -219,7 +218,6 @@ public class RemascProcessMinerFeesTest {
 
         assertEquals(Coin.ZERO, remascStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
-        assertEquals(0, remascStorageProvider.getSiblings().size());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
 
@@ -241,7 +239,6 @@ public class RemascProcessMinerFeesTest {
 
         assertEquals(Coin.valueOf(minerFee - blockReward), remascStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
-        assertEquals(0, remascStorageProvider.getSiblings().size());
 
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
@@ -299,7 +296,6 @@ public class RemascProcessMinerFeesTest {
 
         assertEquals(Coin.ZERO, remascStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
-        assertEquals(1, remascStorageProvider.getSiblings().size());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                 PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
@@ -332,7 +328,6 @@ public class RemascProcessMinerFeesTest {
 
         assertEquals(Coin.valueOf(minerFee - blockReward), remascStorageProvider.getRewardBalance());
         assertEquals(Coin.valueOf(1), remascStorageProvider.getBurnedBalance());
-        assertEquals(0, remascStorageProvider.getSiblings().size());
 
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
@@ -749,7 +744,6 @@ public class RemascProcessMinerFeesTest {
         RemascStorageProvider remasceStorageProvider = getRemascStorageProvider(blockchain);
         assertEquals(Coin.ZERO, remasceStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remasceStorageProvider.getBurnedBalance());
-        assertEquals(0, remasceStorageProvider.getSiblings().size());
 
         // A hacker trying to screw the system creates a tx to remasc and a fool/accomplice miner includes that tx in a block
         Transaction tx = new Transaction(
@@ -834,7 +828,6 @@ public class RemascProcessMinerFeesTest {
         RemascStorageProvider remasceStorageProvider = getRemascStorageProvider(blockchain);
         assertEquals(Coin.ZERO, remasceStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remasceStorageProvider.getBurnedBalance());
-        assertEquals(0, remasceStorageProvider.getSiblings().size());
 
         // A hacker trying to screw the system creates a contracts that calls remasc and a fool/accomplice miner includes that tx in a block
 //        Contract code
@@ -1137,7 +1130,6 @@ public class RemascProcessMinerFeesTest {
     private void validateRemascsStorageIsCorrect(RemascStorageProvider provider, Coin expectedRewardBalance, Coin expectedBurnedBalance, long expectedSiblingsSize) {
         assertEquals(expectedRewardBalance, provider.getRewardBalance());
         assertEquals(expectedBurnedBalance, provider.getBurnedBalance());
-        assertEquals(expectedSiblingsSize, provider.getSiblings().size());
     }
 
     private RemascStorageProvider getRemascStorageProvider(Blockchain blockchain) {
