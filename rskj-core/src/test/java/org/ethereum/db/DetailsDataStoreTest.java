@@ -22,7 +22,6 @@ package org.ethereum.db;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.ethereum.datasource.HashMapDB;

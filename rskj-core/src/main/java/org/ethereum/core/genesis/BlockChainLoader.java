@@ -24,12 +24,15 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.RepositoryImpl;
+import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -125,30 +128,8 @@ public class BlockChainLoader {
         if (bestBlock == null) {
             logger.info("DB is empty - adding Genesis");
 
-            // first we need to create the accounts, which creates also the associated ContractDetails
-            for (RskAddress accounts : genesis.getAccounts().keySet()) {
-                repository.createAccount(accounts);
-            }
-
-            // second we create contracts whom only have code modifying the preexisting ContractDetails instance
-            for (Map.Entry<RskAddress, byte[]> codeEntry : genesis.getCodes().entrySet()) {
-                RskAddress contractAddress = codeEntry.getKey();
-                ContractDetails contractDetails = repository.getContractDetails(contractAddress);
-                contractDetails.setCode(codeEntry.getValue());
-                Map<DataWord, byte[]> contractStorage = genesis.getStorages().get(contractAddress);
-                for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
-                    contractDetails.putBytes(storageEntry.getKey(), storageEntry.getValue());
-                }
-                repository.updateContractDetails(contractAddress, contractDetails);
-            }
-
-            // given the accounts had the proper storage root set from the genesis construction we update the account state
-            for (Map.Entry<RskAddress, AccountState> accountEntry : genesis.getAccounts().entrySet()) {
-                repository.updateAccountState(accountEntry.getKey(), accountEntry.getValue());
-            }
-
-            genesis.setStateRoot(repository.getRoot());
-            genesis.flushRLP();
+            loadRepository(repository);
+            updateGenesis(repository);
 
             blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
             blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
@@ -162,7 +143,9 @@ public class BlockChainLoader {
             blockchain.setStatus(bestBlock, totalDifficulty);
 
             // we need to do this because when bestBlock == null we touch the genesis' state root
-            genesis.setStateRoot(repository.getSnapshotTo(genesis.getStateRoot()).getRoot());
+            Repository repo = new RepositoryImpl(new Trie(true), null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+            loadRepository(repo);
+            updateGenesis(repo);
 
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     blockchain.getBestBlock().getNumber(),
@@ -188,5 +171,34 @@ public class BlockChainLoader {
             }
         }
         return blockchain;
+    }
+
+    private void updateGenesis(Repository repository) {
+        genesis.setStateRoot(repository.getRoot());
+        genesis.flushRLP();
+    }
+
+    private void loadRepository(Repository repository) {
+        // first we need to create the accounts, which creates also the associated ContractDetails
+        for (RskAddress accounts : genesis.getAccounts().keySet()) {
+                repository.createAccount(accounts);
+            }
+
+        // second we create contracts whom only have code modifying the preexisting ContractDetails instance
+        for (Map.Entry<RskAddress, byte[]> codeEntry : genesis.getCodes().entrySet()) {
+            RskAddress contractAddress = codeEntry.getKey();
+            ContractDetails contractDetails = repository.getContractDetails(contractAddress);
+            contractDetails.setCode(codeEntry.getValue());
+            Map<DataWord, byte[]> contractStorage = genesis.getStorages().get(contractAddress);
+            for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
+                contractDetails.putBytes(storageEntry.getKey(), storageEntry.getValue());
+            }
+            repository.updateContractDetails(contractAddress, contractDetails);
+        }
+
+        // given the accounts had the proper storage root set from the genesis construction we update the account state
+        for (Map.Entry<RskAddress, AccountState> accountEntry : genesis.getAccounts().entrySet()) {
+            repository.updateAccountState(accountEntry.getKey(), accountEntry.getValue());
+        }
     }
 }

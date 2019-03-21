@@ -26,7 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryImplForTesting;
-import co.rsk.db.TrieStorePoolOnMemory;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
