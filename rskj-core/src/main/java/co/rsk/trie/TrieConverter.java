@@ -30,15 +30,21 @@ public class TrieConverter {
     private final Map<Keccak256, Keccak256> cacheHashes;
     private final Map<Keccak256, byte[]> cacheStorage;
 //    private final List<String> dump = new ArrayList<>();
+//    private int accounts = 0;
+//    private int storage = 0;
 
     public TrieConverter() {
-        cacheHashes = new MaxSizeHashMap<>(500_000, true);
-        cacheStorage = new MaxSizeHashMap<>(600_000, true);
+        cacheHashes = new MaxSizeHashMap<>(100_000, true);
+        cacheStorage = new MaxSizeHashMap<>(50_000, true);
     }
 
     public byte[] getOrchidAccountTrieRoot(Trie src) {
 //        dump.clear();
+//        accounts = 0;
+//        storage = 0;
         byte[] oldAccountTrieRoot = getOrchidAccountTrieRoot(src.getSharedPath(), src, true);
+//        System.out.println("ACCOUNTS: " + accounts);
+//        System.out.println("STORAGE: " + storage);
 //        try {
 //            FileWriter writer = new FileWriter("output.txt");
 //            for(String str: dump) {
@@ -52,6 +58,7 @@ public class TrieConverter {
     }
 
     private byte[] getOrchidAccountTrieRoot(TrieKeySlice key, Trie src, boolean removeFirst8bits) {
+//        accounts++;
         if (src == null) {
             return HashUtil.EMPTY_TRIE_HASH;
         }
@@ -146,6 +153,7 @@ public class TrieConverter {
     }
 
     private byte[] getOrchidStateRoot(TrieKeySlice key, Trie unitrieStorageRoot, boolean removeFirstNodePrefix, boolean onlyChild) {
+//        storage++;
         if (unitrieStorageRoot == null) {
             return HashUtil.EMPTY_TRIE_HASH;
         }
