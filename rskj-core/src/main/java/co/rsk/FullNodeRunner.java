@@ -218,7 +218,7 @@ public class FullNodeRunner implements NodeRunner {
     }
 
     private void waitRskSyncDone() throws InterruptedException {
-        while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync() || rsk.isPlayingBlocks()) {
+        while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync()) {
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e1) {

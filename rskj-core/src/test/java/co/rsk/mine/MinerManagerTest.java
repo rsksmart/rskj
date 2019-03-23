@@ -163,31 +163,6 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void mineBlockWhilePlayingBlocks() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        RskImplForTest rsk = new RskImplForTest() {
-            @Override
-            public boolean hasBetterBlockToSync() {
-                return false;
-            }
-
-            @Override
-            public boolean isPlayingBlocks() {
-                return true;
-            }
-        };
-        MinerServerImpl minerServer = getMinerServer();
-        MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
-
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-
-        Assert.assertFalse(minerClient.mineBlock());
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-    }
-
-    @Test
     public void doWork() {
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
@@ -274,11 +249,6 @@ public class MinerManagerTest {
         return getMinerClient(new RskImplForTest() {
             @Override
             public boolean hasBetterBlockToSync() {
-                return false;
-            }
-
-            @Override
-            public boolean isPlayingBlocks() {
                 return false;
             }
         }, minerServer);

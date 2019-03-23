@@ -118,15 +118,6 @@ public class MinerClientImpl implements MinerClient {
                 }
                 return false;
             }
-
-            if (this.rsk.isPlayingBlocks()) {
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException ex) {
-                    logger.error("Interrupted mining sleep", ex);
-                }
-                return false;
-            }
         }
 
         newBestBlockArrivedFromAnotherNode = false;
