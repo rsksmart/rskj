@@ -183,16 +183,6 @@ public class BlockChainImpl implements Blockchain {
         }
     }
 
-    @Override
-    public void suspendProcess() {
-        this.lock.writeLock().lock();
-    }
-
-    @Override
-    public void resumeProcess() {
-        this.lock.writeLock().unlock();
-    }
-
     private ImportResult internalTryToConnect(Block block) {
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
                 !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {

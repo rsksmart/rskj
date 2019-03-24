@@ -19,7 +19,6 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
-import co.rsk.db.PruneConfiguration;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
@@ -317,29 +316,6 @@ public class RskSystemProperties extends SystemProperties {
 
     public VmConfig getVmConfig() {
         return new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle());
-    }
-
-    // New prune service properties
-    public boolean isPruneEnabled() {
-        return configFromFiles.getBoolean("prune.enabled");
-    }
-
-    public int getPruneNoBlocksToCopy() {
-        return configFromFiles.getInt("prune.blocks.toCopy");
-    }
-
-    public int getPruneNoBlocksToWait() {
-        return configFromFiles.getInt("prune.blocks.toWait");
-    }
-
-    public int getPruneNoBlocksToAvoidForks() {
-        return configFromFiles.getInt("prune.blocks.toAvoidForks");
-    }
-
-    public PruneConfiguration getPruneConfiguration() {
-        return new PruneConfiguration(this.getPruneNoBlocksToCopy(),
-                                      this.getPruneNoBlocksToAvoidForks(),
-                                      this.getPruneNoBlocksToWait());
     }
 
     public long peerDiscoveryCleanPeriod() {
