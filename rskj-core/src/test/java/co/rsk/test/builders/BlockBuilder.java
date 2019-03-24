@@ -21,13 +21,16 @@ package co.rsk.test.builders;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.StateRootHandler;
 import co.rsk.test.World;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -122,7 +125,7 @@ public class BlockBuilder {
                     config.databaseDir(),
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
-            ));
+            ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
             executor.executeAndFill(block, parent.getHeader());
         }
 

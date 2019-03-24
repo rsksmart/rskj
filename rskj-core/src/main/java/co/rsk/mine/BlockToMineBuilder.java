@@ -25,6 +25,7 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
+import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
 import org.apache.commons.collections4.CollectionUtils;
@@ -66,6 +67,7 @@ public class BlockToMineBuilder {
     private final BlockExecutor executor;
 
     private final Coin minerMinGasPriceTarget;
+    private final StateRootHandler stateRootHandler;
 
     @Autowired
     public BlockToMineBuilder(
@@ -78,7 +80,8 @@ public class BlockToMineBuilder {
             @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
             RskSystemProperties config,
             ReceiptStore receiptStore,
-            MinerClock clock) {
+            MinerClock clock,
+            StateRootHandler stateRootHandler) {
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
         this.blockStore = Objects.requireNonNull(blockStore);
@@ -90,6 +93,7 @@ public class BlockToMineBuilder {
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        this.stateRootHandler = stateRootHandler;
         this.executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
@@ -110,7 +114,7 @@ public class BlockToMineBuilder {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), this.stateRootHandler);
 
         this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
     }

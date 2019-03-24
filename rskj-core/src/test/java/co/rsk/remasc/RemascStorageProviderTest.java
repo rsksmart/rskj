@@ -26,14 +26,13 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryImplForTesting;
-import org.ethereum.db.TrieStorePoolOnMemory;
+import co.rsk.db.StateRootHandler;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
-
 import org.ethereum.config.blockchain.mainnet.MainNetAfterBridgeSyncConfig;
 import org.ethereum.config.blockchain.mainnet.MainNetOrchidConfig;
 import org.ethereum.config.blockchain.testnet.TestNetBeforeBridgeSyncConfig;
@@ -43,6 +42,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -527,7 +527,7 @@ public class RemascStorageProviderTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());

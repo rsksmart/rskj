@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.StateRootHandler;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
@@ -52,10 +53,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -229,7 +227,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
         executor.executeAndFill(block, parent.getHeader());
@@ -278,7 +276,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
         Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
@@ -338,7 +336,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
         Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
@@ -384,7 +382,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         Assert.assertTrue(executor.executeAndValidate(block, parent.getHeader()));
     }
@@ -415,7 +413,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         byte[] stateRoot = block.getStateRoot();
         stateRoot[0] = (byte)((stateRoot[0] + 1) % 256);
@@ -449,7 +447,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         byte[] receiptsRoot = block.getReceiptsRoot();
         receiptsRoot[0] = (byte)((receiptsRoot[0] + 1) % 256);
@@ -483,7 +481,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         block.getHeader().setGasUsed(0);
 
@@ -516,7 +514,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         block.getHeader().setPaidFees(Coin.ZERO);
 
@@ -549,7 +547,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         byte[] logBloom = block.getLogBloom();
         logBloom[0] = (byte)((logBloom[0] + 1) % 256);
@@ -591,7 +589,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
         List<Transaction> txs = new ArrayList<>();
@@ -721,7 +719,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
         Repository repository = objects.getRepository();
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
@@ -817,7 +815,7 @@ public class BlockExecutorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), getStateRootHandler());
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = createStrangeTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()), strangeTransactionType);
@@ -869,6 +867,10 @@ public class BlockExecutorTest {
         Keccak256 digest =  new Keccak256();
         digest.update(input);
         return digest.digest();
+    }
+
+    private static StateRootHandler getStateRootHandler() {
+        return new StateRootHandler(config, new HashMapDB(), new HashMap<>());
     }
 
     public static class TestObjects {

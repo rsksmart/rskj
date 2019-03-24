@@ -23,6 +23,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockStore;
 import co.rsk.net.BlockSyncService;
@@ -30,6 +31,7 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -108,7 +110,7 @@ public class World {
                     config.databaseDir(),
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
-            ));
+            ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
 
         return this.blockExecutor;
     }

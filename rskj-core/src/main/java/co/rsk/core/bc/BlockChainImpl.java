@@ -19,6 +19,8 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
@@ -79,6 +81,7 @@ public class BlockChainImpl implements Blockchain {
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
+    private final StateRootHandler stateRootHandler;
     private final EthereumListener listener;
     private BlockValidator blockValidator;
 
@@ -101,7 +104,8 @@ public class BlockChainImpl implements Blockchain {
                           BlockValidator blockValidator,
                           boolean flushEnabled,
                           int flushNumberOfBlocks,
-                          BlockExecutor blockExecutor) {
+                          BlockExecutor blockExecutor,
+                          StateRootHandler stateRootHandler) {
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
@@ -111,6 +115,7 @@ public class BlockChainImpl implements Blockchain {
         this.flushNumberOfBlocks = flushNumberOfBlocks;
         this.blockExecutor = blockExecutor;
         this.transactionPool = transactionPool;
+        this.stateRootHandler = stateRootHandler;
     }
 
     @Override
@@ -265,6 +270,9 @@ public class BlockChainImpl implements Blockchain {
 
             long totalTime = System.nanoTime() - saveTime;
             logger.trace("block: num: [{}] hash: [{}], executed after: [{}]nano", block.getNumber(), block.getShortHash(), totalTime);
+
+            // the block is valid at this point
+            stateRootHandler.register(block.getHeader(), new Keccak256(result.getStateRoot()));
         }
 
         // the new accumulated difficulty
@@ -347,7 +355,8 @@ public class BlockChainImpl implements Blockchain {
         synchronized (accessLock) {
             status = new BlockChainStatus(block, totalDifficulty);
             blockStore.saveBlock(block, totalDifficulty, true);
-            repository.syncToRoot(block.getStateRoot());
+            Keccak256 root = stateRootHandler.translate(block.getHeader());
+            repository.syncToRoot(root.getBytes());
         }
     }
 
@@ -449,7 +458,8 @@ public class BlockChainImpl implements Blockchain {
         synchronized (accessLock) {
             storeBlock(block, totalDifficulty, true);
             status = new BlockChainStatus(block, totalDifficulty);
-            repository.syncToRoot(block.getStateRoot());
+            Keccak256 root = stateRootHandler.translate(block.getHeader());
+            repository.syncToRoot(root.getBytes());
         }
     }
 

@@ -27,21 +27,23 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -73,6 +75,7 @@ public class RemascProcessMinerFeesTest {
 
     private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
     private BlockChainBuilder blockchainBuilder;
+    private StateRootHandler stateRootHandler;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
@@ -92,8 +95,12 @@ public class RemascProcessMinerFeesTest {
 
     @Before
     public void setup() {
-        blockchainBuilder = new BlockChainBuilder();
-        blockchainBuilder.setGenesis(genesisBlock).setConfig(config).setTesting(true);
+        stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        blockchainBuilder = new BlockChainBuilder()
+                .setStateRootHandler(stateRootHandler)
+                .setGenesis(genesisBlock)
+                .setConfig(config)
+                .setTesting(true);
     }
 
     @Test
@@ -138,7 +145,7 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
@@ -200,7 +207,7 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
@@ -276,7 +283,7 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
@@ -394,7 +401,7 @@ public class RemascProcessMinerFeesTest {
                         config.databaseDir(),
                         config.vmTraceDir(),
                         config.vmTraceCompressed()
-                ));
+                ), stateRootHandler);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
@@ -529,7 +536,7 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
@@ -624,7 +631,7 @@ public class RemascProcessMinerFeesTest {
                         config.databaseDir(),
                         config.vmTraceDir(),
                         config.vmTraceCompressed()
-                ));
+                ), stateRootHandler);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
@@ -727,7 +734,7 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
@@ -810,7 +817,7 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());

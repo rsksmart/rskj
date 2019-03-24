@@ -25,6 +25,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskFactory;
 import co.rsk.core.bc.BlockValidatorImpl;
+import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.BlockValidator;
@@ -61,6 +62,7 @@ public class RskContext {
     private ReceiptStore receiptStore;
     private ProgramInvokeFactoryImpl programInvokeFactory;
     private TransactionPool transactionPool;
+    private StateRootHandler stateRootHandler;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -92,11 +94,20 @@ public class RskContext {
                     getTransactionPool(),
                     getCompositeEthereumListener(),
                     getBlockValidator(),
-                    getGenesis()
+                    getGenesis(),
+                    getStateRootHandler()
             );
         }
 
         return blockChainLoader;
+    }
+
+    public StateRootHandler getStateRootHandler() {
+        if (stateRootHandler == null) {
+            stateRootHandler = factory.getStateRootHandler(getRskSystemProperties());
+        }
+
+        return stateRootHandler;
     }
 
     public TransactionPool getTransactionPool() {
@@ -160,7 +171,8 @@ public class RskContext {
             blockParentDependantValidationRule = factory.blockParentDependantValidationRule(
                     getRepository(),
                     getRskSystemProperties(),
-                    getDifficultyCalculator()
+                    getDifficultyCalculator(),
+                    getStateRootHandler()
             );
         }
 

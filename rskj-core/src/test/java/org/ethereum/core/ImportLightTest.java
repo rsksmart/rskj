@@ -26,7 +26,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
+import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -37,6 +37,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.PrecompiledContracts;
@@ -73,6 +74,7 @@ public class ImportLightTest {
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
@@ -102,7 +104,8 @@ public class ImportLightTest {
                         config.databaseDir(),
                         config.vmTraceDir(),
                         config.vmTraceCompressed()
-                ))
+                ), stateRootHandler),
+                stateRootHandler
         );
 
         blockchain.setNoValidation(true);

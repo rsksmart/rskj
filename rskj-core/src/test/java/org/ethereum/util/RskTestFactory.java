@@ -8,6 +8,7 @@ import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.StateRootHandler;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
@@ -42,6 +43,7 @@ public class RskTestFactory extends RskContext {
     private IndexedBlockStore blockStore;
     private RepositoryImpl repository;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
+    private StateRootHandler stateRootHandler;
     private NodeBlockProcessor blockProcessor;
     private RskImpl rskImpl;
     private CompositeEthereumListener compositeEthereumListener;
@@ -126,6 +128,15 @@ public class RskTestFactory extends RskContext {
         return genesis;
     }
 
+    @Override
+    public StateRootHandler getStateRootHandler() {
+        if (stateRootHandler == null) {
+            stateRootHandler = new StateRootHandler(getRskSystemProperties(), new HashMapDB(), new HashMap<>());
+        }
+
+        return stateRootHandler;
+    }
+
     public NodeBlockProcessor getBlockProcessor() {
         if (blockProcessor == null) {
             co.rsk.net.BlockStore store = new co.rsk.net.BlockStore();
@@ -182,7 +193,8 @@ public class RskTestFactory extends RskContext {
         if (blockExecutor == null) {
             blockExecutor = new BlockExecutor(
                     getRepository(),
-                    getTransactionExecutorFactory()
+                    getTransactionExecutorFactory(),
+                    getStateRootHandler()
             );
         }
 

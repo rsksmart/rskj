@@ -28,9 +28,10 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
+import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.validators.DummyBlockValidator;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
@@ -58,7 +59,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -121,6 +121,7 @@ public class TestRunner {
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
         BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, null, new DummyBlockValidator(), false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
@@ -141,7 +142,7 @@ public class TestRunner {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        )));
+        ), stateRootHandler), stateRootHandler);
 
         blockchain.setNoValidation(true);
         blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());

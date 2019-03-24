@@ -25,7 +25,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
+import co.rsk.db.StateRootHandler;
 import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
@@ -59,6 +59,7 @@ public class BlockChainBuilder {
     private ReceiptStore receiptStore;
     private RskSystemProperties config;
     private EthereumListener listener;
+    private StateRootHandler stateRootHandler;
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -105,8 +106,17 @@ public class BlockChainBuilder {
         return this;
     }
 
+    public BlockChainBuilder setStateRootHandler(StateRootHandler stateRootHandler) {
+        this.stateRootHandler = stateRootHandler;
+        return this;
+    }
+
     public RskSystemProperties getConfig() {
         return config;
+    }
+
+    public StateRootHandler getStateRootHandler() {
+        return this.stateRootHandler;
     }
 
     public BlockChainImpl build() {
@@ -117,6 +127,10 @@ public class BlockChainBuilder {
         if (repository == null)
             repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
+        if (stateRootHandler == null) {
+            stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        }
+        
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         }
@@ -165,7 +179,7 @@ public class BlockChainBuilder {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        )));
+        ), stateRootHandler), stateRootHandler);
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
@@ -210,7 +224,7 @@ public class BlockChainBuilder {
                     config.databaseDir(),
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
-            ));
+            ), stateRootHandler);
 
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());

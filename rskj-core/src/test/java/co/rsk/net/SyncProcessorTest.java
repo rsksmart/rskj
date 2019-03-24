@@ -6,6 +6,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.StateRootHandler;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.DownloadingBodiesSyncState;
@@ -16,9 +17,11 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
@@ -28,7 +31,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.time.Duration;
@@ -684,7 +686,7 @@ public class SyncProcessorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
         Assert.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis.getHeader());
         Assert.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());

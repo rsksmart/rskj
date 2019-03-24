@@ -20,10 +20,11 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.db.StateRootHandler;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,10 +43,15 @@ public class BlockExecutor {
 
     private final Repository repository;
     private final TransactionExecutorFactory transactionExecutorFactory;
+    private final StateRootHandler stateRootHandler;
 
-    public BlockExecutor(Repository repository, TransactionExecutorFactory transactionExecutorFactory) {
+    public BlockExecutor(
+            Repository repository,
+            TransactionExecutorFactory transactionExecutorFactory,
+            StateRootHandler stateRootHandler) {
         this.repository = repository;
         this.transactionExecutorFactory = transactionExecutorFactory;
+        this.stateRootHandler = stateRootHandler;
     }
 
     /**
@@ -111,7 +117,8 @@ public class BlockExecutor {
             return false;
         }
 
-        if (!Arrays.equals(result.getStateRoot(), block.getStateRoot()))  {
+        boolean isValidStateRoot = stateRootHandler.validate(block.getHeader(), result);
+        if (!isValidStateRoot) {
             logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot()));
             return false;
         }
@@ -174,9 +181,8 @@ public class BlockExecutor {
     private BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
-        Repository initialRepository = repository.getSnapshotTo(parent.getStateRoot());
-
-        byte[] lastStateRootHash = initialRepository.getRoot();
+        byte[] lastStateRootHash = stateRootHandler.translate(parent).getBytes();
+        Repository initialRepository = repository.getSnapshotTo(lastStateRootHash);
 
         Repository track = initialRepository.startTracking();
         int i = 1;
