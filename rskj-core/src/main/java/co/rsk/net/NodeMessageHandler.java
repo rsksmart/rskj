@@ -297,8 +297,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
         }
 
-        Metrics.processBlockMessage("start", block, sender.getPeerNodeID());
-
         if (!isValidBlock(block)) {
             logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
             recordEvent(sender, EventType.INVALID_BLOCK);
@@ -307,31 +305,27 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
             logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
-            Metrics.processBlockMessage("blockIgnored", block, sender.getPeerNodeID());
             return;
         }
 
         if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())){
             logger.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getShortHash());
-            Metrics.processBlockMessage("blockIgnored", block, sender.getPeerNodeID());
             return;
         }
 
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
-        Metrics.processBlockMessage("blockProcessed", block, sender.getPeerNodeID());
-        tryRelayBlock(sender, block, result);
+        tryRelayBlock(block, result);
         recordEvent(sender, EventType.VALID_BLOCK);
-        Metrics.processBlockMessage("finish", block, sender.getPeerNodeID());
     }
 
-    private void tryRelayBlock(@Nonnull MessageChannel sender, Block block, BlockProcessResult result) {
+    private void tryRelayBlock(Block block, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
         if (result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
-            relayBlock(sender, block);
+            relayBlock(block);
         }
     }
 
-    private void relayBlock(@Nonnull MessageChannel sender, Block block) {
+    private void relayBlock(Block block) {
         byte[] blockHash = block.getHash().getBytes();
         final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
         final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(blockHash);
@@ -344,7 +338,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         identifiers.add(new BlockIdentifier(blockHash, block.getNumber()));
         channelManager.broadcastBlockHash(identifiers, newNodes);
 
-        Metrics.processBlockMessage("blockRelayed", block, sender.getPeerNodeID());
     }
 
     private void processStatusMessage(@Nonnull final MessageChannel sender, @Nonnull final StatusMessage message) {
@@ -412,7 +405,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void processNewBlockHashesMessage(@Nonnull final MessageChannel sender, @Nonnull final NewBlockHashesMessage message) {
-        message.getBlockIdentifiers().forEach(bi -> Metrics.newBlockHash(bi, sender.getPeerNodeID()));
         blockProcessor.processNewBlockHashesMessage(sender, message);
     }
 
@@ -421,8 +413,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         loggerMessageProcess.debug("Tx message about to be process: {}", message.getMessageContentInfo());
 
         List<Transaction> messageTxs = message.getTransactions();
-        Metrics.processTxsMessage("start", messageTxs, sender.getPeerNodeID());
-
         List<Transaction> txs = new LinkedList();
 
         for (Transaction tx : messageTxs) {
@@ -434,11 +424,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             }
         }
 
-        List<Transaction> acceptedTxs = transactionGateway.receiveTransactionsFrom(txs, sender.getPeerNodeID());
-
-        Metrics.processTxsMessage("validTxsAddedToTransactionPool", acceptedTxs, sender.getPeerNodeID());
-
-        Metrics.processTxsMessage("finish", acceptedTxs, sender.getPeerNodeID());
+        transactionGateway.receiveTransactionsFrom(txs, sender.getPeerNodeID());
 
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }

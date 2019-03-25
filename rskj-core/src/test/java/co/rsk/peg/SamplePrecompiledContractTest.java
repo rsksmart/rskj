@@ -21,7 +21,7 @@ package co.rsk.peg;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import co.rsk.trie.Trie;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.config.BlockchainConfig;

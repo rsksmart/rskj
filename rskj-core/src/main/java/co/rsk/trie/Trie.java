@@ -106,7 +106,7 @@ public class Trie {
 
     // full constructor
     private Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store, boolean isSecure) {
-        this.value = value;
+        this.value = cloneArray(value);
         this.left = left;
         this.right = right;
         this.store = store;
@@ -251,7 +251,7 @@ public class Trie {
      */
     public byte[] get(byte[] key) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(this.isSecure ? Keccak256Helper.keccak256(key) : key);
-        return get(keySlice);
+        return cloneArray(get(keySlice));
     }
 
     /**
@@ -579,6 +579,11 @@ public class Trie {
     private Trie internalPut(TrieKeySlice key, byte[] value) {
         TrieKeySlice commonPath = key.commonPath(sharedPath);
         if (commonPath.length() < sharedPath.length()) {
+            // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
+            if (value == null) {
+                return this;
+            }
+
             return this.split(commonPath).put(key, value);
         }
 
@@ -625,7 +630,7 @@ public class Trie {
             newRight = newNodeReference;
         }
 
-        if (isEmptyTrie(value, newLeft, newRight)) {
+        if (isEmptyTrie(this.value, newLeft, newRight)) {
             return null;
         }
 
@@ -680,14 +685,13 @@ public class Trie {
     }
 
     public Trie getSnapshotTo(Keccak256 hash) {
-        // This call shouldn't be needed since internally try can know it should store data
-        //this.save();
-        if (getHash().equals(hash)) {
-            return this;
-        }
-
         if (emptyHash.equals(hash)) {
             return new Trie(this.store, this.isSecure);
+        }
+
+        // check if saved to only return this when we know it is in disk storage
+        if (this.saved && getHash().equals(hash)) {
+            return this;
         }
 
         return internalRetrieve(this.store, hash.getBytes());
@@ -709,7 +713,13 @@ public class Trie {
         return null;
     }
 
-    public byte[] getValue() { return this.value; }
+    public byte[] getValue() {
+        return cloneArray(this.value);
+    }
+
+    private static byte[] cloneArray(byte[] array) {
+        return array == null ? null : Arrays.copyOf(array, array.length);
+    }
 
     /**
      * makeEmpyHash creates the hash associated to empty nodes
