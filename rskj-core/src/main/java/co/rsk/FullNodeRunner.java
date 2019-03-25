@@ -154,8 +154,6 @@ public class FullNodeRunner implements NodeRunner {
             rskSystemProperties.setDiscoveryEnabled(Boolean.FALSE);
         }
 
-        Metrics.registerNodeID(rskSystemProperties.nodeId());
-
         if (rskSystemProperties.simulateTxs()) {
             enableSimulateTxs();
         }

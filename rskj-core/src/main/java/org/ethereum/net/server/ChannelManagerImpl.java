@@ -20,7 +20,6 @@
 package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.net.Metrics;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.eth.RskMessage;
@@ -189,7 +188,6 @@ public class ChannelManagerImpl implements ChannelManager {
      */
     @Nonnull
     public Set<NodeID> broadcastBlock(@Nonnull final Block block) {
-        Metrics.broadcastBlock(block);
 
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
         final BlockIdentifier bi = new BlockIdentifier(block.getHash().getBytes(), block.getNumber());
@@ -247,7 +245,6 @@ public class ChannelManagerImpl implements ChannelManager {
      */
     @Nonnull
     public Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, final Set<NodeID> skip) {
-        Metrics.broadcastTransaction(transaction);
         List<Transaction> transactions = Collections.singletonList(transaction);
 
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();

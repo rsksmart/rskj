@@ -20,7 +20,6 @@ package co.rsk.core.bc;
 
 import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.BlockDifficulty;
-import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
@@ -286,7 +285,6 @@ public class BlockChainImpl implements Blockchain {
                         status.getTotalDifficulty().toString(), totalDifficulty.toString());
                 BlockFork fork = new BlockFork();
                 fork.calculate(bestBlock, block, blockStore);
-                Metrics.rebranch(bestBlock, block, fork.getNewBlocks().size() + fork.getOldBlocks().size());
                 blockStore.reBranch(block);
             }
 

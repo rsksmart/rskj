@@ -131,6 +131,7 @@ public class TrieSnapshotTest {
         TrieStore store = mock(TrieStore.class);
         Trie trie = new Trie(store, false);
         trie = trie.put("key", "value".getBytes());
+        trie.save();
 
         Trie snapshotTrie = trie.getSnapshotTo(trie.getHash());
 

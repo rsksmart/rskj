@@ -19,34 +19,38 @@
 
 package org.ethereum.vm.trace;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.OpCode;
+import org.ethereum.vm.program.Memory;
+import org.ethereum.vm.program.Stack;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Op {
 
-    private OpCode code;
-    private int deep;
+    private OpCode op;
+    private int depth;
     private int pc;
     private long gas;
-    private OpActions actions;
+    private long gasCost;
 
-    public OpCode getCode() {
-        return code;
+    private List<String> memory = new ArrayList<>();
+    private List<String> stack = new ArrayList<>();
+    private Map<String, String> storage = new HashMap<>();
+
+    public OpCode getOp() {
+        return op;
     }
 
-    public void setCode(OpCode code) {
-        this.code = code;
+    public void setOp(OpCode op) {
+        this.op = op;
     }
 
-    public int getDeep() {
-        return deep;
-    }
-
-    public void setDeep(int deep) {
-        this.deep = deep;
-    }
-
-    public int getPc() {
-        return pc;
+    public void setDepth(int depth) {
+        this.depth = depth;
     }
 
     public void setPc(int pc) {
@@ -61,11 +65,26 @@ public class Op {
         this.gas = gas;
     }
 
-    public OpActions getActions() {
-        return actions;
+    public void setGasCost(long gasCost) { this.gasCost = gasCost; }
+
+    public void setMemory(Memory memory) {
+        int size = memory.size();
+
+        for (int k = 0; k < size; k += 32) {
+            byte[] bytes = memory.read(k, Math.min(32, size - k));
+            this.memory.add(Hex.toHexString(bytes));
+        }
     }
 
-    public void setActions(OpActions actions) {
-        this.actions = actions;
+    public void setStorage(Map<String, String> storage) {
+        this.storage = storage;
+    }
+
+    public void setStack(Stack stack) {
+        int size = stack.size();
+
+        for (int k = 0; k < size; k++) {
+            this.stack.add(Hex.toHexString(stack.get(k).getData()));
+        }
     }
 }

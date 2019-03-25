@@ -25,7 +25,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;

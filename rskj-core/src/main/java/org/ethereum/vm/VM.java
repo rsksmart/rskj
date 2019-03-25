@@ -1965,6 +1965,11 @@ public class VM {
                     vmHook.step(program, op);
                 }
                 executeOpcode();
+
+                if (vmConfig.vmTrace()) {
+                    program.saveOpGasCost(gasCost);
+                }
+
                 program.setPreviouslyExecutedOp(op.val());
                 logOpCode();
                 vmCounter++;
