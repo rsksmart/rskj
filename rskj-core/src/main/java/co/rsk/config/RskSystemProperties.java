@@ -193,14 +193,6 @@ public class RskSystemProperties extends SystemProperties {
         return ret;
     }
 
-    public boolean isBlocksEnabled() {
-        return getBoolean("blocks.enabled", false);
-    }
-
-    public String blocksRecorder() {
-        return getString("blocks.recorder", null);
-    }
-
     public boolean isFlushEnabled() {
         return getBoolean("blockchain.flush", true);
     }

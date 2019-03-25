@@ -17,7 +17,6 @@
  */
 package co.rsk;
 
-import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.db.PruneConfiguration;
@@ -47,7 +46,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Nullable;
 import java.util.stream.Collectors;
 
 @Component
@@ -144,9 +142,6 @@ public class FullNodeRunner implements NodeRunner {
         if (logger.isInfoEnabled()) {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
             logger.info("Capability eth version: [{}]", versions);
-        }
-        if (rskSystemProperties.isBlocksEnabled()) {
-            setupRecorder(rskSystemProperties.blocksRecorder());
         }
 
         if (!"".equals(rskSystemProperties.blocksLoader())) {
@@ -283,11 +278,5 @@ public class FullNodeRunner implements NodeRunner {
         }
 
         logger.info("RSK node Shut down");
-    }
-
-    private void setupRecorder(@Nullable String blocksRecorderFileName) {
-        if (blocksRecorderFileName != null) {
-            blockchain.setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
-        }
     }
 }

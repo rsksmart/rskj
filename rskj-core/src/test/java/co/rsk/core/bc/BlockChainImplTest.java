@@ -19,7 +19,6 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.blocks.DummyBlockRecorder;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -792,19 +791,6 @@ public class BlockChainImplTest {
         Assert.assertNotNull(listener.getLatestBlock());
         Assert.assertNotNull(listener.getLatestTrace());
         Assert.assertEquals(block1.getHash(), listener.getLatestBlock().getHash());
-    }
-
-    @Test
-    public void useBlockRecorder() {
-        DummyBlockRecorder recorder = new DummyBlockRecorder();
-        BlockChainImpl blockChain = createBlockChain();
-        blockChain.setBlockRecorder(recorder);
-
-        Block genesis = getGenesisBlock(blockChain);
-
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-
-        Assert.assertEquals(genesis, recorder.getLatestBlock());
     }
 
     @Test

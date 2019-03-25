@@ -19,7 +19,6 @@
 
 package org.ethereum.core;
 
-import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.db.BlockInformation;
@@ -57,8 +56,6 @@ public interface Blockchain {
      * @return - last added block from blockchain
      */
     Block getBestBlock();
-
-    void setBlockRecorder(BlockRecorder blockRecorder);
 
     long getSize();
 
