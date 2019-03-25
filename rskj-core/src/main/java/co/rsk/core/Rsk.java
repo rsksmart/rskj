@@ -25,8 +25,6 @@ import org.ethereum.facade.Ethereum;
  */
 public interface Rsk extends Ethereum {
 
-    boolean isPlayingBlocks();
-
     boolean hasBetterBlockToSync();
 
     boolean isBlockchainEmpty();
