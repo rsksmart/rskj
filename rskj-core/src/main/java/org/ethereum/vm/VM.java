@@ -216,7 +216,6 @@ public class VM {
         }
 
         word1.add(word2);
-        program.disposeWord(word2);
         program.stackPush(word1);
         program.step();
 
@@ -233,7 +232,6 @@ public class VM {
         }
 
         word1.mul(word2);
-        program.disposeWord(word2);
         program.stackPush(word1);
         program.step();
     }
@@ -249,7 +247,6 @@ public class VM {
         }
 
         word1.sub(word2);
-        program.disposeWord(word2);
         program.stackPush(word1);
         program.step();
     }
@@ -265,7 +262,6 @@ public class VM {
         }
 
         word1.div(word2);
-        program.disposeWord(word2);
         program.stackPush(word1);
         program.step();
     }
@@ -281,7 +277,6 @@ public class VM {
         }
 
         word1.sDiv(word2);
-        program.disposeWord(word2);
         program.stackPush(word1);
         program.step();
     }
@@ -297,7 +292,6 @@ public class VM {
         }
 
         word1.mod(word2);
-        program.disposeWord(word2);
         program.stackPush(word1);
         program.step();
     }
@@ -313,7 +307,6 @@ public class VM {
         }
 
         word1.sMod(word2);
-        program.disposeWord(word2);
         program.stackPush(word1);
         program.step();
     }
@@ -334,7 +327,6 @@ public class VM {
         }
 
         word1.exp(word2);
-        program.disposeWord(word2);
         program.stackPush(word1);
         program.step();
     }
@@ -353,7 +345,6 @@ public class VM {
             word2.signExtend((byte) k);
             program.stackPush(word2);
         }
-        program.disposeWord(word1);
         program.step();
     }
 
@@ -389,7 +380,6 @@ public class VM {
             word1.zero();
         }
         program.stackPush(word1);
-        program.disposeWord(word2);
         program.step();
     }
 
@@ -410,7 +400,6 @@ public class VM {
             word1.zero();
         }
         program.stackPush(word1);
-        program.disposeWord(word2);
         program.step();
     }
 
@@ -431,10 +420,8 @@ public class VM {
             word1.zero();
         }
         program.stackPush(word1);
-        program.disposeWord(word2);
         program.step();
     }
-
 
     protected void doGT() {
         spendOpCodeGas();
@@ -453,7 +440,6 @@ public class VM {
             word1.zero();
         }
         program.stackPush(word1);
-        program.disposeWord(word2);
         program.step();
     }
 
@@ -473,7 +459,6 @@ public class VM {
             word1.zero();
         }
         program.stackPush(word1);
-        program.disposeWord(word2);
         program.step();
     }
 
@@ -509,7 +494,6 @@ public class VM {
 
         word1.and(word2);
         program.stackPush(word1);
-        program.disposeWord(word2);
         program.step();
     }
 
@@ -525,7 +509,6 @@ public class VM {
 
         word1.or(word2);
         program.stackPush(word1);
-        program.disposeWord(word2);
         program.step();
     }
 
@@ -541,7 +524,6 @@ public class VM {
 
         word1.xor(word2);
         program.stackPush(word1);
-        program.disposeWord(word2);
         program.step();
     }
 
@@ -567,7 +549,6 @@ public class VM {
         }
 
         program.stackPush(result);
-        program.disposeWord(word1);
         program.step();
     }
 
@@ -579,8 +560,6 @@ public class VM {
         DataWord word3 = program.stackPop();
         word1.addmod(word2, word3);
         program.stackPush(word1);
-        program.disposeWord(word2);
-        program.disposeWord(word3);
         program.step();
     }
 
@@ -592,8 +571,6 @@ public class VM {
         DataWord word3 = program.stackPop();
         word1.mulmod(word2, word3);
         program.stackPush(word1);
-        program.disposeWord(word2);
-        program.disposeWord(word3);
         program.step();
     }
 
@@ -626,8 +603,6 @@ public class VM {
         }
 
         program.stackPush(word);
-        program.disposeWord(memOffsetData);
-        program.disposeWord(lengthData);
         program.step();
     }
 
@@ -661,7 +636,6 @@ public class VM {
         }
 
         program.stackPush(balance);
-        program.disposeWord(address);
         program.step();
     }
 
@@ -715,7 +689,6 @@ public class VM {
         }
 
         program.stackPush(value);
-        program.disposeWord(dataOffs);
         program.step();
     }
 
@@ -749,9 +722,6 @@ public class VM {
         }
 
         program.memorySave(memOffsetData.intValue(), msgData);
-        program.disposeWord(memOffsetData);
-        program.disposeWord(dataOffsetData);
-        program.disposeWord(lengthData);
         program.step();
     }
 
@@ -784,7 +754,6 @@ public class VM {
                     codeLength = new DataWord(BigIntegers.asUnsignedByteArray(DataWord.MAX_VALUE));
                 }
             }
-            program.disposeWord(address);
         }
 
         if (isLogEnabled) {
@@ -830,7 +799,6 @@ public class VM {
         if (op == OpCode.EXTCODECOPY) {
             DataWord address = program.stackPop();
             fullCode = program.getCodeAt(address);
-            program.disposeWord(address);
         }
 
         DataWord memOffsetDW = program.stackPop();
@@ -875,9 +843,6 @@ public class VM {
         // to receive a byte[] buffer and a length, and to create another method memoryZero(offset,length)
         // to fill the gap.
         program.memorySave(memOffset, codeCopy);
-        program.disposeWord(memOffsetDW);
-        program.disposeWord(codeOffsetDW);
-        program.disposeWord(lengthDataDW);
 
         program.step();
     }
@@ -1029,7 +994,7 @@ public class VM {
     protected void doPOP(){
         spendOpCodeGas();
         // EXECUTION PHASE
-        program.disposeWord(program.stackPop());
+        program.stackPop();
         program.step();
     }
 
@@ -1134,8 +1099,6 @@ public class VM {
 
         program.getResult().addLogInfo(logInfo);
         // Log topics taken from the stack are lost and never returned to the DataWord pool
-        program.disposeWord(memStart);
-        program.disposeWord(memOffset);
         program.step();
     }
 
@@ -1156,7 +1119,6 @@ public class VM {
         }
 
         program.stackPush(data);
-        program.disposeWord(addr);
         program.step();
     }
 
@@ -1177,8 +1139,6 @@ public class VM {
         }
 
         program.memorySave(addr, value);
-        program.disposeWord(addr);
-        program.disposeWord(value);
         program.step();
     }
 
@@ -1197,8 +1157,6 @@ public class VM {
         byte[] byteVal = {value.getData()[31]};
         //TODO: non-standard single byte memory storage, this should be documented
         program.memorySave(addr.intValue(), byteVal);
-        program.disposeWord(addr);
-        program.disposeWord(value);
         program.step();
     }
 
@@ -1263,8 +1221,6 @@ public class VM {
         }
 
         program.storageSave(addr, value);
-        program.disposeWord(addr);
-        program.disposeWord(value);
         program.step();
     }
 
@@ -1279,8 +1235,6 @@ public class VM {
         }
 
         program.setPC(nextPC);
-        program.disposeWord(pos);
-
     }
 
     protected void doJUMPI(){
@@ -1301,8 +1255,6 @@ public class VM {
         } else {
             program.step();
         }
-        program.disposeWord(pos);
-        program.disposeWord(cond);
     }
 
     protected void doPC(){
@@ -1400,9 +1352,6 @@ public class VM {
         }
 
         program.createContract(value, inOffset, inSize);
-        program.disposeWord(value);
-        program.disposeWord(inOffset);
-        program.disposeWord(inSize);
         program.step();
     }
 
@@ -1486,22 +1435,6 @@ public class VM {
 
         callToAddress(codeAddress, msg);
 
-        program.disposeWord(inDataOffs);
-        program.disposeWord(inDataSize);
-        program.disposeWord(outDataOffs);
-        program.disposeWord(outDataSize);
-        program.disposeWord(codeAddress);
-        program.disposeWord(gas);
-        if (config.isRskip103()) {
-            if (op != OpCode.DELEGATECALL && op != OpCode.STATICCALL) {
-                program.disposeWord(value);
-            }
-        } else {
-            if (!op.equals(OpCode.DELEGATECALL)) {
-                program.disposeWord(value);
-            }
-        }
-
         program.step();
     }
 
@@ -1579,8 +1512,6 @@ public class VM {
         }
 
         program.step();
-        program.disposeWord(offset);
-        program.disposeWord(size);
         program.stop();
     }
 
@@ -1605,7 +1536,6 @@ public class VM {
             hint = "address: " + Hex.toHexString(program.getOwnerAddress().getLast20Bytes());
         }
 
-        program.disposeWord(address);
         program.stop();
     }
 
@@ -1654,8 +1584,6 @@ public class VM {
         }
 
         program.stackPush(result);
-        program.disposeWord(memOffsetData);
-        program.disposeWord(lengthData);
         program.step();
     }
 

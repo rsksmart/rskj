@@ -111,71 +111,6 @@ public class Program {
     private int startAddr;
 
     private BitSet jumpdestSet;
-    /**********************************************************************************************************
-     * About DataWord Pool:
-     *---------------------------------------------------------------------------------------------------------
-     * Preliminaries:
-     * (source: http://programmers.stackexchange.com/questions/149563/should-we-avoid-object-creation-in-java)
-     *
-     * There is a misconception that creating many small short lived objects causes the JVM to pause
-     * for long periods of time, this is now false as well. Current GC algorithms are actually optimized
-     * for creating many many small objects that are short lived, that is basically the 99% heuristic
-     * for Java objects in every program. Object Pooling will actually make the JVM preform worse in most
-     * cases.
-     * The modern GC algorithms don't have this problem because they don't deallocate on a schedule, they
-     * deallocate when free memory is needed in a certain generation.
-     *
-     * SDL analysis:
-     *
-     * THIS IS NOT THE CASE for an application that creates millions of objects per second (as the VM can do).
-     *
-     * Here are the results of runs of the VMPerformaceTest.testFibonacciLongTime() that show a mixed result:
-     *----------------------------------------------------------------
-     * CASE 1: HIGH MEMORY USE / useDataWordPool =  false
-     * Creating 10000000 linked  objects..
-     * Program.useDataWordPool =  false
-     * Time elapsed [ms]: 28969 [s]:28
-     * RealTime elapsed [ms]: 39626 [s]:39
-     * GCTime elapsed [ms]: 10372 [s]:10
-     * Instructions executed: : 170400032
-     *----------------------------------------------------------------
-     * CASE 2: HIGH MEMORY USE / useDataWordPool =  true
-     * Creating 10000000 linked  objects..
-     * Program.useDataWordPool =  true
-     * Time elapsed [ms]: 35724 [s]:35
-     * RealTime elapsed [ms]: 35783 [s]:35
-     * GCTime elapsed [ms]: 0 [s]:0
-     * Instructions executed: : 170400032
-     *----------------------------------------------------------------
-     * CASE 3: VERY LOW MEMORY USE / useDataWordPool =  false
-     * Creating 0 linked  objects..
-     * Program.useDataWordPool =  false
-     * Time elapsed [ms]: 28516 [s]:28
-     * RealTime elapsed [ms]: 29287 [s]:29
-     * GCTime elapsed [ms]: 291 [s]:0
-     * Instructions executed: : 170400032
-     *----------------------------------------------------------------
-     * If we compare the cases where memory is full of objects (1 and 2), using the memory pool resulted
-     * in 35 seconds of processing (RealTime) while not using the pool resulted in 38 seconds (realTime).
-     * Using useDataWordPool makes the VM go 8% faster.
-     *
-     * In case 2 the time dedicated to GC was actually zero.
-     *
-     * In case 3, there was no use of memory (apart from the VM itself). In this case using the pool took takes also 35
-     * seconds (actual run not shown), but not using the pool takes only 29 seconds (RealTime). Therefore not using the
-     * pool makes the VM faster by 17%.
-     *
-     * However the speedup the DataWord pool provides depends in the application that is run (the real full-node).
-     * Garbage collection time depends on the number of live object pointers. In a test-case that number
-     * is low, therefore garbage collecting is fast. The full-node stores in memory a huge amount of interrelated
-     * objects (such as the Trie). That increases the GC time. To determine if dataWordPool should be activated by
-     * default or disabled by default , additional test cases involving a real full-node with a large worldstate must be
-     * performed. Until that moment, dataWordPool is enabled by setting useDataWordPool=true
-     *
-     *******************************************************************************************************************/
-    private final java.util.Stack<DataWord> dataWordPool;
-
-    private static Boolean useDataWordPool = true;
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
@@ -215,30 +150,13 @@ public class Program {
         this.stack.ensureCapacity(1024); // faster?
         this.storage = setupProgramListener(new Storage(programInvoke));
 
-        if (useDataWordPool) {
-            this.dataWordPool = new java.util.Stack<>();
-            this.dataWordPool.ensureCapacity(1024); // faster?
-        } else {
-            this.dataWordPool = null;
-        }
-
         precompile();
         traceListener = new ProgramTraceListener(config);
-    }
-
-    public static void setUseDataWordPool(Boolean value) {
-        useDataWordPool = value;
-    }
-
-    public static Boolean getUseDataWordPool() {
-        return useDataWordPool;
     }
 
     public int getCallDeep() {
         return invoke.getCallDeep();
     }
-
-
 
     private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, RskAddress senderAddress, RskAddress receiveAddress,
                                               Coin value, byte[] data, String note) {
@@ -300,44 +218,19 @@ public class Program {
     }
 
     private DataWord getNewDataWordFast() {
-        if (dataWordPool==null) {
-            return new DataWord();
-        }
-        if (dataWordPool.empty()) {
-            return new DataWord();
-        } else {
-            return dataWordPool.pop();
-        }
-    }
-
-    public void stackPush(byte[] data) {
-        DataWord dw=getNewDataWordFast();
-        dw.assign(data);
-        stackPush(dw);
+        return new DataWord();
     }
 
     private void stackPushZero() {
-        DataWord dw=getNewDataWordFast();
-        dw.zero();
-        stackPush(dw);
+        stackPush(DataWord.ZERO);
     }
 
     private void stackPushOne() {
-        DataWord stackWord=getNewDataWordFast();
-        stackWord.assignData(DataWord.ONE.getData());
-        stackPush(stackWord);
+        stackPush(DataWord.ONE);
     }
 
     private void stackClear(){
-        if (dataWordPool==null) {
-            stack.clear();
-            return;
-        }
-
-        while (!stack.isEmpty()) {
-            disposeWord(stack.pop());
-        }
-
+        stack.clear();
     }
 
     public DataWord newDataWord(byte[] data) {
@@ -346,46 +239,21 @@ public class Program {
         return dw;
     }
     public DataWord newDataWord(int  v) {
-        DataWord dw=getNewDataWordFast();
-        dw.assign(v);
-        return dw;
+        return new DataWord(v);
     }
 
     public DataWord newDataWord(long  v) {
-        DataWord dw=getNewDataWordFast();
-        dw.assign(v);
-        return dw;
-    }
-    public DataWord newDataWord(DataWord idw) {
-        DataWord dw=getNewDataWordFast();
-        dw.assignData(idw.getData());
-        return dw;
+        return new DataWord(v);
     }
 
-    public DataWord newEmptyDataWord() {
-        DataWord dw=getNewDataWordFast();
-        dw.zero();
+    public DataWord newDataWord(DataWord idw) {
+        DataWord dw= idw.clone();
         return dw;
     }
 
     public void stackPush(DataWord stackWord) {
         verifyStackOverflow(0, 1); //Sanity Check
         stack.push(stackWord);
-    }
-
-    public void disposeWord(DataWord dw) {
-        if (dataWordPool == null) {
-            return ;
-        }
-
-        if (dw == DataWord.ZERO || dw == DataWord.ONE) {
-            throw new IllegalArgumentException("Can't dispose a global DataWord");
-        }
-
-        // If there are enough cached values, just really dispose
-        if (dataWordPool.size() < 1024) {
-            dataWordPool.push(dw);
-        }
     }
 
     public Stack getStack() {
@@ -424,21 +292,6 @@ public class Program {
         setPC(pc + 1);
     }
 
-
-    public byte[] byteSweep(int n) {
-
-        if (pc + n > ops.length) {
-            stop();
-        }
-
-        byte[] data = Arrays.copyOfRange(ops, pc, pc + n);
-        pc += n;
-        if (pc >= ops.length) {
-            stop();
-        }
-
-        return data;
-    }
 
     public DataWord sweepGetDataWord(int n) {
           if (pc + n > ops.length) {
@@ -1012,12 +865,6 @@ public class Program {
         DataWord keyWord = new DataWord(key);
         DataWord valWord = new DataWord(val);
 
-        // If DataWords will be reused, then we must clone them.
-        if (useDataWordPool) {
-            keyWord = keyWord.clone();
-            valWord = valWord.clone();
-        }
-
         getStorage().addStorageRow(new RskAddress(getOwnerAddress()), keyWord, valWord);
     }
 
@@ -1274,16 +1121,6 @@ public class Program {
 
     public void saveOpGasCost(long gasCost) {
         trace.saveGasCost(gasCost);
-    }
-
-    public static int getScriptVersionInCode(byte[] ops){
-        if (ops.length >= 4) {
-            OpCode op = OpCode.code(ops[0]);
-            if ((op!=null) && op == OpCode.HEADER) {
-                return ops[2];
-            }
-        }
-        return 0;
     }
 
     public ProgramTrace getTrace() {
