@@ -168,8 +168,7 @@ public class VMPerformanceTest {
     public long measureOpcode(OpCode opcode, Boolean reference, long refTime, ResultLogger resultLogger) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int iCount = 0;
-        DataWord maxValue = new DataWord();
-        maxValue.bnot();
+        DataWord maxValue = new DataWord().bnot();
         // PUSH
         for (int inp = 0; inp < opcode.require(); inp++) {
             if (shortArg) {
@@ -180,7 +179,7 @@ public class VMPerformanceTest {
                 try {
                     baos.write(maxValue.getData());
                     // decrement maxValue so that each value pushed is a little different
-                    maxValue.sub(DataWord.ONE);
+                    maxValue = maxValue.sub(DataWord.ONE);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

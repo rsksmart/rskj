@@ -215,8 +215,7 @@ public class VM {
             hint = word1.value() + " + " + word2.value();
         }
 
-        word1.add(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.add(word2));
         program.step();
 
     }
@@ -231,8 +230,7 @@ public class VM {
             hint = word1.value() + " * " + word2.value();
         }
 
-        word1.mul(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.mul(word2));
         program.step();
     }
 
@@ -246,8 +244,7 @@ public class VM {
             hint = word1.value() + " - " + word2.value();
         }
 
-        word1.sub(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.sub(word2));
         program.step();
     }
 
@@ -261,8 +258,7 @@ public class VM {
             hint = word1.value() + " / " + word2.value();
         }
 
-        word1.div(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.div(word2));
         program.step();
     }
 
@@ -276,8 +272,7 @@ public class VM {
             hint = word1.sValue() + " / " + word2.sValue();
         }
 
-        word1.sDiv(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.sDiv(word2));
         program.step();
     }
 
@@ -291,8 +286,7 @@ public class VM {
             hint = word1.value() + " % " + word2.value();
         }
 
-        word1.mod(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.mod(word2));
         program.step();
     }
 
@@ -306,8 +300,7 @@ public class VM {
             hint = word1.sValue() + " #% " + word2.sValue();
         }
 
-        word1.sMod(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.sMod(word2));
         program.step();
     }
 
@@ -326,8 +319,7 @@ public class VM {
             hint = word1.value() + " ** " + word2.value();
         }
 
-        word1.exp(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.exp(word2));
         program.step();
     }
 
@@ -342,17 +334,17 @@ public class VM {
             if (isLogEnabled) {
                 hint = word1 + "  " + word2.value();
             }
-            word2.signExtend((byte) k);
-            program.stackPush(word2);
+
+            program.stackPush(word2.signExtend((byte) k));
         }
+
         program.step();
     }
 
     protected void doNOT() {
         spendOpCodeGas();
         // EXECUTION PHASE
-        DataWord word1 = program.stackPop();
-        word1.bnot();
+        DataWord word1 = program.stackPop().bnot();
 
         if (isLogEnabled) {
             hint = "" + word1.value();
@@ -375,11 +367,10 @@ public class VM {
 
         // TODO: We should compare the performance of BigInteger comparison with DataWord comparison:
         if (word1.compareTo(word2) < 0) {
-            word1.setTrue();
+            program.stackPush(DataWord.ONE);
         } else {
-            word1.zero();
+            program.stackPush(DataWord.ZERO);
         }
-        program.stackPush(word1);
         program.step();
     }
 
@@ -395,11 +386,10 @@ public class VM {
         }
 
         if (word1.sValue().compareTo(word2.sValue()) < 0) {
-            word1.setTrue();
+            program.stackPush(DataWord.ONE);
         } else {
-            word1.zero();
+            program.stackPush(DataWord.ZERO);
         }
-        program.stackPush(word1);
         program.step();
     }
 
@@ -415,11 +405,10 @@ public class VM {
         }
 
         if (word1.sValue().compareTo(word2.sValue()) > 0) {
-            word1.setTrue();
+            program.stackPush(DataWord.ONE);
         } else {
-            word1.zero();
+            program.stackPush(DataWord.ZERO);
         }
-        program.stackPush(word1);
         program.step();
     }
 
@@ -435,11 +424,11 @@ public class VM {
         }
 
         if (word1.value().compareTo(word2.value()) > 0) {
-            word1.setTrue();
+            program.stackPush(DataWord.ONE);
         } else {
-            word1.zero();
+            program.stackPush(DataWord.ZERO);
         }
-        program.stackPush(word1);
+
         program.step();
     }
 
@@ -454,11 +443,11 @@ public class VM {
         }
 
         if (word1.equalValue(word2)) {
-            word1.setTrue();
+            program.stackPush(DataWord.ONE);
         } else {
-            word1.zero();
+            program.stackPush(DataWord.ZERO);
         }
-        program.stackPush(word1);
+
         program.step();
     }
 
@@ -466,19 +455,14 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
-        if (word1.isZero()) {
-            // This is an optimization: since word1 is zero, then setting only the last byte
-            // to 1 is equivalent to setTrue().
-            word1.getData()[31] = 1;
-        } else {
-            word1.zero();
-        }
+
+        DataWord result = word1.isZero() ? DataWord.ONE : DataWord.ZERO;
 
         if (isLogEnabled) {
-            hint = "" + word1.value();
+            hint = "" + result.value();
         }
 
-        program.stackPush(word1);
+        program.stackPush(result);
         program.step();
     }
 
@@ -507,8 +491,7 @@ public class VM {
             hint = word1.value() + " || " + word2.value();
         }
 
-        word1.or(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.or(word2));
         program.step();
     }
 
@@ -522,8 +505,7 @@ public class VM {
             hint = word1.value() + " ^ " + word2.value();
         }
 
-        word1.xor(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.xor(word2));
         program.step();
     }
 
@@ -536,12 +518,11 @@ public class VM {
         long wvalue = Program.limitToMaxLong(word1);
         if (wvalue<32) {
             byte tmp = word2.getData()[(int) wvalue];
-            word2.zero();
-            word2.getData()[31] = tmp;
-            result = word2;
+            byte[] newdata = new byte[32];
+            newdata[31] = tmp;
+            result = new DataWord(newdata);
         } else {
-            word2.zero();
-            result = word2;
+            result = DataWord.ZERO;
         }
 
         if (isLogEnabled) {
@@ -558,8 +539,7 @@ public class VM {
         DataWord word1 = program.stackPop();
         DataWord word2 = program.stackPop();
         DataWord word3 = program.stackPop();
-        word1.addmod(word2, word3);
-        program.stackPush(word1);
+        program.stackPush(word1.addmod(word2, word3));
         program.step();
     }
 
@@ -569,8 +549,7 @@ public class VM {
         DataWord word1 = program.stackPop();
         DataWord word2 = program.stackPop();
         DataWord word3 = program.stackPop();
-        word1.mulmod(word2, word3);
-        program.stackPush(word1);
+        program.stackPush(word1.mulmod(word2, word3));
         program.step();
     }
 
@@ -596,7 +575,7 @@ public class VM {
         byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
 
         byte[] encoded = HashUtil.keccak256(buffer);
-        DataWord word = program.newDataWord(encoded);
+        DataWord word = new DataWord(encoded);
 
         if (isLogEnabled) {
             hint = word.toString();
@@ -1174,7 +1153,7 @@ public class VM {
         }
 
         if (val == null) {
-            val = key.zero();
+            val = DataWord.ZERO;
         }
 
         program.stackPush(val);
@@ -1261,7 +1240,7 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         int pc = program.getPC();
-        DataWord pcWord = program.newDataWord(pc);
+        DataWord pcWord = new DataWord(pc);
 
         if (isLogEnabled) {
             hint = pcWord.toString();
@@ -1275,7 +1254,7 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         int memSize = program.getMemSize();
-        DataWord wordMemSize = program.newDataWord(memSize);
+        DataWord wordMemSize = new DataWord(memSize);
 
         if (isLogEnabled) {
             hint = Integer.toString(memSize);
@@ -1288,7 +1267,7 @@ public class VM {
     protected void doGAS(){
         spendOpCodeGas();
         // EXECUTION PHASE
-        DataWord gas = program.newDataWord(program.getRemainingGas());
+        DataWord gas = new DataWord(program.getRemainingGas());
 
         if (isLogEnabled) {
             hint = "" + gas;
@@ -1577,7 +1556,7 @@ public class VM {
         byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
         int resultInt = program.replaceCode(buffer);
 
-        DataWord result = program.newDataWord(resultInt);
+        DataWord result = new DataWord(resultInt);
 
         if (isLogEnabled) {
             hint = result.toString();

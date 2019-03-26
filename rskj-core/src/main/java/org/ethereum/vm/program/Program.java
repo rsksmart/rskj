@@ -233,19 +233,6 @@ public class Program {
         stack.clear();
     }
 
-    public DataWord newDataWord(byte[] data) {
-        DataWord dw=getNewDataWordFast();
-        dw.assignData(data);
-        return dw;
-    }
-    public DataWord newDataWord(int  v) {
-        return new DataWord(v);
-    }
-
-    public DataWord newDataWord(long  v) {
-        return new DataWord(v);
-    }
-
     public DataWord newDataWord(DataWord idw) {
         DataWord dw= idw.clone();
         return dw;
@@ -300,8 +287,7 @@ public class Program {
               // Asummes LSBs are zero. assignDataRange undestands this semantics.
           }
 
-        DataWord dw = getNewDataWordFast();
-        dw.assignDataRange(ops, pc, n);
+        DataWord dw = new DataWord(ops, pc, n);
         pc += n;
         if (pc >= ops.length) {
             stop();
