@@ -178,7 +178,7 @@ class RemascTestRunner {
                                       coinbase, blockSiblings, minerFee, this.gasPrice, txNonce, this.txValue, this.txSigningKey, null);
             mainChainBlocks.add(block);
 
-            blockExecutor.executeAndFillAll(block, this.blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(block, this.blockchain.getBestBlock().getHeader());
 
             block.seal();
             ImportResult result = this.blockchain.tryToConnect(block);

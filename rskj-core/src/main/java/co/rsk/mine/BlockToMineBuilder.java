@@ -144,7 +144,7 @@ public class BlockToMineBuilder {
         final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice, extraData);
 
         removePendingTransactions(txsToRemove);
-        executor.executeAndFill(newBlock, newBlockParent);
+        executor.executeAndFill(newBlock, newBlockParent.getHeader());
         return newBlock;
     }
 

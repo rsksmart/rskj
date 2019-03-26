@@ -686,7 +686,7 @@ public class SyncProcessorTest {
                 config.vmTraceCompressed()
         ));
         Assert.assertEquals(1, block.getTransactionsList().size());
-        blockExecutor.executeAndFillAll(block, genesis);
+        blockExecutor.executeAndFillAll(block, genesis.getHeader());
         Assert.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());
         Assert.assertEquals(1, block.getTransactionsList().size());
 

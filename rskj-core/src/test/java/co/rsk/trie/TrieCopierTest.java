@@ -199,7 +199,7 @@ public class TrieCopierTest {
 
             Block block = new BlockGenerator().createChildBlock(blockchain.getBestBlock(), txs);
             BlockExecutor blockExecutor = world.getBlockExecutor();
-            blockExecutor.executeAndFillAll(block, blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(block, blockchain.getBestBlock().getHeader());
 
             Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block));
             Assert.assertEquals(block.getHash(), blockchain.getBestBlock().getHash());

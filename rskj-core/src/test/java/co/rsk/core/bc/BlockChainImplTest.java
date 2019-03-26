@@ -694,7 +694,7 @@ public class BlockChainImplTest {
 
         BlockExecutor executor = createExecutor(blockChain, listener);
 
-        Assert.assertTrue(executor.executeAndValidate(block, genesis));
+        Assert.assertTrue(executor.executeAndValidate(block, genesis.getHeader()));
     }
 
     @Test
@@ -714,13 +714,13 @@ public class BlockChainImplTest {
 
         BlockExecutor executor = createExecutor(blockChain, listener);
 
-        Assert.assertTrue(executor.executeAndValidate(block1, genesis));
-        Assert.assertTrue(executor.executeAndValidate(block2, block1));
-        Assert.assertTrue(executor.executeAndValidate(block3, block2));
-        Assert.assertTrue(executor.executeAndValidate(block4, block3));
-        Assert.assertTrue(executor.executeAndValidate(block5, block4));
-        Assert.assertTrue(executor.executeAndValidate(block6, block5));
-        Assert.assertTrue(executor.executeAndValidate(block7, block6));
+        Assert.assertTrue(executor.executeAndValidate(block1, genesis.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block2, block1.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block3, block2.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block4, block3.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block5, block4.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block6, block5.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block7, block6.getHeader()));
     }
 
     @Test
@@ -876,7 +876,7 @@ public class BlockChainImplTest {
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
         ));
-        executor.executeAndFill(block, genesis);
+        executor.executeAndFill(block, genesis.getHeader());
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));

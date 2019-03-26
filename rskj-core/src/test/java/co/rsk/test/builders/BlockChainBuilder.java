@@ -213,7 +213,7 @@ public class BlockChainBuilder {
             ));
 
             for (Block b : this.blocks) {
-                blockExecutor.executeAndFillAll(b, blockChain.getBestBlock());
+                blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());
                 blockChain.tryToConnect(b);
             }
         }

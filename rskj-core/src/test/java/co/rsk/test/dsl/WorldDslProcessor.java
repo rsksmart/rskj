@@ -184,10 +184,10 @@ public class WorldDslProcessor {
             BlockExecutor executor = world.getBlockExecutor();
 
             if (block.getParentHash().equals(blockChain.getBestBlock().getHash())) {
-                executor.executeAndFill(block, blockChain.getBestBlock());
+                executor.executeAndFill(block, blockChain.getBestBlock().getHeader());
             }
             else {
-                executor.executeAndFill(block, world.getBlockByHash(block.getParentHash()));
+                executor.executeAndFill(block, world.getBlockByHash(block.getParentHash()).getHeader());
             }
 
             block.seal();
@@ -255,7 +255,7 @@ public class WorldDslProcessor {
                                                                config.vmTraceDir(),
                                                                config.vmTraceCompressed()
                                                        ));
-            executor.executeAndFill(block, parent);
+            executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);
             parent = block;
             k++;

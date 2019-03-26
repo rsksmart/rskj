@@ -684,7 +684,7 @@ public class RemascStorageProviderTest {
         ));
 
         for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
 
             long blockNumber = blockchain.getBestBlock().getNumber();

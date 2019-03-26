@@ -91,7 +91,7 @@ public class BlockExecutorTest {
         Block parent = blockchain.getBestBlock();
         Block block = new BlockGenerator().createChildBlock(parent);
 
-        BlockResult result = executor.execute(block, repository.getRoot(), false);
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getTransactionReceipts());
@@ -108,7 +108,7 @@ public class BlockExecutorTest {
         Transaction tx = block.getTransactionsList().get(0);
         RskAddress account = tx.getSender();
 
-        BlockResult result = executor.execute(block, repository.getRoot(), false);
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(listener.getLatestSummary());
@@ -158,7 +158,7 @@ public class BlockExecutorTest {
         Transaction tx2 = block.getTransactionsList().get(1);
         RskAddress account = tx1.getSender();
 
-        BlockResult result = executor.execute(block, repository.getRoot(), false);
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
 
         Assert.assertNotNull(result);
 
@@ -231,8 +231,8 @@ public class BlockExecutorTest {
                 config.vmTraceCompressed()
         ));
 
-        BlockResult result = executor.execute(block, parent.getStateRoot(), false);
-        executor.executeAndFill(block, parent);
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
+        executor.executeAndFill(block, parent.getHeader());
 
         Assert.assertArrayEquals(result.getReceiptsRoot(), block.getReceiptsRoot());
         Assert.assertArrayEquals(result.getStateRoot(), block.getStateRoot());
@@ -293,7 +293,7 @@ public class BlockExecutorTest {
         genesis.setStateRoot(repository.getRoot());
         Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
 
-        executor.executeAndFill(block, genesis);
+        executor.executeAndFill(block, genesis.getHeader());
 
         // Check tx2 was excluded
         Assert.assertEquals(1, block.getTransactionsList().size());
@@ -353,7 +353,7 @@ public class BlockExecutorTest {
         genesis.setStateRoot(repository.getRoot());
         Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
 
-        BlockResult result = executor.execute(block, genesis.getStateRoot(), false);
+        BlockResult result = executor.execute(block, genesis.getHeader(), false);
 
         Assert.assertSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
     }
@@ -386,7 +386,7 @@ public class BlockExecutorTest {
                 config.vmTraceCompressed()
         ));
 
-        Assert.assertTrue(executor.executeAndValidate(block, parent));
+        Assert.assertTrue(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
@@ -420,7 +420,7 @@ public class BlockExecutorTest {
         byte[] stateRoot = block.getStateRoot();
         stateRoot[0] = (byte)((stateRoot[0] + 1) % 256);
 
-        Assert.assertFalse(executor.executeAndValidate(block, parent));
+        Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
@@ -454,7 +454,7 @@ public class BlockExecutorTest {
         byte[] receiptsRoot = block.getReceiptsRoot();
         receiptsRoot[0] = (byte)((receiptsRoot[0] + 1) % 256);
 
-        Assert.assertFalse(executor.executeAndValidate(block, parent));
+        Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
@@ -487,7 +487,7 @@ public class BlockExecutorTest {
 
         block.getHeader().setGasUsed(0);
 
-        Assert.assertFalse(executor.executeAndValidate(block, parent));
+        Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
@@ -520,7 +520,7 @@ public class BlockExecutorTest {
 
         block.getHeader().setPaidFees(Coin.ZERO);
 
-        Assert.assertFalse(executor.executeAndValidate(block, parent));
+        Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
@@ -554,7 +554,7 @@ public class BlockExecutorTest {
         byte[] logBloom = block.getLogBloom();
         logBloom[0] = (byte)((logBloom[0] + 1) % 256);
 
-        Assert.assertFalse(executor.executeAndValidate(block, parent));
+        Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     public static TestObjects generateBlockWithOneTransaction() {
@@ -603,7 +603,7 @@ public class BlockExecutorTest {
         genesis.setStateRoot(repository.getRoot());
         Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 
-        executor.executeAndFill(block, genesis);
+        executor.executeAndFill(block, genesis.getHeader());
 
         return new TestObjects(repository, block, genesis, tx, account);
     }
@@ -698,6 +698,7 @@ public class BlockExecutorTest {
 
     public void executeBlockWithOneStrangeTransaction(boolean mustFailValidation, boolean mustFailExecution, TestObjects objects) {
         SimpleEthereumListener listener = new SimpleEthereumListener();
+        Block parent = objects.getParent();
         Block block = objects.getBlock();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockExecutor executor = new BlockExecutor(objects.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
@@ -737,7 +738,7 @@ public class BlockExecutorTest {
             return;
         }
 
-        BlockResult result = executor.execute(block, repository.getRoot(), false);
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
 
         Assert.assertNotNull(result);
         if (mustFailExecution) {
@@ -828,7 +829,7 @@ public class BlockExecutorTest {
         genesis.setStateRoot(repository.getRoot());
         Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 
-        executor.executeAndFillReal(block, genesis); // Forces all transactions included
+        executor.executeAndFillReal(block, genesis.getHeader()); // Forces all transactions included
 
         return new TestObjects(repository, block, genesis, tx, account);
     }

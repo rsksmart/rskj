@@ -54,18 +54,18 @@ public class BlockExecutor {
      * @param block        A block to execute and complete
      * @param parent       The parent of the block.
      */
-    public void executeAndFill(Block block, Block parent) {
-        BlockResult result = execute(block, parent.getStateRoot(), true);
+    public void executeAndFill(Block block, BlockHeader parent) {
+        BlockResult result = execute(block, parent, true);
         fill(block, result);
     }
 
-    public void executeAndFillAll(Block block, Block parent) {
-        BlockResult result = executeAll(block, parent.getStateRoot());
+    public void executeAndFillAll(Block block, BlockHeader parent) {
+        BlockResult result = executeAll(block, parent);
         fill(block, result);
     }
 
-    public void executeAndFillReal(Block block, Block parent) {
-        BlockResult result = execute(block, parent.getStateRoot(), false, false);
+    public void executeAndFillReal(Block block, BlockHeader parent) {
+        BlockResult result = execute(block, parent, false, false);
         if (result != BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             fill(block, result);
         }
@@ -92,8 +92,8 @@ public class BlockExecutor {
      * @param parent       The parent of the block.
      * @return true if the block final state is equalBytes to the calculated final state.
      */
-    public boolean executeAndValidate(Block block, Block parent) {
-        BlockResult result = execute(block, parent.getStateRoot(), false);
+    public boolean executeAndValidate(Block block, BlockHeader parent) {
+        BlockResult result = execute(block, parent, false);
 
         return this.validate(block, result);
     }
@@ -160,21 +160,21 @@ public class BlockExecutor {
      * Execute a block, from initial state, returning the final state data.
      *
      * @param block        A block to validate
-     * @param stateRoot    Initial state hash
+     * @param parent       The parent of the block to validate
      * @return BlockResult with the final state data.
      */
-    public BlockResult execute(Block block, byte[] stateRoot, boolean discardInvalidTxs) {
-        return execute(block, stateRoot, discardInvalidTxs, false);
+    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
+        return execute(block, parent, discardInvalidTxs, false);
     }
 
-    public BlockResult executeAll(Block block, byte[] stateRoot) {
-        return execute(block, stateRoot, false, true);
+    public BlockResult executeAll(Block block, BlockHeader parent) {
+        return execute(block, parent, false, true);
     }
 
-    private BlockResult execute(Block block, byte[] stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
+    private BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
-        Repository initialRepository = repository.getSnapshotTo(stateRoot);
+        Repository initialRepository = repository.getSnapshotTo(parent.getStateRoot());
 
         byte[] lastStateRootHash = initialRepository.getRoot();
 

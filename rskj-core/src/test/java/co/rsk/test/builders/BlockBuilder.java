@@ -123,7 +123,7 @@ public class BlockBuilder {
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
             ));
-            executor.executeAndFill(block, parent);
+            executor.executeAndFill(block, parent.getHeader());
         }
 
         return block;

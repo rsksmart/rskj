@@ -248,9 +248,9 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("execute start");
 
             if (this.noValidation) {
-                result = blockExecutor.executeAll(block, parent.getStateRoot());
+                result = blockExecutor.executeAll(block, parent.getHeader());
             } else {
-                result = blockExecutor.execute(block, parent.getStateRoot(), false);
+                result = blockExecutor.execute(block, parent.getHeader(), false);
             }
 
             logger.trace("execute done");
