@@ -19,24 +19,14 @@
 
 package org.ethereum.core.genesis;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.db.RepositoryImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.Constants;
+import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -45,32 +35,14 @@ public class BlockchainLoaderTest {
 
     @Test
     public void testLoadBlockchainEmptyBlockchain() throws IOException {
-        String jsonFile = "blockchain_loader_genesis.json";
-
-        TestSystemProperties systemProperties = Mockito.mock(TestSystemProperties.class);
-
-        Constants constants = Mockito.mock(Constants.class);
-        Mockito.when(constants.getInitialNonce()).thenReturn(BigInteger.ZERO);
-
-        BlockchainNetConfig blockchainNetConfig = Mockito.mock(BlockchainNetConfig.class);
-        Mockito.when(blockchainNetConfig.getCommonConstants()).thenReturn(constants);
-
-        Mockito.when(systemProperties.databaseDir()).thenReturn(new TestSystemProperties().databaseDir());
-        Mockito.when(systemProperties.getBlockchainConfig()).thenReturn(blockchainNetConfig);
-        Mockito.when(systemProperties.genesisInfo()).thenReturn(jsonFile);
-
-        BlockStore blockStore = Mockito.mock(BlockStore.class);
-        Mockito.when(blockStore.getBestBlock()).thenReturn(null);
-
-        EthereumListener ethereumListener = Mockito.mock(EthereumListener.class);
-
-        Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true), new HashMapDB(), new TrieStorePoolOnMemory(), systemProperties.detailsInMemoryStorageLimit());
-
-        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null,
-                                                                 RskTestFactory.getGenesisInstance(systemProperties)
-        );
-
-        blockChainLoader.loadBlockchain();
+        RskTestFactory objects = new RskTestFactory() {
+            @Override
+            public Genesis getGenesis() {
+                return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true);
+            }
+        };
+        objects.getBlockchain(); // calls loadBlockchain
+        Repository repository = objects.getRepository();
 
         Assert.assertEquals(5, repository.getAccountsKeys().size());
 
