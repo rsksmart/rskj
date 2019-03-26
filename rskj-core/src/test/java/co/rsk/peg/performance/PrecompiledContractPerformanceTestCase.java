@@ -196,29 +196,40 @@ public abstract class PrecompiledContractPerformanceTestCase {
     }
 
     protected interface EnvironmentBuilder {
-        class Environment {
-            PrecompiledContracts.PrecompiledContract contract;
-            BenchmarkedRepository benchmarkedRepository;
+        interface Environment {
+            PrecompiledContracts.PrecompiledContract getContract();
+            BenchmarkedRepository getBenchmarkedRepository();
+            void finalise();
 
-            public Environment(
-                    PrecompiledContracts.PrecompiledContract contract,
-                    BenchmarkedRepository benchmarkedRepository) {
+            static Environment withContract(PrecompiledContracts.PrecompiledContract contract) {
+                return new Environment() {
+                    @Override
+                    public PrecompiledContracts.PrecompiledContract getContract() {
+                        return contract;
+                    }
 
-                this.contract = contract;
-                this.benchmarkedRepository = benchmarkedRepository;
+                    @Override
+                    public BenchmarkedRepository getBenchmarkedRepository() {
+                        return () -> new BenchmarkedRepository.Statistics();
+                    }
+
+                    @Override
+                    public void finalise() {
+                        // No finalisation
+                    }
+                };
             }
         }
 
-        Environment initialize(int executionIndex, Transaction tx, int height);
-        void teardown();
+        Environment build(int executionIndex, Transaction tx, int height);
     }
 
     protected interface ResultCallback {
-        void callback(byte[] callResult);
+        void callback(EnvironmentBuilder.Environment environment, byte[] callResult);
     }
 
     private ExecutionTracker execute(
-            EnvironmentBuilder testEnvironment,
+            EnvironmentBuilder environmentBuilder,
             ABIEncoder abiEncoder,
             TxBuilder txBuilder,
             HeightProvider heightProvider,
@@ -228,23 +239,23 @@ public abstract class PrecompiledContractPerformanceTestCase {
         ExecutionTracker executionInfo = new ExecutionTracker(thread);
 
         // Initialize the environment, obtaining a fresh contract ready for execution
-        EnvironmentBuilder.Environment environment = testEnvironment.initialize(
+        EnvironmentBuilder.Environment environment = environmentBuilder.build(
                 executionIndex,
                 txBuilder.build(executionIndex),
                 heightProvider.getHeight(executionIndex)
         );
 
         executionInfo.startTimer();
-        byte[] executionResult = environment.contract.execute(abiEncoder.encode(executionIndex));
+        byte[] executionResult = environment.getContract().execute(abiEncoder.encode(executionIndex));
         executionInfo.endTimer();
 
+        environment.finalise();
+
         if (resultCallback != null) {
-            resultCallback.callback(executionResult);
+            resultCallback.callback(environment, executionResult);
         }
 
-        testEnvironment.teardown();
-
-        executionInfo.setRepositoryStatistics(environment.benchmarkedRepository.getStatistics());
+        executionInfo.setRepositoryStatistics(environment.getBenchmarkedRepository().getStatistics());
 
         return executionInfo;
     }

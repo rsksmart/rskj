@@ -70,4 +70,6 @@ public interface BlockchainConfig {
     boolean isRskipMultipleKeyFederateMembers();
 
     boolean isRskip106();
+
+    boolean isRskipPublicReceiveHeaders();
 }

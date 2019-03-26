@@ -21,6 +21,7 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcBlockChain;
 import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.TestSystemProperties;
@@ -29,6 +30,7 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBlockStore;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -38,15 +40,130 @@ import java.util.List;
 
 @Ignore
 public class ReceiveHeadersTest extends BridgePerformanceTestCase {
-    private BtcBlock blockToTry;
+    private BtcBlockStore btcBlockStore;
+    private BtcBlock lastBlock;
+    private BtcBlock expectedBestBlock;
+
+    // This is here for profiling with any external tools (e.g., visualVM)
+    public static void main(String args[]) throws Exception {
+        setupA();
+        setupB();
+        ReceiveHeadersTest test = new ReceiveHeadersTest();
+        test.setupCpuTime();
+
+        System.out.println("Ready\n");
+        System.in.read();
+        System.out.println("Going!\n");
+        test.receiveHeadersSingleBlock();
+
+        test.teardownCpuTime();
+    }
+
+    @Test
+    public void receiveHeadersSingleBlock() throws IOException {
+        setQuietMode(true);
+        System.out.print("Doing a few initial passes... ");
+        doReceiveHeaders(100, 1, 0);
+        setQuietMode(false);
+        System.out.print("Done!\n");
+
+        ExecutionStats stats = new ExecutionStats("receiveHeaders-singleBlock");
+
+        executeAndAverage(
+                "receiveHeaders-singleBlock", 2000,
+                generateABIEncoder(1, 1, 0),
+                buildInitializer(1000, 2000),
+                Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
+                Helper.getRandomHeightProvider(10),
+                stats
+        );
+
+        BridgePerformanceTest.addStats(stats);
+    }
 
     @Test
     public void receiveHeaders() throws IOException {
-        final int minBtcBlocks = 1000;
-        final int maxBtcBlocks = 2000;
+        CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders");
 
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBlockStore(new TestSystemProperties(), repository, PrecompiledContracts.BRIDGE_ADDR);
+        for (int i = 1; i <= 500; i++) {
+            stats.add(doReceiveHeaders(10, i, 0));
+        }
+
+        BridgePerformanceTest.addStats(stats);
+    }
+
+    @Test
+    public void receiveHeadersWithForking() throws IOException {
+        setQuietMode(true);
+        doReceiveHeaders(100, 1, 0);
+        setQuietMode(false);
+
+        CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-withForking");
+
+        for (int numHeaders = 1; numHeaders < 10; numHeaders++) {
+            for (int depth = 0; depth <= 10; depth++) {
+                stats.add(doReceiveHeaders(50, numHeaders, depth));
+            }
+        }
+
+        BridgePerformanceTest.addStats(stats);
+    }
+
+    private ExecutionStats doReceiveHeaders(int times, int numHeaders, int forkDepth) {
+        String name = String.format("receiveHeaders-fork-%d-headers-%d", forkDepth, numHeaders);
+        ExecutionStats stats = new ExecutionStats(name);
+        int totalHeaders = numHeaders + forkDepth;
+        return executeAndAverage(
+                name, times,
+                generateABIEncoder(totalHeaders, totalHeaders, forkDepth),
+                buildInitializer(1000, 2000),
+                Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
+                Helper.getRandomHeightProvider(10),
+                stats,
+                (EnvironmentBuilder.Environment environment, byte[] result) -> {
+                    btcBlockStore = new RepositoryBlockStore(new TestSystemProperties(), (Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR);
+                    Sha256Hash bestBlockHash = null;
+                    try {
+                        bestBlockHash = btcBlockStore.getChainHead().getHeader().getHash();
+                    } catch (BlockStoreException e) {
+                        Assert.fail(e.getMessage());
+                    }
+                    Assert.assertEquals(expectedBestBlock.getHash(), bestBlockHash);
+                }
+        );
+    }
+
+    private ABIEncoder generateABIEncoder(int minBlocks, int maxBlocks, int forkDepth) {
+        return (int executionIndex) -> {
+            List<BtcBlock> headersToSendToBridge = new ArrayList<>();
+
+            BtcBlock currentBlock = lastBlock;
+            int currentDepth = forkDepth;
+            while (currentDepth-- > 0) {
+                try {
+                    currentBlock = btcBlockStore.get(lastBlock.getPrevBlockHash()).getHeader();
+                } catch (BlockStoreException e) {
+                    throw new RuntimeException("Unexpected error trying to fetch previous block", e);
+                }
+            }
+
+            int blocksToGenerate = Helper.randomInRange(minBlocks, maxBlocks);
+            for (int i = 0; i < blocksToGenerate; i++) {
+                currentBlock = Helper.generateBtcBlock(currentBlock);
+                headersToSendToBridge.add(currentBlock);
+            }
+
+            expectedBestBlock = currentBlock;
+
+            Object[] headersEncoded = headersToSendToBridge.stream().map(h -> h.bitcoinSerialize()).toArray();
+
+            return Bridge.RECEIVE_HEADERS.encode(new Object[]{headersEncoded});
+        };
+    }
+
+    private BridgeStorageProviderInitializer buildInitializer(int minBlocks, int maxBlocks) {
+        return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+            btcBlockStore = new RepositoryBlockStore(new TestSystemProperties(), repository, PrecompiledContracts.BRIDGE_ADDR);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
@@ -55,27 +172,8 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
                 throw new RuntimeException("Error initializing btc blockchain for tests");
             }
 
-            int blocksToGenerate = Helper.randomInRange(minBtcBlocks, maxBtcBlocks);
-            BtcBlock lastBlock = Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
-            blockToTry = Helper.generateBtcBlock(lastBlock);
+            int blocksToGenerate = Helper.randomInRange(minBlocks, maxBlocks);
+            lastBlock = Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
         };
-
-        ABIEncoder abiEncoder = (int executionIndex) -> {
-            List<BtcBlock> headersToSendToBridge = new ArrayList<>();
-
-            // Send just one header (that's the only case we're interested in measuring atm
-            headersToSendToBridge.add(blockToTry);
-
-            Object[] headersEncoded = headersToSendToBridge.stream().map(h -> h.bitcoinSerialize()).toArray();
-
-            return Bridge.RECEIVE_HEADERS.encode(new Object[]{headersEncoded});
-        };
-
-        ExecutionStats stats = new ExecutionStats("receiveHeaders");
-        executeAndAverage("receiveHeaders", 200, abiEncoder, storageInitializer, Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()), Helper.getRandomHeightProvider(10), stats);
-
-        BridgePerformanceTest.addStats(stats);
     }
-
-
 }
