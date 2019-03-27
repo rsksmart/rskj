@@ -45,6 +45,7 @@ public final class DataWord implements Comparable<DataWord> {
     public static final BigInteger MAX_VALUE = _2_256.subtract(BigInteger.ONE);
     public static final DataWord ZERO = new DataWord();
     public static final DataWord ONE = new DataWord(1);
+    public static final int MAX_POW = 256;
 
     private final byte[] data;
 
@@ -61,10 +62,9 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     private DataWord(ByteBuffer buffer) {
-        final ByteBuffer data = ByteBuffer.allocate(32);
+        this.data = new byte[32];
         final byte[] array = buffer.array();
-        System.arraycopy(array, 0, data.array(), 32 - array.length, array.length);
-        this.data = data.array();
+        System.arraycopy(array, 0, this.data, 32 - array.length, array.length);
     }
 
     @JsonCreator
@@ -99,11 +99,10 @@ public final class DataWord implements Comparable<DataWord> {
             this.data = ByteUtil.EMPTY_BYTE_ARRAY;
         } else if (data.length == 32 && !copy) {
             this.data = data;
-        }
-        else if (data.length <= 32) {
+        } else if (data.length <= 32) {
             this.data = new byte[32];
             System.arraycopy(data, 0, this.data, 32 - data.length, data.length);
-        }else {
+        } else {
             throw new RuntimeException("Data word can't exceed 32 bytes: " + data);
         }
     }
@@ -139,6 +138,7 @@ public final class DataWord implements Comparable<DataWord> {
 
         return intVal;
     }
+
     /**
      * Converts this DataWord to an int, checking for lost information.
      * If this DataWord is out of the possible range for an int result
@@ -187,21 +187,7 @@ public final class DataWord implements Comparable<DataWord> {
 
         return longVal;
     }
-    /**
-     * Converts this DataWord to a long, checking for lost information.
-     * If this DataWord is out of the possible range for a long result
-     * then an ArithmeticException is thrown.
-     *
-     * @return this DataWord converted to a long.
-     * @throws ArithmeticException - if this will not fit in a long.
-     */
-    public long longValueCheck() {
-        if (bitsOccupied()>63) {
-            throw new ArithmeticException();
-        }
 
-        return longValue();
-    }
     /**
      * In case of long overflow returns Long.MAX_VALUE
      * otherwise works as #longValue()
@@ -244,11 +230,14 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     public DataWord and(DataWord w2) {
+        byte[] newdata = new byte[32];
+        System.arraycopy(this.data, 0, newdata, 32 - this.data.length, this.data.length);
 
         for (int i = 0; i < this.data.length; ++i) {
-            this.data[i] &= w2.data[i];
+            newdata[i] &= w2.data[i];
         }
-        return this;
+
+        return new DataWord(newdata, false);
     }
 
     public DataWord or(DataWord w2) {
@@ -271,6 +260,11 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         return new DataWord(newdata, false);
+    }
+
+    public DataWord negate() {
+        if (this.isZero()) return ZERO;
+        return bnot().add(DataWord.ONE);
     }
 
     public DataWord bnot() {
@@ -400,10 +394,6 @@ public final class DataWord implements Comparable<DataWord> {
     public String shortHex() {
         String hexValue = Hex.toHexString(getNoLeadZeroesData()).toUpperCase();
         return "0x" + hexValue.replaceFirst("^0+(?!$)", "");
-    }
-
-    public DataWord clone() {
-        return new DataWord(Arrays.clone(data));
     }
 
     @Override

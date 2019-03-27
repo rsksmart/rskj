@@ -476,8 +476,7 @@ public class VM {
             hint = word1.value() + " && " + word2.value();
         }
 
-        word1.and(word2);
-        program.stackPush(word1);
+        program.stackPush(word1.and(word2));
         program.step();
     }
 
@@ -589,13 +588,12 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord address = program.getOwnerAddress();
-        DataWord dwAddress = program.newDataWord(address);
 
         if (isLogEnabled) {
             hint = "address: " + Hex.toHexString(address.getLast20Bytes());
         }
 
-        program.stackPush(dwAddress);
+        program.stackPush(address);
         program.step();
     }
 
@@ -982,7 +980,7 @@ public class VM {
         // EXECUTION PHASE
         int n = op.val() - OpCode.DUP1.val() + 1;
         DataWord word1 = stack.get(stack.size() - n);
-        program.stackPush(program.newDataWord(word1));
+        program.stackPush(word1);
         program.step();
     }
 
@@ -997,7 +995,7 @@ public class VM {
         program.verifyStackOverflow(n, n + 1);
 
         DataWord word1 = stack.get(stack.size() - n);
-        program.stackPush(program.newDataWord(word1));
+        program.stackPush(word1);
         program.step();
     }
 

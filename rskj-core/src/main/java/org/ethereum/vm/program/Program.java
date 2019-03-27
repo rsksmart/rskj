@@ -233,11 +233,6 @@ public class Program {
         stack.clear();
     }
 
-    public DataWord newDataWord(DataWord idw) {
-        DataWord dw= idw.clone();
-        return dw;
-    }
-
     public void stackPush(DataWord stackWord) {
         verifyStackOverflow(0, 1); //Sanity Check
         stack.push(stackWord);
@@ -882,9 +877,9 @@ public class Program {
     public DataWord getBlockHash(long index) {
        long bn = this.getNumber().longValue();
         if ((index <  bn) && (index >= Math.max(0, bn - 256))) {
-            return new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData())).clone();
+            return new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData()));
         } else {
-            return DataWord.ZERO.clone();
+            return DataWord.ZERO;
         }
     }
 
@@ -894,15 +889,15 @@ public class Program {
     }
 
     public DataWord getOriginAddress() {
-        return invoke.getOriginAddress().clone();
+        return invoke.getOriginAddress();
     }
 
     public DataWord getCallerAddress() {
-        return invoke.getCallerAddress().clone();
+        return invoke.getCallerAddress();
     }
 
     public DataWord getGasPrice() {
-        return invoke.getMinGasPrice().clone();
+        return invoke.getMinGasPrice();
     }
 
     public long getRemainingGas() {
@@ -910,11 +905,11 @@ public class Program {
     }
 
     public DataWord getCallValue() {
-            return invoke.getCallValue().clone();
+            return invoke.getCallValue();
     }
 
     public DataWord getDataSize() {
-        return invoke.getDataSize().clone();
+        return invoke.getDataSize();
     }
 
     public DataWord getDataValue(DataWord index) {
@@ -930,31 +925,31 @@ public class Program {
     }
 
     public DataWord getPrevHash() {
-        return invoke.getPrevHash().clone();
+        return invoke.getPrevHash();
     }
 
     public DataWord getCoinbase() {
-        return invoke.getCoinbase().clone();
+        return invoke.getCoinbase();
     }
 
     public DataWord getTimestamp() {
-        return invoke.getTimestamp().clone();
+        return invoke.getTimestamp();
     }
 
     public DataWord getNumber() {
-        return invoke.getNumber().clone();
+        return invoke.getNumber();
     }
 
     public DataWord getTransactionIndex() {
-        return invoke.getTransactionIndex().clone();
+        return invoke.getTransactionIndex();
     }
 
     public DataWord getDifficulty() {
-        return invoke.getDifficulty().clone();
+        return invoke.getDifficulty();
     }
 
     public DataWord getGasLimit() {
-        return invoke.getGaslimit().clone();
+        return invoke.getGaslimit();
     }
 
     public boolean isStaticCall() {
