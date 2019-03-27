@@ -137,7 +137,7 @@ public class GetMultisigScriptHashTest {
                         BigInteger.ONE,
                         new Object[]{}
                 }),
-                "At least two public keys"
+                "At least 2 public keys"
         );
         assertFails(
                 () -> method.execute(new Object[]{
@@ -146,7 +146,7 @@ public class GetMultisigScriptHashTest {
                                 Hex.decode("03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"),
                         }
                 }),
-                "At least two public keys"
+                "At least 2 public keys"
         );
     }
 

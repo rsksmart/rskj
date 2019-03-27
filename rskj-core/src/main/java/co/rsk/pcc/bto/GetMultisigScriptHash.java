@@ -76,7 +76,7 @@ public class GetMultisigScriptHash extends NativeMethod {
         }
 
         if (publicKeys.length < MINIMUM_REQUIRED_KEYS) {
-            throw new NativeContractIllegalArgumentException("At least two public keys are required");
+            throw new NativeContractIllegalArgumentException(String.format("At least %d public keys are required", MINIMUM_REQUIRED_KEYS));
         }
 
         if (publicKeys.length < minimumSignatures) {
