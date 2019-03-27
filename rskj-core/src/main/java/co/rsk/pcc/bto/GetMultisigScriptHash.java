@@ -48,8 +48,8 @@ public class GetMultisigScriptHash extends NativeMethod {
     private final static int COMPRESSED_PUBLIC_KEY_LENGTH = 33;
     private final static int UNCOMPRESSED_PUBLIC_KEY_LENGTH = 65;
 
-    private final static int BASE_COST = 13500;
-    private final static int COST_PER_EXTRA_KEY = 500;
+    private final static long BASE_COST = 13_500L;
+    private final static long COST_PER_EXTRA_KEY = 500L;
 
     private final static int MINIMUM_REQUIRED_KEYS = 2;
 
@@ -127,7 +127,7 @@ public class GetMultisigScriptHash extends NativeMethod {
 
         // Base cost is the cost for 2 keys (the minimum).
         // Then a fee is payed per additional key.
-        return BASE_COST + (numberOfKeys - 2)* COST_PER_EXTRA_KEY;
+        return BASE_COST + (numberOfKeys - 2) * COST_PER_EXTRA_KEY;
     }
 
     @Override
