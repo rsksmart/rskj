@@ -100,13 +100,9 @@ public class Trie {
         this(TrieKeySlice.empty(), null, NodeReference.empty(), NodeReference.empty(), store, isSecure);
     }
 
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, boolean isSecure) {
-        this(sharedPath, value, NodeReference.empty(), NodeReference.empty(), store, isSecure);
-    }
-
     // full constructor
     private Trie(TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, TrieStore store, boolean isSecure) {
-        this.value = cloneArray(value);
+        this.value = value;
         this.left = left;
         this.right = right;
         this.store = store;
@@ -204,6 +200,7 @@ public class Trie {
             }
         }
 
+        // it doesn't need to clone value since it's retrieved from store or created from message
         Trie trie = new Trie(sharedPath, value, left, right, store, isSecure);
 
         if (store != null) {
@@ -596,11 +593,18 @@ public class Trie {
                 return null;
             }
 
-            return new Trie(this.sharedPath, value, this.left, this.right, this.store, this.isSecure);
+            return new Trie(this.sharedPath, cloneArray(value), this.left, this.right, this.store, this.isSecure);
         }
 
         if (isEmptyTrie()) {
-            return new Trie(this.store, key, value, this.isSecure);
+            return new Trie(
+                    key,
+                    cloneArray(value),
+                    NodeReference.empty(),
+                    NodeReference.empty(),
+                    this.store,
+                    this.isSecure
+            );
         }
 
         // this bit will be implicit and not present in a shared path
