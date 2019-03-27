@@ -202,7 +202,7 @@ public class ProgramTrace {
                 this.currentStorage.put(this.storageKey.toString(), value.toString());
             }
             else {
-                this.currentStorage.remove(this.storageKey);
+                this.currentStorage.remove(this.storageKey.toString());
             }
 
             this.storageSize = this.currentStorage.size();

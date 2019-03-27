@@ -210,17 +210,6 @@ public class Program {
         this.previouslyExecutedOp = op;
     }
 
-    /**
-     * Returns the last fully executed OP.
-     */
-    public byte getPreviouslyExecutedOp() {
-        return this.previouslyExecutedOp;
-    }
-
-    private DataWord getNewDataWordFast() {
-        return new DataWord();
-    }
-
     private void stackPushZero() {
         stackPush(DataWord.ZERO);
     }

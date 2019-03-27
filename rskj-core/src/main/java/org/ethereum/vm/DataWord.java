@@ -262,11 +262,6 @@ public final class DataWord implements Comparable<DataWord> {
         return new DataWord(newdata, false);
     }
 
-    public DataWord negate() {
-        if (this.isZero()) return ZERO;
-        return bnot().add(DataWord.ONE);
-    }
-
     public DataWord bnot() {
         byte[] newdata = new byte[32];
 
