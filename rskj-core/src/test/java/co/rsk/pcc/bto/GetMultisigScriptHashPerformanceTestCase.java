@@ -29,6 +29,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -41,32 +42,52 @@ import java.util.stream.Collectors;
 @Ignore
 public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private CallTransaction.Function function;
+    private EnvironmentBuilder environmentBuilder;
 
-    @Test
-    public void getMultisigScriptHash() throws IOException {
+    @Before
+    public void setFunctionAndBuilder() {
         function = new GetMultisigScriptHash(null).getFunction();
-
-        EnvironmentBuilder environmentBuilder = (int executionIndex, Transaction tx, int height) -> {
+        environmentBuilder = (int executionIndex, Transaction tx, int height) -> {
             BTOUtils contract = new BTOUtils(new TestSystemProperties(), PrecompiledContracts.BTOUTILS_ADDR);
             contract.init(tx, Helper.getMockBlock(1), null, null, null, null);
 
             return EnvironmentBuilder.Environment.withContract(contract);
         };
+    }
 
-        // Get rid of outliers by executing some cases beforehand
-        setQuietMode(true);
-        System.out.print("Doing an initial pass... ");
-        estimateGetMultisigScriptHash(100, 15, environmentBuilder);
-        System.out.print("Done!\n");
-        setQuietMode(false);
+    @Test
+    public void getMultisigScriptHash_Weighed() throws IOException {
+        warmUp();
 
-        CombinedExecutionStats stats = new CombinedExecutionStats(function.name);
+        CombinedExecutionStats stats = new CombinedExecutionStats(String.format("%s-weighed", function.name));
 
         stats.add(estimateGetMultisigScriptHash(500, 2, environmentBuilder));
         stats.add(estimateGetMultisigScriptHash(2000, 8, environmentBuilder));
         stats.add(estimateGetMultisigScriptHash(1000, 15, environmentBuilder));
 
         BTOUtilsPerformanceTest.addStats(stats);
+    }
+
+    @Test
+    public void getMultisigScriptHash_Even() throws IOException {
+        warmUp();
+
+        CombinedExecutionStats stats = new CombinedExecutionStats(String.format("%s-even", function.name));
+
+        for (int numberOfKeys = 2; numberOfKeys <= 15; numberOfKeys++) {
+            stats.add(estimateGetMultisigScriptHash(500, numberOfKeys, environmentBuilder));
+        }
+
+        BTOUtilsPerformanceTest.addStats(stats);
+    }
+
+    private void warmUp() {
+        // Get rid of outliers by executing some cases beforehand
+        setQuietMode(true);
+        System.out.print("Doing an initial pass... ");
+        estimateGetMultisigScriptHash(100, 15, environmentBuilder);
+        System.out.print("Done!\n");
+        setQuietMode(false);
     }
 
     private ExecutionStats estimateGetMultisigScriptHash(int times, int numberOfKeys, EnvironmentBuilder environmentBuilder) {
