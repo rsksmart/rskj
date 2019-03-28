@@ -1875,7 +1875,6 @@ public class VM {
                     program.saveOpGasCost(gasCost);
                 }
 
-                program.setPreviouslyExecutedOp(op.val());
                 logOpCode();
                 vmCounter++;
             } // for

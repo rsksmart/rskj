@@ -104,7 +104,6 @@ public class Program {
     private final byte[] ops;
     private int pc;
     private byte lastOp;
-    private byte previouslyExecutedOp;
     private boolean stopped;
     private byte exeVersion;    // currently limited to 0..127
     private byte scriptVersion; // currently limited to 0..127
@@ -201,13 +200,6 @@ public class Program {
      */
     public void setLastOp(byte op) {
         this.lastOp = op;
-    }
-
-    /**
-     * Should be set only after the OP is fully executed.
-     */
-    public void setPreviouslyExecutedOp(byte op) {
-        this.previouslyExecutedOp = op;
     }
 
     private void stackPushZero() {
