@@ -142,7 +142,7 @@ public class TransactionReceipt {
         byte[] postTxStateRLP = RLP.encodeElement(this.postTxState);
         byte[] cumulativeGasRLP = RLP.encodeElement(this.cumulativeGas);
         byte[] gasUsedRLP = RLP.encodeElement(this.gasUsed);
-        byte[] bloomRLP = RLP.encodeElement(this.bloomFilter.data);
+        byte[] bloomRLP = RLP.encodeElement(this.bloomFilter.getData());
         byte[] statusRLP = RLP.encodeElement(this.status);
 
         final byte[] logInfoListRLP;
