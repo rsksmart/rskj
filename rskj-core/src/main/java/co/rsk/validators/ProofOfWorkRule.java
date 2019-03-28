@@ -39,8 +39,6 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -50,7 +48,6 @@ import java.util.List;
 /**
  * Checks proof value against its boundary for the block header.
  */
-@Component
 public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
@@ -62,7 +59,6 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
     private final Constants constants;
     private boolean fallbackMiningEnabled = true;
 
-    @Autowired
     public ProofOfWorkRule(RskSystemProperties config) {
         this.config = config;
         this.blockchainConfig = config.getBlockchainConfig();

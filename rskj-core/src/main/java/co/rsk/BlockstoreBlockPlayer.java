@@ -18,7 +18,6 @@
 
 package co.rsk;
 
-import co.rsk.core.RskFactory;
 import co.rsk.net.BlockProcessResult;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -40,7 +39,7 @@ public class BlockstoreBlockPlayer {
     }
 
     private void connectBlocks() {
-        BlockStore sourceBlockStore = RskFactory.buildBlockStore(sourceDir);
+        BlockStore sourceBlockStore = RskContext.buildBlockStore(sourceDir);
         for (Block block = nextBlock(sourceBlockStore); block != null; block = nextBlock(sourceBlockStore)) {
             if (!connectBlock(block)) {
                 System.err.printf("Import failed at block %s\n", block.getNumber());

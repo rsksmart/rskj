@@ -24,15 +24,11 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.server.ChannelManager;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
 public class RskImpl extends EthereumImpl implements Rsk {
 
     private final NodeBlockProcessor nodeBlockProcessor;
 
-    @Autowired
     public RskImpl(
             ChannelManager channelManager,
             TransactionPool transactionPool,

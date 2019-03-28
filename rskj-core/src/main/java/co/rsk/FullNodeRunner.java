@@ -40,12 +40,9 @@ import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
 
-@Component
 public class FullNodeRunner implements NodeRunner {
     private static Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
@@ -70,7 +67,6 @@ public class FullNodeRunner implements NodeRunner {
     private final TransactionGateway transactionGateway;
     private final BuildInfo buildInfo;
 
-    @Autowired
     public FullNodeRunner(
             Rsk rsk,
             UDPServer udpServer,

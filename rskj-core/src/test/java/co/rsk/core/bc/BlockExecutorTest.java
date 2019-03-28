@@ -71,17 +71,17 @@ public class BlockExecutorTest {
 
     @Before
     public void setUp() {
-        listener = new SimpleEthereumListener();
         RskTestFactory objects = new RskTestFactory(config) {
             @Override
-            public CompositeEthereumListener getCompositeEthereumListener() {
-                return listener;
+            public CompositeEthereumListener buildCompositeEthereumListener() {
+                return new SimpleEthereumListener();
             }
         };
 
         blockchain = objects.getBlockchain();
         executor = objects.getBlockExecutor();
         repository = objects.getRepository();
+        listener = (SimpleEthereumListener) objects.getCompositeEthereumListener();
     }
 
     @Test

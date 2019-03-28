@@ -37,9 +37,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -49,7 +46,6 @@ import java.util.*;
  * It can also be used to generate a new block from the pending state, which is useful
  * in places like Web3 with the 'pending' parameter.
  */
-@Component
 public class BlockToMineBuilder {
     private static final Logger logger = LoggerFactory.getLogger("blocktominebuilder");
 
@@ -67,9 +63,7 @@ public class BlockToMineBuilder {
     private final BlockExecutor executor;
 
     private final Coin minerMinGasPriceTarget;
-    private final StateRootHandler stateRootHandler;
 
-    @Autowired
     public BlockToMineBuilder(
             MiningConfig miningConfig,
             Repository repository,
@@ -77,7 +71,7 @@ public class BlockToMineBuilder {
             TransactionPool transactionPool,
             DifficultyCalculator difficultyCalculator,
             GasLimitCalculator gasLimitCalculator,
-            @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
+            BlockValidationRule validationRules,
             RskSystemProperties config,
             ReceiptStore receiptStore,
             MinerClock clock,
@@ -93,7 +87,6 @@ public class BlockToMineBuilder {
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        this.stateRootHandler = stateRootHandler;
         this.executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
@@ -114,7 +107,7 @@ public class BlockToMineBuilder {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), this.stateRootHandler);
+        ), stateRootHandler);
 
         this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
     }

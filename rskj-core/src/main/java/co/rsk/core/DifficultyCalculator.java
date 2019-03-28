@@ -20,14 +20,10 @@ package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.BlockHeader;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
 public class DifficultyCalculator {
     private final RskSystemProperties config;
 
-    @Autowired
     public DifficultyCalculator(RskSystemProperties config) {
         this.config = config;
     }

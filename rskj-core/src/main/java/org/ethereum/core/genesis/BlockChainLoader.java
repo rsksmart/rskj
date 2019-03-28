@@ -42,8 +42,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +52,6 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 /**
  * Created by mario on 13/01/17.
  */
-@Component
 public class BlockChainLoader {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
@@ -69,7 +66,6 @@ public class BlockChainLoader {
     private final Genesis genesis;
     private final StateRootHandler stateRootHandler;
 
-    @Autowired
     public BlockChainLoader(
             RskSystemProperties config,
             org.ethereum.core.Repository repository,

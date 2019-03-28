@@ -35,8 +35,6 @@ import org.ethereum.net.message.ReasonCode;
 import org.ethereum.sync.SyncPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import java.net.InetAddress;
@@ -49,7 +47,6 @@ import java.util.concurrent.*;
  * @author Roman Mandeleil
  * @since 11.11.2014
  */
-@Component("ChannelManager")
 public class ChannelManagerImpl implements ChannelManager {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
@@ -76,7 +73,6 @@ public class ChannelManagerImpl implements ChannelManager {
     private final int maxConnectionsAllowed;
     private final int networkCIDR;
 
-    @Autowired
     public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool) {
         this.mainWorker = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "newPeersProcessor"));
         this.syncPool = syncPool;

@@ -41,8 +41,6 @@ import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
@@ -59,7 +57,6 @@ import java.util.function.Function;
  * @author Oscar Guindzberg
  */
 
-@Component("MinerServer")
 public class MinerServerImpl implements MinerServer {
     private static final long DELAY_BETWEEN_BUILD_BLOCKS_MS = TimeUnit.MINUTES.toMillis(1);
 
@@ -100,7 +97,6 @@ public class MinerServerImpl implements MinerServer {
 
     private final BlockProcessor nodeBlockProcessor;
 
-    @Autowired
     public MinerServerImpl(
             RskSystemProperties config,
             Ethereum ethereum,

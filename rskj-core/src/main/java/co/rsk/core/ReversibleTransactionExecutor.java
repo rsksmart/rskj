@@ -30,14 +30,11 @@ import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * Encapsulates the logic to execute a transaction in an
  * isolated environment (e.g. no persistent state changes).
  */
-@Component
 public class ReversibleTransactionExecutor {
 
     private final RskSystemProperties config;
@@ -46,7 +43,6 @@ public class ReversibleTransactionExecutor {
     private final ReceiptStore receiptStore;
     private final ProgramInvokeFactory programInvokeFactory;
 
-    @Autowired
     public ReversibleTransactionExecutor(
             RskSystemProperties config,
             Repository track,
