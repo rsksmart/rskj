@@ -18,6 +18,7 @@
 
 package co.rsk.peg.performance;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.vm.VMPerformanceTest;
@@ -43,6 +44,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public abstract class PrecompiledContractPerformanceTestCase {
+    protected static TestSystemProperties config;
     protected static BlockchainNetConfig blockchainNetConfig;
 
     private boolean oldCpuTimeEnabled;
@@ -105,7 +107,9 @@ public abstract class PrecompiledContractPerformanceTestCase {
 
     @BeforeClass
     public static void setupA() throws Exception {
-        blockchainNetConfig = new RegtestBlockchainNetConfig(ActivationConfigsForTest.genesis());
+        config = new TestSystemProperties();
+        config.setBlockchainConfig(new RegtestBlockchainNetConfig(ActivationConfigsForTest.genesis()));
+        blockchainNetConfig = config.getBlockchainConfig();
     }
 
     @AfterClass

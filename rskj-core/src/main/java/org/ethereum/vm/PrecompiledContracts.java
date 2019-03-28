@@ -23,6 +23,7 @@ import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.SamplePrecompiledContract;
 import co.rsk.remasc.RemascContract;
@@ -58,11 +59,13 @@ public class PrecompiledContracts {
     public static final String SAMPLE_ADDR_STR = "0000000000000000000000000000000001000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
+    public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
 
     public static final RskAddress BRIDGE_ADDR = new RskAddress(BRIDGE_ADDR_STR);
     public static final RskAddress IDENTITY_ADDR = new RskAddress(IDENTITY_ADDR_STR);
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_STR);
     public static final RskAddress SAMPLE_ADDR = new RskAddress(SAMPLE_ADDR_STR);
+    public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
 
     public static final DataWord BRIDGE_ADDR_DW = DataWord.valueOf(BRIDGE_ADDR.getBytes());
     public static final DataWord IDENTITY_ADDR_DW = DataWord.valueOf(IDENTITY_ADDR.getBytes());
@@ -72,6 +75,7 @@ public class PrecompiledContracts {
     public static final DataWord RIPEMPD160_ADDR_DW = DataWord.valueFromHex(RIPEMPD160_ADDR);
     public static final DataWord BIG_INT_MODEXP_ADDR_DW = DataWord.valueFromHex(BIG_INT_MODEXP_ADDR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR);
+    public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueOf(BLOCK_HEADER_ADDR.getBytes());
 
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
@@ -104,10 +108,6 @@ public class PrecompiledContracts {
         if (address.equals(IDENTITY_ADDR_DW)) {
             return identity;
         }
-        // RSKIP-93 removes this contract completely
-        if (address.equals(SAMPLE_ADDR_DW) && !blockchainConfig.isRskip93()) {
-            return sample;
-        }
         if (address.equals(BRIDGE_ADDR_DW)) {
             return new Bridge(BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), config.getBlockchainConfig());
         }
@@ -117,6 +117,17 @@ public class PrecompiledContracts {
         if (address.equals(REMASC_ADDR_DW)) {
             RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
             return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig());
+        }
+
+        // Precompiled contracts depending on blockchainConfig
+        if (blockchainConfig != null) {
+            // RSKIP-93 removes this contract completely
+            if (address.equals(SAMPLE_ADDR_DW) && !blockchainConfig.isRskip93()){
+                return sample;
+            }
+            if (blockchainConfig.isRskip119() && address.equals(BLOCK_HEADER_ADDR_DW)) {
+                return new BlockHeaderContract(config, BLOCK_HEADER_ADDR);
+            }
         }
 
         return null;

@@ -20,10 +20,14 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by Sergio Demian Lerner on 12/10/2018.
@@ -38,6 +42,7 @@ public class PrecompiledContractAddressTests {
     public static final String SAMPLE_ADDR_STR = "0000000000000000000000000000000001000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
+    public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
 
     private final TestSystemProperties config = new TestSystemProperties();
 
@@ -52,12 +57,18 @@ public class PrecompiledContractAddressTests {
         //checkAddr(pcList,SAMPLE_ADDR_STR ,"SamplePrecompiledContract");
         checkAddr(pcList,BRIDGE_ADDR_STR ,"Bridge");
         checkAddr(pcList,REMASC_ADDR_STR ,"RemascContract");
+        checkAddr(pcList,BLOCK_HEADER_ADDR_STR,"BlockHeaderContract");
     }
 
     void checkAddr(PrecompiledContracts pcList,String addr,String className) {
+        BlockchainConfig bcConfig = mock(BlockchainConfig.class);
+
+        // Enabling necessary RSKIPs for every precompiled contract to be available
+        when(bcConfig.isRskip119()).thenReturn(true);
+
         RskAddress a;
         a = new RskAddress(addr);
-        PrecompiledContracts.PrecompiledContract pc = pcList.getContractForAddress(null, DataWord.valueOf(a.getBytes()));
+        PrecompiledContracts.PrecompiledContract pc = pcList.getContractForAddress(bcConfig, DataWord.valueOf(a.getBytes()));
         Assert.assertEquals(className,pc.getClass().getSimpleName());
     }
 }

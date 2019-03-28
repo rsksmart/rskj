@@ -19,12 +19,17 @@
 package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.peg.Bridge;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class PrecompiledContractTest {
 
@@ -49,5 +54,30 @@ public class PrecompiledContractTest {
         Assert.assertNotNull(bridge1);
         Assert.assertNotNull(bridge2);
         Assert.assertNotSame(bridge1, bridge2);
+    }
+
+    @Test
+    public void getBlockHeaderContractBeforeRskip119() {
+        BlockchainConfig afterRskip119 = mock(BlockchainConfig.class);
+        when(afterRskip119.isRskip119()).thenReturn(false);
+        DataWord blockHeaderContractAddress = DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
+        PrecompiledContract blockHeaderContract = precompiledContracts.getContractForAddress(afterRskip119, blockHeaderContractAddress);
+
+        Assert.assertNull(blockHeaderContract);
+    }
+
+    @Test
+    public void getBlockHeaderContractAfterRskip119() {
+        BlockchainConfig afterRskip119 = mock(BlockchainConfig.class);
+        when(afterRskip119.isRskip119()).thenReturn(true);
+        DataWord blockHeaderContractAddress = DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
+        PrecompiledContract blockHeaderContract1 = precompiledContracts.getContractForAddress(afterRskip119, blockHeaderContractAddress);
+        PrecompiledContract blockHeaderContract2 = precompiledContracts.getContractForAddress(afterRskip119, blockHeaderContractAddress);
+
+        Assert.assertNotNull(blockHeaderContract1);
+        Assert.assertNotNull(blockHeaderContract2);
+        Assert.assertEquals(BlockHeaderContract.class, blockHeaderContract1.getClass());
+        Assert.assertEquals(BlockHeaderContract.class, blockHeaderContract2.getClass());
+        Assert.assertNotSame(blockHeaderContract1, blockHeaderContract2);
     }
 }

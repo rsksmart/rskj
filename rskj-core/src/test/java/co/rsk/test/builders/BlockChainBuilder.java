@@ -301,7 +301,16 @@ public class BlockChainBuilder {
 
     public static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining) {
         Block initial = blockchain.getBestBlock();
-        List<Block> blocks = new BlockGenerator().getBlockChain(initial, size, 0, withUncles, mining, null);
+        extend(blockchain, size, withUncles, mining, initial);
+    }
+
+    public static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining, long blockNumber) {
+        Block initial = blockchain.getBlockByNumber(blockNumber);
+        extend(blockchain, size, withUncles, mining, initial);
+    }
+
+    private static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining, Block initialBlock) {
+        List<Block> blocks = new BlockGenerator().getBlockChain(initialBlock, size, 0, withUncles, mining, null);
 
         for (Block block: blocks)
             blockchain.tryToConnect(block);
