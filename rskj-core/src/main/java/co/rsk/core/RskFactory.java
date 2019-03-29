@@ -25,6 +25,7 @@ import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.metrics.BlockHeaderElement;
+import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.metrics.HashRateCalculatorMining;
 import co.rsk.metrics.HashRateCalculatorNonMining;
@@ -205,7 +206,8 @@ public class RskFactory {
                         BlockProcessor nodeBlockProcessor,
                         HashRateCalculator hashRateCalculator,
                         ConfigCapabilities configCapabilities,
-                        BuildInfo buildInfo) {
+                        BuildInfo buildInfo,
+                        BlocksBloomStore blocksBloomStore) {
         return new Web3RskImpl(
                 rsk,
                 blockchain,
@@ -229,7 +231,8 @@ public class RskFactory {
                 nodeBlockProcessor,
                 hashRateCalculator,
                 configCapabilities,
-                buildInfo
+                buildInfo,
+                blocksBloomStore
         );
     }
 
@@ -282,6 +285,11 @@ public class RskFactory {
     @Bean
     public BlockChainImpl getBlockchain(BlockChainLoader blockChainLoader) {
         return blockChainLoader.loadBlockchain();
+    }
+
+    @Bean
+    public BlocksBloomStore getBlocksBloomStore() {
+        return new BlocksBloomStore(64, 20);
     }
 
     @Bean
