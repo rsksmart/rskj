@@ -19,7 +19,6 @@
 package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,14 +27,14 @@ import java.util.Arrays;
 /**
  * Created by ajlopez on 03/04/2017.
  */
-public class SecureTrieImplKeyValueTest {
+public class SecureTrieKeyValueTest {
 
     @Test
     public void zeroKeyWhenTwoKeysHasNoSharedPath() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
-        Trie trie = new TrieImpl(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(oneKey);
@@ -49,7 +48,7 @@ public class SecureTrieImplKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
-        Trie trie = new TrieImpl(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(zeroKey);
@@ -63,7 +62,7 @@ public class SecureTrieImplKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
-        Trie trie = new TrieImpl(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(zeroKey);
@@ -77,7 +76,7 @@ public class SecureTrieImplKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
-        Trie trie = new TrieImpl(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
+        Trie trie = new Trie(true).put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
                 .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(oneKey);

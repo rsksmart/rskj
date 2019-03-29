@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
 import org.bouncycastle.util.encoders.Hex;
@@ -89,6 +88,7 @@ public abstract class SystemProperties {
     public static final String PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME = "blockchain.config.hardforkActivationHeights";
     public static final String PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS = "genesis_constants.federationPublicKeys";
     public static final String PROPERTY_PEER_PORT = "peer.port";
+    public static final String PROPERTY_BASE_PATH = "database.dir";
     public static final String PROPERTY_DB_RESET = "database.reset";
     // TODO review rpc properties
     public static final String PROPERTY_RPC_CORS = "rpc.providers.web.cors";
@@ -358,7 +358,7 @@ public abstract class SystemProperties {
 
     @ValidateMe
     public String databaseDir() {
-        return databaseDir == null ? configFromFiles.getString("database.dir") : databaseDir;
+        return databaseDir == null ? configFromFiles.getString(PROPERTY_BASE_PATH) : databaseDir;
     }
 
     public void setDataBaseDir(String dataBaseDir) {

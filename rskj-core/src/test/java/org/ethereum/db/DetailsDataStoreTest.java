@@ -22,8 +22,7 @@ package org.ethereum.db;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
@@ -55,7 +54,7 @@ public class DetailsDataStoreTest {
         String storeName = "contracts-storage";
         ContractDetails contractDetails = new ContractDetailsImpl(
             contractAddress,
-            new TrieImpl(trieStorePool.getInstanceFor(storeName), true),
+            new Trie(trieStorePool.getInstanceFor(storeName), true),
             null,
             trieStorePool,
             config.detailsInMemoryStorageLimit()
@@ -95,7 +94,7 @@ public class DetailsDataStoreTest {
         String storeName = "details-storage/" + toHexString(contractAddress);
         ContractDetails contractDetails = new ContractDetailsImpl(
             null,
-            new TrieImpl(trieStorePool.getInstanceFor(storeName), true),
+            new Trie(trieStorePool.getInstanceFor(storeName), true),
             null,
             trieStorePool,
             config.detailsInMemoryStorageLimit()
@@ -140,7 +139,7 @@ public class DetailsDataStoreTest {
         String storeName = "contracts-storage";
         ContractDetails contractDetails = new ContractDetailsImpl(
             contractAddress,
-            new TrieImpl(trieStorePool.getInstanceFor(storeName), true),
+            new Trie(trieStorePool.getInstanceFor(storeName), true),
             null,
             trieStorePool,
             config.detailsInMemoryStorageLimit()

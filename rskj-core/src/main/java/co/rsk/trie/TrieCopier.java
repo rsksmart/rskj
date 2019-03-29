@@ -67,7 +67,7 @@ public class TrieCopier {
                 AccountState accountState = stateRepository.getAccountState(contractAddress);
 
                 ContractDetailsImpl contractDetails = (ContractDetailsImpl)stateRepository.getContractDetails(contractAddress);
-                TrieImpl trie = (TrieImpl)contractDetails.getTrie();
+                Trie trie = contractDetails.getTrie();
                 trieStateCopy(trie.getStore(), target, new Keccak256(accountState.getStateRoot()));
             }
 

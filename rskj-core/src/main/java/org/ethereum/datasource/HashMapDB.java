@@ -41,18 +41,21 @@ public class HashMapDB implements KeyValueDataSource {
 
     @Override
     public byte[] get(byte[] arg0) throws DBException {
+        Objects.requireNonNull(arg0);
         return storage.get(wrap(arg0));
     }
 
 
     @Override
     public byte[] put(byte[] key, byte[] value) throws DBException {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
         return storage.put(wrap(key), value);
     }
 
     @Override
     public void init() {
-
+        this.storage.clear();
     }
 
     @Override
@@ -73,9 +76,21 @@ public class HashMapDB implements KeyValueDataSource {
     }
 
     @Override
-    public synchronized void updateBatch(Map<byte[], byte[]> rows) {
-        rows.entrySet().stream().
-                forEach(entry -> storage.put(wrap(entry.getKey()), entry.getValue()));
+    public synchronized void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
+        if (rows.containsKey(null) || rows.containsValue(null)) {
+            throw new IllegalArgumentException("Cannot update null values");
+        }
+        rows.keySet().removeAll(keysToRemove);
+        for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
+            ByteArrayWrapper wrappedKey = entry.getKey();
+            byte[] key = wrappedKey.getData();
+            byte[] value = entry.getValue();
+            put(key , value);
+        }
+
+        for (ByteArrayWrapper keyToRemove : keysToRemove) {
+            delete(keyToRemove.getData());
+        }
     }
 
     public synchronized HashMapDB setClearOnClose(boolean clearOnClose) {
@@ -88,5 +103,10 @@ public class HashMapDB implements KeyValueDataSource {
         if (clearOnClose) {
             this.storage.clear();
         }
+    }
+
+    @Override
+    public void flush(){
+        // HashMapDB has no flush: everything is kept in memory.
     }
 }

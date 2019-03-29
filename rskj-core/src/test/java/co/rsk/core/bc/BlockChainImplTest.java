@@ -19,15 +19,14 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.blocks.DummyBlockRecorder;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import org.bouncycastle.util.Arrays;
@@ -795,21 +794,8 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void useBlockRecorder() {
-        DummyBlockRecorder recorder = new DummyBlockRecorder();
-        BlockChainImpl blockChain = createBlockChain();
-        blockChain.setBlockRecorder(recorder);
-
-        Block genesis = getGenesisBlock(blockChain);
-
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-
-        Assert.assertEquals(genesis, recorder.getLatestBlock());
-    }
-
-    @Test
     public void addInvalidMGPBlock() {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
@@ -840,7 +826,7 @@ public class BlockChainImplTest {
 
     @Test
     public void addValidMGPBlock() {
-        Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
         IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), (DB) null);
 
@@ -950,7 +936,7 @@ public class BlockChainImplTest {
         )));
     }
 
-    public static Block getGenesisBlock(BlockChainImpl blockChain) {
+    public static Block getGenesisBlock(Blockchain blockChain) {
         Repository repository = blockChain.getRepository();
 
         Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true);

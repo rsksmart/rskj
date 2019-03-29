@@ -45,7 +45,7 @@ public class TransactionPoolImplTest {
     private static final TestSystemProperties config = new TestSystemProperties();
 
     private TransactionPoolImpl transactionPool;
-    private BlockChainImpl blockChain;
+    private Blockchain blockChain;
 
     @Before
     public void setUp() {

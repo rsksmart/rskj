@@ -1,4 +1,4 @@
-package co.rsk.db;
+package org.ethereum.db;
 
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -11,7 +11,7 @@ import java.util.Map;
 public class TrieStorePoolOnMemory implements TrieStore.Pool {
 
     private final StoreProvider storeProvider;
-    Map<String, TrieStore> pool = new HashMap<>();
+    private final Map<String, TrieStore> pool = new HashMap<>();
 
     public TrieStorePoolOnMemory() {
         this (HashMapDB::new);
@@ -31,8 +31,9 @@ public class TrieStorePoolOnMemory implements TrieStore.Pool {
         return pool.containsKey(name);
     }
 
-    public void closeInstanceFor(String name) {
 
+    public void closeInstanceFor(String name) {
+        //nothing to do here!
     }
 
     @Override

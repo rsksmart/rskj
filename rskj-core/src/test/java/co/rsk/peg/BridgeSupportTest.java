@@ -36,7 +36,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.peg.simples.SimpleWallet;
@@ -47,7 +47,7 @@ import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import com.google.common.collect.Lists;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -3487,6 +3487,6 @@ public class BridgeSupportTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl(new Trie(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }

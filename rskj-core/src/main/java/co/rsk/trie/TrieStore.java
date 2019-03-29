@@ -20,11 +20,10 @@ package co.rsk.trie;
 
 import org.ethereum.datasource.KeyValueDataSource;
 
-/**
- * Created by ajlopez on 29/03/2017.
- */
 public interface TrieStore {
     void save(Trie trie);
+
+    void flush();
 
     Trie retrieve(byte[] hash);
 

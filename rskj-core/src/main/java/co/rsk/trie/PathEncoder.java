@@ -47,7 +47,7 @@ class PathEncoder {
     @Nonnull
     private static byte[] encodeBinaryPath(byte[] path) {
         int lpath = path.length;
-        int lencoded = lpath / 8 + (lpath % 8 == 0 ? 0 : 1);
+        int lencoded = calculateEncodedLength(lpath);
 
         byte[] encoded = new byte[lencoded];
         int nbyte = 0;
@@ -82,5 +82,9 @@ class PathEncoder {
         }
 
         return path;
+    }
+
+    public static int calculateEncodedLength(int keyLength) {
+        return keyLength / 8 + (keyLength % 8 == 0 ? 0 : 1);
     }
 }

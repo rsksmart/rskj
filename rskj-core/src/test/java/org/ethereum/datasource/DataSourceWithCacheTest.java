@@ -1,0 +1,208 @@
+package org.ethereum.datasource;
+
+import org.ethereum.TestUtils;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.util.ByteUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
+
+public class DataSourceWithCacheTest {
+
+    private static final int CACHE_SIZE = 15;
+    private HashMapDB baseDataSource;
+    private DataSourceWithCache dataSourceWithCache;
+
+    @Before
+    public void setupDataSources() {
+        this.baseDataSource = spy(new HashMapDB());
+        this.dataSourceWithCache = new DataSourceWithCache(baseDataSource, CACHE_SIZE);
+    }
+
+    /**
+     * Checks that the base is acceded once
+     */
+    @Test
+    public void getAfterMiss() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+
+        baseDataSource.put(randomKey, TestUtils.randomBytes(20));
+        dataSourceWithCache.get(randomKey);
+        dataSourceWithCache.get(randomKey);
+
+        verify(baseDataSource, times(1)).get(any(byte[].class));
+
+        dataSourceWithCache.flush();
+        dataSourceWithCache.get(randomKey);
+        verify(baseDataSource, times(1)).get(any(byte[].class));
+    }
+
+    @Test
+    public void getAfterModification() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+        byte[] randomValue = TestUtils.randomBytes(20);
+
+        baseDataSource.put(randomKey, randomValue);
+        byte[] modifiedRandomValue = Arrays.copyOf(randomValue, randomValue.length);
+        modifiedRandomValue[modifiedRandomValue.length - 1] += 1;
+
+        dataSourceWithCache.put(randomKey, modifiedRandomValue);
+
+        dataSourceWithCache.get(randomKey);
+        verify(baseDataSource, never()).get(any(byte[].class));
+
+        dataSourceWithCache.flush();
+        dataSourceWithCache.get(randomKey);
+        verify(baseDataSource, never()).get(any(byte[].class));
+    }
+
+    @Test
+    public void getAfterDeletion() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+        baseDataSource.put(randomKey, TestUtils.randomBytes(20));
+
+        dataSourceWithCache.delete(randomKey);
+
+        dataSourceWithCache.get(randomKey);
+        verify(baseDataSource, never()).get(any(byte[].class));
+
+        dataSourceWithCache.flush();
+        dataSourceWithCache.get(randomKey);
+        verify(baseDataSource, never()).get(any(byte[].class));
+    }
+
+    /**
+     * Note: we cannot exhaustively verify baseDataSource#get access b/c on flush all the uncommittedCache is dumped
+     * into the underlying layer and it's impossible to establish which entries stayed in the committedCache due to the
+     * {@link java.util.LinkedHashMap#putAll(Map)} eviction semantic
+     */
+    @Test
+    public void getWithFullCache() {
+        int expectedMisses = 1;
+        Map<ByteArrayWrapper, byte[]> initialEntries = generateRandomValuesToUpdate(CACHE_SIZE + expectedMisses);
+        dataSourceWithCache.updateBatch(initialEntries, Collections.emptySet());
+        dataSourceWithCache.flush();
+
+        for (ByteArrayWrapper key : initialEntries.keySet()) {
+            assertThat(dataSourceWithCache.get(key.getData()), is(initialEntries.get(key)));
+        }
+
+        verify(baseDataSource, atLeast(expectedMisses)).get(any(byte[].class));
+    }
+
+    @Test
+    public void put() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+        byte[] randomValue = TestUtils.randomBytes(20);
+
+        dataSourceWithCache.put(randomKey, randomValue);
+        assertThat(baseDataSource.get(randomKey), is(nullValue()));
+
+        dataSourceWithCache.flush();
+        assertThat(baseDataSource.get(randomKey), is(randomValue));
+    }
+
+    @Test
+    public void keys() {
+        Map<ByteArrayWrapper, byte[]> initialEntries = generateRandomValuesToUpdate(CACHE_SIZE);
+        Set<byte[]> initialKeys = initialEntries.keySet().stream().map(ByteArrayWrapper::getData).collect(Collectors.toSet());
+        baseDataSource.updateBatch(initialEntries, Collections.emptySet());
+
+        assertThat(dataSourceWithCache.keys(), is(initialKeys));
+
+        byte[] randomKey = TestUtils.randomBytes(20);
+        dataSourceWithCache.get(randomKey);
+        assertThat(dataSourceWithCache.keys(), not(hasItem(randomKey)));
+    }
+
+    @Test
+    public void keysAfterPut() {
+        Map<ByteArrayWrapper, byte[]> initialEntries = generateRandomValuesToUpdate(CACHE_SIZE);
+        baseDataSource.updateBatch(initialEntries, Collections.emptySet());
+
+        byte[] randomKey = TestUtils.randomBytes(20);
+        dataSourceWithCache.put(randomKey, TestUtils.randomBytes(20));
+
+        assertThat(dataSourceWithCache.keys(), hasItem(randomKey));
+    }
+
+    @Test
+    public void keysAfterDelete() {
+        Map<ByteArrayWrapper, byte[]> initialEntries = generateRandomValuesToUpdate(CACHE_SIZE);
+        baseDataSource.updateBatch(initialEntries, Collections.emptySet());
+
+        byte[] randomInitialKey = initialEntries.keySet().iterator().next().getData();
+        dataSourceWithCache.delete(randomInitialKey);
+
+        assertThat(dataSourceWithCache.keys(), not(hasItem(randomInitialKey)));
+    }
+
+    @Test
+    public void delete() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+        baseDataSource.put(randomKey, TestUtils.randomBytes(20));
+
+        dataSourceWithCache.delete(randomKey);
+        dataSourceWithCache.flush();
+
+        assertThat(baseDataSource.get(randomKey), is(nullValue()));
+    }
+    
+    @Test
+    public void deleteNonExistentCachedKey() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+
+        // force caching non existing value
+        dataSourceWithCache.get(randomKey);
+        dataSourceWithCache.delete(randomKey);
+        dataSourceWithCache.flush();
+
+        ArgumentCaptor<Set<ByteArrayWrapper>> keysToDeleteArgument = ArgumentCaptor.forClass((Class)Set.class);
+        verify(baseDataSource, times(1)).updateBatch(any(Map.class), keysToDeleteArgument.capture());
+        assertThat(keysToDeleteArgument.getValue(), is(empty()));
+    }
+
+    @Test
+    public void deleteUnknownKey() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+
+        dataSourceWithCache.delete(randomKey);
+        dataSourceWithCache.flush();
+
+        ArgumentCaptor<Set<ByteArrayWrapper>> keysToDeleteArgument = ArgumentCaptor.forClass((Class)Set.class);
+        verify(baseDataSource, times(1)).updateBatch(any(Map.class), keysToDeleteArgument.capture());
+        Set<ByteArrayWrapper> keysToDelete = keysToDeleteArgument.getValue();
+        assertThat(keysToDelete, hasSize(1));
+        assertThat(keysToDelete, hasItem(ByteUtil.wrap(randomKey)));
+    }
+
+    @Test
+    public void updateBatch() {
+        Map<ByteArrayWrapper, byte[]> initialEntries = generateRandomValuesToUpdate(CACHE_SIZE);
+        baseDataSource.updateBatch(initialEntries, Collections.emptySet());
+
+        Set<ByteArrayWrapper> keysToBatchRemove = initialEntries.keySet().stream().limit(CACHE_SIZE / 2).collect(Collectors.toSet());
+        dataSourceWithCache.updateBatch(Collections.emptyMap(), keysToBatchRemove);
+        dataSourceWithCache.flush();
+
+        for (ByteArrayWrapper removedKey : keysToBatchRemove) {
+            assertThat(baseDataSource.get(removedKey.getData()), is(nullValue()));
+        }
+    }
+
+    private Map<ByteArrayWrapper, byte[]> generateRandomValuesToUpdate(int maxValuesToCreate) {
+        Map<ByteArrayWrapper, byte[]> updatedValues = new HashMap<>();
+        for (int i = 0; i < maxValuesToCreate; i++) {
+            updatedValues.put(ByteUtil.wrap(TestUtils.randomBytes(20)), TestUtils.randomBytes(20));
+        }
+        return updatedValues;
+    }
+}

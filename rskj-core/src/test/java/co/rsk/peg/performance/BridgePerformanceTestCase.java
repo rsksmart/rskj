@@ -24,12 +24,12 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
-import co.rsk.db.TrieStorePoolOnMemory;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import co.rsk.vm.VMPerformanceTest;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.Blockchain;
@@ -326,6 +326,6 @@ public abstract class BridgePerformanceTestCase {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl(new Trie(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }

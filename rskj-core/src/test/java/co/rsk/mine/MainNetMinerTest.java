@@ -8,15 +8,11 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.net.NodeBlockProcessor;
-import co.rsk.peg.Federation;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.Repository;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.util.RskTestFactory;
@@ -37,7 +33,7 @@ import java.time.Clock;
  * Created by SerAdmin on 1/3/2018.
  */
 public class MainNetMinerTest {
-    private BlockChainImpl blockchain;
+    private Blockchain blockchain;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();

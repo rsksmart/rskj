@@ -22,7 +22,6 @@ package org.ethereum.core.genesis;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
@@ -134,7 +133,7 @@ public class GenesisLoader {
     }
 
     private static byte[] calculateStateRoot(Map<DataWord, byte[]> contractStorage) {
-        Trie trie = new TrieImpl(true);
+        Trie trie = new Trie(true);
         for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
             trie = trie.put(storageEntry.getKey().getData(), storageEntry.getValue());
         }

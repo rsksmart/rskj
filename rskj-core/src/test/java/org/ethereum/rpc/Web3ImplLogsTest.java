@@ -23,7 +23,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskImpl;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
-import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -38,6 +37,7 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
@@ -46,7 +46,6 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -86,7 +85,7 @@ public class Web3ImplLogsTest {
     private final static String INCREMENT_METHOD_SIGNATURE = "371303c0";
     private final static String GET_VALUE_METHOD_SIGNATURE = "20965255";
     private final TestSystemProperties config = new TestSystemProperties();
-    private BlockChainImpl blockChain;
+    private Blockchain blockChain;
     private TransactionPool transactionPool;
     private RskImpl eth;
     private ReceiptStore receiptStore;
@@ -753,7 +752,7 @@ public class Web3ImplLogsTest {
         web3.personal_newAccountWithSeed("notDefault");
     }
 
-    public static void addEmptyBlockToBlockchain(BlockChainImpl blockChain) {
+    public static void addEmptyBlockToBlockchain(Blockchain blockChain) {
         Account acc1 = new AccountBuilder(blockChain).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         Block genesis = blockChain.getBlockByNumber(0);

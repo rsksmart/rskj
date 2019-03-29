@@ -18,12 +18,9 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.BlockDifficulty;
-import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
@@ -94,7 +91,6 @@ public class BlockChainImpl implements Blockchain {
     private final boolean flushEnabled;
     private final int flushNumberOfBlocks;
     private final BlockExecutor blockExecutor;
-    private BlockRecorder blockRecorder;
     private boolean noValidation;
 
     public BlockChainImpl(Repository repository,
@@ -157,10 +153,6 @@ public class BlockChainImpl implements Blockchain {
             if (!block.isSealed()) {
                 panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
                 block.seal();
-            }
-
-            if (blockRecorder != null) {
-                blockRecorder.writeBlock(block);
             }
 
             try {
@@ -287,7 +279,6 @@ public class BlockChainImpl implements Blockchain {
                         status.getTotalDifficulty().toString(), totalDifficulty.toString());
                 BlockFork fork = new BlockFork();
                 fork.calculate(bestBlock, block, blockStore);
-                Metrics.rebranch(bestBlock, block, fork.getNewBlocks().size() + fork.getOldBlocks().size());
                 blockStore.reBranch(block);
             }
 
@@ -454,11 +445,6 @@ public class BlockChainImpl implements Blockchain {
         return getBestBlock().getHash().getBytes();
     }
 
-    @Override
-    public void setBlockRecorder(BlockRecorder blockRecorder) {
-        this.blockRecorder = blockRecorder;
-    }
-
     private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
         synchronized (accessLock) {
             storeBlock(block, totalDifficulty, true);
@@ -538,7 +524,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
-        Trie receiptsTrie = new TrieImpl();
+        Trie receiptsTrie = new Trie();
 
         if (receipts == null || receipts.isEmpty()) {
             return HashUtil.EMPTY_TRIE_HASH;

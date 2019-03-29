@@ -18,12 +18,22 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.cli.CliArgs;
+import co.rsk.config.*;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryImpl;
+import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
+import co.rsk.metrics.HashRateCalculatorMining;
+import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.mine.*;
 import co.rsk.net.*;
+import co.rsk.net.discovery.PeerExplorer;
+import co.rsk.net.discovery.UDPServer;
+import co.rsk.net.discovery.table.KademliaOptions;
+import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.eth.MessageFilter;
 import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
@@ -42,18 +52,25 @@ import co.rsk.rpc.netty.*;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
-import co.rsk.validators.ProofOfWorkRule;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStoreImpl;
+import co.rsk.util.RskCustomCache;
+import co.rsk.validators.*;
+import org.apache.commons.collections4.CollectionUtils;
+import org.ethereum.config.Constants;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.net.RegTestConfig;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.Repository;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.TrieStorePoolOnDisk;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
@@ -64,6 +81,7 @@ import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.eth.handler.EthHandlerFactory;
 import org.ethereum.net.eth.handler.EthHandlerFactoryImpl;
 import org.ethereum.net.message.StaticMessages;
+import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.EthereumChannelInitializer;
 import org.ethereum.net.server.PeerServer;
@@ -72,7 +90,12 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
+import org.ethereum.util.FileUtil;
+import org.ethereum.validator.*;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
+import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -82,18 +105,20 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.*;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
-import java.util.Properties;
+import java.util.*;
+
+import static java.util.Arrays.asList;
+import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 
 @Configuration
-@ComponentScan("org.ethereum")
+@ComponentScan({"co.rsk", "org.ethereum"})
 public class RskFactory {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
@@ -479,5 +504,226 @@ public class RskFactory {
     @Bean
     public MinerClock getMinerClock(RskSystemProperties config){
         return new MinerClock(config.getBlockchainConfig() instanceof RegTestConfig, Clock.systemUTC());
+    }
+
+    @Bean
+    public org.ethereum.db.BlockStore blockStore(RskSystemProperties config) {
+        return buildBlockStore(config.databaseDir());
+    }
+
+    @Bean
+    public RskSystemProperties rskSystemProperties(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
+        return new RskSystemProperties(new ConfigLoader(cliArgs));
+    }
+
+    @Bean
+    public Repository repository(RskSystemProperties config) {
+        String databaseDir = config.databaseDir();
+        if (config.databaseReset()) {
+            FileUtil.recursiveDelete(databaseDir);
+            try {
+                Files.createDirectories(FileUtil.getDatabaseDirectoryPath(databaseDir, "database"));
+            } catch (IOException e) {
+                logger.error("Could not re-create database directory");
+            }
+            logger.info("Database reset done");
+        }
+
+        return buildRepository(databaseDir, config.detailsInMemoryStorageLimit(), config.getStatesCacheSize());
+    }
+
+    @Bean
+    public BlockParentDependantValidationRule blockParentDependantValidationRule(
+            Repository repository,
+            RskSystemProperties config,
+            DifficultyCalculator difficultyCalculator) {
+        BlockTxsValidationRule blockTxsValidationRule = new BlockTxsValidationRule(repository);
+        BlockTxsFieldsValidationRule blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule();
+        PrevMinGasPriceRule prevMinGasPriceRule = new PrevMinGasPriceRule();
+        BlockParentNumberRule parentNumberRule = new BlockParentNumberRule();
+        BlockDifficultyRule difficultyRule = new BlockDifficultyRule(difficultyCalculator);
+        BlockParentGasLimitRule parentGasLimitRule = new BlockParentGasLimitRule(config.getBlockchainConfig().
+                getCommonConstants().getGasLimitBoundDivisor());
+
+        return new BlockParentCompositeRule(blockTxsFieldsValidationRule, blockTxsValidationRule, prevMinGasPriceRule, parentNumberRule, difficultyRule, parentGasLimitRule);
+    }
+
+    @Bean(name = "blockValidationRule")
+    public BlockValidationRule blockValidationRule(
+            org.ethereum.db.BlockStore blockStore,
+            RskSystemProperties config,
+            DifficultyCalculator difficultyCalculator,
+            ProofOfWorkRule proofOfWorkRule) {
+        Constants commonConstants = config.getBlockchainConfig().getCommonConstants();
+        int uncleListLimit = commonConstants.getUncleListLimit();
+        int uncleGenLimit = commonConstants.getUncleGenerationLimit();
+        int validPeriod = commonConstants.getNewBlockMaxSecondsInTheFuture();
+        BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
+
+        BlockParentGasLimitRule parentGasLimitRule = new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor());
+        BlockParentCompositeRule unclesBlockParentHeaderValidator = new BlockParentCompositeRule(new PrevMinGasPriceRule(), new BlockParentNumberRule(), blockTimeStampValidationRule, new BlockDifficultyRule(difficultyCalculator), parentGasLimitRule);
+
+        BlockCompositeRule unclesBlockHeaderValidator = new BlockCompositeRule(proofOfWorkRule, blockTimeStampValidationRule, new ValidGasUsedRule());
+
+        BlockUnclesValidationRule blockUnclesValidationRule = new BlockUnclesValidationRule(config, blockStore, uncleListLimit, uncleGenLimit, unclesBlockHeaderValidator, unclesBlockParentHeaderValidator);
+
+        int minGasLimit = commonConstants.getMinGasLimit();
+        int maxExtraDataSize = commonConstants.getMaximumExtraDataSize();
+
+        return new BlockCompositeRule(new TxsMinGasPriceRule(), blockUnclesValidationRule, new BlockRootValidationRule(), new RemascValidationRule(), blockTimeStampValidationRule, new GasLimitRule(minGasLimit), new ExtraDataRule(maxExtraDataSize));
+    }
+
+    @Bean
+    public ReceiptStore receiptStore(RskSystemProperties config) {
+        return buildReceiptStore(config.databaseDir());
+    }
+
+    @Bean
+    public HashRateCalculator hashRateCalculator(RskSystemProperties rskSystemProperties, org.ethereum.db.BlockStore blockStore, MiningConfig miningConfig) {
+        RskCustomCache<Keccak256, BlockHeaderElement> cache = new RskCustomCache<>(60000L);
+        if (!rskSystemProperties.isMinerServerEnabled()) {
+            return new HashRateCalculatorNonMining(blockStore, cache);
+        }
+
+        return new HashRateCalculatorMining(blockStore, cache, miningConfig.getCoinbaseAddress());
+    }
+
+    @Bean
+    public MiningConfig miningConfig(RskSystemProperties rskSystemProperties) {
+        return new MiningConfig(
+                rskSystemProperties.coinbaseAddress(),
+                rskSystemProperties.minerMinFeesNotifyInDollars(),
+                rskSystemProperties.minerGasUnitInDollars(),
+                rskSystemProperties.minerMinGasPrice(),
+                rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleListLimit(),
+                rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit(),
+                new GasLimitConfig(
+                        rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit(),
+                        rskSystemProperties.getTargetGasLimit(),
+                        rskSystemProperties.getForceTargetGasLimit()
+                )
+        );
+    }
+
+    @Bean
+    public NetworkStateExporter networkStateExporter(Repository repository) {
+        return new NetworkStateExporter(repository);
+    }
+
+
+    @Bean(name = "minerServerBlockValidation")
+    public BlockValidationRule minerServerBlockValidationRule(
+            org.ethereum.db.BlockStore blockStore,
+            RskSystemProperties config,
+            DifficultyCalculator difficultyCalculator,
+            ProofOfWorkRule proofOfWorkRule) {
+        Constants commonConstants = config.getBlockchainConfig().getCommonConstants();
+        int uncleListLimit = commonConstants.getUncleListLimit();
+        int uncleGenLimit = commonConstants.getUncleGenerationLimit();
+
+        BlockParentGasLimitRule parentGasLimitRule = new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor());
+        BlockParentCompositeRule unclesBlockParentHeaderValidator = new BlockParentCompositeRule(new PrevMinGasPriceRule(), new BlockParentNumberRule(), new BlockDifficultyRule(difficultyCalculator), parentGasLimitRule);
+
+        int validPeriod = commonConstants.getNewBlockMaxSecondsInTheFuture();
+        BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
+        BlockCompositeRule unclesBlockHeaderValidator = new BlockCompositeRule(proofOfWorkRule, blockTimeStampValidationRule, new ValidGasUsedRule());
+
+        return new BlockUnclesValidationRule(config, blockStore, uncleListLimit, uncleGenLimit, unclesBlockHeaderValidator, unclesBlockParentHeaderValidator);
+    }
+
+    @Bean
+    public PeerExplorer peerExplorer(RskSystemProperties rskConfig) {
+        ECKey key = rskConfig.getMyKey();
+        Integer networkId = rskConfig.networkId();
+        Node localNode = new Node(key.getNodeId(), rskConfig.getPublicIp(), rskConfig.getPeerPort());
+        NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
+        long msgTimeOut = rskConfig.peerDiscoveryMessageTimeOut();
+        long refreshPeriod = rskConfig.peerDiscoveryRefreshPeriod();
+        long cleanPeriod = rskConfig.peerDiscoveryCleanPeriod();
+        List<String> initialBootNodes = rskConfig.peerDiscoveryIPList();
+        List<Node> activePeers = rskConfig.peerActive();
+        if(CollectionUtils.isNotEmpty(activePeers)) {
+            for(Node n : activePeers) {
+                InetSocketAddress address = n.getAddress();
+                initialBootNodes.add(address.getHostName() + ":" + address.getPort());
+            }
+        }
+        return new PeerExplorer(initialBootNodes, localNode, distanceTable, key, msgTimeOut, refreshPeriod, cleanPeriod, networkId);
+    }
+
+    @Bean
+    public UDPServer udpServer(PeerExplorer peerExplorer, RskSystemProperties rskConfig) {
+        return new UDPServer(rskConfig.getBindAddress().getHostAddress(), rskConfig.getPeerPort(), peerExplorer);
+    }
+
+    @Bean
+    public List<Transaction> transactionPoolTransactions() {
+        return Collections.synchronizedList(new ArrayList<Transaction>());
+    }
+
+    @Bean
+    public ParentBlockHeaderValidator parentHeaderValidator(RskSystemProperties config, DifficultyCalculator difficultyCalculator) {
+
+        List<DependentBlockHeaderRule> rules = new ArrayList<>(asList(
+                new ParentNumberRule(),
+                new DifficultyRule(difficultyCalculator),
+                new ParentGasLimitRule(config.getBlockchainConfig().getCommonConstants().getGasLimitBoundDivisor())
+        ));
+
+        return new ParentBlockHeaderValidator(rules);
+    }
+
+    public ReceiptStore buildReceiptStore(String databaseDir) {
+        KeyValueDataSource ds = new LevelDbDataSource("receipts", databaseDir);
+        ds.init();
+        return new ReceiptStoreImpl(ds);
+    }
+
+    private Repository buildRepository(String databaseDir, int memoryStorageLimit, int statesCacheSize) {
+        KeyValueDataSource ds = makeDataSource("state", databaseDir);
+        KeyValueDataSource detailsDS = makeDataSource("details", databaseDir);
+
+        if (statesCacheSize != 0) {
+            ds = new DataSourceWithCache(ds, statesCacheSize);
+        }
+
+        return new RepositoryImpl(
+                new Trie(new TrieStoreImpl(ds), true),
+                detailsDS,
+                new TrieStorePoolOnDisk(databaseDir),
+                memoryStorageLimit
+        );
+    }
+
+    public static org.ethereum.db.BlockStore buildBlockStore(String databaseDir) {
+        File blockIndexDirectory = new File(databaseDir + "/blocks/");
+        File dbFile = new File(blockIndexDirectory, "index");
+        if (!blockIndexDirectory.exists()) {
+            boolean mkdirsSuccess = blockIndexDirectory.mkdirs();
+            if (!mkdirsSuccess) {
+                logger.error("Unable to create blocks directory: {}", blockIndexDirectory);
+            }
+        }
+
+        DB indexDB = DBMaker.fileDB(dbFile)
+                .closeOnJvmShutdown()
+                .make();
+
+        Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = indexDB.hashMapCreate("index")
+                .keySerializer(Serializer.LONG)
+                .valueSerializer(BLOCK_INFO_SERIALIZER)
+                .counterEnable()
+                .makeOrGet();
+
+        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", databaseDir);
+        blocksDB.init();
+
+        return new IndexedBlockStore(indexMap, blocksDB, indexDB);
+    }
+
+    private KeyValueDataSource makeDataSource(String name, String databaseDir) {
+        KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir);
+        ds.init();
+        return ds;
     }
 }

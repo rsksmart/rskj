@@ -19,7 +19,6 @@
 package co.rsk.core;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.MinerServer;
 import co.rsk.test.builders.AccountBuilder;
@@ -40,7 +39,7 @@ import static org.mockito.Mockito.mock;
  */
 public class SnapshotManagerTest {
 
-    private BlockChainImpl blockchain;
+    private Blockchain blockchain;
     private Repository repository;
     private TransactionPool transactionPool;
     private SnapshotManager manager;

@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class RskImpl extends EthereumImpl implements Rsk {
 
-    private boolean isplaying;
     private final NodeBlockProcessor nodeBlockProcessor;
 
     @Autowired
@@ -50,17 +49,8 @@ public class RskImpl extends EthereumImpl implements Rsk {
     }
 
     @Override
-    public boolean isPlayingBlocks() {
-        return isplaying;
-    }
-
-    @Override
     public boolean isBlockchainEmpty() {
         return this.nodeBlockProcessor.getBestBlockNumber() == 0;
-    }
-
-    public void setIsPlayingBlocks(boolean value) {
-        isplaying = value;
     }
 
     @Override

@@ -23,12 +23,12 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
-import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
@@ -49,7 +49,7 @@ import java.util.concurrent.Callable;
 public class MinerManagerTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
-    private BlockChainImpl blockchain;
+    private Blockchain blockchain;
     private TransactionPool transactionPool;
     private Repository repository;
     private BlockStore blockStore;
@@ -163,31 +163,6 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void mineBlockWhilePlayingBlocks() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        RskImplForTest rsk = new RskImplForTest() {
-            @Override
-            public boolean hasBetterBlockToSync() {
-                return false;
-            }
-
-            @Override
-            public boolean isPlayingBlocks() {
-                return true;
-            }
-        };
-        MinerServerImpl minerServer = getMinerServer();
-        MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
-
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-
-        Assert.assertFalse(minerClient.mineBlock());
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-    }
-
-    @Test
     public void doWork() {
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
@@ -274,11 +249,6 @@ public class MinerManagerTest {
         return getMinerClient(new RskImplForTest() {
             @Override
             public boolean hasBetterBlockToSync() {
-                return false;
-            }
-
-            @Override
-            public boolean isPlayingBlocks() {
                 return false;
             }
         }, minerServer);

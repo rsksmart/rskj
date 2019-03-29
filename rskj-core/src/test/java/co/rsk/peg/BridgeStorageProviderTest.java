@@ -27,12 +27,12 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
-import co.rsk.trie.TrieImpl;
+import co.rsk.trie.Trie;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
@@ -806,6 +806,6 @@ public class BridgeStorageProviderTest {
     }
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(new TrieImpl(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        return new RepositoryImpl(new Trie(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
     }
 }
