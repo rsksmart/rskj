@@ -885,4 +885,11 @@ public class RLP {
         }
         throw new RuntimeException("Unsupported type: Only accepting String, Integer and BigInteger for now");
     }
+
+    /**
+     * An encoded empty list
+     */
+    public static byte[] encodedEmptyList() {
+        return new byte[] {(byte) OFFSET_SHORT_LIST};
+    }
 }

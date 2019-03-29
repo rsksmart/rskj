@@ -6,7 +6,9 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskImpl;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.StateRootHandler;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
@@ -17,11 +19,13 @@ import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
+import org.ethereum.vm.PrecompiledContracts;
 
 import java.util.HashMap;
 
@@ -39,12 +43,16 @@ public class RskTestFactory extends RskContext {
     private IndexedBlockStore blockStore;
     private RepositoryImpl repository;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
+    private StateRootHandler stateRootHandler;
     private NodeBlockProcessor blockProcessor;
     private RskImpl rskImpl;
     private CompositeEthereumListener compositeEthereumListener;
     private ReceiptStoreImpl receiptStore;
     private DummyBlockValidator blockValidator;
     private Genesis genesis;
+    private BlockExecutor blockExecutor;
+    private BlockExecutor.TransactionExecutorFactory transactionExecutorFactory;
+    private PrecompiledContracts precompiledContracts;
 
     public RskTestFactory() {
         this(new TestSystemProperties());
@@ -120,6 +128,15 @@ public class RskTestFactory extends RskContext {
         return genesis;
     }
 
+    @Override
+    public StateRootHandler getStateRootHandler() {
+        if (stateRootHandler == null) {
+            stateRootHandler = new StateRootHandler(getRskSystemProperties(), new HashMapDB(), new HashMap<>());
+        }
+
+        return stateRootHandler;
+    }
+
     public NodeBlockProcessor getBlockProcessor() {
         if (blockProcessor == null) {
             co.rsk.net.BlockStore store = new co.rsk.net.BlockStore();
@@ -170,6 +187,55 @@ public class RskTestFactory extends RskContext {
         }
 
         return rskImpl;
+    }
+
+    public BlockExecutor getBlockExecutor() {
+        if (blockExecutor == null) {
+            blockExecutor = new BlockExecutor(
+                    getRepository(),
+                    getTransactionExecutorFactory(),
+                    getStateRootHandler()
+            );
+        }
+
+        return blockExecutor;
+    }
+
+    private BlockExecutor.TransactionExecutorFactory getTransactionExecutorFactory() {
+        if (transactionExecutorFactory == null) {
+            RskSystemProperties config = getRskSystemProperties();
+            transactionExecutorFactory = (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
+                    tx,
+                    txindex,
+                    block.getCoinbase(),
+                    track,
+                    getBlockStore(),
+                    getReceiptStore(),
+                    getProgramInvokeFactory(),
+                    block,
+                    getCompositeEthereumListener(),
+                    totalGasUsed,
+                    config.getVmConfig(),
+                    config.getBlockchainConfig(),
+                    config.playVM(),
+                    config.isRemascEnabled(),
+                    config.vmTrace(),
+                    getPrecompiledContracts(),
+                    config.databaseDir(),
+                    config.vmTraceDir(),
+                    config.vmTraceCompressed()
+            );
+        }
+
+        return transactionExecutorFactory;
+    }
+
+    private PrecompiledContracts getPrecompiledContracts() {
+        if (precompiledContracts == null) {
+            precompiledContracts = new PrecompiledContracts(getRskSystemProperties());
+        }
+
+        return precompiledContracts;
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {

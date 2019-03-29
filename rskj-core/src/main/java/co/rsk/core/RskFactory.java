@@ -24,6 +24,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
@@ -544,8 +545,9 @@ public class RskFactory {
     public BlockParentDependantValidationRule blockParentDependantValidationRule(
             Repository repository,
             RskSystemProperties config,
-            DifficultyCalculator difficultyCalculator) {
-        BlockTxsValidationRule blockTxsValidationRule = new BlockTxsValidationRule(repository);
+            DifficultyCalculator difficultyCalculator,
+            StateRootHandler stateRootHandler) {
+        BlockTxsValidationRule blockTxsValidationRule = new BlockTxsValidationRule(repository, stateRootHandler);
         BlockTxsFieldsValidationRule blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule();
         PrevMinGasPriceRule prevMinGasPriceRule = new PrevMinGasPriceRule();
         BlockParentNumberRule parentNumberRule = new BlockParentNumberRule();
@@ -681,6 +683,11 @@ public class RskFactory {
         return new ParentBlockHeaderValidator(rules);
     }
 
+    @Bean
+    public StateRootHandler getStateRootHandler(RskSystemProperties config) {
+        return buildStateRootHandler(config);
+    }
+
     public ReceiptStore buildReceiptStore(String databaseDir) {
         KeyValueDataSource ds = new LevelDbDataSource("receipts", databaseDir);
         ds.init();
@@ -727,6 +734,13 @@ public class RskFactory {
         blocksDB.init();
 
         return new IndexedBlockStore(indexMap, blocksDB, indexDB);
+    }
+
+    public StateRootHandler buildStateRootHandler(RskSystemProperties config) {
+        KeyValueDataSource stateRootsDB = new LevelDbDataSource("stateRoots", config.databaseDir());
+        stateRootsDB.init();
+
+        return new StateRootHandler(config, stateRootsDB, new HashMap<>());
     }
 
     private KeyValueDataSource makeDataSource(String name, String databaseDir) {

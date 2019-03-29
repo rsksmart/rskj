@@ -413,17 +413,6 @@ public class Trie {
         this.saved = true;
     }
 
-    public void copyTo(TrieStore target) {
-        if (target.retrieve(this.getHash().getBytes()) != null) {
-            return;
-        }
-
-        this.left.getNode().ifPresent(node -> node.copyTo(target));
-        this.right.getNode().ifPresent(node -> node.copyTo(target));
-
-        target.save(this);
-    }
-
     /**
      * trieSize returns the number of nodes in trie
      *

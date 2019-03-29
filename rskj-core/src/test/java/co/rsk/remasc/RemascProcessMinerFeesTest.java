@@ -27,21 +27,23 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -73,6 +75,7 @@ public class RemascProcessMinerFeesTest {
 
     private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
     private BlockChainBuilder blockchainBuilder;
+    private StateRootHandler stateRootHandler;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
@@ -92,8 +95,12 @@ public class RemascProcessMinerFeesTest {
 
     @Before
     public void setup() {
-        blockchainBuilder = new BlockChainBuilder();
-        blockchainBuilder.setGenesis(genesisBlock).setConfig(config).setTesting(true);
+        stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        blockchainBuilder = new BlockChainBuilder()
+                .setStateRootHandler(stateRootHandler)
+                .setGenesis(genesisBlock)
+                .setConfig(config)
+                .setTesting(true);
     }
 
     @Test
@@ -138,10 +145,10 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             blockchain.tryToConnect(b);
         }
 
@@ -155,7 +162,7 @@ public class RemascProcessMinerFeesTest {
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
 
-        blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock());
+        blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(newblock);
 
         repository = blockchain.getRepository();
@@ -168,7 +175,6 @@ public class RemascProcessMinerFeesTest {
         RemascStorageProvider remascStorageProvider = getRemascStorageProvider(blockchain);
         assertEquals(Coin.valueOf(minerFee), remascStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
-        assertEquals(0, remascStorageProvider.getSiblings().size());
     }
 
     @Test
@@ -201,10 +207,10 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             blockchain.tryToConnect(b);
         }
 
@@ -219,11 +225,10 @@ public class RemascProcessMinerFeesTest {
 
         assertEquals(Coin.ZERO, remascStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
-        assertEquals(0, remascStorageProvider.getSiblings().size());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
 
-        blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock());
+        blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(newblock);
 
         repository = blockchain.getRepository();
@@ -241,7 +246,6 @@ public class RemascProcessMinerFeesTest {
 
         assertEquals(Coin.valueOf(minerFee - blockReward), remascStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
-        assertEquals(0, remascStorageProvider.getSiblings().size());
 
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
@@ -279,10 +283,10 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             blockchain.tryToConnect(b);
         }
 
@@ -299,12 +303,11 @@ public class RemascProcessMinerFeesTest {
 
         assertEquals(Coin.ZERO, remascStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
-        assertEquals(1, remascStorageProvider.getSiblings().size());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                 PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
 
-        blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock());
+        blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock().getHeader());
 
         blockchain.tryToConnect(newblock);
 
@@ -332,7 +335,6 @@ public class RemascProcessMinerFeesTest {
 
         assertEquals(Coin.valueOf(minerFee - blockReward), remascStorageProvider.getRewardBalance());
         assertEquals(Coin.valueOf(1), remascStorageProvider.getBurnedBalance());
-        assertEquals(0, remascStorageProvider.getSiblings().size());
 
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward, newblock);
     }
@@ -399,10 +401,10 @@ public class RemascProcessMinerFeesTest {
                         config.databaseDir(),
                         config.vmTraceDir(),
                         config.vmTraceCompressed()
-                ));
+                ), stateRootHandler);
 
         for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             blockchain.tryToConnect(b);
         }
 
@@ -416,7 +418,7 @@ public class RemascProcessMinerFeesTest {
         // add block to pay fees of blocks on blockchain's height 4
         Block blockToPayFeesOnHeightFour = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size() - 1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, minerFee, 3, txValue, cowKey);
 
-        blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFour, blockchain.getBestBlock());
+        blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFour, blockchain.getBestBlock().getHeader());
 
         blockchain.tryToConnect(blockToPayFeesOnHeightFour);
 
@@ -455,7 +457,7 @@ public class RemascProcessMinerFeesTest {
 
         // add block to pay fees of blocks on blockchain's height 5
         Block blockToPayFeesOnHeightFive = RemascTestRunner.createBlock(this.genesisBlock, blockToPayFeesOnHeightFour, PegTestUtils.createHash3(), TestUtils.randomAddress(), null, minerFee, 4, txValue, cowKey);
-        blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFive, blockchain.getBestBlock());
+        blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFive, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(blockToPayFeesOnHeightFive);
 
         repository = blockchain.getRepository();
@@ -534,10 +536,10 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             blockchain.tryToConnect(b);
         }
 
@@ -549,7 +551,7 @@ public class RemascProcessMinerFeesTest {
 
         // add block to pay fees of blocks on blockchain's height 4
         Block blockToPayFeesOnHeightFour = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size() - 1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, minerFee, 0, txValue, cowKey);
-        blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFour, blockchain.getBestBlock());
+        blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFour, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(blockToPayFeesOnHeightFour);
 
         Repository repository = blockchain.getRepository();
@@ -629,10 +631,10 @@ public class RemascProcessMinerFeesTest {
                         config.databaseDir(),
                         config.vmTraceDir(),
                         config.vmTraceCompressed()
-                ));
+                ), stateRootHandler);
 
         for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             blockchain.tryToConnect(b);
         }
 
@@ -644,7 +646,7 @@ public class RemascProcessMinerFeesTest {
 
         // add block to pay fees of blocks on blockchain's height 5
         Block blockToPayFeesOnHeightFive = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size() - 1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
-        blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFive, blockchain.getBestBlock());
+        blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFive, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(blockToPayFeesOnHeightFive);
 
         // -- After executing REMASC's contract for paying height 5 blocks
@@ -673,7 +675,7 @@ public class RemascProcessMinerFeesTest {
 
         // add block to pay fees of blocks on blockchain's height 6
         Block blockToPayFeesOnHeightSix = RemascTestRunner.createBlock(this.genesisBlock, blockToPayFeesOnHeightFive, PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
-        blockExecutor.executeAndFillAll(blockToPayFeesOnHeightSix, blockchain.getBestBlock());
+        blockExecutor.executeAndFillAll(blockToPayFeesOnHeightSix, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(blockToPayFeesOnHeightSix);
 
         // -- After executing REMASC's contract for paying height 6 blocks
@@ -732,10 +734,10 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             blockchain.tryToConnect(b);
         }
 
@@ -749,7 +751,6 @@ public class RemascProcessMinerFeesTest {
         RemascStorageProvider remasceStorageProvider = getRemascStorageProvider(blockchain);
         assertEquals(Coin.ZERO, remasceStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remasceStorageProvider.getBurnedBalance());
-        assertEquals(0, remasceStorageProvider.getSiblings().size());
 
         // A hacker trying to screw the system creates a tx to remasc and a fool/accomplice miner includes that tx in a block
         Transaction tx = new Transaction(
@@ -763,7 +764,7 @@ public class RemascProcessMinerFeesTest {
         tx.sign(cowKey.getPrivKeyBytes());
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                 PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null, tx);
-        blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock());
+        blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(newblock);
 
         repository = blockchain.getRepository();
@@ -816,10 +817,10 @@ public class RemascProcessMinerFeesTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), stateRootHandler);
 
         for (Block b : blocks) {
-            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             b.seal();
             blockchain.tryToConnect(b);
         }
@@ -834,7 +835,6 @@ public class RemascProcessMinerFeesTest {
         RemascStorageProvider remasceStorageProvider = getRemascStorageProvider(blockchain);
         assertEquals(Coin.ZERO, remasceStorageProvider.getRewardBalance());
         assertEquals(Coin.ZERO, remasceStorageProvider.getBurnedBalance());
-        assertEquals(0, remasceStorageProvider.getSiblings().size());
 
         // A hacker trying to screw the system creates a contracts that calls remasc and a fool/accomplice miner includes that tx in a block
 //        Contract code
@@ -871,7 +871,7 @@ public class RemascProcessMinerFeesTest {
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                 PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null,
                 txCreateContract, txCallRemasc);
-        blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock());
+        blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock().getHeader());
         newblock.seal();
         blockchain.tryToConnect(newblock);
 
@@ -1137,7 +1137,6 @@ public class RemascProcessMinerFeesTest {
     private void validateRemascsStorageIsCorrect(RemascStorageProvider provider, Coin expectedRewardBalance, Coin expectedBurnedBalance, long expectedSiblingsSize) {
         assertEquals(expectedRewardBalance, provider.getRewardBalance());
         assertEquals(expectedBurnedBalance, provider.getBurnedBalance());
-        assertEquals(expectedSiblingsSize, provider.getSiblings().size());
     }
 
     private RemascStorageProvider getRemascStorageProvider(Blockchain blockchain) {

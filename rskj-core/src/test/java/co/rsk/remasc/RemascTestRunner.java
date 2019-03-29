@@ -121,7 +121,8 @@ class RemascTestRunner {
         this.blockchain.tryToConnect(this.genesis);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(),
+        BlockExecutor blockExecutor = new BlockExecutor(
+                blockchain.getRepository(),
                 (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
                     tx,
                     txindex,
@@ -141,7 +142,9 @@ class RemascTestRunner {
                     new PrecompiledContracts(builder.getConfig()),
                     builder.getConfig().databaseDir(),
                     builder.getConfig().vmTraceDir(),
-                    builder.getConfig().vmTraceCompressed())
+                    builder.getConfig().vmTraceCompressed()
+                ),
+                builder.getStateRootHandler()
         );
 
         for(int i = 0; i <= this.initialHeight; i++) {
@@ -178,7 +181,7 @@ class RemascTestRunner {
                                       coinbase, blockSiblings, minerFee, this.gasPrice, txNonce, this.txValue, this.txSigningKey, null);
             mainChainBlocks.add(block);
 
-            blockExecutor.executeAndFillAll(block, this.blockchain.getBestBlock());
+            blockExecutor.executeAndFillAll(block, this.blockchain.getBestBlock().getHeader());
 
             block.seal();
             ImportResult result = this.blockchain.tryToConnect(block);

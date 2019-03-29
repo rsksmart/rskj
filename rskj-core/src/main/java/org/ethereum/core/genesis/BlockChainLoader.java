@@ -24,10 +24,13 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
@@ -39,7 +42,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -65,6 +67,7 @@ public class BlockChainLoader {
     private final EthereumListener listener;
     private final BlockValidator blockValidator;
     private final Genesis genesis;
+    private final StateRootHandler stateRootHandler;
 
     @Autowired
     public BlockChainLoader(
@@ -75,7 +78,8 @@ public class BlockChainLoader {
             TransactionPool transactionPool,
             EthereumListener listener,
             BlockValidator blockValidator,
-            Genesis genesis) {
+            Genesis genesis,
+            StateRootHandler stateRootHandler) {
 
         this.config = config;
         this.blockStore = blockStore;
@@ -85,6 +89,7 @@ public class BlockChainLoader {
         this.listener = listener;
         this.blockValidator = blockValidator;
         this.genesis = genesis;
+        this.stateRootHandler = stateRootHandler;
     }
 
     public BlockChainImpl loadBlockchain() {
@@ -120,8 +125,10 @@ public class BlockChainLoader {
                             config.databaseDir(),
                             config.vmTraceDir(),
                             config.vmTraceCompressed()
-                        )
-                )
+                        ),
+                    stateRootHandler
+                ),
+                stateRootHandler
         );
 
         Block bestBlock = blockStore.getBestBlock();
@@ -166,8 +173,10 @@ public class BlockChainLoader {
             // Update world state to latest loaded block from db
             // if state is not generated from empty premine list
             // todo this is just a workaround, move EMPTY_TRIE_HASH logic to Trie implementation
-            if (!Arrays.equals(blockchain.getBestBlock().getStateRoot(), EMPTY_TRIE_HASH)) {
-                this.repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
+            BlockHeader bestBlockHeader = blockchain.getBestBlock().getHeader();
+            Keccak256 bestBlockStateRoot = stateRootHandler.translate(bestBlockHeader);
+            if (!Arrays.equals(bestBlockStateRoot.getBytes(), EMPTY_TRIE_HASH)) {
+                repository.syncToRoot(bestBlockStateRoot.getBytes());
             }
         }
         return blockchain;

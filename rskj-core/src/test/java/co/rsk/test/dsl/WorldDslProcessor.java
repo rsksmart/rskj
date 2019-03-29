@@ -23,17 +23,20 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.StateRootHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 /**
@@ -184,10 +187,10 @@ public class WorldDslProcessor {
             BlockExecutor executor = world.getBlockExecutor();
 
             if (block.getParentHash().equals(blockChain.getBestBlock().getHash())) {
-                executor.executeAndFill(block, blockChain.getBestBlock());
+                executor.executeAndFill(block, blockChain.getBestBlock().getHeader());
             }
             else {
-                executor.executeAndFill(block, world.getBlockByHash(block.getParentHash()));
+                executor.executeAndFill(block, world.getBlockByHash(block.getParentHash()).getHeader());
             }
 
             block.seal();
@@ -254,8 +257,10 @@ public class WorldDslProcessor {
                                                                config.databaseDir(),
                                                                config.vmTraceDir(),
                                                                config.vmTraceCompressed()
-                                                       ));
-            executor.executeAndFill(block, parent);
+                                                       ),
+                    new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+            );
+            executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);
             parent = block;
             k++;

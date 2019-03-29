@@ -20,10 +20,11 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.db.StateRootHandler;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,10 +43,15 @@ public class BlockExecutor {
 
     private final Repository repository;
     private final TransactionExecutorFactory transactionExecutorFactory;
+    private final StateRootHandler stateRootHandler;
 
-    public BlockExecutor(Repository repository, TransactionExecutorFactory transactionExecutorFactory) {
+    public BlockExecutor(
+            Repository repository,
+            TransactionExecutorFactory transactionExecutorFactory,
+            StateRootHandler stateRootHandler) {
         this.repository = repository;
         this.transactionExecutorFactory = transactionExecutorFactory;
+        this.stateRootHandler = stateRootHandler;
     }
 
     /**
@@ -54,18 +60,18 @@ public class BlockExecutor {
      * @param block        A block to execute and complete
      * @param parent       The parent of the block.
      */
-    public void executeAndFill(Block block, Block parent) {
-        BlockResult result = execute(block, parent.getStateRoot(), true);
+    public void executeAndFill(Block block, BlockHeader parent) {
+        BlockResult result = execute(block, parent, true);
         fill(block, result);
     }
 
-    public void executeAndFillAll(Block block, Block parent) {
-        BlockResult result = executeAll(block, parent.getStateRoot());
+    public void executeAndFillAll(Block block, BlockHeader parent) {
+        BlockResult result = executeAll(block, parent);
         fill(block, result);
     }
 
-    public void executeAndFillReal(Block block, Block parent) {
-        BlockResult result = execute(block, parent.getStateRoot(), false, false);
+    public void executeAndFillReal(Block block, BlockHeader parent) {
+        BlockResult result = execute(block, parent, false, false);
         if (result != BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             fill(block, result);
         }
@@ -92,8 +98,8 @@ public class BlockExecutor {
      * @param parent       The parent of the block.
      * @return true if the block final state is equalBytes to the calculated final state.
      */
-    public boolean executeAndValidate(Block block, Block parent) {
-        BlockResult result = execute(block, parent.getStateRoot(), false);
+    public boolean executeAndValidate(Block block, BlockHeader parent) {
+        BlockResult result = execute(block, parent, false);
 
         return this.validate(block, result);
     }
@@ -111,7 +117,8 @@ public class BlockExecutor {
             return false;
         }
 
-        if (!Arrays.equals(result.getStateRoot(), block.getStateRoot()))  {
+        boolean isValidStateRoot = stateRootHandler.validate(block.getHeader(), result);
+        if (!isValidStateRoot) {
             logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot()));
             return false;
         }
@@ -160,23 +167,22 @@ public class BlockExecutor {
      * Execute a block, from initial state, returning the final state data.
      *
      * @param block        A block to validate
-     * @param stateRoot    Initial state hash
+     * @param parent       The parent of the block to validate
      * @return BlockResult with the final state data.
      */
-    public BlockResult execute(Block block, byte[] stateRoot, boolean discardInvalidTxs) {
-        return execute(block, stateRoot, discardInvalidTxs, false);
+    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
+        return execute(block, parent, discardInvalidTxs, false);
     }
 
-    public BlockResult executeAll(Block block, byte[] stateRoot) {
-        return execute(block, stateRoot, false, true);
+    public BlockResult executeAll(Block block, BlockHeader parent) {
+        return execute(block, parent, false, true);
     }
 
-    private BlockResult execute(Block block, byte[] stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
+    private BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
-        Repository initialRepository = repository.getSnapshotTo(stateRoot);
-
-        byte[] lastStateRootHash = initialRepository.getRoot();
+        byte[] lastStateRootHash = stateRootHandler.translate(parent).getBytes();
+        Repository initialRepository = repository.getSnapshotTo(lastStateRootHash);
 
         Repository track = initialRepository.startTracking();
         int i = 1;

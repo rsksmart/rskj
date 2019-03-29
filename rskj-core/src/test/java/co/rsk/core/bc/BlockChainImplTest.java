@@ -23,7 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
+import co.rsk.db.StateRootHandler;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
@@ -38,6 +38,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -694,7 +695,7 @@ public class BlockChainImplTest {
 
         BlockExecutor executor = createExecutor(blockChain, listener);
 
-        Assert.assertTrue(executor.executeAndValidate(block, genesis));
+        Assert.assertTrue(executor.executeAndValidate(block, genesis.getHeader()));
     }
 
     @Test
@@ -714,13 +715,13 @@ public class BlockChainImplTest {
 
         BlockExecutor executor = createExecutor(blockChain, listener);
 
-        Assert.assertTrue(executor.executeAndValidate(block1, genesis));
-        Assert.assertTrue(executor.executeAndValidate(block2, block1));
-        Assert.assertTrue(executor.executeAndValidate(block3, block2));
-        Assert.assertTrue(executor.executeAndValidate(block4, block3));
-        Assert.assertTrue(executor.executeAndValidate(block5, block4));
-        Assert.assertTrue(executor.executeAndValidate(block6, block5));
-        Assert.assertTrue(executor.executeAndValidate(block7, block6));
+        Assert.assertTrue(executor.executeAndValidate(block1, genesis.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block2, block1.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block3, block2.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block4, block3.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block5, block4.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block6, block5.getHeader()));
+        Assert.assertTrue(executor.executeAndValidate(block7, block6.getHeader()));
     }
 
     @Test
@@ -875,8 +876,8 @@ public class BlockChainImplTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
-        executor.executeAndFill(block, genesis);
+        ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+        executor.executeAndFill(block, genesis.getHeader());
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
@@ -913,6 +914,7 @@ public class BlockChainImplTest {
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, null, listener, 10, 100);
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
         return new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
@@ -933,7 +935,7 @@ public class BlockChainImplTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        )));
+        ), stateRootHandler), stateRootHandler);
     }
 
     public static Block getGenesisBlock(Blockchain blockChain) {
@@ -975,7 +977,7 @@ public class BlockChainImplTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ));
+        ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
     }
 
     private static void alterBytes(byte[] bytes) {

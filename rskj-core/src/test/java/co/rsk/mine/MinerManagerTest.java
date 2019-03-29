@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
+import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
@@ -31,6 +32,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.rpc.Simples.SimpleEthereum;
@@ -40,6 +42,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Clock;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -280,7 +283,8 @@ public class MinerManagerTest {
                         new BlockValidationRuleDummy(),
                         config,
                         null,
-                        clock
+                        clock,
+                        new StateRootHandler(config, new HashMapDB(), new HashMap<>())
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
