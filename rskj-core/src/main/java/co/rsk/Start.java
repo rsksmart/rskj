@@ -17,7 +17,6 @@
  */
 package co.rsk;
 
-import co.rsk.core.RskFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +27,7 @@ public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
     public static void main(String[] args) {
-        NodeBootstrapper ctx = new SpringNodeBootstrapper(RskFactory.class, args);
+        RskContext ctx = new RskContext(args);
         NodeRunner runner = ctx.getNodeRunner();
         try {
             runner.run();

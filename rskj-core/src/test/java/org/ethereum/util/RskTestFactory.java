@@ -4,34 +4,27 @@ import co.rsk.RskContext;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.core.RskImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
-import co.rsk.net.BlockNodeInformation;
-import co.rsk.net.BlockSyncService;
-import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Genesis;
-import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
-import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.PrecompiledContracts;
 
 import java.util.HashMap;
 
+
 /**
  * This is the test version of {@link RskContext}.
- *
+ * <p>
  * We try to recreate the objects used in production as best as we can,
  * replacing persistent storage with in-memory storage.
  * There are many nulls in place of objects that aren't part of our
@@ -40,16 +33,6 @@ import java.util.HashMap;
 public class RskTestFactory extends RskContext {
     private final TestSystemProperties config;
 
-    private IndexedBlockStore blockStore;
-    private RepositoryImpl repository;
-    private ReversibleTransactionExecutor reversibleTransactionExecutor;
-    private StateRootHandler stateRootHandler;
-    private NodeBlockProcessor blockProcessor;
-    private RskImpl rskImpl;
-    private CompositeEthereumListener compositeEthereumListener;
-    private ReceiptStoreImpl receiptStore;
-    private DummyBlockValidator blockValidator;
-    private Genesis genesis;
     private BlockExecutor blockExecutor;
     private BlockExecutor.TransactionExecutorFactory transactionExecutorFactory;
     private PrecompiledContracts precompiledContracts;
@@ -64,129 +47,48 @@ public class RskTestFactory extends RskContext {
     }
 
     @Override
-    public RskSystemProperties getRskSystemProperties() {
+    public RskSystemProperties buildRskSystemProperties() {
         return config;
     }
 
     @Override
-    public BlockValidator getBlockValidator() {
-        if (blockValidator == null) {
-            blockValidator = new DummyBlockValidator();
-        }
-
-        return blockValidator;
+    public BlockValidator buildBlockValidator() {
+        return new DummyBlockValidator();
     }
 
     @Override
-    public ReceiptStore getReceiptStore() {
-        if (receiptStore == null) {
-            receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        }
-
-        return receiptStore;
+    public ReceiptStore buildReceiptStore() {
+        return new ReceiptStoreImpl(new HashMapDB());
     }
 
     @Override
-    public BlockStore getBlockStore() {
-        if (blockStore == null) {
-            blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
-        }
-
-        return blockStore;
+    public BlockStore buildBlockStore() {
+        return new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
     }
 
     @Override
-    public Repository getRepository() {
-        if (repository == null) {
-            HashMapDB stateStore = new HashMapDB();
-            repository = new RepositoryImpl(
-                    new Trie(new TrieStoreImpl(stateStore), true),
-                    new HashMapDB(),
-                    new TrieStorePoolOnMemory(),
-                    getRskSystemProperties().detailsInMemoryStorageLimit()
-            );
-        }
-
-        return repository;
+    public RepositoryImpl buildRepository() {
+        return new RepositoryImpl(
+                new Trie(new TrieStoreImpl(new HashMapDB()), true),
+                new HashMapDB(),
+                new TrieStorePoolOnMemory(),
+                getRskSystemProperties().detailsInMemoryStorageLimit()
+        );
     }
 
     @Override
-    public CompositeEthereumListener getCompositeEthereumListener() {
-        if (compositeEthereumListener == null) {
-            compositeEthereumListener = new TestCompositeEthereumListener();
-        }
-
-        return compositeEthereumListener;
+    public Genesis buildGenesis() {
+        return new BlockGenerator().getGenesisBlock();
     }
 
     @Override
-    public Genesis getGenesis() {
-        if (genesis == null) {
-            genesis = new BlockGenerator().getGenesisBlock();
-        }
-
-        return genesis;
+    public StateRootHandler buildStateRootHandler() {
+        return new StateRootHandler(getRskSystemProperties(), new HashMapDB(), new HashMap<>());
     }
 
     @Override
-    public StateRootHandler getStateRootHandler() {
-        if (stateRootHandler == null) {
-            stateRootHandler = new StateRootHandler(getRskSystemProperties(), new HashMapDB(), new HashMap<>());
-        }
-
-        return stateRootHandler;
-    }
-
-    public NodeBlockProcessor getBlockProcessor() {
-        if (blockProcessor == null) {
-            co.rsk.net.BlockStore store = new co.rsk.net.BlockStore();
-            BlockNodeInformation nodeInformation = new BlockNodeInformation();
-            SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-            BlockSyncService blockSyncService = new BlockSyncService(
-                    getRskSystemProperties(),
-                    store,
-                    getBlockchain(),
-                    nodeInformation,
-                    syncConfiguration
-            );
-            blockProcessor = new NodeBlockProcessor(
-                    store,
-                    getBlockchain(),
-                    nodeInformation,
-                    blockSyncService,
-                    syncConfiguration
-            );
-        }
-
-        return blockProcessor;
-    }
-
-    public ReversibleTransactionExecutor getReversibleTransactionExecutor() {
-        if (reversibleTransactionExecutor == null) {
-            reversibleTransactionExecutor = new ReversibleTransactionExecutor(
-                    getRskSystemProperties(),
-                    getRepository(),
-                    getBlockStore(),
-                    getReceiptStore(),
-                    getProgramInvokeFactory()
-            );
-        }
-
-        return reversibleTransactionExecutor;
-    }
-
-    public RskImpl getRskImpl() {
-        if (rskImpl == null) {
-            rskImpl = new RskImpl(
-                    null,
-                    getTransactionPool(),
-                    getCompositeEthereumListener(),
-                    getBlockProcessor(),
-                    getBlockchain()
-            );
-        }
-
-        return rskImpl;
+    public SyncConfiguration buildSyncConfiguration() {
+        return SyncConfiguration.IMMEDIATE_FOR_TESTING;
     }
 
     public BlockExecutor getBlockExecutor() {

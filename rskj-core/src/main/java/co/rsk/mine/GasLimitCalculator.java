@@ -20,8 +20,6 @@ package co.rsk.mine;
 
 import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.Constants;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 
@@ -29,12 +27,10 @@ import java.math.BigInteger;
  * Created by Ruben on 23/05/2016.
  * This class calculates next block gas limit
  */
-@Component
 public class GasLimitCalculator {
 
     private final RskSystemProperties config;
 
-    @Autowired
     public GasLimitCalculator(RskSystemProperties config) {
         this.config = config;
     }

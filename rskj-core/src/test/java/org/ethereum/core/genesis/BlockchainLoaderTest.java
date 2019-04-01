@@ -37,7 +37,7 @@ public class BlockchainLoaderTest {
     public void testLoadBlockchainEmptyBlockchain() throws IOException {
         RskTestFactory objects = new RskTestFactory() {
             @Override
-            public Genesis getGenesis() {
+            public Genesis buildGenesis() {
                 return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true);
             }
         };

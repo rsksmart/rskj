@@ -62,7 +62,6 @@
     <logger name="trie" level="INFO"/>
     <logger name="peermonitor" level="INFO"/>
     <logger name="bridge" level="INFO"/>
-    <logger name="org.springframework" level="INFO"/>
     <logger name="rlp" level="INFO"/>
     <logger name="messagehandler" level="INFO"/>
     <logger name="sync" level="INFO"/>

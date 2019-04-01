@@ -20,15 +20,11 @@ package co.rsk.rpc.modules.debug;
 
 import co.rsk.net.MessageHandler;
 import org.ethereum.rpc.TypeConverter;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
 public class DebugModuleImpl implements DebugModule {
 
     private final MessageHandler messageHandler;
 
-    @Autowired
     public DebugModuleImpl(MessageHandler messageHandler) {
         this.messageHandler = messageHandler;
     }

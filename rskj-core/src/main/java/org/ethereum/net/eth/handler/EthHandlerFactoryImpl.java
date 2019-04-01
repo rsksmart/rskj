@@ -21,8 +21,6 @@ package org.ethereum.net.eth.handler;
 
 import co.rsk.net.eth.RskWireProtocol;
 import org.ethereum.net.eth.EthVersion;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * Default factory implementation
@@ -30,12 +28,10 @@ import org.springframework.stereotype.Component;
  * @author Mikhail Kalinin
  * @since 20.08.2015
  */
-@Component
 public class EthHandlerFactoryImpl implements EthHandlerFactory {
 
     private final RskWireProtocolFactory rskWireProtocolFactory;
 
-    @Autowired
     public EthHandlerFactoryImpl(RskWireProtocolFactory rskWireProtocolFactory) {
         this.rskWireProtocolFactory = rskWireProtocolFactory;
     }

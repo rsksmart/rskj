@@ -35,8 +35,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Map;
@@ -44,7 +42,6 @@ import java.util.Map;
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
 // TODO add all RPC methods
-@Component
 public class EthModule
     implements EthModuleSolidity, EthModuleWallet, EthModuleTransaction {
 
@@ -58,7 +55,6 @@ public class EthModule
     private final EthModuleWallet ethModuleWallet;
     private final EthModuleTransaction ethModuleTransaction;
 
-    @Autowired
     public EthModule(
             RskSystemProperties config,
             Blockchain blockchain,

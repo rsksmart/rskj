@@ -54,7 +54,7 @@ public class MainNetMinerTest {
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
         blockStore = factory.getBlockStore();
-        blockProcessor = factory.getBlockProcessor();
+        blockProcessor = factory.getNodeBlockProcessor();
         repository = factory.getRepository();
     }
 

@@ -24,28 +24,27 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.mine.*;
+import co.rsk.mine.MinerServer;
+import co.rsk.mine.MinerWork;
+import co.rsk.mine.SubmitBlockResult;
+import co.rsk.mine.SubmittedBlockInfo;
 import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
 import org.apache.commons.lang3.ArrayUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-@Component
 public class MnrModuleImpl implements MnrModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
     private final MinerServer minerServer;
 
-    @Autowired
     public MnrModuleImpl(MinerServer minerServer) {
         this.minerServer = minerServer;
     }

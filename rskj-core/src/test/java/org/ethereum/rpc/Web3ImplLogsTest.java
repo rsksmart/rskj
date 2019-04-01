@@ -20,7 +20,7 @@ package org.ethereum.rpc;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.RskImpl;
+import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.logfilter.BlocksBloomStore;
@@ -88,7 +88,7 @@ public class Web3ImplLogsTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockChain;
     private TransactionPool transactionPool;
-    private RskImpl eth;
+    private Rsk eth;
     private ReceiptStore receiptStore;
     private Web3Impl web3;
 
@@ -100,7 +100,7 @@ public class Web3ImplLogsTest {
         RskTestFactory factory = new RskTestFactory();
         blockChain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
-        eth = factory.getRskImpl();
+        eth = factory.getRsk();
         receiptStore = factory.getReceiptStore();
         web3 = createWeb3();
     }

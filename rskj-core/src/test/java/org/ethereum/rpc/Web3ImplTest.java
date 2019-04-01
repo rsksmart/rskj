@@ -42,6 +42,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.TestContract;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -67,8 +68,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
-import org.bouncycastle.util.encoders.Hex;
-import org.springframework.util.StringUtils;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -1343,7 +1342,7 @@ public class Web3ImplTest {
     public void eth_compileSolidity() throws Exception {
         RskSystemProperties systemProperties = Mockito.mock(RskSystemProperties.class);
         String solc = System.getProperty("solc");
-        if(StringUtils.isEmpty(solc))
+        if (solc == null || solc.isEmpty())
             solc = "/usr/bin/solc";
 
         Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);
@@ -1396,7 +1395,7 @@ public class Web3ImplTest {
     public void eth_compileSolidityWithoutSolidity() throws Exception {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");
-        if(StringUtils.isEmpty(solc))
+        if (solc == null || solc.isEmpty())
             solc = "/usr/bin/solc";
 
         Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);
