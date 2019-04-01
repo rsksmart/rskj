@@ -83,4 +83,9 @@ public class ToBase58Check extends NativeMethod {
     public boolean onlyAllowsLocalCalls() {
         return false;
     }
+
+    @Override
+    public long getGas(Object[] parsedArguments, byte[] originalData) {
+        return 8_000L;
+    }
 }

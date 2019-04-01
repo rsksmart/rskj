@@ -131,13 +131,22 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void mustProvideAtLeastOnePublicKey() {
+    public void mustProvideAtLeastTwoPublicKeys() {
         assertFails(
                 () -> method.execute(new Object[]{
                         BigInteger.ONE,
                         new Object[]{}
                 }),
-                "At least one public key"
+                "At least 2 public keys"
+        );
+        assertFails(
+                () -> method.execute(new Object[]{
+                        BigInteger.ONE,
+                        new Object[]{
+                                Hex.decode("03b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed6"),
+                        }
+                }),
+                "At least 2 public keys"
         );
     }
 

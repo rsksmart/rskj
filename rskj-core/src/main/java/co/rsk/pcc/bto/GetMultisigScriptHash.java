@@ -48,9 +48,14 @@ public class GetMultisigScriptHash extends NativeMethod {
     private final static int COMPRESSED_PUBLIC_KEY_LENGTH = 33;
     private final static int UNCOMPRESSED_PUBLIC_KEY_LENGTH = 65;
 
+    private final static long BASE_COST = 13_500L;
+    private final static long COST_PER_EXTRA_KEY = 500L;
+
+    private final static int MINIMUM_REQUIRED_KEYS = 2;
+
     // Enforced by the 520-byte size limit of the redeem script
     // (see https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki#520byte_limitation_on_serialized_script_size)
-    private final static int MAXIMUM_ALLOWED_SIGNATURES = 15;
+    private final static int MAXIMUM_ALLOWED_KEYS = 15;
 
     public GetMultisigScriptHash(ExecutionEnvironment executionEnvironment) {
         super(executionEnvironment);
@@ -70,8 +75,8 @@ public class GetMultisigScriptHash extends NativeMethod {
             throw new NativeContractIllegalArgumentException("Minimum required signatures must be greater than zero");
         }
 
-        if (publicKeys.length == 0) {
-            throw new NativeContractIllegalArgumentException("At least one public key is required");
+        if (publicKeys.length < MINIMUM_REQUIRED_KEYS) {
+            throw new NativeContractIllegalArgumentException(String.format("At least %d public keys are required", MINIMUM_REQUIRED_KEYS));
         }
 
         if (publicKeys.length < minimumSignatures) {
@@ -81,10 +86,10 @@ public class GetMultisigScriptHash extends NativeMethod {
             ));
         }
 
-        if (publicKeys.length > MAXIMUM_ALLOWED_SIGNATURES) {
+        if (publicKeys.length > MAXIMUM_ALLOWED_KEYS) {
             throw new NativeContractIllegalArgumentException(String.format(
                     "Given public keys (%d) are more than the maximum allowed signatures (%d)",
-                    publicKeys.length, MAXIMUM_ALLOWED_SIGNATURES
+                    publicKeys.length, MAXIMUM_ALLOWED_KEYS
             ));
         }
 
@@ -114,6 +119,15 @@ public class GetMultisigScriptHash extends NativeMethod {
         Script multisigScript = ScriptBuilder.createP2SHOutputScript(minimumSignatures, btcPublicKeys);
 
         return multisigScript.getPubKeyHash();
+    }
+
+    @Override
+    public long getGas(Object[] parsedArguments, byte[] originalData) {
+        int numberOfKeys = ((Object[]) parsedArguments[1]).length;
+
+        // Base cost is the cost for 2 keys (the minimum).
+        // Then a fee is payed per additional key.
+        return BASE_COST + (numberOfKeys - 2) * COST_PER_EXTRA_KEY;
     }
 
     @Override
