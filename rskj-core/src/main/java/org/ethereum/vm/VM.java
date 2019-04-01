@@ -519,7 +519,7 @@ public class VM {
             byte tmp = word2.getData()[(int) wvalue];
             byte[] newdata = new byte[32];
             newdata[31] = tmp;
-            result = new DataWord(newdata);
+            result = DataWord.valueOf(newdata);
         } else {
             result = DataWord.ZERO;
         }
@@ -574,7 +574,7 @@ public class VM {
         byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
 
         byte[] encoded = HashUtil.keccak256(buffer);
-        DataWord word = new DataWord(encoded);
+        DataWord word = DataWord.valueOf(encoded);
 
         if (isLogEnabled) {
             hint = word.toString();
@@ -720,15 +720,15 @@ public class VM {
         // EXECUTION PHASE
         DataWord codeLength;
         if (op == OpCode.CODESIZE) {
-            codeLength = new DataWord(program.getCode().length); // during initialization it will return the initialization code size
+            codeLength = DataWord.valueOf(program.getCode().length); // during initialization it will return the initialization code size
         } else {
             DataWord address = program.stackPop();
-            codeLength = new DataWord(program.getCodeAt(address).length);
+            codeLength = DataWord.valueOf(program.getCodeAt(address).length);
             BlockchainConfig blockchainConfig = program.getBlockchainConfig();
             if (blockchainConfig.isRskip90()) {
                 PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, address);
                 if (precompiledContract != null) {
-                    codeLength = new DataWord(BigIntegers.asUnsignedByteArray(DataWord.MAX_VALUE));
+                    codeLength = DataWord.valueOf(BigIntegers.asUnsignedByteArray(DataWord.MAX_VALUE));
                 }
             }
         }
@@ -1238,7 +1238,7 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         int pc = program.getPC();
-        DataWord pcWord = new DataWord(pc);
+        DataWord pcWord = DataWord.valueOf(pc);
 
         if (isLogEnabled) {
             hint = pcWord.toString();
@@ -1252,7 +1252,7 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         int memSize = program.getMemSize();
-        DataWord wordMemSize = new DataWord(memSize);
+        DataWord wordMemSize = DataWord.valueOf(memSize);
 
         if (isLogEnabled) {
             hint = Integer.toString(memSize);
@@ -1265,7 +1265,7 @@ public class VM {
     protected void doGAS(){
         spendOpCodeGas();
         // EXECUTION PHASE
-        DataWord gas = new DataWord(program.getRemainingGas());
+        DataWord gas = DataWord.valueOf(program.getRemainingGas());
 
         if (isLogEnabled) {
             hint = "" + gas;
@@ -1407,7 +1407,7 @@ public class VM {
 
         MessageCall msg = new MessageCall(
                 MsgType.fromOpcode(op),
-                new DataWord(calleeGas), codeAddress, value, inDataOffs, inDataSize,
+                DataWord.valueOf(calleeGas), codeAddress, value, inDataOffs, inDataSize,
                 outDataOffs, outDataSize);
 
         callToAddress(codeAddress, msg);
@@ -1554,7 +1554,7 @@ public class VM {
         byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
         int resultInt = program.replaceCode(buffer);
 
-        DataWord result = new DataWord(resultInt);
+        DataWord result = DataWord.valueOf(resultInt);
 
         if (isLogEnabled) {
             hint = result.toString();
@@ -1964,7 +1964,7 @@ public class VM {
                     break;
             }
             String addressString = Hex.toHexString(program.getOwnerAddress().getLast20Bytes());
-            String pcString = Hex.toHexString(new DataWord(program.getPC()).getNoLeadZeroesData());
+            String pcString = Hex.toHexString(DataWord.valueOf(program.getPC()).getNoLeadZeroesData());
             String opString = Hex.toHexString(new byte[]{op.val()});
             String gasString = Long.toHexString(program.getRemainingGas());
 

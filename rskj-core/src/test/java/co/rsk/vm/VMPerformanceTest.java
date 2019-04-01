@@ -168,7 +168,7 @@ public class VMPerformanceTest {
     public long measureOpcode(OpCode opcode, Boolean reference, long refTime, ResultLogger resultLogger) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int iCount = 0;
-        DataWord maxValue = new DataWord().bnot();
+        DataWord maxValue = DataWord.ZERO;
         // PUSH
         for (int inp = 0; inp < opcode.require(); inp++) {
             if (shortArg) {

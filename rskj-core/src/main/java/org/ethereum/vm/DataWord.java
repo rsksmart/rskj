@@ -22,14 +22,14 @@ package org.ethereum.vm;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.FastByteComparisons;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.FastByteComparisons;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 /**
  * DataWord is the 32-byte array representation of a 256-bit number
@@ -39,80 +39,47 @@ import java.nio.ByteBuffer;
  * @since 01.06.2014
  */
 public final class DataWord implements Comparable<DataWord> {
+    /**
+     * The number of bytes used to represent a DataWord
+     */
+    private static final int BYTES = 32;
+    private static final byte[] ZERO_DATA = new byte[BYTES];
 
     /* Maximum value of the DataWord */
     public static final BigInteger _2_256 = BigInteger.valueOf(2).pow(256);
     public static final BigInteger MAX_VALUE = _2_256.subtract(BigInteger.ONE);
-    public static final DataWord ZERO = new DataWord();
-    public static final DataWord ONE = new DataWord(1);
+    public static final DataWord ZERO = new DataWord(ZERO_DATA);
+    public static final DataWord ONE = valueOf(1);
     public static final int MAX_POW = 256;
 
     private final byte[] data;
 
-    public DataWord() {
-        this.data = new byte[32];
-    }
-
-    public DataWord(int num) {
-        this(ByteBuffer.allocate(4).putInt(num));
-    }
-
-    public DataWord(long num) {
-        this(ByteBuffer.allocate(8).putLong(num));
-    }
-
-    private DataWord(ByteBuffer buffer) {
-        this.data = new byte[32];
-        final byte[] array = buffer.array();
-        System.arraycopy(array, 0, this.data, 32 - array.length, array.length);
-    }
-
-    @JsonCreator
-    public DataWord(String data) {
-        this(Hex.decode(data));
-    }
-
-    public DataWord(ByteArrayWrapper wrappedData){
-        this(wrappedData.getData());
-    }
-
-    public DataWord(byte[] data) {
-        this(data, true);
-    }
-
-    public DataWord(byte[] data,int ofs,int len) {
-        if (data == null) {
-            this.data = ByteUtil.EMPTY_BYTE_ARRAY;
-        } else if (len <= 32) {
-            //if there is not enough data
-            // trailing zeros are assumed (this is required  for PUSH opcode semantic
-            this.data = new byte[32];
-            int dlen =Integer.min(len,data.length-ofs);
-            System.arraycopy(data, ofs, this.data, 32 - len ,dlen );
-        } else {
-            throw new RuntimeException("Data word can't exceed 32 bytes: " + data);
+    /**
+     * Use this constructor for internal operations that don't need copying
+     */
+    private DataWord(byte[] data) {
+        if (data.length != BYTES) {
+            throw new IllegalArgumentException(String.format("A DataWord must be %d bytes long", BYTES));
         }
+
+        this.data = data;
     }
 
-    private DataWord(byte[] data, boolean copy) {
-        if (data == null) {
-            this.data = ByteUtil.EMPTY_BYTE_ARRAY;
-        } else if (data.length == 32 && !copy) {
-            this.data = data;
-        } else if (data.length <= 32) {
-            this.data = new byte[32];
-            System.arraycopy(data, 0, this.data, 32 - data.length, data.length);
-        } else {
-            throw new RuntimeException("Data word can't exceed 32 bytes: " + data);
-        }
-    }
-
+    /**
+     * Returns a copy of the internal data in order to guarantee immutability
+     */
     public byte[] getData() {
-        return data;
+        return Arrays.copyOf(data, data.length);
     }
 
     public byte[] getNoLeadZeroesData() {
-        return ByteUtil.stripLeadingZeroes(data);
+        byte[] noLeadZeroesData = ByteUtil.stripLeadingZeroes(data);
+        if (noLeadZeroesData == data) {
+            // in case the method returned the same object, return a copy to ensure immutability
+            return getData();
+        }
+
+        return noLeadZeroesData;
     }
 
     public byte[] getLast20Bytes() {
@@ -230,52 +197,49 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     public DataWord and(DataWord w2) {
-        byte[] newdata = new byte[32];
-        System.arraycopy(this.data, 0, newdata, 32 - this.data.length, this.data.length);
+        byte[] newdata = getData();
 
         for (int i = 0; i < this.data.length; ++i) {
             newdata[i] &= w2.data[i];
         }
 
-        return new DataWord(newdata, false);
+        return new DataWord(newdata);
     }
 
     public DataWord or(DataWord w2) {
-        byte[] newdata = new byte[32];
-        System.arraycopy(this.data, 0, newdata, 32 - this.data.length, this.data.length);
+        byte[] newdata = getData();
 
         for (int i = 0; i < this.data.length; ++i) {
             newdata[i] |= w2.data[i];
         }
 
-        return new DataWord(newdata, false);
+        return new DataWord(newdata);
     }
 
     public DataWord xor(DataWord w2) {
-        byte[] newdata = new byte[32];
-        System.arraycopy(this.data, 0, newdata, 0, this.data.length);
+        byte[] newdata = getData();
 
         for (int i = 0; i < this.data.length; ++i) {
             newdata[i] ^= w2.data[i];
         }
 
-        return new DataWord(newdata, false);
+        return new DataWord(newdata);
     }
 
     public DataWord bnot() {
-        byte[] newdata = new byte[32];
+        byte[] newdata = new byte[BYTES];
 
         for (int i = 0; i < this.data.length; ++i) {
             newdata[i] = (byte) ~this.data[i];
         }
 
-        return new DataWord(newdata, false);
+        return new DataWord(newdata);
     }
 
     // By   : Holger
     // From : http://stackoverflow.com/a/24023466/459349
     public DataWord add(DataWord word) {
-        byte[] newdata = new byte[32];
+        byte[] newdata = new byte[BYTES];
 
         for (int i = 31, overflow = 0; i >= 0; i--) {
             int v = (this.data[i] & 0xff) + (word.data[i] & 0xff) + overflow;
@@ -283,7 +247,7 @@ public final class DataWord implements Comparable<DataWord> {
             overflow = v >>> 8;
         }
 
-        return new DataWord(newdata, false);
+        return new DataWord(newdata);
     }
 
     // TODO: mul can be done in more efficient way
@@ -291,7 +255,7 @@ public final class DataWord implements Comparable<DataWord> {
     // TODO      without BigInteger quick hack
     public DataWord mul(DataWord word) {
         BigInteger result = value().multiply(word.value());
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)), false);
+        return valueOf(result.and(MAX_VALUE));
     }
 
     // TODO: improve with no BigInteger
@@ -302,7 +266,7 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         BigInteger result = value().divide(word.value());
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)), false);
+        return valueOf(result.and(MAX_VALUE));
     }
 
     // TODO: improve with no BigInteger
@@ -312,19 +276,19 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         BigInteger result = sValue().divide(word.sValue());
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)), false);
+        return valueOf(result.and(MAX_VALUE));
     }
 
     // TODO: improve with no BigInteger
     public DataWord sub(DataWord word) {
         BigInteger result = value().subtract(word.value());
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)), false);
+        return valueOf(result.and(MAX_VALUE));
     }
 
     // TODO: improve with no BigInteger
     public DataWord exp(DataWord word) {
         BigInteger result = value().modPow(word.value(), _2_256);
-        return new DataWord(ByteUtil.copyToArray(result), false);
+        return valueOf(result);
     }
 
     // TODO: improve with no BigInteger
@@ -334,7 +298,7 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         BigInteger result = value().mod(word.value());
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)), false);
+        return valueOf(result.and(MAX_VALUE));
     }
 
     public DataWord sMod(DataWord word) {
@@ -345,7 +309,7 @@ public final class DataWord implements Comparable<DataWord> {
         BigInteger result = sValue().abs().mod(word.sValue().abs());
         result = (sValue().signum() == -1) ? result.negate() : result;
 
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)), false);
+        return valueOf(result.and(MAX_VALUE));
     }
 
     public DataWord addmod(DataWord word1, DataWord word2) {
@@ -354,7 +318,7 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         BigInteger result = value().add(word1.value()).mod(word2.value());
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)), false);
+        return valueOf(result.and(MAX_VALUE));
     }
 
     public DataWord mulmod(DataWord word1, DataWord word2) {
@@ -363,7 +327,7 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         BigInteger result = value().multiply(word1.value()).mod(word2.value());
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)), false);
+        return valueOf(result.and(MAX_VALUE));
     }
 
     @JsonValue
@@ -414,12 +378,13 @@ public final class DataWord implements Comparable<DataWord> {
 
     @Override
     public int compareTo(DataWord o) {
-        if (o == null || o.getData() == null) {
+        if (o == null || o.data == null) {
             return -1;
         }
         int result = FastByteComparisons.compareTo(
                 data, 0, data.length,
-                o.getData(), 0, o.getData().length);
+                o.data, 0, o.data.length
+        );
 
         // Convert result into -1, 0 or 1 as is the convention
         // SigNum uses floating point arithmetic. It should be faster
@@ -435,8 +400,7 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     public DataWord signExtend(byte k) {
-        byte[] newdata = new byte[32];
-        System.arraycopy(this.data, 0, newdata, 32 - this.data.length, this.data.length);
+        byte[] newdata = getData();
 
         if (0 > k || k > 31) {
             throw new IndexOutOfBoundsException();
@@ -448,7 +412,7 @@ public final class DataWord implements Comparable<DataWord> {
             newdata[31 - i] = mask;
         }
 
-        return new DataWord(newdata, false);
+        return new DataWord(newdata);
     }
 
     public boolean occupyMoreThan(int n) {
@@ -504,12 +468,53 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     /**
-     * Will create a DataWord from the string value, but first will encode it using {@link org.ethereum.rpc.TypeConverter#stringToByteArray(String)}
-     * @param value any string value with less than 32 bytes
-     * @return a valid DataWord with the encoded string as the data, if the data has less than 32 bytes it will precede it with zeros
+     * Will create a DataWord from the string value.
+     * @param value any string with a byte representation of 32 bytes or less
+     * @return a DataWord with the encoded string as the data, padded with zeroes if necessary
      */
     public static DataWord fromString(String value) {
-        return new DataWord(org.ethereum.rpc.TypeConverter.stringToByteArray(value));
+        return valueOf(value.getBytes(StandardCharsets.UTF_8));
     }
 
+    @JsonCreator
+    public static DataWord valueFromHex(String data) {
+        return valueOf(Hex.decode(data));
+    }
+
+    public static DataWord valueOf(int num) {
+        byte[] data = new byte[BYTES];
+        ByteBuffer.wrap(data).putInt(data.length - Integer.BYTES, num);
+        return valueOf(data);
+    }
+
+    public static DataWord valueOf(long num) {
+        byte[] data = new byte[BYTES];
+        ByteBuffer.wrap(data).putLong(data.length - Long.BYTES, num);
+        return valueOf(data);
+    }
+
+    public static DataWord valueOf(byte[] data) {
+        return valueOf(data, 0, data.length);
+    }
+
+    public static DataWord valueOf(byte[] data, int offset, int length) {
+        if (data == null || length == 0) {
+            return ZERO;
+        }
+
+        if (length > BYTES) {
+            throw new IllegalArgumentException(String.format("A DataWord must be %d bytes long", BYTES));
+        }
+
+        // if there is not enough data
+        // trailing zeros are assumed (this is required for PUSH opcode semantics)
+        byte[] copiedData = new byte[BYTES];
+        int dlen = Integer.min(length, data.length - offset);
+        System.arraycopy(data, offset, copiedData, BYTES - length, dlen);
+        return new DataWord(copiedData);
+    }
+
+    private static DataWord valueOf(BigInteger data) {
+        return new DataWord(ByteUtil.copyToArray(data));
+    }
 }

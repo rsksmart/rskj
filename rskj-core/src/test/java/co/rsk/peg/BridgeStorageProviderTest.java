@@ -127,12 +127,12 @@ public class BridgeStorageProviderTest {
         RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
         Assert.assertThat(repository.isContract(contractAddress), is(true));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("btcTxHashesAP".getBytes())));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("releaseRequestQueue".getBytes())));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("releaseTransactionSet".getBytes())));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("rskTxsWaitingFS".getBytes())));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("newFederationBtcUTXOs".getBytes())));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("oldFederationBtcUTXOs".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("btcTxHashesAP".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("releaseRequestQueue".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("releaseTransactionSet".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("rskTxsWaitingFS".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("newFederationBtcUTXOs".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("oldFederationBtcUTXOs".getBytes())));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), bridgeStorageConfigurationAtHeightZero);
 
@@ -272,7 +272,7 @@ public class BridgeStorageProviderTest {
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
             // Make sure the bytes are get from the correct address in the repo
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertEquals(DataWord.valueOf("newFederation".getBytes(StandardCharsets.UTF_8)), address);
             return new byte[]{(byte)0xaa};
         });
         PowerMockito.when(BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
@@ -304,7 +304,7 @@ public class BridgeStorageProviderTest {
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
             // Make sure the bytes are get from the correct address in the repo
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertEquals(DataWord.valueOf("newFederation".getBytes(StandardCharsets.UTF_8)), address);
             return null;
         });
         PowerMockito.when(BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
@@ -340,7 +340,7 @@ public class BridgeStorageProviderTest {
             byte[] data = invocation.getArgumentAt(2, byte[].class);
             // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertEquals(DataWord.valueOf("newFederation".getBytes(StandardCharsets.UTF_8)), address);
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xbb}, data));
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
@@ -370,7 +370,7 @@ public class BridgeStorageProviderTest {
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
             // Make sure the bytes are got from the correct address in the repo
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("federationElection".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertEquals(DataWord.valueOf("federationElection".getBytes(StandardCharsets.UTF_8)), address);
             return new byte[]{(byte)0xaa};
         });
         PowerMockito.when(BridgeSerializationUtils.deserializeElection(any(byte[].class), any(AddressBasedAuthorizer.class))).then((InvocationOnMock invocation) -> {
@@ -402,7 +402,7 @@ public class BridgeStorageProviderTest {
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
             // Make sure the bytes are got from the correct address in the repo
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("federationElection".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertEquals(DataWord.valueOf("federationElection".getBytes(StandardCharsets.UTF_8)), address);
             return null;
         });
         PowerMockito.when(BridgeSerializationUtils.deserializeElection(any(byte[].class), any(AddressBasedAuthorizer.class))).then((InvocationOnMock invocation) -> {
@@ -438,7 +438,7 @@ public class BridgeStorageProviderTest {
             byte[] data = invocation.getArgumentAt(2, byte[].class);
             // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("federationElection".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertEquals(DataWord.valueOf("federationElection".getBytes(StandardCharsets.UTF_8)), address);
             Assert.assertTrue(Arrays.equals(Hex.decode("aabb"), data));
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
@@ -467,24 +467,24 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                 BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(500)));
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
         .then((InvocationOnMock invocation) -> {
             calls.add(0);
             RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
             // Make sure the bytes are got from the correct address in the repo
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertEquals(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
             return new byte[]{(byte)0xaa};
         });
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(new DataWord("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)))))
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)))))
                 .then((InvocationOnMock invocation) -> {
                     calls.add(0);
                     RskAddress contractAddress = invocation.getArgumentAt(0, RskAddress.class);
                     DataWord address = invocation.getArgumentAt(1, DataWord.class);
                     // Make sure the bytes are got from the correct address in the repo
                     Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-                    Assert.assertEquals(new DataWord("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
+                    Assert.assertEquals(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
                     return new byte[]{(byte)0xbb};
                 });
         PowerMockito
@@ -533,7 +533,7 @@ public class BridgeStorageProviderTest {
                 DataWord address = invocation.getArgumentAt(1, DataWord.class);
                 // Make sure the bytes are got from the correct address in the repo
                 Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-                Assert.assertEquals(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertEquals(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
                 return null;
             });
         PowerMockito
@@ -586,11 +586,11 @@ public class BridgeStorageProviderTest {
                 byte[] data = invocation.getArgumentAt(2, byte[].class);
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                 Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
-                Assert.assertEquals(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertEquals(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
                 Assert.assertTrue(Arrays.equals(Hex.decode("ccdd"), data));
                 return null;
             })
-            .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8))), any(byte[].class));
+            .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8))), any(byte[].class));
 
         // Mock the Unlimited serialization
         PowerMockito
@@ -610,11 +610,11 @@ public class BridgeStorageProviderTest {
                 byte[] data = invocation.getArgumentAt(2, byte[].class);
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                 Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
-                Assert.assertEquals(new DataWord("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
+                Assert.assertEquals(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
                 Assert.assertTrue(Arrays.equals(Hex.decode("bbcc"), data));
                 return null;
             })
-            .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(new DataWord("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8))), any(byte[].class));
+            .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8))), any(byte[].class));
 
         storageProvider.saveLockWhitelist();
         // Shouldn't have tried to save nor serialize anything
@@ -636,7 +636,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                 BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(500)));
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
                 .then((InvocationOnMock invocation) -> new byte[]{(byte)0xaa});
 
         PowerMockito
@@ -652,7 +652,7 @@ public class BridgeStorageProviderTest {
                     storageCalled.set(Boolean.TRUE);
                     return null;
                 })
-                .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8))), any(byte[].class));
+                .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8))), any(byte[].class));
 
         Assert.assertTrue(storageProvider.getLockWhitelist().getSize() > 0);
 
@@ -675,7 +675,7 @@ public class BridgeStorageProviderTest {
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
             // Make sure the bytes are got from the correct address in the repo
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("releaseRequestQueue".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertEquals(DataWord.valueOf("releaseRequestQueue".getBytes(StandardCharsets.UTF_8)), address);
             return new byte[]{(byte)0xaa};
         });
         PowerMockito.when(BridgeSerializationUtils.deserializeReleaseRequestQueue(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
@@ -706,7 +706,7 @@ public class BridgeStorageProviderTest {
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
             // Make sure the bytes are got from the correct address in the repo
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(new DataWord("releaseTransactionSet".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertEquals(DataWord.valueOf("releaseTransactionSet".getBytes(StandardCharsets.UTF_8)), address);
             return new byte[]{(byte)0xaa};
         });
         PowerMockito.when(BridgeSerializationUtils.deserializeReleaseTransactionSet(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {

@@ -27,7 +27,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -71,13 +70,13 @@ public class RepositoryBlockStore implements BtcBlockstoreWithCache {
     public synchronized void put(StoredBlock block) throws BlockStoreException {
         Sha256Hash hash = block.getHeader().getHash();
         byte[] ba = storedBlockToByteArray(block);
-        repository.addStorageBytes(contractAddress, new DataWord(hash.toString()), ba);
+        repository.addStorageBytes(contractAddress, DataWord.valueFromHex(hash.toString()), ba);
         knownBlocks.put(hash, block);
     }
 
     @Override
     public synchronized StoredBlock get(Sha256Hash hash) throws BlockStoreException {
-        byte[] ba = repository.getStorageBytes(contractAddress, new DataWord(hash.toString()));
+        byte[] ba = repository.getStorageBytes(contractAddress, DataWord.valueFromHex(hash.toString()));
 
         if (ba==null) {
             return null;
@@ -95,7 +94,7 @@ public class RepositoryBlockStore implements BtcBlockstoreWithCache {
             return storedBlock;
         }
 
-        byte[] ba = repository.getStorageBytes(contractAddress, new DataWord(hash.toString()));
+        byte[] ba = repository.getStorageBytes(contractAddress, DataWord.valueFromHex(hash.toString()));
 
         if (ba==null) {
             return null;
@@ -110,7 +109,7 @@ public class RepositoryBlockStore implements BtcBlockstoreWithCache {
 
     @Override
     public StoredBlock getChainHead() throws BlockStoreException {
-        byte[] ba = repository.getStorageBytes(contractAddress, new DataWord(BLOCK_STORE_CHAIN_HEAD_KEY.getBytes(StandardCharsets.UTF_8)));
+        byte[] ba = repository.getStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY));
         if (ba==null) {
             return null;
         }
@@ -121,7 +120,7 @@ public class RepositoryBlockStore implements BtcBlockstoreWithCache {
     @Override
     public void setChainHead(StoredBlock chainHead) throws BlockStoreException {
         byte[] ba = storedBlockToByteArray(chainHead);
-        repository.addStorageBytes(contractAddress, new DataWord(BLOCK_STORE_CHAIN_HEAD_KEY.getBytes(StandardCharsets.UTF_8)), ba);
+        repository.addStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY), ba);
     }
 
     @Override

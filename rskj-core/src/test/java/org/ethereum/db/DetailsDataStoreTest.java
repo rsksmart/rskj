@@ -60,7 +60,7 @@ public class DetailsDataStoreTest {
             config.detailsInMemoryStorageLimit()
         );
         contractDetails.setCode(code);
-        contractDetails.put(new DataWord(key), new DataWord(value));
+        contractDetails.put(DataWord.valueOf(key), DataWord.valueOf(value));
 
         dds.update(c_key, contractDetails);
 
@@ -100,7 +100,7 @@ public class DetailsDataStoreTest {
             config.detailsInMemoryStorageLimit()
         );
         contractDetails.setCode(code);
-        contractDetails.put(new DataWord(key), new DataWord(value));
+        contractDetails.put(DataWord.valueOf(key), DataWord.valueOf(value));
 
         dds.update(c_key, contractDetails);
 
@@ -145,7 +145,7 @@ public class DetailsDataStoreTest {
             config.detailsInMemoryStorageLimit()
         );
         contractDetails.setCode(code);
-        contractDetails.put(new DataWord(key), new DataWord(value));
+        contractDetails.put(DataWord.valueOf(key), DataWord.valueOf(value));
 
         dds.update(c_key, contractDetails);
 

@@ -45,7 +45,7 @@ public class Logs {
             JSONArray jTopics = (JSONArray) jLog.get("topics");
             for (Object t : jTopics.toArray()) {
                 byte[] topic = Hex.decode(((String) t));
-                topics.add(new DataWord(topic));
+                topics.add(DataWord.valueOf(topic));
             }
 
             LogInfo li = new LogInfo(address, topics, data);

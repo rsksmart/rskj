@@ -410,7 +410,7 @@ public class Web3Impl implements Web3 {
             }
 
             DataWord storageValue = accountInformationProvider.
-                    getStorageValue(addr, new DataWord(stringHexToByteArray(storageIdx)));
+                    getStorageValue(addr, DataWord.valueOf(stringHexToByteArray(storageIdx)));
             if (storageValue != null) {
                 return s = TypeConverter.toJsonHex(storageValue.getData());
             } else {

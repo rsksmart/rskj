@@ -263,7 +263,7 @@ public class Program {
               // Asummes LSBs are zero. assignDataRange undestands this semantics.
           }
 
-        DataWord dw = new DataWord(ops, pc, n);
+        DataWord dw = DataWord.valueOf(ops, pc, n);
         pc += n;
         if (pc >= ops.length) {
             stop();
@@ -468,7 +468,7 @@ public class Program {
         // [5] COOK THE INVOKE AND EXECUTE
         InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
-                this, new DataWord(newAddressBytes), getOwnerAddress(), value, gasLimit,
+                this, DataWord.valueOf(newAddressBytes), getOwnerAddress(), value, gasLimit,
                 newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         ProgramResult programResult = ProgramResult.empty();
@@ -531,7 +531,7 @@ public class Program {
             getResult().addLogInfos(programResult.getLogInfoList());
 
             // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
-            stackPush(new DataWord(newAddressBytes));
+            stackPush(DataWord.valueOf(newAddressBytes));
         }
 
         // 5. REFUND THE REMAIN GAS
@@ -696,7 +696,7 @@ public class Program {
         ProgramResult childResult = null;
 
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
-                this, new DataWord(contextAddress.getBytes()),
+                this, DataWord.valueOf(contextAddress.getBytes()),
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(),
@@ -824,8 +824,8 @@ public class Program {
     private void storageSave(byte[] key, byte[] val) {
         // DataWord constructor some times reference the passed byte[] instead
         // of making a copy.
-        DataWord keyWord = new DataWord(key);
-        DataWord valWord = new DataWord(val);
+        DataWord keyWord = DataWord.valueOf(key);
+        DataWord valWord = DataWord.valueOf(val);
 
         getStorage().addStorageRow(new RskAddress(getOwnerAddress()), keyWord, valWord);
     }
@@ -858,7 +858,7 @@ public class Program {
     public DataWord getBlockHash(long index) {
        long bn = this.getNumber().longValue();
         if ((index <  bn) && (index >= Math.max(0, bn - 256))) {
-            return new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData()));
+            return DataWord.valueOf(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData()));
         } else {
             return DataWord.ZERO;
         }
@@ -866,7 +866,7 @@ public class Program {
 
     public DataWord getBalance(DataWord address) {
         Coin balance = getStorage().getBalance(new RskAddress(address));
-        return new DataWord(balance.getBytes());
+        return DataWord.valueOf(balance.getBytes());
     }
 
     public DataWord getOriginAddress() {
@@ -1145,7 +1145,7 @@ public class Program {
     }
 
     public DataWord getReturnDataBufferSize() {
-        return new DataWord(getReturnDataBufferSizeI());
+        return DataWord.valueOf(getReturnDataBufferSizeI());
     }
 
     private int getReturnDataBufferSizeI() {

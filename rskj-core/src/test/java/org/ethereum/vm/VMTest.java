@@ -187,7 +187,7 @@ public class VMTest {
         assertEquals(DataWord.ONE, program.stackPop());
         assertFalse(program.getStack().isEmpty());
         assertEquals(1, program.getStack().size());
-        assertEquals(new DataWord(42), program.getStack().pop());
+        assertEquals(DataWord.valueOf(42), program.getStack().pop());
     }
 
     @Test  // PUSH1 OP
@@ -1241,7 +1241,7 @@ public class VMTest {
         byte operation = (byte) (OpCode.SWAP1.val() + n - 1);
 
         String programCode = "";
-        String top = new DataWord(0x10 + n).toString();
+        String top = DataWord.valueOf(0x10 + n).toString();
         for (int i = n; i > -1; --i) {
             programCode += "60" + oneByteToHexString((byte) (0x10 + i));
 
@@ -1697,7 +1697,7 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        DataWord key = new DataWord(Hex.decode(s_expected_key));
+        DataWord key = DataWord.valueOf(Hex.decode(s_expected_key));
         DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()), key);
 
         assertEquals(s_expected_val, Hex.toHexString(val.getData()).toUpperCase());
@@ -1718,7 +1718,7 @@ public class VMTest {
         vm.step(program);
 
         Repository repository = program.getStorage();
-        DataWord key = new DataWord(Hex.decode(s_expected_key));
+        DataWord key = DataWord.valueOf(Hex.decode(s_expected_key));
         DataWord val = repository.getStorageValue(new RskAddress(invoke.getOwnerAddress()), key);
 
         assertEquals(s_expected_val, Hex.toHexString(val.getData()).toUpperCase());
@@ -1927,7 +1927,7 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        DataWord key = new DataWord(Hex.decode(s_expected_key));
+        DataWord key = DataWord.valueOf(Hex.decode(s_expected_key));
         DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()), key);
 
         assertTrue(program.isStopped());
@@ -1950,7 +1950,7 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        DataWord key = new DataWord(Hex.decode(s_expected_key));
+        DataWord key = DataWord.valueOf(Hex.decode(s_expected_key));
         DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()), key);
 
         assertTrue(program.isStopped());

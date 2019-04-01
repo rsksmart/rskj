@@ -24,8 +24,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 
-import java.nio.charset.StandardCharsets;
-
 /**
  * Responsible for persisting the remasc state into the contract state
  * @see co.rsk.peg.BridgeStorageProvider
@@ -58,7 +56,7 @@ class RemascStorageProvider {
             return federationBalance ;
         }
 
-        DataWord address = new DataWord(FEDERATION_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = DataWord.fromString(FEDERATION_BALANCE_KEY);
 
         DataWord value = this.repository.getStorageValue(this.contractAddress, address);
 
@@ -75,7 +73,7 @@ class RemascStorageProvider {
             return rewardBalance;
         }
 
-        DataWord address = new DataWord(REWARD_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = DataWord.fromString(REWARD_BALANCE_KEY);
 
         DataWord value = this.repository.getStorageValue(this.contractAddress, address);
 
@@ -96,9 +94,9 @@ class RemascStorageProvider {
             return;
         }
 
-        DataWord address = new DataWord(FEDERATION_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = DataWord.fromString(FEDERATION_BALANCE_KEY);
 
-        this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.federationBalance.getBytes()));
+        this.repository.addStorageRow(this.contractAddress, address, DataWord.valueOf(this.federationBalance.getBytes()));
     }
 
     public void setRewardBalance(Coin rewardBalance) {
@@ -110,9 +108,9 @@ class RemascStorageProvider {
             return;
         }
 
-        DataWord address = new DataWord(REWARD_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = DataWord.fromString(REWARD_BALANCE_KEY);
 
-        this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.rewardBalance.getBytes()));
+        this.repository.addStorageRow(this.contractAddress, address, DataWord.valueOf(this.rewardBalance.getBytes()));
     }
 
     public Coin getBurnedBalance() {
@@ -120,7 +118,7 @@ class RemascStorageProvider {
             return burnedBalance;
         }
 
-        DataWord address = new DataWord(BURNED_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = DataWord.fromString(BURNED_BALANCE_KEY);
 
         DataWord value = this.repository.getStorageValue(this.contractAddress, address);
 
@@ -144,13 +142,13 @@ class RemascStorageProvider {
             return;
         }
 
-        DataWord address = new DataWord(BURNED_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = DataWord.fromString(BURNED_BALANCE_KEY);
 
-        this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.burnedBalance.getBytes()));
+        this.repository.addStorageRow(this.contractAddress, address, DataWord.valueOf(this.burnedBalance.getBytes()));
     }
 
     private void saveSiblings() {
-        DataWord address = new DataWord(SIBLINGS_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = DataWord.fromString(SIBLINGS_KEY);
 
         // we add an empty list because Remasc state expects to have an empty siblings list after 0.5.0 activation
         this.repository.addStorageBytes(this.contractAddress, address, RLP.encodedEmptyList());
@@ -161,7 +159,7 @@ class RemascStorageProvider {
             return brokenSelectionRule;
         }
 
-        DataWord address = new DataWord(BROKEN_SELECTION_RULE_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = DataWord.fromString(BROKEN_SELECTION_RULE_KEY);
 
         byte[] bytes = this.repository.getStorageBytes(this.contractAddress, address);
 
@@ -185,7 +183,7 @@ class RemascStorageProvider {
             return;
         }
 
-        DataWord address = new DataWord(BROKEN_SELECTION_RULE_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = DataWord.fromString(BROKEN_SELECTION_RULE_KEY);
 
         byte[] bytes = new byte[1];
 

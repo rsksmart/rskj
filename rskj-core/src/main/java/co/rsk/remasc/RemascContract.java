@@ -22,6 +22,7 @@ import co.rsk.config.RemascConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -29,14 +30,12 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -59,7 +58,7 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
     private static final CallTransaction.Function PROCESS_MINERS_FEES = CallTransaction.Function.fromSignature("processMinersFees", new String[]{}, new String[]{});
     public static final CallTransaction.Function GET_STATE_FOR_DEBUGGING = CallTransaction.Function.fromSignature("getStateForDebugging", new String[]{}, new String[]{"bytes"});
 
-    static final DataWord MINING_FEE_TOPIC = new DataWord(TypeConverter.stringToByteArray("mining_fee_topic"));
+    public static final DataWord MINING_FEE_TOPIC = DataWord.fromString("mining_fee_topic");
     public static final String REMASC_CONFIG = "remasc.json";
 
     private final RskSystemProperties config;

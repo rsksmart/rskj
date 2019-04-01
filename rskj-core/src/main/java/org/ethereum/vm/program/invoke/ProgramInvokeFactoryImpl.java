@@ -151,7 +151,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         DataWord origin = program.getOriginAddress();
         DataWord caller = callerAddress;
 
-        DataWord balance = new DataWord(balanceInt.getBytes());
+        DataWord balance = DataWord.valueOf(balanceInt.getBytes());
         DataWord gasPrice = program.getGasPrice();
         long agas = inGas;
         DataWord callValue = inValue;

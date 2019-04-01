@@ -141,7 +141,7 @@ public class ContractDetailsImpl implements ContractDetails {
             return null;
         }
 
-        return new DataWord(value);
+        return DataWord.valueOf(value);
     }
 
     @Override
@@ -278,7 +278,7 @@ public class ContractDetailsImpl implements ContractDetails {
         Set<DataWord> result = new HashSet<>();
 
         for (ByteArrayWrapper key : keys) {
-            result.add(new DataWord(key));
+            result.add(DataWord.valueOf(key.getData()));
         }
 
         return result;
@@ -290,7 +290,7 @@ public class ContractDetailsImpl implements ContractDetails {
 
         if (keys == null) {
             for (ByteArrayWrapper keyBytes : this.keys) {
-                DataWord key = new DataWord(keyBytes);
+                DataWord key = DataWord.valueOf(keyBytes.getData());
                 DataWord value = get(key);
 
                 // we check if the value is not null,

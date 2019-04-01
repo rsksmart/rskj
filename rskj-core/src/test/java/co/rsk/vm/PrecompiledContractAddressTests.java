@@ -57,13 +57,7 @@ public class PrecompiledContractAddressTests {
     void checkAddr(PrecompiledContracts pcList,String addr,String className) {
         RskAddress a;
         a = new RskAddress(addr);
-        PrecompiledContracts.PrecompiledContract pc = pcList.getContractForAddress(null,new DataWord(a.getBytes()));
+        PrecompiledContracts.PrecompiledContract pc = pcList.getContractForAddress(null, DataWord.valueOf(a.getBytes()));
         Assert.assertEquals(className,pc.getClass().getSimpleName());
-        // Do not get precompiles if the 12-byte prefix is non-zero.
-        DataWord dw = new DataWord(a.getBytes());
-        dw.getData()[0] = (byte) 0xff; // MSB
-        PrecompiledContracts.PrecompiledContract pc2 = pcList.getContractForAddress(null,dw);
-        Assert.assertEquals(null,pc2);
-
     }
 }

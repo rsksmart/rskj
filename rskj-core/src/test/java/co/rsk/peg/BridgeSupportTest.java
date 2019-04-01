@@ -1184,8 +1184,8 @@ public class BridgeSupportTest {
         org.ethereum.core.Transaction tx = new InternalTransaction(
                 null, 0, 0,
                 BigIntegers.asUnsignedByteArray(NONCE),
-                new DataWord(BigIntegers.asUnsignedByteArray(GAS_PRICE)),
-                new DataWord(BigIntegers.asUnsignedByteArray(GAS_LIMIT)),
+                DataWord.valueOf(BigIntegers.asUnsignedByteArray(GAS_PRICE)),
+                DataWord.valueOf(BigIntegers.asUnsignedByteArray(GAS_LIMIT)),
                 new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(new BtcECKey().getPrivKey()).getAddress()).getBytes(),
                 Hex.decode(TO_ADDRESS),
                 BigIntegers.asUnsignedByteArray(AMOUNT),
