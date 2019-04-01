@@ -20,6 +20,8 @@ package co.rsk.trie;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.is;
+
 public class TrieKeySliceTest {
     @Test
     public void bytesToKey() {
@@ -38,6 +40,22 @@ public class TrieKeySliceTest {
         Assert.assertArrayEquals(
                 PathEncoder.encode(new byte[] { 0x00, 0x01, 0x00, 0x01, 0x00 }),
                 TrieKeySlice.fromKey(new byte[]{(byte) 0xaa}).slice(1, 6).encode()
+        );
+    }
+
+    @Test
+    public void leftPad() {
+        int paddedLength = 8;
+        TrieKeySlice initialKey = TrieKeySlice.fromKey(new byte[]{(byte) 0xff});
+        TrieKeySlice leftPaddedKey = initialKey.leftPad(paddedLength);
+
+        Assert.assertThat(leftPaddedKey.length(), is(initialKey.length() + paddedLength));
+        Assert.assertArrayEquals(
+            PathEncoder.encode(new byte[] {
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01
+            }),
+            leftPaddedKey.encode()
         );
     }
 }

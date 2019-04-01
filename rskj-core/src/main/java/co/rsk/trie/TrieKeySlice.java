@@ -96,6 +96,16 @@ public class TrieKeySlice {
         return new TrieKeySlice(newExpandedKey, 0, newExpandedKey.length);
     }
 
+    public TrieKeySlice leftPad(int paddingLength) {
+        if (paddingLength == 0) {
+            return this;
+        }
+        int currentLength = length();
+        byte[] paddedExpandedKey = new byte[currentLength + paddingLength];
+        System.arraycopy(expandedKey, offset, paddedExpandedKey, paddingLength, currentLength);
+        return new TrieKeySlice(paddedExpandedKey, 0, paddedExpandedKey.length);
+    }
+
     public static TrieKeySlice fromKey(byte[] key) {
         byte[] expandedKey = PathEncoder.decode(key, key.length * 8);
         return new TrieKeySlice(expandedKey, 0, expandedKey.length);

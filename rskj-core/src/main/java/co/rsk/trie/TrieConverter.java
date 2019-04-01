@@ -191,6 +191,12 @@ public class TrieConverter {
 
         if (!removeFirstNodePrefix && child0Hash == null && child1Hash == null) { // terminal node
             sharedPath = extractOrchidStorageKeyPathFromUnitrieKey(key, sharedPath);
+        } else {
+            // 42 = DOMAIN_PREFIX(1) + SECURE_KEY_SIZE(10) + RskAddress(20) + STORAGE_PREFIX(1) + SECURE_KEY_SIZE(10)
+            if (key.length() >= 42 * Byte.SIZE) {
+                // there is a branching ahead of the needed shared 10 bytes
+                throw new IllegalArgumentException("The unitrie storage doesn't share as much structure as we need to rebuild the Orchid trie");
+            }
         }
 
         NodeReference left = new NodeReference(null, child0Hash, null);
@@ -221,19 +227,15 @@ public class TrieConverter {
 
     private TrieKeySlice extractOrchidStorageKeyPathFromUnitrieKey(TrieKeySlice key, TrieKeySlice sharedPath) {
         // 42 = DOMAIN_PREFIX(1) + SECURE_KEY_SIZE(10) + RskAddress(20) + STORAGE_PREFIX(1) + SECURE_KEY_SIZE(10)
-        TrieKeySlice unsecuredKey = key.slice(42 * Byte.SIZE, key.length());
+        int leadingZeroesToAdd = 42 * Byte.SIZE + DataWord.BYTES * Byte.SIZE - key.length() ;
+        TrieKeySlice unsecuredKey = key.slice(42 * Byte.SIZE, key.length()).leftPad(leadingZeroesToAdd);
         byte[] orchidTrieSecureKey = Keccak256Helper.keccak256(unsecuredKey.encode());
-
-        // 32 = DOMAIN_PREFIX(1) + SECURE_KEY_SIZE(10) + RskAddress(20) + STORAGE_PREFIX(1)
-        if (sharedPath.length() < 32 * Byte.SIZE) {
-            throw new IllegalArgumentException("The unitrie storage doesn't share as much structure as we need to rebuild the Orchid trie. Path length: " + sharedPath.length());
-        }
 
         TrieKeySlice expandedOrchidTrieSecureKey = TrieKeySlice.fromKey(orchidTrieSecureKey);
 
-        int consumedFrom80bitPrefix = 42 * Byte.SIZE - sharedPath.length();
+        int nonSharedPathOffset = 42 * Byte.SIZE - sharedPath.length() - leadingZeroesToAdd;
 
-        return expandedOrchidTrieSecureKey.slice(consumedFrom80bitPrefix, expandedOrchidTrieSecureKey.length());
+        return expandedOrchidTrieSecureKey.slice(nonSharedPathOffset, expandedOrchidTrieSecureKey.length());
     }
 
 }
