@@ -97,7 +97,6 @@ dependencies {
     testCompile "org.powermock:powermock-module-junit4:${powermockitoVersion}"
     testCompile "org.powermock:powermock-api-mockito:${powermockitoVersion}"
     testCompile "co.rsk:lll-compiler:${rskLllVersion}"
-    testCompile "com.h2database:h2:1.4.193"
     testCompile "org.awaitility:awaitility:3.0.0"
     testCompile 'commons-io:commons-io:2.5'
     testCompile 'commons-codec:commons-codec:1.10'
@@ -113,12 +112,11 @@ dependencyVerification {
         'com.fasterxml.jackson.core:jackson-annotations:4caf3936315439b509b8c3ef494d4e47eaa6d25c3b5299aadb0eafb3944ed32f',
         'com.fasterxml.jackson.core:jackson-core:256ff34118ab292d1b4f3ee4d2c3e5e5f0f609d8e07c57e8ad1f51c46d4fbb46',
         'com.fasterxml.jackson.core:jackson-databind:4f74337b6d18664be0f5b15c6664b17aa3972c9c175092328b139b894ff66f19',
-	'com.github.briandilley.jsonrpc4j:jsonrpc4j:bb2cde1f554e152e69741353c6630e02e69f217abbd6703f8c038e6ed637c105',
+	    'com.github.briandilley.jsonrpc4j:jsonrpc4j:bb2cde1f554e152e69741353c6630e02e69f217abbd6703f8c038e6ed637c105',
         'com.google.code.findbugs:jsr305:1e7f53fa5b8b5c807e986ba335665da03f18d660802d8bf061823089d1bee468',
         'com.google.guava:guava:d664fbfc03d2e5ce9cab2a44fb01f1d0bf9dfebeccc1a473b1f9ea31f79f6f99',
         'com.google.protobuf:protobuf-java:55aa554843983f431df5616112cf688d38aa17c132357afd1c109435bfdac4e6',
         'com.googlecode.json-simple:json-simple:4e69696892b88b41c55d49ab2fdcc21eead92bf54acc588c0050596c3b75199c',
-        'com.h2database:h2:b1cf34c64871014aa73580281cc464dfa72450d8860cc0752fc175e87edd6544',
         'com.lambdaworks:scrypt:9a82d218099fb14c10c0e86e7eefeebd8c104de920acdc47b8b4b7a686fb73b4',
         'com.madgag.spongycastle:core:07a401edbe26e1028e2324754557b741cc57306008df7b71a9e12ec32d65be8f',
         'com.squareup.okhttp:okhttp:b4c943138fcef2bcc9d2006b2250c4aabbedeafc5947ed7c0af7fd103ceb2707',
