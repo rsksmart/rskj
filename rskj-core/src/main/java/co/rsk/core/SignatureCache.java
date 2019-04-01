@@ -60,7 +60,7 @@ public class SignatureCache {
             txFromBroadcastToBlock(key, senderAddr);
         } else {
             senderAddr = computeTxSender(rawHashBytes, signature);
-            if(!senderAddr.equals(RskAddress.nullAddress())) sendersByTxOnBlock.put(key,senderAddr);
+            if(!senderAddr.equals(RskAddress.nullAddress())) { sendersByTxOnBlock.put(key,senderAddr); };
         }
         return senderAddr;
     }
