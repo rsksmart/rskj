@@ -12,6 +12,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -184,7 +185,7 @@ public class MutableRepository implements Repository {
             return subkey;
         }
         byte[] secureKey = Arrays.copyOfRange(Keccak256Helper.keccak256(subkey), 0, SECURE_KEY_SIZE);
-        return concat(secureKey, subkey);
+        return concat(secureKey, ByteUtil.stripLeadingZeroes(subkey));
     }
 
     private byte[] getAccountStorageKey(RskAddress addr, byte[] subkey) {
@@ -339,6 +340,8 @@ public class MutableRepository implements Repository {
 
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
+        // -1 b/c the first bit is implicit in the storage node
+        final int storageKeyOffset = (STORAGE_PREFIX.length + MutableRepository.SECURE_KEY_SIZE) * Byte.SIZE - 1;
         byte[] accountStorageKey = getAccountStoragePrefixKey(addr, true);
         Trie storageTrie = this.trie.getTrie().find(accountStorageKey);
 
@@ -353,10 +356,10 @@ public class MutableRepository implements Repository {
                         return true;
                     }
                     while (storageIterator.hasNext()) {
-                        TrieKeySlice nodeKey = storageIterator.next().getNodeKey();
-                        int nodeKeyLength = nodeKey.length();
-                        if (nodeKeyLength == (STORAGE_PREFIX.length + MutableRepository.SECURE_KEY_SIZE + DataWord.BYTES) * Byte.SIZE - 1) { // -1 b/c the first bit is implicit in the storage node
-                            byte[] storageExpandedKeySuffix = nodeKey.slice(nodeKeyLength - DataWord.BYTES * Byte.SIZE, nodeKeyLength).encode();
+                        Trie.IterationElement iterationElement = storageIterator.next();
+                        TrieKeySlice nodeKey = iterationElement.getNodeKey();
+                        if (iterationElement.getNode().getValue() != null) {
+                            byte[] storageExpandedKeySuffix = nodeKey.slice(storageKeyOffset, nodeKey.length()).encode();
                             currentStorageKey = DataWord.valueOf(storageExpandedKeySuffix);
                             return true;
                         }
@@ -366,6 +369,12 @@ public class MutableRepository implements Repository {
 
                 @Override
                 public DataWord next() {
+                    if (currentStorageKey == null) {
+                        if (!hasNext()) {
+                            throw new NoSuchElementException();
+                        }
+                    }
+
                     DataWord next = currentStorageKey;
                     currentStorageKey = null;
                     return next;
