@@ -11,6 +11,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.DataWord;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -189,7 +190,7 @@ public class TrieConverter {
         }
 
         if (!removeFirstNodePrefix && child0Hash == null && child1Hash == null) { // terminal node
-            sharedPath = extractOrchidStorageKeyPathFromUnitrieKey(key, sharedPath.length());
+            sharedPath = extractOrchidStorageKeyPathFromUnitrieKey(key, sharedPath);
         }
 
         NodeReference left = new NodeReference(null, child0Hash, null);
@@ -218,19 +219,19 @@ public class TrieConverter {
         return expandedOrchidTrieSecureKey.slice(commonTriePathLength, expandedOrchidTrieSecureKey.length());
     }
 
-    // FIXME(diegoll) we need to add the same handling for remasc keys length
-    private TrieKeySlice extractOrchidStorageKeyPathFromUnitrieKey(TrieKeySlice key, int sharedPathLength) {
-        TrieKeySlice unsecuredKey = key.slice(key.length() - 256, key.length());
+    private TrieKeySlice extractOrchidStorageKeyPathFromUnitrieKey(TrieKeySlice key, TrieKeySlice sharedPath) {
+        // 42 = DOMAIN_PREFIX(1) + SECURE_KEY_SIZE(10) + RskAddress(20) + STORAGE_PREFIX(1) + SECURE_KEY_SIZE(10)
+        TrieKeySlice unsecuredKey = key.slice(42 * Byte.SIZE, key.length());
         byte[] orchidTrieSecureKey = Keccak256Helper.keccak256(unsecuredKey.encode());
 
-        //(MutableRepository.STORAGE_KEY_SIZE - MutableRepository.SECURE_KEY_SIZE * 2 + MutableRepository.STORAGE_PREFIX.length )
-        if (sharedPathLength < 256) { //TODO(diegoll) review 248 = SECURE_KEY_SIZE + RskAddress size + STORAGE_PREFIX + SECURE_KEY_SIZE
-            throw new IllegalArgumentException("The unitrie storage doesn't share as much structure as we need to rebuild the Orchid trie");
+        // 32 = DOMAIN_PREFIX(1) + SECURE_KEY_SIZE(10) + RskAddress(20) + STORAGE_PREFIX(1)
+        if (sharedPath.length() < 32 * Byte.SIZE) {
+            throw new IllegalArgumentException("The unitrie storage doesn't share as much structure as we need to rebuild the Orchid trie. Path length: " + sharedPath.length());
         }
 
         TrieKeySlice expandedOrchidTrieSecureKey = TrieKeySlice.fromKey(orchidTrieSecureKey);
 
-        int consumedFrom80bitPrefix = 42 * Byte.SIZE - sharedPathLength;
+        int consumedFrom80bitPrefix = 42 * Byte.SIZE - sharedPath.length();
 
         return expandedOrchidTrieSecureKey.slice(consumedFrom80bitPrefix, expandedOrchidTrieSecureKey.length());
     }
