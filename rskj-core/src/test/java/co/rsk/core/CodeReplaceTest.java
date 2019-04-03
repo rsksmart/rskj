@@ -209,7 +209,7 @@ public class CodeReplaceTest {
 
     public TransactionExecutor executeTransaction(BlockChainImpl blockchain, Transaction tx) {
         Repository track = blockchain.getRepository().startTracking();
-        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+        TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
                 config,
                 blockchain.getBlockStore(),
                 null,

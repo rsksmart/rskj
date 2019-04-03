@@ -233,7 +233,7 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
-                    TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                    TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
                             config,
                             new BlockStoreDummy(),
                             null,

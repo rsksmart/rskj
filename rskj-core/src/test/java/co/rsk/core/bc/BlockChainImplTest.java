@@ -22,7 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.test.builders.BlockBuilder;
@@ -879,7 +879,7 @@ public class BlockChainImplTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+        TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,
@@ -932,7 +932,7 @@ public class BlockChainImplTest {
             BlockStore blockStore) {
         return new BlockExecutor(
                 repository,
-                new TransactionExecutorFactory(
+                new TestTransactionExecutorFactory(
                         config,
                         blockStore,
                         receiptStore,

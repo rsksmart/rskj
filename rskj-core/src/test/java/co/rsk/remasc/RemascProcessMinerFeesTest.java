@@ -24,8 +24,8 @@ import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
@@ -33,8 +33,8 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
@@ -967,7 +967,7 @@ public class RemascProcessMinerFeesTest {
     private BlockExecutor buildBlockExecutor(Blockchain blockchain) {
         return new BlockExecutor(
                 blockchain.getRepository(),
-                new TransactionExecutorFactory(
+                new TestTransactionExecutorFactory(
                         config,
                         blockchain.getBlockStore(),
                         null,

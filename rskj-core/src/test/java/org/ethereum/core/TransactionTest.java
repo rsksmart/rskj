@@ -21,7 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -438,7 +438,7 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
-                    TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                    TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
                             config,
                             new BlockStoreDummy(),
                             null,
@@ -696,7 +696,7 @@ public class TransactionTest {
 
     private TransactionExecutor executeTransaction(Blockchain blockchain, Transaction tx) {
         Repository track = blockchain.getRepository().startTracking();
-        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+        TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
                 config,
                 blockchain.getBlockStore(),
                 null,

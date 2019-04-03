@@ -25,9 +25,8 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -63,8 +62,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     private BlockStore blockStore;
     private TransactionPool transactionPool;
     private BlockFactory blockFactory;
-    private StateRootHandler stateRootHandler;
-    private TransactionExecutorFactory transactionExecutorFactory;
+    private BlockExecutorFactory blockExecutorFactory;
 
     public MinerServerTest(TestSystemProperties config) {
         super(config);
@@ -75,32 +73,30 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     public void setUp() {
         RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
-        repository = factory.getRepository();
+        repository = Mockito.spy(factory.getRepository());
         blockStore = factory.getBlockStore();
         transactionPool = factory.getTransactionPool();
         blockFactory = factory.getBlockFactory();
-        stateRootHandler = factory.getStateRootHandler();
-        transactionExecutorFactory = factory.getTransactionExecutorFactory();
+        blockExecutorFactory = factory.getBlockExecutorFactory();
     }
 
     @Test
     public void buildBlockToMineCheckThatLastTransactionIsForREMASC() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Repository repository = Mockito.mock(Repository.class);
-        Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
-        Mockito.when(repository.getRoot()).thenReturn(this.repository.getRoot());
-        Mockito.when(repository.startTracking()).thenReturn(repository);
-
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
         byte[] s1 = new byte[32];
         s1[0] = 0;
         Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
         Mockito.when(tx1.getEncoded()).thenReturn(new byte[32]);
 
-        Mockito.when(repository.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
-        Mockito.when(repository.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
-        Mockito.when(repository.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
-        Mockito.when(repository.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
+        Repository track = Mockito.mock(Repository.class);
+        Mockito.doReturn(repository.getRoot()).when(track).getRoot();
+        Mockito.when(track.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
+        Mockito.when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
+        Mockito.when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
+        Mockito.when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
+        Mockito.doReturn(track).when(repository).getSnapshotTo(Mockito.any());
+        Mockito.doReturn(track).when(repository).startTracking();
+        Mockito.doReturn(track).when(track).startTracking();
 
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));
 
@@ -112,7 +108,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServerImpl minerServer = new MinerServerImpl(
                 config,
-                ethereumImpl,
+                Mockito.mock(EthereumImpl.class),
                 this.blockchain,
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
@@ -126,8 +122,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -169,8 +164,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -236,8 +230,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -288,8 +281,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -343,8 +335,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -405,8 +396,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -459,8 +449,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -518,8 +507,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -559,8 +547,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -600,8 +587,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -645,8 +631,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        transactionExecutorFactory
+                        blockExecutorFactory
                 ),
                 clock,
                 blockFactory,

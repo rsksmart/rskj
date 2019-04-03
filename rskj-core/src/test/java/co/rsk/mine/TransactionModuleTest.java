@@ -22,6 +22,7 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.rpc.ExecutionBlockRetriever;
@@ -274,8 +275,11 @@ public class TransactionModuleTest {
                         Mockito.mock(BlockUnclesValidationRule.class),
                         minerClock,
                         blockFactory,
-                        new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>()),
-                        buildTransactionExecutorFactory(blockStore, receiptStore)
+                        new BlockExecutorFactory(
+                                buildTransactionExecutorFactory(blockStore, receiptStore),
+                                repository,
+                                new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
+                        )
                 ),
                 minerClock,
                 blockFactory,
@@ -297,7 +301,7 @@ public class TransactionModuleTest {
 
         EthModule ethModule = new EthModule(config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain, reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
-        DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
 
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -329,7 +333,7 @@ public class TransactionModuleTest {
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(BlockStore blockStore, ReceiptStore receiptStore) {
-        return new TransactionExecutorFactory(
+        return new TestTransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,

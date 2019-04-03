@@ -75,7 +75,8 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              DataWord lastHash, DataWord coinbase, DataWord timestamp, DataWord number, DataWord transactionIndex, DataWord
                                      difficulty,
                              DataWord gaslimit, Repository repository, int callDeep, BlockStore blockStore,
-                             boolean isStaticCall, boolean byTestingSuite) {
+                             boolean isStaticCall,
+                             boolean byTestingSuite) {
 
         // Transaction env
         this.address = address;

@@ -24,7 +24,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
@@ -140,7 +140,7 @@ public class TestRunner {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+        TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,

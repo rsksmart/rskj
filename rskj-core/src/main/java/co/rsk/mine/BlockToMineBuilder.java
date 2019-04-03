@@ -22,10 +22,9 @@ import co.rsk.config.MiningConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.core.bc.FamilyUtils;
-import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.*;
@@ -73,8 +72,7 @@ public class BlockToMineBuilder {
             BlockValidationRule validationRules,
             MinerClock clock,
             BlockFactory blockFactory,
-            StateRootHandler stateRootHandler,
-            TransactionExecutorFactory transactionExecutorFactory) {
+            BlockExecutorFactory blockExecutorFactory) {
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
         this.blockStore = Objects.requireNonNull(blockStore);
@@ -86,11 +84,7 @@ public class BlockToMineBuilder {
         this.blockFactory = blockFactory;
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
-        this.executor = new BlockExecutor(
-                repository,
-                transactionExecutorFactory,
-                stateRootHandler
-        );
+        this.executor = blockExecutorFactory.build();
 
         this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
     }

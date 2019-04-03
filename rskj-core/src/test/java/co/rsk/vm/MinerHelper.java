@@ -20,7 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
@@ -88,7 +88,7 @@ public class MinerHelper {
         int txindex = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
-            TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+            TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
                     config,
                     null,
                     null,
