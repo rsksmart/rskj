@@ -823,7 +823,6 @@ public class RskContext implements NodeBootstrapper {
             blockValidationRule = new BlockCompositeRule(
                     new TxsMinGasPriceRule(),
                     new BlockUnclesValidationRule(
-                            rskSystemProperties,
                             getBlockStore(),
                             commonConstants.getUncleListLimit(),
                             commonConstants.getUncleGenerationLimit(),
@@ -856,7 +855,6 @@ public class RskContext implements NodeBootstrapper {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             Constants commonConstants = rskSystemProperties.getBlockchainConfig().getCommonConstants();
             minerServerBlockValidationRule = new BlockUnclesValidationRule(
-                    rskSystemProperties,
                     getBlockStore(),
                     commonConstants.getUncleListLimit(),
                     commonConstants.getUncleGenerationLimit(),

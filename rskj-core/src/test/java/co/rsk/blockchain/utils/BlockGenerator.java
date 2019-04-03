@@ -28,7 +28,6 @@ import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.peg.simples.SimpleRskTransaction;
-import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
@@ -243,7 +242,7 @@ public class BlockGenerator {
                 new byte[]{},
                 new byte[]{},
                 (minGasPrice != null) ? minGasPrice.toByteArray() : null,
-                CollectionUtils.size(uncles)
+                uncles != null ? uncles.size() : 0
         );
 
         if (difficulty == 0) {

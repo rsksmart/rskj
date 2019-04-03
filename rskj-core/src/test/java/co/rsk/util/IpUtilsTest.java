@@ -1,6 +1,5 @@
 package co.rsk.util;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -58,7 +57,7 @@ public class IpUtilsTest {
         addresses.add(IPV4_WITH_PORT);
         addresses.add(IPV4_NO_PORT);
         List<InetSocketAddress> result = IpUtils.parseAddresses(addresses);
-        Assert.assertTrue(CollectionUtils.isNotEmpty(result));
-        Assert.assertEquals(2, CollectionUtils.size(result));
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(2, result.size());
     }
 }

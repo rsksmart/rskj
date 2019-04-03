@@ -21,7 +21,6 @@ package org.ethereum.db;
 
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
-import org.apache.commons.collections4.MapUtils;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.bouncycastle.util.encoders.Hex;
@@ -279,7 +278,7 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
     @Override
     public boolean isNullObject() {
-        return origContract.isNullObject() && (MapUtils.isEmpty(storage));
+        return origContract.isNullObject() && (storage.isEmpty());
     }
 
     @Override

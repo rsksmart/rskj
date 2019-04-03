@@ -105,7 +105,7 @@ public class BlockValidatorBuilder {
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockValidationRule validationRule, BlockParentDependantValidationRule parentValidationRule) {
         int uncleListLimit = config.getBlockchainConfig().getCommonConstants().getUncleListLimit();
         int uncleGenLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
-        this.blockUnclesValidationRule = new BlockUnclesValidationRule(config, blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
+        this.blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
         return this;
     }
 
