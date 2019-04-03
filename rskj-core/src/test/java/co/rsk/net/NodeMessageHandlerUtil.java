@@ -16,7 +16,7 @@ import org.ethereum.sync.SyncPool;
 import org.ethereum.util.RskMockFactory;
 import org.mockito.Mockito;
 
-import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.mock;
 
 public class NodeMessageHandlerUtil {

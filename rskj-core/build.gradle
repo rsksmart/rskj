@@ -62,8 +62,8 @@ ext {
     slf4jVersion = '1.7.25'
     leveldbVersion = '0.9'
     junitVersion = '4.12'
-    mockitoVersion = '1.10.19'
-    powermockitoVersion = '1.6.4'
+    mockitoVersion = '2.8.9'
+    powermockitoVersion = '1.7.4'
     rskLllVersion = '0.0.2'
     logbackVersion = '1.2.2'
     bitcoinjVersion = '0.14.4-rsk-5'
@@ -92,9 +92,8 @@ dependencies {
     testCompile "com.googlecode.json-simple:json-simple:1.1.1"
     testCompile "junit:junit:${junitVersion}"
     testCompile "org.mockito:mockito-core:${mockitoVersion}"
-    testCompile "org.powermock:powermock-core:${powermockitoVersion}"
     testCompile "org.powermock:powermock-module-junit4:${powermockitoVersion}"
-    testCompile "org.powermock:powermock-api-mockito:${powermockitoVersion}"
+    testCompile "org.powermock:powermock-api-mockito2:${powermockitoVersion}"
     testCompile "co.rsk:lll-compiler:${rskLllVersion}"
     testCompile "org.awaitility:awaitility:3.0.0"
     testCompile 'commons-io:commons-io:2.5'
@@ -139,16 +138,17 @@ dependencyVerification {
         'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
         'org.iq80.leveldb:leveldb-api:279e3a5649cde0bf0d4e09fd1369ec0e9ee80344ec06527c37148c9a58684140',
         'org.iq80.leveldb:leveldb:0dcc623fcb8450e736b9d2b1b8d91b980e44920d6a22cec8c00f703548b3747f',
-        'org.javassist:javassist:d7691062fb779c2381640c8f72acba2c23873b01c243866d41c15dc4c8848ea2',
+        'org.javassist:javassist:7aa59e031f941984af07dacc6ca85e6dc9bd3a485e9aa2494cbc034efa1225d0',
         'org.mapdb:mapdb:1268e9ec22ff770ef7e63d7cc72563406ad239422c791acc8b9ee4fdfba0bb1e',
-        'org.mockito:mockito-core:d5831ee4f71055800821a34a3051cf1ed5b3702f295ffebd50f65fb5d81a71b8',
+        'org.mockito:mockito-core:a2bb9b8b40d81bb02ccb84259524c0f4911f73c6577bfc7ddd940b8fc729b6e6',
         'org.objenesis:objenesis:b043f03e466752f7f03e2326a3b13a49b7c649f8f2a2dc87715827e24f73d9c6',
-        'org.powermock:powermock-api-mockito:68667e82c0e5d8c65e7030403c56ddc8595bbd723bf04719976106c03a022b85',
-        'org.powermock:powermock-api-support:ade74743df908ebd859591c2136ce400443e57bbd8abdc0703871ac7309ac09b',
-        'org.powermock:powermock-core:9b4da42d513500dda03f4d90e303647f6a7b50c6bc5ed88cd39118680f6b329f',
-        'org.powermock:powermock-module-junit4-common:1b4928d42a8e6f0aa196d0f6fcf7831e0bc29b8a925ce755479b4bd29b3643bb',
-        'org.powermock:powermock-module-junit4:a90e4bc135e349852eaebed9f1a14d404e14c5a8a7248b4e20e062879a97e63f',
-        'org.powermock:powermock-reflect:14e3b046621ddb6a39113f145c5c129709d3af3d36caad2df7d547778d271c3e',
+        'org.powermock:powermock-api-mockito2:ee560b1562c25242e9a445d5d877c5489fedf4d2d0d9bc672131244716343109',
+        'org.powermock:powermock-api-mockito-common:9b216ae6583ae2b073a30677307c661a5548d3bdf5b5999daae080a735894bb3',
+        'org.powermock:powermock-api-support:faa0ef7f926dc1e27764dfb0d3da34dd8b37ed6d870cabcca9c3ca808dc2d278',
+        'org.powermock:powermock-core:72d96da61d697f1834f05912d4d73f3697ee33e86716244b22902f251f19232f',
+        'org.powermock:powermock-module-junit4:8271bc70cc8d396360d600396c795825c0121f72a537f25b23e0e86c0278fccc',
+        'org.powermock:powermock-module-junit4-common:af14d42765e1d09fe0aa362a5470e100aecb0274e0c2fa8d32c99035b2771039',
+        'org.powermock:powermock-reflect:01970886cf822f44fc0815c46b7fcf6d67efcc21d5dc2f8985ff1dbbfe3f24c6',
         'org.slf4j:log4j-over-slf4j:c84c5ce4bbb661369ccd4c7b99682027598a0fb2e3d63a84259dbe5c0bf1f949',
         'org.slf4j:slf4j-api:18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79',
     ]

@@ -32,7 +32,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
@@ -46,6 +45,7 @@ import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
@@ -59,11 +59,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayOutputStream;
@@ -79,7 +79,6 @@ import java.util.*;
 
 import static co.rsk.bitcoinj.core.Utils.uint32ToByteStreamLE;
 import static org.hamcrest.CoreMatchers.is;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -1188,7 +1187,7 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         Set<Sha256Hash> hashes = new HashSet<>();
-        when(bridgeSupportMock.isBtcTxHashAlreadyProcessed(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.contains(invocation.getArgumentAt(0, Sha256Hash.class)));
+        when(bridgeSupportMock.isBtcTxHashAlreadyProcessed(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.contains(invocation.<Sha256Hash>getArgument(0)));
 
         hashes.add(Sha256Hash.of("hash_1".getBytes()));
         hashes.add(Sha256Hash.of("hash_2".getBytes()));
@@ -1227,7 +1226,7 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         Map<Sha256Hash, Long> hashes = new HashMap<>();
-        when(bridgeSupportMock.getBtcTxHashProcessedHeight(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.get(invocation.getArgumentAt(0, Sha256Hash.class)));
+        when(bridgeSupportMock.getBtcTxHashProcessedHeight(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.get(invocation.<Sha256Hash>getArgument(0)));
 
         hashes.put(Sha256Hash.of("hash_1".getBytes()), 1L);
         hashes.put(Sha256Hash.of("hash_2".getBytes()), 2L);
@@ -1308,7 +1307,7 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getFederatorPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
-                BigInteger.valueOf(invocation.getArgumentAt(0, int.class)).toByteArray());
+                BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
 
         Assert.assertTrue(Arrays.equals(new byte[]{10}, bridge.getFederatorPublicKey(new Object[]{BigInteger.valueOf(10)})));
         Assert.assertTrue(Arrays.equals(new byte[]{20}, bridge.getFederatorPublicKey(new Object[]{BigInteger.valueOf(20)})));
@@ -1365,7 +1364,7 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getRetiringFederatorPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
-                BigInteger.valueOf(invocation.getArgumentAt(0, int.class)).toByteArray());
+                BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
 
         Assert.assertTrue(Arrays.equals(new byte[]{10}, bridge.getRetiringFederatorPublicKey(new Object[]{BigInteger.valueOf(10)})));
         Assert.assertTrue(Arrays.equals(new byte[]{20}, bridge.getRetiringFederatorPublicKey(new Object[]{BigInteger.valueOf(20)})));
@@ -1390,7 +1389,7 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getPendingFederatorPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
-                BigInteger.valueOf(invocation.getArgumentAt(0, int.class)).toByteArray());
+                BigInteger.valueOf(invocation.<Integer>getArgument(0)).toByteArray());
 
         Assert.assertTrue(Arrays.equals(new byte[]{10}, bridge.getPendingFederatorPublicKey(new Object[]{BigInteger.valueOf(10)})));
         Assert.assertTrue(Arrays.equals(new byte[]{20}, bridge.getPendingFederatorPublicKey(new Object[]{BigInteger.valueOf(20)})));
@@ -1787,11 +1786,11 @@ public class BridgeTest {
     public void executeMethodWithOnlyLocalCallsAllowed_localCallTx() throws Exception {
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(true);
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
         bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         Address address = new BtcECKey().toAddress(networkParameters);
         when(bridgeSupportMock.getFederationAddress()).thenReturn(address);
 
@@ -1807,14 +1806,14 @@ public class BridgeTest {
         when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getFederationAddress()).thenReturn(new BtcECKey().toAddress(networkParameters));
-        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
-
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(false);
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
         bridge.init(tx, getGenesisBlock(), null, null, null, null);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getFederationAddress()).thenReturn(new BtcECKey().toAddress(networkParameters));
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
 
         byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
         bridge.execute(data);
@@ -1857,11 +1856,11 @@ public class BridgeTest {
     private void executeAndCheckMethodWithAnyCallsAllowed(boolean localCall) throws Exception {
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(localCall);
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
         bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        PowerMockito.whenNew(BridgeSupport.class).withAnyArguments().thenReturn(bridgeSupportMock);
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         when(bridgeSupportMock.voteFeePerKbChange(tx, Coin.CENT)).thenReturn(1);
 
         byte[] data = BridgeMethods.VOTE_FEE_PER_KB.getFunction().encode(new Object[]{ Coin.CENT.longValue() });

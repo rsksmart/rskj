@@ -45,7 +45,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mapdb.DB;
-import org.mockito.internal.util.reflection.Whitebox;
+import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.util.ArrayList;

@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.any;
 
 @RunWith(PowerMockRunner.class)
 public class FederationTest {
@@ -103,8 +103,8 @@ public class FederationTest {
         PowerMockito.mockStatic(ScriptBuilder.class);
         PowerMockito.when(ScriptBuilder.createRedeemScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
             calls.add(1);
-            int numberOfSignaturesRequired = invocationOnMock.getArgumentAt(0, int.class);
-            List<BtcECKey> publicKeys = invocationOnMock.getArgumentAt(1, List.class);
+            int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
+            List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
             Assert.assertEquals(4, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
             for (int i = 0; i < sortedPublicKeys.size(); i++) {
@@ -125,8 +125,8 @@ public class FederationTest {
         PowerMockito.mockStatic(ScriptBuilder.class);
         PowerMockito.when(ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
             calls.add(0);
-            int numberOfSignaturesRequired = invocationOnMock.getArgumentAt(0, int.class);
-            List<BtcECKey> publicKeys = invocationOnMock.getArgumentAt(1, List.class);
+            int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
+            List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
             Assert.assertEquals(4, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
             for (int i = 0; i < sortedPublicKeys.size();i ++) {
@@ -151,8 +151,8 @@ public class FederationTest {
         PowerMockito.mockStatic(ScriptBuilder.class);
         PowerMockito.when(ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
             calls.add(0);
-            int numberOfSignaturesRequired = invocationOnMock.getArgumentAt(0, int.class);
-            List<BtcECKey> publicKeys = invocationOnMock.getArgumentAt(1, List.class);
+            int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
+            List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
             Assert.assertEquals(4, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
             for (int i = 0; i < sortedPublicKeys.size();i ++) {

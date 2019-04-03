@@ -27,10 +27,7 @@ import org.junit.Test;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 05/04/2017.

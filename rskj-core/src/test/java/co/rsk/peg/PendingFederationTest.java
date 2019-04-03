@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.any;
 
 @RunWith(PowerMockRunner.class)
 public class PendingFederationTest {

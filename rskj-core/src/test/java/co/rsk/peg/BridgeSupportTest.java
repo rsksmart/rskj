@@ -36,7 +36,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.peg.simples.SimpleWallet;
@@ -67,6 +66,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -83,11 +83,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -107,7 +107,6 @@ import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -1627,8 +1626,8 @@ public class BridgeSupportTest {
 
         PowerMockito.spy(BridgeUtils.class);
         PowerMockito.doReturn(mockStoredBlock).when(BridgeUtils.class, "getStoredBlockAtHeight", any(BtcBlockstoreWithCache.class), anyInt());
-        PowerMockito.doReturn(false).when(BridgeUtils.class, "isLockTx", any(BtcTransaction.class), anyListOf(Federation.class), any(Context.class), any(BridgeConstants.class));
-        PowerMockito.doReturn(true).when(BridgeUtils.class, "isReleaseTx", any(BtcTransaction.class), anyListOf(Federation.class));
+        PowerMockito.doReturn(false).when(BridgeUtils.class, "isLockTx", any(BtcTransaction.class), anyList(), any(Context.class), any(BridgeConstants.class));
+        PowerMockito.doReturn(true).when(BridgeUtils.class, "isReleaseTx", any(BtcTransaction.class), anyList());
 
         BridgeSupport bridgeSupport = new BridgeSupport(
                 mock(Repository.class),
@@ -2780,9 +2779,9 @@ public class BridgeSupportTest {
         final Wallet expectedWallet = mock(Wallet.class);
         PowerMockito.mockStatic(BridgeUtils.class);
         PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(), any(), any())).then((InvocationOnMock m) -> {
-            Assert.assertEquals(m.getArgumentAt(0, Context.class), expectedContext);
-            Assert.assertEquals(m.getArgumentAt(1, Federation.class), expectedFederation);
-            Assert.assertEquals(m.getArgumentAt(2, Object.class), expectedUtxos);
+            Assert.assertEquals(m.<Context>getArgument(0), expectedContext);
+            Assert.assertEquals(m.<Federation>getArgument(1), expectedFederation);
+            Assert.assertEquals(m.<Object>getArgument(2), expectedUtxos);
             return expectedWallet;
         });
 
@@ -2823,9 +2822,9 @@ public class BridgeSupportTest {
         final Wallet expectedWallet = mock(Wallet.class);
         PowerMockito.mockStatic(BridgeUtils.class);
         PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(), any(), any())).then((InvocationOnMock m) -> {
-            Assert.assertEquals(m.getArgumentAt(0, Context.class), expectedContext);
-            Assert.assertEquals(m.getArgumentAt(1, Federation.class), expectedFederation);
-            Assert.assertEquals(m.getArgumentAt(2, Object.class), expectedUtxos);
+            Assert.assertEquals(m.<Context>getArgument(0), expectedContext);
+            Assert.assertEquals(m.<Federation>getArgument(1), expectedFederation);
+            Assert.assertEquals(m.<Object>getArgument(2), expectedUtxos);
             return expectedWallet;
         });
 
@@ -2870,7 +2869,7 @@ public class BridgeSupportTest {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
         when(mockedWhitelist.put(any(Address.class), any(OneOffWhiteListEntry.class))).then((InvocationOnMock m) -> {
-            Address address = m.getArgumentAt(0, Address.class);
+            Address address = m.<Address>getArgument(0);
             Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
             return true;
         });
@@ -3092,7 +3091,7 @@ public class BridgeSupportTest {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
         when(mockedWhitelist.remove(any(Address.class))).then((InvocationOnMock m) -> {
-            Address address = m.getArgumentAt(0, Address.class);
+            Address address = m.<Address>getArgument(0);
             Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
             return true;
         });
@@ -3113,7 +3112,7 @@ public class BridgeSupportTest {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
         when(mockedWhitelist.remove(any(Address.class))).then((InvocationOnMock m) -> {
-            Address address = m.getArgumentAt(0, Address.class);
+            Address address = m.<Address>getArgument(0);
             Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
             return false;
         });
@@ -3374,22 +3373,22 @@ public class BridgeSupportTest {
             }
 
             if (holder.getFederationElection() == null) {
-                AddressBasedAuthorizer auth = m.getArgumentAt(0, AddressBasedAuthorizer.class);
+                AddressBasedAuthorizer auth = m.<AddressBasedAuthorizer>getArgument(0);
                 holder.setFederationElection(new ABICallElection(auth));
             }
 
             return holder.getFederationElection();
         });
         Mockito.doAnswer((InvocationOnMock m) -> {
-            holder.setActiveFederation(m.getArgumentAt(0, Federation.class));
+            holder.setActiveFederation(m.<Federation>getArgument(0));
             return null;
         }).when(providerMock).setNewFederation(any());
         Mockito.doAnswer((InvocationOnMock m) -> {
-            holder.setRetiringFederation(m.getArgumentAt(0, Federation.class));
+            holder.setRetiringFederation(m.<Federation>getArgument(0));
             return null;
         }).when(providerMock).setOldFederation(any());
         Mockito.doAnswer((InvocationOnMock m) -> {
-            holder.setPendingFederation(m.getArgumentAt(0, PendingFederation.class));
+            holder.setPendingFederation(m.<PendingFederation>getArgument(0));
             return null;
         }).when(providerMock).setPendingFederation(any());
 

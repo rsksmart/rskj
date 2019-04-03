@@ -53,9 +53,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by usuario on 13/04/2017.
