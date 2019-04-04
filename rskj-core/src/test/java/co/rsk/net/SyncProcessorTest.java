@@ -5,6 +5,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.messages.*;
@@ -644,16 +645,12 @@ public class SyncProcessorTest {
         Account senderAccount = createAccount("sender");
         Account receiverAccount = createAccount("receiver");
 
-        List<Account> accounts = new ArrayList<Account>();
-        List<Coin> balances = new ArrayList<>();
-
-        accounts.add(senderAccount);
-        balances.add(Coin.valueOf(20000000));
-        accounts.add(receiverAccount);
-        balances.add(Coin.ZERO);
+        Map<RskAddress, AccountState> accounts = new HashMap<>();
+        accounts.put(senderAccount.getAddress(), new AccountState(BigInteger.ZERO, Coin.valueOf(20000000)));
+        accounts.put(receiverAccount.getAddress(), new AccountState(BigInteger.ZERO, Coin.ZERO));
 
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(0, false, accounts, balances);
+        Blockchain blockchain = BlockChainBuilder.ofSize(0, false, accounts);
 
         Block genesis = blockchain.getBestBlock();
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });

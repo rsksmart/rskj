@@ -89,8 +89,7 @@ public class BlockValidatorTest {
     public void validateBlockWithTransaction() {
         BlockChainImpl blockChain = new BlockChainBuilder().setListener(new BlockExecutorTest.SimpleEthereumListener()).build();
 
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
-        genesis.seal();
+        Block genesis = blockChain.getBestBlock();
 
         Block parent = new BlockBuilder().parent(genesis).build();
         parent.seal();
@@ -100,7 +99,6 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder().parent(parent).transactions(txs).build();;
         block.seal();
 
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(parent));
 
         BlockValidator validator = createValidator(blockChain.getBlockStore());
