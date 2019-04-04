@@ -18,14 +18,10 @@
 
 package co.rsk.core;
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.*;
-import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -36,15 +32,14 @@ import java.math.BigInteger;
  */
 public class CallContractTest {
 
-    private static final TestSystemProperties config = new TestSystemProperties();
+    private final RskTestFactory objects = new RskTestFactory();
 
     @Test
     public void callContractReturningOne() {
-        World world = new World();
         byte[] code = new byte[] { 0x60, 0x01, 0x60, 0x00, 0x52, 0x60, 0x20, 0x60, 0x00, (byte)0xf3 };
-        Account account = new AccountBuilder(world).name("acc1").code(code).build();
+        Account account = new AccountBuilder(objects.getBlockchain()).name("acc1").code(code).build();
 
-        ProgramResult result = callContract(world, account.getAddress(), new byte[0]);
+        ProgramResult result = callContract(account.getAddress(), new byte[0]);
 
         Assert.assertNotNull(result);
 
@@ -55,37 +50,18 @@ public class CallContractTest {
         Assert.assertEquals(BigInteger.ONE, new BigInteger(1, value));
     }
 
-    private static ProgramResult callContract(World world, RskAddress receiveAddress, byte[] data) {
-        Transaction tx = CallTransaction.createRawTransaction(config, 0, 0, 100000000000000L,
+    private ProgramResult callContract(RskAddress receiveAddress, byte[] data) {
+        Transaction tx = CallTransaction.createRawTransaction(objects.getRskSystemProperties(), 0, 0, 50000L,
                 receiveAddress, 0, data);
         tx.sign(new byte[32]);
 
-        Block bestBlock = world.getBlockChain().getBestBlock();
+        Block bestBlock = objects.getBlockchain().getBestBlock();
 
-        Repository repository = world.getRepository().startTracking();
+        Repository repository = objects.getRepository().startTracking();
 
         try {
-            org.ethereum.core.TransactionExecutor executor = new TransactionExecutor(
-                    tx,
-                    0,
-                    bestBlock.getCoinbase(),
-                    repository,
-                    null,
-                    null,
-                    new ProgramInvokeFactoryImpl(),
-                    bestBlock,
-                    new EthereumListenerAdapter(),
-                    0,
-                    config.getVmConfig(),
-                    config.getBlockchainConfig(),
-                    config.playVM(),
-                    config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed())
-                .setLocalCall(true);
+            org.ethereum.core.TransactionExecutor executor = objects.getTransactionExecutorFactory()
+                    .newInstance(tx, 0,  bestBlock.getCoinbase(), repository, bestBlock, 0);
 
             executor.init();
             executor.execute();

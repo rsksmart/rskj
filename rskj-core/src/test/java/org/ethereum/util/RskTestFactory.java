@@ -103,7 +103,7 @@ public class RskTestFactory extends RskContext {
         return blockExecutor;
     }
 
-    private BlockExecutor.TransactionExecutorFactory getTransactionExecutorFactory() {
+    public BlockExecutor.TransactionExecutorFactory getTransactionExecutorFactory() {
         if (transactionExecutorFactory == null) {
             RskSystemProperties config = getRskSystemProperties();
             transactionExecutorFactory = (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
