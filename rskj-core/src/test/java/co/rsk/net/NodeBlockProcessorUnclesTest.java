@@ -27,7 +27,6 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.ImportResult;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -141,12 +140,6 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     private static NodeBlockProcessor createNodeBlockProcessor(BlockChainImpl blockChain) {
-        Block genesis = new BlockGenerator().getGenesisBlock();
-        genesis.setStateRoot(blockChain.getRepository().getRoot());
-        genesis.flushRLP();
-
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;

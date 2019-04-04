@@ -71,7 +71,11 @@ public class BlockGenerator {
         return getNewGenesisBlock(3141592, Collections.emptyMap(), new byte[] { 2, 0, 0});
     }
 
-    private Genesis getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap, byte[] difficulty) {
+    public Genesis getGenesisBlock(Map<RskAddress, AccountState> accounts) {
+        return getNewGenesisBlock(3141592, accounts, new byte[] {2, 0, 0});
+    }
+
+    private Genesis getNewGenesisBlock(long initialGasLimit, Map<RskAddress, AccountState> accounts, byte[] difficulty) {
         /* Unimportant address. Because there is no subsidy
         ECKey ecKey;
         byte[] address;
@@ -87,12 +91,6 @@ public class BlockGenerator {
         byte[] extraData   = EMPTY_BYTE_ARRAY;
 
         long   gasLimit         = initialGasLimit;
-
-        Map<RskAddress, AccountState> accounts = new HashMap<>();
-        for (Map.Entry<byte[], BigInteger> accountEntry : preMineMap.entrySet()) {
-            AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(accountEntry.getValue()));
-            accounts.put(new RskAddress(accountEntry.getKey()), acctState);
-        }
 
         boolean useRskip92Encoding = config.getBlockchainConfig().getConfigForBlock(0).isRskip92();
         return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
@@ -379,7 +377,13 @@ public class BlockGenerator {
     }
 
     public Block getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap) {
-        return getNewGenesisBlock(initialGasLimit,preMineMap, new byte[] { 0 });
+        Map<RskAddress, AccountState> accounts = new HashMap<>();
+        for (Map.Entry<byte[], BigInteger> accountEntry : preMineMap.entrySet()) {
+            AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(accountEntry.getValue()));
+            accounts.put(new RskAddress(accountEntry.getKey()), acctState);
+        }
+
+        return getNewGenesisBlock(initialGasLimit, accounts, new byte[] { 0 });
     }
 
     private static byte[] nullReplace(byte[] e) {
