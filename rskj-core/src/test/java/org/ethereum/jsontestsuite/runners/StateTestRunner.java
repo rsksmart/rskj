@@ -70,8 +70,17 @@ public class StateTestRunner {
     protected ProgramInvokeFactory invokeFactory;
     protected Block block;
 
+    // Enable when State tests are changed to support paying
+    // the fees into REMASC instead that into the coinbase account
+    boolean stateTestUseREMASC = false;
+
     public StateTestRunner(StateTestCase stateTestCase) {
         this.stateTestCase = stateTestCase;
+    }
+
+    public StateTestRunner setstateTestUSeREMASC(boolean v) {
+        stateTestUseREMASC = v;
+        return this;
     }
 
     protected ProgramResult executeTransaction(Transaction tx) {
@@ -91,7 +100,7 @@ public class StateTestRunner {
                 config.getVmConfig(),
                 config.getBlockchainConfig(),
                 config.playVM(),
-                config.isRemascEnabled(),
+                config.isRemascEnabled() && stateTestUseREMASC,
                 config.vmTrace(),
                 new PrecompiledContracts(config),
                 config.databaseDir(),
