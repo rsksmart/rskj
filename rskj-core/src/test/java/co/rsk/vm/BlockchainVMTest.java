@@ -22,9 +22,12 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.test.World;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -39,6 +42,8 @@ import java.util.List;
 public class BlockchainVMTest {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
+    private final RskTestFactory objects = new RskTestFactory();
+
     @Test
     public void genesisTest() {
         Block genesis = new BlockGenerator().getGenesisBlock();
@@ -47,11 +52,6 @@ public class BlockchainVMTest {
 
     private static Coin faucetAmount = Coin.valueOf(1000000000L);
 
-    public static class NewBlockChainInfo {
-        public Blockchain blockchain;
-        public ECKey faucetKey;
-        public Repository repository;
-    }
     static long addrCounter =1;
 
     byte[] randomAddress() {
@@ -62,10 +62,10 @@ public class BlockchainVMTest {
 
     @Test
     public void testSEND_1() {
-        NewBlockChainInfo binfo = createNewBlockchain();
-        Blockchain blockchain = binfo.blockchain;
+        ECKey faucetKey = populateFaucet();
+        Blockchain blockchain = objects.getBlockchain();
         BlockGenerator blockGenerator = new BlockGenerator();
-        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), null, binfo.repository.getRoot());
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), null, objects.getRepository().getRoot());
         List<Transaction> txs = new ArrayList<>();
         Coin transferAmount = Coin.valueOf(100L);
         // Add a single transaction paying to a new address
@@ -81,14 +81,13 @@ public class BlockchainVMTest {
                 null,
                 new TestSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
 
-        t.sign(binfo.faucetKey.getPrivKeyBytes());
+        t.sign(faucetKey.getPrivKeyBytes());
         txs.add(t);
 
-        Block block2 = blockGenerator.createChildBlock(block1, txs, binfo.repository.getRoot());
+        Block block2 = blockGenerator.createChildBlock(block1, txs, objects.getRepository().getRoot());
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
 
-        MinerHelper mh = new MinerHelper(
-                binfo.repository, binfo.blockchain);
+        MinerHelper mh = new MinerHelper(objects.getRepository(), objects.getBlockchain());
 
         mh.completeBlock(block2, block1);
 
@@ -101,35 +100,21 @@ public class BlockchainVMTest {
         srcAmount = srcAmount.subtract(transactionGasPrice.multiply(transactionGasLimit));
 
         Assert.assertEquals(
-                binfo.repository.getBalance(new RskAddress(binfo.faucetKey.getAddress())),
+                objects.getRepository().getBalance(new RskAddress(faucetKey.getAddress())),
                 srcAmount);
 
         Assert.assertEquals(
-                binfo.repository.getBalance(new RskAddress(dstAddress)),
+                objects.getRepository().getBalance(new RskAddress(dstAddress)),
                 transferAmount);
     }
 
-    private static NewBlockChainInfo createNewBlockchain() {
-        World world = new World();
-        NewBlockChainInfo binfo = new NewBlockChainInfo();
-
-        binfo.faucetKey = createFaucetAccount(world);
-        binfo.blockchain = world.getBlockChain();
-        binfo.repository = world.getRepository();
-        return binfo;
-    }
-
-    private static ECKey createFaucetAccount(World world) {
-        co.rsk.test.builders.AccountBuilder builder = new co.rsk.test.builders.AccountBuilder(world);
+    private ECKey populateFaucet() {
+        co.rsk.test.builders.AccountBuilder builder = new co.rsk.test.builders.AccountBuilder(objects.getBlockchain());
         builder.name("faucet");
 
         builder.balance(faucetAmount);
 
-        Account account = builder.build();
-
-        world.saveAccount("faucet", account);
-
-        return account.getEcKey();
+        return builder.build().getEcKey();
     }
 
 }
