@@ -813,7 +813,7 @@ public class RskContext implements NodeBootstrapper {
         return ethereumChannelInitializerFactory;
     }
 
-    private BlockValidationRule getBlockValidationRule() {
+    public BlockValidationRule getBlockValidationRule() {
         if (blockValidationRule == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             Constants commonConstants = rskSystemProperties.getBlockchainConfig().getCommonConstants();
@@ -890,7 +890,7 @@ public class RskContext implements NodeBootstrapper {
         return udpServer;
     }
 
-    private BlockParentDependantValidationRule getBlockParentDependantValidationRule() {
+    public BlockParentDependantValidationRule getBlockParentDependantValidationRule() {
         if (blockParentDependantValidationRule == null) {
             Constants commonConstants = getRskSystemProperties().getBlockchainConfig().getCommonConstants();
             blockParentDependantValidationRule = new BlockParentCompositeRule(
