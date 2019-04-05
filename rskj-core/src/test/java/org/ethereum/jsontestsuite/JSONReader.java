@@ -21,7 +21,7 @@ package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
 import org.apache.commons.codec.binary.Base64;
-import org.h2.util.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,20 +52,12 @@ public class JSONReader {
     public static String loadJSONFromResource(String resname, ClassLoader loader) {
         System.out.println("Loading local resource: " + resname);
 
-        try {
-            InputStreamReader reader = new InputStreamReader(loader.getResourceAsStream(resname));
-            StringWriter writer = new StringWriter();
-
-            IOUtils.copyAndCloseInput(reader, writer, 100000000);
-
-            writer.close();
-
-            return writer.toString();
+        try (InputStream reader = loader.getResourceAsStream(resname)) {
+            return IOUtils.toString(reader, StandardCharsets.UTF_8);
         } catch (IOException e) {
             e.printStackTrace();
+            return "";
         }
-
-        return "";
     }
 
     public static String loadJSONFromCommit(String filename, String shacommit) {
