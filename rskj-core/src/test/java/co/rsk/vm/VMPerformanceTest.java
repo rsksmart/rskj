@@ -101,8 +101,6 @@ public class VMPerformanceTest {
     }
 
     static Boolean shortArg = false;
-    static boolean tesUsingDataWordPool = false;
-
 
     @Ignore
     @Test
@@ -111,12 +109,8 @@ public class VMPerformanceTest {
     }
 
     private void testVMPerformance1(ResultLogger resultLogger) {
-
-        if (!tesUsingDataWordPool) {
-            maxLLSize = 1000*1000*10;
-            Program.setUseDataWordPool(false);
-            createLarseSetOfMemoryObjects();
-        }
+        maxLLSize = 1000*1000*10;
+        createLarseSetOfMemoryObjects();
 
         thread = ManagementFactory.getThreadMXBean();
         if (!thread.isThreadCpuTimeSupported()) return;
@@ -127,7 +121,6 @@ public class VMPerformanceTest {
         if (useProfiler)
             waitForProfiler();
 
-        System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());
         System.out.println("Configuration: shortArg =  " + shortArg.toString());
 
         // Program
@@ -172,14 +165,10 @@ public class VMPerformanceTest {
         measureOpcode(OpCode.NOT, false, refTime11, resultLogger);
     }
 
-
-
-
     public long measureOpcode(OpCode opcode, Boolean reference, long refTime, ResultLogger resultLogger) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int iCount = 0;
-        DataWord maxValue = new DataWord();
-        maxValue.bnot();
+        DataWord maxValue = DataWord.ZERO;
         // PUSH
         for (int inp = 0; inp < opcode.require(); inp++) {
             if (shortArg) {
@@ -190,7 +179,7 @@ public class VMPerformanceTest {
                 try {
                     baos.write(maxValue.getData());
                     // decrement maxValue so that each value pushed is a little different
-                    maxValue.sub(DataWord.ONE);
+                    maxValue = maxValue.sub(DataWord.ONE);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -582,10 +571,6 @@ public class VMPerformanceTest {
         createLarseSetOfMemoryObjects();
         System.out.println("done.");
 
-        // now measure with and without Data Word Pool
-        Program.setUseDataWordPool(true);
-        testRunTime(code, s_expected);
-        Program.setUseDataWordPool(false);
         testRunTime(code, s_expected);
     }
     /****************** RESULTS 30/12/2016 ******************************************
@@ -617,7 +602,6 @@ public class VMPerformanceTest {
         program = new Program(vmConfig, precompiledContracts, blockchainConfig, code, invoke, null);
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
-        System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());
         startMeasure();
         vm.steps(program, Long.MAX_VALUE);
         endMeasure();

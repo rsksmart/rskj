@@ -57,7 +57,7 @@ class RemascFeesPayer {
     private void logPayment(byte[] blockHash, Coin value, RskAddress toAddress, List<LogInfo> logs) {
 
         byte[] loggerContractAddress = this.contractAddress.getBytes();
-        List<DataWord> topics = Arrays.asList(RemascContract.MINING_FEE_TOPIC, new DataWord(toAddress.getBytes()));
+        List<DataWord> topics = Arrays.asList(RemascContract.MINING_FEE_TOPIC, DataWord.valueOf(toAddress.getBytes()));
         byte[] data = RLP.encodeList(RLP.encodeElement(blockHash), RLP.encodeCoin(value));
 
         logs.add(new LogInfo(loggerContractAddress, topics, data));

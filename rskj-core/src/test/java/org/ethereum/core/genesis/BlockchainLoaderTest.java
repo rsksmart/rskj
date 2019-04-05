@@ -56,7 +56,7 @@ public class BlockchainLoaderTest {
         Assert.assertEquals(Coin.valueOf(10), repository.getBalance(address));
         Assert.assertEquals(BigInteger.valueOf(25), repository.getNonce(address));
         Assert.assertEquals(DataWord.ONE, repository.getStorageValue(address, DataWord.ZERO));
-        Assert.assertEquals(new DataWord(3), repository.getStorageValue(address, DataWord.ONE));
+        Assert.assertEquals(DataWord.valueOf(3), repository.getStorageValue(address, DataWord.ONE));
         Assert.assertEquals(274, repository.getCode(address).length);
 
     }

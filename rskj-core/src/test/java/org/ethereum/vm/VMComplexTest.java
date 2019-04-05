@@ -75,8 +75,8 @@ public class VMComplexTest {
 
         int expectedGas = 436;
 
-        DataWord key1 = new DataWord(999);
-        DataWord value1 = new DataWord(3);
+        DataWord key1 = DataWord.valueOf(999);
+        DataWord value1 = DataWord.valueOf(3);
 
         // Set contract into Database
         String callerAddr = "cd2a3d9f938e13cd947ec05abc7fe734df8dd826";
@@ -207,8 +207,8 @@ public class VMComplexTest {
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
 
 
-        DataWord value_1 = repository.getStorageValue(contractA_addr, new DataWord(00));
-        DataWord value_2 = repository.getStorageValue(contractA_addr, new DataWord(01));
+        DataWord value_1 = repository.getStorageValue(contractA_addr, DataWord.valueOf(00));
+        DataWord value_2 = repository.getStorageValue(contractA_addr, DataWord.valueOf(01));
 
 
         assertEquals(expectedVal_1, value_1.longValue());
@@ -291,12 +291,12 @@ public class VMComplexTest {
         System.out.println("============ Results ============");
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
 
-        DataWord value1 = program.memoryLoad(new DataWord(32));
-        DataWord value2 = program.memoryLoad(new DataWord(64));
-        DataWord value3 = program.memoryLoad(new DataWord(96));
-        DataWord value4 = program.memoryLoad(new DataWord(128));
-        DataWord value5 = program.memoryLoad(new DataWord(160));
-        DataWord value6 = program.memoryLoad(new DataWord(192));
+        DataWord value1 = program.memoryLoad(DataWord.valueOf(32));
+        DataWord value2 = program.memoryLoad(DataWord.valueOf(64));
+        DataWord value3 = program.memoryLoad(DataWord.valueOf(96));
+        DataWord value4 = program.memoryLoad(DataWord.valueOf(128));
+        DataWord value5 = program.memoryLoad(DataWord.valueOf(160));
+        DataWord value6 = program.memoryLoad(DataWord.valueOf(192));
 
         assertEquals(expectedVal_1, value1.longValue());
         assertEquals(expectedVal_2, value2.longValue());
@@ -440,10 +440,10 @@ public class VMComplexTest {
         System.out.println("============ Results ============");
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
 
-        DataWord memValue1 = program.memoryLoad(new DataWord(0));
-        DataWord memValue2 = program.memoryLoad(new DataWord(32));
+        DataWord memValue1 = program.memoryLoad(DataWord.valueOf(0));
+        DataWord memValue2 = program.memoryLoad(DataWord.valueOf(32));
 
-        DataWord storeValue1 = repository.getStorageValue(contractB_addr, new DataWord(00));
+        DataWord storeValue1 = repository.getStorageValue(contractB_addr, DataWord.valueOf(00));
 
         assertEquals("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", memValue1.toString());
         assertEquals("aaffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaa", memValue2.toString());
@@ -460,8 +460,8 @@ public class VMComplexTest {
 
         int expectedGas = 357;
 
-        DataWord key1 = new DataWord(999);
-        DataWord value1 = new DataWord(3);
+        DataWord key1 = DataWord.valueOf(999);
+        DataWord value1 = DataWord.valueOf(3);
 
         // Set contract into Database
         String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
@@ -519,8 +519,8 @@ public class VMComplexTest {
 
         int expectedGas = 354;
 
-        DataWord key1 = new DataWord(999);
-        DataWord value1 = new DataWord(3);
+        DataWord key1 = DataWord.valueOf(999);
+        DataWord value1 = DataWord.valueOf(3);
 
         // Set contract into Database
         String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
@@ -578,8 +578,8 @@ public class VMComplexTest {
 
         int expectedGas = 356;
 
-        DataWord key1 = new DataWord(9999);
-        DataWord value1 = new DataWord(3);
+        DataWord key1 = DataWord.valueOf(9999);
+        DataWord value1 = DataWord.valueOf(3);
 
         // Set contract into Database
         String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
@@ -637,8 +637,8 @@ public class VMComplexTest {
 
         int expectedGas = 313;
 
-        DataWord key1 = new DataWord(999);
-        DataWord value1 = new DataWord(3);
+        DataWord key1 = DataWord.valueOf(999);
+        DataWord value1 = DataWord.valueOf(3);
 
         // Set contract into Database
         String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";

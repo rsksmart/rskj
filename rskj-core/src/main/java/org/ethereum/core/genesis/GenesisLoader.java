@@ -117,7 +117,7 @@ public class GenesisLoader {
                     acctState.setCodeHash(code == null ? EMPTY_DATA_HASH : Keccak256Helper.keccak256(code));
                     Map<DataWord, byte[]> storage = new HashMap<>(contract.getData().size());
                     for (Map.Entry<String, String> storageData : contract.getData().entrySet()) {
-                        storage.put(new DataWord(Hex.decode(storageData.getKey())), Hex.decode(storageData.getValue()));
+                        storage.put(DataWord.valueFromHex(storageData.getKey()), Hex.decode(storageData.getValue()));
                     }
                     storages.put(address, storage);
                     acctState.setStateRoot(calculateStateRoot(storage));

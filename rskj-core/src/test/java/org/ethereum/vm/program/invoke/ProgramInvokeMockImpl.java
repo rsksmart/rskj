@@ -92,13 +92,13 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     /*           ADDRESS op         */
     public DataWord getOwnerAddress() {
-        return new DataWord(ownerAddress.getBytes());
+        return DataWord.valueOf(ownerAddress.getBytes());
     }
 
     /*           BALANCE op         */
     public DataWord getBalance() {
         byte[] balance = Hex.decode("0DE0B6B3A7640000");
-        return new DataWord(balance);
+        return DataWord.valueOf(balance);
     }
 
     /*           ORIGIN op         */
@@ -107,7 +107,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         byte[] cowPrivKey = HashUtil.keccak256("horse".getBytes(StandardCharsets.UTF_8));
         byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
 
-        return new DataWord(addr);
+        return DataWord.valueOf(addr);
     }
 
     /*           CALLER op         */
@@ -116,14 +116,14 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         byte[] cowPrivKey = HashUtil.keccak256("monkey".getBytes(StandardCharsets.UTF_8));
         byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
 
-        return new DataWord(addr);
+        return DataWord.valueOf(addr);
     }
 
     /*           GASPRICE op       */
     public DataWord getMinGasPrice() {
 
         byte[] minGasPrice = Hex.decode("09184e72a000");
-        return new DataWord(minGasPrice);
+        return DataWord.valueOf(minGasPrice);
     }
 
     /*           GAS op       */
@@ -139,7 +139,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     /*          CALLVALUE op    */
     public DataWord getCallValue() {
         byte[] balance = Hex.decode("0DE0B6B3A7640000");
-        return new DataWord(balance);
+        return DataWord.valueOf(balance);
     }
 
     /*****************/
@@ -156,21 +156,21 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         int index = indexData.value().intValue();
         int size = 32;
 
-        if (msgData == null) return new DataWord(data);
-        if (index > msgData.length) return new DataWord(data);
+        if (msgData == null) return DataWord.valueOf(data);
+        if (index > msgData.length) return DataWord.valueOf(data);
         if (index + 32 > msgData.length) size = msgData.length - index;
 
         System.arraycopy(msgData, index, data, 0, size);
 
-        return new DataWord(data);
+        return DataWord.valueOf(data);
     }
 
     /*  CALLDATASIZE */
     public DataWord getDataSize() {
 
-        if (msgData == null || msgData.length == 0) return new DataWord(new byte[32]);
+        if (msgData == null || msgData.length == 0) return DataWord.valueOf(new byte[32]);
         int size = msgData.length;
-        return new DataWord(size);
+        return DataWord.valueOf(size);
     }
 
     /*  CALLDATACOPY */
@@ -193,25 +193,25 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     @Override
     public DataWord getPrevHash() {
         byte[] prevHash = Hex.decode("961CB117ABA86D1E596854015A1483323F18883C2D745B0BC03E87F146D2BB1C");
-        return new DataWord(prevHash);
+        return DataWord.valueOf(prevHash);
     }
 
     @Override
     public DataWord getCoinbase() {
         byte[] coinBase = Hex.decode("E559DE5527492BCB42EC68D07DF0742A98EC3F1E");
-        return new DataWord(coinBase);
+        return DataWord.valueOf(coinBase);
     }
 
     @Override
     public DataWord getTimestamp() {
         long timestamp = 1401421348;
-        return new DataWord(timestamp);
+        return DataWord.valueOf(timestamp);
     }
 
     @Override
     public DataWord getNumber() {
         long number = 33;
-        return new DataWord(number);
+        return DataWord.valueOf(number);
     }
 
     @Override
@@ -226,12 +226,12 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     @Override
     public DataWord getDifficulty() {
         byte[] difficulty = Hex.decode("3ED290");
-        return new DataWord(difficulty);
+        return DataWord.valueOf(difficulty);
     }
 
     @Override
     public DataWord getGaslimit() {
-        return new DataWord(gasLimit);
+        return DataWord.valueOf(gasLimit);
     }
 
 

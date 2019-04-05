@@ -367,7 +367,7 @@ public abstract class SolidityType {
         @Override
         public Object decode(byte[] encoded, int offset) {
             BigInteger asBigInteger = (BigInteger) super.decode(encoded, offset);
-            return new DataWord(asBigInteger.toByteArray());
+            return DataWord.valueOf(asBigInteger.toByteArray());
         }
     }
 

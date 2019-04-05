@@ -60,7 +60,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(new DataWord(0xa0), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(0xa0), stack.peek());
     }
 
     @Test
@@ -69,7 +69,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(new DataWord(3), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(3), stack.peek());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(new DataWord(6), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(6), stack.peek());
     }
 
     @Test
@@ -87,7 +87,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(new DataWord(1), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
     }
 
     @Test
@@ -96,7 +96,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(new DataWord(1), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
     }
 
     @Test
@@ -105,8 +105,8 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(2, stack.size());
-        Assert.assertEquals(new DataWord(1), stack.peek());
-        Assert.assertEquals(new DataWord(1), stack.get(0));
+        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(1), stack.get(0));
     }
 
     @Test
@@ -115,10 +115,10 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(5, stack.size());
-        Assert.assertEquals(new DataWord(1), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
 
         for (int k = 0; k < 4; k++)
-            Assert.assertEquals(new DataWord(k + 1), stack.get(k));
+            Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
     }
 
     @Test
@@ -127,10 +127,10 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(21, stack.size());
-        Assert.assertEquals(new DataWord(1), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
 
         for (int k = 0; k < 20; k++)
-            Assert.assertEquals(new DataWord(k + 1), stack.get(k));
+            Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
     }
 
     @Test(expected = Program.StackTooSmallException.class)
@@ -149,8 +149,8 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(2, stack.size());
-        Assert.assertEquals(new DataWord(1), stack.peek());
-        Assert.assertEquals(new DataWord(2), stack.get(0));
+        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(2), stack.get(0));
     }
 
     @Test
@@ -159,10 +159,10 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(4, stack.size());
-        Assert.assertEquals(new DataWord(1), stack.peek());
-        Assert.assertEquals(new DataWord(4), stack.get(0));
-        Assert.assertEquals(new DataWord(2), stack.get(1));
-        Assert.assertEquals(new DataWord(3), stack.get(2));
+        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(4), stack.get(0));
+        Assert.assertEquals(DataWord.valueOf(2), stack.get(1));
+        Assert.assertEquals(DataWord.valueOf(3), stack.get(2));
     }
 
     @Test
@@ -171,11 +171,11 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(20, stack.size());
-        Assert.assertEquals(new DataWord(1), stack.peek());
-        Assert.assertEquals(new DataWord(20), stack.get(0));
+        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(20), stack.get(0));
 
         for (int k = 1; k < 19; k++)
-            Assert.assertEquals(new DataWord(k + 1), stack.get(k));
+            Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
     }
 
     @Test(expected = Program.StackTooSmallException.class)
@@ -190,12 +190,12 @@ public class VMExecutionTest {
 
     @Test
     public void txindexExecution() {
-        invoke.setTransactionIndex(new DataWord(42));
+        invoke.setTransactionIndex(DataWord.valueOf(42));
         Program program = executeCode("TXINDEX", 1);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(new DataWord(42), stack.peek());
+        Assert.assertEquals(DataWord.valueOf(42), stack.peek());
     }
 
     @Test

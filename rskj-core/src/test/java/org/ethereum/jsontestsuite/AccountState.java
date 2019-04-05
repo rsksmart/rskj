@@ -71,7 +71,7 @@ public class AccountState {
 
             byte[] key = org.ethereum.json.Utils.parseData(keyS);
             byte[] value = org.ethereum.json.Utils.parseData(valS);
-            storage.put(new DataWord(key), new DataWord(value));
+            storage.put(DataWord.valueOf(key), DataWord.valueOf(value));
         }
     }
 

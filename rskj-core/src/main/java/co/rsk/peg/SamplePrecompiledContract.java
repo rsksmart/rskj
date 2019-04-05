@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -29,10 +30,8 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -108,10 +107,10 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
         Coin balance = Coin.valueOf(50000);
         repository.addBalance(addr, balance);
 
-        DataWord keyWord = new DataWord("result".getBytes(StandardCharsets.UTF_8));
+        DataWord keyWord = DataWord.fromString("result");
         DataWord storedValue = repository.getStorageValue(contractAddress, keyWord);
         int result = (storedValue != null ? storedValue.intValue() : 0) + 1;
-        DataWord valWord = new DataWord(result);
+        DataWord valWord = DataWord.valueOf(result);
         repository.addStorageRow(contractAddress, keyWord, valWord);
 
         logs.add(new LogInfo(contractAddress.getBytes(), null, null));
@@ -136,16 +135,16 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
 
     public void IncrementResult(Object... args)
     {
-        DataWord keyWord = new DataWord("result".getBytes(StandardCharsets.UTF_8));
+        DataWord keyWord = DataWord.fromString("result");
         DataWord storedValue = repository.getStorageValue(contractAddress, keyWord);
         int result = (storedValue != null ? storedValue.intValue() : 0) + 1;
-        DataWord valWord = new DataWord(result);
+        DataWord valWord = DataWord.valueOf(result);
         repository.addStorageRow(contractAddress, keyWord, valWord);
     }
 
     public int GetResult(Object... args)
     {
-        DataWord keyWord = new DataWord("result".getBytes(StandardCharsets.UTF_8));
+        DataWord keyWord = DataWord.fromString("result");
         DataWord storedValue = repository.getStorageValue(contractAddress, keyWord);
         int result = (storedValue != null ? storedValue.intValue() : 0);
 

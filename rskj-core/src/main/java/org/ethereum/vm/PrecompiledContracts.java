@@ -63,14 +63,14 @@ public class PrecompiledContracts {
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_STR);
     public static final RskAddress SAMPLE_ADDR = new RskAddress(SAMPLE_ADDR_STR);
 
-    public static final DataWord BRIDGE_ADDR_DW = new DataWord(BRIDGE_ADDR.getBytes());
-    public static final DataWord IDENTITY_ADDR_DW = new DataWord(IDENTITY_ADDR.getBytes());
-    public static final DataWord REMASC_ADDR_DW  = new DataWord(REMASC_ADDR.getBytes());
-    public static final DataWord SAMPLE_ADDR_DW = new DataWord(SAMPLE_ADDR.getBytes());
-    public static final DataWord ECRECOVER_ADDR_DW = new DataWord(ECRECOVER_ADDR);
-    public static final DataWord RIPEMPD160_ADDR_DW = new DataWord(RIPEMPD160_ADDR);
-    public static final DataWord BIG_INT_MODEXP_ADDR_DW = new DataWord(BIG_INT_MODEXP_ADDR);
-    public static final DataWord SHA256_ADDR_DW = new DataWord(SHA256_ADDR);
+    public static final DataWord BRIDGE_ADDR_DW = DataWord.valueOf(BRIDGE_ADDR.getBytes());
+    public static final DataWord IDENTITY_ADDR_DW = DataWord.valueOf(IDENTITY_ADDR.getBytes());
+    public static final DataWord REMASC_ADDR_DW  = DataWord.valueOf(REMASC_ADDR.getBytes());
+    public static final DataWord SAMPLE_ADDR_DW = DataWord.valueOf(SAMPLE_ADDR.getBytes());
+    public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR);
+    public static final DataWord RIPEMPD160_ADDR_DW = DataWord.valueFromHex(RIPEMPD160_ADDR);
+    public static final DataWord BIG_INT_MODEXP_ADDR_DW = DataWord.valueFromHex(BIG_INT_MODEXP_ADDR);
+    public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR);
 
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
@@ -203,7 +203,7 @@ public class PrecompiledContracts {
                 result = HashUtil.ripemd160(data);
             }
 
-            return new DataWord(result).getData();
+            return DataWord.valueOf(result).getData();
         }
     }
 
@@ -237,7 +237,7 @@ public class PrecompiledContracts {
                     ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[31]);
 
                     ECKey key = ECKey.signatureToKey(h, signature);
-                    out = new DataWord(key.getAddress());
+                    out = DataWord.valueOf(key.getAddress());
                 }
             } catch (Exception any) {
             }
@@ -374,7 +374,7 @@ public class PrecompiledContracts {
 
         private int parseLen(byte[] data, int idx) {
             byte[] bytes = parseBytes(data, 32 * idx, 32);
-            return new DataWord(bytes).intValueSafe();
+            return DataWord.valueOf(bytes).intValueSafe();
         }
 
         private BigInteger parseArg(byte[] data, int offset, int len) {

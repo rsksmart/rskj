@@ -72,7 +72,7 @@ public class ContractDetailsImplTest {
         int nkeys = IN_MEMORY_STORAGE_LIMIT;
 
         for (int k = 1; k <= nkeys + 1; k++)
-            details.put(new DataWord(k), new DataWord(k * 2));
+            details.put(DataWord.valueOf(k), DataWord.valueOf(k * 2));
 
         Assert.assertTrue(details.hasExternalStorage());
     }
@@ -84,7 +84,7 @@ public class ContractDetailsImplTest {
         int nkeys = IN_MEMORY_STORAGE_LIMIT;
 
         for (int k = 1; k <= nkeys + 1; k++)
-            details.putBytes(new DataWord(k), randomData());
+            details.putBytes(DataWord.valueOf(k), randomData());
 
         Assert.assertTrue(details.hasExternalStorage());
     }
@@ -116,9 +116,9 @@ public class ContractDetailsImplTest {
     public void putAndGetDataWord() {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
-        details.put(DataWord.ONE, new DataWord(42));
+        details.put(DataWord.ONE, DataWord.valueOf(42));
 
-        Assert.assertEquals(new DataWord(42), details.get(DataWord.ONE));
+        Assert.assertEquals(DataWord.valueOf(42), details.get(DataWord.ONE));
         Assert.assertTrue(details.isDirty());
         Assert.assertEquals(1, details.getStorageSize());
     }
@@ -127,7 +127,7 @@ public class ContractDetailsImplTest {
     public void putDataWordWithoutLeadingZeroes() {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
-        details.put(DataWord.ONE, new DataWord(42));
+        details.put(DataWord.ONE, DataWord.valueOf(42));
 
         Trie trie = details.getTrie();
 
@@ -143,7 +143,7 @@ public class ContractDetailsImplTest {
     public void putDataWordZeroAsDeleteValue() {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
-        details.put(DataWord.ONE, new DataWord(42));
+        details.put(DataWord.ONE, DataWord.valueOf(42));
         details.put(DataWord.ONE, DataWord.ZERO);
 
         Trie trie = details.getTrie();
@@ -193,8 +193,8 @@ public class ContractDetailsImplTest {
     public void getStorageRoot() {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
-        details.put(DataWord.ONE, new DataWord(42));
-        details.put(DataWord.ZERO, new DataWord(1));
+        details.put(DataWord.ONE, DataWord.valueOf(42));
+        details.put(DataWord.ZERO, DataWord.valueOf(1));
 
         Trie trie = details.getTrie();
 
@@ -233,7 +233,7 @@ public class ContractDetailsImplTest {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
         details.put(DataWord.ZERO, DataWord.ONE);
-        details.put(DataWord.ONE, new DataWord(42));
+        details.put(DataWord.ONE, DataWord.valueOf(42));
 
         Assert.assertEquals(2, details.getStorageSize());
     }
@@ -243,7 +243,7 @@ public class ContractDetailsImplTest {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
         details.put(DataWord.ZERO, DataWord.ONE);
-        details.put(DataWord.ONE, new DataWord(42));
+        details.put(DataWord.ONE, DataWord.valueOf(42));
 
         Set<DataWord> keys = details.getStorageKeys();
 
@@ -258,7 +258,7 @@ public class ContractDetailsImplTest {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
         details.put(DataWord.ZERO, DataWord.ONE);
-        details.put(DataWord.ONE, new DataWord(42));
+        details.put(DataWord.ONE, DataWord.valueOf(42));
         details.put(DataWord.ONE, DataWord.ZERO);
 
         Set<DataWord> keys = details.getStorageKeys();
@@ -293,7 +293,7 @@ public class ContractDetailsImplTest {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
         details.put(DataWord.ZERO, DataWord.ONE);
-        details.put(DataWord.ONE, new DataWord(42));
+        details.put(DataWord.ONE, DataWord.valueOf(42));
 
         Map<DataWord, DataWord> map = details.getStorage();
 
@@ -304,7 +304,7 @@ public class ContractDetailsImplTest {
         Assert.assertTrue(map.containsKey(DataWord.ONE));
 
         Assert.assertEquals(DataWord.ONE, map.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(42), map.get(DataWord.ONE));
+        Assert.assertEquals(DataWord.valueOf(42), map.get(DataWord.ONE));
     }
 
     @Test
@@ -312,13 +312,13 @@ public class ContractDetailsImplTest {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
         details.put(DataWord.ZERO, DataWord.ONE);
-        details.put(DataWord.ONE, new DataWord(42));
-        details.put(new DataWord(3), new DataWord(144));
+        details.put(DataWord.ONE, DataWord.valueOf(42));
+        details.put(DataWord.valueOf(3), DataWord.valueOf(144));
 
         Collection<DataWord> keys = new HashSet<>();
 
         keys.add(DataWord.ZERO);
-        keys.add(new DataWord(3));
+        keys.add(DataWord.valueOf(3));
 
         Map<DataWord, DataWord> map = details.getStorage(keys);
 
@@ -328,10 +328,10 @@ public class ContractDetailsImplTest {
         Assert.assertEquals(2, map.size());
 
         Assert.assertTrue(map.containsKey(DataWord.ZERO));
-        Assert.assertTrue(map.containsKey(new DataWord(3)));
+        Assert.assertTrue(map.containsKey(DataWord.valueOf(3)));
 
         Assert.assertEquals(DataWord.ONE, map.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), map.get(new DataWord(3)));
+        Assert.assertEquals(DataWord.valueOf(144), map.get(DataWord.valueOf(3)));
     }
 
     @Test
@@ -384,7 +384,7 @@ public class ContractDetailsImplTest {
     public void contractDetailsWithStorageDataIsNotNullObject() {
         ContractDetailsImpl details = buildContractDetails(new HashMapDB());
 
-        details.put(DataWord.ONE, new DataWord(42));
+        details.put(DataWord.ONE, DataWord.valueOf(42));
 
         Assert.assertFalse(details.isNullObject());
     }
@@ -395,13 +395,13 @@ public class ContractDetailsImplTest {
 
         Map<DataWord, DataWord> map = new HashMap<>();
 
-        map.put(DataWord.ZERO, new DataWord(42));
-        map.put(DataWord.ONE, new DataWord(144));
+        map.put(DataWord.ZERO, DataWord.valueOf(42));
+        map.put(DataWord.ONE, DataWord.valueOf(144));
 
         details.setStorage(map);
 
-        Assert.assertEquals(new DataWord(42), details.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), details.get(DataWord.ONE));
+        Assert.assertEquals(DataWord.valueOf(42), details.get(DataWord.ZERO));
+        Assert.assertEquals(DataWord.valueOf(144), details.get(DataWord.ONE));
     }
 
     @Test
@@ -411,32 +411,32 @@ public class ContractDetailsImplTest {
         byte[] initialRoot = details.getStorageHash();
 
         Map<DataWord, DataWord> firstStorage = new HashMap<>();
-        firstStorage.put(DataWord.ZERO, new DataWord(42));
-        firstStorage.put(DataWord.ONE, new DataWord(144));
+        firstStorage.put(DataWord.ZERO, DataWord.valueOf(42));
+        firstStorage.put(DataWord.ONE, DataWord.valueOf(144));
         details.setStorage(firstStorage);
 
         byte[] root = details.getStorageHash();
 
         Map<DataWord, DataWord> secondStorage = new HashMap<>();
 
-        secondStorage.put(new DataWord(2), new DataWord(1));
-        secondStorage.put(new DataWord(3), new DataWord(2));
+        secondStorage.put(DataWord.valueOf(2), DataWord.valueOf(1));
+        secondStorage.put(DataWord.valueOf(3), DataWord.valueOf(2));
 
         details.setStorage(secondStorage);
 
         ContractDetails result = details.getSnapshotTo(root);
 
-        Assert.assertEquals(new DataWord(42), result.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), result.get(DataWord.ONE));
-        Assert.assertEquals(null, result.get(new DataWord(2)));
-        Assert.assertEquals(null, result.get(new DataWord(3)));
+        Assert.assertEquals(DataWord.valueOf(42), result.get(DataWord.ZERO));
+        Assert.assertEquals(DataWord.valueOf(144), result.get(DataWord.ONE));
+        Assert.assertEquals(null, result.get(DataWord.valueOf(2)));
+        Assert.assertEquals(null, result.get(DataWord.valueOf(3)));
 
         ContractDetails result2 = details.getSnapshotTo(initialRoot);
 
         Assert.assertEquals(null, result2.get(DataWord.ZERO));
         Assert.assertEquals(null, result2.get(DataWord.ONE));
-        Assert.assertEquals(null, result2.get(new DataWord(2)));
-        Assert.assertEquals(null, result2.get(new DataWord(3)));
+        Assert.assertEquals(null, result2.get(DataWord.valueOf(2)));
+        Assert.assertEquals(null, result2.get(DataWord.valueOf(3)));
     }
 
     @Test
@@ -445,8 +445,8 @@ public class ContractDetailsImplTest {
         ContractDetailsImpl details = buildContractDetails(store);
 
         Map<DataWord, DataWord> storage = new HashMap<>();
-        storage.put(DataWord.ZERO, new DataWord(42));
-        storage.put(DataWord.ONE, new DataWord(144));
+        storage.put(DataWord.ZERO, DataWord.valueOf(42));
+        storage.put(DataWord.ONE, DataWord.valueOf(144));
 
         details.setStorage(storage);
         details.syncStorage();
@@ -457,10 +457,10 @@ public class ContractDetailsImplTest {
 
         ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory(() -> store), config.detailsInMemoryStorageLimit());
 
-        Assert.assertEquals(new DataWord(42), result.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), result.get(DataWord.ONE));
-        Assert.assertEquals(null, result.get(new DataWord(2)));
-        Assert.assertEquals(null, result.get(new DataWord(3)));
+        Assert.assertEquals(DataWord.valueOf(42), result.get(DataWord.ZERO));
+        Assert.assertEquals(DataWord.valueOf(144), result.get(DataWord.ONE));
+        Assert.assertEquals(null, result.get(DataWord.valueOf(2)));
+        Assert.assertEquals(null, result.get(DataWord.valueOf(3)));
     }
 
     @Test
@@ -469,8 +469,8 @@ public class ContractDetailsImplTest {
         ContractDetailsImpl details = buildContractDetails(store);
 
         Map<DataWord, DataWord> storage = new HashMap<>();
-        storage.put(DataWord.ZERO, new DataWord(42));
-        storage.put(DataWord.ONE, new DataWord(144));
+        storage.put(DataWord.ZERO, DataWord.valueOf(42));
+        storage.put(DataWord.ONE, DataWord.valueOf(144));
 
         details.setStorage(storage);
 
@@ -480,10 +480,10 @@ public class ContractDetailsImplTest {
 
         ContractDetailsImpl result = new ContractDetailsImpl(encoded, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
-        Assert.assertEquals(new DataWord(42), result.get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(144), result.get(DataWord.ONE));
-        Assert.assertEquals(null, result.get(new DataWord(2)));
-        Assert.assertEquals(null, result.get(new DataWord(3)));
+        Assert.assertEquals(DataWord.valueOf(42), result.get(DataWord.ZERO));
+        Assert.assertEquals(DataWord.valueOf(144), result.get(DataWord.ONE));
+        Assert.assertEquals(null, result.get(DataWord.valueOf(2)));
+        Assert.assertEquals(null, result.get(DataWord.valueOf(3)));
 
         Assert.assertArrayEquals(details.getStorageHash(), result.getStorageHash());
     }
@@ -507,16 +507,16 @@ public class ContractDetailsImplTest {
         HashMapDB store = new HashMapDB();
         ContractDetailsImpl details = buildContractDetails(store);
 
-        DataWord value0 = new DataWord(42);
-        DataWord value1 = new DataWord(144);
+        DataWord value0 = DataWord.valueOf(42);
+        DataWord value1 = DataWord.valueOf(144);
 
         details.put(DataWord.ZERO, value0);
         details.put(DataWord.ONE, value1);
 
         byte[] hash1 = details.getStorageHash();
 
-        details.put(new DataWord(10), value0);
-        details.put(new DataWord(11), value1);
+        details.put(DataWord.valueOf(10), value0);
+        details.put(DataWord.valueOf(11), value1);
 
         byte[] hash2 = details.getStorageHash();
 
@@ -551,11 +551,11 @@ public class ContractDetailsImplTest {
         byte[] accountAddress = randomAddress();
         ContractDetailsImpl details = new ContractDetailsImpl(accountAddress, trie, null, new TrieStorePoolOnMemory(() -> store), config.detailsInMemoryStorageLimit());
 
-        details.put(new DataWord(42), DataWord.ONE);
+        details.put(DataWord.valueOf(42), DataWord.ONE);
 
         details.syncStorage();
 
-        Assert.assertNotNull(details.get(new DataWord(42)));
+        Assert.assertNotNull(details.get(DataWord.valueOf(42)));
     }
 
     @Test
@@ -568,7 +568,7 @@ public class ContractDetailsImplTest {
         int nkeys = IN_MEMORY_STORAGE_LIMIT;
 
         for (int k = 1; k <= nkeys + 1; k++)
-            details.put(new DataWord(k), new DataWord(k * 2));
+            details.put(DataWord.valueOf(k), DataWord.valueOf(k * 2));
 
         Assert.assertTrue(details.hasExternalStorage());
 
@@ -583,9 +583,9 @@ public class ContractDetailsImplTest {
         Assert.assertTrue(details2.hasExternalStorage());
 
         for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(details1.get(new DataWord(k)));
+            Assert.assertNotNull(details1.get(DataWord.valueOf(k)));
         for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(details2.get(new DataWord(k)));
+            Assert.assertNotNull(details2.get(DataWord.valueOf(k)));
 
         details1.syncStorage();
         details2.syncStorage();
@@ -602,7 +602,7 @@ public class ContractDetailsImplTest {
         int nkeys = IN_MEMORY_STORAGE_LIMIT;
 
         for (int k = 1; k <= nkeys + 1; k++)
-            details.put(new DataWord(k), new DataWord(k * 2));
+            details.put(DataWord.valueOf(k), DataWord.valueOf(k * 2));
 
         Assert.assertTrue(details.hasExternalStorage());
 
@@ -615,7 +615,7 @@ public class ContractDetailsImplTest {
         Assert.assertEquals(ssize, details.getStorageSize());
 
         for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(details.get(new DataWord(k)));
+            Assert.assertNotNull(details.get(DataWord.valueOf(k)));
 
         ContractDetailsImpl clone = new ContractDetailsImpl(details.getEncoded(), trieStorePool, config.detailsInMemoryStorageLimit());
 
@@ -624,10 +624,10 @@ public class ContractDetailsImplTest {
         Assert.assertEquals(details.getStorageSize(), clone.getStorageSize());
 
         for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(clone.get(new DataWord(k)));
+            Assert.assertNotNull(clone.get(DataWord.valueOf(k)));
 
         for (int k = 1; k <= nkeys + 1; k++)
-            clone.put(new DataWord(k), new DataWord(k * 3));
+            clone.put(DataWord.valueOf(k), DataWord.valueOf(k * 3));
 
         Assert.assertTrue(clone.hasExternalStorage());
         Assert.assertEquals(details.getStorageSize(), clone.getStorageSize());
@@ -647,14 +647,14 @@ public class ContractDetailsImplTest {
         int nkeys = IN_MEMORY_STORAGE_LIMIT;
 
         for (int k = 1; k <= nkeys + 1; k++)
-            details.put(new DataWord(k), new DataWord(k * 2));
+            details.put(DataWord.valueOf(k), DataWord.valueOf(k * 2));
 
         Assert.assertTrue(details.hasExternalStorage());
 
         details.syncStorage();
 
         for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(details.get(new DataWord(k)));
+            Assert.assertNotNull(details.get(DataWord.valueOf(k)));
 
         ContractDetailsImpl clone = new ContractDetailsImpl(details.getEncoded(), new TrieStorePoolOnMemory(() -> store), config.detailsInMemoryStorageLimit());
 
@@ -663,10 +663,10 @@ public class ContractDetailsImplTest {
         Assert.assertEquals(details.getStorageSize(), clone.getStorageSize());
 
         for (int k = 1; k <= nkeys + 1; k++)
-            Assert.assertNotNull(clone.get(new DataWord(k)));
+            Assert.assertNotNull(clone.get(DataWord.valueOf(k)));
 
         for (int k = 1; k <= nkeys + 1; k++)
-            clone.put(new DataWord(k), new DataWord(k * 3));
+            clone.put(DataWord.valueOf(k), DataWord.valueOf(k * 3));
 
         Assert.assertTrue(clone.hasExternalStorage());
         Assert.assertEquals(details.getStorageSize(), clone.getStorageSize());
@@ -774,8 +774,8 @@ public class ContractDetailsImplTest {
 
         ContractDetailsImpl contractDetails = buildContractDetails(pool);
         contractDetails.setCode(code);
-        contractDetails.put(new DataWord(key_1), new DataWord(val_1));
-        contractDetails.put(new DataWord(key_2), new DataWord(val_2));
+        contractDetails.put(DataWord.valueOf(key_1), DataWord.valueOf(val_1));
+        contractDetails.put(DataWord.valueOf(key_2), DataWord.valueOf(val_2));
         contractDetails.syncStorage();
 
         byte[] data = contractDetails.getEncoded();
@@ -786,10 +786,10 @@ public class ContractDetailsImplTest {
                 Hex.toHexString(contractDetails_.getCode()));
 
         Assert.assertEquals(Hex.toHexString(val_1),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_1)).getNoLeadZeroesData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_1)).getNoLeadZeroesData()));
 
         Assert.assertEquals(Hex.toHexString(val_2),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_2)).getNoLeadZeroesData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_2)).getNoLeadZeroesData()));
     }
 
     @Test
@@ -845,20 +845,20 @@ public class ContractDetailsImplTest {
         ContractDetailsImpl contractDetails = buildContractDetails(store);
         contractDetails.setCode(code);
         contractDetails.setAddress(address);
-        contractDetails.put(new DataWord(key_0), new DataWord(val_0));
-        contractDetails.put(new DataWord(key_1), new DataWord(val_1));
-        contractDetails.put(new DataWord(key_2), new DataWord(val_2));
-        contractDetails.put(new DataWord(key_3), new DataWord(val_3));
-        contractDetails.put(new DataWord(key_4), new DataWord(val_4));
-        contractDetails.put(new DataWord(key_5), new DataWord(val_5));
-        contractDetails.put(new DataWord(key_6), new DataWord(val_6));
-        contractDetails.put(new DataWord(key_7), new DataWord(val_7));
-        contractDetails.put(new DataWord(key_8), new DataWord(val_8));
-        contractDetails.put(new DataWord(key_9), new DataWord(val_9));
-        contractDetails.put(new DataWord(key_10), new DataWord(val_10));
-        contractDetails.put(new DataWord(key_11), new DataWord(val_11));
-        contractDetails.put(new DataWord(key_12), new DataWord(val_12));
-        contractDetails.put(new DataWord(key_13), new DataWord(val_13));
+        contractDetails.put(DataWord.valueOf(key_0), DataWord.valueOf(val_0));
+        contractDetails.put(DataWord.valueOf(key_1), DataWord.valueOf(val_1));
+        contractDetails.put(DataWord.valueOf(key_2), DataWord.valueOf(val_2));
+        contractDetails.put(DataWord.valueOf(key_3), DataWord.valueOf(val_3));
+        contractDetails.put(DataWord.valueOf(key_4), DataWord.valueOf(val_4));
+        contractDetails.put(DataWord.valueOf(key_5), DataWord.valueOf(val_5));
+        contractDetails.put(DataWord.valueOf(key_6), DataWord.valueOf(val_6));
+        contractDetails.put(DataWord.valueOf(key_7), DataWord.valueOf(val_7));
+        contractDetails.put(DataWord.valueOf(key_8), DataWord.valueOf(val_8));
+        contractDetails.put(DataWord.valueOf(key_9), DataWord.valueOf(val_9));
+        contractDetails.put(DataWord.valueOf(key_10), DataWord.valueOf(val_10));
+        contractDetails.put(DataWord.valueOf(key_11), DataWord.valueOf(val_11));
+        contractDetails.put(DataWord.valueOf(key_12), DataWord.valueOf(val_12));
+        contractDetails.put(DataWord.valueOf(key_13), DataWord.valueOf(val_13));
         contractDetails.syncStorage();
 
         byte[] data = contractDetails.getEncoded();
@@ -872,43 +872,43 @@ public class ContractDetailsImplTest {
                 Hex.toHexString(contractDetails_.getAddress()));
 
         Assert.assertEquals(Hex.toHexString(val_1),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_1)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_1)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_2),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_2)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_2)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_3),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_3)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_3)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_4),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_4)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_4)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_5),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_5)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_5)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_6),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_6)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_6)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_7),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_7)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_7)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_8),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_8)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_8)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_9),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_9)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_9)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_10),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_10)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_10)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_11),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_11)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_11)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_12),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_12)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_12)).getData()));
 
         Assert.assertEquals(Hex.toHexString(val_13),
-                Hex.toHexString(contractDetails_.get(new DataWord(key_13)).getData()));
+                Hex.toHexString(contractDetails_.get(DataWord.valueOf(key_13)).getData()));
     }
 
     private static byte[] randomData() {

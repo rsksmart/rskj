@@ -77,7 +77,7 @@ public class ParentGasLimitRuleTest {
 
     // Used also by GasLimitCalculatorTest
     public static BlockHeader getHeader(long gasLimitValue) {
-        byte[] gasLimit = new DataWord(gasLimitValue).getData();
+        byte[] gasLimit = DataWord.valueOf(gasLimitValue).getData();
 
         BlockHeader header = new BlockHeader(null, null, TestUtils.randomAddress().getBytes(),
                 null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,

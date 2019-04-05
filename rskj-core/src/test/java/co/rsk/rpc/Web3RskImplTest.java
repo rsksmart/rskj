@@ -24,7 +24,6 @@ import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.crypto.Keccak256;
-import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -113,8 +112,8 @@ public class Web3RskImplTest {
         byte[] valueToTest = HashUtil.keccak256(new byte[]{1});
         Mockito.when(logInfo.getData()).thenReturn(valueToTest);
         List<DataWord> topics = new ArrayList<>();
-        topics.add(new DataWord("c1"));
-        topics.add(new DataWord("c2"));
+        topics.add(DataWord.valueFromHex("c1"));
+        topics.add(DataWord.valueFromHex("c2"));
         Mockito.when(logInfo.getTopics()).thenReturn(topics);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHash()).thenReturn(new Keccak256(valueToTest));

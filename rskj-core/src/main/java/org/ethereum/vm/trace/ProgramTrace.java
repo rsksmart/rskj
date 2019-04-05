@@ -202,7 +202,7 @@ public class ProgramTrace {
                 this.currentStorage.put(this.storageKey.toString(), value.toString());
             }
             else {
-                this.currentStorage.remove(this.storageKey);
+                this.currentStorage.remove(this.storageKey.toString());
             }
 
             this.storageSize = this.currentStorage.size();
@@ -210,7 +210,7 @@ public class ProgramTrace {
         }
 
         if (opcode == OpCode.SSTORE || opcode == OpCode.SLOAD) {
-            this.storageKey = stack.peek().clone();
+            this.storageKey = stack.peek();
         }
 
         op.setStorage(this.currentStorage);

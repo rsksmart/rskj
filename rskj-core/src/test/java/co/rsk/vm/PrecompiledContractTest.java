@@ -33,7 +33,7 @@ public class PrecompiledContractTest {
 
     @Test
     public void getBridgeContract() {
-        DataWord bridgeAddress = new DataWord(PrecompiledContracts.BRIDGE_ADDR.getBytes());
+        DataWord bridgeAddress = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
         PrecompiledContract bridge = precompiledContracts.getContractForAddress(null, bridgeAddress);
 
         Assert.assertNotNull(bridge);
@@ -42,7 +42,7 @@ public class PrecompiledContractTest {
 
     @Test
     public void getBridgeContractTwice() {
-        DataWord bridgeAddress = new DataWord(PrecompiledContracts.BRIDGE_ADDR.getBytes());
+        DataWord bridgeAddress = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
         PrecompiledContract bridge1 = precompiledContracts.getContractForAddress(null, bridgeAddress);
         PrecompiledContract bridge2 = precompiledContracts.getContractForAddress(null, bridgeAddress);
 
