@@ -4,6 +4,7 @@ import co.rsk.RskContext;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Wallet;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
@@ -79,6 +80,11 @@ public class RskTestFactory extends RskContext {
     @Override
     public Genesis buildGenesis() {
         return new BlockGenerator().getGenesisBlock();
+    }
+
+    @Override
+    protected Wallet buildWallet() {
+        return new Wallet(new HashMapDB());
     }
 
     @Override

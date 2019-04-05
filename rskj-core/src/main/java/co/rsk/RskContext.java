@@ -73,6 +73,7 @@ import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.DataSourceWithCache;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.IndexedBlockStore;
@@ -315,6 +316,20 @@ public class RskContext implements NodeBootstrapper {
         return nodeBlockProcessor;
     }
 
+    public BlockSyncService getBlockSyncService() {
+        if (blockSyncService == null) {
+            blockSyncService = new BlockSyncService(
+                    getRskSystemProperties(),
+                    getNetBlockStore(),
+                    getBlockchain(),
+                    getBlockNodeInformation(),
+                    getSyncConfiguration()
+            );
+        }
+
+        return blockSyncService;
+    }
+
     public RskSystemProperties getRskSystemProperties() {
         if (rskSystemProperties == null) {
             rskSystemProperties = buildRskSystemProperties();
@@ -454,6 +469,14 @@ public class RskContext implements NodeBootstrapper {
         return configCapabilities;
     }
 
+    public Web3 getWeb3() {
+        if (web3 == null) {
+            web3 = buildWeb3();
+        }
+
+        return web3;
+    }
+
     public DebugModule getDebugModule() {
         if (debugModule == null) {
             debugModule = new DebugModuleImpl(getNodeMessageHandler());
@@ -476,6 +499,14 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return txPoolModule;
+    }
+
+    public Wallet getWallet() {
+        if (wallet == null) {
+            wallet = buildWallet();
+        }
+
+        return wallet;
     }
 
     public NetworkStateExporter getNetworkStateExporter() {
@@ -600,6 +631,16 @@ public class RskContext implements NodeBootstrapper {
                 getBuildInfo(),
                 getBlocksBloomStore()
         );
+    }
+
+    protected Wallet buildWallet() {
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        if (!rskSystemProperties.isWalletEnabled()) {
+            return null;
+        }
+
+        KeyValueDataSource ds = makeDataSource("wallet", rskSystemProperties.databaseDir());
+        return new Wallet(new HashMapDB());
     }
 
     protected ReceiptStore buildReceiptStore() {
@@ -745,34 +786,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return syncConfiguration;
-    }
-
-    private Wallet getWallet() {
-        if (wallet == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            if (!rskSystemProperties.isWalletEnabled()) {
-                return null;
-            }
-
-            KeyValueDataSource ds = makeDataSource("wallet", rskSystemProperties.databaseDir());
-            wallet = new Wallet(ds);
-        }
-
-        return wallet;
-    }
-
-    private BlockSyncService getBlockSyncService() {
-        if (blockSyncService == null) {
-            blockSyncService = new BlockSyncService(
-                    getRskSystemProperties(),
-                    getNetBlockStore(),
-                    getBlockchain(),
-                    getBlockNodeInformation(),
-                    getSyncConfiguration()
-            );
-        }
-
-        return blockSyncService;
     }
 
     private BlockValidator getBlockValidator() {
@@ -1066,14 +1079,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return syncPool;
-    }
-
-    private Web3 getWeb3() {
-        if (web3 == null) {
-            web3 = buildWeb3();
-        }
-
-        return web3;
     }
 
     private JsonRpcWeb3FilterHandler getJsonRpcWeb3FilterHandler() {
