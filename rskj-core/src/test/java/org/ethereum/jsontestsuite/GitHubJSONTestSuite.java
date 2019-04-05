@@ -245,9 +245,14 @@ public class GitHubJSONTestSuite {
         }
 
         Set<String> testNames = stateTestSuite.getTestCases().keySet();
+        int ignores = 0;
         for (String testName : testNames){
 
-            if (excluded.contains(testName)) continue;
+            if (excluded.contains(testName)) {
+                ignores++;
+                continue;
+            }
+
             String output = String.format("*  running: %s  *", testName);
             String line = output.replaceAll(".", "*");
 
@@ -256,6 +261,8 @@ public class GitHubJSONTestSuite {
             logger.info(line);
 
             List<String> result = StateTestRunner.run(testCases.get(testName));
+
+
             if (!result.isEmpty())
                 summary.put(testName, false);
             else
@@ -273,9 +280,10 @@ public class GitHubJSONTestSuite {
                     replace(' ', '.').
                     replace("^", " ");
             logger.info(sumTest);
+
         }
 
-        logger.info(" - Total: Pass: {}, Failed: {} - ", pass, fails);
+        logger.info(" - Total: Pass: {}, Failed: {} - Ignore: {} -", pass, fails,ignores);
 
         Assert.assertTrue(fails == 0);
     }

@@ -268,7 +268,7 @@ public class TransactionTest {
                 // now executing the JSON test transaction
                 return super.executeTransaction(tx);
             }
-        }.runImpl();
+        }.setstateTestUSeREMASC(true).runImpl();
         if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
     }
 
