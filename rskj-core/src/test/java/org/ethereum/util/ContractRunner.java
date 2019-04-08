@@ -1,6 +1,5 @@
 package org.ethereum.util;
 
-import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
@@ -48,7 +47,7 @@ public class ContractRunner {
         this.receiptStore = receiptStore;
 
         // we build a new block with high gas limit because Genesis' is too low
-        Block block = new BlockBuilder(blockchain, new BlockGenerator())
+        Block block = new BlockBuilder(blockchain)
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .build();
         blockchain.setStatus(block, block.getCumulativeDifficulty());
