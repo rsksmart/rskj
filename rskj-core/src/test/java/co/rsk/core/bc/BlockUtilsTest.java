@@ -18,7 +18,6 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockStore;
@@ -111,16 +110,11 @@ public class BlockUtilsTest {
 
     @Test
     public void unknowAncestorsHashesUsingUncles() {
-        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Genesis genesis = blockGenerator.getGenesisBlock();
-        BlockChainImpl blockChain = blockChainBuilder.setGenesis(genesis).build();
+        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        Genesis genesis = (Genesis) blockChain.getBestBlock();
         BlockStore store = new BlockStore();
 
-        genesis.setStateRoot(blockChain.getRepository().getRoot());
-        genesis.flushRLP();
-
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, blockGenerator);
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain);
         Block block1 = blockBuilder.parent(genesis).build();
         Block block1b = blockBuilder.parent(genesis).build();
         Block block2 = blockBuilder.parent(block1).build();

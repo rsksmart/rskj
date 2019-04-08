@@ -58,7 +58,7 @@ public class BlockBuilder {
         this(blockChain, new BlockGenerator());
     }
 
-    public BlockBuilder(Blockchain blockChain, BlockGenerator blockGenerator) {
+    private BlockBuilder(Blockchain blockChain, BlockGenerator blockGenerator) {
         this.blockChain = blockChain;
         this.blockGenerator = blockGenerator;
         // sane defaults

@@ -18,7 +18,6 @@
 
 package co.rsk.net;
 
-import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.net.simples.SimpleMessageChannel;
@@ -59,7 +58,7 @@ public class NodeBlockProcessorUnclesTest {
 
         Block genesis = blockChain.getBestBlock();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, new BlockGenerator());
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain);
         Block block1 = blockBuilder.parent(genesis).build();
         Block uncle1 = blockBuilder.parent(genesis).build();
         Block uncle2 = blockBuilder.parent(genesis).build();
@@ -90,7 +89,7 @@ public class NodeBlockProcessorUnclesTest {
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, new BlockGenerator());
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain);
         Block block1 = blockBuilder.parent(genesis).build();
         Block uncle1 = blockBuilder.parent(genesis).build();
         Block uncle2 = blockBuilder.parent(genesis).build();
