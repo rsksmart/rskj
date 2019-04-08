@@ -151,7 +151,7 @@ public class Web3ImplSnapshotTest {
 
 
     private Web3Impl createWeb3(SimpleEthereum ethereum) {
-        MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
+        MinerClock minerClock = new MinerClock(true, false, Clock.systemUTC());
         MinerServer minerServer = getMinerServerForTest(ethereum, minerClock);
         MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
         EvmModule evmModule = new EvmModuleImpl(minerServer, minerClient, minerClock, blockchain, factory.getTransactionPool());

@@ -23,22 +23,30 @@ import java.time.Clock;
 
 public class MinerClock {
     private final boolean isRegtest;
+    private final boolean isAutoMine;
     private final Clock clock;
 
     private long timeAdjustment;
 
-    public MinerClock(boolean isRegtest, Clock clock) {
+    public MinerClock(boolean isRegtest, boolean isAutoMine, Clock clock) {
         this.isRegtest = isRegtest;
+        this.isAutoMine = isAutoMine;
         this.clock = clock;
     }
 
     public long calculateTimestampForChild(Block parent) {
         long previousTimestamp = parent.getTimestamp();
+        long ret = clock.instant().getEpochSecond();
+
         if (isRegtest) {
-            return previousTimestamp + timeAdjustment;
+
+            if(isAutoMine) {
+                return previousTimestamp + timeAdjustment;
+            }
+
+            ret = ret + timeAdjustment;
         }
 
-        long ret = clock.instant().plusSeconds(timeAdjustment).getEpochSecond();
         return Long.max(ret, previousTimestamp + 1);
     }
 

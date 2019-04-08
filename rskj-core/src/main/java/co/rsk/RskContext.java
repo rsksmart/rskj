@@ -1264,7 +1264,9 @@ public class RskContext implements NodeBootstrapper {
     private MinerClock getMinerClock() {
         if (minerClock == null) {
             minerClock = new MinerClock(
-                    getRskSystemProperties().getBlockchainConfig() instanceof RegTestConfig, Clock.systemUTC()
+                    getRskSystemProperties().getBlockchainConfig() instanceof RegTestConfig,
+                    getRskSystemProperties().minerClientAutoMine(),
+                    Clock.systemUTC()
             );
         }
 

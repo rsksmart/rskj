@@ -40,7 +40,7 @@ public class MinerClockTest {
 
     @Test
     public void timestampForChildIsParentTimestampIfRegtest() {
-        MinerClock minerClock = new MinerClock(true, clock);
+        MinerClock minerClock = new MinerClock(true, true, clock);
 
         Block parent = mock(Block.class);
         when(parent.getTimestamp()).thenReturn(54L);
@@ -53,7 +53,7 @@ public class MinerClockTest {
 
     @Test
     public void timestampForChildIsClockTimeIfNotRegtest() {
-        MinerClock minerClock = new MinerClock(false, clock);
+        MinerClock minerClock = new MinerClock(false, false, clock);
 
         Block parent = mock(Block.class);
         when(parent.getTimestamp()).thenReturn(54L);
@@ -66,7 +66,7 @@ public class MinerClockTest {
 
     @Test
     public void timestampForChildIsTimestampPlusOneIfNotRegtest() {
-        MinerClock minerClock = new MinerClock(false, clock);
+        MinerClock minerClock = new MinerClock(false, false, clock);
 
         Block parent = mock(Block.class);
         when(parent.getTimestamp()).thenReturn(clock.instant().getEpochSecond());
@@ -79,7 +79,7 @@ public class MinerClockTest {
 
     @Test
     public void adjustTimeIfRegtest() {
-        MinerClock minerClock = new MinerClock(true, clock);
+        MinerClock minerClock = new MinerClock(true, true, clock);
 
         Block parent = mock(Block.class);
         when(parent.getTimestamp()).thenReturn(33L);
@@ -94,7 +94,7 @@ public class MinerClockTest {
 
     @Test
     public void adjustTimeIfNotRegtest() {
-        MinerClock minerClock = new MinerClock(false, clock);
+        MinerClock minerClock = new MinerClock(false, false, clock);
 
         Block parent = mock(Block.class);
         when(parent.getTimestamp()).thenReturn(33L);
@@ -102,14 +102,27 @@ public class MinerClockTest {
         minerClock.increaseTime(5392L);
 
         assertEquals(
-                clock.instant().getEpochSecond() + 5392L,
+                clock.instant().getEpochSecond(),
+                minerClock.calculateTimestampForChild(parent)
+        );
+    }
+
+    @Test
+    public void automineTimestampShouldnotIncrease() {
+        MinerClock minerClock = new MinerClock(true, true, clock);
+
+        Block parent = mock(Block.class);
+        when(parent.getTimestamp()).thenReturn(33L);
+
+        assertEquals(
+                33L,
                 minerClock.calculateTimestampForChild(parent)
         );
     }
 
     @Test
     public void clearTimeIncrease() {
-        MinerClock minerClock = new MinerClock(true, clock);
+        MinerClock minerClock = new MinerClock(true, true, clock);
 
         Block parent = mock(Block.class);
         when(parent.getTimestamp()).thenReturn(33L);
@@ -119,6 +132,19 @@ public class MinerClockTest {
 
         assertEquals(
                 33L,
+                minerClock.calculateTimestampForChild(parent)
+        );
+    }
+
+    @Test
+    public void timestampForChildIsTimestampPlusOneIfAutomineIsAnable() {
+        MinerClock minerClock = new MinerClock(true, false, clock);
+
+        Block parent = mock(Block.class);
+        when(parent.getTimestamp()).thenReturn(clock.instant().getEpochSecond());
+
+        assertEquals(
+                clock.instant().getEpochSecond() + 1,
                 minerClock.calculateTimestampForChild(parent)
         );
     }

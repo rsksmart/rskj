@@ -266,7 +266,7 @@ public class MinerManagerTest {
         ethereum.repository = repository;
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
-        MinerClock clock = new MinerClock(true, Clock.systemUTC());
+        MinerClock clock = new MinerClock(true, false, Clock.systemUTC());
         return new MinerServerImpl(
                 config,
                 ethereum,

@@ -258,7 +258,7 @@ public class TransactionModuleTest {
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
         CompositeEthereumListener compositeEthereumListener = new CompositeEthereumListener();
         Ethereum eth = new EthereumImpl(new ChannelManagerImpl(config, new SyncPool(compositeEthereumListener, blockchain, config, null)), transactionPool, compositeEthereumListener, blockchain);
-        MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
+        MinerClock minerClock = new MinerClock(true, false, Clock.systemUTC());
 
         MinerServer minerServer = new MinerServerImpl(
                 config,
