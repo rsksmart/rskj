@@ -67,7 +67,7 @@ public class Genesis extends Block {
                 new BlockHeader(parentHash, unclesHash, coinbase, logsBloom, difficulty,
                         number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData,
                         bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                        bitcoinMergedMiningCoinbaseTransaction, minimumGasPrice, 0) {
+                        bitcoinMergedMiningCoinbaseTransaction, minimumGasPrice, 0, false) {
 
                     @Override
                     protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {

@@ -19,10 +19,10 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.core.RskAddress;
 import com.google.common.collect.Lists;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
 import org.junit.Assert;
@@ -218,7 +218,7 @@ public class BlockStoreTest {
     @Test
     public void saveHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = new BlockHeader(new byte[]{},
+        BlockHeader blockHeader = BlockFactory.newHeader(new byte[]{},
                 new byte[]{},
                 TestUtils.randomAddress().getBytes(),
                 new Bloom().getData(),
@@ -232,7 +232,8 @@ public class BlockStoreTest {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{0},
-                0
+                0,
+                false
         );
 
         store.saveHeader(blockHeader);
@@ -242,7 +243,7 @@ public class BlockStoreTest {
     @Test
     public void removeHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = new BlockHeader(new byte[]{},
+        BlockHeader blockHeader = BlockFactory.newHeader(new byte[]{},
                 new byte[]{},
                 TestUtils.randomAddress().getBytes(),
                 new Bloom().getData(),
@@ -256,7 +257,8 @@ public class BlockStoreTest {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{0},
-                0
+                0,
+                false
         );
 
         store.saveHeader(blockHeader);

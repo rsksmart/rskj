@@ -285,9 +285,10 @@ class RemascTestRunner {
                 BlockDifficulty finalDifficulty, Coin paidFees, List<BlockHeader> uncles, Keccak256 blockHash) {
             super(
                     parentBlock.getHash().getBytes(), RemascTestRunner.EMPTY_LIST_HASH, coinbase.getBytes(),
-                    new Bloom().getData(), finalDifficulty.getBytes(), parentBlock.getNumber() + 1, parentBlock.getGasLimit(),
-                    parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
-                    null, null, null, Coin.valueOf(10).getBytes(), uncles.size()
+                    new Bloom().getData(), finalDifficulty.getBytes(), parentBlock.getNumber() + 1,
+                    parentBlock.getGasLimit(), parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
+                    null, null, null,
+                    Coin.valueOf(10).getBytes(), uncles.size(), false
             );
             setPaidFees(paidFees);
             this.blockHash = blockHash;

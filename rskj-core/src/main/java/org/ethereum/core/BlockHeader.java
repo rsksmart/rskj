@@ -106,10 +106,6 @@ public class BlockHeader {
     /* Indicates if this block header cannot be changed */
     private volatile boolean sealed;
 
-    public BlockHeader(byte[] encoded, boolean sealed) {
-        this(RLP.decodeList(encoded), sealed);
-    }
-
     public BlockHeader(RLPList rlpHeader, boolean sealed) {
         // TODO fix old tests that have other sizes
         if (rlpHeader.size() != 19 && rlpHeader.size() != 16) {
@@ -177,20 +173,9 @@ public class BlockHeader {
                        byte[] logsBloom, byte[] difficulty, long number,
                        byte[] gasLimit, long gasUsed, long timestamp,
                        byte[] extraData,
-                       byte[] minimumGasPrice,
-                       int uncleCount) {
-        this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit, gasUsed, timestamp, extraData,
-                null, null, null, minimumGasPrice, uncleCount);
-    }
-
-    public BlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
-                       byte[] logsBloom, byte[] difficulty, long number,
-                       byte[] gasLimit, long gasUsed, long timestamp,
-                       byte[] extraData,
                        byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction,
-                       byte[] minimumGasPrice,
-                       int uncleCount) {
+                       byte[] minimumGasPrice, int uncleCount, boolean sealed) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = new RskAddress(coinbase);
@@ -209,6 +194,7 @@ public class BlockHeader {
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
+        this.sealed = sealed;
     }
 
     @VisibleForTesting

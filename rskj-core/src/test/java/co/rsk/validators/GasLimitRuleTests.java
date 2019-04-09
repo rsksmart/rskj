@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
@@ -58,9 +59,9 @@ public class GasLimitRuleTests {
     private static Block getBlock(long gasLimitValue) {
         byte[] gasLimit = DataWord.valueOf(gasLimitValue).getData();
 
-        BlockHeader header = new BlockHeader(null, null, TestUtils.randomAddress().getBytes(),
+        BlockHeader header = BlockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(),
                 null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
-                0, null, null, 0);
+                0, null, null, 0, false);
 
         return new Block(header);
     }

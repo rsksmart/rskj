@@ -179,9 +179,11 @@ public class Block {
             this.uncleList = new CopyOnWriteArrayList<>();
         }
 
-        this.header = new BlockHeader(parentHash, unclesHash, coinbase, logsBloom,
+        this.header = BlockFactory.newHeader(
+                parentHash, unclesHash, coinbase, logsBloom,
                 difficulty, number, gasLimit, gasUsed,
-                timestamp, extraData, minimumGasPrice, this.uncleList.size());
+                timestamp, extraData, minimumGasPrice, this.uncleList.size(), false
+        );
 
         this.parsed = true;
     }
@@ -215,7 +217,7 @@ public class Block {
 
         // Parse Header
         RLPList header = (RLPList) block.get(0);
-        this.header = new BlockHeader(header, this.sealed);
+        this.header = BlockFactory.newHeader(header, this.sealed);
 
         // Parse Transactions
         RLPList txTransactions = (RLPList) block.get(1);
@@ -228,7 +230,7 @@ public class Block {
         for (RLPElement rawUncle : uncleBlocks) {
 
             RLPList uncleHeader = (RLPList) rawUncle;
-            BlockHeader blockData = new BlockHeader(uncleHeader, this.sealed);
+            BlockHeader blockData = BlockFactory.newHeader(uncleHeader, this.sealed);
             this.uncleList.add(blockData);
         }
         this.parsed = true;

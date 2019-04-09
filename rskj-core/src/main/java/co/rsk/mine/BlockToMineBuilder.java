@@ -194,7 +194,7 @@ public class BlockToMineBuilder {
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
                                                                         gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
-        final BlockHeader newHeader = new BlockHeader(
+        final BlockHeader newHeader = BlockFactory.newHeader(
                 newBlockParent.getHash().getBytes(),
                 unclesListHash,
                 miningConfig.getCoinbaseAddress().getBytes(),
@@ -209,7 +209,8 @@ public class BlockToMineBuilder {
                 new byte[]{},
                 new byte[]{},
                 minimumGasPrice.getBytes(),
-                CollectionUtils.size(uncles)
+                CollectionUtils.size(uncles),
+                false
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
