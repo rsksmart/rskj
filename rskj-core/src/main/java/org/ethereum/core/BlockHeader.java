@@ -28,7 +28,6 @@ import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
 import org.ethereum.util.Utils;
 
 import javax.annotation.Nullable;
@@ -104,69 +103,6 @@ public class BlockHeader {
 
     /* Indicates if this block header cannot be changed */
     private volatile boolean sealed;
-
-    public BlockHeader(RLPList rlpHeader, boolean sealed) {
-        // TODO fix old tests that have other sizes
-        if (rlpHeader.size() != 19 && rlpHeader.size() != 16) {
-            throw new IllegalArgumentException(String.format(
-                    "A block header must have 16 elements or 19 including merged-mining fields but it had %d",
-                    rlpHeader.size()
-            ));
-        }
-
-        this.parentHash = rlpHeader.get(0).getRLPData();
-        this.unclesHash = rlpHeader.get(1).getRLPData();
-        this.coinbase = RLP.parseRskAddress(rlpHeader.get(2).getRLPData());
-        this.stateRoot = rlpHeader.get(3).getRLPData();
-        if (this.stateRoot == null) {
-            this.stateRoot = EMPTY_TRIE_HASH;
-        }
-
-        this.txTrieRoot = rlpHeader.get(4).getRLPData();
-        if (this.txTrieRoot == null) {
-            this.txTrieRoot = EMPTY_TRIE_HASH;
-        }
-
-        this.receiptTrieRoot = rlpHeader.get(5).getRLPData();
-        if (this.receiptTrieRoot == null) {
-            this.receiptTrieRoot = EMPTY_TRIE_HASH;
-        }
-
-        this.logsBloom = rlpHeader.get(6).getRLPData();
-        this.difficulty = RLP.parseBlockDifficulty(rlpHeader.get(7).getRLPData());
-
-        byte[] nrBytes = rlpHeader.get(8).getRLPData();
-        byte[] glBytes = rlpHeader.get(9).getRLPData();
-        byte[] guBytes = rlpHeader.get(10).getRLPData();
-        byte[] tsBytes = rlpHeader.get(11).getRLPData();
-
-        this.number = parseBigInteger(nrBytes).longValueExact();
-
-        this.gasLimit = glBytes;
-        this.gasUsed = parseBigInteger(guBytes).longValueExact();
-        this.timestamp = parseBigInteger(tsBytes).longValueExact();
-
-        this.extraData = rlpHeader.get(12).getRLPData();
-
-        this.paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
-        this.minimumGasPrice = RLP.parseSignedCoinNonNullZero(rlpHeader.get(14).getRLPData());
-
-        int r = 15;
-
-        if ((rlpHeader.size() == 19) || (rlpHeader.size() == 16)) {
-            byte[] ucBytes = rlpHeader.get(r++).getRLPData();
-            this.uncleCount = parseBigInteger(ucBytes).intValueExact();
-        }
-
-        if (rlpHeader.size() > r) {
-            this.bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
-            this.bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPRawData();
-            this.bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
-
-        }
-
-        this.sealed = sealed;
-    }
 
     public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
