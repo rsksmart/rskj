@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite.builder;
 
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.jsontestsuite.model.BlockHeaderTck;
 
@@ -38,7 +39,7 @@ public class BlockHeaderBuilder {
 
     public static BlockHeader  build(BlockHeaderTck headerTck){
 
-        BlockHeader header = new BlockHeader(
+        BlockHeader header = BlockFactory.newHeader(
                 parseData(headerTck.getParentHash()),
                 parseData(headerTck.getUncleHash()),
                 parseData(headerTck.getCoinbase()),

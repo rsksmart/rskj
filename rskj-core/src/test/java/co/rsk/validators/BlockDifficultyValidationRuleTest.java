@@ -21,10 +21,10 @@ package co.rsk.validators;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.RskAddress;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -47,7 +47,7 @@ public class BlockDifficultyValidationRuleTest {
     }
 
     private BlockHeader getEmptyHeader(BlockDifficulty difficulty, long blockTimestamp, int uCount) {
-        BlockHeader header = new BlockHeader(null, null,
+        BlockHeader header = BlockFactory.newHeader(null, null,
                 TestUtils.randomAddress().getBytes(), null, difficulty.getBytes(), 0,
                 null, 0,
                 blockTimestamp, null, null, uCount);

@@ -228,7 +228,7 @@ public class BlockGenerator {
 
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        BlockHeader newHeader = new BlockHeader(parent.getHash().getBytes(),
+        BlockHeader newHeader = BlockFactory.newHeader(parent.getHash().getBytes(),
                 unclesListHash,
                 coinbase.getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
@@ -242,7 +242,7 @@ public class BlockGenerator {
                 new byte[]{},
                 new byte[]{},
                 (minGasPrice != null) ? minGasPrice.toByteArray() : null,
-                uncles != null ? uncles.size() : 0
+                uncles.size()
         );
 
         if (difficulty == 0) {

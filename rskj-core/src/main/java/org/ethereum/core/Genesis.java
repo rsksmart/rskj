@@ -20,13 +20,17 @@
 package org.ethereum.core;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 
 import java.util.*;
+
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * The genesis block is the first block in the chain and has fixed values according to
@@ -64,10 +68,12 @@ public class Genesis extends Block {
                    Map<RskAddress, byte[]> initialCodes,
                    Map<RskAddress, Map<DataWord, byte[]>> initialStorages){
         super(
-                new BlockHeader(parentHash, unclesHash, coinbase, logsBloom, difficulty,
-                        number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData,
-                        bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                        bitcoinMergedMiningCoinbaseTransaction, minimumGasPrice, 0) {
+                new BlockHeader(
+                        parentHash, unclesHash, new RskAddress(coinbase), ByteUtils.clone(EMPTY_TRIE_HASH),
+                        null, ByteUtils.clone(EMPTY_TRIE_HASH), logsBloom, RLP.parseBlockDifficulty(difficulty),
+                        number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData, Coin.ZERO,
+                        bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
+                        RLP.parseSignedCoinNonNullZero(minimumGasPrice), 0, false) {
 
                     @Override
                     protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {
