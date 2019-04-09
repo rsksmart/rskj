@@ -232,8 +232,7 @@ public class BlockStoreTest {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{0},
-                0,
-                false
+                0
         );
 
         store.saveHeader(blockHeader);
@@ -257,8 +256,7 @@ public class BlockStoreTest {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{0},
-                0,
-                false
+                0
         );
 
         store.saveHeader(blockHeader);

@@ -209,8 +209,7 @@ public class BlockToMineBuilder {
                 new byte[]{},
                 new byte[]{},
                 minimumGasPrice.getBytes(),
-                CollectionUtils.size(uncles),
-                false
+                CollectionUtils.size(uncles)
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());

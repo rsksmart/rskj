@@ -24,7 +24,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.HashUtil;
@@ -169,28 +168,28 @@ public class BlockHeader {
         this.sealed = sealed;
     }
 
-    public BlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
-                       byte[] logsBloom, byte[] difficulty, long number,
-                       byte[] gasLimit, long gasUsed, long timestamp,
-                       byte[] extraData,
-                       byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+    public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
+                       byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
+                       long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
+                       Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction,
-                       byte[] minimumGasPrice, int uncleCount, boolean sealed) {
+                       Coin minimumGasPrice, int uncleCount, boolean sealed) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
-        this.coinbase = new RskAddress(coinbase);
+        this.coinbase = coinbase;
+        this.stateRoot = stateRoot;
+        this.txTrieRoot = txTrieRoot;
+        this.receiptTrieRoot = receiptTrieRoot;
         this.logsBloom = logsBloom;
-        this.difficulty = RLP.parseBlockDifficulty(difficulty);
+        this.difficulty = difficulty;
         this.number = number;
         this.gasLimit = gasLimit;
         this.gasUsed = gasUsed;
         this.timestamp = timestamp;
         this.extraData = extraData;
-        this.stateRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
-        this.minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPrice);
-        this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
+        this.minimumGasPrice = minimumGasPrice;
         this.uncleCount = uncleCount;
-        this.paidFees = Coin.ZERO;
+        this.paidFees = paidFees;
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;

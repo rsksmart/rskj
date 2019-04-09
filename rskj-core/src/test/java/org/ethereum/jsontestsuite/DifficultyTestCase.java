@@ -98,7 +98,7 @@ public class DifficultyTestCase {
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY, null,
                 org.ethereum.json.Utils.parseLong(currentBlockNumber), new byte[] {0}, 0,
                 org.ethereum.json.Utils.parseLong(currentTimestamp),
-                EMPTY_BYTE_ARRAY, null,0, false);
+                EMPTY_BYTE_ARRAY, null, 0);
     }
 
     public BlockHeader getParent() {
@@ -107,7 +107,7 @@ public class DifficultyTestCase {
                 parseDifficulty(parentDifficulty).toByteArray(),
                 org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1, new byte[] {0}, 0,
                 org.ethereum.json.Utils.parseLong(parentTimestamp),
-                EMPTY_BYTE_ARRAY, null, 0, false);
+                EMPTY_BYTE_ARRAY, null, 0);
     }
 
     public BlockDifficulty getExpectedDifficulty() {

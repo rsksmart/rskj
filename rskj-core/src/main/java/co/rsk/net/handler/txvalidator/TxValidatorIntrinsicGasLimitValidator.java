@@ -54,8 +54,7 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{0},
-                0,
-                false
+                0
         );
         Block block = new Block(blockHeader);
 

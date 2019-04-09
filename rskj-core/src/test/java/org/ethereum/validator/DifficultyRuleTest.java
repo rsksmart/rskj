@@ -57,7 +57,7 @@ public class DifficultyRuleTest {
 
         BlockHeader header = BlockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(), null, difficulty, 0,
                 null, 0,
-                0, null, null, 0, false);
+                0, null, null, 0);
 
         return header;
     }

@@ -243,8 +243,7 @@ public class BlockGenerator {
                 new byte[]{},
                 new byte[]{},
                 (minGasPrice != null) ? minGasPrice.toByteArray() : null,
-                CollectionUtils.size(uncles),
-                false
+                CollectionUtils.size(uncles)
         );
 
         if (difficulty == 0) {

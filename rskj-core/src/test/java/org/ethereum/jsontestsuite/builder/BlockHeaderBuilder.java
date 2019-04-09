@@ -51,8 +51,7 @@ public class BlockHeaderBuilder {
                 getPositiveLong(headerTck.getTimestamp()),
                 parseData(headerTck.getExtraData()),
                 null,
-                0,
-                false
+                0
         );
 
         header.setReceiptsRoot(parseData(headerTck.getReceiptTrie()));

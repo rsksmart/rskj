@@ -137,7 +137,7 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
             List<BlockHeader> headers = rlpHeaders.stream()
-                    .map(el -> BlockFactory.newHeader(el.getRLPData(), true))
+                    .map(el -> BlockFactory.decodeHeader(el.getRLPData()))
                     .collect(Collectors.toList());
 
             return new BlockHeadersResponseMessage(id, headers);
@@ -214,7 +214,7 @@ public enum MessageType {
             }
 
             List<BlockHeader> uncles = rlpUncles.stream()
-                    .map(el -> BlockFactory.newHeader(el.getRLPData(), true))
+                    .map(el -> BlockFactory.decodeHeader(el.getRLPData()))
                     .collect(Collectors.toList());
 
             return new BodyResponseMessage(id, transactions, uncles);

@@ -182,7 +182,7 @@ public class Block {
         this.header = BlockFactory.newHeader(
                 parentHash, unclesHash, coinbase, logsBloom,
                 difficulty, number, gasLimit, gasUsed,
-                timestamp, extraData, minimumGasPrice, this.uncleList.size(), false
+                timestamp, extraData, minimumGasPrice, this.uncleList.size()
         );
 
         this.parsed = true;

@@ -50,7 +50,7 @@ public class BlockDifficultyValidationRuleTest {
         BlockHeader header = BlockFactory.newHeader(null, null,
                 TestUtils.randomAddress().getBytes(), null, difficulty.getBytes(), 0,
                 null, 0,
-                blockTimestamp, null, null, uCount, false);
+                blockTimestamp, null, null, uCount);
         return header;
     }
 
