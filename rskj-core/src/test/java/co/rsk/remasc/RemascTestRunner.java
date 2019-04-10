@@ -252,12 +252,13 @@ class RemascTestRunner {
         Transaction remascTx = new RemascTransaction(parentBlock.getNumber() + 1);
         txs.add(remascTx);
 
-        long difficultyAsLong = difficulty == null ? parentBlock.getDifficulty().asBigInteger().longValue() : difficulty;
+        BigInteger difficultyAsLong = difficulty == null ? parentBlock.getDifficulty().asBigInteger() : BigInteger.valueOf(difficulty);
 
-        if (difficultyAsLong == 0)
-            difficultyAsLong = 1;
+        if (difficultyAsLong.equals(BigInteger.ZERO)) {
+            difficultyAsLong = BigInteger.ONE;
+        }
 
-        byte[] diffBytes = BigInteger.valueOf(difficultyAsLong).toByteArray();
+        BlockDifficulty finalDifficulty = new BlockDifficulty(difficultyAsLong);
 
         Coin paidFees = Coin.ZERO;
         for (Transaction tx : txs) {
@@ -266,58 +267,35 @@ class RemascTestRunner {
             paidFees = paidFees.add(gasPrice.multiply(gasLimit));
         }
 
-        Block block =  new Block(
-                parentBlock.getHash().getBytes(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
-                coinbase.getBytes(),            // fixedCoinbase
-                new Bloom().getData(),          // logs bloom
-                diffBytes,    // difficulty
-                parentBlock.getNumber() + 1,
-                parentBlock.getGasLimit(),
-                parentBlock.getGasUsed(),
-                parentBlock.getTimestamp(),
-                new byte[0],                    // extraData
-                new byte[0],                    // mixHash
-                BigInteger.ZERO.toByteArray(),         // provisory nonce
-                HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                BlockChainImpl.calcTxTrie(txs), // transaction root
-                genesis.getStateRoot(),         //EMPTY_TRIE_HASH,   // state root
-                txs,                            // transaction list
-                uncles,                          // uncle list
-                BigInteger.TEN.toByteArray(),
-                paidFees
-        ) {
-            private BlockHeader harcodedHashHeader;
+        uncles = uncles != null ? uncles : new ArrayList<>();
+        return Block.fromValidData(
+                new HardcodedHashBlockHeader(
+                        parentBlock, coinbase, genesis, txs, finalDifficulty, paidFees, uncles, blockHash
+                ),
+                txs,
+                uncles
+        );
+    }
 
-            @Override
-            public BlockHeader getHeader() {
-                if (harcodedHashHeader==null) {
-                    harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded(), false) {
-                        @Override
-                        public Keccak256 getHash() {
-                            return blockHash;
-                        }
-                    };
-                }
-                return harcodedHashHeader;
-            }
+    private static class HardcodedHashBlockHeader extends BlockHeader {
+        private final Keccak256 blockHash;
 
-            @Override
-            public Keccak256 getHash() {
-                return blockHash;
-            }
+        public HardcodedHashBlockHeader(
+                Block parentBlock, RskAddress coinbase, Block genesis, List<Transaction> txs,
+                BlockDifficulty finalDifficulty, Coin paidFees, List<BlockHeader> uncles, Keccak256 blockHash) {
+            super(
+                    parentBlock.getHash().getBytes(), RemascTestRunner.EMPTY_LIST_HASH, coinbase.getBytes(),
+                    new Bloom().getData(), finalDifficulty.getBytes(), parentBlock.getNumber() + 1, parentBlock.getGasLimit(),
+                    parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
+                    null, null, null, Coin.valueOf(10).getBytes(), uncles.size()
+            );
+            setPaidFees(paidFees);
+            this.blockHash = blockHash;
+        }
 
-            @Override
-            public void flushRLP() {
-                if (harcodedHashHeader != null)
-                    super.getHeader().setPaidFees(harcodedHashHeader.getPaidFees());
-
-                super.flushRLP();
-
-                harcodedHashHeader = null;
-            }
-        };
-
-        return block;
+        @Override
+        public Keccak256 getHash() {
+            return blockHash;
+        }
     }
 }
