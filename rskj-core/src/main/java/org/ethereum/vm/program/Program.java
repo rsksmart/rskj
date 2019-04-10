@@ -1238,8 +1238,9 @@ public class Program {
             Block executionBlock = new Block(
                     getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(), EMPTY_BYTE_ARRAY,
                     getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(),
-                    0, getTimestamp().longValue(), EMPTY_BYTE_ARRAY, ByteUtils.clone(EMPTY_TRIE_HASH),
-                    ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
+                    0, getTimestamp().longValue(), EMPTY_BYTE_ARRAY,
+                    null, null, null,
+                    ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
                     new ArrayList<>(), new ArrayList<>(), null, Coin.ZERO
             );
 

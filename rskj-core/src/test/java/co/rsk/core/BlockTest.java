@@ -80,6 +80,9 @@ public class BlockTest {
                 3000000, // gasUsed
                 100, //timestamp
                 new byte[0],                    // extraData
+                null,
+                null,
+                null,
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
                 BlockChainImpl.calcTxTrie(txs), // transaction root
                 HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root

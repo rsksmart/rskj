@@ -142,6 +142,9 @@ public class BlockGenerator {
                 parent.getGasUsed(),
                 parent.getTimestamp() + ++count,
                 EMPTY_BYTE_ARRAY,   // extraData
+                null,
+                null,
+                null,
                 EMPTY_TRIE_HASH,   // receipts root
                 BlockChainImpl.calcTxTrie(txs),  // transaction root
                 ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
@@ -175,6 +178,9 @@ public class BlockGenerator {
                 parent.getGasUsed(),
                 parent.getTimestamp() + ++count,
                 EMPTY_BYTE_ARRAY,   // extraData
+                null,
+                null,
+                null,
                 EMPTY_TRIE_HASH,   // receipts root
                 BlockChainImpl.calcTxTrie(txs),  // transaction root
                 stateRoot, //EMPTY_TRIE_HASH,   // state root
@@ -285,6 +291,9 @@ public class BlockGenerator {
                 parent.getGasUsed(),
                 parent.getTimestamp() + ++count,
                 EMPTY_BYTE_ARRAY,   // extraData
+                null,
+                null,
+                null,
                 EMPTY_TRIE_HASH,   // receipts root
                 Block.getTxTrie(txs).getHash().getBytes(),  // transaction receipts
                 EMPTY_TRIE_HASH,   // state root
@@ -315,6 +324,9 @@ public class BlockGenerator {
                 parent.getGasUsed(),
                 parent.getTimestamp() + ++count,
                 EMPTY_BYTE_ARRAY,   // extraData
+                null,
+                null,
+                null,
                 EMPTY_TRIE_HASH,   // receipts root
                 EMPTY_TRIE_HASH,  // transaction receipts
                 EMPTY_TRIE_HASH,   // state root
