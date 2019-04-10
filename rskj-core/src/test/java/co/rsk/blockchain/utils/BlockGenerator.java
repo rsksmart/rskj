@@ -132,26 +132,15 @@ public class BlockGenerator {
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
-                parent.getHash().getBytes(), // parent hash
-                unclesListHash, // uncle hash
-                parent.getCoinbase().getBytes(),
-                ByteUtils.clone(new Bloom().getData()),
-                difficulty, // difficulty
-                parent.getNumber() + 1,
-                parent.getGasLimit(),
-                parent.getGasUsed(),
-                parent.getTimestamp() + ++count,
-                EMPTY_BYTE_ARRAY,   // extraData
-                null,
-                null,
-                null,
-                EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
-                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                uncles,        // uncle list
-                null,
-                Coin.valueOf(fees)
+                BlockFactory.newHeader(
+                        parent.getHash().getBytes(), unclesListHash, parent.getCoinbase().getBytes(),
+                        ByteUtils.clone(parent.getStateRoot()), BlockChainImpl.calcTxTrie(txs), EMPTY_TRIE_HASH,
+                        ByteUtils.clone(new Bloom().getData()), difficulty, parent.getNumber() + 1,
+                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count, EMPTY_BYTE_ARRAY,
+                        Coin.valueOf(fees), null, null, null, null, uncles.size()
+                ),
+                txs,
+                uncles
         );
 //        return createChildBlock(parent, 0);
     }
@@ -168,26 +157,15 @@ public class BlockGenerator {
         }
 
         return new Block(
-                parent.getHash().getBytes(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
-                coinbase, // coinbase
-                logBloom.getData(), // logs bloom
-                parent.getDifficulty().getBytes(), // difficulty
-                parent.getNumber() + 1,
-                parent.getGasLimit(),
-                parent.getGasUsed(),
-                parent.getTimestamp() + ++count,
-                EMPTY_BYTE_ARRAY,   // extraData
-                null,
-                null,
-                null,
-                EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
-                stateRoot, //EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                null,        // uncle list
-                null,
-                Coin.ZERO
+                BlockFactory.newHeader(
+                        parent.getHash().getBytes(), EMPTY_LIST_HASH, coinbase,
+                        stateRoot, BlockChainImpl.calcTxTrie(txs), EMPTY_TRIE_HASH,
+                        logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
+                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
+                ),
+                txs,
+                null
         );
     }
 
@@ -281,26 +259,15 @@ public class BlockGenerator {
         Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
 
         return new Block(
-                parent.getHash().getBytes(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase().getBytes(), // coinbase
-                logBloom.getData(), // logs bloom
-                parent.getDifficulty().getBytes(), // difficulty
-                number,
-                parent.getGasLimit(),
-                parent.getGasUsed(),
-                parent.getTimestamp() + ++count,
-                EMPTY_BYTE_ARRAY,   // extraData
-                null,
-                null,
-                null,
-                EMPTY_TRIE_HASH,   // receipts root
-                Block.getTxTrie(txs).getHash().getBytes(),  // transaction receipts
-                EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                null,        // uncle list
-                minimumGasPrice.getBytes(),
-                Coin.ZERO
+                BlockFactory.newHeader(
+                        parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
+                        EMPTY_TRIE_HASH, Block.getTxTrie(txs).getHash().getBytes(), EMPTY_TRIE_HASH,
+                        logBloom.getData(), parent.getDifficulty().getBytes(), number,
+                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, minimumGasPrice.getBytes(), 0
+                ),
+                txs,
+                null
         );
     }
 
@@ -314,26 +281,15 @@ public class BlockGenerator {
         }
 
         return new Block(
-                parent.getHash().getBytes(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase().getBytes(), // coinbase
-                logBloom.getData(), // logs bloom
-                parent.getDifficulty().getBytes(), // difficulty
-                parent.getNumber() + 1,
-                parent.getGasLimit(),
-                parent.getGasUsed(),
-                parent.getTimestamp() + ++count,
-                EMPTY_BYTE_ARRAY,   // extraData
-                null,
-                null,
-                null,
-                EMPTY_TRIE_HASH,   // receipts root
-                EMPTY_TRIE_HASH,  // transaction receipts
-                EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                null,       // uncle list
-                Coin.valueOf(10).getBytes(),
-                Coin.ZERO
+                BlockFactory.newHeader(
+                        parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
+                        EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
+                        logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
+                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, Coin.valueOf(10).getBytes(), 0
+                ),
+                txs,
+                null
         );
     }
 

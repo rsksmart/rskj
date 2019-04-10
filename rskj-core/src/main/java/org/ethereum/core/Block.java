@@ -94,39 +94,6 @@ public class Block {
     }
 
     public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-
-        this(
-                header.getParentHash().getBytes(),
-                header.getUnclesHash(),
-                header.getCoinbase().getBytes(),
-                header.getLogsBloom(),
-                header.getDifficulty().getBytes(),
-                header.getNumber(),
-                header.getGasLimit(),
-                header.getGasUsed(),
-                header.getTimestamp(),
-                header.getExtraData(),
-                header.getBitcoinMergedMiningHeader(),
-                header.getBitcoinMergedMiningMerkleProof(),
-                header.getBitcoinMergedMiningCoinbaseTransaction(),
-                header.getReceiptsRoot(),
-                header.getTxTrieRoot(),
-                header.getStateRoot(),
-                transactionsList,
-                uncleList,
-                header.getMinimumGasPrice() == null ? null : header.getMinimumGasPrice().getBytes(),
-                Coin.ZERO
-        );
-    }
-
-    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                 byte[] difficulty, long number, byte[] gasLimit,
-                 long gasUsed, long timestamp, byte[] extraData,
-                 byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                 byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] receiptsRoot,
-                 byte[] transactionsRoot, byte[] stateRoot,
-                 List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, Coin paidFees) {
-
         if (transactionsList == null) {
             this.transactionsList = Collections.emptyList();
         }
@@ -139,17 +106,10 @@ public class Block {
             this.uncleList = new CopyOnWriteArrayList<>();
         }
 
-        this.header = BlockFactory.newHeader(
-                parentHash, unclesHash, coinbase,
-                stateRoot, transactionsRoot, receiptsRoot,
-                logsBloom, difficulty, number,
-                gasLimit, gasUsed, timestamp, extraData, paidFees,
-                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
-                minimumGasPrice, this.uncleList.size()
-        );
+        this.header = header;
 
         byte[] calculatedRoot = getTxTrie(this.transactionsList).getHash().getBytes();
-        this.checkExpectedRoot(transactionsRoot, calculatedRoot);
+        this.checkExpectedRoot(header.getTxTrieRoot(), calculatedRoot);
 
         this.flushRLP();
     }

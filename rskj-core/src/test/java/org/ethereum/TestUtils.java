@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.vm.DataWord;
@@ -103,9 +104,15 @@ public final class TestUtils {
             byte[] newHash = HashUtil.randomHash();
 
             Block block = new Block(
-                    lastHash, newHash,  RskAddress.nullAddress().getBytes(), null, difficutly, lastIndex,
-                    new byte[] {0}, 0, 0, null, null, null, null, null, EMPTY_TRIE_HASH,
-                    HashUtil.randomHash(), null, null, null, Coin.ZERO
+                    BlockFactory.newHeader(
+                            lastHash, newHash, RskAddress.nullAddress().getBytes(),
+                            HashUtil.randomHash(), EMPTY_TRIE_HASH, null,
+                            null, difficutly, lastIndex,
+                            new byte[] {0}, 0, 0, null, Coin.ZERO,
+                            null, null, null, null, 0
+                    ),
+                    null,
+                    null
             );
 
             ++lastIndex;
