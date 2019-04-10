@@ -483,7 +483,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private Coin getTxBaseCost(Transaction tx) {
         Coin gasCost = tx.getValue();
-        if (bestBlock == null || tx.transactionCost(bestBlock, config.getBlockchainConfig()) > 0) {
+        if (bestBlock == null || tx.transactionCost(bestBlock.getNumber(), config.getBlockchainConfig()) > 0) {
             BigInteger gasLimit = new BigInteger(1, tx.getGasLimit());
             gasCost = gasCost.add(tx.getGasPrice().multiply(gasLimit));
         }

@@ -137,7 +137,7 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     public boolean init() {
-        basicTxCost = tx.transactionCost(executionBlock, netConfig);
+        basicTxCost = tx.transactionCost(executionBlock.getNumber(), netConfig);
 
         if (localCall) {
             readyToExecute = true;
@@ -369,7 +369,7 @@ public class TransactionExecutor {
         try {
 
             // Charge basic cost of the transaction
-            program.spendGas(tx.transactionCost(executionBlock, netConfig), "TRANSACTION COST");
+            program.spendGas(tx.transactionCost(executionBlock.getNumber(), netConfig), "TRANSACTION COST");
 
             if (playVm) {
                 vm.play(program);
