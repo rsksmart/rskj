@@ -155,21 +155,16 @@ public class Block {
         }
 
         this.header = BlockFactory.newHeader(
-                parentHash, unclesHash, coinbase, logsBloom,
-                difficulty, number, gasLimit, gasUsed,
-                timestamp, extraData, minimumGasPrice, this.uncleList.size()
+                parentHash, unclesHash, coinbase,
+                stateRoot, transactionsRoot, receiptsRoot,
+                logsBloom, difficulty, number,
+                gasLimit, gasUsed, timestamp, extraData, paidFees,
+                null, null, null,
+                minimumGasPrice, this.uncleList.size()
         );
 
-        this.parsed = true;
-
-        this.header.setPaidFees(paidFees);
-
-        byte[] calculatedRoot = getTxTrie(transactionsList).getHash().getBytes();
-        this.header.setTransactionsRoot(calculatedRoot);
+        byte[] calculatedRoot = getTxTrie(this.transactionsList).getHash().getBytes();
         this.checkExpectedRoot(transactionsRoot, calculatedRoot);
-
-        this.header.setStateRoot(stateRoot);
-        this.header.setReceiptsRoot(receiptsRoot);
 
         this.flushRLP();
     }
