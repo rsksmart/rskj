@@ -70,26 +70,15 @@ public class BlockTest {
         txs.add(remascTx);
 
         Block block =  new Block(
-                PegTestUtils.createHash3().getBytes(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
-                TestUtils.randomAddress().getBytes(),            // coinbase
-                new Bloom().getData(),          // logs bloom
-                BigInteger.ONE.toByteArray(),    // difficulty
-                1,
-                BigInteger.valueOf(4000000).toByteArray(), // gasLimit
-                3000000, // gasUsed
-                100, //timestamp
-                new byte[0],                    // extraData
-                null,
-                null,
-                null,
-                HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                BlockChainImpl.calcTxTrie(txs), // transaction root
-                HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
-                txs,                            // transaction list
-                null,  // uncle list
-                BigInteger.TEN.toByteArray(),
-                Coin.ZERO
+                BlockFactory.newHeader(
+                        PegTestUtils.createHash3().getBytes(), EMPTY_LIST_HASH, TestUtils.randomAddress().getBytes(),
+                        HashUtil.EMPTY_TRIE_HASH, BlockChainImpl.calcTxTrie(txs), HashUtil.EMPTY_TRIE_HASH,
+                        new Bloom().getData(), BigInteger.ONE.toByteArray(), 1,
+                        BigInteger.valueOf(4000000).toByteArray(), 3000000, 100, new byte[0], Coin.ZERO,
+                        null, null, null, BigInteger.TEN.toByteArray(), 0
+                ),
+                txs,
+                null
         );
 
         Block parsedBlock = new Block(block.getEncoded());

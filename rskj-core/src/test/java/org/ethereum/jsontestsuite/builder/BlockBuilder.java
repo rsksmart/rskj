@@ -21,6 +21,7 @@ package org.ethereum.jsontestsuite.builder;
 
 import co.rsk.core.Coin;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 import org.ethereum.jsontestsuite.Env;
@@ -63,24 +64,15 @@ public class BlockBuilder {
     public static Block build(Env env){
 
         Block block = new Block(
-                ByteUtil.EMPTY_BYTE_ARRAY,
-                ByteUtil.EMPTY_BYTE_ARRAY,
-                env.getCurrentCoinbase(),
-                ByteUtil.EMPTY_BYTE_ARRAY,
-                env.getCurrentDifficulty(),
-                byteArrayToLong(env.getCurrentNumber()),
-                env.getCurrentGasLimit(),
-                0L,
-                byteArrayToLong(env.getCurrentTimestamp()),
-                new byte[32],
-                ZERO_BYTE_ARRAY,
-                ZERO_BYTE_ARRAY,
-                ZERO_BYTE_ARRAY,
-                EMPTY_TRIE_HASH,
-                EMPTY_TRIE_HASH,
-                EMPTY_TRIE_HASH,
-                null, null, null,
-                Coin.ZERO
+                BlockFactory.newHeader(
+                        ByteUtil.EMPTY_BYTE_ARRAY, ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentCoinbase(),
+                        EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
+                        ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentDifficulty(), byteArrayToLong(env.getCurrentNumber()),
+                        env.getCurrentGasLimit(), 0L, byteArrayToLong(env.getCurrentTimestamp()),
+                        new byte[32], Coin.ZERO, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, null, 0
+                ),
+                null,
+                null
         );
 
         return block;

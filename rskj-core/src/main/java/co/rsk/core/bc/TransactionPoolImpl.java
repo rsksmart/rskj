@@ -434,26 +434,18 @@ public class TransactionPoolImpl implements TransactionPool {
         Trie txsTrie = new Trie();
 
         // creating fake lightweight calculated block with no hashes calculations
-        return new Block(best.getHash().getBytes(),
-                            emptyUncleHashList, // uncleHash
-                            new byte[20], //coinbase
-                            new byte[32], // log bloom - from tx receipts
-                            best.getDifficulty().getBytes(), // difficulty
-                            best.getNumber() + 1, //number
-                            ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE), // max Gas Limit
-                            0,  // gas used
-                            best.getTimestamp() + 1,  // block time
-                            new byte[0],  // extra data
-                            new byte[0],
-                            new byte[0],
-                            new byte[0],
-                            new byte[32],  // receiptsRoot
-                            txsTrie.getHash().getBytes(),  // TransactionsRoot-
-                            new byte[32],  // stateRoot
-                            Collections.<Transaction>emptyList(), // tx list
-                            Collections.<BlockHeader>emptyList(), // uncle list
-                            ByteUtil.bigIntegerToBytes(BigInteger.ZERO), //minimum gas price
-                            Coin.ZERO);
+        return new Block(
+                BlockFactory.newHeader(
+                        best.getHash().getBytes(), emptyUncleHashList, new byte[20],
+                        new byte[32], txsTrie.getHash().getBytes(), new byte[32],
+                        new byte[32], best.getDifficulty().getBytes(), best.getNumber() + 1,
+                        ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE), 0, best.getTimestamp() + 1,
+                        new byte[0], Coin.ZERO, new byte[0], new byte[0], new byte[0],
+                        ByteUtil.bigIntegerToBytes(BigInteger.ZERO), 0
+                ),
+                Collections.emptyList(),
+                Collections.emptyList()
+        );
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx) {

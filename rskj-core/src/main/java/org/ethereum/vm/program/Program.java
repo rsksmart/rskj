@@ -31,6 +31,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
@@ -1236,12 +1237,15 @@ public class Program {
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
 
             Block executionBlock = new Block(
-                    getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(), EMPTY_BYTE_ARRAY,
-                    getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(),
-                    0, getTimestamp().longValue(), EMPTY_BYTE_ARRAY,
-                    null, null, null,
-                    ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
-                    new ArrayList<>(), new ArrayList<>(), null, Coin.ZERO
+                    BlockFactory.newHeader(
+                            getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(),
+                            ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
+                            ByteUtils.clone(EMPTY_TRIE_HASH), EMPTY_BYTE_ARRAY, getDifficulty().getData(),
+                            getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
+                            EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
+                    ),
+                    new ArrayList<>(),
+                    new ArrayList<>()
             );
 
             contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
