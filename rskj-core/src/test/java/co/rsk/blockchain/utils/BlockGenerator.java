@@ -287,7 +287,7 @@ public class BlockGenerator {
                 parent.getTimestamp() + ++count,
                 EMPTY_BYTE_ARRAY,   // extraData
                 EMPTY_TRIE_HASH,   // receipts root
-                EMPTY_TRIE_HASH,  // transaction receipts
+                Block.getTxTrie(txs).getHash().getBytes(),  // transaction receipts
                 EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list

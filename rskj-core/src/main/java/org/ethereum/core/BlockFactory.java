@@ -38,11 +38,27 @@ public class BlockFactory {
             byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
             byte[] bitcoinMergedMiningCoinbaseTransaction,
             byte[] minimumGasPrice, int uncleCount) {
+        return newHeader(
+                parentHash, unclesHash, coinbase,
+                ByteUtils.clone(EMPTY_TRIE_HASH), null, ByteUtils.clone(EMPTY_TRIE_HASH),
+                logsBloom, difficulty, number, gasLimit, gasUsed, timestamp, extraData, Coin.ZERO,
+                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction, minimumGasPrice, uncleCount
+        );
+    }
+
+    public static BlockHeader newHeader(
+            byte[] parentHash, byte[] unclesHash, byte[] coinbase,
+            byte[] stateRoot, byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, byte[] difficulty, long number,
+            byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
+            Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+            byte[] bitcoinMergedMiningCoinbaseTransaction,
+            byte[] minimumGasPrice, int uncleCount) {
         return new BlockHeader(
                 parentHash, unclesHash, new RskAddress(coinbase),
-                ByteUtils.clone(EMPTY_TRIE_HASH), null, ByteUtils.clone(EMPTY_TRIE_HASH),
+                stateRoot, txTrieRoot, receiptTrieRoot,
                 logsBloom, RLP.parseBlockDifficulty(difficulty), number,
-                gasLimit, gasUsed, timestamp, extraData, Coin.ZERO,
+                gasLimit, gasUsed, timestamp, extraData, paidFees,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 RLP.parseSignedCoinNonNullZero(minimumGasPrice), uncleCount, false
         );
