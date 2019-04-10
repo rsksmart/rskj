@@ -532,6 +532,51 @@ public class VM {
         program.step();
     }
 
+    protected void doSHL() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord word1 = program.stackPop();
+        DataWord word2 = program.stackPop();
+
+        if (isLogEnabled) {
+            hint = word1.value() + " << " + word2.value();
+        }
+
+        program.stackPush(word1.shiftLeft(word2));
+        program.step();
+
+    }
+
+    protected void doSHR() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord word1 = program.stackPop();
+        DataWord word2 = program.stackPop();
+
+        if (isLogEnabled) {
+            hint = word1.value() + " >> " + word2.value();
+        }
+
+        program.stackPush(word1.shiftRight(word2));
+        program.step();
+
+    }
+
+    protected void doSAR() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord word1 = program.stackPop();
+        DataWord word2 = program.stackPop();
+
+        if (isLogEnabled) {
+            hint = word1.value() + " >> " + word2.value();
+        }
+
+        program.stackPush(word1.shiftRightSigned(word2));
+        program.step();
+
+    }
+
     protected void doADDMOD() {
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1619,6 +1664,12 @@ public class VM {
             case OpCodes.OP_ADDMOD: doADDMOD();
             break;
             case OpCodes.OP_MULMOD: doMULMOD();
+            break;
+            case OpCodes.OP_SHL: doSHL();
+            break;
+            case OpCodes.OP_SHR: doSHR();
+            break;
+            case OpCodes.OP_SAR: doSAR();
             break;
             /**
              * SHA3

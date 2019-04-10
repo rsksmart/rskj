@@ -330,6 +330,52 @@ public final class DataWord implements Comparable<DataWord> {
         return valueOf(result.and(MAX_VALUE));
     }
 
+    /**
+     * Shift left, both this and input arg are treated as unsigned
+     * @param arg
+     * @return this << arg
+     */
+    public DataWord shiftLeft(DataWord arg) {
+        if (arg.value().compareTo(BigInteger.valueOf(MAX_POW)) >= 0) {
+            return DataWord.ZERO;
+        }
+
+        BigInteger result = value().shiftLeft(arg.intValueSafe());
+        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)));
+    }
+
+    /**
+     * Shift right, both this and input arg are treated as unsigned
+     * @param arg
+     * @return this >> arg
+     */
+    public DataWord shiftRight(DataWord arg) {
+        if (arg.value().compareTo(BigInteger.valueOf(MAX_POW)) >= 0) {
+            return DataWord.ZERO;
+        }
+
+        BigInteger result = value().shiftRight(arg.intValueSafe());
+        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)));
+    }
+
+    /**
+     * Shift right, this is signed, while input arg is treated as unsigned
+     * @param arg
+     * @return this >> arg
+     */
+    public DataWord shiftRightSigned(DataWord arg) {
+        if (arg.value().compareTo(BigInteger.valueOf(MAX_POW)) >= 0) {
+            if (this.isNegative()) {
+                return valueOf(BigInteger.ONE.negate()); // This should be 0xFFFFF......
+            } else {
+                return DataWord.ZERO;
+            }
+        }
+
+        BigInteger result = sValue().shiftRight(arg.intValueSafe());
+        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)));
+    }
+
     @JsonValue
     @Override
     public String toString() {

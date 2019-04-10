@@ -130,6 +130,19 @@ public class OpCodes {
      */
     static final byte OP_BYTE =0x1a ;
 
+    /**
+     * (0x1b) Bitwise SHIFT LEFT operation
+     */
+    static final byte OP_SHL =0x1b ;
+    /**
+     * (0x1c) Bitwise SHIFT RIGHT operation
+     */
+    static final byte OP_SHR =0x1c ;
+    /**
+     * (0x1d) Bitwise ARITHMETIC SHIFT RIGHT operation
+     */
+    static final byte OP_SAR =0x1d ;
+
     /*  Cryptographic Operations    */
 
     /**
