@@ -21,16 +21,45 @@ package org.ethereum.core;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.remasc.RemascTransaction;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
+    public static Block decodeBlock(byte[] rawData) {
+        return decodeBlock(rawData, true);
+    }
+
+    public static Block decodeBlock(byte[] rawData, boolean sealed) {
+        RLPList block = RLP.decodeList(rawData);
+        if (block.size() != 3) {
+            throw new IllegalArgumentException("A block must have 3 exactly items");
+        }
+
+        RLPList rlpHeader = (RLPList) block.get(0);
+        BlockHeader header = BlockFactory.newHeader(rlpHeader, sealed);
+
+        List<Transaction> transactionList = parseTxs((RLPList) block.get(1));
+
+        RLPList uncleHeadersRlp = (RLPList) block.get(2);
+        List<BlockHeader> uncleList = uncleHeadersRlp.stream()
+                .map(uncleHeader -> BlockFactory.newHeader((RLPList) uncleHeader, sealed))
+                .collect(Collectors.toList());
+
+        return new Block(header, transactionList, uncleList);
+    }
+
     public static BlockHeader newHeader(
             byte[] parentHash, byte[] unclesHash, byte[] coinbase,
             byte[] logsBloom, byte[] difficulty, long number,
@@ -155,5 +184,22 @@ public class BlockFactory {
 
     private static BigInteger parseBigInteger(byte[] bytes) {
         return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
+    }
+
+    private static List<Transaction> parseTxs(RLPList txTransactions) {
+        List<Transaction> parsedTxs = new ArrayList<>();
+
+        for (int i = 0; i < txTransactions.size(); i++) {
+            RLPElement transactionRaw = txTransactions.get(i);
+            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
+
+            if (tx.isRemascTransaction(i, txTransactions.size())) {
+                // It is the remasc transaction
+                tx = new RemascTransaction(transactionRaw.getRLPData());
+            }
+            parsedTxs.add(tx);
+        }
+
+        return Collections.unmodifiableList(parsedTxs);
     }
 }

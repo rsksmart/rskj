@@ -59,7 +59,7 @@ public enum MessageType {
     BLOCK_MESSAGE(2) {
         @Override
         public Message createMessage(RLPList list) {
-            return new BlockMessage(new Block(list.get(0).getRLPData()));
+            return new BlockMessage(BlockFactory.decodeBlock(list.get(0).getRLPData()));
         }
     },
     GET_BLOCK_MESSAGE(3) {
@@ -161,7 +161,7 @@ public enum MessageType {
             byte[] rlpBlock = message.get(0).getRLPData();
 
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            Block block = new Block(rlpBlock);
+            Block block = BlockFactory.decodeBlock(rlpBlock);
 
             return new BlockResponseMessage(id, block);
         }
