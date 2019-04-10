@@ -190,7 +190,6 @@ public class Block {
         Block block = new Block(header);
         block.transactionsList = transactionsList;
         block.uncleList = uncleList;
-        block.seal();
         return block;
     }
 
