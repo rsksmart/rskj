@@ -26,6 +26,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
@@ -53,6 +54,7 @@ import java.util.*;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.*;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -1233,9 +1235,13 @@ public class Program {
             // Propagate the "local call" nature of the originating transaction down to the callee
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
 
-            Block executionBlock = new Block(getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(), EMPTY_BYTE_ARRAY,
-                getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
-                EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
+            Block executionBlock = new Block(
+                    getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(), EMPTY_BYTE_ARRAY,
+                    getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(),
+                    0, getTimestamp().longValue(), EMPTY_BYTE_ARRAY, ByteUtils.clone(EMPTY_TRIE_HASH),
+                    ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
+                    new ArrayList<>(), new ArrayList<>(), null, Coin.ZERO
+            );
 
             contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
         }
