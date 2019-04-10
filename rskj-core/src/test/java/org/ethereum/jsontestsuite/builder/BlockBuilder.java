@@ -75,8 +75,6 @@ public class BlockBuilder {
                 ZERO_BYTE_ARRAY,
                 ZERO_BYTE_ARRAY,
                 ZERO_BYTE_ARRAY,
-                ZERO_BYTE_ARRAY,
-                ZERO_BYTE_ARRAY,
                 EMPTY_TRIE_HASH,
                 EMPTY_TRIE_HASH,
                 EMPTY_TRIE_HASH,
