@@ -206,7 +206,7 @@ public enum MessageType {
                 byte[] txdata = rlpTransactions.get(k).getRLPData();
                 Transaction tx = new ImmutableTransaction(txdata);
 
-                if (Block.isRemascTransaction(tx, k, rlpTransactions.size())) {
+                if (tx.isRemascTransaction(k, rlpTransactions.size())) {
                     tx = new RemascTransaction(txdata);
                 }
 
