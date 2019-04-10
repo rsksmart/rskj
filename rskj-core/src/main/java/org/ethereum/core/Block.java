@@ -142,26 +142,6 @@ public class Block {
                  byte[] receiptsRoot, byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, Coin paidFees) {
 
-        this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
-                gasUsed, timestamp, extraData, transactionsList, uncleList, minimumGasPrice);
-
-        this.header.setPaidFees(paidFees);
-
-        byte[] calculatedRoot = getTxTrie(transactionsList).getHash().getBytes();
-        this.header.setTransactionsRoot(calculatedRoot);
-        this.checkExpectedRoot(transactionsRoot, calculatedRoot);
-
-        this.header.setStateRoot(stateRoot);
-        this.header.setReceiptsRoot(receiptsRoot);
-
-        this.flushRLP();
-    }
-
-    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                 byte[] difficulty, long number, byte[] gasLimit,
-                 long gasUsed, long timestamp, byte[] extraData,
-                 List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
-
         if (transactionsList == null) {
             this.transactionsList = Collections.emptyList();
         }
@@ -181,6 +161,17 @@ public class Block {
         );
 
         this.parsed = true;
+
+        this.header.setPaidFees(paidFees);
+
+        byte[] calculatedRoot = getTxTrie(transactionsList).getHash().getBytes();
+        this.header.setTransactionsRoot(calculatedRoot);
+        this.checkExpectedRoot(transactionsRoot, calculatedRoot);
+
+        this.header.setStateRoot(stateRoot);
+        this.header.setReceiptsRoot(receiptsRoot);
+
+        this.flushRLP();
     }
 
     public static Block fromValidData(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
