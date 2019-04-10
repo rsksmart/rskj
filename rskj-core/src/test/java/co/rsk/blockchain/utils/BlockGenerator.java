@@ -26,7 +26,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
@@ -306,7 +305,7 @@ public class BlockGenerator {
             txs.add(new SimpleRskTransaction(PegTestUtils.createHash3().getBytes()));
         }
 
-        return new SimpleBlock(
+        return new Block(
                 parent.getHash().getBytes(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(), // coinbase
@@ -321,7 +320,9 @@ public class BlockGenerator {
                 EMPTY_TRIE_HASH,  // transaction receipts
                 EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
-                null        // uncle list
+                null,       // uncle list
+                Coin.valueOf(10).getBytes(),
+                Coin.ZERO
         );
     }
 
