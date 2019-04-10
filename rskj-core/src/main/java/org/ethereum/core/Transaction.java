@@ -41,6 +41,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.vm.GasCost;
+import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -524,5 +525,27 @@ public class Transaction {
 
     public void setLocalCallTransaction(boolean isLocalCall) {
         this.isLocalCall = isLocalCall;
+    }
+
+    public boolean isRemascTransaction(int txPosition, int txsSize) {
+        return isLastTx(txPosition, txsSize) && checkRemascAddress() && checkRemascTxZeroValues();
+    }
+
+    private boolean isLastTx(int txPosition, int txsSize) {
+        return txPosition == (txsSize - 1);
+    }
+
+    private boolean checkRemascAddress() {
+        return PrecompiledContracts.REMASC_ADDR.equals(getReceiveAddress());
+    }
+
+    private boolean checkRemascTxZeroValues() {
+        if (null != getData() || null != getSignature()) {
+            return false;
+        }
+
+        return Coin.ZERO.equals(getValue()) &&
+                BigInteger.ZERO.equals(new BigInteger(1, getGasLimit())) &&
+                Coin.ZERO.equals(getGasPrice());
     }
 }
