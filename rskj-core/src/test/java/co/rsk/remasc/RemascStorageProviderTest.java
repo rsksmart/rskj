@@ -84,7 +84,7 @@ public class RemascStorageProviderTest {
 
         while (chain.size() < size) {
             Block newblock = RemascTestRunner.createBlock(this.genesisBlock, parent, PegTestUtils.createHash3(),
-                                                          coinbase, null, null);
+                                                          coinbase, Collections.emptyList(), null);
             chain.add(newblock);
             parent = newblock;
         }
@@ -494,13 +494,13 @@ public class RemascStorageProviderTest {
         Blockchain blockchain = testRunner.getBlockChain();
         List<Block> blocks = new ArrayList<>();
         blocks.add(RemascTestRunner.createBlock(genesisBlock, blockchain.getBestBlock(), PegTestUtils.createHash3(),
-                coinbase, null, gasLimit, gasPrice, 14, txValue, cowKey, null));
+                coinbase, Collections.emptyList(), gasLimit, gasPrice, 14, txValue, cowKey, null));
         blocks.add(RemascTestRunner.createBlock(genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(),
-                coinbase, null, gasLimit, lowGasPrice, 15, txValue, cowKey, null));
+                coinbase, Collections.emptyList(), gasLimit, lowGasPrice, 15, txValue, cowKey, null));
         blocks.add(RemascTestRunner.createBlock(genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(),
-                coinbase, null, gasLimit, gasPrice, 16, txValue, cowKey, null));
+                coinbase, Collections.emptyList(), gasLimit, gasPrice, 16, txValue, cowKey, null));
         blocks.add(RemascTestRunner.createBlock(genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(),
-                coinbase, null, gasLimit, lowGasPrice, 17, txValue, cowKey, null));
+                coinbase, Collections.emptyList(), gasLimit, lowGasPrice, 17, txValue, cowKey, null));
 
         blocks.addAll(createSimpleBlocks(blocks.get(blocks.size()-1),10, coinbase));
 

@@ -30,6 +30,7 @@ import org.ethereum.jsontestsuite.model.TransactionTck;
 import org.ethereum.util.ByteUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
@@ -71,8 +72,8 @@ public class BlockBuilder {
                         env.getCurrentGasLimit(), 0L, byteArrayToLong(env.getCurrentTimestamp()),
                         new byte[32], Coin.ZERO, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, null, 0
                 ),
-                null,
-                null
+                Collections.emptyList(),
+                Collections.emptyList()
         );
 
         return block;

@@ -78,7 +78,7 @@ public class BlockTest {
                         null, null, null, BigInteger.TEN.toByteArray(), 0
                 ),
                 txs,
-                null
+                Collections.emptyList()
         );
 
         Block parsedBlock = BlockFactory.decodeBlock(block.getEncoded());

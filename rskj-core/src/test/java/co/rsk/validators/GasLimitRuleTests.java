@@ -27,6 +27,8 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 
+import java.util.Collections;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -63,6 +65,6 @@ public class GasLimitRuleTests {
                 null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
                 0, null, null, 0);
 
-        return new Block(header);
+        return new Block(header, Collections.emptyList(), Collections.emptyList());
     }
 }

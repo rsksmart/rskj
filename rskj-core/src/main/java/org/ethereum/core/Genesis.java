@@ -79,7 +79,10 @@ public class Genesis extends Block {
                     protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {
                         return RLP.encodeElement(difficulty);
                     }
-                });
+                },
+                Collections.emptyList(),
+                Collections.emptyList()
+        );
         if (!initialAccounts.keySet().containsAll(initialCodes.keySet())) {
             throw new IllegalArgumentException("Code must have an associated account");
         }

@@ -30,15 +30,12 @@ import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The block in Ethereum is the collection of relevant pieces of information
@@ -52,18 +49,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @since 20.05.2014
  */
 public class Block {
-
-    private static final Logger logger = LoggerFactory.getLogger("block");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private BlockHeader header;
 
-    // The methods below make sure we use immutable lists
-    /* Transactions */
     private List<Transaction> transactionsList;
 
-    /* Uncles */
-    private List<BlockHeader> uncleList = new CopyOnWriteArrayList<>();
+    private List<BlockHeader> uncleList;
 
     /* Private */
     private byte[] rlpEncoded;
@@ -71,36 +63,18 @@ public class Block {
     /* Indicates if this block can or cannot be changed */
     private volatile boolean sealed;
 
-    public Block(BlockHeader header) {
-        this.header = header;
-    }
-
     public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-        if (transactionsList == null) {
-            this.transactionsList = Collections.emptyList();
-        }
-        else {
-            this.transactionsList = Collections.unmodifiableList(transactionsList);
-        }
-
-        this.uncleList = uncleList;
-        if (this.uncleList == null) {
-            this.uncleList = new CopyOnWriteArrayList<>();
+        byte[] calculatedRoot = getTxTrie(transactionsList).getHash().getBytes();
+        if (!Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
+            // TODO(mc) this is bad enough that we should evaluate throwing an exception
+            panicProcessor.panic("txroot", String.format(
+                    "Transactions trie root validation failed for block %d %s", header.getNumber(), header.getHash()
+            ));
         }
 
         this.header = header;
-
-        byte[] calculatedRoot = getTxTrie(this.transactionsList).getHash().getBytes();
-        this.checkExpectedRoot(header.getTxTrieRoot(), calculatedRoot);
-
-        this.flushRLP();
-    }
-
-    public static Block fromValidData(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-        Block block = new Block(header);
-        block.transactionsList = transactionsList;
-        block.uncleList = uncleList;
-        return block;
+        this.transactionsList = Collections.unmodifiableList(transactionsList);
+        this.uncleList = Collections.unmodifiableList(uncleList);
     }
 
     public void seal() {
@@ -210,11 +184,11 @@ public class Block {
     }
 
     public List<Transaction> getTransactionsList() {
-        return Collections.unmodifiableList(this.transactionsList);
+        return this.transactionsList;
     }
 
     public List<BlockHeader> getUncleList() {
-        return Collections.unmodifiableList(this.uncleList);
+        return this.uncleList;
     }
 
     public Coin getMinimumGasPrice() {
@@ -256,13 +230,6 @@ public class Block {
         toStringBuff.append("]");
 
         return toStringBuff.toString();
-    }
-
-    private void checkExpectedRoot(byte[] expectedRoot, byte[] calculatedRoot) {
-        if (!Arrays.areEqual(expectedRoot, calculatedRoot)) {
-            logger.error("Transactions trie root validation failed for block #{}", this.header.getNumber());
-            panicProcessor.panic("txroot", String.format("Transactions trie root validation failed for block %d %s", this.header.getNumber(), this.header.getHash()));
-        }
     }
 
     /**

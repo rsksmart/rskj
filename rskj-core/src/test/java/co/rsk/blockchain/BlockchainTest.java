@@ -21,9 +21,7 @@ package co.rsk.blockchain;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
+import org.ethereum.core.*;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -186,7 +184,7 @@ public class BlockchainTest {
 
         Block block2 = blockGenerator.createChildBlock(blockchain.getBestBlock());
         Block block2b = blockGenerator.createBlock(10, 5);
-        Block block3 = Block.fromValidData(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList());
+        Block block3 = new Block(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList());
         ImportResult importResult2 = blockchain.tryToConnect(block3);
         Assert.assertFalse(importResult2.isSuccessful());
     }

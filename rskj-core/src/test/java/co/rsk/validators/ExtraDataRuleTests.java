@@ -24,6 +24,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.Collections;
+
 /**
  * @author martin.medina
  * @since 07.02.2017
@@ -36,7 +38,7 @@ public class ExtraDataRuleTests {
         BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getExtraData()).thenReturn(new byte[32]);
 
-        Block block = new Block(blockHeader);
+        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
@@ -49,7 +51,7 @@ public class ExtraDataRuleTests {
         BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getExtraData()).thenReturn(null);
 
-        Block block = new Block(blockHeader);
+        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
@@ -62,7 +64,7 @@ public class ExtraDataRuleTests {
         BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getExtraData()).thenReturn(new byte[43]);
 
-        Block block = new Block(blockHeader);
+        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
 
         ExtraDataRule rule = new ExtraDataRule(42);
 

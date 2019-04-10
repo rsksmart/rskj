@@ -659,9 +659,9 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        Transaction tx = createTransaction(senderAccount, receiverAccount, BigInteger.valueOf(1000000), BigInteger.ZERO);
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
+        List<Transaction> txs = Collections.singletonList(
+                createTransaction(senderAccount, receiverAccount, BigInteger.valueOf(1000000), BigInteger.ZERO)
+        );
 
         Block block = new BlockGenerator().createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
 

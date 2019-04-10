@@ -29,6 +29,7 @@ import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -117,7 +118,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
 
         for (BlockHeader uncle : uncles) {
 
-            Block blockForUncleHeader = new Block(uncle);
+            Block blockForUncleHeader = new Block(uncle, Collections.emptyList(), Collections.emptyList());
 
             if (!this.validations.isValid(blockForUncleHeader)
                     || !validateParentNumber(uncle, blockNumber)) {
