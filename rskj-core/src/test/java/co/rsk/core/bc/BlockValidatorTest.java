@@ -21,8 +21,8 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -484,8 +484,8 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
 
         Block genesis = blockGenerator.getGenesisBlock();
-        Block uncle1a = blockGenerator.createChildBlock(new SimpleBlock(null, null, TestUtils.randomAddress().getBytes(), null, TEST_DIFFICULTY.getBytes(),
-                0, null, 0L, 0L, new byte[]{}, null, Block.getTxTrie(null).getHash().getBytes(), null, null, null));
+        Block uncle1a = blockGenerator.createChildBlock(new Block(null, null, TestUtils.randomAddress().getBytes(), null, TEST_DIFFICULTY.getBytes(),
+                0, null, 0L, 0L, new byte[]{}, null, Block.getTxTrie(null).getHash().getBytes(), null, null, null, Coin.valueOf(10).getBytes(), Coin.ZERO));
 
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
