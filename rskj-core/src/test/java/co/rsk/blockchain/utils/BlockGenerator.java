@@ -128,18 +128,17 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
-        List<Transaction> txs = new ArrayList<>();
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
                 BlockFactory.newHeader(
                         parent.getHash().getBytes(), unclesListHash, parent.getCoinbase().getBytes(),
-                        ByteUtils.clone(parent.getStateRoot()), BlockChainImpl.calcTxTrie(txs), EMPTY_TRIE_HASH,
+                        ByteUtils.clone(parent.getStateRoot()), EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         ByteUtils.clone(new Bloom().getData()), difficulty, parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count, EMPTY_BYTE_ARRAY,
                         Coin.valueOf(fees), null, null, null, null, uncles.size()
                 ),
-                txs,
+                Collections.emptyList(),
                 uncles
         );
 //        return createChildBlock(parent, 0);
@@ -152,10 +151,6 @@ public class BlockGenerator {
     public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot, byte[] coinbase) {
         Bloom logBloom = new Bloom();
 
-        if (txs == null) {
-            txs = new ArrayList<>();
-        }
-
         return new Block(
                 BlockFactory.newHeader(
                         parent.getHash().getBytes(), EMPTY_LIST_HASH, coinbase,
@@ -165,7 +160,7 @@ public class BlockGenerator {
                         EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
                 ),
                 txs,
-                null
+                Collections.emptyList()
         );
     }
 
@@ -267,7 +262,7 @@ public class BlockGenerator {
                         EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, minimumGasPrice.getBytes(), 0
                 ),
                 txs,
-                null
+                Collections.emptyList()
         );
     }
 
@@ -289,7 +284,7 @@ public class BlockGenerator {
                         EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, Coin.valueOf(10).getBytes(), 0
                 ),
                 txs,
-                null
+                Collections.emptyList()
         );
     }
 

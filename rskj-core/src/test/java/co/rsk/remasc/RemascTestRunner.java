@@ -37,6 +37,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -166,7 +167,7 @@ class RemascTestRunner {
                 RskAddress siblingCoinbase = TestUtils.randomAddress();
                 Block mainchainSiblingParent = mainChainBlocks.get(sibling.getHeight() - 1);
                 Block siblingBlock = createBlock(this.genesis, mainchainSiblingParent, PegTestUtils.createHash3(),
-                        siblingCoinbase, null, minerFee, this.gasPrice, Long.valueOf(i), this.txValue,
+                        siblingCoinbase, Collections.emptyList(), minerFee, this.gasPrice, (long) i, this.txValue,
                         this.txSigningKey, null);
 
                 blockSiblings.add(siblingBlock.getHeader());
@@ -211,8 +212,7 @@ class RemascTestRunner {
     public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, long gasLimit, long txNonce, long txValue,
                                     ECKey txSigningKey) {
-        return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, gasLimit, 1L,  txNonce,
-                           txValue, txSigningKey, null);
+        return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, gasLimit, txNonce, txValue, txSigningKey, null);
     }
 
     public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
@@ -267,8 +267,7 @@ class RemascTestRunner {
             paidFees = paidFees.add(gasPrice.multiply(gasLimit));
         }
 
-        uncles = uncles != null ? uncles : new ArrayList<>();
-        return Block.fromValidData(
+        return new Block(
                 new HardcodedHashBlockHeader(
                         parentBlock, coinbase, genesis, txs, difficultyAsBD, paidFees, uncles, blockHash
                 ),

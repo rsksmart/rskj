@@ -171,7 +171,7 @@ public class BlockToMineBuilder {
             byte[] extraData) {
         final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice, extraData);
         final Block newBlock = new Block(newHeader, txs, uncles);
-        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, null);
+        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, Collections.emptyList());
     }
 
     private BlockHeader createHeader(

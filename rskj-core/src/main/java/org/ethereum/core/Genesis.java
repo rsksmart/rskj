@@ -70,7 +70,7 @@ public class Genesis extends Block {
         super(
                 new BlockHeader(
                         parentHash, unclesHash, new RskAddress(coinbase), ByteUtils.clone(EMPTY_TRIE_HASH),
-                        null, ByteUtils.clone(EMPTY_TRIE_HASH), logsBloom, RLP.parseBlockDifficulty(difficulty),
+                        ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH), logsBloom, RLP.parseBlockDifficulty(difficulty),
                         number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData, Coin.ZERO,
                         bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                         RLP.parseSignedCoinNonNullZero(minimumGasPrice), 0, false) {
@@ -79,7 +79,10 @@ public class Genesis extends Block {
                     protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {
                         return RLP.encodeElement(difficulty);
                     }
-                });
+                },
+                Collections.emptyList(),
+                Collections.emptyList()
+        );
         if (!initialAccounts.keySet().containsAll(initialCodes.keySet())) {
             throw new IllegalArgumentException("Code must have an associated account");
         }

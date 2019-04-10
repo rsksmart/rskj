@@ -1244,8 +1244,8 @@ public class Program {
                             getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
                             EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
                     ),
-                    new ArrayList<>(),
-                    new ArrayList<>()
+                    Collections.emptyList(),
+                    Collections.emptyList()
             );
 
             contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);

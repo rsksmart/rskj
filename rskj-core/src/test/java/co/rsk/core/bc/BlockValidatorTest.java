@@ -40,10 +40,7 @@ import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ajlopez on 04/08/2016.
@@ -492,8 +489,8 @@ public class BlockValidatorTest {
                         null, 0L, 0L, new byte[]{}, Coin.ZERO,
                         null, null, null, Coin.valueOf(10).getBytes(), 0
                 ),
-                null,
-                null
+                Collections.emptyList(),
+                Collections.emptyList()
         ));
 
         List<BlockHeader> uncles1 = new ArrayList<>();
