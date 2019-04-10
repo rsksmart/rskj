@@ -29,6 +29,7 @@ import co.rsk.mine.ParameterizedNetworkUpgradeTest;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -82,7 +83,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         byte[] lastField = b.getBitcoinMergedMiningCoinbaseTransaction(); // last field
         b.flushRLP();// force re-encode
         byte[] encoded = b.getEncoded();
-        Block b2 = new Block(encoded);
+        Block b2 = BlockFactory.decodeBlock(encoded);
         byte[] lastField2 = b2.getBitcoinMergedMiningCoinbaseTransaction(); // last field
         b2.flushRLP();// force re-encode
         byte[] encoded2 = b2.getEncoded();
@@ -142,7 +143,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         new BlockMiner(config).findNonce(bitcoinMergedMiningBlock, targetBI);
 
         // We need to clone to allow modifications
-        Block newBlock = new Block(block.getEncoded()).cloneBlock();
+        Block newBlock = block.cloneBlock();
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 

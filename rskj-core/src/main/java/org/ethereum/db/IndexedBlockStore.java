@@ -29,6 +29,7 @@ import co.rsk.remasc.Sibling;
 import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.mapdb.DB;
@@ -248,7 +249,7 @@ public class IndexedBlockStore implements BlockStore {
             return null;
         }
 
-        return new Block(blockRlp);
+        return BlockFactory.decodeBlock(blockRlp);
     }
 
     @Override

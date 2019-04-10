@@ -21,6 +21,7 @@ package co.rsk;
 import co.rsk.net.BlockProcessResult;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 
@@ -50,7 +51,7 @@ public class BlocksFilePlayer {
 
     private Block readBlock(String line) {
         String[] parts = line.split(",");
-        return new Block(Hex.decode(parts[parts.length - 1]));
+        return BlockFactory.decodeBlock(Hex.decode(parts[parts.length - 1]));
     }
 
     private void connectBlock(Block block) {
