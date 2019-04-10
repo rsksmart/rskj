@@ -23,7 +23,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
-import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.mockito.Mockito;
 
@@ -85,7 +84,7 @@ public class Tx {
             b[i] = bytes.get(i);
         }
         Mockito.when(transaction.getData()).thenReturn(b);
-        Mockito.when(transaction.transactionCost(any(Block.class), eq(config.getBlockchainConfig()))).thenReturn(amount);
+        Mockito.when(transaction.transactionCost(any(Integer.class), eq(config.getBlockchainConfig()))).thenReturn(amount);
 
         return transaction;
     }

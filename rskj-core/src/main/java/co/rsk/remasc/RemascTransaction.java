@@ -20,7 +20,6 @@ package co.rsk.remasc;
 
 import co.rsk.core.RskAddress;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
@@ -60,7 +59,7 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public long transactionCost(Block block, BlockchainNetConfig netConfig) {
+    public long transactionCost(long blockNumber, BlockchainNetConfig netConfig) {
         // RemascTransaction does not pay any fees
         return 0;
     }
