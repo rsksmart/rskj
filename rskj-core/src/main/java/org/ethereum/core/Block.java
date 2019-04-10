@@ -114,7 +114,9 @@ public class Block {
                 header.getStateRoot(),
                 transactionsList,
                 uncleList,
-                header.getMinimumGasPrice() == null ? null : header.getMinimumGasPrice().getBytes());
+                header.getMinimumGasPrice() == null ? null : header.getMinimumGasPrice().getBytes(),
+                Coin.ZERO
+        );
     }
 
     public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
@@ -123,23 +125,6 @@ public class Block {
                  byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                  byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] receiptsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
-                 List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
-
-        this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
-                gasUsed, timestamp, extraData, receiptsRoot, transactionsRoot,
-                stateRoot, transactionsList, uncleList, minimumGasPrice, Coin.ZERO);
-
-        this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
-        this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
-        this.header.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleProof);
-
-        this.flushRLP();
-    }
-
-    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                 byte[] difficulty, long number, byte[] gasLimit,
-                 long gasUsed, long timestamp, byte[] extraData,
-                 byte[] receiptsRoot, byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, Coin paidFees) {
 
         if (transactionsList == null) {
@@ -159,7 +144,7 @@ public class Block {
                 stateRoot, transactionsRoot, receiptsRoot,
                 logsBloom, difficulty, number,
                 gasLimit, gasUsed, timestamp, extraData, paidFees,
-                null, null, null,
+                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 minimumGasPrice, this.uncleList.size()
         );
 

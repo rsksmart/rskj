@@ -452,7 +452,8 @@ public class TransactionPoolImpl implements TransactionPool {
                             new byte[32],  // stateRoot
                             Collections.<Transaction>emptyList(), // tx list
                             Collections.<BlockHeader>emptyList(), // uncle list
-                            ByteUtil.bigIntegerToBytes(BigInteger.ZERO)); //minimum gas price
+                            ByteUtil.bigIntegerToBytes(BigInteger.ZERO), //minimum gas price
+                            Coin.ZERO);
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx) {

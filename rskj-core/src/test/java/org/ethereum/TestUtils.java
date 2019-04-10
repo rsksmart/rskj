@@ -104,7 +104,7 @@ public final class TestUtils {
 
             Block block = new Block(
                     lastHash, newHash,  RskAddress.nullAddress().getBytes(), null, difficutly, lastIndex,
-                    new byte[] {0}, 0, 0, null, null, EMPTY_TRIE_HASH,
+                    new byte[] {0}, 0, 0, null, null, null, null, null, EMPTY_TRIE_HASH,
                     HashUtil.randomHash(), null, null, null, Coin.ZERO
             );
 

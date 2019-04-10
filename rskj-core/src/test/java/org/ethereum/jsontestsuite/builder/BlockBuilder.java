@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite.builder;
 
+import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
@@ -78,7 +79,9 @@ public class BlockBuilder {
                 EMPTY_TRIE_HASH,
                 EMPTY_TRIE_HASH,
                 EMPTY_TRIE_HASH,
-                null, null, null);
+                null, null, null,
+                Coin.ZERO
+        );
 
         return block;
     }
