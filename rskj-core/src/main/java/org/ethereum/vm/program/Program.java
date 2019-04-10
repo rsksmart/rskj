@@ -1235,7 +1235,7 @@ public class Program {
 
             Block executionBlock = new Block(getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(), EMPTY_BYTE_ARRAY,
                 getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
+                EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
 
             contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
         }

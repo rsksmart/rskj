@@ -444,8 +444,6 @@ public class TransactionPoolImpl implements TransactionPool {
                             0,  // gas used
                             best.getTimestamp() + 1,  // block time
                             new byte[0],  // extra data
-                            new byte[0],  // mixHash (to mine)
-                            new byte[0],  // nonce   (to mine)
                             new byte[0],
                             new byte[0],
                             new byte[0],

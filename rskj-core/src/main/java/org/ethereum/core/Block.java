@@ -106,8 +106,6 @@ public class Block {
                 header.getGasUsed(),
                 header.getTimestamp(),
                 header.getExtraData(),
-                null,
-                null,
                 header.getBitcoinMergedMiningHeader(),
                 header.getBitcoinMergedMiningMerkleProof(),
                 header.getBitcoinMergedMiningCoinbaseTransaction(),
@@ -122,14 +120,13 @@ public class Block {
     public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
-                 byte[] mixHash,
-                 byte[] nonce, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+                 byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                  byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] receiptsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
-                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot,
+                gasUsed, timestamp, extraData, receiptsRoot, transactionsRoot,
                 stateRoot, transactionsList, uncleList, minimumGasPrice, Coin.ZERO);
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
@@ -142,12 +139,11 @@ public class Block {
     public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
-                 byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
-                 byte[] transactionsRoot, byte[] stateRoot,
+                 byte[] receiptsRoot, byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, Coin paidFees) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
-                gasUsed, timestamp, extraData, mixHash, nonce, transactionsList, uncleList, minimumGasPrice);
+                gasUsed, timestamp, extraData, transactionsList, uncleList, minimumGasPrice);
 
         this.header.setPaidFees(paidFees);
 
@@ -163,8 +159,7 @@ public class Block {
 
     public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
-                 long gasUsed, long timestamp,
-                 byte[] extraData, byte[] mixHash, byte[] nonce,
+                 long gasUsed, long timestamp, byte[] extraData,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
         if (transactionsList == null) {
