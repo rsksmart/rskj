@@ -216,8 +216,9 @@ public class BlockGenerator {
         return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, parent.getGasLimit());
     }
 
+
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
-                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit) {
+                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase) {
         if (txs == null) {
             txs = new ArrayList<>();
         }
@@ -230,7 +231,7 @@ public class BlockGenerator {
 
         BlockHeader newHeader = new BlockHeader(parent.getHash().getBytes(),
                 unclesListHash,
-                parent.getCoinbase().getBytes(),
+                coinbase.getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 new byte[]{1},
                 parent.getNumber()+1,
@@ -259,6 +260,11 @@ public class BlockGenerator {
         Block newBlock = new Block(newHeader, txs, uncles);
 
         return newBlock;
+    }
+
+    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit) {
+        return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, gasLimit, parent.getCoinbase());
     }
 
     public Block createBlock(int number, int ntxs) {
