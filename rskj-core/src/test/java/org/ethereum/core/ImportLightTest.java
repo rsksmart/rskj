@@ -71,7 +71,8 @@ public class ImportLightTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
+        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, blockFactory, null, listener, 10, 100);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());

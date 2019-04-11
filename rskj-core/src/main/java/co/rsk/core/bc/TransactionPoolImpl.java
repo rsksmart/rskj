@@ -64,6 +64,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private final BlockStore blockStore;
     private final Repository repository;
     private final ReceiptStore receiptStore;
+    private final BlockFactory blockFactory;
     private final ProgramInvokeFactory programInvokeFactory;
     private final EthereumListener listener;
     private final int outdatedThreshold;
@@ -76,26 +77,11 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final TxPendingValidator validator;
 
-    public TransactionPoolImpl(BlockStore blockStore,
-                               ReceiptStore receiptStore,
-                               EthereumListener listener,
-                               ProgramInvokeFactory programInvokeFactory,
-                               Repository repository,
-                               RskSystemProperties config) {
-        this(config,
-                repository,
-                blockStore,
-                receiptStore,
-                programInvokeFactory,
-                listener,
-                config.txOutdatedThreshold(),
-                config.txOutdatedTimeout());
-    }
-
     public TransactionPoolImpl(RskSystemProperties config,
                                Repository repository,
                                BlockStore blockStore,
                                ReceiptStore receiptStore,
+                               BlockFactory blockFactory,
                                ProgramInvokeFactory programInvokeFactory,
                                EthereumListener listener,
                                int outdatedThreshold,
@@ -104,6 +90,7 @@ public class TransactionPoolImpl implements TransactionPool {
         this.blockStore = blockStore;
         this.repository = repository;
         this.receiptStore = receiptStore;
+        this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.listener = listener;
         this.outdatedThreshold = outdatedThreshold;
@@ -435,7 +422,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         // creating fake lightweight calculated block with no hashes calculations
         return new Block(
-                BlockFactory.getInstance().newHeader(
+                blockFactory.newHeader(
                         best.getHash().getBytes(), emptyUncleHashList, new byte[20],
                         new byte[32], txsTrie.getHash().getBytes(), new byte[32],
                         new byte[32], best.getDifficulty().getBytes(), best.getNumber() + 1,

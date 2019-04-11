@@ -66,10 +66,7 @@ import co.rsk.validators.*;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.config.net.RegTestConfig;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.Repository;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
@@ -129,6 +126,7 @@ public class RskContext implements NodeBootstrapper {
 
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
+    private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
     private org.ethereum.db.BlockStore blockStore;
     private co.rsk.net.BlockStore netBlockStore;
@@ -226,15 +224,27 @@ public class RskContext implements NodeBootstrapper {
         return blockchain;
     }
 
+    public BlockFactory getBlockFactory() {
+        if (blockFactory == null) {
+            blockFactory = new BlockFactory(getRskSystemProperties().getBlockchainConfig());
+        }
+
+        return blockFactory;
+    }
+
     public TransactionPool getTransactionPool() {
         if (transactionPool == null) {
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
             transactionPool = new TransactionPoolImpl(
+                    rskSystemProperties,
+                    getRepository(),
                     getBlockStore(),
                     getReceiptStore(),
-                    getCompositeEthereumListener(),
+                    getBlockFactory(),
                     getProgramInvokeFactory(),
-                    getRepository(),
-                    getRskSystemProperties()
+                    getCompositeEthereumListener(),
+                    rskSystemProperties.txOutdatedThreshold(),
+                    rskSystemProperties.txOutdatedTimeout()
             );
         }
 
