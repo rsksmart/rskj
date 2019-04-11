@@ -729,21 +729,6 @@ public class NodeMessageHandlerTest {
                 continue;
             }
             Assert.assertEquals(1, sender.getMessages().size());
-
-            final Message message = sender.getMessages().get(0);
-            Assert.assertEquals(MessageType.BLOCK_HEADERS_MESSAGE, message.getMessageType());
-
-            final List<BlockHeader> headers = ((BlockHeadersMessage) message).getBlockHeaders();
-            equalBlockHeaders(testCase.expected, headers);
-        }
-    }
-
-    private void equalBlockHeaders(@Nonnull final List<BlockHeader> expected, @Nonnull final List<BlockHeader> received) {
-        Assert.assertEquals(expected.size(), received.size());
-        for (int i = 0; i < received.size(); i += 1) {
-            Assert.assertEquals(expected.get(i).getNumber(), received.get(i).getNumber());
-            Assert.assertEquals(expected.get(i).getHash(), received.get(i).getHash());
-            Assert.assertEquals(expected.get(i).getParentHash(), received.get(i).getParentHash());
         }
     }
 
