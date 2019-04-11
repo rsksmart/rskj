@@ -55,7 +55,7 @@ public class DifficultyRuleTest {
     private static BlockHeader getHeader(long difficultyValue) {
         byte[] difficulty = DataWord.valueOf(difficultyValue).getData();
 
-        BlockHeader header = BlockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(), null, difficulty, 0,
+        BlockHeader header = BlockFactory.getInstance().newHeader(null, null, TestUtils.randomAddress().getBytes(), null, difficulty, 0,
                 null, 0,
                 0, null, null, 0);
 

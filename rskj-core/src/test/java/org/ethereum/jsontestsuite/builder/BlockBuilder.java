@@ -65,7 +65,7 @@ public class BlockBuilder {
     public static Block build(Env env){
 
         Block block = new Block(
-                BlockFactory.newHeader(
+                BlockFactory.getInstance().newHeader(
                         ByteUtil.EMPTY_BYTE_ARRAY, ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentCoinbase(),
                         EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentDifficulty(), byteArrayToLong(env.getCurrentNumber()),

@@ -56,7 +56,7 @@ public class ParentNumberRuleTest {
     }
 
     private static BlockHeader getHeader(long number) {
-        BlockHeader header = BlockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(),
+        BlockHeader header = BlockFactory.getInstance().newHeader(null, null, TestUtils.randomAddress().getBytes(),
                 null, BlockDifficulty.ZERO.getBytes(), number, null, 0,
                 0, null, null, 0);
 

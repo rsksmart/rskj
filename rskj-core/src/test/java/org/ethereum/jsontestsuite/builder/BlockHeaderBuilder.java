@@ -39,7 +39,7 @@ public class BlockHeaderBuilder {
 
     public static BlockHeader  build(BlockHeaderTck headerTck){
 
-        BlockHeader header = BlockFactory.newHeader(
+        BlockHeader header = BlockFactory.getInstance().newHeader(
                 parseData(headerTck.getParentHash()),
                 parseData(headerTck.getUncleHash()),
                 parseData(headerTck.getCoinbase()),

@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -38,30 +39,46 @@ import java.util.stream.Collectors;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
-    public static Block decodeBlock(byte[] rawData) {
+    private static BlockFactory INSTANCE;
+
+    private final BlockchainNetConfig blockchainConfig;
+
+    public BlockFactory(BlockchainNetConfig blockchainConfig) {
+        this.blockchainConfig = blockchainConfig;
+    }
+
+    public synchronized static BlockFactory getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new BlockFactory(SystemProperties.DONOTUSE_blockchainConfig);
+        }
+
+        return INSTANCE;
+    }
+
+    public Block decodeBlock(byte[] rawData) {
         return decodeBlock(rawData, true);
     }
 
-    public static Block decodeBlock(byte[] rawData, boolean sealed) {
+    public Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
         if (block.size() != 3) {
             throw new IllegalArgumentException("A block must have 3 exactly items");
         }
 
         RLPList rlpHeader = (RLPList) block.get(0);
-        BlockHeader header = BlockFactory.decodeHeader(rlpHeader, sealed);
+        BlockHeader header = decodeHeader(rlpHeader, sealed);
 
         List<Transaction> transactionList = parseTxs((RLPList) block.get(1));
 
         RLPList uncleHeadersRlp = (RLPList) block.get(2);
         List<BlockHeader> uncleList = uncleHeadersRlp.stream()
-                .map(uncleHeader -> BlockFactory.decodeHeader((RLPList) uncleHeader, sealed))
+                .map(uncleHeader -> decodeHeader((RLPList) uncleHeader, sealed))
                 .collect(Collectors.toList());
 
         return new Block(header, transactionList, uncleList);
     }
 
-    public static BlockHeader newHeader(
+    public BlockHeader newHeader(
             byte[] parentHash, byte[] unclesHash, byte[] coinbase,
             byte[] logsBloom, byte[] difficulty, long number,
             byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
@@ -77,14 +94,14 @@ public class BlockFactory {
         );
     }
 
-    public static BlockHeader newHeader(
+    public BlockHeader newHeader(
             byte[] parentHash, byte[] unclesHash, byte[] coinbase,
             byte[] stateRoot, byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, byte[] difficulty, long number,
             byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
             Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
             byte[] bitcoinMergedMiningCoinbaseTransaction,
             byte[] minimumGasPrice, int uncleCount) {
-        boolean useRskip92Encoding = SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(number).isRskip92();
+        boolean useRskip92Encoding = blockchainConfig.getConfigForBlock(number).isRskip92();
         return new BlockHeader(
                 parentHash, unclesHash, new RskAddress(coinbase),
                 stateRoot, txTrieRoot, receiptTrieRoot,
@@ -95,7 +112,7 @@ public class BlockFactory {
         );
     }
 
-    public static BlockHeader newHeader(
+    public BlockHeader newHeader(
             byte[] parentHash, byte[] unclesHash, byte[] coinbase,
             byte[] logsBloom, byte[] difficulty, long number,
             byte[] gasLimit, long gasUsed, long timestamp,
@@ -108,11 +125,11 @@ public class BlockFactory {
         );
     }
 
-    public static BlockHeader decodeHeader(byte[] encoded) {
+    public BlockHeader decodeHeader(byte[] encoded) {
         return decodeHeader(RLP.decodeList(encoded), true);
     }
 
-    public static BlockHeader decodeHeader(RLPList rlpHeader, boolean sealed) {
+    public BlockHeader decodeHeader(RLPList rlpHeader, boolean sealed) {
         // TODO fix old tests that have other sizes
         if (rlpHeader.size() != 19 && rlpHeader.size() != 16) {
             throw new IllegalArgumentException(String.format(
@@ -175,7 +192,7 @@ public class BlockFactory {
             bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
         }
 
-        boolean useRskip92Encoding = SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(number).isRskip92();
+        boolean useRskip92Encoding = blockchainConfig.getConfigForBlock(number).isRskip92();
         return new BlockHeader(
                 parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, logsBloom, difficulty,

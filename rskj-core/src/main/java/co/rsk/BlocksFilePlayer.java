@@ -51,7 +51,7 @@ public class BlocksFilePlayer {
 
     private Block readBlock(String line) {
         String[] parts = line.split(",");
-        return BlockFactory.decodeBlock(Hex.decode(parts[parts.length - 1]));
+        return BlockFactory.getInstance().decodeBlock(Hex.decode(parts[parts.length - 1]));
     }
 
     private void connectBlock(Block block) {

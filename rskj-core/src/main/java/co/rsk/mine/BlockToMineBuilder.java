@@ -193,7 +193,7 @@ public class BlockToMineBuilder {
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
                                                                         gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
-        final BlockHeader newHeader = BlockFactory.newHeader(
+        final BlockHeader newHeader = BlockFactory.getInstance().newHeader(
                 newBlockParent.getHash().getBytes(),
                 unclesListHash,
                 miningConfig.getCoinbaseAddress().getBytes(),

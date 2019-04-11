@@ -249,7 +249,7 @@ public class IndexedBlockStore implements BlockStore {
             return null;
         }
 
-        return BlockFactory.decodeBlock(blockRlp);
+        return BlockFactory.getInstance().decodeBlock(blockRlp);
     }
 
     @Override
