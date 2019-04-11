@@ -37,9 +37,11 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
-import org.ethereum.jsontestsuite.builder.BlockBuilder;
 import org.ethereum.jsontestsuite.builder.RepositoryBuilder;
+import org.ethereum.jsontestsuite.builder.TransactionBuilder;
+import org.ethereum.jsontestsuite.model.BlockHeaderTck;
 import org.ethereum.jsontestsuite.model.BlockTck;
+import org.ethereum.jsontestsuite.model.TransactionTck;
 import org.ethereum.jsontestsuite.validators.BlockHeaderValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -65,6 +67,7 @@ import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.shortHash;
 import static org.ethereum.json.Utils.parseData;
+import static org.ethereum.json.Utils.parseNumericData;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 import static org.mockito.Mockito.mock;
@@ -78,6 +81,7 @@ public class TestRunner {
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
     private boolean setNewStateRoot;
@@ -103,7 +107,7 @@ public class TestRunner {
 
     public List<String> runTestCase(BlockTestCase testCase) {
         /* 1 */ // Create genesis + init pre state
-        Block genesis = BlockBuilder.build(testCase.getGenesisBlockHeader(), null, null);
+        Block genesis = build(testCase.getGenesisBlockHeader(), null, null);
         Repository repository = RepositoryBuilder.build(testCase.getPre());
 
         IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
@@ -148,9 +152,7 @@ public class TestRunner {
         List<Block> blockTraffic = new ArrayList<>();
 
         for (BlockTck blockTck : testCase.getBlocks()) {
-            Block block = BlockBuilder.build(blockTck.getBlockHeader(),
-                    blockTck.getTransactions(),
-                    blockTck.getUncleHeaders());
+            Block block = build(blockTck.getBlockHeader(), blockTck.getTransactions(), blockTck.getUncleHeaders());
 
             setNewStateRoot = !((blockTck.getTransactions() == null)
                     && (blockTck.getUncleHeaders() == null)
@@ -159,7 +161,7 @@ public class TestRunner {
             Block tBlock = null;
             try {
                 byte[] rlp = parseData(blockTck.getRlp());
-                tBlock = BlockFactory.getInstance().decodeBlock(rlp);
+                tBlock = blockFactory.decodeBlock(rlp);
 
                 ArrayList<String> outputSummary =
                         BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader());
@@ -631,5 +633,57 @@ public class TestRunner {
 
     public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
         return new RepositoryImpl(new Trie(null, true), new HashMapDB(), new TrieStorePoolOnMemory());
+    }
+
+    public Block build(
+            BlockHeaderTck header,
+            List<TransactionTck> transactionsTck,
+            List<BlockHeaderTck> unclesTck) {
+
+        if (header == null) return null;
+
+        List<BlockHeader> uncles = new ArrayList<>();
+        if (unclesTck != null) for (BlockHeaderTck uncle : unclesTck)
+            uncles.add(buildHeader(blockFactory, uncle));
+
+        List<org.ethereum.core.Transaction> transactions = new ArrayList<>();
+        if (transactionsTck != null) for (TransactionTck tx : transactionsTck)
+            transactions.add(TransactionBuilder.build(tx));
+
+        BlockHeader blockHeader = buildHeader(blockFactory, header);
+        return new Block(blockHeader, transactions, uncles);
+    }
+
+
+    private static long getPositiveLong(String a) {
+        if (a.startsWith("0x")) {
+            a = a.substring(2);
+        }
+
+        return Long.parseLong(a,16);
+    }
+
+    private static BlockHeader buildHeader(BlockFactory blockFactory, BlockHeaderTck headerTck) {
+        return blockFactory.newHeader(
+                parseData(headerTck.getParentHash()),
+                parseData(headerTck.getUncleHash()),
+                parseData(headerTck.getCoinbase()),
+                parseData(headerTck.getStateRoot()),
+                parseData(headerTck.getTransactionsTrie()),
+                parseData(headerTck.getReceiptTrie()),
+                parseData(headerTck.getBloom()),
+                parseNumericData(headerTck.getDifficulty()),
+                getPositiveLong(headerTck.getNumber()),
+                parseData(headerTck.getGasLimit()),
+                getPositiveLong(headerTck.getGasUsed()),
+                getPositiveLong(headerTck.getTimestamp()),
+                parseData(headerTck.getExtraData()),
+                Coin.ZERO,
+                null,
+                null,
+                null,
+                null,
+                0
+        );
     }
 }

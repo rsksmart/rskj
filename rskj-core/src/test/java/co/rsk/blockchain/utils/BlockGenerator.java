@@ -53,6 +53,7 @@ public class BlockGenerator {
     private static final Block[] blockCache = new Block[5];
 
     private final DifficultyCalculator difficultyCalculator;
+    private final BlockFactory blockFactory;
     private int count = 0;
     private TestSystemProperties config;
 
@@ -63,6 +64,7 @@ public class BlockGenerator {
     public BlockGenerator(TestSystemProperties config) {
         this.config = config;
         this.difficultyCalculator = new DifficultyCalculator(this.config);
+        this.blockFactory = new BlockFactory(config.getBlockchainConfig());
     }
 
     public Genesis getGenesisBlock() {
@@ -129,7 +131,7 @@ public class BlockGenerator {
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
-                BlockFactory.getInstance().newHeader(
+                blockFactory.newHeader(
                         parent.getHash().getBytes(), unclesListHash, parent.getCoinbase().getBytes(),
                         ByteUtils.clone(parent.getStateRoot()), EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         ByteUtils.clone(new Bloom().getData()), difficulty, parent.getNumber() + 1,
@@ -150,7 +152,7 @@ public class BlockGenerator {
         Bloom logBloom = new Bloom();
 
         return new Block(
-                BlockFactory.getInstance().newHeader(
+                blockFactory.newHeader(
                         parent.getHash().getBytes(), EMPTY_LIST_HASH, coinbase,
                         stateRoot, BlockChainImpl.calcTxTrie(txs), EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
@@ -200,7 +202,7 @@ public class BlockGenerator {
 
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        BlockHeader newHeader = BlockFactory.getInstance().newHeader(parent.getHash().getBytes(),
+        BlockHeader newHeader = blockFactory.newHeader(parent.getHash().getBytes(),
                 unclesListHash,
                 coinbase.getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
@@ -252,7 +254,7 @@ public class BlockGenerator {
         Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
 
         return new Block(
-                BlockFactory.getInstance().newHeader(
+                blockFactory.newHeader(
                         parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
                         EMPTY_TRIE_HASH, Block.getTxTrie(txs).getHash().getBytes(), EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), number,
@@ -274,7 +276,7 @@ public class BlockGenerator {
         }
 
         return new Block(
-                BlockFactory.getInstance().newHeader(
+                blockFactory.newHeader(
                         parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
                         EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,

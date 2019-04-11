@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.json.simple.parser.ParseException;
 import org.junit.FixMethodOrder;
@@ -53,6 +54,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyTest() throws IOException, ParseException {
         config.setBlockchainConfig(new MainNetConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficulty.json", shacommit);
 
@@ -62,8 +64,8 @@ public class GitHubBasicTest {
 
             logger.info("Running {}\n", testCase.getName());
 
-            BlockHeader current = testCase.getCurrent();
-            BlockHeader parent = testCase.getParent();
+            BlockHeader current = testCase.getCurrent(blockFactory);
+            BlockHeader parent = testCase.getParent(blockFactory);
 
             assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
         }
@@ -73,6 +75,7 @@ public class GitHubBasicTest {
     public void runDifficultyFrontierTest() throws IOException, ParseException {
 
         config.setBlockchainConfig(new MainNetConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyFrontier.json", shacommit);
 
@@ -82,8 +85,8 @@ public class GitHubBasicTest {
 
             logger.info("Running {}\n", testCase.getName());
 
-            BlockHeader current = testCase.getCurrent();
-            BlockHeader parent = testCase.getParent();
+            BlockHeader current = testCase.getCurrent(blockFactory);
+            BlockHeader parent = testCase.getParent(blockFactory);
 
             assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
         }
@@ -93,6 +96,7 @@ public class GitHubBasicTest {
     public void runDifficultyHomesteadTest() throws IOException, ParseException {
 
         config.setBlockchainConfig(new GenesisConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyHomestead.json", shacommit);
 
@@ -102,8 +106,8 @@ public class GitHubBasicTest {
 
             logger.info("Running {}\n", testCase.getName());
 
-            BlockHeader current = testCase.getCurrent();
-            BlockHeader parent = testCase.getParent();
+            BlockHeader current = testCase.getCurrent(blockFactory);
+            BlockHeader parent = testCase.getParent(blockFactory);
 
             assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
         }

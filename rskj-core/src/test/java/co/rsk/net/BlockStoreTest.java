@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.TestSystemProperties;
 import com.google.common.collect.Lists;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
@@ -36,6 +37,9 @@ import java.util.List;
  * Created by ajlopez on 5/11/2016.
  */
 public class BlockStoreTest {
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+
     @Test
     public void getUnknownBlockAsNull() {
         BlockStore store = new BlockStore();
@@ -218,7 +222,7 @@ public class BlockStoreTest {
     @Test
     public void saveHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = BlockFactory.getInstance().newHeader(new byte[]{},
+        BlockHeader blockHeader = blockFactory.newHeader(new byte[]{},
                 new byte[]{},
                 TestUtils.randomAddress().getBytes(),
                 new Bloom().getData(),
@@ -242,7 +246,7 @@ public class BlockStoreTest {
     @Test
     public void removeHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = BlockFactory.getInstance().newHeader(new byte[]{},
+        BlockHeader blockHeader = blockFactory.newHeader(new byte[]{},
                 new byte[]{},
                 TestUtils.randomAddress().getBytes(),
                 new Bloom().getData(),

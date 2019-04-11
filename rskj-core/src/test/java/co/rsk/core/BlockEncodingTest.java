@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
@@ -40,6 +41,9 @@ import java.util.List;
  */
 public class BlockEncodingTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
+
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     @Test(expected = ArithmeticException.class)
     public void testBadBlockEncoding1() {
@@ -83,7 +87,7 @@ public class BlockEncodingTest {
         );
 
         // Now decode, and re-encode
-        Block parsedBlock = BlockFactory.getInstance().decodeBlock(fblock.getEncoded());
+        Block parsedBlock = blockFactory.decodeBlock(fblock.getEncoded());
         // must throw java.lang.ArithmeticException
         parsedBlock.getGasLimit(); // forced parse
 

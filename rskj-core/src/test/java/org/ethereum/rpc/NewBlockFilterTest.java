@@ -20,10 +20,8 @@ package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import org.ethereum.core.Block;
-import org.ethereum.jsontestsuite.builder.BlockBuilder;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Created by ajlopez on 17/01/2018.

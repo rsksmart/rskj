@@ -20,6 +20,7 @@ package co.rsk.mine;
 
 import co.rsk.config.TestSystemProperties;
 import org.ethereum.config.Constants;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.validator.ParentGasLimitRule;
 import org.junit.Assert;
@@ -35,6 +36,7 @@ import static org.ethereum.validator.ParentGasLimitRuleTest.getHeader;
 public class GasLimitCalculatorTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     private Constants constants = new Constants();
     private ParentGasLimitRule rule = new ParentGasLimitRule(1024);
 
@@ -180,8 +182,8 @@ public class GasLimitCalculatorTest {
     }
 
     private boolean validByConsensus(BigInteger newGas, BigInteger parentGas) {
-        BlockHeader header = getHeader(newGas.intValue());
-        BlockHeader parent = getHeader(parentGas.intValue());
+        BlockHeader header = getHeader(blockFactory, newGas.intValue());
+        BlockHeader parent = getHeader(blockFactory, parentGas.intValue());
         return rule.validate(header, parent);
     }
 }

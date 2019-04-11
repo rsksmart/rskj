@@ -21,10 +21,9 @@ package co.rsk.validators;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.util.Collections;
 
 /**
  * @author martin.medina
@@ -32,13 +31,19 @@ import java.util.Collections;
  */
 public class ExtraDataRuleTests {
 
+    private BlockHeader blockHeader;
+    private Block block;
+
+    @Before
+    public void setUp() {
+        blockHeader = Mockito.mock(BlockHeader.class);
+        block = Mockito.mock(Block.class);
+        Mockito.when(block.getHeader()).thenReturn(blockHeader);
+    }
+
     @Test
     public void blockWithValidExtraData() {
-
-        BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getExtraData()).thenReturn(new byte[32]);
-
-        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
@@ -47,11 +52,7 @@ public class ExtraDataRuleTests {
 
     @Test
     public void blockWithValidNullExtraData() {
-
-        BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getExtraData()).thenReturn(null);
-
-        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
@@ -60,11 +61,7 @@ public class ExtraDataRuleTests {
 
     @Test
     public void blockWithValidLongerExtraDataThanAccepted() {
-
-        BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getExtraData()).thenReturn(new byte[43]);
-
-        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
 
         ExtraDataRule rule = new ExtraDataRule(42);
 

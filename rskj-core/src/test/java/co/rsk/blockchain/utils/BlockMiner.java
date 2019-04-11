@@ -18,9 +18,11 @@ public class BlockMiner {
     private static long nextNonceToUse = 0L;
 
     private final TestSystemProperties config;
+    private final BlockFactory blockFactory;
 
     public BlockMiner(TestSystemProperties config) {
         this.config = config;
+        this.blockFactory = new BlockFactory(config.getBlockchainConfig());
     }
 
     public Block mineBlock(Block block) {
@@ -35,7 +37,7 @@ public class BlockMiner {
         findNonce(bitcoinMergedMiningBlock, targetBI);
 
         // We need to clone to allow modifications
-        Block newBlock = BlockFactory.getInstance().decodeBlock(block.getEncoded()).cloneBlock();
+        Block newBlock = blockFactory.decodeBlock(block.getEncoded()).cloneBlock();
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 

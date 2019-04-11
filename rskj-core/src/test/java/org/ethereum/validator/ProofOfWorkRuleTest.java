@@ -50,10 +50,12 @@ import static org.junit.Assert.assertTrue;
 public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
 
     private ProofOfWorkRule rule;
+    private BlockFactory blockFactory;
 
     public ProofOfWorkRuleTest(TestSystemProperties config) {
         super(config);
         this.rule = new ProofOfWorkRule(config).setFallbackMiningEnabled(false);
+        this.blockFactory = new BlockFactory(config.getBlockchainConfig());
     }
 
     @Test
@@ -83,7 +85,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         byte[] lastField = b.getBitcoinMergedMiningCoinbaseTransaction(); // last field
         b.flushRLP();// force re-encode
         byte[] encoded = b.getEncoded();
-        Block b2 = BlockFactory.getInstance().decodeBlock(encoded);
+        Block b2 = blockFactory.decodeBlock(encoded);
         byte[] lastField2 = b2.getBitcoinMergedMiningCoinbaseTransaction(); // last field
         b2.flushRLP();// force re-encode
         byte[] encoded2 = b2.getEncoded();

@@ -50,6 +50,7 @@ public class BlockValidatorTest {
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     @Test
     public void validateGenesisBlock() {
@@ -482,7 +483,7 @@ public class BlockValidatorTest {
 
         Block genesis = blockGenerator.getGenesisBlock();
         Block uncle1a = blockGenerator.createChildBlock(new Block(
-                BlockFactory.getInstance().newHeader(
+                blockFactory.newHeader(
                         null, null, TestUtils.randomAddress().getBytes(),
                         null, Block.getTxTrie(null).getHash().getBytes(), null,
                         null, TEST_DIFFICULTY.getBytes(), 0,

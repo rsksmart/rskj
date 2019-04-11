@@ -21,25 +21,31 @@ package co.rsk.validators;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.Collections;
 
 /**
  * Created by martin.medina on 07/02/17.
  */
 public class ValidGasUsedValidatorTest {
 
+    private BlockHeader blockHeader;
+    private Block block;
+
+    @Before
+    public void setUp() {
+        blockHeader = Mockito.mock(BlockHeader.class);
+        block = Mockito.mock(Block.class);
+        Mockito.when(block.getHeader()).thenReturn(blockHeader);
+    }
+
     @Test
     public void blockWithValidGasUsed() {
-
-        BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getGasUsed()).thenReturn(20L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
-
-        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
@@ -48,12 +54,8 @@ public class ValidGasUsedValidatorTest {
 
     @Test
     public void blockWithInvalidGasUsedBiggerThanGasLimit() {
-
-        BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getGasUsed()).thenReturn(120L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
-
-        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
@@ -62,12 +64,8 @@ public class ValidGasUsedValidatorTest {
 
     @Test
     public void blockWithInvalidGasUsedLessThanZero() {
-
-        BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getGasUsed()).thenReturn(-120L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
-
-        Block block = new Block(blockHeader, Collections.emptyList(), Collections.emptyList());
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
