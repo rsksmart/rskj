@@ -104,6 +104,9 @@ public class BlockHeader {
     /* Indicates if this block header cannot be changed */
     private volatile boolean sealed;
 
+    /* Indicates if the block was mined according to RSKIP-92 rules */
+    private boolean useRskip92Encoding;
+
     public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
@@ -130,6 +133,8 @@ public class BlockHeader {
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
         this.sealed = sealed;
+
+        this.useRskip92Encoding = SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(number).isRskip92();
     }
 
     @VisibleForTesting
@@ -276,10 +281,7 @@ public class BlockHeader {
     }
 
     public Keccak256 getHash() {
-        return new Keccak256(HashUtil.keccak256(getEncoded(
-                true,
-                !SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(getNumber()).isRskip92()
-        )));
+        return new Keccak256(HashUtil.keccak256(getEncoded(true, !useRskip92Encoding)));
     }
 
     public byte[] getEncoded() {
