@@ -38,8 +38,6 @@ public class Eth62MessageFactory implements MessageFactory {
         switch (receivedCommand) {
             case STATUS:
                 return new StatusMessage(encoded);
-            case TRANSACTIONS:
-                return new TransactionsMessage(encoded);
             case BLOCK_HEADERS:
                 return new BlockHeadersMessage(encoded);
             case GET_BLOCK_BODIES:

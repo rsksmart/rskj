@@ -35,7 +35,6 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.handler.EthHandler;
 import org.ethereum.net.eth.message.EthMessage;
-import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
 import org.ethereum.sync.SyncState;
@@ -48,7 +47,6 @@ import org.bouncycastle.util.encoders.Hex;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 import static org.ethereum.net.eth.EthVersion.V62;
@@ -257,22 +255,6 @@ public class RskWireProtocol extends EthHandler {
         ethState = EthState.STATUS_SENT;
     }
 
-    @Override
-    public void sendTransaction(List<Transaction> txs) {
-        TransactionsMessage msg = new TransactionsMessage(txs);
-        sendMessage(msg);
-    }
-
-    @Override
-    public void sendNewBlock(Block newBlock) {
-
-    }
-
-    @Override
-    public void sendNewBlockHashes(Block block) {
-
-    }
-
     /*************************
      *    Sync Management    *
      *************************/
@@ -294,16 +276,6 @@ public class RskWireProtocol extends EthHandler {
     @Override
     public boolean hasStatusSucceeded() {
         return ethState == EthState.STATUS_SUCCEEDED;
-    }
-
-    @Override
-    public boolean isHashRetrievingDone() {
-        return syncState == SyncState.DONE_HASH_RETRIEVING;
-    }
-
-    @Override
-    public boolean isHashRetrieving() {
-        return syncState == SyncState.HASH_RETRIEVING;
     }
 
     @Override
@@ -343,17 +315,6 @@ public class RskWireProtocol extends EthHandler {
 
         logger.info("Peer {}: is a bad one, drop", channel.getPeerIdShort());
         disconnect(USELESS_PEER);
-    }
-
-    /*************************
-     *       Logging         *
-     *************************/
-
-    @Override
-    public void logSyncStats() {
-        if(!logger.isInfoEnabled()) {
-            return;
-        }
     }
 
     @Override
