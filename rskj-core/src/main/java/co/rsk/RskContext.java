@@ -427,7 +427,7 @@ public class RskContext implements NodeBootstrapper {
         if (buildInfo == null) {
             try {
                 Properties props = new Properties();
-                InputStream buildInfoFile = RskContext.class.getResourceAsStream("build-info.properties");
+                InputStream buildInfoFile = RskContext.class.getClassLoader().getResourceAsStream("build-info.properties");
                 props.load(buildInfoFile);
                 buildInfo = new BuildInfo(props.getProperty("build.hash"), props.getProperty("build.branch"));
             } catch (IOException | NullPointerException e) {
