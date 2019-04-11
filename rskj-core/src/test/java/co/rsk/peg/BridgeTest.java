@@ -100,6 +100,8 @@ public class BridgeTest {
     private static ECKey fedECPrivateKey;
     private static TestSystemProperties config = new TestSystemProperties();
 
+    private BlockFactory blockFactory;
+
     @BeforeClass
     public static void setUpBeforeClass() {
         config.setBlockchainConfig(new RegTestGenesisConfig());
@@ -112,6 +114,7 @@ public class BridgeTest {
     @Before
     public void resetConfigToRegTest() {
         config.setBlockchainConfig(new RegTestGenesisConfig());
+        blockFactory = new BlockFactory(config.getBlockchainConfig());
     }
 
     @Test
@@ -1907,6 +1910,7 @@ public class BridgeTest {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
         when(mockedConfig.isRskip88()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
+        blockFactory = new BlockFactory(config.getBlockchainConfig());
 
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
         EVMAssembler assembler = new EVMAssembler();
@@ -1934,7 +1938,7 @@ public class BridgeTest {
 
         try {
             // Run the program on the VM
-            Program program = new Program(config.getVmConfig(), precompiledContracts, mock(BlockchainConfig.class), code, invoke, tx);
+            Program program = new Program(config.getVmConfig(), precompiledContracts, blockFactory, mock(BlockchainConfig.class), code, invoke, tx);
             for (int i = 0; i < numOps; i++) {
                 vm.step(program);
             }
@@ -1949,6 +1953,7 @@ public class BridgeTest {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
         when(mockedConfig.isRskip88()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
+        blockFactory = new BlockFactory(config.getBlockchainConfig());
 
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
         EVMAssembler assembler = new EVMAssembler();
@@ -1975,7 +1980,7 @@ public class BridgeTest {
         when(tx.getHash()).thenReturn(new Keccak256("001122334455667788990011223344556677889900112233445566778899aabb"));
 
         // Run the program on the VM
-        Program program = new Program(config.getVmConfig(), precompiledContracts, mock(BlockchainConfig.class), code, invoke, tx);
+        Program program = new Program(config.getVmConfig(), precompiledContracts, blockFactory, mock(BlockchainConfig.class), code, invoke, tx);
         try {
             for (int i = 0; i < numOps; i++) {
                 vm.step(program);

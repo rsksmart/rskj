@@ -89,7 +89,7 @@ public class World {
     public BlockExecutor getBlockExecutor() {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         final TestSystemProperties config = new TestSystemProperties();
-        if (this.blockExecutor == null)
+        if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(this.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                     tx1,
                     txindex1,
@@ -97,6 +97,7 @@ public class World {
                     track1,
                     this.getBlockChain().getBlockStore(),
                     null,
+                    new BlockFactory(config.getBlockchainConfig()),
                     programInvokeFactory,
                     block1,
                     null,
@@ -111,6 +112,7 @@ public class World {
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
             ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+        }
 
         return this.blockExecutor;
     }

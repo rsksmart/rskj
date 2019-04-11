@@ -75,6 +75,7 @@ public class BlockToMineBuilder {
             RskSystemProperties config,
             ReceiptStore receiptStore,
             MinerClock clock,
+            BlockFactory blockFactory,
             StateRootHandler stateRootHandler) {
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
@@ -94,6 +95,7 @@ public class BlockToMineBuilder {
                 track1,
                 blockStore,
                 receiptStore,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,

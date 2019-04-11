@@ -92,6 +92,7 @@ public class ImportLightTest {
                         track1,
                         blockStore,
                         receiptStore,
+                        blockFactory,
                         programInvokeFactory,
                         block1,
                         listener,

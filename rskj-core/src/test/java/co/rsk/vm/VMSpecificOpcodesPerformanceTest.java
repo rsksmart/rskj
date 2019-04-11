@@ -11,6 +11,7 @@ import co.rsk.test.builders.TransactionBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.Account;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -23,7 +24,6 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +37,7 @@ public class VMSpecificOpcodesPerformanceTest {
     private VM vm;
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
@@ -180,7 +181,7 @@ public class VMSpecificOpcodesPerformanceTest {
     }
 
     private Program getProgram(byte[] code, Transaction transaction) {
-        return new Program(vmConfig, precompiledContracts, getBlockchainConfig(), code, invoke, transaction);
+        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(), code, invoke, transaction);
     }
 
     private byte[] compile(String code) {

@@ -130,6 +130,7 @@ public class TestRunner {
                 track1,
                 blockStore,
                 receiptStore,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -256,7 +257,7 @@ public class TestRunner {
             /* 3. Create Program - exec.code */
             /* 4. run VM */
             VM vm = new VM(vmConfig, precompiledContracts);
-            Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), exec.getCode(), programInvoke, null);
+            Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(BlockchainConfig.class), exec.getCode(), programInvoke, null);
             boolean vmDidThrowAnEception = false;
             Exception e = null;
             ThreadMXBean thread;

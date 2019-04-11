@@ -113,6 +113,7 @@ public class Program {
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
+    private final BlockFactory blockFactory;
 
     private boolean isLogEnabled;
     private boolean isGasLogEnabled;
@@ -120,12 +121,14 @@ public class Program {
     public Program(
             VmConfig config,
             PrecompiledContracts precompiledContracts,
+            BlockFactory blockFactory,
             BlockchainConfig blockchainConfig,
             byte[] ops,
             ProgramInvoke programInvoke,
             Transaction transaction) {
         this.config = config;
         this.precompiledContracts = precompiledContracts;
+        this.blockFactory = blockFactory;
         this.blockchainConfig = blockchainConfig;
         this.transaction = transaction;
         isLogEnabled = logger.isInfoEnabled();
@@ -475,7 +478,7 @@ public class Program {
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
-            Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
+            Program program = new Program(config, precompiledContracts, blockFactory, blockchainConfig, programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
         }
@@ -703,7 +706,7 @@ public class Program {
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
-        Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
+        Program program = new Program(config, precompiledContracts, blockFactory, blockchainConfig, programCode, programInvoke, internalTx);
         vm.play(program);
         childResult  = program.getResult();
 
@@ -1234,7 +1237,7 @@ public class Program {
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
 
             Block executionBlock = new Block(
-                    BlockFactory.getInstance().newHeader(
+                    blockFactory.newHeader(
                             getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(),
                             ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
                             ByteUtils.clone(EMPTY_TRIE_HASH), EMPTY_BYTE_ARRAY, getDifficulty().getData(),

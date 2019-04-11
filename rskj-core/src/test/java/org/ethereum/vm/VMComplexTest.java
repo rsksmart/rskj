@@ -23,8 +23,10 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.program.Program;
@@ -36,7 +38,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -52,6 +53,7 @@ public class VMComplexTest {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
@@ -694,6 +696,6 @@ public class VMComplexTest {
     }
 
     private Program getProgram(byte[] code, ProgramInvoke pi) {
-        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, pi, null);
+        return new Program(vmConfig, precompiledContracts, blockFactory, mock(BlockchainConfig.class), code, pi, null);
     }
 }

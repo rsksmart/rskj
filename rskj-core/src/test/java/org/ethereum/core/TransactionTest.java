@@ -57,6 +57,7 @@ import static org.junit.Assert.assertNull;
 public class TransactionTest {
 
     private TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */
     public void test1() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, IOException {
@@ -447,6 +448,7 @@ public class TransactionTest {
                             track,
                             new BlockStoreDummy(),
                             null,
+                            blockFactory,
                             invokeFactory,
                             bestBlock,
                             new EthereumListenerAdapter(),
@@ -721,6 +723,7 @@ public class TransactionTest {
                 blockchain.getRepository(),
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 new ProgramInvokeFactoryImpl(),
                 blockchain.getBestBlock(),
                 new EthereumListenerAdapter(),

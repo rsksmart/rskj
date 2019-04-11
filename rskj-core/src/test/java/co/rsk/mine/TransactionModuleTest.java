@@ -275,6 +275,7 @@ public class TransactionModuleTest {
                         config,
                         receiptStore,
                         minerClock,
+                        blockFactory,
                         new StateRootHandler(config, new HashMapDB(), new HashMap<>())
                 ),
                 minerClock,
@@ -286,7 +287,7 @@ public class TransactionModuleTest {
         MinerClient minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
         EthModuleTransaction transactionModule = null;
 
-        ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(config, repository, blockStore, receiptStore, null);
+        ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(config, repository, blockStore, receiptStore, blockFactory, null);
 
         if (mineInstant) {
             transactionModule = new EthModuleTransactionInstant(config, wallet, transactionPool, minerServer, minerClient, blockchain);
