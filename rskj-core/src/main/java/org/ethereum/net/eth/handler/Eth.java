@@ -19,14 +19,10 @@
 
 package org.ethereum.net.eth.handler;
 
-import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.sync.SyncStatistics;
-
-import java.util.List;
 
 /**
  * Describes interface required by Eth peer clients
@@ -55,21 +51,6 @@ public interface Eth {
     void onShutdown();
 
     /**
-     * Puts sync statistics to log output
-     */
-    void logSyncStats();
-
-    /**
-     * @return true if syncState is DONE_HASH_RETRIEVING, false otherwise
-     */
-    boolean isHashRetrievingDone();
-
-    /**
-     * @return true if syncState is HASH_RETRIEVING, false otherwise
-     */
-    boolean isHashRetrieving();
-
-    /**
      * @return true if syncState is IDLE, false otherwise
      */
     boolean isIdle();
@@ -88,23 +69,6 @@ public interface Eth {
      * Enables pending transaction processing
      */
     void enableTransactions();
-
-    /**
-     * Sends transaction to the wire
-     *
-     * @param tx sending transaction
-     */
-    void sendTransaction(List<Transaction> tx);
-
-    /**
-     * Sends new block to the wire
-     */
-    void sendNewBlock(Block newBlock);
-
-    /**
-     * Sends new block hashes message to the wire
-     */
-    void sendNewBlockHashes(Block block);
 
     /**
      * @return protocol version

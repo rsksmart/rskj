@@ -211,20 +211,8 @@ public class Channel {
 
     // RSK sub protocol
 
-    public boolean isEthCompatible(Channel peer) {
-        return peer != null && peer.getEthVersion().isCompatible(getEthVersion());
-    }
-
-    public Eth getEthHandler() {
-        return eth;
-    }
-
     public boolean hasEthStatusSucceeded() {
         return eth.hasStatusSucceeded();
-    }
-
-    public void logSyncStats() {
-        eth.logSyncStats();
     }
 
     public BigInteger getTotalDifficulty() {
@@ -235,36 +223,8 @@ public class Channel {
         return eth.getStats();
     }
 
-    public boolean isHashRetrievingDone() {
-        return eth.isHashRetrievingDone();
-    }
-
-    public boolean isHashRetrieving() {
-        return eth.isHashRetrieving();
-    }
-
-    public boolean isMaster() {
-        return eth.isHashRetrieving() || eth.isHashRetrievingDone();
-    }
-
     public boolean isIdle() {
         return eth.isIdle();
-    }
-
-    public void prohibitTransactionProcessing() {
-        eth.disableTransactions();
-    }
-
-    public void sendTransaction(List<Transaction> tx) {
-        eth.sendTransaction(tx);
-    }
-
-    public void sendNewBlock(Block block) {
-        eth.sendNewBlock(block);
-    }
-
-    public EthVersion getEthVersion() {
-        return eth.getVersion();
     }
 
     public void dropConnection() {
