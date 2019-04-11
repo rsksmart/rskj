@@ -22,6 +22,7 @@ import co.rsk.asm.EVMAssembler;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
@@ -43,6 +44,7 @@ import java.util.Arrays;
 public class CodeReplaceTest {
 
     private TestSystemProperties config = new TestSystemProperties(TestSystemProperties.CODEREPLACE_PREORCHID);
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     @Test
     public void replaceCodeTest1() throws InterruptedException {
@@ -208,6 +210,7 @@ public class CodeReplaceTest {
                 blockchain.getRepository(),
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 new ProgramInvokeFactoryImpl(),
                 blockchain.getBestBlock(),
                 new EthereumListenerAdapter(),

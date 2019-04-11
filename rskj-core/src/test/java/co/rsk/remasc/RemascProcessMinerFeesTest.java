@@ -75,6 +75,7 @@ public class RemascProcessMinerFeesTest {
     private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
     private BlockChainBuilder blockchainBuilder;
     private StateRootHandler stateRootHandler;
+    private BlockFactory blockFactory;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
@@ -94,6 +95,7 @@ public class RemascProcessMinerFeesTest {
 
     @Before
     public void setup() {
+        blockFactory = new BlockFactory(config.getBlockchainConfig());
         stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
         blockchainBuilder = new BlockChainBuilder()
                 .setStateRootHandler(stateRootHandler)
@@ -131,6 +133,7 @@ public class RemascProcessMinerFeesTest {
                 track,
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block,
                 null,
@@ -193,6 +196,7 @@ public class RemascProcessMinerFeesTest {
                 track,
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block,
                 null,
@@ -269,6 +273,7 @@ public class RemascProcessMinerFeesTest {
                 track,
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block,
                 null,
@@ -387,6 +392,7 @@ public class RemascProcessMinerFeesTest {
                         track,
                         blockchain.getBlockStore(),
                         null,
+                        blockFactory,
                         programInvokeFactory,
                         block,
                         null,
@@ -522,6 +528,7 @@ public class RemascProcessMinerFeesTest {
                 track,
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block,
                 null,
@@ -617,6 +624,7 @@ public class RemascProcessMinerFeesTest {
                         track,
                         blockchain.getBlockStore(),
                         null,
+                        blockFactory,
                         programInvokeFactory,
                         block,
                         null,
@@ -720,6 +728,7 @@ public class RemascProcessMinerFeesTest {
                 track,
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block,
                 null,
@@ -803,6 +812,7 @@ public class RemascProcessMinerFeesTest {
                 track,
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block,
                 null,

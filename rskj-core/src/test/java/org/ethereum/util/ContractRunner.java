@@ -116,6 +116,7 @@ public class ContractRunner {
                 repository,
                 blockStore,
                 receiptStore,
+                new BlockFactory(config.getBlockchainConfig()),
                 new ProgramInvokeFactoryImpl(),
                 blockchain.getBestBlock(),
                 new EthereumListenerAdapter(),

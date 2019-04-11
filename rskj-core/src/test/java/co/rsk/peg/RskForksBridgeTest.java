@@ -357,6 +357,7 @@ public class RskForksBridgeTest {
                 repository,
                 blockChain.getBlockStore(),
                 null,
+                new BlockFactory(beforeBambooProperties.getBlockchainConfig()),
                 new ProgramInvokeFactoryImpl(),
                 blockChain.getBestBlock(),
                 new EthereumListenerAdapter(),

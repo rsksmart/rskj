@@ -112,6 +112,7 @@ public class BlockBuilder {
                     track1,
                     blockChain.getBlockStore(),
                     null,
+                    new BlockFactory(config.getBlockchainConfig()),
                     programInvokeFactory,
                     block1,
                     null,

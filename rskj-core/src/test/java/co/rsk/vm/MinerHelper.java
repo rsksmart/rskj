@@ -46,6 +46,7 @@ public class MinerHelper {
     private final Blockchain blockchain;
     private final Repository repository;
     private final GasLimitCalculator gasLimitCalculator;
+    private final BlockFactory blockFactory;
 
     private byte[] latestStateRootHash;
     private long totalGasUsed;
@@ -56,6 +57,7 @@ public class MinerHelper {
         this.repository = repository;
         this.blockchain = blockchain;
         this.gasLimitCalculator = new GasLimitCalculator(config);
+        this.blockFactory = new BlockFactory(config.getBlockchainConfig());
     }
 
     public void processBlock( Block block, Block parent) {
@@ -95,7 +97,7 @@ public class MinerHelper {
                     track,
                     null,
                     null,
-
+                    blockFactory,
                     null,
                     block,
                     new EthereumListenerAdapter(),

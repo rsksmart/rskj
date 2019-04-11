@@ -74,6 +74,7 @@ public class RskTestFactory extends RskTestContext {
                     track,
                     getBlockStore(),
                     getReceiptStore(),
+                    getBlockFactory(),
                     getProgramInvokeFactory(),
                     block,
                     getCompositeEthereumListener(),

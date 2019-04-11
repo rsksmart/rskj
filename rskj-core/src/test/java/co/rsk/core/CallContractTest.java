@@ -37,6 +37,7 @@ import java.math.BigInteger;
 public class CallContractTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
+    private static final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     @Test
     public void callContractReturningOne() {
@@ -72,6 +73,7 @@ public class CallContractTest {
                     repository,
                     null,
                     null,
+                    blockFactory,
                     new ProgramInvokeFactoryImpl(),
                     bestBlock,
                     new EthereumListenerAdapter(),

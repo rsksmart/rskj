@@ -145,6 +145,7 @@ public class TransactionPoolImpl implements TransactionPool {
                     repository,
                     blockStore,
                     receiptStore,
+                    blockFactory,
                     programInvokeFactory,
                     createFakePendingBlock(bestBlock),
                     new EthereumListenerAdapter(),

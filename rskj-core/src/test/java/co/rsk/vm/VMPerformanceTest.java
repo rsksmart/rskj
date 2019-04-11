@@ -24,6 +24,7 @@ import co.rsk.helpers.PerformanceTestConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.PrecompiledContracts;
@@ -56,6 +57,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class VMPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private final BlockchainConfig blockchainConfig = new RegTestGenesisConfig();
@@ -259,7 +261,7 @@ public class VMPerformanceTest {
 
         byte[] newCode = getClonedCode(code,cloneCount);
 
-        program = new Program(vmConfig, precompiledContracts, blockchainConfig, newCode, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, newCode, invoke, null);
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -488,7 +490,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(vmConfig, precompiledContracts, blockchainConfig, code, invoke, null);
+        program =new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, code, invoke, null);
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -599,7 +601,7 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     public void testRunTime(byte[] code, String s_expected) {
-        program = new Program(vmConfig, precompiledContracts, blockchainConfig, code, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, code, invoke, null);
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
         startMeasure();

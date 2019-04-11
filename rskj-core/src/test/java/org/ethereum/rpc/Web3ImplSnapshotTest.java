@@ -36,8 +36,8 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
@@ -45,7 +45,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Clock;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -56,11 +55,15 @@ public class Web3ImplSnapshotTest {
     private static final TestSystemProperties config = new TestSystemProperties();
     private RskTestFactory factory;
     private Blockchain blockchain;
+    private BlockFactory blockFactory;
+    private StateRootHandler stateRootHandler;
 
     @Before
     public void setUp() {
-        factory = new RskTestFactory();
+        factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
+        blockFactory = factory.getBlockFactory();
+        stateRootHandler = factory.getStateRootHandler();
     }
 
     @Test
@@ -214,7 +217,8 @@ public class Web3ImplSnapshotTest {
                         config,
                         null,
                         clock,
-                        new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()

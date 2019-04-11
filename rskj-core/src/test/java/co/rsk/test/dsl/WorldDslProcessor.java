@@ -244,6 +244,7 @@ public class WorldDslProcessor {
                                                                track1,
                     world.getBlockChain().getBlockStore(),
                     null,
+                    new BlockFactory(config.getBlockchainConfig()),
                     programInvokeFactory,
                                                                block1,
                     null,

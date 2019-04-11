@@ -32,7 +32,6 @@ import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.*;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
@@ -47,7 +46,10 @@ import org.mockito.Mockito;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.time.Clock;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
@@ -62,6 +64,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     private Repository repository;
     private BlockStore blockStore;
     private TransactionPool transactionPool;
+    private BlockFactory blockFactory;
+    private StateRootHandler stateRootHandler;
 
     public MinerServerTest(TestSystemProperties config) {
         super(config);
@@ -75,6 +79,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         repository = factory.getRepository();
         blockStore = factory.getBlockStore();
         transactionPool = factory.getTransactionPool();
+        blockFactory = factory.getBlockFactory();
+        stateRootHandler = factory.getStateRootHandler();
     }
 
     @Test
@@ -121,7 +127,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -163,7 +170,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -229,7 +237,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -280,7 +289,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -334,7 +344,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -395,7 +406,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -448,7 +460,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -506,7 +519,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -546,7 +560,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -586,7 +601,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -630,7 +646,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         config,
                         null,
                         clock,
-                        getStateRootHandler()
+                        blockFactory,
+                        stateRootHandler
                 ),
                 clock,
                 ConfigUtils.getDefaultMiningConfig()
@@ -717,11 +734,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 config,
                 Mockito.mock(ReceiptStore.class),
                 Mockito.mock(MinerClock.class),
-                getStateRootHandler()
+                blockFactory,
+                stateRootHandler
         );
-    }
-
-    private StateRootHandler getStateRootHandler() {
-        return new StateRootHandler(config, new HashMapDB(), new HashMap<>());
     }
 }

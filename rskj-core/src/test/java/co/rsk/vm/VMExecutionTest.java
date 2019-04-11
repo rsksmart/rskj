@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -45,6 +46,7 @@ public class VMExecutionTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     private ProgramInvokeMockImpl invoke;
     private BytecodeCompiler compiler;
 
@@ -245,7 +247,7 @@ public class VMExecutionTest {
     @Test
     public void dupnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST DUPN 0x5b 0x5b");
-        Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(BlockchainConfig.class), code, invoke, null);
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -260,7 +262,7 @@ public class VMExecutionTest {
     @Test
     public void swapnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST SWAPN 0x5b 0x5b");
-        Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(BlockchainConfig.class), code, invoke, null);
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -359,7 +361,7 @@ public class VMExecutionTest {
     private Program executeCode(byte[] code, int nsteps) {
         VM vm = new VM(vmConfig, precompiledContracts);
 
-        Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(BlockchainConfig.class), code, invoke, null);
 
         for (int k = 0; k < nsteps; k++)
             vm.step(program);

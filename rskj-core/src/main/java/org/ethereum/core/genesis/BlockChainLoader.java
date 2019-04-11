@@ -63,6 +63,7 @@ public class BlockChainLoader {
     private final TransactionPool transactionPool;
     private final EthereumListener listener;
     private final BlockValidator blockValidator;
+    private final BlockFactory blockFactory;
     private final Genesis genesis;
     private final StateRootHandler stateRootHandler;
 
@@ -74,6 +75,7 @@ public class BlockChainLoader {
             TransactionPool transactionPool,
             EthereumListener listener,
             BlockValidator blockValidator,
+            BlockFactory blockFactory,
             Genesis genesis,
             StateRootHandler stateRootHandler) {
 
@@ -84,6 +86,7 @@ public class BlockChainLoader {
         this.transactionPool = transactionPool;
         this.listener = listener;
         this.blockValidator = blockValidator;
+        this.blockFactory = blockFactory;
         this.genesis = genesis;
         this.stateRootHandler = stateRootHandler;
     }
@@ -108,6 +111,7 @@ public class BlockChainLoader {
                             track1,
                             blockStore,
                             receiptStore,
+                            blockFactory,
                             programInvokeFactory,
                             block1,
                             listener,

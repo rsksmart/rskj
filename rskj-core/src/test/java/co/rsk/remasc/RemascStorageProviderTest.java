@@ -506,6 +506,7 @@ public class RemascStorageProviderTest {
 
         Repository repository = blockchain.getRepository();
         BlockStore blockStore = blockchain.getBlockStore();
+        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockExecutor blockExecutor = new BlockExecutor(repository, (tx, txindex, coinbase1, track, block, totalGasUsed) -> new TransactionExecutor(
                 tx,
@@ -514,6 +515,7 @@ public class RemascStorageProviderTest {
                 track,
                 blockStore,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block,
                 null,

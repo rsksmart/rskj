@@ -14,7 +14,6 @@ import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.core.*;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.util.RskTestFactory;
@@ -30,7 +29,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Clock;
-import java.util.HashMap;
 
 /**
  * Created by SerAdmin on 1/3/2018.
@@ -45,17 +43,21 @@ public class MainNetMinerTest {
     private BlockStore blockStore;
     private NodeBlockProcessor blockProcessor;
     private Repository repository;
+    private BlockFactory blockFactory;
+    private StateRootHandler stateRootHandler;
 
     @Before
     public void setup() {
-        RskTestFactory factory = new RskTestFactory();
         config = new TestSystemProperties();
         config.setBlockchainConfig(new FallbackMainNetConfig());
+        RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
         blockStore = factory.getBlockStore();
         blockProcessor = factory.getNodeBlockProcessor();
         repository = factory.getRepository();
+        blockFactory = factory.getBlockFactory();
+        stateRootHandler = factory.getStateRootHandler();
     }
 
     /*
@@ -205,7 +207,8 @@ public class MainNetMinerTest {
                 config,
                 null,
                 clock,
-                new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                blockFactory,
+                stateRootHandler
         );
     }
 }
