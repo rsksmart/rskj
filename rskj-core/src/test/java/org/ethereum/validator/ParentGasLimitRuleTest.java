@@ -80,7 +80,7 @@ public class ParentGasLimitRuleTest {
     public static BlockHeader getHeader(long gasLimitValue) {
         byte[] gasLimit = DataWord.valueOf(gasLimitValue).getData();
 
-        BlockHeader header = BlockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(),
+        BlockHeader header = BlockFactory.getInstance().newHeader(null, null, TestUtils.randomAddress().getBytes(),
                 null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
                 0, null, null, 0);
 

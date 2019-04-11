@@ -83,7 +83,7 @@ public class BlockEncodingTest {
         );
 
         // Now decode, and re-encode
-        Block parsedBlock = BlockFactory.decodeBlock(fblock.getEncoded());
+        Block parsedBlock = BlockFactory.getInstance().decodeBlock(fblock.getEncoded());
         // must throw java.lang.ArithmeticException
         parsedBlock.getGasLimit(); // forced parse
 

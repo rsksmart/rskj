@@ -94,7 +94,7 @@ public class DifficultyTestCase {
     }
 
     public BlockHeader getCurrent() {
-        return BlockFactory.newHeader(
+        return BlockFactory.getInstance().newHeader(
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY, null,
                 org.ethereum.json.Utils.parseLong(currentBlockNumber), new byte[] {0}, 0,
                 org.ethereum.json.Utils.parseLong(currentTimestamp),
@@ -102,7 +102,7 @@ public class DifficultyTestCase {
     }
 
     public BlockHeader getParent() {
-        return BlockFactory.newHeader(
+        return BlockFactory.getInstance().newHeader(
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY,
                 parseDifficulty(parentDifficulty).toByteArray(),
                 org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1, new byte[] {0}, 0,

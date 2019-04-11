@@ -218,7 +218,7 @@ public class BlockStoreTest {
     @Test
     public void saveHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = BlockFactory.newHeader(new byte[]{},
+        BlockHeader blockHeader = BlockFactory.getInstance().newHeader(new byte[]{},
                 new byte[]{},
                 TestUtils.randomAddress().getBytes(),
                 new Bloom().getData(),
@@ -242,7 +242,7 @@ public class BlockStoreTest {
     @Test
     public void removeHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = BlockFactory.newHeader(new byte[]{},
+        BlockHeader blockHeader = BlockFactory.getInstance().newHeader(new byte[]{},
                 new byte[]{},
                 TestUtils.randomAddress().getBytes(),
                 new Bloom().getData(),

@@ -70,7 +70,7 @@ public class BlockTest {
         txs.add(remascTx);
 
         Block block =  new Block(
-                BlockFactory.newHeader(
+                BlockFactory.getInstance().newHeader(
                         PegTestUtils.createHash3().getBytes(), EMPTY_LIST_HASH, TestUtils.randomAddress().getBytes(),
                         HashUtil.EMPTY_TRIE_HASH, BlockChainImpl.calcTxTrie(txs), HashUtil.EMPTY_TRIE_HASH,
                         new Bloom().getData(), BigInteger.ONE.toByteArray(), 1,
@@ -81,7 +81,7 @@ public class BlockTest {
                 Collections.emptyList()
         );
 
-        Block parsedBlock = BlockFactory.decodeBlock(block.getEncoded());
+        Block parsedBlock = BlockFactory.getInstance().decodeBlock(block.getEncoded());
         Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(0).getClass());
         Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(1).getClass());
         Assert.assertEquals(RemascTransaction.class, parsedBlock.getTransactionsList().get(2).getClass());

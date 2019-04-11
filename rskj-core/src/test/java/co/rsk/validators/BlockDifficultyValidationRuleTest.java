@@ -47,7 +47,7 @@ public class BlockDifficultyValidationRuleTest {
     }
 
     private BlockHeader getEmptyHeader(BlockDifficulty difficulty, long blockTimestamp, int uCount) {
-        BlockHeader header = BlockFactory.newHeader(null, null,
+        BlockHeader header = BlockFactory.getInstance().newHeader(null, null,
                 TestUtils.randomAddress().getBytes(), null, difficulty.getBytes(), 0,
                 null, 0,
                 blockTimestamp, null, null, uCount);

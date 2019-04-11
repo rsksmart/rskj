@@ -88,7 +88,7 @@ public class Block {
 
     // Clone this block allowing modifications
     public Block cloneBlock() {
-        return BlockFactory.decodeBlock(this.getEncoded(), false);
+        return BlockFactory.getInstance().decodeBlock(this.getEncoded(), false);
     }
 
     // TODO(mc) remove this method and create a new ExecutedBlock class or similar

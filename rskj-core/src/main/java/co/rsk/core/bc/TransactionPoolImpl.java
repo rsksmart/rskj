@@ -435,7 +435,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         // creating fake lightweight calculated block with no hashes calculations
         return new Block(
-                BlockFactory.newHeader(
+                BlockFactory.getInstance().newHeader(
                         best.getHash().getBytes(), emptyUncleHashList, new byte[20],
                         new byte[32], txsTrie.getHash().getBytes(), new byte[32],
                         new byte[32], best.getDifficulty().getBytes(), best.getNumber() + 1,

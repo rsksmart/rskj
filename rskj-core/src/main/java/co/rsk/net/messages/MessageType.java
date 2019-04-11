@@ -59,7 +59,7 @@ public enum MessageType {
     BLOCK_MESSAGE(2) {
         @Override
         public Message createMessage(RLPList list) {
-            return new BlockMessage(BlockFactory.decodeBlock(list.get(0).getRLPData()));
+            return new BlockMessage(BlockFactory.getInstance().decodeBlock(list.get(0).getRLPData()));
         }
     },
     GET_BLOCK_MESSAGE(3) {
@@ -137,7 +137,7 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
             List<BlockHeader> headers = rlpHeaders.stream()
-                    .map(el -> BlockFactory.decodeHeader(el.getRLPData()))
+                    .map(el -> BlockFactory.getInstance().decodeHeader(el.getRLPData()))
                     .collect(Collectors.toList());
 
             return new BlockHeadersResponseMessage(id, headers);
@@ -161,7 +161,7 @@ public enum MessageType {
             byte[] rlpBlock = message.get(0).getRLPData();
 
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            Block block = BlockFactory.decodeBlock(rlpBlock);
+            Block block = BlockFactory.getInstance().decodeBlock(rlpBlock);
 
             return new BlockResponseMessage(id, block);
         }
@@ -214,7 +214,7 @@ public enum MessageType {
             }
 
             List<BlockHeader> uncles = rlpUncles.stream()
-                    .map(el -> BlockFactory.decodeHeader(el.getRLPData()))
+                    .map(el -> BlockFactory.getInstance().decodeHeader(el.getRLPData()))
                     .collect(Collectors.toList());
 
             return new BodyResponseMessage(id, transactions, uncles);

@@ -142,7 +142,7 @@ public class EthashTestCase {
 
     public BlockHeader getBlockHeader() {
         ArrayList<RLPElement> rlp = RLP.decode2(decode(header));
-        return BlockFactory.newHeader((RLPList) rlp.get(0), true);
+        return BlockFactory.getInstance().newHeader((RLPList) rlp.get(0), true);
     }
 
     public byte[] getResultBytes() {

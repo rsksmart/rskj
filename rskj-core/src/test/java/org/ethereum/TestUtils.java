@@ -101,7 +101,7 @@ public final class TestUtils {
             byte[] newHash = HashUtil.randomHash();
 
             Block block = new Block(
-                    BlockFactory.newHeader(
+                    BlockFactory.getInstance().newHeader(
                             lastHash, newHash, RskAddress.nullAddress().getBytes(),
                             HashUtil.randomHash(), EMPTY_TRIE_HASH, null,
                             null, difficutly, lastIndex,

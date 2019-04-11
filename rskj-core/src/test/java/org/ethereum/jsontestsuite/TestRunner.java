@@ -159,7 +159,7 @@ public class TestRunner {
             Block tBlock = null;
             try {
                 byte[] rlp = parseData(blockTck.getRlp());
-                tBlock = BlockFactory.decodeBlock(rlp);
+                tBlock = BlockFactory.getInstance().decodeBlock(rlp);
 
                 ArrayList<String> outputSummary =
                         BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader());
