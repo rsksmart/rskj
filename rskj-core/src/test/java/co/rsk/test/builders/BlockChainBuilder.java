@@ -149,6 +149,8 @@ public class BlockChainBuilder {
             listener = new BlockExecutorTest.SimpleEthereumListener();
         }
 
+        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
 
         validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
@@ -156,7 +158,7 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, blockFactory, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(this.repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
