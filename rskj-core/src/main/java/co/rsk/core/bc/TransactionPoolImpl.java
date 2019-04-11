@@ -248,7 +248,7 @@ public class TransactionPoolImpl implements TransactionPool {
         transactionTimes.put(hash, timestampSeconds);
 
         if (!(tx instanceof RemascTransaction)) {
-            tx.computeSenderTxBroadcasted(signatureCache);
+            tx.computeSenderOfTransactionBroadcasted(signatureCache);
         }
 
         BigInteger currentNonce = getPendingState().getNonce(tx.getSender());

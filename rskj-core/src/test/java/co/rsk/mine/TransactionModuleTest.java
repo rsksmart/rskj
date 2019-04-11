@@ -297,7 +297,7 @@ public class TransactionModuleTest {
         MinerClient minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
         EthModuleTransaction transactionModule = null;
 
-        ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(config, repository, blockStore, receiptStore, blockFactory, null);
+        ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(config, repository, blockStore, receiptStore, blockFactory, null, signatureCache);
 
         if (mineInstant) {
             transactionModule = new EthModuleTransactionInstant(config, wallet, transactionPool, minerServer, minerClient, blockchain);

@@ -453,7 +453,7 @@ public class TransactionTest {
                             invokeFactory,
                             bestBlock,
                             new EthereumListenerAdapter(),
-                            new SignatureCache(),
+                            signatureCache,
                             0,
                             config.getVmConfig(),
                             config.getBlockchainConfig(),
@@ -597,7 +597,7 @@ public class TransactionTest {
         }
 
          */
-
+        SignatureCache signatureCache = new SignatureCache();
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
@@ -609,7 +609,6 @@ public class TransactionTest {
         String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"homicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"multipleHomicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"payable\":true,\"type\":\"fallback\"}]";
 
         Transaction tx = createTx(blockchain, sender, new byte[0], Hex.decode(code));
-        SignatureCache signatureCache = new SignatureCache();
         executeTransaction(blockchain, tx, signatureCache);
 
         byte[] contractAddress = tx.getContractAddress().getBytes();

@@ -1,9 +1,6 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.SignatureCache;
 import co.rsk.core.bc.*;
 
 import co.rsk.test.builders.AccountBuilder;
@@ -47,7 +44,7 @@ public class SignatureCacheTest {
         genesis = BlockChainImplTest.getGenesisBlock(blockChain);
         blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
         signatureCache = factory.getSignatureCache();
-        transactionPool = new TransactionPoolImpl(config, factory.getRepository(), null, null, signatureCache, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
+        transactionPool = new TransactionPoolImpl(config, factory.getRepository(), null, null, factory.getBlockFactory(), signatureCache,new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
         transactionPool.processBest(blockChain.getBestBlock());
         builder = new BlockBuilder(blockChain);
         accBuilder = new AccountBuilder(blockChain);

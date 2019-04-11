@@ -550,11 +550,11 @@ public class Transaction {
                 Coin.ZERO.equals(getGasPrice());
     }
 
-    public void computeSenderTxBroadcasted(SignatureCache signatureCache) {
+    public void computeSenderOfTransactionBroadcasted(SignatureCache signatureCache) {
         sender = signatureCache.getSenderCacheInBroadcastTx(getRawHash().getBytes(), getSignature());
     }
 
-    public void computeSenderTxInBlock(SignatureCache signatureCache) {
+    public void computeSenderOfTransactionInBlock(SignatureCache signatureCache) {
         sender = signatureCache.getSenderCacheInBlock(getRawHash().getBytes(), getSignature());
     }
 

@@ -307,7 +307,8 @@ public class RskContext implements NodeBootstrapper {
                     getBlockStore(),
                     getReceiptStore(),
                     getBlockFactory(),
-                    getProgramInvokeFactory()
+                    getProgramInvokeFactory(),
+                    getSignatureCache()
             );
         }
 

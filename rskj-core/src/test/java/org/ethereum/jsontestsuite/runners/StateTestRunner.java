@@ -63,7 +63,7 @@ public class StateTestRunner {
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
-    private final SignatureCache signatureCache = new SignatureCache();
+    protected final SignatureCache signatureCache = new SignatureCache();
 
     public static List<String> run(StateTestCase stateTestCase2) {
         return new StateTestRunner(stateTestCase2).runImpl();

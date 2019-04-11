@@ -40,6 +40,7 @@ public class ReversibleTransactionExecutor {
     private final ReceiptStore receiptStore;
     private final ProgramInvokeFactory programInvokeFactory;
     private final BlockFactory blockFactory;
+    private final SignatureCache signatureCache;
 
     public ReversibleTransactionExecutor(
             RskSystemProperties config,
@@ -47,13 +48,15 @@ public class ReversibleTransactionExecutor {
             BlockStore blockStore,
             ReceiptStore receiptStore,
             BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory) {
+            ProgramInvokeFactory programInvokeFactory,
+            SignatureCache signatureCache) {
         this.config = config;
         this.track = track;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.programInvokeFactory = programInvokeFactory;
         this.blockFactory = blockFactory;
+        this.signatureCache = signatureCache;
     }
 
     public ProgramResult executeTransaction(
@@ -80,7 +83,7 @@ public class ReversibleTransactionExecutor {
 
         TransactionExecutor executor = new TransactionExecutor(
                 tx, 0, coinbase, repository, blockStore, receiptStore,
-                blockFactory, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), new SignatureCache(), 0, config.getVmConfig(),
+                blockFactory, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), signatureCache, 0, config.getVmConfig(),
                 config.getBlockchainConfig(), config.playVM(), config.isRemascEnabled(), config.vmTrace(), new PrecompiledContracts(config),
                 config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed()
         ).setLocalCall(true);
