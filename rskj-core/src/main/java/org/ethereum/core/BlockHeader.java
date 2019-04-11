@@ -25,7 +25,6 @@ import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.bouncycastle.util.BigIntegers;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
@@ -104,12 +103,15 @@ public class BlockHeader {
     /* Indicates if this block header cannot be changed */
     private volatile boolean sealed;
 
+    /* Indicates if the block was mined according to RSKIP-92 rules */
+    private boolean useRskip92Encoding;
+
     public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction,
-                       Coin minimumGasPrice, int uncleCount, boolean sealed) {
+                       Coin minimumGasPrice, int uncleCount, boolean sealed, boolean useRskip92Encoding) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -130,6 +132,7 @@ public class BlockHeader {
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
         this.sealed = sealed;
+        this.useRskip92Encoding = useRskip92Encoding;
     }
 
     @VisibleForTesting
@@ -276,10 +279,7 @@ public class BlockHeader {
     }
 
     public Keccak256 getHash() {
-        return new Keccak256(HashUtil.keccak256(getEncoded(
-                true,
-                !SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(getNumber()).isRskip92()
-        )));
+        return new Keccak256(HashUtil.keccak256(getEncoded(true, !useRskip92Encoding)));
     }
 
     public byte[] getEncoded() {

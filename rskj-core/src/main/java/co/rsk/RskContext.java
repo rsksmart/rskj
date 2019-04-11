@@ -63,6 +63,7 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.Blockchain;
@@ -616,10 +617,12 @@ public class RskContext implements NodeBootstrapper {
 
     protected Genesis buildGenesis() {
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        BlockchainNetConfig blockchainConfig = rskSystemProperties.getBlockchainConfig();
         return GenesisLoader.loadGenesis(
                 rskSystemProperties.genesisInfo(),
-                rskSystemProperties.getBlockchainConfig().getCommonConstants().getInitialNonce(),
-                true
+                blockchainConfig.getCommonConstants().getInitialNonce(),
+                true,
+                blockchainConfig.getConfigForBlock(0).isRskip92()
         );
     }
 

@@ -47,15 +47,15 @@ public class GenesisLoader {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
     private static final Logger logger = LoggerFactory.getLogger("genesisloader");
 
-    public static Genesis loadGenesis(String genesisFile, BigInteger initialNonce, boolean isRsk)  {
+    public static Genesis loadGenesis(String genesisFile, BigInteger initialNonce, boolean isRsk, boolean useRskip92Encoding)  {
         InputStream is = GenesisLoader.class.getResourceAsStream("/genesis/" + genesisFile);
-        return loadGenesis(initialNonce, is, isRsk);
+        return loadGenesis(initialNonce, is, isRsk, useRskip92Encoding);
     }
 
-    public static Genesis loadGenesis(BigInteger initialNonce, InputStream genesisJsonIS, boolean isRsk)  {
+    public static Genesis loadGenesis(BigInteger initialNonce, InputStream genesisJsonIS, boolean isRsk, boolean useRskip92Encoding)  {
         try {
             GenesisJson genesisJson = new ObjectMapper().readValue(genesisJsonIS, GenesisJson.class);
-            Genesis genesis = mapFromJson(initialNonce, genesisJson, isRsk);
+            Genesis genesis = mapFromJson(initialNonce, genesisJson, isRsk, useRskip92Encoding);
             genesis.flushRLP();
 
             return genesis;
@@ -67,7 +67,7 @@ public class GenesisLoader {
         }
     }
 
-    private static Genesis mapFromJson(BigInteger initialNonce, GenesisJson json, boolean rskFormat) {
+    private static Genesis mapFromJson(BigInteger initialNonce, GenesisJson json, boolean rskFormat, boolean useRskip92Encoding) {
         byte[] difficulty = Utils.parseData(json.difficulty);
         byte[] coinbase = Utils.parseData(json.coinbase);
 
@@ -129,7 +129,7 @@ public class GenesisLoader {
         return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, Genesis.getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, minGasPrice, accounts, codes, storages);
+                bitcoinMergedMiningCoinbaseTransaction, minGasPrice, useRskip92Encoding, accounts, codes, storages);
     }
 
     private static byte[] calculateStateRoot(Map<DataWord, byte[]> contractStorage) {
