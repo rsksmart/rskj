@@ -28,7 +28,9 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
@@ -64,6 +66,7 @@ public class Genesis extends Block {
                    byte[] extraData,
                    byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                    byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] minimumGasPrice,
+                   boolean useRskip92Encoding,
                    Map<RskAddress, AccountState> initialAccounts,
                    Map<RskAddress, byte[]> initialCodes,
                    Map<RskAddress, Map<DataWord, byte[]>> initialStorages){
@@ -73,7 +76,7 @@ public class Genesis extends Block {
                         null, ByteUtils.clone(EMPTY_TRIE_HASH), logsBloom, RLP.parseBlockDifficulty(difficulty),
                         number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData, Coin.ZERO,
                         bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
-                        RLP.parseSignedCoinNonNullZero(minimumGasPrice), 0, false) {
+                        RLP.parseSignedCoinNonNullZero(minimumGasPrice), 0, false, useRskip92Encoding) {
 
                     @Override
                     protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {

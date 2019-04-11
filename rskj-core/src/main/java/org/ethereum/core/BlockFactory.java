@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -83,13 +84,14 @@ public class BlockFactory {
             Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
             byte[] bitcoinMergedMiningCoinbaseTransaction,
             byte[] minimumGasPrice, int uncleCount) {
+        boolean useRskip92Encoding = SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(number).isRskip92();
         return new BlockHeader(
                 parentHash, unclesHash, new RskAddress(coinbase),
                 stateRoot, txTrieRoot, receiptTrieRoot,
                 logsBloom, RLP.parseBlockDifficulty(difficulty), number,
                 gasLimit, gasUsed, timestamp, extraData, paidFees,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
-                RLP.parseSignedCoinNonNullZero(minimumGasPrice), uncleCount, false
+                RLP.parseSignedCoinNonNullZero(minimumGasPrice), uncleCount, false, useRskip92Encoding
         );
     }
 
@@ -173,12 +175,13 @@ public class BlockFactory {
             bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
         }
 
+        boolean useRskip92Encoding = SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(number).isRskip92();
         return new BlockHeader(
                 parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
-                minimumGasPrice, uncleCount, sealed
+                minimumGasPrice, uncleCount, sealed, useRskip92Encoding
         );
     }
 

@@ -25,7 +25,6 @@ import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.bouncycastle.util.BigIntegers;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
@@ -112,7 +111,7 @@ public class BlockHeader {
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction,
-                       Coin minimumGasPrice, int uncleCount, boolean sealed) {
+                       Coin minimumGasPrice, int uncleCount, boolean sealed, boolean useRskip92Encoding) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -133,8 +132,7 @@ public class BlockHeader {
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
         this.sealed = sealed;
-
-        this.useRskip92Encoding = SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(number).isRskip92();
+        this.useRskip92Encoding = useRskip92Encoding;
     }
 
     @VisibleForTesting

@@ -288,7 +288,7 @@ class RemascTestRunner {
                     new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,
                     parentBlock.getGasLimit(), parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
                     paidFees, null, null, null,
-                    Coin.valueOf(10), uncles.size(), false
+                    Coin.valueOf(10), uncles.size(), false, true
             );
             this.blockHash = blockHash;
         }

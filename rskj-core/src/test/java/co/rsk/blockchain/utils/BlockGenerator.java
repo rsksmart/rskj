@@ -87,20 +87,18 @@ public class BlockGenerator {
 
         long   gasLimit         = initialGasLimit;
 
-        byte[] bitcoinMergedMiningHeader = null;
-        byte[] bitcoinMergedMiningMerkleProof = null;
-        byte[] bitcoinMergedMiningCoinbaseTransaction = null;
-
         Map<RskAddress, AccountState> accounts = new HashMap<>();
         for (Map.Entry<byte[], BigInteger> accountEntry : preMineMap.entrySet()) {
             AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(accountEntry.getValue()));
             accounts.put(new RskAddress(accountEntry.getKey()), acctState);
         }
 
+        boolean useRskip92Encoding = config.getBlockchainConfig().getConfigForBlock(0).isRskip92();
         return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
-                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray(), accounts, Collections.emptyMap(), Collections.emptyMap());
+                null, null, null, BigInteger.valueOf(100L).toByteArray(), useRskip92Encoding,
+                accounts, Collections.emptyMap(), Collections.emptyMap()
+        );
     }
 
     public Block getBlock(int number) {
