@@ -27,7 +27,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -38,16 +38,18 @@ import java.math.BigInteger;
  */
 public class BlockDifficultyValidationRuleTest {
 
-    private static TestSystemProperties config;
+    private TestSystemProperties config;
+    private BlockFactory blockFactory;
 
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
+    @Before
+    public void setUp() {
         config = new TestSystemProperties();
         config.setBlockchainConfig(new RegTestGenesisConfig());
+        blockFactory = new BlockFactory(config.getBlockchainConfig());
     }
 
     private BlockHeader getEmptyHeader(BlockDifficulty difficulty, long blockTimestamp, int uCount) {
-        BlockHeader header = BlockFactory.getInstance().newHeader(null, null,
+        BlockHeader header = blockFactory.newHeader(null, null,
                 TestUtils.randomAddress().getBytes(), null, difficulty.getBytes(), 0,
                 null, 0,
                 blockTimestamp, null, null, uCount);

@@ -38,6 +38,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class GasLimitRuleTests {
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     private GasLimitRule rule = new GasLimitRule(3000000);
 
     @Test // pass rule
@@ -58,10 +59,10 @@ public class GasLimitRuleTests {
         assertFalse(rule.isValid(block));
     }
 
-    private static Block getBlock(long gasLimitValue) {
+    private Block getBlock(long gasLimitValue) {
         byte[] gasLimit = DataWord.valueOf(gasLimitValue).getData();
 
-        BlockHeader header = BlockFactory.getInstance().newHeader(null, null, TestUtils.randomAddress().getBytes(),
+        BlockHeader header = blockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(),
                 null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
                 0, null, null, 0);
 

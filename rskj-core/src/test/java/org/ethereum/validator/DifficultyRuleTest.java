@@ -35,7 +35,9 @@ import static org.junit.Assert.assertTrue;
  * @since 02.23.2016
  */
 public class DifficultyRuleTest {
-    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(new TestSystemProperties()));
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(config));
 
     @Ignore
     @Test // pass rule
@@ -52,10 +54,10 @@ public class DifficultyRuleTest {
         assertFalse(rule.validate(header, parent));
     }
 
-    private static BlockHeader getHeader(long difficultyValue) {
+    private BlockHeader getHeader(long difficultyValue) {
         byte[] difficulty = DataWord.valueOf(difficultyValue).getData();
 
-        BlockHeader header = BlockFactory.getInstance().newHeader(null, null, TestUtils.randomAddress().getBytes(), null, difficulty, 0,
+        BlockHeader header = blockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(), null, difficulty, 0,
                 null, 0,
                 0, null, null, 0);
 

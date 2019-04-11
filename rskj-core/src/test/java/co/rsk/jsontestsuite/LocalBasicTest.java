@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.net.MainNetConfig;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.jsontestsuite.DifficultyTestCase;
 import org.ethereum.jsontestsuite.DifficultyTestSuite;
@@ -48,6 +49,7 @@ public class LocalBasicTest {
     public void runDifficultyTest() throws IOException, ParseException {
         config.setGenesisInfo("frontier.json");
         config.setBlockchainConfig(new MainNetConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
         String json = getJSON("difficulty");
 
@@ -57,8 +59,8 @@ public class LocalBasicTest {
 
             logger.info("Running {}\n", testCase.getName());
 
-            BlockHeader current = testCase.getCurrent();
-            BlockHeader parent = testCase.getParent();
+            BlockHeader current = testCase.getCurrent(blockFactory);
+            BlockHeader parent = testCase.getParent(blockFactory);
             BlockDifficulty calc = new DifficultyCalculator(config).calcDifficulty(current, parent);
             int c = calc.compareTo(parent.getDifficulty());
             if (c>0)

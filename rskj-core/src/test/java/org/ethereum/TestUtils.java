@@ -87,7 +87,7 @@ public final class TestUtils {
         return db;
     }
 
-    public static List<Block> getRandomChain(byte[] startParentHash, long startNumber, long length){
+    public static List<Block> getRandomChain(BlockFactory blockFactory, byte[] startParentHash, long startNumber, long length){
 
         List<Block> result = new ArrayList<>();
 
@@ -101,7 +101,7 @@ public final class TestUtils {
             byte[] newHash = HashUtil.randomHash();
 
             Block block = new Block(
-                    BlockFactory.getInstance().newHeader(
+                    blockFactory.newHeader(
                             lastHash, newHash, RskAddress.nullAddress().getBytes(),
                             HashUtil.randomHash(), EMPTY_TRIE_HASH, null,
                             null, difficutly, lastIndex,
