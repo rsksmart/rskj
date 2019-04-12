@@ -20,10 +20,9 @@
 package org.ethereum.net.server;
 
 import co.rsk.net.NodeID;
+import co.rsk.net.eth.RskWireProtocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.NodeStatistics;
@@ -32,10 +31,8 @@ import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.handler.Eth;
 import org.ethereum.net.eth.handler.EthAdapter;
 import org.ethereum.net.eth.handler.EthHandler;
-import org.ethereum.net.eth.handler.EthHandlerFactory;
 import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.eth.message.EthMessage;
-import org.ethereum.net.message.MessageFactory;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.p2p.HelloMessage;
@@ -59,7 +56,8 @@ public class Channel {
     private final MessageQueue msgQueue;
     private final MessageCodec messageCodec;
     private final NodeManager nodeManager;
-    private final EthHandlerFactory ethHandlerFactory;
+    private final RskWireProtocol.Factory rskWireProtocolFactory;
+    private final Eth62MessageFactory eth62MessageFactory;
     private final StaticMessages staticMessages;
     private final boolean isActive;
 
@@ -75,13 +73,15 @@ public class Channel {
     public Channel(MessageQueue msgQueue,
                    MessageCodec messageCodec,
                    NodeManager nodeManager,
-                   EthHandlerFactory ethHandlerFactory,
+                   RskWireProtocol.Factory rskWireProtocolFactory,
+                   Eth62MessageFactory eth62MessageFactory,
                    StaticMessages staticMessages,
                    String remoteId) {
         this.msgQueue = msgQueue;
         this.messageCodec = messageCodec;
         this.nodeManager = nodeManager;
-        this.ethHandlerFactory = ethHandlerFactory;
+        this.rskWireProtocolFactory = rskWireProtocolFactory;
+        this.eth62MessageFactory = eth62MessageFactory;
         this.staticMessages = staticMessages;
         this.isActive = remoteId != null && !remoteId.isEmpty();
     }
@@ -111,10 +111,13 @@ public class Channel {
     }
 
     public void activateEth(ChannelHandlerContext ctx, EthVersion version) {
-        EthHandler handler = ethHandlerFactory.create(version);
-        MessageFactory messageFactory = createEthMessageFactory(version);
+        if (version != EthVersion.V62) {
+            throw new IllegalArgumentException(String.format("Eth version %s is not supported", version));
+        }
+
+        EthHandler handler = rskWireProtocolFactory.newInstance();
         messageCodec.setEthVersion(version);
-        messageCodec.setEthMessageFactory(messageFactory);
+        messageCodec.setEthMessageFactory(eth62MessageFactory);
 
         logger.info("Eth{} [ address = {} | id = {} ]", handler.getVersion(), inetSocketAddress, getPeerIdShort());
 
@@ -126,13 +129,6 @@ public class Channel {
         handler.activate();
 
         eth = handler;
-    }
-
-    private MessageFactory createEthMessageFactory(EthVersion version) {
-        switch (version) {
-            case V62:   return new Eth62MessageFactory();
-            default:    throw new IllegalArgumentException("Eth " + version + " is not supported");
-        }
     }
 
     public void setInetSocketAddress(InetSocketAddress inetSocketAddress) {

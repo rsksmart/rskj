@@ -23,19 +23,20 @@ import com.google.common.io.ByteStreams;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.eth.EthVersion;
+import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.message.Message;
-import org.ethereum.net.message.MessageFactory;
 import org.ethereum.net.p2p.P2pMessageCodes;
+import org.ethereum.net.p2p.P2pMessageFactory;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.LRUMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.*;
@@ -59,8 +60,8 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
     private Channel channel;
     private MessageCodesResolver messageCodesResolver;
 
-    private MessageFactory p2pMessageFactory;
-    private MessageFactory ethMessageFactory;
+    private P2pMessageFactory p2pMessageFactory;
+    private Eth62MessageFactory ethMessageFactory;
     private EthVersion ethVersion;
 
     private final EthereumListener ethereumListener;
@@ -245,11 +246,11 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
         this.messageCodesResolver = new MessageCodesResolver(caps);
     }
 
-    public void setP2pMessageFactory(MessageFactory p2pMessageFactory) {
+    public void setP2pMessageFactory(P2pMessageFactory p2pMessageFactory) {
         this.p2pMessageFactory = p2pMessageFactory;
     }
 
-    public void setEthMessageFactory(MessageFactory ethMessageFactory) {
+    public void setEthMessageFactory(Eth62MessageFactory ethMessageFactory) {
         this.ethMessageFactory = ethMessageFactory;
     }
 
