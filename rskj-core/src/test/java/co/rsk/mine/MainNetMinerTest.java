@@ -84,6 +84,7 @@ public class MainNetMinerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 blockToMineBuilder(),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -145,6 +146,7 @@ public class MainNetMinerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 blockToMineBuilder(),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {

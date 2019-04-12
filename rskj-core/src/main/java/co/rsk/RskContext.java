@@ -525,6 +525,7 @@ public class RskContext implements NodeBootstrapper {
                     getProofOfWorkRule(),
                     getBlockToMineBuilder(),
                     getMinerClock(),
+                    getBlockFactory(),
                     getMiningConfig()
             );
         }
