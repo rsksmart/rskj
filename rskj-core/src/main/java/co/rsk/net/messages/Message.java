@@ -19,6 +19,7 @@
 package co.rsk.net.messages;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -41,18 +42,18 @@ public abstract class Message {
     }
 
     @VisibleForTesting
-    static Message create(byte[] encoded) {
-        return create((RLPList) RLP.decode2(encoded).get(0));
+    static Message create(BlockFactory blockFactory, byte[] encoded) {
+        return create(blockFactory, (RLPList) RLP.decode2(encoded).get(0));
     }
 
-    public static Message create(ArrayList<RLPElement> paramsList) {
+    public static Message create(BlockFactory blockFactory, ArrayList<RLPElement> paramsList) {
         byte[] body = paramsList.get(1).getRLPData();
 
         if (body != null) {
             int type = paramsList.get(0).getRLPData()[0];
             MessageType messageType = MessageType.valueOfType(type);
             RLPList list = (RLPList) RLP.decode2(body).get(0);
-            return messageType.createMessage(list);
+            return messageType.createMessage(blockFactory, list);
 
         }
         return null;

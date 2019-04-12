@@ -833,7 +833,7 @@ public class RskContext implements NodeBootstrapper {
 
     private Eth62MessageFactory getEth62MessageFactory() {
         if (eth62MessageFactory == null) {
-            eth62MessageFactory = new Eth62MessageFactory();
+            eth62MessageFactory = new Eth62MessageFactory(getBlockFactory());
         }
 
         return eth62MessageFactory;
