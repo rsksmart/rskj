@@ -57,6 +57,7 @@ public class BlockToMineBuilder {
     private final GasLimitCalculator gasLimitCalculator;
     private final BlockValidationRule validationRules;
     private final MinerClock clock;
+    private final BlockFactory blockFactory;
 
     private final MinimumGasPriceCalculator minimumGasPriceCalculator;
     private final MinerUtils minerUtils;
@@ -85,6 +86,7 @@ public class BlockToMineBuilder {
         this.gasLimitCalculator = Objects.requireNonNull(gasLimitCalculator);
         this.validationRules = Objects.requireNonNull(validationRules);
         this.clock = Objects.requireNonNull(clock);
+        this.blockFactory = blockFactory;
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
@@ -196,7 +198,7 @@ public class BlockToMineBuilder {
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
                                                                         gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
-        final BlockHeader newHeader = BlockFactory.getInstance().newHeader(
+        final BlockHeader newHeader = blockFactory.newHeader(
                 newBlockParent.getHash().getBytes(),
                 unclesListHash,
                 miningConfig.getCoinbaseAddress().getBytes(),
