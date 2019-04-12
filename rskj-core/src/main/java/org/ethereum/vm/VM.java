@@ -542,7 +542,7 @@ public class VM {
             hint = word1.value() + " << " + word2.value();
         }
 
-        program.stackPush(word1.shiftLeft(word2));
+        program.stackPush(word2.shiftLeft(word1));
         program.step();
 
     }
@@ -557,7 +557,7 @@ public class VM {
             hint = word1.value() + " >> " + word2.value();
         }
 
-        program.stackPush(word1.shiftRight(word2));
+        program.stackPush(word2.shiftRight(word1));
         program.step();
 
     }
@@ -572,7 +572,7 @@ public class VM {
             hint = word1.value() + " >> " + word2.value();
         }
 
-        program.stackPush(word1.shiftRightSigned(word2));
+        program.stackPush(word2.shiftRightSigned(word1));
         program.step();
 
     }

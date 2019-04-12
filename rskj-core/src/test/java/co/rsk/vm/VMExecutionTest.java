@@ -20,6 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
+import javassist.bytecode.ByteArray;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.BlockFactory;
@@ -35,6 +36,7 @@ import org.junit.Test;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.math.BigInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -90,6 +92,67 @@ public class VMExecutionTest {
 
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+    }
+
+    @Test
+    public void testSHL1() {
+        Program program = executeCode("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3);
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueOf(2), stack.peek());
+    }
+
+    @Test
+    public void testSHL2() {
+        Program program = executeCode("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x00 SHL", 3);
+        Stack stack = program.getStack();
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+    }
+
+    @Test
+    public void testSHL3() {
+        Program program = executeCode("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0xff SHL", 3);
+        Stack stack = program.getStack();
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueFromHex("8000000000000000000000000000000000000000000000000000000000000000"), stack.peek());
+    }
+
+    @Test
+    public void testSHR1() {
+        Program program = executeCode("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3);
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueOf(0), stack.peek());
+    }
+
+    @Test
+    public void testSHR2() {
+        Program program = executeCode("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x00 SHR", 3);
+        Stack stack = program.getStack();
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+    }
+
+    @Test
+    public void testSAR1() {
+        Program program = executeCode("PUSH32 0x8000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SAR", 3);
+        Stack stack = program.getStack();
+
+        String expectedResult = "c000000000000000000000000000000000000000000000000000000000000000";
+
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueFromHex(expectedResult), stack.peek());
+    }
+
+    @Test
+    public void testSAR2() {
+        Program program = executeCode("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SAR", 3);
+        Stack stack = program.getStack();
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueOf(0), stack.peek());
     }
 
     @Test
