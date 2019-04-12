@@ -156,6 +156,17 @@ public class VMExecutionTest {
     }
 
     @Test
+    public void testSAR3() {
+        Program program = executeCode("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3);
+        Stack stack = program.getStack();
+
+        String expectedResult = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueFromHex(expectedResult), stack.peek());
+    }
+
+    @Test
     public void testJumpSkippingInvalidJump() {
         Program program = executeCode("PUSH1 0x05 JUMP PUSH1 0xa0 JUMPDEST PUSH1 0x01", 4);
         Stack stack = program.getStack();
