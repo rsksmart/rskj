@@ -417,6 +417,7 @@ public class VMExecutionTest {
         executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, blockchainConfig);
     }
 
+
     @Test
     public void testJumpSkippingInvalidJump() {
         Program program = executeCode("PUSH1 0x05 JUMP PUSH1 0xa0 JUMPDEST PUSH1 0x01", 4);
