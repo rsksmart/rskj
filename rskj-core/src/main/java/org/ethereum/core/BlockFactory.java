@@ -25,7 +25,6 @@ import co.rsk.remasc.RemascTransaction;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -39,20 +38,10 @@ import java.util.stream.Collectors;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
-    private static BlockFactory INSTANCE;
-
     private final BlockchainNetConfig blockchainConfig;
 
     public BlockFactory(BlockchainNetConfig blockchainConfig) {
         this.blockchainConfig = blockchainConfig;
-    }
-
-    public synchronized static BlockFactory getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new BlockFactory(SystemProperties.DONOTUSE_blockchainConfig);
-        }
-
-        return INSTANCE;
     }
 
     public Block cloneBlockForModification(Block block) {
