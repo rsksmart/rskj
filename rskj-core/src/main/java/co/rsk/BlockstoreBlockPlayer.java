@@ -20,6 +20,7 @@ package co.rsk;
 
 import co.rsk.net.BlockProcessResult;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.db.BlockStore;
@@ -29,17 +30,19 @@ import java.util.Arrays;
 public class BlockstoreBlockPlayer {
     private final String sourceDir;
     private final Blockchain targetBlockchain;
+    private final BlockFactory blockFactory;
 
     private long blockNumber;
 
     private BlockstoreBlockPlayer(String sourceDir, RskContext objects) {
         this.sourceDir = sourceDir;
         this.targetBlockchain = objects.getBlockchain();
+        this.blockFactory = objects.getBlockFactory();
         this.blockNumber = targetBlockchain.getBestBlock().getNumber() + 1;
     }
 
     private void connectBlocks() {
-        BlockStore sourceBlockStore = RskContext.buildBlockStore(sourceDir);
+        BlockStore sourceBlockStore = RskContext.buildBlockStore(blockFactory, sourceDir);
         for (Block block = nextBlock(sourceBlockStore); block != null; block = nextBlock(sourceBlockStore)) {
             if (!connectBlock(block)) {
                 System.err.printf("Import failed at block %s\n", block.getNumber());
