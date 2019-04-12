@@ -33,10 +33,12 @@ import java.util.stream.Stream;
 
 public class BlocksFilePlayer {
     private final Blockchain targetBlockchain;
+    private final BlockFactory blockFactory;
     private final String filename;
 
     private BlocksFilePlayer(String filename, RskContext objects) {
         this.targetBlockchain = objects.getBlockchain();
+        this.blockFactory = objects.getBlockFactory();
         this.filename = filename;
     }
 
@@ -51,7 +53,7 @@ public class BlocksFilePlayer {
 
     private Block readBlock(String line) {
         String[] parts = line.split(",");
-        return BlockFactory.getInstance().decodeBlock(Hex.decode(parts[parts.length - 1]));
+        return blockFactory.decodeBlock(Hex.decode(parts[parts.length - 1]));
     }
 
     private void connectBlock(Block block) {
