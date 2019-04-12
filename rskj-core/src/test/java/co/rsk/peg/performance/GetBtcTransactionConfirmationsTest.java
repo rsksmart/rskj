@@ -38,33 +38,69 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     @Before
     public void setRskipToTrue() {
         config.setBlockchainConfig(new RegTestSecondForkConfig());
+        warmUp();
     }
 
-    @Test
-    public void getBtcTransactionConfirmations() {
-        CombinedExecutionStats stats = new CombinedExecutionStats("getBtcTransactionConfirmations");
-
+    private void warmUp() {
         // Doing an initial estimation gets some things cached and speeds up the rest,
         // so that we get even numbers at the end
         System.out.print("Doing an initial pass... ");
         setQuietMode(true);
-        estimateGetBtcTransactionConfirmations(20, 4000, 750, 1000);
+        estimateGetBtcTransactionConfirmations("foo", 20, 4000, 750, 1000);
         setQuietMode(false);
         System.out.print("Done!\n");
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_Weighed() {
+        final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
+        CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
         // We always consider the average BTC block case from https://www.blockchain.com/charts/n-transactions-per-block
 
         // One day of BTC blocks
-        stats.add(estimateGetBtcTransactionConfirmations(300, 144, 750, 3000));
+        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 300, 144, 750, 3000));
         // Maximum number of confirmations
-        stats.add(estimateGetBtcTransactionConfirmations(10, BridgeSupport.BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH, 750, 3000));
+        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 10, BridgeSupport.BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH, 750, 3000));
         // Single confirmation
-        stats.add(estimateGetBtcTransactionConfirmations(10, 0,750,3000));
+        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 10, 0,750,3000));
 
         BridgePerformanceTest.addStats(stats);
     }
 
+    @Test
+    public void getBtcTransactionConfirmations_Even() {
+        final String CASE_NAME = "getBtcTransactionConfirmations-even";
+        CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
+
+        // Up to two days of confirmations (average of 6 blocks per hour)
+        final int MAX_CONFIRMATIONS = 6*24*2;
+
+        for (int numConfirmations = 0; numConfirmations <= MAX_CONFIRMATIONS; numConfirmations++) {
+            stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 100, numConfirmations, 750, 3000));
+        }
+
+        BridgePerformanceTest.addStats(stats);
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_Zero() {
+        BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
+                "getBtcTransactionConfirmations-zero",
+                2000, 0, 750, 3000
+        ));
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_Hundred() {
+        BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
+                "getBtcTransactionConfirmations-hundred",
+                2000, 100, 750, 3000
+        ));
+    }
+
     private ExecutionStats estimateGetBtcTransactionConfirmations(
+            String caseName,
             int times, int confirmations, int  minTransactions,
             int maxTransactions) {
 
@@ -76,7 +112,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 maxTransactions
         );
 
-        String name = String.format("getBtcTransactionConfirmations-confirmations-%d", confirmations);
+        String name = String.format("%s-%d", caseName, confirmations);
         ExecutionStats stats = new ExecutionStats(name);
 
         executeAndAverage(

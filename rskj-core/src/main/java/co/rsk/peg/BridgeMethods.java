@@ -165,7 +165,7 @@ public enum BridgeMethods {
                     new String[]{"bytes32", "bytes32", "uint256", "bytes32[]"},
                     new String[]{"int256"}
             ),
-            fixedCost(22000L), //TODO ESTIMATE GAS
+            fromMethod(Bridge::getBtcTransactionConfirmationsGetCost),
             (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
             blockchainConfig -> blockchainConfig.isRskipGetBtcTransactionConfirmations(),
             false
@@ -453,7 +453,7 @@ public enum BridgeMethods {
                     new String[]{"bytes[]"},
                     new String[]{}
             ),
-            fromMethod(Bridge::receiveHeadersGetCost),
+            fixedCost(22000L),
             Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::receiveHeaders, "receiveHeaders"),
             false
     ),
