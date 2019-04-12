@@ -20,7 +20,6 @@
 package org.ethereum.net.p2p;
 
 import org.ethereum.net.message.Message;
-import org.ethereum.net.message.MessageFactory;
 import org.ethereum.net.message.StaticMessages;
 
 /**
@@ -29,9 +28,8 @@ import org.ethereum.net.message.StaticMessages;
  * @author Mikhail Kalinin
  * @since 20.08.2015
  */
-public class P2pMessageFactory implements MessageFactory {
+public class P2pMessageFactory {
 
-    @Override
     public Message create(byte code, byte[] encoded) {
 
         P2pMessageCodes receivedCommand = P2pMessageCodes.fromByte(code);

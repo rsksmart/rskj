@@ -21,7 +21,6 @@ package org.ethereum.net.eth.message;
 
 import co.rsk.net.eth.RskMessage;
 import org.ethereum.net.message.Message;
-import org.ethereum.net.message.MessageFactory;
 
 import static org.ethereum.net.eth.EthVersion.V62;
 
@@ -29,9 +28,8 @@ import static org.ethereum.net.eth.EthVersion.V62;
  * @author Mikhail Kalinin
  * @since 04.09.2015
  */
-public class Eth62MessageFactory implements MessageFactory {
+public class Eth62MessageFactory {
 
-    @Override
     public Message create(byte code, byte[] encoded) {
 
         EthMessageCodes receivedCommand = EthMessageCodes.fromByte(code, V62);
