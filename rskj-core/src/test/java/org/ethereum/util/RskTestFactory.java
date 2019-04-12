@@ -1,36 +1,22 @@
 package org.ethereum.util;
 
-import co.rsk.RskContext;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.RepositoryImpl;
-import co.rsk.db.StateRootHandler;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.genesis.GenesisLoader;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.*;
 import org.ethereum.vm.PrecompiledContracts;
 
-import java.util.HashMap;
-
-
 /**
- * This is the test version of {@link RskContext}.
- * <p>
- * We try to recreate the objects used in production as best as we can,
- * replacing persistent storage with in-memory storage.
- * There are many nulls in place of objects that aren't part of our
- * tests yet.
+ * @deprecated use {@link RskTestContext} instead which builds the same graph of dependencies than the productive code
  */
-public class RskTestFactory extends RskContext {
+@Deprecated
+public class RskTestFactory extends RskTestContext {
     private final TestSystemProperties config;
 
     private BlockExecutor blockExecutor;
@@ -57,33 +43,8 @@ public class RskTestFactory extends RskContext {
     }
 
     @Override
-    public ReceiptStore buildReceiptStore() {
-        return new ReceiptStoreImpl(new HashMapDB());
-    }
-
-    @Override
-    public BlockStore buildBlockStore() {
-        return new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
-    }
-
-    @Override
-    public RepositoryImpl buildRepository() {
-        return new RepositoryImpl(
-                new Trie(new TrieStoreImpl(new HashMapDB()), true),
-                new HashMapDB(),
-                new TrieStorePoolOnMemory(),
-                getRskSystemProperties().detailsInMemoryStorageLimit()
-        );
-    }
-
-    @Override
     public Genesis buildGenesis() {
         return new BlockGenerator().getGenesisBlock();
-    }
-
-    @Override
-    public StateRootHandler buildStateRootHandler() {
-        return new StateRootHandler(getRskSystemProperties(), new HashMapDB(), new HashMap<>());
     }
 
     @Override
