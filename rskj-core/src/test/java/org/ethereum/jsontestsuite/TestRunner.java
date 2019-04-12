@@ -110,7 +110,7 @@ public class TestRunner {
         Block genesis = build(testCase.getGenesisBlockHeader(), null, null);
         Repository repository = RepositoryBuilder.build(testCase.getPre());
 
-        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();

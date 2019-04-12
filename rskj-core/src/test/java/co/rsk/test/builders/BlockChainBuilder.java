@@ -130,9 +130,11 @@ public class BlockChainBuilder {
         if (stateRootHandler == null) {
             stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
         }
+
+        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
         
         if (blockStore == null) {
-            blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+            blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         }
 
         if (receiptStore == null) {
@@ -148,8 +150,6 @@ public class BlockChainBuilder {
         if (listener == null) {
             listener = new BlockExecutorTest.SimpleEthereumListener();
         }
-
-        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
 

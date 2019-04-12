@@ -60,7 +60,8 @@ public class ImportLightTest {
                 return new BlockDifficulty(BigInteger.ONE);
             }
         }));
-        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         TrieStore.Pool pool = new TrieStorePoolOnMemory();
         Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), pool, config.detailsInMemoryStorageLimit());
@@ -71,7 +72,6 @@ public class ImportLightTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, blockFactory, null, listener, 10, 100);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();

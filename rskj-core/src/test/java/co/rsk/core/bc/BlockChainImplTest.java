@@ -799,7 +799,7 @@ public class BlockChainImplTest {
     public void addInvalidMGPBlock() {
         Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
-        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
         validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
@@ -830,7 +830,7 @@ public class BlockChainImplTest {
     public void addValidMGPBlock() {
         Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
 
-        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), (DB) null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), (DB) null);
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
         validatorBuilder.blockStore(blockStore)
@@ -894,7 +894,7 @@ public class BlockChainImplTest {
     }
 
     private static BlockChainImpl createBlockChain(Repository repository, BlockExecutorTest.SimpleEthereumListener listener) {
-        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
         validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)

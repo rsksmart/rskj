@@ -59,11 +59,17 @@ public class IndexedBlockStore implements BlockStore {
     private final Map<Long, List<BlockInfo>> index;
     private final DB indexDB;
     private final KeyValueDataSource blocks;
+    private final BlockFactory blockFactory;
 
-    public IndexedBlockStore(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB) {
+    public IndexedBlockStore(
+            BlockFactory blockFactory,
+            Map<Long, List<BlockInfo>> index,
+            KeyValueDataSource blocks,
+            DB indexDB) {
         this.index = index;
         this.blocks = blocks;
         this.indexDB  = indexDB;
+        this.blockFactory = blockFactory;
         //TODO(lsebrie): move these maps creation outside blockstore,
         // remascCache should be an external component and not be inside blockstore
         this.blockCache = new BlockCache(5000);
@@ -249,7 +255,7 @@ public class IndexedBlockStore implements BlockStore {
             return null;
         }
 
-        return BlockFactory.getInstance().decodeBlock(blockRlp);
+        return blockFactory.decodeBlock(blockRlp);
     }
 
     @Override

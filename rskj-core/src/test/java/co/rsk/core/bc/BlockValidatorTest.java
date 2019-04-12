@@ -62,7 +62,7 @@ public class BlockValidatorTest {
 
     @Test
     public void validateEmptyBlock() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         Block genesis = new BlockGenerator().getGenesisBlock();
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
@@ -74,7 +74,7 @@ public class BlockValidatorTest {
 
     @Test
     public void validateChildBlock() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         Block genesis = new BlockGenerator().getGenesisBlock();
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
@@ -189,7 +189,7 @@ public class BlockValidatorTest {
 
     @Test
     public void validateHeader() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -210,7 +210,7 @@ public class BlockValidatorTest {
 
     @Test
     public void getGenesisEmptyAncestorSet() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Assert.assertTrue(FamilyUtils.getAncestors(store, genesis, 6).isEmpty());
@@ -218,7 +218,7 @@ public class BlockValidatorTest {
 
     @Test
     public void getBlockOneAncestorSet() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
@@ -232,7 +232,7 @@ public class BlockValidatorTest {
 
     @Test
     public void getThreeAncestorSet() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
@@ -261,7 +261,7 @@ public class BlockValidatorTest {
 
     @Test
     public void getUsedUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -319,7 +319,7 @@ public class BlockValidatorTest {
 
     @Test
     public void validUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -349,7 +349,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidSiblingUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -376,7 +376,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUnclesUncleIncludedMultipeTimes () {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -401,7 +401,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidPOWUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -429,7 +429,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleIsAncestor() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -454,7 +454,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleHasNoSavedParent() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -477,7 +477,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleHasNoCommonAncestor() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -512,7 +512,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleHasParentThatIsNotAncestor() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -544,7 +544,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleAlreadyUsed() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -582,7 +582,7 @@ public class BlockValidatorTest {
 
     @Test
     public void tooManyUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -725,7 +725,7 @@ public class BlockValidatorTest {
 
     @Test
     public void parentInvalidNumber() {
-        IndexedBlockStore store = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 

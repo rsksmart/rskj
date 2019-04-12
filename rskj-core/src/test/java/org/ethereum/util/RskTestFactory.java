@@ -63,7 +63,7 @@ public class RskTestFactory extends RskContext {
 
     @Override
     public BlockStore buildBlockStore() {
-        return new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        return new IndexedBlockStore(getBlockFactory(), new HashMap<>(), new HashMapDB(), null);
     }
 
     @Override

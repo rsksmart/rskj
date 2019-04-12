@@ -135,7 +135,7 @@ public class StateTestRunner {
 
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
-        BlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
