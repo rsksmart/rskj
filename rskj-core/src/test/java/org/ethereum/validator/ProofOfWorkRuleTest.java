@@ -144,8 +144,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
 
         new BlockMiner(config).findNonce(bitcoinMergedMiningBlock, targetBI);
 
-        // We need to clone to allow modifications
-        Block newBlock = block.cloneBlock();
+        Block newBlock = blockFactory.cloneBlockForModification(block);
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 

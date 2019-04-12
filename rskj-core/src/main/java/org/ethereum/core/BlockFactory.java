@@ -55,6 +55,10 @@ public class BlockFactory {
         return INSTANCE;
     }
 
+    public Block cloneBlockForModification(Block block) {
+        return decodeBlock(block.getEncoded(), false);
+    }
+
     public Block decodeBlock(byte[] rawData) {
         return decodeBlock(rawData, true);
     }

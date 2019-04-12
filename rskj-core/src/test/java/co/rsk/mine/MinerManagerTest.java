@@ -287,6 +287,7 @@ public class MinerManagerTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
     }

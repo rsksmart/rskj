@@ -221,6 +221,7 @@ public class Web3ImplSnapshotTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
     }

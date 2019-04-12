@@ -279,6 +279,7 @@ public class TransactionModuleTest {
                         new StateRootHandler(config, new HashMapDB(), new HashMap<>())
                 ),
                 minerClock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
 

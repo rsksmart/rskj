@@ -71,6 +71,7 @@ public class MinerServerImpl implements MinerServer {
     private final BlockToMineBuilder builder;
     private final BlockchainNetConfig blockchainConfig;
     private final MinerClock clock;
+    private final BlockFactory blockFactory;
 
     private Timer refreshWorkTimer;
     private NewBlockListener blockListener;
@@ -105,6 +106,7 @@ public class MinerServerImpl implements MinerServer {
             ProofOfWorkRule powRule,
             BlockToMineBuilder builder,
             MinerClock clock,
+            BlockFactory blockFactory,
             MiningConfig miningConfig) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
@@ -112,6 +114,7 @@ public class MinerServerImpl implements MinerServer {
         this.powRule = powRule;
         this.builder = builder;
         this.clock = clock;
+        this.blockFactory = blockFactory;
         this.blockchainConfig = config.getBlockchainConfig();
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
@@ -249,8 +252,7 @@ public class MinerServerImpl implements MinerServer {
                 return new SubmitBlockResult("ERROR", message);
             }
 
-            // clone the block
-            newBlock = workingBlock.cloneBlock();
+            newBlock = blockFactory.cloneBlockForModification(workingBlock);
 
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }

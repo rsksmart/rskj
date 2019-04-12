@@ -131,6 +131,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -174,6 +175,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -241,6 +243,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -293,6 +296,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -348,6 +352,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -410,6 +415,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -464,6 +470,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -523,6 +530,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -564,6 +572,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -605,6 +614,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -650,6 +660,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         stateRootHandler
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -718,6 +729,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 getBuilderWithMocks(),
                 new MinerClock(true, Clock.systemUTC()),
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
     }

@@ -87,11 +87,6 @@ public class Block {
         return this.sealed;
     }
 
-    // Clone this block allowing modifications
-    public Block cloneBlock() {
-        return BlockFactory.getInstance().decodeBlock(this.getEncoded(), false);
-    }
-
     // TODO(mc) remove this method and create a new ExecutedBlock class or similar
     public void setTransactionsList(@Nonnull List<Transaction> transactionsList) {
         /* A sealed block is immutable, cannot be changed */
