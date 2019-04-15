@@ -429,6 +429,8 @@ public class VMExecutionTest {
         Assert.assertEquals(DataWord.valueFromHex(expectedResult), stack.peek());
     }
 
+    /* SEBASTIANS -- ADD TESTS FOR WRONG OPCODE EXCEPTION FOR THE HARD FORK */
+
     @Test
     public void testJumpSkippingInvalidJump() {
         Program program = executeCode("PUSH1 0x05 JUMP PUSH1 0xa0 JUMPDEST PUSH1 0x01", 4);
