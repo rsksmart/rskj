@@ -533,6 +533,9 @@ public class VM {
     }
 
     protected void doSHL() {
+        if (false/* que se hace aca entonces? */) {
+            throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+        }
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -548,6 +551,9 @@ public class VM {
     }
 
     protected void doSHR() {
+        if (false/* que se hace aca entonces? */) {
+            throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+        }
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -563,6 +569,9 @@ public class VM {
     }
 
     protected void doSAR() {
+        if (false/* que se hace aca entonces? */) {
+            throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+        }
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();

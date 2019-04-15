@@ -335,13 +335,15 @@ public final class DataWord implements Comparable<DataWord> {
      * @param arg
      * @return this << arg
      */
+
     public DataWord shiftLeft(DataWord arg) {
-        if (arg.value().compareTo(BigInteger.valueOf(MAX_POW)) >= 0) {
+        if (arg.compareTo(DataWord.valueOf(MAX_POW)) >= 0) {
             return DataWord.ZERO;
         }
 
-        BigInteger result = value().shiftLeft(arg.intValueSafe());
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)));
+        byte[] bytes = ByteUtil.shiftLeft(this.getData(), arg.intValueSafe());
+
+        return new DataWord(bytes);
     }
 
     /**
@@ -350,12 +352,12 @@ public final class DataWord implements Comparable<DataWord> {
      * @return this >> arg
      */
     public DataWord shiftRight(DataWord arg) {
-        if (arg.value().compareTo(BigInteger.valueOf(MAX_POW)) >= 0) {
+        if (arg.compareTo(DataWord.valueOf(MAX_POW)) >= 0) {
             return DataWord.ZERO;
         }
 
-        BigInteger result = value().shiftRight(arg.intValueSafe());
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)));
+        byte[] bytes = ByteUtil.shiftRight(this.getData(), arg.intValueSafe());
+        return new DataWord(bytes);
     }
 
     /**
@@ -364,7 +366,7 @@ public final class DataWord implements Comparable<DataWord> {
      * @return this >> arg
      */
     public DataWord shiftRightSigned(DataWord arg) {
-        if (arg.value().compareTo(BigInteger.valueOf(MAX_POW)) >= 0) {
+        if (arg.compareTo(DataWord.valueOf(MAX_POW)) >= 0) {
             if (this.isNegative()) {
                 return valueOf(BigInteger.ONE.negate()); // This should be 0xFFFFF......
             } else {
@@ -372,9 +374,10 @@ public final class DataWord implements Comparable<DataWord> {
             }
         }
 
-        BigInteger result = sValue().shiftRight(arg.intValueSafe());
-        return new DataWord(ByteUtil.copyToArray(result.and(MAX_VALUE)));
+        byte[] bytes = ByteUtil.shiftArithmeticRight(this.getData(), arg.intValueSafe());
+        return new DataWord(bytes);
     }
+
 
     @JsonValue
     @Override
