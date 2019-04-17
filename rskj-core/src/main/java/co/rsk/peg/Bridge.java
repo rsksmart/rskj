@@ -290,6 +290,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.repository = repository;
         this.logs = logs;
         this.blockchainConfig = blockchainNetConfig.getConfigForBlock(rskExecutionBlock.getNumber());
+        this.bridgeSupport = setup();
     }
 
     @Override
@@ -321,8 +322,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 logger.info(errorMessage);
                 throw new BridgeIllegalArgumentException(errorMessage);
             }
-
-            this.bridgeSupport = setup();
 
             Optional<?> result;
             try {
@@ -577,6 +576,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return blockHash.getBytes();
+    }
+
+    public long getBtcTransactionConfirmationsGetCost(Object[] args) {
+        Sha256Hash btcBlockHash = Sha256Hash.wrap((byte[]) args[1]);
+
+        return bridgeSupport.getBtcTransactionConfirmationsGetCost(btcBlockHash);
     }
 
     public int getBtcTransactionConfirmations(Object[] args)
