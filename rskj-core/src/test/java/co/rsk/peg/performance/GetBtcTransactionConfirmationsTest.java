@@ -91,6 +91,14 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
         ));
     }
 
+    @Test
+    public void getBtcTransactionConfirmations_Hundred() {
+        BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
+                "getBtcTransactionConfirmations-hundred",
+                2000, 100, 750, 3000
+        ));
+    }
+
     private ExecutionStats estimateGetBtcTransactionConfirmations(
             String caseName,
             int times, int confirmations, int  minTransactions,
