@@ -3943,7 +3943,7 @@ public class BridgeSupportTest {
 
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(blockHash);
 
-        Assert.assertEquals(17_500 + 10*20, cost);
+        Assert.assertEquals(13_600 + 10*70, cost);
     }
 
     @Test
@@ -3964,7 +3964,7 @@ public class BridgeSupportTest {
 
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(blockHash);
 
-        Assert.assertEquals(17_500, cost);
+        Assert.assertEquals(13_600, cost);
     }
 
     @Test
@@ -3986,7 +3986,7 @@ public class BridgeSupportTest {
 
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(blockHash);
 
-        Assert.assertEquals(17_500, cost);
+        Assert.assertEquals(13_600, cost);
     }
 
     @Test
@@ -4008,7 +4008,7 @@ public class BridgeSupportTest {
 
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(blockHash);
 
-        Assert.assertEquals(17_500, cost);
+        Assert.assertEquals(13_600, cost);
     }
 
     @Test
@@ -4033,7 +4033,7 @@ public class BridgeSupportTest {
 
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(blockHash);
 
-        Assert.assertEquals(17_500, cost);
+        Assert.assertEquals(13_600, cost);
     }
 
     @Test
@@ -4059,7 +4059,7 @@ public class BridgeSupportTest {
 
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(blockHash);
 
-        Assert.assertEquals(17_500, cost);
+        Assert.assertEquals(13_600, cost);
     }
 
     @Test
