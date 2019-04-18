@@ -53,6 +53,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -2448,6 +2449,67 @@ public class BridgeTest {
             Assert.assertEquals(RuntimeException.class, e.getCause().getClass());
             Assert.assertTrue(e.getCause().getMessage().contains("bla bla bla"));
         }
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_gasCost() throws Exception {
+        PowerMockito.mockStatic(BridgeUtils.class);
+
+        GenesisConfig mockedConfig = spy(new GenesisConfig());
+        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
+        config.setBlockchainConfig(mockedConfig);
+
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, getGenesisBlock(), null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+
+        PowerMockito.when(BridgeUtils.isContractTx(any(Transaction.class))).thenReturn(false);
+        PowerMockito.when(BridgeUtils.isFreeBridgeTx(any(Transaction.class), any(long.class), any(BlockchainNetConfig.class))).thenReturn(false);
+
+        byte[] btcTxHash = Sha256Hash.of(Hex.decode("aabbcc")).getBytes();
+        byte[] btcBlockHash = Sha256Hash.of(Hex.decode("ddeeff")).getBytes();
+        byte[][] merkleBranchHashes = new byte[][] {
+                Sha256Hash.of(Hex.decode("11")).getBytes(),
+                Sha256Hash.of(Hex.decode("22")).getBytes(),
+                Sha256Hash.of(Hex.decode("33")).getBytes(),
+        };
+        BigInteger merkleBranchBits = BigInteger.valueOf(123);
+
+        when(bridgeSupportMock.getBtcTransactionConfirmationsGetCost(Sha256Hash.wrap(btcBlockHash))).thenReturn(1234L);
+
+        CallTransaction.Function fn = BridgeMethods.GET_BTC_TRANSACTION_CONFIRMATIONS.getFunction();
+
+        // *** Hack to bypass a current bytes32 solidity type encoding bug *** //
+        SolidityType.Bytes32Type bytes32Spy = spy((SolidityType.Bytes32Type) fn.inputs[0].type);
+        when(bytes32Spy.encode(any(Object.class))).thenAnswer((InvocationOnMock m) -> m.getArgumentAt(0, Object.class));
+
+        // Overwriting bytes32 types inputs with a spy that uses the identity function as the encoding method (which is what we need)
+        SolidityType oldArg0, oldArg1, oldArg3ElementType;
+
+        oldArg0 = fn.inputs[0].type;
+        oldArg1 = fn.inputs[1].type;
+        oldArg3ElementType = (SolidityType) Whitebox.getInternalState(fn.inputs[3].type, "elementType");
+
+        fn.inputs[0].type = bytes32Spy;
+        fn.inputs[1].type = bytes32Spy;
+        Whitebox.setInternalState(fn.inputs[3].type, "elementType", bytes32Spy);
+        // *** End of hack *** //
+
+        byte[] data = fn.encode(new Object[]{
+                btcTxHash,
+                btcBlockHash,
+                merkleBranchBits,
+                merkleBranchHashes
+        });
+
+        // *** Unhack! *** //
+        fn.inputs[0].type = oldArg0;
+        fn.inputs[1].type = oldArg1;
+        Whitebox.setInternalState(fn.inputs[3].type, "elementType", oldArg3ElementType);
+        // *** End of unhack! *** //
+
+        Assert.assertEquals(2*data.length + 1234L, bridge.getGasForData(data));
     }
 
     @Test
