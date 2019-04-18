@@ -1133,8 +1133,8 @@ public class BridgeSupport {
     }
 
     public Long getBtcTransactionConfirmationsGetCost(Sha256Hash btcBlockHash) {
-        final long BASIC_COST = 17_500;
-        final long STEP_COST = 20;
+        final long BASIC_COST = 13_600;
+        final long STEP_COST = 70;
 
         // Dynamic cost based on the depth of the block that contains
         // the transaction. Find such depth first, then calculate
