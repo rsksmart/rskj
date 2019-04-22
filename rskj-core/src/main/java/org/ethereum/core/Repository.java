@@ -125,18 +125,6 @@ public interface Repository extends AccountInformationProvider {
     Set<RskAddress> getAccountsKeys();
 
     /**
-     * Dump the full state of the current repository into a file with JSON format
-     * It contains all the contracts/account, their attributes and
-     *
-     * @param block of the current state
-     * @param gasUsed the amount of gas used in the block until that point
-     * @param txNumber is the number of the transaction for which the dump has to be made
-     * @param txHash is the hash of the given transaction.
-     * If null, the block state post coinbase reward is dumped.
-     */
-    void dumpState(Block block, long gasUsed, int txNumber, byte[] txHash);
-
-    /**
      * Save a snapshot and start tracking future changes
      *
      * @return the tracker repository

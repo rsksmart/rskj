@@ -56,22 +56,19 @@ public class ContractDetailsImpl implements ContractDetails {
     private boolean closed;
     private Set<ByteArrayWrapper> keys = new HashSet<>();
     private final TrieStore.Pool trieStorePool;
-    private final int memoryStorageLimit;
     private byte[] codeHash;
 
-    public ContractDetailsImpl(byte[] encoded, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
+    public ContractDetailsImpl(byte[] encoded, TrieStore.Pool trieStorePool) {
         this.trieStorePool = trieStorePool;
-        this.memoryStorageLimit = memoryStorageLimit;
         decode(encoded);
     }
 
-    public ContractDetailsImpl(byte[] address, Trie trie, byte[] code, TrieStore.Pool trieStorePool, int memoryStorageLimit) {
+    public ContractDetailsImpl(byte[] address, Trie trie, byte[] code, TrieStore.Pool trieStorePool) {
         this.address = ByteUtils.clone(address);
         this.trie = trie;
         this.code = ByteUtils.clone(code);
         this.codeHash = getCodeHash(code);
         this.trieStorePool = trieStorePool;
-        this.memoryStorageLimit = memoryStorageLimit;
 
         if (this.trie == null) {
             this.trie = this.newTrie();
@@ -358,8 +355,8 @@ public class ContractDetailsImpl implements ContractDetails {
         ContractDetailsImpl details = new ContractDetailsImpl(this.address,
                                                               this.trie.getSnapshotTo(new Keccak256(hash)),
                                                               this.code,
-                                                              this.trieStorePool,
-                                                              this.memoryStorageLimit);
+                                                              this.trieStorePool
+        );
         details.keys = new HashSet<>();
         details.keys.addAll(this.keys);
 

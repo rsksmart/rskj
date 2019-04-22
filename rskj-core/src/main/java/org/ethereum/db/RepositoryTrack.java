@@ -24,7 +24,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
-import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -322,12 +321,6 @@ public class RepositoryTrack implements Repository {
 
     @Override
     public Set<RskAddress> getAccountsKeys() {
-        throw new UnsupportedOperationException();
-    }
-
-
-    @Override
-    public void dumpState(Block block, long gasUsed, int txNumber, byte[] txHash) {
         throw new UnsupportedOperationException();
     }
 

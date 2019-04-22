@@ -138,7 +138,6 @@ public class BlockChainLoader {
             blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
             listener.onBlock(genesis, new ArrayList<>() );
-            repository.dumpState(genesis, 0, 0, null);
 
             logger.info("Genesis block loaded");
         } else {
@@ -146,7 +145,7 @@ public class BlockChainLoader {
             blockchain.setStatus(bestBlock, totalDifficulty);
 
             // we need to do this because when bestBlock == null we touch the genesis' state root
-            Repository repo = new RepositoryImpl(new Trie(true), null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+            Repository repo = new RepositoryImpl(new Trie(true), null, new TrieStorePoolOnMemory());
             loadRepository(repo);
             updateGenesis(repo);
 

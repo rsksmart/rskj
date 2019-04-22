@@ -647,8 +647,7 @@ public class RskContext implements NodeBootstrapper {
         return new RepositoryImpl(
                 new Trie(new TrieStoreImpl(ds), true),
                 detailsDS,
-                new TrieStorePoolOnDisk(databaseDir),
-                rskSystemProperties.detailsInMemoryStorageLimit()
+                new TrieStorePoolOnDisk(databaseDir)
         );
     }
 
@@ -713,7 +712,17 @@ public class RskContext implements NodeBootstrapper {
         return peerExplorer;
     }
 
-    private Genesis getGenesis() {
+    protected Wallet buildWallet() {
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        if (!rskSystemProperties.isWalletEnabled()) {
+            return null;
+        }
+
+        KeyValueDataSource ds = makeDataSource("wallet", rskSystemProperties.databaseDir());
+        return new Wallet(ds);
+    }
+
+    public Genesis getGenesis() {
         if (genesis == null) {
             genesis = buildGenesis();
         }
@@ -747,15 +756,9 @@ public class RskContext implements NodeBootstrapper {
         return syncConfiguration;
     }
 
-    private Wallet getWallet() {
+    public Wallet getWallet() {
         if (wallet == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            if (!rskSystemProperties.isWalletEnabled()) {
-                return null;
-            }
-
-            KeyValueDataSource ds = makeDataSource("wallet", rskSystemProperties.databaseDir());
-            wallet = new Wallet(ds);
+            wallet = buildWallet();
         }
 
         return wallet;
