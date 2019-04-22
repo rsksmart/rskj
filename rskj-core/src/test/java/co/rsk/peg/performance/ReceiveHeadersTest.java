@@ -31,6 +31,7 @@ import co.rsk.peg.RepositoryBlockStore;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -59,34 +60,36 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         test.teardownCpuTime();
     }
 
-    @Test
-    public void receiveHeadersSingleBlock() throws IOException {
+    @Before
+    public void warmup() {
         setQuietMode(true);
         System.out.print("Doing a few initial passes... ");
-        doReceiveHeaders(100, 1, 0);
+        doReceiveHeaders("warmup", 100, 1, 0);
         setQuietMode(false);
         System.out.print("Done!\n");
+    }
 
-        ExecutionStats stats = new ExecutionStats("receiveHeaders-singleBlock");
+    @Test
+    public void receiveHeadersSingleBlock() throws IOException {
+        BridgePerformanceTest.addStats(doReceiveHeaders("receiveHeaders-singleBlock", 2000, 1, 0));
+    }
 
-        executeAndAverage(
-                "receiveHeaders-singleBlock", 2000,
-                generateABIEncoder(1, 1, 0),
-                buildInitializer(1000, 2000),
-                Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
-                Helper.getRandomHeightProvider(10),
-                stats
-        );
+    @Test
+    public void receiveHeadersInterpolation() throws IOException {
+        CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-interpolation");
+
+        stats.add(doReceiveHeaders("receiveHeaders-interpolation",1000, 1, 0));
+        stats.add(doReceiveHeaders("receiveHeaders-interpolation",1000, 500, 0));
 
         BridgePerformanceTest.addStats(stats);
     }
 
     @Test
-    public void receiveHeaders() throws IOException {
-        CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders");
+    public void receiveHeadersIncremental() throws IOException {
+        CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-incremental");
 
         for (int i = 1; i <= 500; i++) {
-            stats.add(doReceiveHeaders(10, i, 0));
+            stats.add(doReceiveHeaders("receiveHeaders-incremental",10, i, 0));
         }
 
         BridgePerformanceTest.addStats(stats);
@@ -94,23 +97,19 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
 
     @Test
     public void receiveHeadersWithForking() throws IOException {
-        setQuietMode(true);
-        doReceiveHeaders(100, 1, 0);
-        setQuietMode(false);
-
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-withForking");
 
         for (int numHeaders = 1; numHeaders < 10; numHeaders++) {
             for (int depth = 0; depth <= 10; depth++) {
-                stats.add(doReceiveHeaders(50, numHeaders, depth));
+                stats.add(doReceiveHeaders("receiveHeaders-withForking", 50, numHeaders, depth));
             }
         }
 
         BridgePerformanceTest.addStats(stats);
     }
 
-    private ExecutionStats doReceiveHeaders(int times, int numHeaders, int forkDepth) {
-        String name = String.format("receiveHeaders-fork-%d-headers-%d", forkDepth, numHeaders);
+    private ExecutionStats doReceiveHeaders(String caseName, int times, int numHeaders, int forkDepth) {
+        String name = String.format("%s-forkdepth-%d-headers-%d", caseName, forkDepth, numHeaders);
         ExecutionStats stats = new ExecutionStats(name);
         int totalHeaders = numHeaders + forkDepth;
         return executeAndAverage(
