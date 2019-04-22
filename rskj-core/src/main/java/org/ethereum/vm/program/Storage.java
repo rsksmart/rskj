@@ -22,7 +22,6 @@ package org.ethereum.vm.program;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
-import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
@@ -167,11 +166,6 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public Set<RskAddress> getAccountsKeys() {
         return repository.getAccountsKeys();
-    }
-
-    @Override
-    public void dumpState(Block block, long gasUsed, int txNumber, byte[] txHash) {
-        repository.dumpState(block, gasUsed, txNumber, txHash);
     }
 
     @Override

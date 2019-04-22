@@ -138,7 +138,6 @@ public class BlockChainLoader {
             blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
             listener.onBlock(genesis, new ArrayList<>() );
-            repository.dumpState(genesis, 0, 0, null);
 
             logger.info("Genesis block loaded");
         } else {

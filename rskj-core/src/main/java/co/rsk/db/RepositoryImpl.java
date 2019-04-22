@@ -283,11 +283,6 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized void dumpState(Block block, long gasUsed, int txNumber, byte[] txHash) {
-        // To be implemented
-    }
-
-    @Override
     public synchronized Repository startTracking() {
         return new RepositoryTrack(this);
     }
