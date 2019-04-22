@@ -52,8 +52,7 @@ public class RskTestContext extends RskContext {
         return new RepositoryImpl(
                 new Trie(new TrieStoreImpl(new HashMapDB()), true),
                 new HashMapDB(),
-                new TrieStorePoolOnMemory(),
-                getRskSystemProperties().detailsInMemoryStorageLimit()
+                new TrieStorePoolOnMemory()
         );
     }
 

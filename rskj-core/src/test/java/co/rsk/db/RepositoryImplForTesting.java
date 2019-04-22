@@ -34,7 +34,7 @@ import static org.ethereum.core.AccountState.EMPTY_DATA_HASH;
 public class RepositoryImplForTesting extends RepositoryImpl {
 
     public RepositoryImplForTesting() {
-        super(new Trie(null, true), new HashMapDB(), new TrieStorePoolOnMemory(), 1000);
+        super(new Trie(null, true), new HashMapDB(), new TrieStorePoolOnMemory());
     }
 
     @Override

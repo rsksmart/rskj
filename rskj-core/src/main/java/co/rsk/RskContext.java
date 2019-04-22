@@ -647,8 +647,7 @@ public class RskContext implements NodeBootstrapper {
         return new RepositoryImpl(
                 new Trie(new TrieStoreImpl(ds), true),
                 detailsDS,
-                new TrieStorePoolOnDisk(databaseDir),
-                rskSystemProperties.detailsInMemoryStorageLimit()
+                new TrieStorePoolOnDisk(databaseDir)
         );
     }
 

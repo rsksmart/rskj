@@ -19,15 +19,14 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import static org.ethereum.TestUtils.randomAddress;
 import static org.ethereum.core.AccountState.EMPTY_DATA_HASH;
@@ -37,13 +36,11 @@ import static org.junit.Assert.assertNull;
 
 public class DetailsDataStoreTest {
 
-    private final TestSystemProperties config = new TestSystemProperties();
-
     @Test
     public void test1(){
         HashMapDB db = new HashMapDB();
         TrieStorePoolOnMemory trieStorePool = new TrieStorePoolOnMemory();
-        DetailsDataStore dds = new DetailsDataStore(db, trieStorePool, config.detailsInMemoryStorageLimit());
+        DetailsDataStore dds = new DetailsDataStore(db, trieStorePool);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -56,8 +53,7 @@ public class DetailsDataStoreTest {
             contractAddress,
             new Trie(trieStorePool.getInstanceFor(storeName), true),
             null,
-            trieStorePool,
-            config.detailsInMemoryStorageLimit()
+            trieStorePool
         );
         contractDetails.setCode(code);
         contractDetails.put(DataWord.valueOf(key), DataWord.valueOf(value));
@@ -83,7 +79,7 @@ public class DetailsDataStoreTest {
 
         HashMapDB db = new HashMapDB();
         TrieStore.Pool trieStorePool = new TrieStorePoolOnMemory();
-        DetailsDataStore dds = new DetailsDataStore(db, trieStorePool, config.detailsInMemoryStorageLimit());
+        DetailsDataStore dds = new DetailsDataStore(db, trieStorePool);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -96,8 +92,7 @@ public class DetailsDataStoreTest {
             null,
             new Trie(trieStorePool.getInstanceFor(storeName), true),
             null,
-            trieStorePool,
-            config.detailsInMemoryStorageLimit()
+            trieStorePool
         );
         contractDetails.setCode(code);
         contractDetails.put(DataWord.valueOf(key), DataWord.valueOf(value));
@@ -125,10 +120,9 @@ public class DetailsDataStoreTest {
     @Test
     public void test3(){
 
-        HashMapDB store = new HashMapDB();
         HashMapDB db = new HashMapDB();
         TrieStore.Pool trieStorePool = new TrieStorePoolOnMemory();
-        DetailsDataStore dds = new DetailsDataStore(db, trieStorePool, config.detailsInMemoryStorageLimit());
+        DetailsDataStore dds = new DetailsDataStore(db, trieStorePool);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
@@ -141,8 +135,7 @@ public class DetailsDataStoreTest {
             contractAddress,
             new Trie(trieStorePool.getInstanceFor(storeName), true),
             null,
-            trieStorePool,
-            config.detailsInMemoryStorageLimit()
+            trieStorePool
         );
         contractDetails.setCode(code);
         contractDetails.put(DataWord.valueOf(key), DataWord.valueOf(value));
@@ -173,7 +166,7 @@ public class DetailsDataStoreTest {
     @Test
     public void test4() {
         HashMapDB db = new HashMapDB();
-        DetailsDataStore dds = new DetailsDataStore(db, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+        DetailsDataStore dds = new DetailsDataStore(db, new TrieStorePoolOnMemory());
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
 
