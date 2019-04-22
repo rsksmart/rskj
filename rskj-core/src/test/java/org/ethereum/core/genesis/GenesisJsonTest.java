@@ -19,8 +19,6 @@
 
 package org.ethereum.core.genesis;
 
-import com.google.common.io.ByteStreams;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;

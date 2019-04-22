@@ -28,7 +28,6 @@ import co.rsk.core.bc.FamilyUtils;
 import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -209,7 +208,7 @@ public class BlockToMineBuilder {
                 new byte[]{},
                 new byte[]{},
                 minimumGasPrice.getBytes(),
-                CollectionUtils.size(uncles)
+                uncles.size()
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());

@@ -25,7 +25,6 @@ import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
 import co.rsk.util.IpUtils;
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
@@ -189,7 +188,7 @@ public class PeerExplorer {
     }
 
     public List<Node> getNodes() {
-        return  new ArrayList<>(this.establishedConnections.values());
+        return new ArrayList<>(this.establishedConnections.values());
     }
 
     public PingPeerMessage sendPing(InetSocketAddress nodeAddress, int attempt) {
@@ -318,14 +317,12 @@ public class PeerExplorer {
     }
 
     private void removeConnections(List<PeerDiscoveryRequest> expiredRequests) {
-        if (CollectionUtils.isNotEmpty(expiredRequests)) {
-            for (PeerDiscoveryRequest req : expiredRequests) {
-                Node node = req.getRelatedNode();
+        for (PeerDiscoveryRequest req : expiredRequests) {
+            Node node = req.getRelatedNode();
 
-                if (node != null) {
-                    this.establishedConnections.remove(node.getId());
-                    this.distanceTable.removeNode(node);
-                }
+            if (node != null) {
+                this.establishedConnections.remove(node.getId());
+                this.distanceTable.removeNode(node);
             }
         }
     }
@@ -346,13 +343,11 @@ public class PeerExplorer {
     }
 
     private void loadInitialBootNodes(List<String> nodes) {
-        if (CollectionUtils.isNotEmpty(nodes)) {
-            bootNodes.addAll(IpUtils.parseAddresses(nodes));
-        }
+        bootNodes.addAll(IpUtils.parseAddresses(nodes));
     }
 
     private List<Node> getRandomizeLimitedList(List<Node> nodes, int maxNumber, int randomElements) {
-        if (CollectionUtils.size(nodes) <= maxNumber) {
+        if (nodes.size() <= maxNumber) {
             return nodes;
         } else {
             List<Node> ret = new ArrayList<>();

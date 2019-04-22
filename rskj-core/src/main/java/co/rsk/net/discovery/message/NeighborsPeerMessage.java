@@ -19,7 +19,6 @@
 package co.rsk.net.discovery.message;
 
 import co.rsk.net.discovery.PeerDiscoveryException;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
@@ -46,6 +45,7 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
 
     public NeighborsPeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         super(wire, mdc, signature, type, data);
+        this.nodes = new ArrayList<>();
         this.parse(data);
     }
 
@@ -61,7 +61,6 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
         }
 
         RLPList nodesRLP = (RLPList) list.get(0);
-        nodes = new ArrayList<>();
 
         for (int i = 0; i < nodesRLP.size(); ++i) {
             RLPList nodeRLP = (RLPList) nodesRLP.get(i);
@@ -120,7 +119,7 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
     }
 
     public int countNodes() {
-        return CollectionUtils.size(this.nodes);
+        return this.nodes.size();
     }
 
     @Override

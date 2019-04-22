@@ -34,8 +34,6 @@ public class SolidityCompiler {
 
     private Solc solc;
 
-    public SolidityCompiler(){}
-
     public SolidityCompiler(SystemProperties config) {
         solc = new Solc(config);
     }

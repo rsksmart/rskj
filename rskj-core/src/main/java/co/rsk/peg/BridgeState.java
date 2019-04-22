@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
-import org.apache.commons.collections4.map.HashedMap;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -109,7 +108,7 @@ public class BridgeState {
     }
 
     public Map<String, Object> stateToMap() {
-        Map<String, Object> result = new HashedMap<>();
+        Map<String, Object> result = new HashMap<>();
         result.put("btcTxHashesAlreadyProcessed", this.formatedAlreadyProcessedHashes());
         result.put("rskTxsWaitingForSignatures", this.toStringList(rskTxsWaitingForSignatures.keySet()));
         result.put("btcBlockchainBestChainHeight", this.btcBlockchainBestChainHeight);

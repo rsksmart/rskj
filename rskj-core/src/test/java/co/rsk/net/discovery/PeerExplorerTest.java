@@ -23,7 +23,6 @@ import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
@@ -82,14 +81,14 @@ public class PeerExplorerTest {
 
         Set<String> nodesWithMessage = peerExplorer.startConversationWithNewNodes();
 
-        Assert.assertTrue(CollectionUtils.isEmpty(nodesWithMessage));
+        Assert.assertTrue(nodesWithMessage.isEmpty());
 
-        peerExplorer = new PeerExplorer(null, node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
+        peerExplorer = new PeerExplorer(new ArrayList<>(), node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
         peerExplorer.setUDPChannel(Mockito.mock(UDPChannel.class));
 
         nodesWithMessage = peerExplorer.startConversationWithNewNodes();
 
-        Assert.assertTrue(CollectionUtils.isEmpty(nodesWithMessage));
+        Assert.assertTrue(nodesWithMessage.isEmpty());
     }
 
 
@@ -112,7 +111,7 @@ public class PeerExplorerTest {
 
         Set<String> nodesWithMessage = peerExplorer.startConversationWithNewNodes();
 
-        Assert.assertTrue(CollectionUtils.size(nodesWithMessage) == 2);
+        Assert.assertEquals(2, nodesWithMessage.size());
         Assert.assertTrue(nodesWithMessage.contains("localhost/127.0.0.1:3307"));
         Assert.assertTrue(nodesWithMessage.contains("localhost/127.0.0.1:3306"));
     }
@@ -132,7 +131,7 @@ public class PeerExplorerTest {
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
 
-        Assert.assertTrue(CollectionUtils.isEmpty(peerExplorer.getNodes()));
+        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
 
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         String check = UUID.randomUUID().toString();
@@ -162,7 +161,7 @@ public class PeerExplorerTest {
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
 
-        Assert.assertTrue(CollectionUtils.isEmpty(peerExplorer.getNodes()));
+        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
 
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         String check = UUID.randomUUID().toString();
@@ -217,7 +216,7 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
-        Assert.assertTrue(CollectionUtils.isEmpty(peerExplorer.getNodes()));
+        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
 
         //A incoming pong for a Ping we did not sent.
         String check = UUID.randomUUID().toString();
@@ -315,7 +314,7 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
-        Assert.assertTrue(CollectionUtils.isEmpty(peerExplorer.getNodes()));
+        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
 
         //we send the ping first
         peerExplorer.startConversationWithNewNodes();
@@ -373,7 +372,7 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
-        Assert.assertTrue(CollectionUtils.isEmpty(peerExplorer.getNodes()));
+        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
 
         //We try to process a Message without previous connection
         List<Node> newNodes = new ArrayList<>();
@@ -444,7 +443,7 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
-        Assert.assertTrue(CollectionUtils.isEmpty(peerExplorer.getNodes()));
+        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
 
         //A incoming pong for a Ping we did not sent.
         String check = UUID.randomUUID().toString();
