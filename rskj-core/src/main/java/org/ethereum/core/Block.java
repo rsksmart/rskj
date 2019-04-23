@@ -191,6 +191,10 @@ public class Block {
         block.transactionsList = transactionsList;
         block.uncleList = uncleList;
         block.seal();
+
+        byte[] calculatedRoot = getTxTrie(block.transactionsList).getHash().getBytes();
+        block.checkExpectedRoot(block.header.getTxTrieRoot(), calculatedRoot);
+
         return block;
     }
 
