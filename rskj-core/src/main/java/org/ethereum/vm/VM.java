@@ -533,9 +533,6 @@ public class VM {
     }
 
     protected void doSHL() {
-        if (false/* que se hace aca entonces? */) {
-            throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
-        }
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -551,9 +548,6 @@ public class VM {
     }
 
     protected void doSHR() {
-        if (false/* que se hace aca entonces? */) {
-            throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
-        }
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -569,9 +563,6 @@ public class VM {
     }
 
     protected void doSAR() {
-        if (false/* que se hace aca entonces? */) {
-            throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
-        }
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -1674,11 +1665,23 @@ public class VM {
             break;
             case OpCodes.OP_MULMOD: doMULMOD();
             break;
-            case OpCodes.OP_SHL: doSHL();
+            case OpCodes.OP_SHL:
+                if (!config.isRskip120()) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doSHL();
             break;
-            case OpCodes.OP_SHR: doSHR();
+            case OpCodes.OP_SHR:
+                if (!config.isRskip120()) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doSHR();
             break;
-            case OpCodes.OP_SAR: doSAR();
+            case OpCodes.OP_SAR:
+                if (!config.isRskip120()) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doSAR();
             break;
             /**
              * SHA3
