@@ -417,20 +417,6 @@ public class VMExecutionTest {
         executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, blockchainConfig);
     }
 
-
-    @Test
-    public void testSAR3() {
-        Program program = executeCode("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3);
-        Stack stack = program.getStack();
-
-        String expectedResult = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueFromHex(expectedResult), stack.peek());
-    }
-
-    /* SEBASTIANS -- ADD TESTS FOR WRONG OPCODE EXCEPTION FOR THE HARD FORK */
-
     @Test
     public void testJumpSkippingInvalidJump() {
         Program program = executeCode("PUSH1 0x05 JUMP PUSH1 0xa0 JUMPDEST PUSH1 0x01", 4);
@@ -719,6 +705,5 @@ public class VMExecutionTest {
             vm.step(program);
 
         return program;
-
     }
 }
