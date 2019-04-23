@@ -28,7 +28,6 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
-import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -127,7 +126,7 @@ public class BlockChainLoader {
         }
 
         String rootHash = config.rootHashStart();
-        if (StringUtils.isNotBlank(rootHash)) {
+        if (rootHash != null && !"".equals(rootHash.trim())) {
             // update world state by dummy hash
             byte[] rootHashArray = Hex.decode(rootHash);
             logger.info("Loading root hash from property file: [{}]", rootHash);

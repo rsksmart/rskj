@@ -27,7 +27,7 @@ import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
-import org.apache.commons.lang3.ArrayUtils;
+import co.rsk.util.ListArrayUtil;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -221,7 +221,7 @@ public class Transaction {
         }
 
         long nonZeroes = this.nonZeroDataBytes();
-        long zeroVals = ArrayUtils.getLength(this.getData()) - nonZeroes;
+        long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
 
         return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
     }

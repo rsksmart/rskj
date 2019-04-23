@@ -25,7 +25,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 
-import static org.apache.commons.lang3.ArrayUtils.*;
+import static co.rsk.util.ListArrayUtil.*;
 
 public class InternalTransaction extends Transaction {
 

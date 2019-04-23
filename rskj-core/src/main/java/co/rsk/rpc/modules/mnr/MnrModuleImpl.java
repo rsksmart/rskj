@@ -29,7 +29,7 @@ import co.rsk.mine.MinerWork;
 import co.rsk.mine.SubmitBlockResult;
 import co.rsk.mine.SubmittedBlockInfo;
 import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
-import org.apache.commons.lang3.ArrayUtils;
+import co.rsk.util.ListArrayUtil;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.rpc.TypeConverter;
@@ -123,9 +123,9 @@ public class MnrModuleImpl implements MnrModule {
 
     private String extractBlockHashForMergedMining(BtcTransaction coinbase) {
         byte[] coinbaseAsByteArray = coinbase.bitcoinSerialize();
-        List<Byte> coinbaseAsByteList = Arrays.asList(ArrayUtils.toObject(coinbaseAsByteArray));
+        List<Byte> coinbaseAsByteList = ListArrayUtil.asByteList(coinbaseAsByteArray);
 
-        List<Byte> rskTagAsByteList = Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+        List<Byte> rskTagAsByteList = ListArrayUtil.asByteList(RskMiningConstants.RSK_TAG);
 
         int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
         byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue() / 8];
