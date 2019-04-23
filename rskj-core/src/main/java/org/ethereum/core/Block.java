@@ -511,6 +511,7 @@ public class Block {
         if (!Arrays.areEqual(expectedRoot, calculatedRoot)) {
             logger.error("Transactions trie root validation failed for block #{}", this.header.getNumber());
             panicProcessor.panic("txroot", String.format("Transactions trie root validation failed for block %d %s", this.header.getNumber(), this.header.getHash()));
+            throw new IllegalArgumentException("Invalid state root", new Throwable());
         }
     }
 
