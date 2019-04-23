@@ -68,12 +68,6 @@ public enum MessageType {
             return new GetBlockMessage(list.get(0).getRLPData());
         }
     },
-    BLOCK_HEADERS_MESSAGE(4) {
-        @Override
-        public Message createMessage(RLPList list) {
-            return new BlockHeadersMessage(list.getRLPData());
-        }
-    },
     GET_BLOCK_HEADERS_MESSAGE(5) {
         @Override
         public Message createMessage(RLPList list) {

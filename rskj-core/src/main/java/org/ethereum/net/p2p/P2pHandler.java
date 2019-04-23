@@ -21,12 +21,9 @@ package org.ethereum.net.p2p;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.MessageQueue;
-import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.net.message.ReasonCode;
-import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,13 +55,7 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
     private static final Logger logger = LoggerFactory.getLogger("net");
 
     private static ScheduledExecutorService pingTimer =
-            Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-                public Thread newThread(Runnable r) {
-                    return new Thread(r, "P2pPingTimer");
-                }
-            });
-
-    private HelloMessage handshakeHelloMessage = null;
+            Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "P2pPingTimer"));
 
     private int ethInbound;
     private int ethOutbound;
@@ -130,11 +121,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
         }
     }
 
-    private void disconnect(ReasonCode reasonCode) {
-        msgQueue.sendMessage(new DisconnectMessage(reasonCode));
-        channel.getNodeStatistics().nodeDisconnectedLocal(reasonCode);
-    }
-
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         logger.info("channel inactive: ", ctx.toString());
@@ -164,10 +150,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
         }
     }
 
-    private void sendGetPeers() {
-        msgQueue.sendMessage(StaticMessages.GET_PEERS_MESSAGE);
-    }
-
     public void setHandshake(HelloMessage msg) {
 
         channel.getNodeStatistics().setClientId(msg.getClientId());
@@ -175,27 +157,11 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
         this.ethInbound = channel.getNodeStatistics().ethInbound.get();
         this.ethOutbound = channel.getNodeStatistics().ethOutbound.get();
 
-        this.handshakeHelloMessage = msg;
         ethereumListener.onHandShakePeer(channel, msg);
-    }
-
-    /**
-     * submit transaction to the network
-     *
-     * @param tx - fresh transaction object
-     */
-    public void sendTransaction(Transaction tx) {
-
-        TransactionsMessage msg = new TransactionsMessage(tx);
-        msgQueue.sendMessage(msg);
     }
 
     public void sendDisconnect() {
         msgQueue.disconnect();
-    }
-
-    public HelloMessage getHandshakeHelloMessage() {
-        return handshakeHelloMessage;
     }
 
     private void startTimers() {

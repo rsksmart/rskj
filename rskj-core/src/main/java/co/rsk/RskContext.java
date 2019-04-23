@@ -85,8 +85,7 @@ import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.client.ConfigCapabilitiesImpl;
 import org.ethereum.net.client.PeerClient;
-import org.ethereum.net.eth.handler.EthHandlerFactory;
-import org.ethereum.net.eth.handler.EthHandlerFactoryImpl;
+import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.*;
@@ -187,8 +186,8 @@ public class RskContext implements NodeBootstrapper {
     private DebugModule debugModule;
     private MnrModule mnrModule;
     private TxPoolModule txPoolModule;
-    private EthHandlerFactory ethHandlerFactory;
-    private EthHandlerFactoryImpl.RskWireProtocolFactory rskWireProtocolFactory;
+    private RskWireProtocol.Factory rskWireProtocolFactory;
+    private Eth62MessageFactory eth62MessageFactory;
     private GasLimitCalculator gasLimitCalculator;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
     private ExecutionBlockRetriever executionBlockRetriever;
@@ -807,13 +806,22 @@ public class RskContext implements NodeBootstrapper {
                     getCompositeEthereumListener(),
                     getConfigCapabilities(),
                     getNodeManager(),
-                    getEthHandlerFactory(),
+                    getRskWireProtocolFactory(),
+                    getEth62MessageFactory(),
                     getStaticMessages(),
                     getPeerScoringManager()
             );
         }
 
         return ethereumChannelInitializerFactory;
+    }
+
+    private Eth62MessageFactory getEth62MessageFactory() {
+        if (eth62MessageFactory == null) {
+            eth62MessageFactory = new Eth62MessageFactory();
+        }
+
+        return eth62MessageFactory;
     }
 
     private BlockValidationRule getBlockValidationRule() {
@@ -1182,15 +1190,7 @@ public class RskContext implements NodeBootstrapper {
         return nodeMessageHandler;
     }
 
-    private EthHandlerFactory getEthHandlerFactory() {
-        if (ethHandlerFactory == null) {
-            ethHandlerFactory = new EthHandlerFactoryImpl(getRskWireProtocolFactory());
-        }
-
-        return ethHandlerFactory;
-    }
-
-    private EthHandlerFactoryImpl.RskWireProtocolFactory getRskWireProtocolFactory() {
+    private RskWireProtocol.Factory getRskWireProtocolFactory() {
         if (rskWireProtocolFactory == null) {
             rskWireProtocolFactory = () -> new RskWireProtocol(
                     getRskSystemProperties(),

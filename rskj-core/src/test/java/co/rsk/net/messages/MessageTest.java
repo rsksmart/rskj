@@ -215,28 +215,6 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBlockHeaderMessage() {
-        BlockHeader header = new BlockGenerator().getBlock(1).getHeader();
-        BlockHeadersMessage message = new BlockHeadersMessage(header);
-
-        byte[] encoded = message.getEncoded();
-
-        Message result = Message.create(encoded);
-
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_MESSAGE, result.getMessageType());
-
-        BlockHeadersMessage newmessage = (BlockHeadersMessage) result;
-
-        Assert.assertEquals(newmessage.getBlockHeaders().size(), 1);
-        BlockHeader newheader = newmessage.getBlockHeaders().get(0);
-        Assert.assertEquals(header.getNumber(), newheader.getNumber());
-        Assert.assertEquals(header.getHash(), newheader.getHash());
-        Assert.assertArrayEquals(header.getEncoded(), newheader.getEncoded());
-    }
-
-    @Test
     public void encodeDecodeBlockHeadersResponseMessage() {
         List<BlockHeader> headers = new ArrayList<>();
 
