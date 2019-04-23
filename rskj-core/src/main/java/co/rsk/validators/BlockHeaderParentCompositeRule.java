@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,32 +23,28 @@ import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Checks if {@link BlockHeader#number} == {@link BlockHeader#number} + 1 of parent's block
- *
- * @author Mikhail Kalinin
- * @since 02.09.2015
- */
-public class BlockParentNumberRule implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule {
+public class BlockHeaderParentCompositeRule implements BlockHeaderParentDependantValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
-    @Override
-    public boolean isValid(BlockHeader header, Block parent) {
-        if (header == null || parent == null) {
-            logger.warn("BlockParentNumberRule - block or parent are null");
-            return false;
-        }
-        BlockHeader parentHeader = parent.getHeader();
-        if (header.getNumber() != (parentHeader.getNumber() + 1)) {
-            logger.warn("#{}: block number is not parentBlock number + 1", header.getNumber());
-            return false;
-        }
-        return true;
+    private BlockHeaderParentDependantValidationRule[] rules;
+
+    public BlockHeaderParentCompositeRule(BlockHeaderParentDependantValidationRule... rules) {
+        this.rules = rules;
     }
 
     @Override
-    public boolean isValid(Block block, Block parent) {
-        return isValid(block.getHeader(), parent);
+    public boolean isValid(BlockHeader header, Block parent) {
+        String shortHash = header.getShortHash();
+        long number = header.getNumber();
+        logger.debug("Validating header {} {}", shortHash, number);
+        for (BlockHeaderParentDependantValidationRule rule : this.rules) {
+            if (!rule.isValid(header, parent)) {
+                logger.warn("Error Validating {} for header {} {}", rule.getClass(), shortHash, number);
+                return false;
+            }
+        }
+
+        return true;
     }
 }

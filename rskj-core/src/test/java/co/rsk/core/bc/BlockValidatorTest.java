@@ -26,7 +26,7 @@ import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.validators.BlockParentDependantValidationRule;
+import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.TestUtils;
@@ -418,7 +418,7 @@ public class BlockValidatorTest {
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
         store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
 
-        BlockParentDependantValidationRule parentValidationRule = Mockito.mock(BlockParentDependantValidationRule.class);
+        BlockHeaderParentDependantValidationRule parentValidationRule = Mockito.mock(BlockHeaderParentDependantValidationRule.class);
         Mockito.when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
       
         BlockValidatorImpl validator = new BlockValidatorBuilder()
@@ -823,11 +823,13 @@ public class BlockValidatorTest {
 
         int validPeriod = 6000;
 
+        BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getTimestamp())
+        Mockito.when(block.getHeader()).thenReturn(header);
+        Mockito.when(header.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + 2*validPeriod);
 
-        Mockito.when(block.getParentHash()).thenReturn(genesis.getHash());
+        Mockito.when(header.getParentHash()).thenReturn(genesis.getHash());
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockTimeStampValidationRule(validPeriod)
@@ -835,7 +837,7 @@ public class BlockValidatorTest {
 
         Assert.assertFalse(validator.isValid(block));
 
-        Mockito.when(block.getTimestamp())
+        Mockito.when(header.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + validPeriod);
 
         Assert.assertTrue(validator.isValid(block));

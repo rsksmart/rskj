@@ -54,14 +54,14 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     private final BlockStore blockStore;
     private final int uncleListLimit;
     private final int uncleGenerationLimit;
-    private final BlockValidationRule validations;
-    private final BlockParentDependantValidationRule parentValidations;
+    private final BlockHeaderValidationRule validations;
+    private final BlockHeaderParentDependantValidationRule parentValidations;
     private final BlockUnclesHashValidationRule blockValidationRule;
 
     public BlockUnclesValidationRule(
             BlockStore blockStore, int uncleListLimit,
-            int uncleGenerationLimit, BlockValidationRule validations,
-            BlockParentDependantValidationRule parentValidations) {
+            int uncleGenerationLimit, BlockHeaderValidationRule validations,
+            BlockHeaderParentDependantValidationRule parentValidations) {
         this.blockStore = blockStore;
         this.uncleListLimit = uncleListLimit;
         this.uncleGenerationLimit = uncleGenerationLimit;
@@ -113,10 +113,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
 
         for (BlockHeader uncle : uncles) {
 
-            Block blockForUncleHeader = new Block(uncle);
-
-            if (!this.validations.isValid(blockForUncleHeader)
-                    || !validateParentNumber(uncle, blockNumber)) {
+            if (!this.validations.isValid(uncle) || !validateParentNumber(uncle, blockNumber)) {
                 return false;
             }
 
@@ -129,7 +126,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
             hashes.add(uncleHash);
 
             if(!validateUnclesAncestors(ancestors, uncleHash) || !validateIfUncleWasNeverUsed(used, uncleHash)
-                    || !validateUncleParent(ancestors, blockForUncleHeader)) {
+                    || !validateUncleParent(ancestors, uncle)) {
                 return false;
             }
         }
@@ -177,7 +174,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         return true;
     }
 
-    private boolean validateUncleParent(Set<Keccak256> ancestors, Block uncle) {
+    private boolean validateUncleParent(Set<Keccak256> ancestors, BlockHeader uncle) {
         String uhashString = uncle.getHash().toString();
         Block parent = blockStore.getBlockByHash(uncle.getParentHash().getBytes());
 

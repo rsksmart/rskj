@@ -837,12 +837,12 @@ public class RskContext implements NodeBootstrapper {
                             getBlockStore(),
                             commonConstants.getUncleListLimit(),
                             commonConstants.getUncleGenerationLimit(),
-                            new BlockCompositeRule(
+                            new BlockHeaderCompositeRule(
                                     getProofOfWorkRule(),
                                     blockTimeStampValidationRule,
                                     new ValidGasUsedRule()
                             ),
-                            new BlockParentCompositeRule(
+                            new BlockHeaderParentCompositeRule(
                                     new PrevMinGasPriceRule(),
                                     new BlockParentNumberRule(),
                                     blockTimeStampValidationRule,
@@ -869,12 +869,12 @@ public class RskContext implements NodeBootstrapper {
                     getBlockStore(),
                     commonConstants.getUncleListLimit(),
                     commonConstants.getUncleGenerationLimit(),
-                    new BlockCompositeRule(
+                    new BlockHeaderCompositeRule(
                             getProofOfWorkRule(),
                             new BlockTimeStampValidationRule(commonConstants.getNewBlockMaxSecondsInTheFuture()),
                             new ValidGasUsedRule()
                     ),
-                    new BlockParentCompositeRule(
+                    new BlockHeaderParentCompositeRule(
                             new PrevMinGasPriceRule(),
                             new BlockParentNumberRule(),
                             new BlockDifficultyRule(getDifficultyCalculator()),

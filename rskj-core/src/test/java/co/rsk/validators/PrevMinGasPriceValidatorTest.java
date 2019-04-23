@@ -22,7 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
-import org.ethereum.db.BlockStore;
+import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -38,68 +38,77 @@ public class PrevMinGasPriceValidatorTest {
 
     @Test
     public void noParentBlock() {
+        BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
+        Mockito.when(block.getHeader()).thenReturn(header);
 
-        Mockito.when(block.getParentHash()).thenReturn(new Keccak256(PARENT_HASH));
-        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
+        Mockito.when(header.getParentHash()).thenReturn(new Keccak256(PARENT_HASH));
+        Mockito.when(header.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(block, null));
+        Assert.assertFalse(pmgpv.isValid(header, null));
     }
 
     @Test
     public void genesisBlock() {
+        BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
+        Mockito.when(block.getHeader()).thenReturn(header);
 
-        Mockito.when(block.isGenesis()).thenReturn(true);
-        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
+        Mockito.when(header.isGenesis()).thenReturn(true);
+        Mockito.when(header.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertTrue(pmgpv.isValid(block, null));
+        Assert.assertTrue(pmgpv.isValid(header, null));
     }
 
     @Test
     public void noMinGasPrice() {
+        BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
+        Mockito.when(block.getHeader()).thenReturn(header);
         Block parent = Mockito.mock(Block.class);
 
-        Mockito.when(block.isGenesis()).thenReturn(false);
-        Mockito.when(block.getMinimumGasPrice()).thenReturn(null);
+        Mockito.when(header.isGenesis()).thenReturn(false);
+        Mockito.when(header.getMinimumGasPrice()).thenReturn(null);
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(block, parent));
+        Assert.assertFalse(pmgpv.isValid(header, parent));
     }
 
     @Test
     public void outOfValidMGPRangeBlock() {
+        BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
+        Mockito.when(block.getHeader()).thenReturn(header);
         Block parent = Mockito.mock(Block.class);
 
-        Mockito.when(block.getParentHash()).thenReturn(new Keccak256(PARENT_HASH));
-        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
+        Mockito.when(header.getParentHash()).thenReturn(new Keccak256(PARENT_HASH));
+        Mockito.when(header.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
         Mockito.when(parent.getMinimumGasPrice()).thenReturn(Coin.valueOf(10L));
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(block, parent));
+        Assert.assertFalse(pmgpv.isValid(header, parent));
 
     }
 
     @Test
     public void validMGPInNewBlock() {
+        BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
+        Mockito.when(block.getHeader()).thenReturn(header);
         Block parent = Mockito.mock(Block.class);
-        BlockStore blockStore = Mockito.mock(BlockStore.class);
 
-        Mockito.when(block.getParentHash()).thenReturn(new Keccak256(PARENT_HASH));
-        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
+        Mockito.when(header.getParentHash()).thenReturn(new Keccak256(PARENT_HASH));
+        Mockito.when(header.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
         Mockito.when(parent.getMinimumGasPrice()).thenReturn(PARENT_BLOCK_MGP);
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(block, parent));
+        Assert.assertFalse(pmgpv.isValid(header, parent));
     }
 }
