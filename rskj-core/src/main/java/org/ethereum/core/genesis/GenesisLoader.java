@@ -82,7 +82,7 @@ public class GenesisLoader {
         ContractDetailsMapper detailsMapper = new ContractDetailsMapper(config);
 
         for (Map.Entry<String, AllocatedAccount> accountEntry : alloc.entrySet()) {
-            if(!StringUtils.equals("00", accountEntry.getKey())) {
+            if(!"00".equals(accountEntry.getKey())) {
                 Coin balance = new Coin(new BigInteger(accountEntry.getValue().getBalance()));
                 BigInteger nonce;
 

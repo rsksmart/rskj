@@ -19,13 +19,12 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.util.ListArrayUtil;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
-
-import static org.apache.commons.lang3.ArrayUtils.*;
 
 public class InternalTransaction extends Transaction {
 
@@ -38,7 +37,7 @@ public class InternalTransaction extends Transaction {
     public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
 
-        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
+        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, ListArrayUtil.nullToEmpty(value), ListArrayUtil.nullToEmpty(data));
 
         this.parentHash = parentHash;
         this.deep = deep;
@@ -83,7 +82,7 @@ public class InternalTransaction extends Transaction {
         }
 
         byte[] nonce = getNonce();
-        if (isEmpty(nonce) || getLength(nonce) == 1 && nonce[0] == 0) {
+        if (ListArrayUtil.isEmpty(nonce) || ListArrayUtil.getLength(nonce) == 1 && nonce[0] == 0) {
             nonce = RLP.encodeElement((byte[]) null);
         } else {
             nonce = RLP.encodeElement(nonce);

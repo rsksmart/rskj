@@ -25,7 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
-import org.apache.commons.lang3.ArrayUtils;
+import co.rsk.util.ListArrayUtil;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -188,7 +188,7 @@ public class Transaction {
         }
 
         long nonZeroes = this.nonZeroDataBytes();
-        long zeroVals  = ArrayUtils.getLength(this.getData()) - nonZeroes;
+        long zeroVals  = ListArrayUtil.getLength(this.getData()) - nonZeroes;
 
         return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
     }

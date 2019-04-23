@@ -23,6 +23,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.util.ListArrayUtil;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -45,8 +46,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.lang3.ArrayUtils.getLength;
-import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
@@ -289,7 +288,7 @@ public class TransactionExecutor {
             }
         } else {
             byte[] code = track.getCode(targetAddress);
-            if (isEmpty(code)) {
+            if (ListArrayUtil.isEmpty(code)) {
                 mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
                 result.spendGas(basicTxCost);
             } else {
@@ -310,7 +309,7 @@ public class TransactionExecutor {
 
     private void create() {
         RskAddress newContractAddress = tx.getContractAddress();
-        if (isEmpty(tx.getData())) {
+        if (ListArrayUtil.isEmpty(tx.getData())) {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
             cacheTrack.createAccount(newContractAddress);
         } else {
@@ -368,7 +367,7 @@ public class TransactionExecutor {
             mEndGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));
 
             if (tx.isContractCreation() && !result.isRevert()) {
-                int createdContractSize = getLength(program.getResult().getHReturn());
+                int createdContractSize = ListArrayUtil.getLength(program.getResult().getHReturn());
                 int returnDataGasValue = createdContractSize * GasCost.CREATE_DATA;
                 if (mEndGas.compareTo(BigInteger.valueOf(returnDataGasValue)) < 0) {
                     program.setRuntimeFailure(

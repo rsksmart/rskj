@@ -19,23 +19,21 @@
 
 package org.ethereum.core;
 
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
-import org.ethereum.vm.LogInfo;
+    import co.rsk.util.ListArrayUtil;
+    import org.bouncycastle.util.BigIntegers;
+    import org.bouncycastle.util.encoders.Hex;
+    import org.ethereum.util.RLP;
+    import org.ethereum.util.RLPElement;
+    import org.ethereum.util.RLPItem;
+    import org.ethereum.util.RLPList;
+    import org.ethereum.vm.LogInfo;
 
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
+    import java.math.BigInteger;
+    import java.util.ArrayList;
+    import java.util.Arrays;
+    import java.util.List;
 
-import java.math.BigInteger;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+    import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * The transaction receipt is a tuple of three items
@@ -75,13 +73,13 @@ public class TransactionReceipt {
         RLPList logs = (RLPList) receipt.get(3);
         RLPItem gasUsedRLP = (RLPItem) receipt.get(4);
 
-        postTxState = nullToEmpty(postTxStateRLP.getRLPData());
+        postTxState = ListArrayUtil.nullToEmpty(postTxStateRLP.getRLPData());
         cumulativeGas = cumulativeGasRLP.getRLPData() == null ? EMPTY_BYTE_ARRAY : cumulativeGasRLP.getRLPData();
         bloomFilter = new Bloom(bloomRLP.getRLPData());
         gasUsed = gasUsedRLP.getRLPData() == null ? EMPTY_BYTE_ARRAY : gasUsedRLP.getRLPData();
 
         if (receipt.size() > 5 ) {
-            byte[] transactionStatus = nullToEmpty(receipt.get(5).getRLPData());
+            byte[] transactionStatus = ListArrayUtil.nullToEmpty(receipt.get(5).getRLPData());
             this.status = transactionStatus;
         }
 

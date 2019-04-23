@@ -24,8 +24,10 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
+import co.rsk.util.ListArrayUtil;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
@@ -48,7 +50,6 @@ import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
@@ -56,7 +57,6 @@ import java.util.*;
 
 import static java.lang.StrictMath.min;
 import static java.lang.String.format;
-import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -211,7 +211,7 @@ public class Program {
 
         this.invoke = programInvoke;
 
-        this.ops = nullToEmpty(ops);
+        this.ops = ListArrayUtil.nullToEmpty(ops);
 
         this.memory = setupProgramListener(new Memory());
         this.stack = setupProgramListener(new Stack());
@@ -250,7 +250,7 @@ public class Program {
             return null;
         }
 
-        byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
+        byte[] senderNonce = ListArrayUtil.isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
 
         return getResult().addInternalTransaction(
                 transaction.getHash().getBytes(),
@@ -275,11 +275,11 @@ public class Program {
     }
 
     public byte getOp(int pc) {
-        return (getLength(ops) <= pc) ? 0 : ops[pc];
+        return (ListArrayUtil.getLength(ops) <= pc) ? 0 : ops[pc];
     }
 
     public byte getCurrentOp() {
-        return isEmpty(ops) ? 0 : ops[pc];
+        return ListArrayUtil.isEmpty(ops) ? 0 : ops[pc];
     }
 
     /**
@@ -662,7 +662,7 @@ public class Program {
 
         ProgramResult programResult = ProgramResult.empty();
         returnDataBuffer = null; // reset return buffer right before the call
-        if (isNotEmpty(programCode)) {
+        if (ListArrayUtil.isNotEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
             Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
             vm.play(program);
@@ -695,7 +695,7 @@ public class Program {
         else {
             // 4. CREATE THE CONTRACT OUT OF RETURN
             byte[] code = programResult.getHReturn();
-            int codeLength = getLength(code);
+            int codeLength = ListArrayUtil.getLength(code);
 
             long storageCost = (long) codeLength * GasCost.CREATE_DATA;
             long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
@@ -853,7 +853,7 @@ public class Program {
 
         boolean callResult;
 
-        if (isNotEmpty(programCode)) {
+        if (ListArrayUtil.isNotEmpty(programCode)) {
             callResult = executeCode(msg, contextAddress, contextBalance, internalTx, track, programCode, senderAddress, data);
         }
         else {
@@ -1035,7 +1035,7 @@ public class Program {
 
     private byte[] getCodeAt(RskAddress addr) {
         byte[] code = invoke.getRepository().getCode(addr);
-        return nullToEmpty(code);
+        return ListArrayUtil.nullToEmpty(code);
     }
 
     public DataWord getOwnerAddress() {

@@ -24,14 +24,17 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.mine.*;
+import co.rsk.mine.MinerServer;
+import co.rsk.mine.MinerWork;
+import co.rsk.mine.SubmitBlockResult;
+import co.rsk.mine.SubmittedBlockInfo;
 import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
-import org.apache.commons.lang3.ArrayUtils;
+import co.rsk.util.ListArrayUtil;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -124,9 +127,9 @@ public class MnrModuleImpl implements MnrModule {
 
     private String extractBlockHashForMergedMining(BtcTransaction coinbase) {
         byte[] coinbaseAsByteArray = coinbase.bitcoinSerialize();
-        List<Byte> coinbaseAsByteList = Arrays.asList(ArrayUtils.toObject(coinbaseAsByteArray));
+        List<Byte> coinbaseAsByteList = ListArrayUtil.asByteList(coinbaseAsByteArray);
 
-        List<Byte> rskTagAsByteList = Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+        List<Byte> rskTagAsByteList = ListArrayUtil.asByteList(RskMiningConstants.RSK_TAG);
 
         int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
         byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue() / 8];
