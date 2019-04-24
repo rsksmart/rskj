@@ -18,6 +18,8 @@
 
 package co.rsk.jsontestsuite;
 
+import org.apache.commons.io.FilenameUtils;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
@@ -26,6 +28,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -33,6 +36,8 @@ import java.util.List;
 import java.util.Set;
 
 import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Angel J Lopez
@@ -450,6 +455,28 @@ public class LocalStateTest {
         excluded.add("delegatecallAfterTransition");
         excluded.add("createNameRegistratorPerTxsBefore");
         GitHubJSONTestSuite.runStateTest(json, excluded);
+    }
+
+    @Test
+    public void stShiftTest() throws ParseException, IOException {
+        Set<String> excluded = new HashSet<>();
+
+        Set<String> fileNames = getFileNames("stShift");
+        for (String fileName : fileNames) {
+            String json = getJSON("stShift/"+fileName);
+            GitHubJSONTestSuite.runGeneralStateTest(json, excluded);
+        }
+    }
+
+    private Set<String> getFileNames(String folderName){
+        Set<String> fileNames = new HashSet<>();
+        File dir = new File("src/test/resources/json/StateTests/"+folderName);
+        for (File file: dir.listFiles()) {
+            if (FilenameUtils.getExtension(file.getName()).equals("json") )
+                fileNames.add(FilenameUtils.removeExtension(file.getName()));
+        }
+
+        return fileNames;
     }
 
     @Ignore

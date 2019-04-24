@@ -97,4 +97,6 @@ public class StateTestCase {
     public void setTransaction(TransactionTck transaction) {
         this.transaction = transaction;
     }
+
+
 }
