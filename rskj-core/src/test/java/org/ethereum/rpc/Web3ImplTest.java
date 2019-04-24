@@ -66,14 +66,13 @@ import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -926,8 +925,8 @@ public class Web3ImplTest {
     @Test
     public void eth_coinbase()  {
         String originalCoinbase = "1dcc4de8dec75d7aab85b513f0a142fd40d49347";
-        MinerServer minerServerMock = Mockito.mock(MinerServer.class);
-        Mockito.when(minerServerMock.getCoinbaseAddress()).thenReturn(new RskAddress(originalCoinbase));
+        MinerServer minerServerMock = mock(MinerServer.class);
+        when(minerServerMock.getCoinbaseAddress()).thenReturn(new RskAddress(originalCoinbase));
 
         Ethereum ethMock = Web3Mocks.getMockEthereum();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
@@ -962,7 +961,7 @@ public class Web3ImplTest {
         );
 
         Assert.assertEquals("0x" + originalCoinbase, web3.eth_coinbase());
-        Mockito.verify(minerServerMock, Mockito.times(1)).getCoinbaseAddress();
+        verify(minerServerMock, times(1)).getCoinbaseAddress();
     }
 
     @Test
@@ -1236,7 +1235,7 @@ public class Web3ImplTest {
     }
 
     private Web3Impl createWeb3Mocked(World world) {
-        Ethereum ethMock = Mockito.mock(Ethereum.class);
+        Ethereum ethMock = mock(Ethereum.class);
         return createWeb3(ethMock, world, null);
     }
 
@@ -1301,10 +1300,10 @@ public class Web3ImplTest {
     private Web3Impl createWeb3(Ethereum eth, Blockchain blockchain, TransactionPool transactionPool, BlockStore blockStore, BlockProcessor nodeBlockProcessor, ConfigCapabilities configCapabilities, ReceiptStore receiptStore) {
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
-        ReversibleTransactionExecutor executor = Mockito.mock(ReversibleTransactionExecutor.class);
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
         ProgramResult res = new ProgramResult();
         res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
-        Mockito.when(executor.executeTransaction(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(res);
+        when(executor.executeTransaction(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(res);
         EthModule ethModule = new EthModule(config, blockchain, executor, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), new EthModuleTransactionBase(config, wallet, transactionPool));
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
@@ -1341,13 +1340,13 @@ public class Web3ImplTest {
     @Test
     @Ignore
     public void eth_compileSolidity() throws Exception {
-        RskSystemProperties systemProperties = Mockito.mock(RskSystemProperties.class);
+        RskSystemProperties systemProperties = mock(RskSystemProperties.class);
         String solc = System.getProperty("solc");
         if (solc == null || solc.isEmpty())
             solc = "/usr/bin/solc";
 
-        Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);
-        Ethereum eth = Mockito.mock(Ethereum.class);
+        when(systemProperties.customSolcPath()).thenReturn(solc);
+        Ethereum eth = mock(Ethereum.class);
         EthModule ethModule = new EthModule(config, null, null, new ExecutionBlockRetriever(null, null, null), new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null, null);
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
@@ -1394,12 +1393,12 @@ public class Web3ImplTest {
 
     @Test
     public void eth_compileSolidityWithoutSolidity() throws Exception {
-        SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
+        SystemProperties systemProperties = mock(SystemProperties.class);
         String solc = System.getProperty("solc");
         if (solc == null || solc.isEmpty())
             solc = "/usr/bin/solc";
 
-        Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);
+        when(systemProperties.customSolcPath()).thenReturn(solc);
 
         Wallet wallet = WalletFactory.createWallet();
         Ethereum eth = Web3Mocks.getMockEthereum();

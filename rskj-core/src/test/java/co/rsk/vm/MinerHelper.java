@@ -23,13 +23,13 @@ import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.PrecompiledContracts;
-import org.mockito.internal.util.reflection.Whitebox;
+import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
