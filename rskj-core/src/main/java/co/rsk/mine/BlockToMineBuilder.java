@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.*;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+
 /**
  * This component helps build a new block to mine.
  * It can also be used to generate a new block from the pending state, which is useful
@@ -56,6 +58,7 @@ public class BlockToMineBuilder {
     private final GasLimitCalculator gasLimitCalculator;
     private final BlockValidationRule validationRules;
     private final MinerClock clock;
+    private final BlockFactory blockFactory;
 
     private final MinimumGasPriceCalculator minimumGasPriceCalculator;
     private final MinerUtils minerUtils;
@@ -74,6 +77,7 @@ public class BlockToMineBuilder {
             RskSystemProperties config,
             ReceiptStore receiptStore,
             MinerClock clock,
+            BlockFactory blockFactory,
             StateRootHandler stateRootHandler) {
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
@@ -83,6 +87,7 @@ public class BlockToMineBuilder {
         this.gasLimitCalculator = Objects.requireNonNull(gasLimitCalculator);
         this.validationRules = Objects.requireNonNull(validationRules);
         this.clock = Objects.requireNonNull(clock);
+        this.blockFactory = blockFactory;
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
@@ -93,6 +98,7 @@ public class BlockToMineBuilder {
                 track1,
                 blockStore,
                 receiptStore,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -171,7 +177,7 @@ public class BlockToMineBuilder {
             byte[] extraData) {
         final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice, extraData);
         final Block newBlock = new Block(newHeader, txs, uncles);
-        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, null);
+        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, Collections.emptyList());
     }
 
     private BlockHeader createHeader(
@@ -193,10 +199,13 @@ public class BlockToMineBuilder {
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
                                                                         gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
-        final BlockHeader newHeader = new BlockHeader(
+        final BlockHeader newHeader = blockFactory.newHeader(
                 newBlockParent.getHash().getBytes(),
                 unclesListHash,
                 miningConfig.getCoinbaseAddress().getBytes(),
+                EMPTY_TRIE_HASH,
+                Block.getTxTrie(txs).getHash().getBytes(),
+                EMPTY_TRIE_HASH,
                 new Bloom().getData(),
                 new byte[]{1},
                 newBlockParent.getNumber() + 1,
@@ -204,6 +213,7 @@ public class BlockToMineBuilder {
                 0,
                 timestampSeconds,
                 extraData,
+                Coin.ZERO,
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
@@ -211,7 +221,6 @@ public class BlockToMineBuilder {
                 uncles.size()
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
         return newHeader;
     }
 }

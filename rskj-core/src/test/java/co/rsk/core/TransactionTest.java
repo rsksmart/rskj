@@ -19,7 +19,6 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.crypto.Keccak256;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -43,6 +42,7 @@ import static org.junit.Assert.assertNotEquals;
 public class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {
@@ -240,6 +240,7 @@ public class TransactionTest {
                             track,
                             new BlockStoreDummy(),
                             null,
+                            blockFactory,
                             invokeFactory,
                             bestBlock,
                             new EthereumListenerAdapter(),

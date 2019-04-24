@@ -26,12 +26,11 @@ import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
@@ -53,6 +52,7 @@ import java.util.*;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.*;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -113,6 +113,7 @@ public class Program {
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
+    private final BlockFactory blockFactory;
 
     private boolean isLogEnabled;
     private boolean isGasLogEnabled;
@@ -120,12 +121,14 @@ public class Program {
     public Program(
             VmConfig config,
             PrecompiledContracts precompiledContracts,
+            BlockFactory blockFactory,
             BlockchainConfig blockchainConfig,
             byte[] ops,
             ProgramInvoke programInvoke,
             Transaction transaction) {
         this.config = config;
         this.precompiledContracts = precompiledContracts;
+        this.blockFactory = blockFactory;
         this.blockchainConfig = blockchainConfig;
         this.transaction = transaction;
         isLogEnabled = logger.isInfoEnabled();
@@ -475,7 +478,7 @@ public class Program {
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
-            Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
+            Program program = new Program(config, precompiledContracts, blockFactory, blockchainConfig, programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
         }
@@ -703,7 +706,7 @@ public class Program {
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
-        Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
+        Program program = new Program(config, precompiledContracts, blockFactory, blockchainConfig, programCode, programInvoke, internalTx);
         vm.play(program);
         childResult  = program.getResult();
 
@@ -1233,9 +1236,17 @@ public class Program {
             // Propagate the "local call" nature of the originating transaction down to the callee
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
 
-            Block executionBlock = new Block(getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(), EMPTY_BYTE_ARRAY,
-                getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
+            Block executionBlock = new Block(
+                    blockFactory.newHeader(
+                            getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(),
+                            ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
+                            ByteUtils.clone(EMPTY_TRIE_HASH), EMPTY_BYTE_ARRAY, getDifficulty().getData(),
+                            getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
+                            EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
+                    ),
+                    Collections.emptyList(),
+                    Collections.emptyList()
+            );
 
             contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
         }

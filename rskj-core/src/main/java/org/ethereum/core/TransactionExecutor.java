@@ -70,6 +70,7 @@ public class TransactionExecutor {
     private final Repository cacheTrack;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final BlockFactory blockFactory;
     private final VmConfig vmConfig;
     private final PrecompiledContracts precompiledContracts;
     private final BlockchainNetConfig netConfig;
@@ -105,7 +106,7 @@ public class TransactionExecutor {
     private boolean localCall = false;
 
     public TransactionExecutor(Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
-                               ProgramInvokeFactory programInvokeFactory, Block executionBlock, EthereumListener listener, long gasUsedInTheBlock,
+                               BlockFactory blockFactory, ProgramInvokeFactory programInvokeFactory, Block executionBlock, EthereumListener listener, long gasUsedInTheBlock,
                                VmConfig vmConfig, BlockchainNetConfig blockchainConfig, boolean playVm, boolean remascEnabled,
                                boolean vmTrace, PrecompiledContracts precompiledContracts, String databaseDir, String vmTraceDir, boolean vmTraceCompressed) {
         this.tx = tx;
@@ -115,6 +116,7 @@ public class TransactionExecutor {
         this.cacheTrack = track.startTracking();
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.executionBlock = executionBlock;
         this.listener = listener;
@@ -137,7 +139,7 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     public boolean init() {
-        basicTxCost = tx.transactionCost(executionBlock, netConfig);
+        basicTxCost = tx.transactionCost(executionBlock.getNumber(), netConfig);
 
         if (localCall) {
             readyToExecute = true;
@@ -308,7 +310,7 @@ public class TransactionExecutor {
 
                 this.vm = new VM(vmConfig, precompiledContracts);
                 BlockchainConfig configForBlock = netConfig.getConfigForBlock(executionBlock.getNumber());
-                this.program = new Program(vmConfig, precompiledContracts, configForBlock, code, programInvoke, tx);
+                this.program = new Program(vmConfig, precompiledContracts, blockFactory, configForBlock, code, programInvoke, tx);
             }
         }
 
@@ -328,7 +330,7 @@ public class TransactionExecutor {
 
             this.vm = new VM(vmConfig, precompiledContracts);
             BlockchainConfig configForBlock = netConfig.getConfigForBlock(executionBlock.getNumber());
-            this.program = new Program(vmConfig, precompiledContracts, configForBlock, tx.getData(), programInvoke, tx);
+            this.program = new Program(vmConfig, precompiledContracts, blockFactory, configForBlock, tx.getData(), programInvoke, tx);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
@@ -369,7 +371,7 @@ public class TransactionExecutor {
         try {
 
             // Charge basic cost of the transaction
-            program.spendGas(tx.transactionCost(executionBlock, netConfig), "TRANSACTION COST");
+            program.spendGas(tx.transactionCost(executionBlock.getNumber(), netConfig), "TRANSACTION COST");
 
             if (playVm) {
                 vm.play(program);

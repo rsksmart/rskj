@@ -20,13 +20,14 @@ package co.rsk.core;
 
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.remasc.RemascTransaction;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
-import org.bouncycastle.util.encoders.Hex;
-import co.rsk.remasc.RemascTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -41,6 +42,9 @@ import java.util.List;
 
 public class BlockTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
+
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     @Test
     public void testParseRemascTransaction() {
@@ -70,28 +74,18 @@ public class BlockTest {
         txs.add(remascTx);
 
         Block block =  new Block(
-                PegTestUtils.createHash3().getBytes(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
-                TestUtils.randomAddress().getBytes(),            // coinbase
-                new Bloom().getData(),          // logs bloom
-                BigInteger.ONE.toByteArray(),    // difficulty
-                1,
-                BigInteger.valueOf(4000000).toByteArray(), // gasLimit
-                3000000, // gasUsed
-                100, //timestamp
-                new byte[0],                    // extraData
-                new byte[0],                    // mixHash
-                new byte[]{0},         // provisory nonce
-                HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                BlockChainImpl.calcTxTrie(txs), // transaction root
-                HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
-                txs,                            // transaction list
-                null,  // uncle list
-                BigInteger.TEN.toByteArray(),
-                Coin.ZERO
+                blockFactory.newHeader(
+                        PegTestUtils.createHash3().getBytes(), EMPTY_LIST_HASH, TestUtils.randomAddress().getBytes(),
+                        HashUtil.EMPTY_TRIE_HASH, BlockChainImpl.calcTxTrie(txs), HashUtil.EMPTY_TRIE_HASH,
+                        new Bloom().getData(), BigInteger.ONE.toByteArray(), 1,
+                        BigInteger.valueOf(4000000).toByteArray(), 3000000, 100, new byte[0], Coin.ZERO,
+                        null, null, null, BigInteger.TEN.toByteArray(), 0
+                ),
+                txs,
+                Collections.emptyList()
         );
 
-        Block parsedBlock = new Block(block.getEncoded());
+        Block parsedBlock = blockFactory.decodeBlock(block.getEncoded());
         Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(0).getClass());
         Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(1).getClass());
         Assert.assertEquals(RemascTransaction.class, parsedBlock.getTransactionsList().get(2).getClass());

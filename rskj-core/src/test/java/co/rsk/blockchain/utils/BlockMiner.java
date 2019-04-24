@@ -5,6 +5,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 
 import java.math.BigInteger;
 
@@ -17,9 +18,11 @@ public class BlockMiner {
     private static long nextNonceToUse = 0L;
 
     private final TestSystemProperties config;
+    private final BlockFactory blockFactory;
 
     public BlockMiner(TestSystemProperties config) {
         this.config = config;
+        this.blockFactory = new BlockFactory(config.getBlockchainConfig());
     }
 
     public Block mineBlock(Block block) {
@@ -33,8 +36,7 @@ public class BlockMiner {
 
         findNonce(bitcoinMergedMiningBlock, targetBI);
 
-        // We need to clone to allow modifications
-        Block newBlock = new Block(block.getEncoded()).cloneBlock();
+        Block newBlock = blockFactory.cloneBlockForModification(block);
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 

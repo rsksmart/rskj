@@ -130,9 +130,11 @@ public class BlockChainBuilder {
         if (stateRootHandler == null) {
             stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
         }
+
+        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
         
         if (blockStore == null) {
-            blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+            blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         }
 
         if (receiptStore == null) {
@@ -156,7 +158,7 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, blockFactory, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(this.repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
@@ -166,6 +168,7 @@ public class BlockChainBuilder {
                 track1,
                 this.blockStore,
                 receiptStore,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 listener,
@@ -211,6 +214,7 @@ public class BlockChainBuilder {
                     track1,
                     blockStore,
                     receiptStore,
+                    blockFactory,
                     programInvokeFactory1,
                     block1,
                     listener,

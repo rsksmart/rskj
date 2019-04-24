@@ -20,15 +20,13 @@
 package org.ethereum.jsontestsuite.runners;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
@@ -41,6 +39,7 @@ import org.ethereum.jsontestsuite.validators.LogsValidator;
 import org.ethereum.jsontestsuite.validators.OutputValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
 import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -50,13 +49,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.util.ByteUtil.byteArrayToLong;
+
 public class StateTestRunner {
+    private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     public static List<String> run(StateTestCase stateTestCase2) {
         return new StateTestRunner(stateTestCase2).runImpl();
@@ -93,6 +98,7 @@ public class StateTestRunner {
                 track,
                 new BlockStoreDummy(),
                 null,
+                blockFactory,
                 invokeFactory,
                 blockchain.getBestBlock(),
                 new EthereumListenerAdapter(),
@@ -129,7 +135,7 @@ public class StateTestRunner {
 
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
-        BlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
@@ -140,6 +146,7 @@ public class StateTestRunner {
                 track1,
                 blockStore,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -158,7 +165,7 @@ public class StateTestRunner {
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);
 
-        block = BlockBuilder.build(env);
+        block = build(env);
         block.setStateRoot(repository.getRoot());
         block.flushRLP();
 
@@ -193,5 +200,19 @@ public class StateTestRunner {
 
         logger.info("\n\n");
         return results;
+    }
+
+    public Block build(Env env) {
+        return new Block(
+                blockFactory.newHeader(
+                        ByteUtil.EMPTY_BYTE_ARRAY, ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentCoinbase(),
+                        EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
+                        ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentDifficulty(), byteArrayToLong(env.getCurrentNumber()),
+                        env.getCurrentGasLimit(), 0L, byteArrayToLong(env.getCurrentTimestamp()),
+                        new byte[32], Coin.ZERO, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, null, 0
+                ),
+                Collections.emptyList(),
+                Collections.emptyList()
+        );
     }
 }

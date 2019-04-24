@@ -44,7 +44,7 @@ public class RskTestContext extends RskContext {
 
     @Override
     protected BlockStore buildBlockStore() {
-        return new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        return new IndexedBlockStore(getBlockFactory(), new HashMap<>(), new HashMapDB(), null);
     }
 
     @Override

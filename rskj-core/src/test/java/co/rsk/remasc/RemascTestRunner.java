@@ -37,6 +37,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -120,6 +121,7 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
+        BlockFactory blockFactory = new BlockFactory(builder.getConfig().getBlockchainConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockExecutor blockExecutor = new BlockExecutor(
                 blockchain.getRepository(),
@@ -130,6 +132,7 @@ class RemascTestRunner {
                     track,
                     blockchain.getBlockStore(),
                     null,
+                    blockFactory,
                     programInvokeFactory,
                     block,
                     null,
@@ -166,7 +169,7 @@ class RemascTestRunner {
                 RskAddress siblingCoinbase = TestUtils.randomAddress();
                 Block mainchainSiblingParent = mainChainBlocks.get(sibling.getHeight() - 1);
                 Block siblingBlock = createBlock(this.genesis, mainchainSiblingParent, PegTestUtils.createHash3(),
-                        siblingCoinbase, null, minerFee, this.gasPrice, Long.valueOf(i), this.txValue,
+                        siblingCoinbase, Collections.emptyList(), minerFee, this.gasPrice, (long) i, this.txValue,
                         this.txSigningKey, null);
 
                 blockSiblings.add(siblingBlock.getHeader());
@@ -211,8 +214,7 @@ class RemascTestRunner {
     public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, long gasLimit, long txNonce, long txValue,
                                     ECKey txSigningKey) {
-        return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, gasLimit, 1L,  txNonce,
-                           txValue, txSigningKey, null);
+        return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, gasLimit, txNonce, txValue, txSigningKey, null);
     }
 
     public static Block createBlock(Block genesis, Block parentBlock, Keccak256 blockHash, RskAddress coinbase,
@@ -252,12 +254,13 @@ class RemascTestRunner {
         Transaction remascTx = new RemascTransaction(parentBlock.getNumber() + 1);
         txs.add(remascTx);
 
-        long difficultyAsLong = difficulty == null ? parentBlock.getDifficulty().asBigInteger().longValue() : difficulty;
+        BigInteger difficultyAsBI = difficulty == null ? parentBlock.getDifficulty().asBigInteger() : BigInteger.valueOf(difficulty);
 
-        if (difficultyAsLong == 0)
-            difficultyAsLong = 1;
+        if (difficultyAsBI.equals(BigInteger.ZERO)) {
+            difficultyAsBI = BigInteger.ONE;
+        }
 
-        byte[] diffBytes = BigInteger.valueOf(difficultyAsLong).toByteArray();
+        BlockDifficulty difficultyAsBD = new BlockDifficulty(difficultyAsBI);
 
         Coin paidFees = Coin.ZERO;
         for (Transaction tx : txs) {
@@ -266,58 +269,35 @@ class RemascTestRunner {
             paidFees = paidFees.add(gasPrice.multiply(gasLimit));
         }
 
-        Block block =  new Block(
-                parentBlock.getHash().getBytes(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
-                coinbase.getBytes(),            // fixedCoinbase
-                new Bloom().getData(),          // logs bloom
-                diffBytes,    // difficulty
-                parentBlock.getNumber() + 1,
-                parentBlock.getGasLimit(),
-                parentBlock.getGasUsed(),
-                parentBlock.getTimestamp(),
-                new byte[0],                    // extraData
-                new byte[0],                    // mixHash
-                BigInteger.ZERO.toByteArray(),         // provisory nonce
-                HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                BlockChainImpl.calcTxTrie(txs), // transaction root
-                genesis.getStateRoot(),         //EMPTY_TRIE_HASH,   // state root
-                txs,                            // transaction list
-                uncles,                          // uncle list
-                BigInteger.TEN.toByteArray(),
-                paidFees
-        ) {
-            private BlockHeader harcodedHashHeader;
+        return new Block(
+                new HardcodedHashBlockHeader(
+                        parentBlock, coinbase, genesis, txs, difficultyAsBD, paidFees, uncles, blockHash
+                ),
+                txs,
+                uncles
+        );
+    }
 
-            @Override
-            public BlockHeader getHeader() {
-                if (harcodedHashHeader==null) {
-                    harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded(), false) {
-                        @Override
-                        public Keccak256 getHash() {
-                            return blockHash;
-                        }
-                    };
-                }
-                return harcodedHashHeader;
-            }
+    private static class HardcodedHashBlockHeader extends BlockHeader {
+        private final Keccak256 blockHash;
 
-            @Override
-            public Keccak256 getHash() {
-                return blockHash;
-            }
+        public HardcodedHashBlockHeader(
+                Block parentBlock, RskAddress coinbase, Block genesis, List<Transaction> txs,
+                BlockDifficulty finalDifficulty, Coin paidFees, List<BlockHeader> uncles, Keccak256 blockHash) {
+            super(
+                    parentBlock.getHash().getBytes(), RemascTestRunner.EMPTY_LIST_HASH, coinbase,
+                    genesis.getStateRoot(), BlockChainImpl.calcTxTrie(txs), HashUtil.EMPTY_TRIE_HASH,
+                    new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,
+                    parentBlock.getGasLimit(), parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
+                    paidFees, null, null, null,
+                    Coin.valueOf(10), uncles.size(), false, true
+            );
+            this.blockHash = blockHash;
+        }
 
-            @Override
-            public void flushRLP() {
-                if (harcodedHashHeader != null)
-                    super.getHeader().setPaidFees(harcodedHashHeader.getPaidFees());
-
-                super.flushRLP();
-
-                harcodedHashHeader = null;
-            }
-        };
-
-        return block;
+        @Override
+        public Keccak256 getHash() {
+            return blockHash;
+        }
     }
 }

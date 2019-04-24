@@ -47,6 +47,7 @@ import static org.mockito.Mockito.when;
 public class SyncProcessorTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
+    private static final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
 
     @Test
@@ -659,9 +660,9 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        Transaction tx = createTransaction(senderAccount, receiverAccount, BigInteger.valueOf(1000000), BigInteger.ZERO);
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
+        List<Transaction> txs = Collections.singletonList(
+                createTransaction(senderAccount, receiverAccount, BigInteger.valueOf(1000000), BigInteger.ZERO)
+        );
 
         Block block = new BlockGenerator().createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
 
@@ -673,6 +674,7 @@ public class SyncProcessorTest {
                 repository,
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,

@@ -63,12 +63,10 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.config.net.RegTestConfig;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.Repository;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
@@ -128,6 +126,7 @@ public class RskContext implements NodeBootstrapper {
 
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
+    private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
     private org.ethereum.db.BlockStore blockStore;
     private co.rsk.net.BlockStore netBlockStore;
@@ -225,15 +224,27 @@ public class RskContext implements NodeBootstrapper {
         return blockchain;
     }
 
+    public BlockFactory getBlockFactory() {
+        if (blockFactory == null) {
+            blockFactory = new BlockFactory(getRskSystemProperties().getBlockchainConfig());
+        }
+
+        return blockFactory;
+    }
+
     public TransactionPool getTransactionPool() {
         if (transactionPool == null) {
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
             transactionPool = new TransactionPoolImpl(
+                    rskSystemProperties,
+                    getRepository(),
                     getBlockStore(),
                     getReceiptStore(),
-                    getCompositeEthereumListener(),
+                    getBlockFactory(),
                     getProgramInvokeFactory(),
-                    getRepository(),
-                    getRskSystemProperties()
+                    getCompositeEthereumListener(),
+                    rskSystemProperties.txOutdatedThreshold(),
+                    rskSystemProperties.txOutdatedTimeout()
             );
         }
 
@@ -293,6 +304,7 @@ public class RskContext implements NodeBootstrapper {
                     getRepository(),
                     getBlockStore(),
                     getReceiptStore(),
+                    getBlockFactory(),
                     getProgramInvokeFactory()
             );
         }
@@ -513,6 +525,7 @@ public class RskContext implements NodeBootstrapper {
                     getProofOfWorkRule(),
                     getBlockToMineBuilder(),
                     getMinerClock(),
+                    getBlockFactory(),
                     getMiningConfig()
             );
         }
@@ -616,10 +629,12 @@ public class RskContext implements NodeBootstrapper {
 
     protected Genesis buildGenesis() {
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        BlockchainNetConfig blockchainConfig = rskSystemProperties.getBlockchainConfig();
         return GenesisLoader.loadGenesis(
                 rskSystemProperties.genesisInfo(),
-                rskSystemProperties.getBlockchainConfig().getCommonConstants().getInitialNonce(),
-                true
+                blockchainConfig.getCommonConstants().getInitialNonce(),
+                true,
+                blockchainConfig.getConfigForBlock(0).isRskip92()
         );
     }
 
@@ -651,7 +666,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected org.ethereum.db.BlockStore buildBlockStore() {
-        return buildBlockStore(getRskSystemProperties().databaseDir());
+        return buildBlockStore(getBlockFactory(), getRskSystemProperties().databaseDir());
     }
 
     protected RskSystemProperties buildRskSystemProperties() {
@@ -739,6 +754,7 @@ public class RskContext implements NodeBootstrapper {
                     getTransactionPool(),
                     getCompositeEthereumListener(),
                     getBlockValidator(),
+                    getBlockFactory(),
                     getGenesis(),
                     getStateRootHandler()
             );
@@ -818,7 +834,7 @@ public class RskContext implements NodeBootstrapper {
 
     private Eth62MessageFactory getEth62MessageFactory() {
         if (eth62MessageFactory == null) {
-            eth62MessageFactory = new Eth62MessageFactory();
+            eth62MessageFactory = new Eth62MessageFactory(getBlockFactory());
         }
 
         return eth62MessageFactory;
@@ -837,12 +853,12 @@ public class RskContext implements NodeBootstrapper {
                             getBlockStore(),
                             commonConstants.getUncleListLimit(),
                             commonConstants.getUncleGenerationLimit(),
-                            new BlockCompositeRule(
+                            new BlockHeaderCompositeRule(
                                     getProofOfWorkRule(),
                                     blockTimeStampValidationRule,
                                     new ValidGasUsedRule()
                             ),
-                            new BlockParentCompositeRule(
+                            new BlockHeaderParentCompositeRule(
                                     new PrevMinGasPriceRule(),
                                     new BlockParentNumberRule(),
                                     blockTimeStampValidationRule,
@@ -869,12 +885,12 @@ public class RskContext implements NodeBootstrapper {
                     getBlockStore(),
                     commonConstants.getUncleListLimit(),
                     commonConstants.getUncleGenerationLimit(),
-                    new BlockCompositeRule(
+                    new BlockHeaderCompositeRule(
                             getProofOfWorkRule(),
                             new BlockTimeStampValidationRule(commonConstants.getNewBlockMaxSecondsInTheFuture()),
                             new ValidGasUsedRule()
                     ),
-                    new BlockParentCompositeRule(
+                    new BlockHeaderParentCompositeRule(
                             new PrevMinGasPriceRule(),
                             new BlockParentNumberRule(),
                             new BlockDifficultyRule(getDifficultyCalculator()),
@@ -944,6 +960,7 @@ public class RskContext implements NodeBootstrapper {
                     getRskSystemProperties(),
                     getReceiptStore(),
                     getMinerClock(),
+                    getBlockFactory(),
                     getStateRootHandler()
             );
         }
@@ -1272,7 +1289,7 @@ public class RskContext implements NodeBootstrapper {
         return minerClock;
     }
 
-    public static org.ethereum.db.BlockStore buildBlockStore(String databaseDir) {
+    public static org.ethereum.db.BlockStore buildBlockStore(BlockFactory blockFactory, String databaseDir) {
         File blockIndexDirectory = new File(databaseDir + "/blocks/");
         File dbFile = new File(blockIndexDirectory, "index");
         if (!blockIndexDirectory.exists()) {
@@ -1296,7 +1313,7 @@ public class RskContext implements NodeBootstrapper {
 
         KeyValueDataSource blocksDB = makeDataSource("blocks", databaseDir);
 
-        return new IndexedBlockStore(indexMap, blocksDB, indexDB);
+        return new IndexedBlockStore(blockFactory, indexMap, blocksDB, indexDB);
     }
 
     private static KeyValueDataSource makeDataSource(String name, String databaseDir) {

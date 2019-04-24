@@ -63,6 +63,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class BlockExecutorTest {
     public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     private static final TestSystemProperties config = new TestSystemProperties();
+    private static final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     private Blockchain blockchain;
     private BlockExecutor executor;
@@ -214,6 +215,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -263,6 +265,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -323,6 +326,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -369,6 +373,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -400,6 +405,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -434,6 +440,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -468,6 +475,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -501,6 +509,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -534,6 +543,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -576,6 +586,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,
@@ -706,6 +717,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 listener,
@@ -802,6 +814,7 @@ public class BlockExecutorTest {
                 track1,
                 null,
                 null,
+                blockFactory,
                 programInvokeFactory,
                 block1,
                 null,

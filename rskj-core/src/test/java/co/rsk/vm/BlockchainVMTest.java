@@ -30,7 +30,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -65,8 +65,7 @@ public class BlockchainVMTest {
         NewBlockChainInfo binfo = createNewBlockchain();
         Blockchain blockchain = binfo.blockchain;
         BlockGenerator blockGenerator = new BlockGenerator();
-        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), null, binfo.repository.getRoot());
-        List<Transaction> txs = new ArrayList<>();
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), Collections.emptyList(), binfo.repository.getRoot());
         Coin transferAmount = Coin.valueOf(100L);
         // Add a single transaction paying to a new address
         byte[] dstAddress = randomAddress();
@@ -82,7 +81,7 @@ public class BlockchainVMTest {
                 new TestSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
 
         t.sign(binfo.faucetKey.getPrivKeyBytes());
-        txs.add(t);
+        List<Transaction> txs = Collections.singletonList(t);
 
         Block block2 = blockGenerator.createChildBlock(block1, txs, binfo.repository.getRoot());
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));

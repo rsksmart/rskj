@@ -22,6 +22,8 @@ package org.ethereum.core;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -40,8 +42,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -57,6 +57,7 @@ import static org.junit.Assert.assertNull;
 public class TransactionTest {
 
     private TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */
     public void test1() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, IOException {
@@ -447,6 +448,7 @@ public class TransactionTest {
                             track,
                             new BlockStoreDummy(),
                             null,
+                            blockFactory,
                             invokeFactory,
                             bestBlock,
                             new EthereumListenerAdapter(),
@@ -596,7 +598,7 @@ public class TransactionTest {
 
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
-                getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
+                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -666,7 +668,7 @@ public class TransactionTest {
 
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
-                getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
+                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -721,6 +723,7 @@ public class TransactionTest {
                 blockchain.getRepository(),
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 new ProgramInvokeFactoryImpl(),
                 blockchain.getBestBlock(),
                 new EthereumListenerAdapter(),

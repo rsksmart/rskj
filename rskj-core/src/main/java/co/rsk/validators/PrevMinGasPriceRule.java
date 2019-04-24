@@ -21,36 +21,41 @@ package co.rsk.validators;
 import co.rsk.mine.BlockGasPriceRange;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Created by mario on 26/12/16.
  */
-public class PrevMinGasPriceRule implements BlockParentDependantValidationRule {
+public class PrevMinGasPriceRule implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-
     @Override
     public boolean isValid(Block block, Block parent) {
-        if(block.isGenesis()) {
+        return isValid(block.getHeader(), parent);
+    }
+
+    @Override
+    public boolean isValid(BlockHeader header, Block parent) {
+        if (header.isGenesis()) {
             return true;
         }
 
-        if (block.getMinimumGasPrice() == null || parent == null) {
+        if (header.getMinimumGasPrice() == null || parent == null) {
             logger.warn("PrevMinGasPriceRule - blockmingasprice or parent are null");
             return false;
         }
 
         BlockGasPriceRange range = new BlockGasPriceRange(parent.getMinimumGasPrice());
-        boolean result = range.inRange(block.getMinimumGasPrice());
-        if(!result) {
+        boolean result = range.inRange(header.getMinimumGasPrice());
+        if (!result) {
             logger.warn("Error validating Min Gas Price.");
             panicProcessor.panic("invalidmingasprice", "Error validating Min Gas Price.");
         }
 
-        return range.inRange(block.getMinimumGasPrice());
+        return range.inRange(header.getMinimumGasPrice());
     }
 }

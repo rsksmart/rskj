@@ -92,17 +92,17 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore) {
-        BlockValidationRule validationRule = Mockito.mock(BlockValidationRule.class);
+        BlockHeaderValidationRule validationRule = Mockito.mock(BlockHeaderValidationRule.class);
         Mockito.when(validationRule.isValid(Mockito.any())).thenReturn(true);
 
-        BlockParentDependantValidationRule parentValidationRule = Mockito.mock(BlockParentDependantValidationRule.class);
+        BlockHeaderParentDependantValidationRule parentValidationRule = Mockito.mock(BlockHeaderParentDependantValidationRule.class);
         Mockito.when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
 
         this.addBlockUnclesValidationRule(blockStore, validationRule, parentValidationRule);
         return this;
     }
 
-    public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockValidationRule validationRule, BlockParentDependantValidationRule parentValidationRule) {
+    public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockHeaderValidationRule validationRule, BlockHeaderParentDependantValidationRule parentValidationRule) {
         int uncleListLimit = config.getBlockchainConfig().getCommonConstants().getUncleListLimit();
         int uncleGenLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
         this.blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
@@ -132,16 +132,6 @@ public class BlockValidatorBuilder {
     public BlockValidatorBuilder addParentGasLimitRule() {
         parentGasLimitRule = new BlockParentGasLimitRule(config.getBlockchainConfig().
                         getCommonConstants().getGasLimitBoundDivisor());
-        return this;
-    }
-
-    public BlockValidatorBuilder blockCompositeRule(BlockCompositeRule blockCompositeRule) {
-        this.blockCompositeRule = blockCompositeRule;
-        return this;
-    }
-
-    public BlockValidatorBuilder blockParentCompositeRule(BlockParentCompositeRule blockParentCompositeRule) {
-        this.blockParentCompositeRule = blockParentCompositeRule;
         return this;
     }
 

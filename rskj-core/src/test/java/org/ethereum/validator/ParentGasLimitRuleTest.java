@@ -18,19 +18,24 @@
 
 package org.ethereum.validator;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import org.ethereum.TestUtils;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Angel J Lopez
  * @since 02.23.2016
  */
 public class ParentGasLimitRuleTest {
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     private ParentGasLimitRule rule = new ParentGasLimitRule(1024);
 
     @Test // pass rule
@@ -76,10 +81,15 @@ public class ParentGasLimitRuleTest {
 
 
     // Used also by GasLimitCalculatorTest
-    public static BlockHeader getHeader(long gasLimitValue) {
+    public BlockHeader getHeader(long gasLimitValue) {
+        return getHeader(blockFactory, gasLimitValue);
+    }
+
+    // Used also by GasLimitCalculatorTest
+    public static BlockHeader getHeader(BlockFactory blockFactory, long gasLimitValue) {
         byte[] gasLimit = DataWord.valueOf(gasLimitValue).getData();
 
-        BlockHeader header = new BlockHeader(null, null, TestUtils.randomAddress().getBytes(),
+        BlockHeader header = blockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(),
                 null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
                 0, null, null, 0);
 

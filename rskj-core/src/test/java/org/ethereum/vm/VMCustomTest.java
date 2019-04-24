@@ -24,6 +24,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.config.BlockchainConfig;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.OutOfGasException;
 import org.ethereum.vm.program.Program.StackTooSmallException;
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.mock;
 public class VMCustomTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private ProgramInvokeMockImpl invoke;
@@ -521,7 +523,7 @@ public class VMCustomTest {
     }
 
     private Program getProgram(String ops) {
-        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), Hex.decode(ops), invoke, null);
+        return new Program(vmConfig, precompiledContracts, blockFactory, mock(BlockchainConfig.class), Hex.decode(ops), invoke, null);
     }
 
 }

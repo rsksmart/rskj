@@ -21,6 +21,8 @@ package co.rsk.core;
 import co.rsk.asm.EVMAssembler;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
@@ -32,7 +34,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -43,12 +44,13 @@ import java.util.Arrays;
 public class CodeReplaceTest {
 
     private TestSystemProperties config = new TestSystemProperties(TestSystemProperties.CODEREPLACE_PREORCHID);
+    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
 
     @Test
     public void replaceCodeTest1() throws InterruptedException {
 
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
-        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
+        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -106,7 +108,7 @@ public class CodeReplaceTest {
 
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
-                getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
+                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -133,7 +135,7 @@ public class CodeReplaceTest {
         TestSystemProperties oldConfig = config;
         config = new TestSystemProperties();
         BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
-        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
+        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -208,6 +210,7 @@ public class CodeReplaceTest {
                 blockchain.getRepository(),
                 blockchain.getBlockStore(),
                 null,
+                blockFactory,
                 new ProgramInvokeFactoryImpl(),
                 blockchain.getBestBlock(),
                 new EthereumListenerAdapter(),

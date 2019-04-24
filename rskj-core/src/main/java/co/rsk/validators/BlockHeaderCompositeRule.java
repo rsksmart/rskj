@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,36 +18,30 @@
 
 package co.rsk.validators;
 
-import co.rsk.panic.PanicProcessor;
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-
-/**
- * Created by martin.medina on 07/02/17.
- */
-public class ValidGasUsedRule implements BlockValidationRule, BlockHeaderValidationRule {
+public class BlockHeaderCompositeRule implements BlockHeaderValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    @Override
-    public boolean isValid(Block block) {
-        return isValid(block.getHeader());
+    private BlockHeaderValidationRule[] rules;
+
+    public BlockHeaderCompositeRule(BlockHeaderValidationRule... rules) {
+        this.rules = rules;
     }
 
     @Override
     public boolean isValid(BlockHeader header) {
-        long gasUsed = header.getGasUsed();
-        long gasLimit = new BigInteger(1, header.getGasLimit()).longValue();
-
-        if(gasUsed < 0 || gasUsed > gasLimit) {
-            logger.warn("Block gas used is less than 0 or more than the gas limit of the block");
-            panicProcessor.panic("invalidGasValue", "Block gas used is less than 0 or more than the gas limit of the block");
-            return false;
+        String shortHash = header.getShortHash();
+        long number = header.getNumber();
+        logger.debug("Validating header {} {}", shortHash, number);
+        for (BlockHeaderValidationRule rule : this.rules) {
+            if (!rule.isValid(header)) {
+                logger.warn("Error Validating {} for header {} {}", rule.getClass(), shortHash, number);
+                return false;
+            }
         }
 
         return true;

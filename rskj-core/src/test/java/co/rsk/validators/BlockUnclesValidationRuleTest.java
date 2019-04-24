@@ -41,7 +41,7 @@ public class BlockUnclesValidationRuleTest {
         store.saveBlock(genesis, new BlockDifficulty(BigInteger.valueOf(1)), true);
         store.saveBlock(block1, new BlockDifficulty(BigInteger.valueOf(2)), true);
 
-        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(store, 10, 10, new BlockCompositeRule(), new BlockParentCompositeRule());
+        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(store, 10, 10, new BlockHeaderCompositeRule(), new BlockHeaderParentCompositeRule());
 
         Assert.assertFalse(rule.isValid(block));
     }
@@ -65,7 +65,7 @@ public class BlockUnclesValidationRuleTest {
         store.saveBlock(genesis, new BlockDifficulty(BigInteger.valueOf(1)), true);
         store.saveBlock(block1, new BlockDifficulty(BigInteger.valueOf(2)), true);
 
-        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(store, 10, 10, new BlockCompositeRule(), new BlockParentCompositeRule());
+        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(store, 10, 10, new BlockHeaderCompositeRule(), new BlockHeaderParentCompositeRule());
 
         Assert.assertFalse(rule.isValid(block));
     }
