@@ -21,13 +21,8 @@ package org.ethereum.jsontestsuite;
 
 import org.ethereum.util.ByteUtil;
 import org.bouncycastle.util.encoders.Hex;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.math.BigInteger;
-
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
@@ -86,46 +81,5 @@ public class Utils {
         if (number.startsWith("0x"))
           number = new BigInteger(number.substring(2), 16).toString(10);
         return number;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static String translateGeneralStateTestToStateTest(String generalStateJsonSuite) throws ParseException {
-        JSONParser parser = new JSONParser();
-        JSONObject generalStateSuite = (JSONObject) parser.parse(generalStateJsonSuite);
-        generalStateSuite.keySet().forEach(keyStr ->
-        {
-            JSONObject keyvalue = (JSONObject) generalStateSuite.get(keyStr);
-            JSONObject stateTest = translateTestCase(keyvalue);
-            generalStateSuite.replace(keyStr,stateTest);
-        });
-
-        return generalStateSuite.toString();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static JSONObject translateTestCase(JSONObject testKey){
-        JSONObject stateJson = new JSONObject();
-        stateJson.put("env", testKey.get("env"));
-        stateJson.put("pre", testKey.get("pre"));
-        stateJson.put("post", null);
-        stateJson.put("out", null);
-
-        JSONObject post = (JSONObject)((JSONArray)((JSONObject)testKey.get("post")).get("Constantinople")).get(0);
-        stateJson.put("postStateRoot", post.get("hash"));
-
-        JSONObject transaction = (JSONObject)testKey.get("transaction");
-        int dataPos = ((Long)((JSONObject)post.get("indexes")).get("data")).intValue();
-        int valuePos = ((Long)((JSONObject)post.get("indexes")).get("gas")).intValue();
-        int gasPos = ((Long)((JSONObject)post.get("indexes")).get("value")).intValue();
-
-
-        transaction.replace("data", ((JSONArray)transaction.get("data")).get(dataPos));
-        transaction.replace("gasLimit", ((JSONArray)transaction.get("gasLimit")).get(gasPos));
-        transaction.replace("value", ((JSONArray)transaction.get("value")).get(valuePos));
-        stateJson.put("logs", new JSONArray());
-
-        stateJson.put("transaction",transaction);
-
-        return stateJson;
     }
 }

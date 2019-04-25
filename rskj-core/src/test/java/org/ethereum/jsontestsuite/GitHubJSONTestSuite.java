@@ -19,7 +19,6 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.ethereum.config.BlockchainConfig;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -32,8 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
-
-import static org.ethereum.jsontestsuite.Utils.translateGeneralStateTestToStateTest;
 
 /**
  * Test file specific for tests maintained in the GitHub repository
@@ -234,17 +231,8 @@ public class GitHubJSONTestSuite {
     }
 
     public static void runStateTest(String jsonSuite, Set<String> excluded) throws IOException {
+
         StateTestSuite stateTestSuite = new StateTestSuite(jsonSuite);
-        runStateTest(stateTestSuite, excluded);
-    }
-
-    public static void runGeneralStateTest(String generalStateJsonSuite, Set<String> excluded) throws ParseException, IOException {
-        StateTestSuite stateTestSuite = new StateTestSuite(translateGeneralStateTestToStateTest(generalStateJsonSuite));
-        runStateTest(stateTestSuite, excluded);
-    }
-
-    public static void runStateTest(StateTestSuite stateTestSuite, Set<String> excluded) throws IOException {
-
         Map<String, StateTestCase> testCases = stateTestSuite.getTestCases();
         Map<String, Boolean> summary = new HashMap<>();
 

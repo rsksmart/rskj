@@ -43,7 +43,6 @@ public class StateTestSuite {
         testCases = new ObjectMapper().readValue(json, type);
     }
 
-
     public Map<String, StateTestCase> getTestCases() {
         return testCases;
     }

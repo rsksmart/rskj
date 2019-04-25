@@ -182,22 +182,17 @@ public class StateTestRunner {
 
         List<String> logsResult = LogsValidator.valid(origLogs, postLogs);
 
+        Repository postRepository = RepositoryBuilder.build(stateTestCase.getPost());
+        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, false /*!blockchain.byTest*/);
+
+        logger.info("--------- POST Validation---------");
+        List<String> outputResults =
+                OutputValidator.valid(Hex.toHexString(programResult.getHReturn()), stateTestCase.getOut());
+
         List<String> results = new ArrayList<>();
-        if (stateTestCase.getPost() != null) {
-            Repository postRepository = RepositoryBuilder.build(stateTestCase.getPost());
-            List<String> repoResults = RepositoryValidator.valid(repository, postRepository, false /*!blockchain.byTest*/);
-            results.addAll(repoResults);
-        }
-
-        if (stateTestCase.getOut() != null){
-            logger.info("--------- POST Validation---------");
-            List<String> outputResults =
-                    OutputValidator.valid(Hex.toHexString(programResult.getHReturn()), stateTestCase.getOut());
-
-            results.addAll(outputResults);
-        }
-
+        results.addAll(repoResults);
         results.addAll(logsResult);
+        results.addAll(outputResults);
 
         for (String result : results) {
             logger.error(result);
