@@ -2654,7 +2654,7 @@ public class BridgeTest {
 
             byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
 
-            Assert.assertEquals(100_000L + 2 * data.length + 100 * numberOfHeaders, bridge.getGasForData(data));
+            Assert.assertEquals(66_000L + 2 * data.length + 1650L * (numberOfHeaders-1), bridge.getGasForData(data));
         }
     }
 
