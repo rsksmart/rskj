@@ -705,5 +705,6 @@ public class VMExecutionTest {
             vm.step(program);
 
         return program;
+
     }
 }
