@@ -96,27 +96,38 @@ public class VMExecutionTest {
         Assert.assertEquals(DataWord.valueOf(1), stack.peek());
     }
 
+
+    private void executeShift(String number, String shiftAmount, String expect,String op ,BlockchainConfig blockchainConfig){
+        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH1 "+shiftAmount+" "+op, 3, blockchainConfig);
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueFromHex(expect), stack.peek());
+    }
+
     @Test
     public void testSHL1() {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip120()).thenReturn(true);
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3, blockchainConfig);
-        Stack stack = program.getStack();
-
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(2), stack.peek());
+        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+                "0x00",
+                "0000000000000000000000000000000000000000000000000000000000000001",
+                "SHL",
+                blockchainConfig);
     }
+
 
     @Test
     public void testSHL2() {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip120()).thenReturn(true);
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x00 SHL", 3, blockchainConfig);
-        Stack stack = program.getStack();
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+                "0x01",
+                "0000000000000000000000000000000000000000000000000000000000000002",
+                "SHL",
+                blockchainConfig);
     }
 
     @Test
@@ -124,10 +135,64 @@ public class VMExecutionTest {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip120()).thenReturn(true);
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SHL", 3, blockchainConfig);
+        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+                "0xff",
+                "8000000000000000000000000000000000000000000000000000000000000000",
+                "SHL",
+                blockchainConfig);
+    }
+
+    @Test
+    public void testSHL4() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        String number = "0x0000000000000000000000000000000000000000000000000000000000000001";
+        String shiftAmount = "0x0100";
+        String op = "SHL";
+        String expect = "0000000000000000000000000000000000000000000000000000000000000000";
+
+        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, blockchainConfig);
         Stack stack = program.getStack();
+
         Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueFromHex("8000000000000000000000000000000000000000000000000000000000000000"), stack.peek());
+        Assert.assertEquals(DataWord.valueFromHex(expect), stack.peek());
+    }
+
+    @Test
+    public void testSHL5() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "0x00",
+                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "SHL",
+                blockchainConfig);
+    }
+
+    @Test
+    public void testSHL6() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "0xff",
+                "8000000000000000000000000000000000000000000000000000000000000000",
+                "SHL",
+                blockchainConfig);
+    }
+
+    @Test
+    public void testSHL7() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        executeShift("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "0x01",
+                "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
+                "SHL",
+                blockchainConfig);
     }
 
     @Test
@@ -135,11 +200,11 @@ public class VMExecutionTest {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip120()).thenReturn(true);
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, blockchainConfig);
-        Stack stack = program.getStack();
-
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(0), stack.peek());
+        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+                "0x00",
+                "0000000000000000000000000000000000000000000000000000000000000001",
+                "SHR",
+                blockchainConfig);
     }
 
     @Test
@@ -147,20 +212,77 @@ public class VMExecutionTest {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip120()).thenReturn(true);
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x00 SHR", 3, blockchainConfig);
-        Stack stack = program.getStack();
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+                "0x01",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                "SHR",
+                blockchainConfig);
     }
+
     @Test
     public void testSHR3() {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip120()).thenReturn(true);
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 0x800000000005000000000000000000010000000000000040000000000A000000 PUSH1 0xff SHR", 3, blockchainConfig);
+        executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
+                "0x01",
+                "4000000000000000000000000000000000000000000000000000000000000000",
+                "SHR",
+                blockchainConfig);
+    }
+
+    @Test
+    public void testSHR4() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
+                "0xff",
+                "0000000000000000000000000000000000000000000000000000000000000001",
+                "SHR",
+                blockchainConfig);
+    }
+
+
+    @Test
+    public void testSHR5() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "0x00",
+                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "SHR",
+                blockchainConfig);
+    }
+
+    @Test
+    public void testSHR6() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "0xff",
+                "0000000000000000000000000000000000000000000000000000000000000001",
+                "SHR",
+                blockchainConfig);
+    }
+
+    @Test
+    public void testSHR7() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        String number = "0x8000000000000000000000000000000000000000000000000000000000000000";
+        String shiftAmount = "0x0100";
+        String op = "SHR";
+        String expect = "0000000000000000000000000000000000000000000000000000000000000000";
+
+        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, blockchainConfig);
         Stack stack = program.getStack();
+
         Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assert.assertEquals(DataWord.valueFromHex(expect), stack.peek());
     }
 
     @Test
@@ -168,39 +290,108 @@ public class VMExecutionTest {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip120()).thenReturn(true);
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 0x8000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SAR", 3, blockchainConfig);
-        Stack stack = program.getStack();
-
-        String expectedResult = "c000000000000000000000000000000000000000000000000000000000000000";
-
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueFromHex(expectedResult), stack.peek());
+        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+                "0x00",
+                "0000000000000000000000000000000000000000000000000000000000000001",
+                "SAR",
+                blockchainConfig);
     }
+
 
     @Test
     public void testSAR2() {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip120()).thenReturn(true);
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SAR", 3, blockchainConfig);
-        Stack stack = program.getStack();
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(0), stack.peek());
+        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+                "0x01",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                "SAR",
+                blockchainConfig);
     }
+
 
     @Test
     public void testSAR3() {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip120()).thenReturn(true);
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3, blockchainConfig);
+        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+                "0x00",
+                "0000000000000000000000000000000000000000000000000000000000000001",
+                "SAR",
+                blockchainConfig);
+    }
+
+
+    @Test
+    public void testSAR4() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
+                "0xff",
+                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "SAR",
+                blockchainConfig);
+    }
+
+
+    @Test
+    public void testSAR5() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "0x00",
+                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "SAR",
+                blockchainConfig);
+    }
+
+
+    @Test
+    public void testSAR6() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "0x01",
+                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "SAR",
+                blockchainConfig);
+    }
+
+
+    @Test
+    public void testSAR7() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        executeShift("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+                "0xf8",
+                "000000000000000000000000000000000000000000000000000000000000007f",
+                "SAR",
+                blockchainConfig);
+    }
+
+    @Test
+    public void testSAR8() {
+        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
+        when(blockchainConfig.isRskip120()).thenReturn(true);
+
+        String number = "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+        String shiftAmount = "0x0100";
+        String op = "SAR";
+        String expect = "0000000000000000000000000000000000000000000000000000000000000000";
+
+        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, blockchainConfig);
         Stack stack = program.getStack();
 
-        String expectedResult = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-
         Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueFromHex(expectedResult), stack.peek());
+        Assert.assertEquals(DataWord.valueFromHex(expect), stack.peek());
     }
+
 
 
     @Test(expected = Program.IllegalOperationException.class)
@@ -504,17 +695,16 @@ public class VMExecutionTest {
     }
 
     private Program executeCodeWithBlockchainConfig(String code, int nsteps, BlockchainConfig blockchainConfig) {
-        return executeCodeWithBlockchainConfig(compiler.compile(code), nsteps, blockchainConfig);
-    }
-
-    private Program executeCodeWithBlockchainConfig(byte[] code, int nsteps, BlockchainConfig blockchainConfig) {
         VM vm = new VM(vmConfig, precompiledContracts);
+        byte[] bytecode = compiler.compile(code);
 
-        Program program = new Program(vmConfig, precompiledContracts, blockchainConfig, code, invoke, null);
+
+        Program program = new Program(vmConfig, precompiledContracts, blockchainConfig, bytecode, invoke, null);
 
         for (int k = 0; k < nsteps; k++)
             vm.step(program);
 
         return program;
+
     }
 }
