@@ -7743,7 +7743,7 @@
     "createWithInvalidOpcode" : {
         "env" : {
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
-            "currentDifficulty" : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "currentDifficulty" : "0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
             "currentGasLimit" : "0x0f4240",
             "currentNumber" : "0x259518",
             "currentTimestamp" : "0x02",
@@ -8632,7 +8632,7 @@
     "testRandomTest" : {
         "env" : {
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
-            "currentDifficulty" : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "currentDifficulty" : "0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
             "currentGasLimit" : "0x0f4240",
             "currentNumber" : "0x259518",
             "currentTimestamp" : "0x02",
