@@ -44,20 +44,25 @@ public class AccountValidator {
 
         List<String> results = new ArrayList<>();
 
-        if (currentState == null || !currentRepository.isContract(addr)) {
+        if (currentState == null) {
             String formattedString = String.format("Account: %s: expected but doesn't exist",
                     addr);
             results.add(formattedString);
             return results;
         }
 
-        if (expectedState == null || !expectedRepository.isContract(addr)) {
+        if (expectedState == null) {
             String formattedString = String.format("Account: %s: unexpected account in the repository",
                     addr);
             results.add(formattedString);
             return results;
         }
 
+        if (currentRepository.isContract(addr) != expectedRepository.isContract(addr)) {
+            String formattedString = String.format("Account: %s: unexpected account state", addr);
+            results.add(formattedString);
+            return results;
+        }
 
         Coin expectedBalance = expectedState.getBalance();
         if (!currentState.getBalance().equals(expectedBalance)) {

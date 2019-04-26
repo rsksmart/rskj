@@ -289,7 +289,8 @@ public class MutableRepository implements Repository {
         Trie storageTrie = this.trie.getTrie().find(accountStorageKey);
 
         if (storageTrie != null) {
-            Iterator<Trie.IterationElement> storageIterator = storageTrie.getInOrderIterator();
+            Iterator<Trie.IterationElement> storageIterator = storageTrie.getPreOrderIterator();
+            storageIterator.next(); // skip storage root
             return new Iterator<DataWord>() {
                 DataWord currentStorageKey;
 
