@@ -402,7 +402,7 @@ public class VMExecutionTest {
     }
 
     @Test(expected = Program.IllegalOperationException.class)
-    public void testSHL1ShoulfFailOnOldVersion() {
+    public void testSHL1ShouldFailOnOldVersion() {
         BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
         when(blockchainConfig.isRskip120()).thenReturn(false);
 
