@@ -699,7 +699,7 @@ public class VMExecutionTest {
         byte[] bytecode = compiler.compile(code);
 
 
-        Program program = new Program(vmConfig, precompiledContracts, blockchainConfig, bytecode, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, bytecode, invoke, null);
 
         for (int k = 0; k < nsteps; k++)
             vm.step(program);

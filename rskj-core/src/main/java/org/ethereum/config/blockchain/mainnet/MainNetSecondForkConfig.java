@@ -20,4 +20,7 @@
 package org.ethereum.config.blockchain.mainnet;
 
 public class MainNetSecondForkConfig extends MainNetOrchid060Config {
+    public boolean isRskip120() {
+        return true;
+    }
 }
