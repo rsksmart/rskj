@@ -41,7 +41,7 @@ import java.util.List;
 public class GetMultisigScriptHash extends NativeMethod {
     private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
             "getMultisigScriptHash",
-            new String[]{"uint8", "bytes[]"},
+            new String[]{"int256", "bytes[]"},
             new String[]{"bytes"}
     );
 
