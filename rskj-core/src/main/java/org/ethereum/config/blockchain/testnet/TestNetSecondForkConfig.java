@@ -20,4 +20,8 @@
 package org.ethereum.config.blockchain.testnet;
 
 public class TestNetSecondForkConfig extends TestNetOrchid060Config {
+    @Override
+    public boolean isRskip120() {
+        return true;
+    }
 }
