@@ -63,5 +63,5 @@ public interface BlockchainConfig {
 
     boolean isRskip98();
 
-    boolean isRskipMultipleKeyFederateMembers();
+    boolean isRskip123();
 }

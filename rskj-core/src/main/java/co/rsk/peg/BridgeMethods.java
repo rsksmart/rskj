@@ -39,7 +39,7 @@ public enum BridgeMethods {
             ),
             13000L,
             (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKey,
-            blockchainConfig -> !blockchainConfig.isRskipMultipleKeyFederateMembers(),
+            blockchainConfig -> !blockchainConfig.isRskip123(),
             false
     ),
     ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY(
@@ -50,7 +50,7 @@ public enum BridgeMethods {
             ),
             13000L,
             (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKeyMultikey,
-            blockchainConfig -> blockchainConfig.isRskipMultipleKeyFederateMembers(),
+            blockchainConfig -> blockchainConfig.isRskip123(),
             false
     ),
     ADD_LOCK_WHITELIST_ADDRESS(
@@ -227,7 +227,7 @@ public enum BridgeMethods {
             ),
             10000L,
             (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKey,
-            blockChainConfig -> !blockChainConfig.isRskipMultipleKeyFederateMembers(),
+            blockChainConfig -> !blockChainConfig.isRskip123(),
             true
     ),
     GET_FEDERATOR_PUBLIC_KEY_OF_TYPE(
@@ -238,7 +238,7 @@ public enum BridgeMethods {
             ),
             10000L,
             (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyOfType,
-            blockChainConfig -> blockChainConfig.isRskipMultipleKeyFederateMembers(),
+            blockChainConfig -> blockChainConfig.isRskip123(),
             true
     ),
     GET_FEE_PER_KB(
@@ -320,7 +320,7 @@ public enum BridgeMethods {
             ),
             3000L,
             (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKey,
-            blockChainConfig -> !blockChainConfig.isRskipMultipleKeyFederateMembers(),
+            blockChainConfig -> !blockChainConfig.isRskip123(),
             true
     ),
     GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
@@ -331,7 +331,7 @@ public enum BridgeMethods {
             ),
             3000L,
             (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKeyOfType,
-            blockChainConfig -> blockChainConfig.isRskipMultipleKeyFederateMembers(),
+            blockChainConfig -> blockChainConfig.isRskip123(),
             true
     ),
     GET_RETIRING_FEDERATION_ADDRESS(
@@ -392,7 +392,7 @@ public enum BridgeMethods {
             ),
             3000L,
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKey,
-            blockChainConfig -> !blockChainConfig.isRskipMultipleKeyFederateMembers(),
+            blockChainConfig -> !blockChainConfig.isRskip123(),
             true
     ),
     GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
@@ -403,7 +403,7 @@ public enum BridgeMethods {
             ),
             3000L,
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKeyOfType,
-            blockChainConfig -> blockChainConfig.isRskipMultipleKeyFederateMembers(),
+            blockChainConfig -> blockChainConfig.isRskip123(),
             true
     ),
     GET_STATE_FOR_BTC_RELEASE_CLIENT(

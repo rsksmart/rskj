@@ -1302,7 +1302,7 @@ public class BridgeTest {
     @Test
     public void getFederatorPublicKey_beforeMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(false);
+        when(mockedConfig.isRskip123()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1334,7 +1334,7 @@ public class BridgeTest {
     @Test
     public void getFederatorPublicKey_afterMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(true);
+        when(mockedConfig.isRskip123()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1349,7 +1349,7 @@ public class BridgeTest {
     @Test
     public void getFederatorPublicKeyOfType_beforeMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(false);
+        when(mockedConfig.isRskip123()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1364,7 +1364,7 @@ public class BridgeTest {
     @Test
     public void getFederatorPublicKeyOfType_afterMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(true);
+        when(mockedConfig.isRskip123()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1441,7 +1441,7 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKey_beforeMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(false);
+        when(mockedConfig.isRskip123()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1473,7 +1473,7 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKey_afterMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(true);
+        when(mockedConfig.isRskip123()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1488,7 +1488,7 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKeyOfType_beforeMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(false);
+        when(mockedConfig.isRskip123()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1503,7 +1503,7 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKeyOfType_afterMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(true);
+        when(mockedConfig.isRskip123()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1548,7 +1548,7 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKey_beforeMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(false);
+        when(mockedConfig.isRskip123()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1580,7 +1580,7 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKey_afterMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(true);
+        when(mockedConfig.isRskip123()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1595,7 +1595,7 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKeyOfType_beforeMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(false);
+        when(mockedConfig.isRskip123()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1610,7 +1610,7 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKeyOfType_afterMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(true);
+        when(mockedConfig.isRskip123()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(config, PrecompiledContracts.BRIDGE_ADDR));
@@ -1656,7 +1656,7 @@ public class BridgeTest {
     @Test
     public void addFederatorPublicKey_beforeMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(false);
+        when(mockedConfig.isRskip123()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Transaction txMock = mock(Transaction.class);
@@ -1677,7 +1677,7 @@ public class BridgeTest {
     @Test
     public void addFederatorPublicKey_afterMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(true);
+        when(mockedConfig.isRskip123()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Transaction txMock = mock(Transaction.class);
@@ -1696,7 +1696,7 @@ public class BridgeTest {
     @Test
     public void addFederatorPublicKeyMultikey_beforeMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(false);
+        when(mockedConfig.isRskip123()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Transaction txMock = mock(Transaction.class);
@@ -1717,7 +1717,7 @@ public class BridgeTest {
     @Test
     public void addFederatorPublicKeyMultikey_afterMultikey() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipMultipleKeyFederateMembers()).thenReturn(true);
+        when(mockedConfig.isRskip123()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Transaction txMock = mock(Transaction.class);

@@ -22,7 +22,7 @@ package org.ethereum.config.blockchain.testnet;
 public class TestNetSecondForkConfig extends TestNetOrchid060Config {
 
     @Override
-    public boolean isRskipMultipleKeyFederateMembers() {
+    public boolean isRskip123() {
         return true;
     }
 }

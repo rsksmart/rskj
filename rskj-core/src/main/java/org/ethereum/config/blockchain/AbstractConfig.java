@@ -164,7 +164,7 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
     }
 
     @Override
-    public boolean isRskipMultipleKeyFederateMembers() {
+    public boolean isRskip123() {
         return false;
     }
 }

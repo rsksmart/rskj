@@ -747,7 +747,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     {
         logger.trace("addFederatorPublicKey");
 
-        byte[] publicKeyBytes = (byte[]) args[0];
+        byte[] publicKeyBytes;
+        try {
+            publicKeyBytes = (byte[]) args[0];
+        } catch (Exception e) {
+            logger.warn("Exception in addFederatorPublicKey", e);
+            return -10;
+        }
 
         return bridgeSupport.voteFederationChange(
                 rskTx,

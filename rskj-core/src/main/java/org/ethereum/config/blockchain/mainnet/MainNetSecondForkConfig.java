@@ -21,7 +21,7 @@ package org.ethereum.config.blockchain.mainnet;
 
 public class MainNetSecondForkConfig extends MainNetOrchid060Config {
     @Override
-    public boolean isRskipMultipleKeyFederateMembers() {
+    public boolean isRskip123() {
         return true;
     }
 }
