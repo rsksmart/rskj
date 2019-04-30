@@ -532,6 +532,51 @@ public class VM {
         program.step();
     }
 
+    protected void doSHL() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord word1 = program.stackPop();
+        DataWord word2 = program.stackPop();
+
+        if (isLogEnabled) {
+            hint = word1.value() + " << " + word2.value();
+        }
+
+        program.stackPush(word2.shiftLeft(word1));
+        program.step();
+
+    }
+
+    protected void doSHR() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord word1 = program.stackPop();
+        DataWord word2 = program.stackPop();
+
+        if (isLogEnabled) {
+            hint = word1.value() + " >> " + word2.value();
+        }
+
+        program.stackPush(word2.shiftRight(word1));
+        program.step();
+
+    }
+
+    protected void doSAR() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord word1 = program.stackPop();
+        DataWord word2 = program.stackPop();
+
+        if (isLogEnabled) {
+            hint = word1.value() + " >> " + word2.value();
+        }
+
+        program.stackPush(word2.shiftRightSigned(word1));
+        program.step();
+
+    }
+
     protected void doADDMOD() {
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1619,6 +1664,24 @@ public class VM {
             case OpCodes.OP_ADDMOD: doADDMOD();
             break;
             case OpCodes.OP_MULMOD: doMULMOD();
+            break;
+            case OpCodes.OP_SHL:
+                if (!config.isRskip120()) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doSHL();
+            break;
+            case OpCodes.OP_SHR:
+                if (!config.isRskip120()) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doSHR();
+            break;
+            case OpCodes.OP_SAR:
+                if (!config.isRskip120()) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doSAR();
             break;
             /**
              * SHA3
