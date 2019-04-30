@@ -460,9 +460,9 @@ public class ByteUtil {
                 byte b = newbytes[k];
                 newbytes[k] <<= nbits;
 
-                if (k == 0)
+                if (k == 0) {
                     continue;
-
+                }
                 newbytes[k - 1] |= (b & 0xff) >>> (8 - nbits);
             }
         }
@@ -475,8 +475,9 @@ public class ByteUtil {
 
         int nbytes = shift / 8;
 
-        if (nbytes >= bytes.length)
+        if (nbytes >= bytes.length) {
             return newbytes;
+        }
 
         int nbits = shift % 8;
 
@@ -487,8 +488,9 @@ public class ByteUtil {
                 byte b = newbytes[k];
                 newbytes[k] = (byte) ((newbytes[k] & 0xff) >> nbits);
 
-                if (k == newbytes.length - 1)
+                if (k == newbytes.length - 1) {
                     continue;
+                }
 
                 newbytes[k + 1] |= (b & 0xff) << (8 - nbits);
             }
@@ -502,9 +504,9 @@ public class ByteUtil {
 
         int nbytes = shift / 8;
 
-        if (nbytes >= bytes.length)
+        if (nbytes >= bytes.length) {
             return newbytes;
-
+        }
         int nbits = shift % 8;
 
         System.arraycopy(bytes, 0, newbytes, nbytes, bytes.length - nbytes);
@@ -514,9 +516,9 @@ public class ByteUtil {
                 byte b = newbytes[k];
                 newbytes[k] = (byte)((newbytes[k] & 0xff) >> nbits);
 
-                if (k == newbytes.length - 1)
+                if (k == newbytes.length - 1) {
                     continue;
-
+                }
                 newbytes[k + 1] |= (b & 0xff) << (8 - nbits);
             }
         }
