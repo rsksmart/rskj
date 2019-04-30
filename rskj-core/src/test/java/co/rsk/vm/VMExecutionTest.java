@@ -688,18 +688,16 @@ public class VMExecutionTest {
 
         Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(BlockchainConfig.class), code, invoke, null);
 
-        for (int k = 0; k < nsteps; k++)
+        for (int k = 0; k < nsteps; k++) {
             vm.step(program);
-
+        }
+        
         return program;
     }
 
     private Program executeCodeWithBlockchainConfig(String code, int nsteps, BlockchainConfig blockchainConfig) {
         VM vm = new VM(vmConfig, precompiledContracts);
-        byte[] bytecode = compiler.compile(code);
-
-
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, bytecode, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, compiler.compile(code), invoke, null);
 
         for (int k = 0; k < nsteps; k++) {
             vm.step(program);
