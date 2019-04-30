@@ -701,8 +701,9 @@ public class VMExecutionTest {
 
         Program program = new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, bytecode, invoke, null);
 
-        for (int k = 0; k < nsteps; k++)
+        for (int k = 0; k < nsteps; k++) {
             vm.step(program);
+        }
 
         return program;
 
