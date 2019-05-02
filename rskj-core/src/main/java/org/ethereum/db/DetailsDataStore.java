@@ -21,6 +21,7 @@ package org.ethereum.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
+import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.crypto.Keccak256Helper;
@@ -163,9 +164,18 @@ public class DetailsDataStore {
     public synchronized Set<RskAddress> keys() {
         Stream<RskAddress> keys = Stream.concat(
                 cache.keySet().stream(),
-                db.keys().stream().map(RskAddress::new)
+                db.keys().stream().map(this::getRskAddress)
         );
         return keys.collect(Collectors.toSet());
     }
+
+    private RskAddress getRskAddress(byte[] bytes) {
+        if (Arrays.equals(RemascTransaction.REMASC_ADDRESS.getBytes(), bytes)) {
+            return RemascTransaction.REMASC_ADDRESS;
+        }
+
+        return new RskAddress(bytes);
+    }
+
 
 }
