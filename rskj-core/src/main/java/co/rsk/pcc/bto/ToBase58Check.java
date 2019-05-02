@@ -46,7 +46,7 @@ public class ToBase58Check extends NativeMethod {
 
     private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
             "toBase58Check",
-            new String[]{"bytes", "uint8"},
+            new String[]{"bytes", "int256"},
             new String[]{"string"}
     );
 

@@ -50,7 +50,7 @@ public class GetMultisigScriptHashTest {
         Assert.assertEquals("getMultisigScriptHash", fn.name);
 
         Assert.assertEquals(2, fn.inputs.length);
-        Assert.assertEquals(SolidityType.getType("uint8").getName(), fn.inputs[0].type.getName());
+        Assert.assertEquals(SolidityType.getType("int256").getName(), fn.inputs[0].type.getName());
         Assert.assertEquals(SolidityType.getType("bytes[]").getName(), fn.inputs[1].type.getName());
 
         Assert.assertEquals(1, fn.outputs.length);
