@@ -442,6 +442,7 @@ public class ByteUtil {
         return ret;
     }
 
+    @java.lang.SuppressWarnings("squid:S3034")
     public static byte[] shiftLeft(byte[] byteArray, int shiftBitCount) {
         // Code taken from the Apache 2 licensed library
         // https://github.com/patrickfav/bytes-java/blob/master/src/main/java/at/favre/lib/bytes/Util.java
@@ -466,6 +467,7 @@ public class ByteUtil {
         return byteArray;
     }
 
+    @java.lang.SuppressWarnings("squid:S3034")
     public static byte[] shiftRight(byte[] byteArray, int shiftBitCount) {
         // Code taken from the Apache 2 licensed library
         // https://github.com/patrickfav/bytes-java/blob/master/src/main/java/at/favre/lib/bytes/Util.java
