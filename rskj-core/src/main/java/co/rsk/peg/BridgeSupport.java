@@ -43,6 +43,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
@@ -80,6 +81,7 @@ public class BridgeSupport {
     private final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(
             "create",
             "add",
+            "add-multi",
             "commit",
             "rollback"));
 
@@ -870,7 +872,7 @@ public class BridgeSupport {
     public void addSignature(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
         Context.propagate(btcContext);
         Federation retiringFederation = getRetiringFederation();
-        if (!getActiveFederation().getPublicKeys().contains(federatorPublicKey) && (retiringFederation == null || !retiringFederation.getPublicKeys().contains(federatorPublicKey))) {
+        if (!getActiveFederation().getBtcPublicKeys().contains(federatorPublicKey) && (retiringFederation == null || !retiringFederation.getBtcPublicKeys().contains(federatorPublicKey))) {
             logger.warn("Supplied federator public key {} does not belong to any of the federators.", federatorPublicKey);
             return;
         }
@@ -947,10 +949,10 @@ public class BridgeSupport {
                     logger.debug("Tx input {} for tx {} signed.", i, new Keccak256(rskTxHash));
                 } catch (IllegalStateException e) {
                     Federation retiringFederation = getRetiringFederation();
-                    if (getActiveFederation().hasPublicKey(federatorPublicKey)) {
+                    if (getActiveFederation().hasBtcPublicKey(federatorPublicKey)) {
                         logger.debug("A member of the active federation is trying to sign a tx of the retiring one");
                         return;
-                    } else if (retiringFederation != null && retiringFederation.hasPublicKey(federatorPublicKey)) {
+                    } else if (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey)) {
                         logger.debug("A member of the retiring federation is trying to sign a tx of the active one");
                         return;
                     }
@@ -1199,7 +1201,7 @@ public class BridgeSupport {
      * @return the federation size
      */
     public Integer getFederationSize() {
-        return federationSupport.getFederationSize();
+        return getActiveFederation().getBtcPublicKeys().size();
     }
 
     /**
@@ -1216,7 +1218,17 @@ public class BridgeSupport {
      * @return the federator's public key
      */
     public byte[] getFederatorPublicKey(int index) {
-        return federationSupport.getFederatorPublicKey(index);
+        return federationSupport.getFederatorBtcPublicKey(index);
+    }
+
+    /**
+     * Returns the public key of given type of the federation's federator at the given index
+     * @param index the federator's index (zero-based)
+     * @param keyType the key type
+     * @return the federator's public key
+     */
+    public byte[] getFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
+        return federationSupport.getFederatorPublicKeyOfType(index, keyType);
     }
 
     /**
@@ -1259,7 +1271,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        return retiringFederation.getPublicKeys().size();
+        return retiringFederation.getBtcPublicKeys().size();
     }
 
     /**
@@ -1286,13 +1298,28 @@ public class BridgeSupport {
             return null;
         }
 
-        List<BtcECKey> publicKeys = retiringFederation.getPublicKeys();
+        List<BtcECKey> publicKeys = retiringFederation.getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
-            throw new IndexOutOfBoundsException(String.format("Retiring federator index must be between 0 and {}", publicKeys.size() - 1));
+            throw new IndexOutOfBoundsException(String.format("Retiring federator index must be between 0 and %d", publicKeys.size() - 1));
         }
 
         return publicKeys.get(index).getPubKey();
+    }
+
+    /**
+     * Returns the public key of the given type of the retiring federation's federator at the given index
+     * @param index the retiring federator's index (zero-based)
+     * @param keyType the key type
+     * @return the retiring federator's public key of the given type, null if no retiring federation exists
+     */
+    public byte[] getRetiringFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
+        Federation retiringFederation = getRetiringFederation();
+        if (retiringFederation == null) {
+            return null;
+        }
+
+        return federationSupport.getMemberPublicKeyOfType(retiringFederation.getMembers(), index, keyType, "Retiring federator");
     }
 
     /**
@@ -1379,19 +1406,24 @@ public class BridgeSupport {
     }
 
     /**
-     * Adds the given key to the current pending federation
+     * Adds the given keys to the current pending federation.
+     *
      * @param dryRun whether to just do a dry run
-     * @param key the public key to add
+     * @param btcKey the BTC public key to add
+     * @param rskKey the RSK public key to add
+     * @param mstKey the MST public key to add
      * @return 1 upon success, -1 if there was no pending federation, -2 if the key was already in the pending federation
      */
-    private Integer addFederatorPublicKey(boolean dryRun, BtcECKey key) {
+    private Integer addFederatorPublicKeyMultikey(boolean dryRun, BtcECKey btcKey, ECKey rskKey, ECKey mstKey) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
             return -1;
         }
 
-        if (currentPendingFederation.getPublicKeys().contains(key)) {
+        if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
+            currentPendingFederation.getMembers().stream().map(m -> m.getRskPublicKey()).anyMatch(k -> k.equals(rskKey)) ||
+            currentPendingFederation.getMembers().stream().map(m -> m.getMstPublicKey()).anyMatch(k -> k.equals(mstKey))) {
             return -2;
         }
 
@@ -1399,7 +1431,9 @@ public class BridgeSupport {
             return 1;
         }
 
-        currentPendingFederation = currentPendingFederation.addPublicKey(key);
+        FederationMember member = new FederationMember(btcKey, rskKey, mstKey);
+
+        currentPendingFederation = currentPendingFederation.addMember(member);
 
         provider.setPendingFederation(currentPendingFederation);
 
@@ -1549,14 +1583,39 @@ public class BridgeSupport {
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
             case "add":
-                byte[] publicKeyBytes = (byte[]) callSpec.getArguments()[0];
+                byte[] publicKeyBytes = callSpec.getArguments()[0];
                 BtcECKey publicKey;
+                ECKey publicKeyEc;
                 try {
                     publicKey = BtcECKey.fromPublicOnly(publicKeyBytes);
+                    publicKeyEc = ECKey.fromPublicOnly(publicKeyBytes);
                 } catch (Exception e) {
                     throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(publicKeyBytes), e);
                 }
-                executionResult = addFederatorPublicKey(dryRun, publicKey);
+                executionResult = addFederatorPublicKeyMultikey(dryRun, publicKey, publicKeyEc, publicKeyEc);
+                result = new ABICallVoteResult(executionResult == 1, executionResult);
+                break;
+            case "add-multi":
+                BtcECKey btcPublicKey;
+                ECKey rskPublicKey, mstPublicKey;
+                try {
+                    btcPublicKey = BtcECKey.fromPublicOnly(callSpec.getArguments()[0]);
+                } catch (Exception e) {
+                    throw new BridgeIllegalArgumentException("BTC public key could not be parsed " + Hex.toHexString(callSpec.getArguments()[0]), e);
+                }
+
+                try {
+                    rskPublicKey = ECKey.fromPublicOnly(callSpec.getArguments()[1]);
+                } catch (Exception e) {
+                    throw new BridgeIllegalArgumentException("RSK public key could not be parsed " + Hex.toHexString(callSpec.getArguments()[1]), e);
+                }
+
+                try {
+                    mstPublicKey = ECKey.fromPublicOnly(callSpec.getArguments()[2]);
+                } catch (Exception e) {
+                    throw new BridgeIllegalArgumentException("MST public key could not be parsed " + Hex.toHexString(callSpec.getArguments()[2]), e);
+                }
+                executionResult = addFederatorPublicKeyMultikey(dryRun, btcPublicKey, rskPublicKey, mstPublicKey);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
                 break;
             case "commit":
@@ -1601,11 +1660,11 @@ public class BridgeSupport {
             return -1;
         }
 
-        return currentPendingFederation.getPublicKeys().size();
+        return currentPendingFederation.getBtcPublicKeys().size();
     }
 
     /**
-     * Returns the currently pending federation threshold, or null if none exists
+     * Returns the currently pending federation federator's public key at the given index, or null if none exists
      * @param index the federator's index (zero-based)
      * @return the pending federation's federator public key
      */
@@ -1616,13 +1675,29 @@ public class BridgeSupport {
             return null;
         }
 
-        List<BtcECKey> publicKeys = currentPendingFederation.getPublicKeys();
+        List<BtcECKey> publicKeys = currentPendingFederation.getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
-            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and {}", publicKeys.size() - 1));
+            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", publicKeys.size() - 1));
         }
 
         return publicKeys.get(index).getPubKey();
+    }
+
+    /**
+     * Returns the public key of the given type of the pending federation's federator at the given index
+     * @param index the federator's index (zero-based)
+     * @param keyType the key type
+     * @return the pending federation's federator public key of given type
+     */
+    public byte[] getPendingFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return null;
+        }
+
+        return federationSupport.getMemberPublicKeyOfType(currentPendingFederation.getMembers(), index, keyType, "Federator");
     }
 
     /**

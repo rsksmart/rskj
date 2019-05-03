@@ -20,4 +20,9 @@
 package org.ethereum.config.blockchain.devnet;
 
 public class DevNetSecondForkConfig extends DevNetOrchid060Config {
+
+    @Override
+    public boolean isRskip123() {
+        return true;
+    }
 }

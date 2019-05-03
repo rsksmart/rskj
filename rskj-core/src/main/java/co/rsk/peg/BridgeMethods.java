@@ -39,6 +39,18 @@ public enum BridgeMethods {
             ),
             13000L,
             (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKey,
+            blockchainConfig -> !blockchainConfig.isRskip123(),
+            false
+    ),
+    ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY(
+            CallTransaction.Function.fromSignature(
+                    "addFederatorPublicKeyMultikey",
+                    new String[]{"bytes", "bytes", "bytes"},
+                    new String[]{"int256"}
+            ),
+            13000L,
+            (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKeyMultikey,
+            blockchainConfig -> blockchainConfig.isRskip123(),
             false
     ),
     ADD_LOCK_WHITELIST_ADDRESS(
@@ -215,6 +227,18 @@ public enum BridgeMethods {
             ),
             10000L,
             (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKey,
+            blockChainConfig -> !blockChainConfig.isRskip123(),
+            true
+    ),
+    GET_FEDERATOR_PUBLIC_KEY_OF_TYPE(
+            CallTransaction.Function.fromSignature(
+                    "getFederatorPublicKeyOfType",
+                    new String[]{"int256", "string"},
+                    new String[]{"bytes"}
+            ),
+            10000L,
+            (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyOfType,
+            blockChainConfig -> blockChainConfig.isRskip123(),
             true
     ),
     GET_FEE_PER_KB(
@@ -296,6 +320,18 @@ public enum BridgeMethods {
             ),
             3000L,
             (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKey,
+            blockChainConfig -> !blockChainConfig.isRskip123(),
+            true
+    ),
+    GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
+            CallTransaction.Function.fromSignature(
+                    "getPendingFederatorPublicKeyOfType",
+                    new String[]{"int256", "string"},
+                    new String[]{"bytes"}
+            ),
+            3000L,
+            (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKeyOfType,
+            blockChainConfig -> blockChainConfig.isRskip123(),
             true
     ),
     GET_RETIRING_FEDERATION_ADDRESS(
@@ -356,6 +392,18 @@ public enum BridgeMethods {
             ),
             3000L,
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKey,
+            blockChainConfig -> !blockChainConfig.isRskip123(),
+            true
+    ),
+    GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
+            CallTransaction.Function.fromSignature(
+                    "getRetiringFederatorPublicKeyOfType",
+                    new String[]{"int256", "string"},
+                    new String[]{"bytes"}
+            ),
+            3000L,
+            (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKeyOfType,
+            blockChainConfig -> blockChainConfig.isRskip123(),
             true
     ),
     GET_STATE_FOR_BTC_RELEASE_CLIENT(

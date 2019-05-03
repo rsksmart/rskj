@@ -111,6 +111,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_FEDERATION_THRESHOLD = BridgeMethods.GET_FEDERATION_THRESHOLD.getFunction();
     // Returns the public key of the federator at the specified index
     public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = BridgeMethods.GET_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Returns the public key of given type of the federator at the specified index
+    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
     // Returns the creation time of the federation
     public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME = BridgeMethods.GET_FEDERATION_CREATION_TIME.getFunction();
     // Returns the block number of the creation of the federation
@@ -124,6 +126,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_THRESHOLD = BridgeMethods.GET_RETIRING_FEDERATION_THRESHOLD.getFunction();
     // Returns the public key of the retiring federation's federator at the specified index
     public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Returns the public key of given type of the retiring federation's federator at the specified index
+    public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
     // Returns the creation time of the retiring federation
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_TIME = BridgeMethods.GET_RETIRING_FEDERATION_CREATION_TIME.getFunction();
     // Returns the block number of the creation of the retiring federation
@@ -133,6 +137,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function CREATE_FEDERATION = BridgeMethods.CREATE_FEDERATION.getFunction();
     // Adds the given key to the current pending federation
     public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY = BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Adds the given key to the current pending federation (multiple-key version)
+    public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY = BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY.getFunction();
     // Commits the currently pending federation
     public static final CallTransaction.Function COMMIT_FEDERATION = BridgeMethods.COMMIT_FEDERATION.getFunction();
     // Rolls back the currently pending federation
@@ -144,6 +150,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_PENDING_FEDERATION_SIZE = BridgeMethods.GET_PENDING_FEDERATION_SIZE.getFunction();
     // Returns the public key of the federator at the specified index for the current pending federation
     public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY = BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Returns the public key of given type the federator at the specified index for the current pending federation
+    public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
 
     // Returns the lock whitelist size
     public static final CallTransaction.Function GET_LOCK_WHITELIST_SIZE = BridgeMethods.GET_LOCK_WHITELIST_SIZE.getFunction();
@@ -608,6 +616,23 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFederatorPublicKey(index);
     }
 
+    public byte[] getFederatorPublicKeyOfType(Object[] args)
+    {
+        logger.trace("getFederatorPublicKeyOfType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.byValue((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getFederatorPublicKeyOfType", e);
+            throw new RuntimeException("Exception in getFederatorPublicKeyOfType", e);
+        }
+
+        return bridgeSupport.getFederatorPublicKeyOfType(index, keyType);
+    }
+
     public Long getFederationCreationTime(Object[] args)
     {
         logger.trace("getFederationCreationTime");
@@ -664,6 +689,30 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return publicKey;
     }
 
+    public byte[] getRetiringFederatorPublicKeyOfType(Object[] args)
+    {
+        logger.trace("getRetiringFederatorPublicKeyOfType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.byValue((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getRetiringFederatorPublicKeyOfType", e);
+            throw new RuntimeException("Exception in getRetiringFederatorPublicKeyOfType", e);
+        }
+
+        byte[] publicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
+
+        if (publicKey == null) {
+            // Empty array is returned when public key is not found or there's no retiring federation
+            return new byte[]{};
+        }
+
+        return publicKey;
+    }
+
     public Long getRetiringFederationCreationTime(Object[] args)
     {
         logger.trace("getRetiringFederationCreationTime");
@@ -709,6 +758,20 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.voteFederationChange(
                 rskTx,
                 new ABICallSpec("add", new byte[][]{ publicKeyBytes })
+        );
+    }
+
+    public Integer addFederatorPublicKeyMultikey(Object[] args)
+    {
+        logger.trace("addFederatorPublicKeyMultikey");
+
+        byte[] btcPublicKeyBytes = (byte[]) args[0];
+        byte[] rskPublicKeyBytes = (byte[]) args[1];
+        byte[] mstPublicKeyBytes = (byte[]) args[2];
+
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("add-multi", new byte[][]{ btcPublicKeyBytes, rskPublicKeyBytes, mstPublicKeyBytes })
         );
     }
 
@@ -767,6 +830,30 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         int index = ((BigInteger) args[0]).intValue();
         byte[] publicKey = bridgeSupport.getPendingFederatorPublicKey(index);
+
+        if (publicKey == null) {
+            // Empty array is returned when public key is not found
+            return new byte[]{};
+        }
+
+        return publicKey;
+    }
+
+    public byte[] getPendingFederatorPublicKeyOfType(Object[] args)
+    {
+        logger.trace("getPendingFederatorPublicKeyOfType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.byValue((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getPendingFederatorPublicKeyOfType", e);
+            throw new RuntimeException("Exception in getPendingFederatorPublicKeyOfType", e);
+        }
+
+        byte[] publicKey = bridgeSupport.getPendingFederatorPublicKeyOfType(index, keyType);
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found
