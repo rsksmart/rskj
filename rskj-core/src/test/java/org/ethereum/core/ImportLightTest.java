@@ -71,12 +71,8 @@ public class ImportLightTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, ,
-                                                                      blockFactory,
-                                                                      null,
-                                                                      listener,
-                                                                      10,
-                                                                      100
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore,
+                null, blockFactory,null, listener, 10, 100
         );
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();

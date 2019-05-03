@@ -119,7 +119,7 @@ public class TestRunner {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, ,
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null,
                                                                       blockFactory,
                                                                       null,
                                                                       listener,

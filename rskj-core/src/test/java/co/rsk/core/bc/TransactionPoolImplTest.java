@@ -25,6 +25,7 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
 import org.ethereum.listener.TestCompositeEthereumListener;
+import org.ethereum.util.RskTestContext;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -49,12 +50,13 @@ public class TransactionPoolImplTest {
 
     @Before
     public void setUp() {
-        RskTestFactory factory = new RskTestFactory(config);
-        blockChain = factory.getBlockchain();
+        RskTestContext rskTestContext = new RskTestContext(new String[0]);
+        blockChain = rskTestContext.getBlockchain();
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
         blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
-        transactionPool = new TransactionPoolImpl(config, factory.getRepository(), null, null, ,
-                                                  factory.getBlockFactory(),
+        transactionPool = new TransactionPoolImpl(config, rskTestContext.getRepository(), null, null,
+                                                rskTestContext.getStateRootHandler(),
+                                                  rskTestContext.getBlockFactory(),
                                                   new ProgramInvokeFactoryImpl(),
                                                   new TestCompositeEthereumListener(),
                                                   10,

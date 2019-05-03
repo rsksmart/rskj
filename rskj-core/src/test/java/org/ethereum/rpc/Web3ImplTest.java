@@ -221,12 +221,13 @@ public class Web3ImplTest {
     public void getBalanceWithAccountAndBlockWithTransaction() throws Exception {
         World world = new World();
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, ,
-                                                                  blockFactory,
-                                                                  null,
-                                                                  null,
-                                                                  10,
-                                                                  100
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null,
+                                                                    world.getStateRootHandler(),
+                                                                    blockFactory,
+                                                                    null,
+                                                                    null,
+                                                                    10,
+                                                                    100
         );
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000000)).build();
         Account acc2 = new AccountBuilder(world).name("acc2").build();
@@ -424,7 +425,8 @@ public class Web3ImplTest {
         World world = new World(receiptStore);
 
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, ,
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null,
+                world.getStateRootHandler(),
                                                                   blockFactory,
                                                                   null,
                                                                   null,
@@ -1202,7 +1204,8 @@ public class Web3ImplTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, ,
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null,
+                world.getStateRootHandler(),
                                                                   blockFactory,
                                                                   null,
                                                                   null,
@@ -1270,7 +1273,12 @@ public class Web3ImplTest {
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
-        EthModule ethModule = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null);
+        EthModule ethModule = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null),
+                null,
+                                            new EthModuleSolidityDisabled(),
+                                            new EthModuleWalletEnabled(wallet),
+                                            null
+        );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         MinerClient minerClient = new SimpleMinerClient();
@@ -1306,7 +1314,8 @@ public class Web3ImplTest {
 
     private Web3Impl createWeb3(Ethereum eth, World world, ReceiptStore receiptStore) {
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, ,
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null,
+                                                                world.getStateRootHandler(),
                                                                   blockFactory,
                                                                   null,
                                                                   null,
@@ -1324,7 +1333,8 @@ public class Web3ImplTest {
 
     private Web3Impl createWeb3(World world, BlockProcessor blockProcessor, ReceiptStore receiptStore) {
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null, ,
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepository(), blockChain.getBlockStore(), null,
+                world.getStateRootHandler(),
                                                                   blockFactory,
                                                                   null,
                                                                   null,
@@ -1351,7 +1361,12 @@ public class Web3ImplTest {
         ProgramResult res = new ProgramResult();
         res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
         when(executor.executeTransaction(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(res);
-        EthModule ethModule = new EthModule(config, blockchain, executor, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), new EthModuleTransactionBase(config, wallet, transactionPool));
+        EthModule ethModule = new EthModule(config, blockchain, executor, new ExecutionBlockRetriever(blockchain, null, null),
+                                            stateRootHandler,
+                                            new EthModuleSolidityDisabled(),
+                                            new EthModuleWalletEnabled(wallet),
+                                            new EthModuleTransactionBase(config, wallet, transactionPool)
+        );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         MinerClient minerClient = new SimpleMinerClient();
@@ -1395,7 +1410,12 @@ public class Web3ImplTest {
 
         when(systemProperties.customSolcPath()).thenReturn(solc);
         Ethereum eth = mock(Ethereum.class);
-        EthModule ethModule = new EthModule(config, null, null, new ExecutionBlockRetriever(null, null, null), new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null, null);
+        EthModule ethModule = new EthModule(config, null, null, new ExecutionBlockRetriever(null, null, null),
+                null,
+                                            new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)),
+                                            null,
+                                            null
+        );
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
@@ -1453,7 +1473,11 @@ public class Web3ImplTest {
         Ethereum eth = Web3Mocks.getMockEthereum();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
-        EthModule ethModule = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null);
+        EthModule ethModule = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), null,
+                                            new EthModuleSolidityDisabled(),
+                                            new EthModuleWalletEnabled(wallet),
+                                            null
+        );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
         Web3Impl web3 = new Web3RskImpl(

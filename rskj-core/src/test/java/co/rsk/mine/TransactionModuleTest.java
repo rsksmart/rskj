@@ -81,7 +81,8 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, null, ,
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, null,
+                                                    null,
                                                                   blockFactory,
                                                                   null,
                                                                   null,
@@ -110,7 +111,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, null, ,
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, null, null,
                                                                   blockFactory,
                                                                   null,
                                                                   null,
@@ -145,7 +146,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, ,
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, world.getStateRootHandler(),
                                                                   blockFactory,
                                                                   null,
                                                                   null,
@@ -176,7 +177,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, ,
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, world.getStateRootHandler(),
                                                                   blockFactory,
                                                                   null,
                                                                   null,
@@ -208,7 +209,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, ,
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, world.getStateRootHandler(),
                                                                   blockFactory,
                                                                   null,
                                                                   null,
@@ -334,7 +335,11 @@ public class TransactionModuleTest {
             transactionModule = new EthModuleTransactionBase(config, wallet, transactionPool);
         }
 
-        EthModule ethModule = new EthModule(config, blockchain, reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule);
+        EthModule ethModule = new EthModule(config, blockchain, reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null), null,
+                                            new EthModuleSolidityDisabled(),
+                                            new EthModuleWalletEnabled(wallet),
+                                            transactionModule
+        );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
 

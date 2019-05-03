@@ -389,6 +389,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockchain(),
                     getReversibleTransactionExecutor(),
                     getExecutionBlockRetriever(),
+                    getStateRootHandler(),
                     getEthModuleSolidity(),
                     getEthModuleWallet(),
                     getEthModuleTransaction()

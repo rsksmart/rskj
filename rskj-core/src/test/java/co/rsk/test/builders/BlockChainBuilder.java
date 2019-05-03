@@ -163,7 +163,8 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, ,
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore,
+                                                                    stateRootHandler,
                                                                       blockFactory,
                                                                       new ProgramInvokeFactoryImpl(),
                                                                       new TestCompositeEthereumListener(),
