@@ -65,5 +65,5 @@ public interface BlockchainConfig {
 
     boolean isRskip123();
 
-    boolean isRskipGetBtcTransactionConfirmations();//TODO set the correct name for the RskIp
+    boolean isRskip122();
 }

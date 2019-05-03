@@ -167,7 +167,7 @@ public enum BridgeMethods {
             ),
             fromMethod(Bridge::getBtcTransactionConfirmationsGetCost),
             (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
-            blockchainConfig -> blockchainConfig.isRskipGetBtcTransactionConfirmations(),
+            blockchainConfig -> blockchainConfig.isRskip122(),
             false
     ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(

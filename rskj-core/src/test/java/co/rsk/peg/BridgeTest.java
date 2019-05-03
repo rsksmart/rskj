@@ -2207,7 +2207,7 @@ public class BridgeTest {
     //TODO RENAME when SecondFork is renamed
     public void getBtcTransactionConfirmationsBeforeSecondFork() throws IOException {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(false);
+        when(mockedConfig.isRskip122()).thenReturn(false);
         config.setBlockchainConfig(mockedConfig);
 
         Repository repository = createRepositoryImpl(config);
@@ -2224,7 +2224,7 @@ public class BridgeTest {
     @Test
     public void getBtcTransactionConfirmationsAfterSecondFork_ok() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
+        when(mockedConfig.isRskip122()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -2281,7 +2281,7 @@ public class BridgeTest {
     @Test
     public void getBtcTransactionConfirmationsAfterSecondFork_errorInBridgeSupport() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
+        when(mockedConfig.isRskip122()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -2345,7 +2345,7 @@ public class BridgeTest {
     @Test
     public void getBtcTransactionConfirmationsAfterSecondFork_merkleBranchConstructionError() throws Exception {
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
+        when(mockedConfig.isRskip122()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
@@ -2397,7 +2397,7 @@ public class BridgeTest {
         PowerMockito.mockStatic(BridgeUtils.class);
 
         GenesisConfig mockedConfig = spy(new GenesisConfig());
-        when(mockedConfig.isRskipGetBtcTransactionConfirmations()).thenReturn(true);
+        when(mockedConfig.isRskip122()).thenReturn(true);
         config.setBlockchainConfig(mockedConfig);
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
