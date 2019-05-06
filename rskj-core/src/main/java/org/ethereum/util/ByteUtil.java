@@ -442,6 +442,56 @@ public class ByteUtil {
         return ret;
     }
 
+    @java.lang.SuppressWarnings("squid:S3034")
+    public static byte[] shiftLeft(byte[] byteArray, int shiftBitCount) {
+        // Code taken from the Apache 2 licensed library
+        // https://github.com/patrickfav/bytes-java/blob/master/src/main/java/at/favre/lib/bytes/Util.java
+        final int shiftMod = shiftBitCount % 8;
+        final byte carryMask = (byte) ((1 << shiftMod) - 1);
+        final int offsetBytes = (shiftBitCount / 8);
+
+        int sourceIndex;
+        for (int i = 0; i < byteArray.length; i++) {
+            sourceIndex = i + offsetBytes;
+            if (sourceIndex >= byteArray.length) {
+                byteArray[i] = 0;
+            } else {
+                byte src = byteArray[sourceIndex];
+                byte dst = (byte) (src << shiftMod);
+                if (sourceIndex + 1 < byteArray.length) {
+                    dst |= byteArray[sourceIndex + 1] >>> (8 - shiftMod) & carryMask;
+                }
+                byteArray[i] = dst;
+            }
+        }
+        return byteArray;
+    }
+
+    @java.lang.SuppressWarnings("squid:S3034")
+    public static byte[] shiftRight(byte[] byteArray, int shiftBitCount) {
+        // Code taken from the Apache 2 licensed library
+        // https://github.com/patrickfav/bytes-java/blob/master/src/main/java/at/favre/lib/bytes/Util.java
+        final int shiftMod = shiftBitCount % 8;
+        final byte carryMask = (byte) (0xFF << (8 - shiftMod));
+        final int offsetBytes = (shiftBitCount / 8);
+
+        int sourceIndex;
+        for (int i = byteArray.length - 1; i >= 0; i--) {
+            sourceIndex = i - offsetBytes;
+            if (sourceIndex < 0) {
+                byteArray[i] = 0;
+            } else {
+                byte src = byteArray[sourceIndex];
+                byte dst = (byte) ((0xff & src) >>> shiftMod);
+                if (sourceIndex - 1 >= 0) {
+                    dst |= byteArray[sourceIndex - 1] << (8 - shiftMod) & carryMask;
+                }
+                byteArray[i] = dst;
+            }
+        }
+        return byteArray;
+    }
+
     /**
      * @param arrays - arrays to merge
      * @return - merged array

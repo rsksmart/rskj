@@ -330,6 +330,65 @@ public final class DataWord implements Comparable<DataWord> {
         return valueOf(result.and(MAX_VALUE));
     }
 
+    /**
+     * Shift left, both this and input arg are treated as unsigned
+     * @param arg
+     * @return this << arg
+     */
+
+    public DataWord shiftLeft(DataWord arg) {
+        if (arg.compareTo(DataWord.valueOf(MAX_POW)) >= 0) {
+            return DataWord.ZERO;
+        }
+
+        byte[] bytes = ByteUtil.shiftLeft(this.getData(), arg.intValueSafe());
+
+        return new DataWord(bytes);
+    }
+
+    /**
+     * Shift right, both this and input arg are treated as unsigned
+     * @param arg
+     * @return this >> arg
+     */
+    public DataWord shiftRight(DataWord arg) {
+        if (arg.compareTo(DataWord.valueOf(MAX_POW)) >= 0) {
+            return DataWord.ZERO;
+        }
+
+        byte[] bytes = ByteUtil.shiftRight(this.getData(), arg.intValueSafe());
+        return new DataWord(bytes);
+    }
+
+    /**
+     * Shift right, this is signed, while input arg is treated as unsigned
+     * @param arg
+     * @return this >> arg
+     */
+    public DataWord shiftRightSigned(DataWord arg) {
+        // Taken from Pantheon implementation
+        // https://github.com/PegaSysEng/pantheon/blob/master/ethereum/core/src/main/java/tech/pegasys/pantheon/ethereum/vm/operations/SarOperation.java
+
+        if (arg.compareTo(DataWord.valueOf(MAX_POW)) >= 0) {
+            if (this.isNegative()) {
+                return valueOf(MAX_VALUE); // This should be 0xFFFFF......
+            } else {
+                return DataWord.ZERO;
+            }
+        }
+
+        byte[] bytes = ByteUtil.shiftRight(this.getData(), arg.intValueSafe());
+
+        if (isNegative()){
+            byte[] allBits = valueOf(MAX_VALUE).getData();
+            byte[] significantBits = ByteUtil.shiftLeft(allBits, 256 - arg.intValueSafe());
+            bytes = ByteUtil.or(bytes, significantBits);
+        }
+
+        return new DataWord(bytes);
+    }
+
+
     @JsonValue
     @Override
     public String toString() {

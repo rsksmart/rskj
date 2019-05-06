@@ -132,6 +132,18 @@ public enum OpCode {
      * (0x1a) Retrieve single byte from word
      */
     BYTE(0x1a, 2, 1, VERY_LOW_TIER),
+    /**
+     * (0x1b) Bitwise SHIFT LEFT operation
+     */
+    SHL(0x1b, 2, 1, VERY_LOW_TIER),
+    /**
+     * (0x1c) Bitwise SHIFT RIGHT operation
+     */
+    SHR(0x1c, 2, 1, VERY_LOW_TIER),
+    /**
+     * (0x1d) Bitwise ARITHMETIC SHIFT RIGHT operation
+     */
+    SAR(0x1d, 2, 1, VERY_LOW_TIER),
 
     /*  Cryptographic Operations    */
 
