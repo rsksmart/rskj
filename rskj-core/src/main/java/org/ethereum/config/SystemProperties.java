@@ -40,11 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -95,16 +90,6 @@ public abstract class SystemProperties {
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
     private static final String DEFAULT_BLOCKS_LOADER = "";
 
-
-
-    /**
-     * Marks config accessor methods which need to be called (for value validation)
-     * upon config creation or modification
-     */
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    private @interface ValidateMe {}
-
     protected final Config configFromFiles;
 
     // mutable options for tests
@@ -128,7 +113,6 @@ public abstract class SystemProperties {
                     "Config trace: {}",
                     configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
             );
-            validateConfig();
 
             Properties props = new Properties();
             try (InputStream is = getClass().getResourceAsStream("/version.properties")) {
@@ -161,19 +145,6 @@ public abstract class SystemProperties {
         return configFromFiles;
     }
 
-    private void validateConfig() {
-        for (Method method : getClass().getMethods()) {
-            try {
-                if (method.isAnnotationPresent(ValidateMe.class)) {
-                    method.invoke(this);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Error validating config method: " + method, e);
-            }
-        }
-    }
-
-    @ValidateMe
     public synchronized BlockchainNetConfig getBlockchainConfig() {
         if (blockchainConfig == null) {
             blockchainConfig = buildBlockchainConfig();
@@ -234,7 +205,6 @@ public abstract class SystemProperties {
         blockchainConfig = config;
     }
 
-    @ValidateMe
     public boolean isPeerDiscoveryEnabled() {
         return discoveryEnabled == null ? configFromFiles.getBoolean("peer.discovery.enabled") : discoveryEnabled;
     }
@@ -243,34 +213,28 @@ public abstract class SystemProperties {
         this.discoveryEnabled = discoveryEnabled;
     }
 
-    @ValidateMe
     public int peerConnectionTimeout() {
         return configFromFiles.getInt("peer.connection.timeout") * 1000;
     }
 
-    @ValidateMe
     public int defaultP2PVersion() {
         return configFromFiles.hasPath("peer.p2p.version") ? configFromFiles.getInt("peer.p2p.version") : P2pHandler.VERSION;
     }
 
-    @ValidateMe
     public int rlpxMaxFrameSize() {
         return configFromFiles.hasPath("peer.p2p.framing.maxSize") ? configFromFiles.getInt("peer.p2p.framing.maxSize") : MessageCodec.NO_FRAMING;
     }
 
-    @ValidateMe
     public List<String> peerDiscoveryIPList() {
         return configFromFiles.hasPath("peer.discovery.ip.list") ? configFromFiles.getStringList("peer.discovery.ip.list") : new ArrayList<>();
     }
 
-    @ValidateMe
     public boolean databaseReset() {
         return configFromFiles.getBoolean("database.reset");
     }
 
 
 
-    @ValidateMe
     public List<Node> peerActive() {
         if (!configFromFiles.hasPath("peer.active")) {
             return Collections.emptyList();
@@ -310,7 +274,6 @@ public abstract class SystemProperties {
         throw new RuntimeException("Unexpected element within 'peer.active' config list: " + configObject);
     }
 
-    @ValidateMe
     public NodeFilter trustedPeers() {
         List<? extends ConfigObject> list = configFromFiles.getObjectList("peer.trusted");
         NodeFilter ret = new NodeFilter();
@@ -325,22 +288,18 @@ public abstract class SystemProperties {
         return ret;
     }
 
-    @ValidateMe
     public Integer peerChannelReadTimeout() {
         return configFromFiles.getInt("peer.channel.read.timeout");
     }
 
-    @ValidateMe
     public String dumpStyle() {
         return configFromFiles.getString("dump.style");
     }
 
-    @ValidateMe
     public int dumpBlock() {
         return configFromFiles.getInt("dump.block");
     }
 
-    @ValidateMe
     public String databaseDir() {
         return databaseDir == null ? configFromFiles.getString(PROPERTY_BASE_PATH) : databaseDir;
     }
@@ -349,17 +308,14 @@ public abstract class SystemProperties {
         this.databaseDir = dataBaseDir;
     }
 
-    @ValidateMe
     public boolean playVM() {
         return configFromFiles.getBoolean("play.vm");
     }
 
-    @ValidateMe
     public int maxHashesAsk() {
         return configFromFiles.getInt("sync.max.hashes.ask");
     }
 
-    @ValidateMe
     public int syncPeerCount() {
         return configFromFiles.getInt("sync.peer.count");
     }
@@ -372,52 +328,42 @@ public abstract class SystemProperties {
     }
 
 
-    @ValidateMe
     public String projectVersion() {
         return projectVersion;
     }
 
-    @ValidateMe
     public String projectVersionModifier() {
         return projectVersionModifier;
     }
 
-    @ValidateMe
     public String helloPhrase() {
         return configFromFiles.getString("hello.phrase");
     }
 
-    @ValidateMe
     public String rootHashStart() {
         return configFromFiles.hasPath("root.hash.start") ? configFromFiles.getString("root.hash.start") : null;
     }
 
-    @ValidateMe
     public List<String> peerCapabilities() {
         return configFromFiles.hasPath("peer.capabilities") ?  configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
     }
 
-    @ValidateMe
     public boolean vmTrace() {
         return configFromFiles.getBoolean("vm.structured.trace");
     }
 
-    @ValidateMe
     public boolean vmTraceCompressed() {
         return configFromFiles.getBoolean("vm.structured.compressed");
     }
 
-    @ValidateMe
     public int vmTraceInitStorageLimit() {
         return configFromFiles.getInt("vm.structured.initStorageLimit");
     }
 
-    @ValidateMe
     public String vmTraceDir() {
         return configFromFiles.getString("vm.structured.dir");
     }
 
-    @ValidateMe
     public String privateKey() {
         if (configFromFiles.hasPath("peer.privateKey")) {
             String key = configFromFiles.getString("peer.privateKey");
@@ -451,7 +397,6 @@ public abstract class SystemProperties {
         }
     }
 
-    @ValidateMe
     public ECKey getMyKey() {
         return ECKey.fromPrivate(Hex.decode(privateKey())).decompress();
     }
@@ -459,37 +404,30 @@ public abstract class SystemProperties {
     /**
      *  Home NodeID calculated from 'peer.privateKey' property
      */
-    @ValidateMe
     public byte[] nodeId() {
         return getMyKey().getNodeId();
     }
 
-    @ValidateMe
     public int networkId() {
         return configFromFiles.getInt("peer.networkId");
     }
 
-    @ValidateMe
     public int maxActivePeers() {
         return configFromFiles.getInt("peer.maxActivePeers");
     }
 
-    @ValidateMe
     public int maxConnectionsAllowed() {
         return configFromFiles.getInt("peer.filter.maxConnections");
     }
 
-    @ValidateMe
     public int networkCIDR() {
         return configFromFiles.getInt("peer.filter.networkCidr");
     }
 
-    @ValidateMe
     public boolean eip8() {
         return configFromFiles.getBoolean("peer.p2p.eip8");
     }
 
-    @ValidateMe
     public int getPeerPort() {
         return configFromFiles.getInt(PROPERTY_PEER_PORT);
     }
@@ -563,12 +501,10 @@ public abstract class SystemProperties {
         return publicIp;
     }
 
-    @ValidateMe
     public String getKeyValueDataSource() {
         return configFromFiles.getString("keyvalue.datasource");
     }
 
-    @ValidateMe
     public boolean isSyncEnabled() {
         return this.syncEnabled == null ? configFromFiles.getBoolean("sync.enabled") : syncEnabled;
     }
@@ -577,7 +513,6 @@ public abstract class SystemProperties {
         this.syncEnabled = syncEnabled;
     }
 
-    @ValidateMe
     public String genesisInfo() {
 
         if (genesisInfo == null) {
@@ -587,12 +522,10 @@ public abstract class SystemProperties {
         }
     }
 
-    @ValidateMe
     public int txOutdatedThreshold() {
         return configFromFiles.getInt("transaction.outdated.threshold");
     }
 
-    @ValidateMe
     public int txOutdatedTimeout() {
         return configFromFiles.getInt("transaction.outdated.timeout");
     }
