@@ -26,7 +26,6 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.config.blockchain.HardForkActivationConfig;
 import org.ethereum.config.net.DevNetConfig;
 import org.ethereum.config.net.MainNetConfig;
@@ -196,9 +195,6 @@ public abstract class SystemProperties {
             switch(netName) {
                 case "main":
                     blockchainConfig = new MainNetConfig();
-                    break;
-                case "fallbackmain":
-                    blockchainConfig = new FallbackMainNetConfig();
                     break;
                 case "testnet":
                     blockchainConfig = new TestNetConfig();
