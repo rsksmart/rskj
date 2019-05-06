@@ -174,7 +174,12 @@ public class BridgeSupportTest {
         // Force instantiation of blockstore
         bridgeSupport.getBtcBlockchainBestChainHeight();
 
-        Assert.assertEquals(1229760, getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead().getHeight());
+        InputStream checkpointsStream = bridgeSupport.getCheckPoints();
+        CheckpointManager manager = new CheckpointManager(btcParams, checkpointsStream);
+        long time = bridgeSupport.getActiveFederation().getCreationTime().toEpochMilli();
+        StoredBlock checkpoint = manager.getCheckpointBefore(time);
+
+        Assert.assertEquals(checkpoint.getHeight(), getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead().getHeight());
     }
 
     @Test
