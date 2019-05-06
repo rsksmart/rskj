@@ -1150,7 +1150,9 @@ public class BridgeSupport {
             }
 
             final int bestChainHeight = getBtcBlockchainBestChainHeight();
-            final int blockDepth = bestChainHeight - block.getHeight();
+
+            // Make sure calculated depth is >= 0
+            final int blockDepth = Math.max(0, bestChainHeight - block.getHeight());
 
             // Block too deep, default to basic cost
             if (blockDepth > BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH) {
