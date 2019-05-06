@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 
 public class NodeMessageHandlerUtil {
     private static final TestSystemProperties config = new TestSystemProperties();
-    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
     public static NodeMessageHandler createHandler(BlockValidationRule validationRule) {
         final World world = new World();

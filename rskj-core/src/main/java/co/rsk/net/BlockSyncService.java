@@ -139,7 +139,7 @@ public class BlockSyncService {
     }
 
     public boolean canBeIgnoredForUnclesRewards(long blockNumber) {
-        int blockDistance = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        int blockDistance = config.getNetworkConstants().getUncleGenerationLimit();
         return blockNumber < getBestBlockNumber() - blockDistance;
     }
 

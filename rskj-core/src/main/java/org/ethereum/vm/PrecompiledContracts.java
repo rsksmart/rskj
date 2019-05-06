@@ -19,6 +19,7 @@ package org.ethereum.vm;
  */
 
 
+import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
@@ -108,13 +109,14 @@ public class PrecompiledContracts {
             return sample;
         }
         if (address.equals(BRIDGE_ADDR_DW)) {
-            return new Bridge(config, BRIDGE_ADDR);
+            return new Bridge(BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), config.getBlockchainConfig());
         }
         if (address.equals(BIG_INT_MODEXP_ADDR_DW)) {
             return bigIntegerModexp;
         }
         if (address.equals(REMASC_ADDR_DW)) {
-            return new RemascContract(config, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName()), REMASC_ADDR);
+            RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
+            return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig());
         }
 
         return null;

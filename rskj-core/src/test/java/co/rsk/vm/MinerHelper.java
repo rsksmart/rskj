@@ -56,8 +56,8 @@ public class MinerHelper {
     public MinerHelper(Repository repository , Blockchain blockchain) {
         this.repository = repository;
         this.blockchain = blockchain;
-        this.gasLimitCalculator = new GasLimitCalculator(config);
-        this.blockFactory = new BlockFactory(config.getBlockchainConfig());
+        this.gasLimitCalculator = new GasLimitCalculator(config.getNetworkConstants());
+        this.blockFactory = new BlockFactory(config.getActivationConfig());
     }
 
     public void processBlock( Block block, Block parent) {
@@ -150,7 +150,7 @@ public class MinerHelper {
 
         newBlock.getHeader().setLogsBloom(logBloom.getData());
 
-        BigInteger minGasLimit = BigInteger.valueOf(config.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        BigInteger minGasLimit = BigInteger.valueOf(config.getNetworkConstants().getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit, false);

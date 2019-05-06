@@ -69,7 +69,7 @@ import java.util.HashMap;
 public class TransactionModuleTest {
     Wallet wallet;
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
     public void sendTransactionMustNotBeMined() {
@@ -269,14 +269,14 @@ public class TransactionModuleTest {
                         repository,
                         blockStore,
                         transactionPool,
-                        new DifficultyCalculator(config),
-                        new GasLimitCalculator(config),
+                        new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         Mockito.mock(BlockUnclesValidationRule.class),
                         config,
                         receiptStore,
                         minerClock,
                         blockFactory,
-                        new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                        new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
                 ),
                 minerClock,
                 blockFactory,
@@ -291,12 +291,12 @@ public class TransactionModuleTest {
         ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(config, repository, blockStore, receiptStore, blockFactory, null);
 
         if (mineInstant) {
-            transactionModule = new EthModuleTransactionInstant(config, wallet, transactionPool, minerServer, minerClient, blockchain);
+            transactionModule = new EthModuleTransactionInstant(config.getNetworkConstants(), wallet, transactionPool, minerServer, minerClient, blockchain);
         } else {
-            transactionModule = new EthModuleTransactionBase(config, wallet, transactionPool);
+            transactionModule = new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool);
         }
 
-        EthModule ethModule = new EthModule(config, blockchain, reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule);
+        EthModule ethModule = new EthModule(config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain, reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
 

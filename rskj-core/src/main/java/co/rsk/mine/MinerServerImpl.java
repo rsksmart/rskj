@@ -34,7 +34,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
-import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
@@ -69,7 +69,7 @@ public class MinerServerImpl implements MinerServer {
     private final Blockchain blockchain;
     private final ProofOfWorkRule powRule;
     private final BlockToMineBuilder builder;
-    private final BlockchainNetConfig blockchainConfig;
+    private final ActivationConfig activationConfig;
     private final MinerClock clock;
     private final BlockFactory blockFactory;
 
@@ -115,7 +115,7 @@ public class MinerServerImpl implements MinerServer {
         this.builder = builder;
         this.clock = clock;
         this.blockFactory = blockFactory;
-        this.blockchainConfig = config.getBlockchainConfig();
+        this.activationConfig = config.getActivationConfig();
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
 
@@ -261,7 +261,7 @@ public class MinerServerImpl implements MinerServer {
 
         newBlock.setBitcoinMergedMiningHeader(blockWithHeaderOnly.cloneAsHeader().bitcoinSerialize());
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), lastTag));
-        newBlock.setBitcoinMergedMiningMerkleProof(MinerUtils.buildMerkleProof(blockchainConfig, proofBuilderFunction, newBlock.getNumber()));
+        newBlock.setBitcoinMergedMiningMerkleProof(MinerUtils.buildMerkleProof(activationConfig, proofBuilderFunction, newBlock.getNumber()));
         newBlock.seal();
 
         if (!isValid(newBlock)) {

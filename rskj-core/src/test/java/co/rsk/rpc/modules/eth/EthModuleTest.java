@@ -51,6 +51,7 @@ public class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 null,
+                null,
                 executor,
                 retriever,
                 null,

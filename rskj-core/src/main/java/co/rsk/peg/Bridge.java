@@ -21,15 +21,14 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.Block;
@@ -44,12 +43,14 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Precompiled contract that manages the 2 way peg between bitcoin and RSK.
@@ -185,7 +186,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
     public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
 
-    private final RskSystemProperties config;
     private final BridgeConstants bridgeConstants;
 
     private BlockchainNetConfig blockchainNetConfig;
@@ -198,12 +198,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private BridgeSupport bridgeSupport;
 
-    public Bridge(RskSystemProperties config, RskAddress contractAddress) {
+    public Bridge(RskAddress contractAddress, BridgeConstants bridgeConstants, BlockchainNetConfig blockchainNetConfig) {
         this.contractAddress = contractAddress;
-
-        this.config = config;
-        this.blockchainNetConfig = config.getBlockchainConfig();
-        this.bridgeConstants = blockchainNetConfig.getCommonConstants().getBridgeConstants();
+        this.bridgeConstants = bridgeConstants;
+        this.blockchainNetConfig = blockchainNetConfig;
     }
 
     @Override
@@ -213,7 +211,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new NullPointerException();
         }
 
-        if (BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber(), config.getBlockchainConfig())) {
+        if (BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber(), blockchainNetConfig)) {
             return 0;
         }
 
@@ -344,8 +342,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private BridgeSupport setup() {
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(this.bridgeConstants, this.logs);
-        return new BridgeSupport(this.config, repository, eventLogger, contractAddress, rskExecutionBlock);
+        return new BridgeSupport(
+                bridgeConstants,
+                new BridgeStorageProvider(
+                        repository,
+                        contractAddress,
+                        bridgeConstants,
+                        BridgeStorageConfiguration.fromBlockchainConfig(blockchainConfig)
+                ),
+                new BridgeEventLoggerImpl(bridgeConstants, logs),
+                repository, rskExecutionBlock, null, null
+        );
     }
 
     private void teardown() throws IOException {

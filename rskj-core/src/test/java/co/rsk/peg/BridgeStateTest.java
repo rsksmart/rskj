@@ -40,7 +40,7 @@ public class BridgeStateTest {
     public void recreateFromEmptyStorageProvider() throws IOException {
         TestSystemProperties config = new TestSystemProperties();
         Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory());
-        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(0));
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
 

@@ -31,15 +31,18 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
-import org.ethereum.core.*;
+import org.ethereum.config.RegtestBlockchainNetConfig;
+import org.ethereum.config.UnitTestBlockchainNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Transaction;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -277,7 +280,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void getAddressFromEthTransaction() {
-        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, config.getBlockchainConfig().getCommonConstants().getChainId());
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, config.getNetworkConstants().getChainId());
         byte[] privKey = generatePrivKey();
         tx.sign(privKey);
 
@@ -289,7 +292,7 @@ public class BridgeUtilsTest {
 
     @Test(expected = Exception.class)
     public void getAddressFromEthNotSignTransaction() {
-        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, config.getBlockchainConfig().getCommonConstants().getChainId());
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, config.getNetworkConstants().getChainId());
         BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
     }
 
@@ -344,12 +347,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void isFreeBridgeTxFreeTxDisabled() {
-        config.setBlockchainConfig(new RegTestGenesisConfig() {
-            @Override
-            public boolean areBridgeTxsFree() {
-                return false;
-            }
-        });
+        config.setBlockchainConfig(new RegtestBlockchainNetConfig(ActivationConfigsForTest.all()));
         isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
     }
 
@@ -484,15 +482,15 @@ public class BridgeUtilsTest {
 
 
     private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, byte[] privKeyBytes) {
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), config.getBlockchainConfig());
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
-                config, 0,
+                0,
                 1,
                 1,
                 destinationAddress,
                 0,
-                Bridge.UPDATE_COLLECTIONS);
+                Bridge.UPDATE_COLLECTIONS, config.getNetworkConstants().getChainId());
         rskTx.sign(privKeyBytes);
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(RskTestFactory.getGenesisInstance(config));

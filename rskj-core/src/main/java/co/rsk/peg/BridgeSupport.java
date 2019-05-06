@@ -27,19 +27,19 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
-import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.BtcTransactionFormatUtils;
-import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -48,7 +48,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -63,6 +62,8 @@ import java.util.stream.Collectors;
  * @author Oscar Guindzberg
  */
 public class BridgeSupport {
+    public static final RskAddress BURN_ADDRESS = new RskAddress("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+
     public static final int MAX_RELEASE_ITERATIONS = 30;
 
     public static final Integer FEDERATION_CHANGE_GENERIC_ERROR_CODE = -10;
@@ -88,7 +89,6 @@ public class BridgeSupport {
     private final BridgeConstants bridgeConstants;
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
-    private final RskSystemProperties config;
     private final BridgeEventLogger eventLogger;
 
     private final FederationSupport federationSupport;
@@ -98,104 +98,49 @@ public class BridgeSupport {
     private BtcBlockChain btcBlockChain;
     private final org.ethereum.core.Block rskExecutionBlock;
 
-    // Used by unit tests
-    public BridgeSupport(
-            RskSystemProperties config,
-            Repository repository,
-            BridgeEventLogger eventLogger,
-            BridgeConstants bridgeConstants,
-            BridgeStorageProvider provider,
-            BtcBlockstoreWithCache btcBlockStore,
-            BtcBlockChain btcBlockChain,
-            Block executionBlock) {
-        this(
-                repository,
-                provider,
-                executionBlock,
-                config,
-                bridgeConstants,
-                eventLogger,
-                new Context(bridgeConstants.getBtcParams()),
-                btcBlockStore,
-                btcBlockChain
-        );
-    }
-
     // Used by bridge
     public BridgeSupport(
-            RskSystemProperties config,
-            Repository repository,
+            BridgeConstants bridgeConstants,
+            BridgeStorageConfiguration bridgeStorageConfiguration,
             BridgeEventLogger eventLogger,
-            RskAddress contractAddress,
-            Block rskExecutionBlock) {
+            Repository repository,
+            Block rskExecutionBlock,
+            RskAddress contractAddress) {
         this(
-                repository,
+                bridgeConstants,
                 new BridgeStorageProvider(
                         repository,
                         contractAddress,
-                        config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
-                        BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(rskExecutionBlock.getNumber()))
+                        bridgeConstants,
+                        bridgeStorageConfiguration
                 ),
-                rskExecutionBlock,
-                config,
-                config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
-                eventLogger,
-                new Context(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams()),
-                null,
-                null
+                eventLogger, repository, rskExecutionBlock, null, null
         );
     }
 
+    // Used by unit tests
     public BridgeSupport(
-            RskSystemProperties config,
-            Repository repository,
-            BridgeEventLogger eventLogger,
-            BridgeStorageProvider provider,
-            Block rskExecutionBlock) {
-        this(
-                repository,
-                provider,
-                rskExecutionBlock,
-                config,
-                config.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
-                eventLogger,
-                new Context(config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams()),
-                null,
-                null
-        );
-    }
-
-    private BridgeSupport(
-            Repository repository,
-            BridgeStorageProvider provider,
-            Block executionBlock,
-            RskSystemProperties config,
             BridgeConstants bridgeConstants,
+            BridgeStorageProvider provider,
             BridgeEventLogger eventLogger,
-            Context btcContext,
+            Repository repository,
+            Block executionBlock,
             BtcBlockstoreWithCache btcBlockStore,
             BtcBlockChain btcBlockChain) {
         this(
-                repository,
-                provider,
-                executionBlock,
-                config,
-                bridgeConstants,
-                eventLogger,
-                btcContext,
-                new FederationSupport(provider, config.getBlockchainConfig(), executionBlock),
-                btcBlockStore,
-                btcBlockChain
+                bridgeConstants, provider, eventLogger, repository, executionBlock,
+                new Context(bridgeConstants.getBtcParams()),
+                new FederationSupport(bridgeConstants, provider, executionBlock),
+                btcBlockStore, btcBlockChain
         );
     }
 
     public BridgeSupport(
-            Repository repository,
-            BridgeStorageProvider provider,
-            Block executionBlock,
-            RskSystemProperties config,
             BridgeConstants bridgeConstants,
+            BridgeStorageProvider provider,
             BridgeEventLogger eventLogger,
+            Repository repository,
+            Block executionBlock,
             Context btcContext,
             FederationSupport federationSupport,
             BtcBlockstoreWithCache btcBlockStore,
@@ -203,7 +148,6 @@ public class BridgeSupport {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
-        this.config = config;
         this.bridgeConstants = bridgeConstants;
         this.eventLogger = eventLogger;
         this.btcContext = btcContext;
@@ -215,7 +159,7 @@ public class BridgeSupport {
     private RepositoryBlockStore buildRepositoryBlockStore() throws BlockStoreException, IOException {
         NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
         RepositoryBlockStore btcBlockStore = new RepositoryBlockStore(
-                this.config,
+                bridgeConstants,
                 this.rskRepository,
                 PrecompiledContracts.BRIDGE_ADDR
         );
@@ -855,8 +799,7 @@ public class BridgeSupport {
         Coin spentByFederation = sumInputs.subtract(change);
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
-            RskAddress burnAddress = config.getBlockchainConfig().getCommonConstants().getBurnAddress();
-            rskRepository.transfer(PrecompiledContracts.BRIDGE_ADDR, burnAddress, co.rsk.core.Coin.fromBitcoin(coinsToBurn));
+            rskRepository.transfer(PrecompiledContracts.BRIDGE_ADDR, BURN_ADDRESS, co.rsk.core.Coin.fromBitcoin(coinsToBurn));
         }
     }
 

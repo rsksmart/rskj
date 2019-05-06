@@ -47,8 +47,8 @@ import static org.mockito.Mockito.when;
 public class SyncProcessorTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
-    private static final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
-    public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
+    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
     @Test
     public void noPeers() {
@@ -688,7 +688,7 @@ public class SyncProcessorTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+        ), new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>()));
         Assert.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis.getHeader());
         Assert.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());
@@ -1010,7 +1010,7 @@ public class SyncProcessorTest {
     private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
         String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getBlockchainConfig().getCommonConstants().getChainId());
+        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);
         return tx;
     }

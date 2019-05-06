@@ -96,7 +96,7 @@ public class TransactionPoolImpl implements TransactionPool {
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
 
-        this.validator = new TxPendingValidator(config);
+        this.validator = new TxPendingValidator(config.getBlockchainConfig());
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));

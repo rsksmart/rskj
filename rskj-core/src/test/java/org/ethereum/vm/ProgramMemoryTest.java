@@ -41,7 +41,7 @@ public class ProgramMemoryTest {
     @Before
     public void createProgram() {
         TestSystemProperties config = new TestSystemProperties();
-        program = new Program(config.getVmConfig(), new PrecompiledContracts(config), new BlockFactory(config.getBlockchainConfig()), mock(BlockchainConfig.class), ByteUtil.EMPTY_BYTE_ARRAY, pi, null);
+        program = new Program(config.getVmConfig(), new PrecompiledContracts(config), new BlockFactory(config.getActivationConfig()), mock(BlockchainConfig.class), ByteUtil.EMPTY_BYTE_ARRAY, pi, null);
     }
 
     @Test

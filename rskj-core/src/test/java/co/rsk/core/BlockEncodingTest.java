@@ -18,10 +18,10 @@
 
 package co.rsk.core;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Bloom;
@@ -42,8 +42,7 @@ import java.util.List;
 public class BlockEncodingTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
-    private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test(expected = ArithmeticException.class)
     public void testBadBlockEncoding1() {

@@ -19,8 +19,8 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.datasource.HashMapDB;
@@ -40,8 +40,7 @@ import java.util.List;
 public class BlockForkTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
-    private static TestSystemProperties config = new TestSystemProperties();
-    private static BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
     public void calculateParentChild() {

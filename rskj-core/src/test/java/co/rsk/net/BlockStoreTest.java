@@ -19,9 +19,9 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.TestSystemProperties;
 import com.google.common.collect.Lists;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
@@ -37,8 +37,7 @@ import java.util.List;
  * Created by ajlopez on 5/11/2016.
  */
 public class BlockStoreTest {
-    private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
     public void getUnknownBlockAsNull() {

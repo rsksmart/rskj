@@ -157,7 +157,7 @@ public class Web3Impl implements Web3 {
         this.blocksBloomStore = blocksBloomStore;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
-        personalModule.init(this.config);
+        personalModule.init();
     }
 
     @Override
@@ -208,7 +208,7 @@ public class Web3Impl implements Web3 {
     public String net_version() {
         String s = null;
         try {
-            byte netVersion = config.getBlockchainConfig().getCommonConstants().getChainId();
+            byte netVersion = config.getNetworkConstants().getChainId();
             return s = Byte.toString(netVersion);
         }
         finally {

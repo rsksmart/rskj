@@ -54,10 +54,10 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     @Override
-    public void init(RskSystemProperties properties) {
+    public void init() {
         // dev node has 10 accouts with balance (in rsk-dev.json
         // with seed cow, cow1..cow9
-        if (config.getBlockchainConfig().getCommonConstants().seedCowAccounts()) {
+        if (config.getNetworkConstants().seedCowAccounts()) {
             newAccountWithSeed("cow");
 
             for (int k = 1; k <= 9; k++) {
@@ -69,13 +69,13 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         // which is then used to set the current miner coinbase address.
         // Generally used for testing, since you usually don't want to store
         // wallets in production for security reasons.
-        Account coinbaseAccount = properties.localCoinbaseAccount();
+        Account coinbaseAccount = config.localCoinbaseAccount();
         if (coinbaseAccount != null) {
             this.wallet.addAccount(coinbaseAccount);
         }
 
         // initializes wallet accounts based on configuration
-        for (WalletAccount acc : properties.walletAccounts()) {
+        for (WalletAccount acc : config.walletAccounts()) {
             this.wallet.addAccountWithPrivateKey(Hex.decode(acc.getPrivateKey()));
         }
     }
@@ -190,7 +190,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
             args.data = args.data.substring(2);
         }
 
-        Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, config.getBlockchainConfig().getCommonConstants().getChainId());
+        Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, config.getNetworkConstants().getChainId());
 
         tx.sign(account.getEcKey().getPrivKeyBytes());
 

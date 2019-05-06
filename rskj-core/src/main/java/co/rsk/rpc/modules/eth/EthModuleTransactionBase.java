@@ -18,15 +18,11 @@
 
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
-import org.ethereum.core.Account;
-import org.ethereum.core.ImmutableTransaction;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
@@ -43,16 +39,14 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
     protected static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
-    private final RskSystemProperties config;
     private final Wallet wallet;
     private final TransactionPool transactionPool;
     private final Constants constants;
 
-    public EthModuleTransactionBase(RskSystemProperties config, Wallet wallet, TransactionPool transactionPool) {
-        this.config = config;
+    public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool) {
         this.wallet = wallet;
         this.transactionPool = transactionPool;
-        this.constants = config.getBlockchainConfig().getCommonConstants();
+        this.constants = constants;
     }
 
     @Override

@@ -19,11 +19,14 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.peg.BridgeState;
+import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -47,29 +50,32 @@ public class EthModule
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
-    private final RskSystemProperties config;
     private final Blockchain blockchain;
     private final ReversibleTransactionExecutor reversibleTransactionExecutor;
     private final ExecutionBlockRetriever executionBlockRetriever;
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
     private final EthModuleTransaction ethModuleTransaction;
+    private final BridgeConstants bridgeConstants;
+    private final ActivationConfig activationConfig;
 
     public EthModule(
-            RskSystemProperties config,
+            BridgeConstants bridgeConstants,
+            ActivationConfig activationConfig,
             Blockchain blockchain,
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
             EthModuleSolidity ethModuleSolidity,
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction) {
-        this.config = config;
         this.blockchain = blockchain;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
         this.ethModuleTransaction = ethModuleTransaction;
+        this.bridgeConstants = bridgeConstants;
+        this.activationConfig = activationConfig;
     }
 
     @Override
@@ -82,15 +88,17 @@ public class EthModule
         Repository repository = blockchain.getRepository().getSnapshotTo(block.getStateRoot()).startTracking();
 
         BridgeSupport bridgeSupport = new BridgeSupport(
-                config,
-                repository,
-                null,
-                PrecompiledContracts.BRIDGE_ADDR,
-                block);
+                bridgeConstants,
+                new BridgeStorageConfiguration(
+                        activationConfig.isActive(ConsensusRule.RSKIP87, block.getNumber()),
+                        activationConfig.isActive(ConsensusRule.RSKIP123, block.getNumber())
+                ),
+                null, repository, block, PrecompiledContracts.BRIDGE_ADDR
+        );
 
         byte[] result = bridgeSupport.getStateForDebugging();
 
-        BridgeState state = BridgeState.create(config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), result);
+        BridgeState state = BridgeState.create(bridgeConstants, result);
 
         return state.stateToMap();
     }

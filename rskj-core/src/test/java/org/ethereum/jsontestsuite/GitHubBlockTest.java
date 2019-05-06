@@ -20,8 +20,6 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
-import org.ethereum.config.blockchain.GenesisConfig;
-import org.ethereum.config.net.MainNetConfig;
 import org.json.simple.parser.ParseException;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
@@ -43,7 +41,6 @@ public class GitHubBlockTest {
     public void runSingleTest() throws ParseException, IOException {
         TestSystemProperties config = new TestSystemProperties();
         config.setGenesisInfo("frontier.json");
-        config.setBlockchainConfig(new GenesisConfig());
 
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/bcTotalDifficultyTest.json", shacommit);
         GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(json, "sideChainWithNewMaxDifficultyStartingFromBlock3AfterBlock4");
@@ -57,12 +54,7 @@ public class GitHubBlockTest {
     private void runHomestead(String name) throws IOException, ParseException {
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/" + name + ".json", shacommit);
         TestSystemProperties config = new TestSystemProperties();
-        config.setBlockchainConfig(new GenesisConfig());
-        try {
-            GitHubJSONTestSuite.runGitHubJsonBlockTest(json, Collections.EMPTY_SET);
-        } finally {
-            config.setBlockchainConfig(new MainNetConfig());
-        }
+        GitHubJSONTestSuite.runGitHubJsonBlockTest(json, Collections.EMPTY_SET);
     }
 
     private void run(String name, boolean frontier, boolean homestead) throws IOException, ParseException {

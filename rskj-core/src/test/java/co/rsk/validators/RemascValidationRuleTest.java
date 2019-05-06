@@ -18,7 +18,6 @@
 
 package co.rsk.validators;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
@@ -35,8 +34,6 @@ import java.util.List;
  * Created by mario on 30/12/16.
  */
 public class RemascValidationRuleTest {
-
-    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void noTxInTheBlock() {

@@ -45,7 +45,7 @@ import static org.mockito.Mockito.mock;
 public class VMCustomTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private ProgramInvokeMockImpl invoke;

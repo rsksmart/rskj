@@ -42,8 +42,8 @@ import static org.junit.Assert.assertNotEquals;
 public class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final byte chainId = config.getBlockchainConfig().getCommonConstants().getChainId();
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final byte chainId = config.getNetworkConstants().getChainId();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {
@@ -227,9 +227,9 @@ public class TransactionTest {
                 {
                     Repository track = repository.startTracking();
 
-                    Transaction txConst = CallTransaction.createCallTransaction(config, 0, 0, 100000000000000L,
+                    Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
                             new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
-                            CallTransaction.Function.fromSignature("get"));
+                            CallTransaction.Function.fromSignature("get"), chainId);
                     txConst.sign(new byte[32]);
 
                     Block bestBlock = block;

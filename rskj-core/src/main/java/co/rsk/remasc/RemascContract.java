@@ -19,10 +19,11 @@
 package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -61,14 +62,16 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
     public static final DataWord MINING_FEE_TOPIC = DataWord.fromString("mining_fee_topic");
     public static final String REMASC_CONFIG = "remasc.json";
 
-    private final RskSystemProperties config;
+    private final Constants constants;
+    private final ActivationConfig activationConfig;
     private final RemascConfig remascConfig;
 
     private final Map<ByteArrayWrapper, CallTransaction.Function> functions;
     private Remasc remasc;
 
-    public RemascContract(RskSystemProperties config, RemascConfig remascConfig, RskAddress contractAddress) {
-        this.config = config;
+    public RemascContract(RskAddress contractAddress, RemascConfig remascConfig, Constants constants, ActivationConfig activationConfig) {
+        this.constants = constants;
+        this.activationConfig = activationConfig;
         this.remascConfig = remascConfig;
         this.contractAddress = contractAddress;
         this.functions = new HashMap<>();
@@ -84,7 +87,7 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public void init(Transaction executionTx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
-        this.remasc = new Remasc(this.config, repository, blockStore, remascConfig, executionTx, contractAddress, executionBlock, logs);
+        this.remasc = new Remasc(constants, activationConfig, repository, blockStore, remascConfig, executionTx, contractAddress, executionBlock, logs);
     }
 
     @Override

@@ -18,11 +18,12 @@
 package co.rsk.remasc;
 
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.FederationSupport;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -35,21 +36,20 @@ public class RemascFederationProvider {
     private final FederationSupport federationSupport;
 
     public RemascFederationProvider(
-            RskSystemProperties config,
+            ActivationConfig activationConfig,
+            BridgeConstants bridgeConstants,
             Repository repository,
             Block processingBlock) {
-        BridgeConstants bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(processingBlock.getNumber()))
+                new BridgeStorageConfiguration(
+                        activationConfig.isActive(ConsensusRule.RSKIP87, processingBlock.getNumber()),
+                        activationConfig.isActive(ConsensusRule.RSKIP123, processingBlock.getNumber())
+                )
         );
-        this.federationSupport = new FederationSupport(
-                bridgeStorageProvider,
-                config.getBlockchainConfig(),
-                processingBlock
-        );
+        this.federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock);
     }
 
     public int getFederationSize() {

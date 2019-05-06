@@ -412,7 +412,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         List<Transaction> txs = new LinkedList();
 
         for (Transaction tx : messageTxs) {
-            if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
+            if (!tx.acceptTransactionSignature(config.getNetworkConstants().getChainId())) {
                 recordEvent(sender, EventType.INVALID_TRANSACTION);
             } else {
                 txs.add(tx);

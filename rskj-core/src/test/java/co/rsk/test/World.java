@@ -97,7 +97,7 @@ public class World {
                     track1,
                     this.getBlockChain().getBlockStore(),
                     null,
-                    new BlockFactory(config.getBlockchainConfig()),
+                    new BlockFactory(config.getActivationConfig()),
                     programInvokeFactory,
                     block1,
                     null,
@@ -111,7 +111,7 @@ public class World {
                     config.databaseDir(),
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
-            ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+            ), new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>()));
         }
 
         return this.blockExecutor;

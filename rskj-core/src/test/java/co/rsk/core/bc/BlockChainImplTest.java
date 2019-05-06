@@ -56,7 +56,7 @@ import java.util.Map;
 public class BlockChainImplTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
-    private static final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
     public void addGenesisBlock() {
@@ -816,7 +816,7 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(1L), BigInteger.TEN, config.getBlockchainConfig().getCommonConstants().getChainId());
+        Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(1L), BigInteger.TEN, config.getNetworkConstants().getChainId());
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
@@ -845,7 +845,7 @@ public class BlockChainImplTest {
         track.commit();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = new Transaction("0000000000000000000000000000000000000100", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.valueOf(22000L), config.getBlockchainConfig().getCommonConstants().getChainId());
+        Transaction tx = new Transaction("0000000000000000000000000000000000000100", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.valueOf(22000L), config.getNetworkConstants().getChainId());
         tx.sign(account.getEcKey().getPrivKeyBytes());
         txs.add(tx);
 
@@ -878,7 +878,7 @@ public class BlockChainImplTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+        ), new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>()));
         executor.executeAndFill(block, genesis.getHeader());
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
@@ -916,7 +916,7 @@ public class BlockChainImplTest {
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, blockFactory, null, listener, 10, 100);
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
         return new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,
@@ -981,7 +981,7 @@ public class BlockChainImplTest {
                 config.databaseDir(),
                 config.vmTraceDir(),
                 config.vmTraceCompressed()
-        ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+        ), new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>()));
     }
 
     private static void alterBytes(byte[] bytes) {

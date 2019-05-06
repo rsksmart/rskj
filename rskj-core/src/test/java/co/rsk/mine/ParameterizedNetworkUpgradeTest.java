@@ -19,14 +19,13 @@
 package co.rsk.mine;
 
 import co.rsk.config.TestSystemProperties;
-import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.blockchain.HardForkActivationConfig;
-import org.ethereum.config.net.RegTestConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 /**
- * This class helps when running tests that should work both before and after a hard fork.
+ * This class helps when running tests that should work both before and after a network upgrade.
  * To use it, you need to:
  * 1. Extend it
  * 2. Create a public constructor that receives a TestSystemProperties
@@ -42,8 +41,8 @@ public abstract class ParameterizedNetworkUpgradeTest {
     public static Object[] data() {
         TestSystemProperties bambooConfig = new TestSystemProperties() {
             @Override
-            protected BlockchainNetConfig buildBlockchainConfig() {
-                return RegTestConfig.getFromConfig(new HardForkActivationConfig(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE), null);
+            public ActivationConfig getActivationConfig() {
+                return ActivationConfigsForTest.genesis();
             }
 
             @Override
@@ -53,10 +52,8 @@ public abstract class ParameterizedNetworkUpgradeTest {
         };
         TestSystemProperties orchidConfig = new TestSystemProperties() {
             @Override
-            protected BlockchainNetConfig buildBlockchainConfig() {
-                // this method ignores the orchid060 activation height configuration
-                return RegTestConfig.getFromConfig(new HardForkActivationConfig(0, Integer.MAX_VALUE, 0), null);
-
+            public ActivationConfig getActivationConfig() {
+                return ActivationConfigsForTest.orchid();
             }
 
             @Override

@@ -21,7 +21,6 @@ package org.ethereum.config;
 
 import co.rsk.config.*;
 import co.rsk.core.BlockDifficulty;
-import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigDecimal;
@@ -167,10 +166,6 @@ public class Constants {
 
     public static int getMaxAddressByteLength() {
         return 20;
-    }
-
-    public RskAddress getBurnAddress() {
-        return new RskAddress("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
     }
 
     public static Constants mainnet() {

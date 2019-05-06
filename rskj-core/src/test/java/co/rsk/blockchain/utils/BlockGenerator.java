@@ -18,7 +18,6 @@
 
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
@@ -29,6 +28,10 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -55,16 +58,16 @@ public class BlockGenerator {
     private final DifficultyCalculator difficultyCalculator;
     private final BlockFactory blockFactory;
     private int count = 0;
-    private TestSystemProperties config;
+    private ActivationConfig activationConfig;
 
     public BlockGenerator() {
-        this(new TestSystemProperties());
+        this(Constants.regtest(), ActivationConfigsForTest.all());
     }
 
-    public BlockGenerator(TestSystemProperties config) {
-        this.config = config;
-        this.difficultyCalculator = new DifficultyCalculator(this.config);
-        this.blockFactory = new BlockFactory(config.getBlockchainConfig());
+    public BlockGenerator(Constants networkConstants, ActivationConfig activationConfig) {
+        this.activationConfig = activationConfig;
+        this.difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
+        this.blockFactory = new BlockFactory(activationConfig);
     }
 
     public Genesis getGenesisBlock() {
@@ -94,7 +97,7 @@ public class BlockGenerator {
             accounts.put(new RskAddress(accountEntry.getKey()), acctState);
         }
 
-        boolean useRskip92Encoding = config.getBlockchainConfig().getConfigForBlock(0).isRskip92();
+        boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, 0);
         return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 null, null, null, BigInteger.valueOf(100L).toByteArray(), useRskip92Encoding,
@@ -342,7 +345,7 @@ public class BlockGenerator {
                     BigInteger.valueOf(1));
 
             if (withMining) {
-                newblock = new BlockMiner(config).mineBlock(newblock);
+                newblock = new BlockMiner(activationConfig).mineBlock(newblock);
             }
 
             chain.add(newblock);

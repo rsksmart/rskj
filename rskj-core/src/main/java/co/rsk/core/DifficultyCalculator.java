@@ -18,10 +18,9 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
 
 import java.math.BigInteger;
@@ -29,18 +28,17 @@ import java.math.BigInteger;
 import static org.ethereum.util.BIUtil.max;
 
 public class DifficultyCalculator {
-    private final BlockchainNetConfig blockchainNetConfig;
+    private final ActivationConfig activationConfig;
     private final Constants constants;
 
-    public DifficultyCalculator(RskSystemProperties config) {
-        this.blockchainNetConfig = config.getBlockchainConfig();
-        this.constants = blockchainNetConfig.getCommonConstants();
+    public DifficultyCalculator(ActivationConfig activationConfig, Constants constants) {
+        this.activationConfig = activationConfig;
+        this.constants = constants;
     }
 
     public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
-        BlockchainConfig blockchainConfig = blockchainNetConfig.getConfigForBlock(header.getNumber());
-        boolean difficultyDropEnabled = blockchainConfig.difficultyDropEnabled();
-        boolean rskip97Active = blockchainConfig.isRskip97();
+        boolean difficultyDropEnabled = activationConfig.isActive(ConsensusRule.DIFFICULTY_DROP_ENABLED, header.getNumber());
+        boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, header.getNumber());
         if (difficultyDropEnabled || !rskip97Active) {
             // If more than 10 minutes, reset to minimum difficulty to allow private mining
             if (header.getTimestamp() >= parentHeader.getTimestamp() + 600) {

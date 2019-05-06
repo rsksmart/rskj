@@ -19,18 +19,13 @@
 
 package org.ethereum.config;
 
-import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.HardForkActivationConfig;
-import org.ethereum.config.net.DevNetConfig;
-import org.ethereum.config.net.MainNetConfig;
-import org.ethereum.config.net.RegTestConfig;
-import org.ethereum.config.net.TestNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.net.p2p.P2pHandler;
@@ -66,10 +61,8 @@ import java.util.stream.Collectors;
 public abstract class SystemProperties {
     private static Logger logger = LoggerFactory.getLogger("general");
 
-    public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
-    // TODO: define a proper name for this config setting
-    public static final String PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME = "blockchain.config.hardforkActivationHeights";
-    public static final String PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS = "genesis_constants.federationPublicKeys";
+    public static final String PROPERTY_BLOCKCHAIN_CONFIG = "blockchain.config";
+    public static final String PROPERTY_BC_CONFIG_NAME = PROPERTY_BLOCKCHAIN_CONFIG + ".name";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_BASE_PATH = "database.dir";
     public static final String PROPERTY_DB_RESET = "database.reset";
@@ -105,7 +98,9 @@ public abstract class SystemProperties {
     private Boolean discoveryEnabled = null;
 
     protected BlockchainNetConfig blockchainConfig;
-    
+    private ActivationConfig activationConfig;
+    private Constants constants;
+
     protected SystemProperties(ConfigLoader loader) {
         try {
             this.configFromFiles = loader.getConfig();
@@ -145,6 +140,10 @@ public abstract class SystemProperties {
         return configFromFiles;
     }
 
+    /**
+     * @deprecated use {@link ActivationConfig} instead, and prefer constructor injection to simplify mocking
+     */
+    @Deprecated
     public synchronized BlockchainNetConfig getBlockchainConfig() {
         if (blockchainConfig == null) {
             blockchainConfig = buildBlockchainConfig();
@@ -153,53 +152,46 @@ public abstract class SystemProperties {
         return blockchainConfig;
     }
 
-    protected BlockchainNetConfig buildBlockchainConfig() {
-        BlockchainNetConfig blockchainConfig;
-        String netName = netName();
-        if (netName != null && configFromFiles.hasPath("blockchain.config.class")) {
-            throw new RuntimeException(String.format(
-                    "Only one of two options should be defined: '%s' and 'blockchain.config.class'",
-                    PROPERTY_BC_CONFIG_NAME)
-            );
-        }
-        if (netName != null) {
-            switch(netName) {
-                case "main":
-                    blockchainConfig = new MainNetConfig();
-                    break;
-                case "testnet":
-                    blockchainConfig = new TestNetConfig();
-                    break;
-                case "devnet":
-                    blockchainConfig = DevNetConfig.getFromConfig(getHardForkActivationConfig(), getGenesisFederationPublicKeys());
-                    break;
-                case "regtest":
-                    blockchainConfig = RegTestConfig.getFromConfig(getHardForkActivationConfig(), getGenesisFederationPublicKeys());
-                    break;
-                default:
-                    throw new RuntimeException(String.format(
-                            "Unknown value for '%s': '%s'",
-                            PROPERTY_BC_CONFIG_NAME,
-                            netName)
-                    );
-            }
-            return blockchainConfig;
+    public ActivationConfig getActivationConfig() {
+        if (activationConfig == null) {
+            activationConfig = ActivationConfig.read(configFromFiles.getConfig(PROPERTY_BLOCKCHAIN_CONFIG));
         }
 
-        String className = configFromFiles.getString("blockchain.config.class");
-        try {
-            Class<? extends BlockchainNetConfig> aClass = (Class<? extends BlockchainNetConfig>) Class.forName(className);
-            blockchainConfig = aClass.newInstance();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' not found" , e);
-        } catch (ClassCastException e) {
-            throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' is not instance of org.ethereum.config.BlockchainForkConfig" , e);
-        } catch (InstantiationException|IllegalAccessException e) {
-            throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' couldn't be instantiated (check for default constructor and its accessibility)" , e);
-        }
-        return blockchainConfig;
+        return activationConfig;
     }
 
+    public Constants getNetworkConstants() {
+        if (constants == null) {
+            switch (netName()) {
+                case "main":
+                    constants = Constants.mainnet();
+                    break;
+                case "testnet":
+                    constants = Constants.testnet();
+                    break;
+                case "devnet":
+                    constants = Constants.devnet();
+                    break;
+                case "regtest":
+                    constants = Constants.regtest();
+                    break;
+                default:
+                    throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
+            }
+        }
+
+        return constants;
+    }
+
+    private BlockchainNetConfig buildBlockchainConfig() {
+        return new BlockchainNetConfig(getNetworkConstants(), getActivationConfig());
+    }
+
+    /**
+     * @deprecated this method mutates state that should never change, and so it has been deprecated.
+     *             use {@link ActivationConfig} and mocking for testing
+     */
+    @Deprecated
     @VisibleForTesting
     public void setBlockchainConfig(BlockchainNetConfig config) {
         blockchainConfig = config;
@@ -656,21 +648,5 @@ public abstract class SystemProperties {
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException("Invalid address: '" + ipToParse + "'", e);
         }
-    }
-
-    private HardForkActivationConfig getHardForkActivationConfig() {
-        if (!this.getConfig().hasPath(PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME)) {
-            return null;
-        }
-        return new HardForkActivationConfig(this.getConfig().getObject(PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME).toConfig());
-    }
-
-    private List<BtcECKey> getGenesisFederationPublicKeys() {
-        List<BtcECKey> genesisFederationsPublicKeys = Collections.emptyList();
-        if (configFromFiles.hasPath(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS)) {
-            List<String> configFederationPublicKeys = configFromFiles.getStringList(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS);
-            genesisFederationsPublicKeys = configFederationPublicKeys.stream().map(key -> BtcECKey.fromPublicOnly(Hex.decode(key))).collect(Collectors.toList());
-        }
-        return genesisFederationsPublicKeys;
     }
 }

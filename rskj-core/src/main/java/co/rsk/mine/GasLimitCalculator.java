@@ -18,7 +18,6 @@
 
 package co.rsk.mine;
 
-import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.Constants;
 
 import java.math.BigInteger;
@@ -29,10 +28,10 @@ import java.math.BigInteger;
  */
 public class GasLimitCalculator {
 
-    private final RskSystemProperties config;
+    private final Constants constants;
 
-    public GasLimitCalculator(RskSystemProperties config) {
-        this.config = config;
+    public GasLimitCalculator(Constants networkConstants) {
+        constants = networkConstants;
     }
 
     // At the end of this algorithm it will increase the gas limit if and only if the previous block gas used
@@ -40,7 +39,6 @@ public class GasLimitCalculator {
     // The idea is to increase the gas limit when there are more transactions on the network while reduce it when
     // there are no or almost no transaction on it
     public BigInteger calculateBlockGasLimit(BigInteger parentGasLimit, BigInteger parentGasUsed, BigInteger minGasLimit, BigInteger targetGasLimit, boolean forceTarget) {
-        Constants constants = config.getBlockchainConfig().getCommonConstants();
 
         BigInteger newGasLimit = parentGasLimit;
 

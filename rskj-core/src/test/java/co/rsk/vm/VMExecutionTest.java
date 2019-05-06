@@ -47,7 +47,7 @@ public class VMExecutionTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private ProgramInvokeMockImpl invoke;
     private BytecodeCompiler compiler;
 

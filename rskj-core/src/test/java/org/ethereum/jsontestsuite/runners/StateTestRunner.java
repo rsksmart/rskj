@@ -62,7 +62,7 @@ public class StateTestRunner {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     public static List<String> run(StateTestCase stateTestCase2) {
         return new StateTestRunner(stateTestCase2).runImpl();
@@ -140,7 +140,7 @@ public class StateTestRunner {
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
         blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
                 tx1,
                 txindex1,

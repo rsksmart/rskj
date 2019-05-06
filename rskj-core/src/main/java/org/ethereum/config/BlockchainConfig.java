@@ -19,16 +19,15 @@
 
 package org.ethereum.config;
 
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+
 /**
  * Describes constants and algorithms used for a specific blockchain at specific stage
- *
- * Created by Anton Nashatyrev on 25.02.2016.
+ * @deprecated usages of this class should be replaced by {@link ActivationConfig}.
+ *             if you need the constants, you should inject them.
  */
+@Deprecated
 public interface BlockchainConfig {
-
-    /**
-     * Get blockchain constants
-     */
     Constants getConstants();
 
     boolean areBridgeTxsFree();

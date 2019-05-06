@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,19 +16,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.config.blockchain.regtest;
+package org.ethereum.config;
 
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.GenesisConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
-public class RegTestGenesisConfig extends GenesisConfig {
-
-    public RegTestGenesisConfig() {
-        super(Constants.regtest());
+public class RegtestBlockchainNetConfig extends BlockchainNetConfig {
+    public RegtestBlockchainNetConfig(ActivationConfig activationConfig) {
+        super(
+                Constants.regtest(),
+                activationConfig
+        );
     }
 
-    @Override
-    public boolean areBridgeTxsFree() {
-        return true;
-    }
 }

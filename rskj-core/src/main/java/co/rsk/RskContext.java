@@ -225,7 +225,7 @@ public class RskContext implements NodeBootstrapper {
 
     public BlockFactory getBlockFactory() {
         if (blockFactory == null) {
-            blockFactory = new BlockFactory(getRskSystemProperties().getBlockchainConfig());
+            blockFactory = new BlockFactory(getRskSystemProperties().getActivationConfig());
         }
 
         return blockFactory;
@@ -372,7 +372,8 @@ public class RskContext implements NodeBootstrapper {
     public EthModule getEthModule() {
         if (ethModule == null) {
             ethModule = new EthModule(
-                    getRskSystemProperties(),
+                    getRskSystemProperties().getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                    getRskSystemProperties().getActivationConfig(),
                     getBlockchain(),
                     getReversibleTransactionExecutor(),
                     getExecutionBlockRetriever(),
@@ -686,7 +687,7 @@ public class RskContext implements NodeBootstrapper {
 
     protected StateRootHandler buildStateRootHandler() {
         KeyValueDataSource stateRootsDB = makeDataSource("stateRoots", getRskSystemProperties().databaseDir());
-        return new StateRootHandler(getRskSystemProperties(), stateRootsDB, new HashMap<>());
+        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), stateRootsDB, new HashMap<>());
     }
 
     protected CompositeEthereumListener buildCompositeEthereumListener() {
@@ -940,7 +941,11 @@ public class RskContext implements NodeBootstrapper {
 
     private DifficultyCalculator getDifficultyCalculator() {
         if (difficultyCalculator == null) {
-            difficultyCalculator = new DifficultyCalculator(getRskSystemProperties());
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            difficultyCalculator = new DifficultyCalculator(
+                    rskSystemProperties.getActivationConfig(),
+                    rskSystemProperties.getNetworkConstants()
+            );
         }
 
         return difficultyCalculator;
@@ -1042,13 +1047,14 @@ public class RskContext implements NodeBootstrapper {
     private EthModuleTransaction getEthModuleTransaction() {
         if (ethModuleTransaction == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            Constants constants = rskSystemProperties.getNetworkConstants();
             Wallet wallet = getWallet();
             TransactionPool transactionPool = getTransactionPool();
             if (wallet == null) {
-                ethModuleTransaction = new EthModuleTransactionDisabled(rskSystemProperties, transactionPool);
+                ethModuleTransaction = new EthModuleTransactionDisabled(constants, transactionPool);
             } else if (rskSystemProperties.minerClientAutoMine()) {
                 ethModuleTransaction = new EthModuleTransactionInstant(
-                        rskSystemProperties,
+                        constants,
                         wallet,
                         transactionPool,
                         getMinerServer(),
@@ -1056,7 +1062,7 @@ public class RskContext implements NodeBootstrapper {
                         getBlockchain()
                 );
             } else {
-                ethModuleTransaction = new EthModuleTransactionBase(rskSystemProperties, wallet, transactionPool);
+                ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool);
             }
         }
 
@@ -1245,7 +1251,7 @@ public class RskContext implements NodeBootstrapper {
 
     private GasLimitCalculator getGasLimitCalculator() {
         if (gasLimitCalculator == null) {
-            gasLimitCalculator = new GasLimitCalculator(getRskSystemProperties());
+            gasLimitCalculator = new GasLimitCalculator(getRskSystemProperties().getNetworkConstants());
         }
 
         return gasLimitCalculator;

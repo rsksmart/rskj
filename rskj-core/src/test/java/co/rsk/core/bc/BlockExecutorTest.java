@@ -63,7 +63,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class BlockExecutorTest {
     public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     private static final TestSystemProperties config = new TestSystemProperties();
-    private static final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     private Blockchain blockchain;
     private BlockExecutor executor;
@@ -665,7 +665,7 @@ public class BlockExecutorTest {
     private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
         String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getBlockchainConfig().getCommonConstants().getChainId());
+        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);
         return tx;
     }
@@ -883,7 +883,7 @@ public class BlockExecutorTest {
     }
 
     private static StateRootHandler getStateRootHandler() {
-        return new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        return new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
     }
 
     public static class TestObjects {

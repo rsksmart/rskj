@@ -26,7 +26,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
-import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -138,10 +139,10 @@ public class MinerUtils {
      * and executes it on the builder corresponding to this block number.
      */
     public static byte[] buildMerkleProof(
-            BlockchainNetConfig blockchainConfig,
+            ActivationConfig activationConfig,
             Function<MerkleProofBuilder, byte[]> proofBuilderFunction,
             long blockNumber) {
-        if (blockchainConfig.getConfigForBlock(blockNumber).isRskip92()) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP92, blockNumber)) {
             return proofBuilderFunction.apply(new Rskip92MerkleProofBuilder());
         } else {
             return proofBuilderFunction.apply(new GenesisMerkleProofBuilder());

@@ -21,8 +21,6 @@ package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
-import org.ethereum.config.blockchain.GenesisConfig;
-import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.json.simple.parser.ParseException;
@@ -47,14 +45,13 @@ public class GitHubBasicTest {
 
     private static TestSystemProperties config = new TestSystemProperties();
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
     public String shacommit = "99afe8f5aad7bca5d0f1b1685390a4dea32d73c3";
 
     @Test
     public void runDifficultyTest() throws IOException, ParseException {
-        config.setBlockchainConfig(new MainNetConfig());
-        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficulty.json", shacommit);
 
@@ -74,8 +71,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyFrontierTest() throws IOException, ParseException {
 
-        config.setBlockchainConfig(new MainNetConfig());
-        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyFrontier.json", shacommit);
 
@@ -95,8 +91,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyHomesteadTest() throws IOException, ParseException {
 
-        config.setBlockchainConfig(new GenesisConfig());
-        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyHomestead.json", shacommit);
 

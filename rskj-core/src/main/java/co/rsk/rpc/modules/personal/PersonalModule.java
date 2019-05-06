@@ -18,7 +18,6 @@
 
 package co.rsk.rpc.modules.personal;
 
-import co.rsk.config.RskSystemProperties;
 import org.ethereum.rpc.Web3;
 
 public interface PersonalModule {
@@ -26,7 +25,7 @@ public interface PersonalModule {
 
     String importRawKey(String key, String passphrase);
 
-    void init(RskSystemProperties properties);
+    void init();
 
     String[] listAccounts();
 
