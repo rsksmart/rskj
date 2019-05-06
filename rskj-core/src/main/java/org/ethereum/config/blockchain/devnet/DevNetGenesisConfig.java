@@ -19,52 +19,16 @@
 
 package org.ethereum.config.blockchain.devnet;
 
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeDevNetConstants;
-import co.rsk.core.BlockDifficulty;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.GenesisConfig;
-
-import java.math.BigInteger;
 
 /**
  * Created by Oscar Guindzberg on 25.10.2016.
  */
 public class DevNetGenesisConfig extends GenesisConfig {
 
-    public static class DevNetConstants extends GenesisConstants {
-
-        private static final byte CHAIN_ID = 32;
-        private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
-        private final BlockDifficulty minimumDifficulty = new BlockDifficulty(BigInteger.valueOf(131072));
-
-        @Override
-        public BridgeConstants getBridgeConstants() {
-            return BridgeDevNetConstants.getInstance();
-        }
-
-        @Override
-        public byte getChainId() {
-            return DevNetConstants.CHAIN_ID;
-        }
-
-        @Override
-        public BlockDifficulty getMinimumDifficulty() {
-            return minimumDifficulty;
-        }
-
-        @Override
-        public int getDurationLimit() {
-            return 14;
-        }
-
-        @Override
-        public BigInteger getDifficultyBoundDivisor() {
-            return DIFFICULTY_BOUND_DIVISOR;
-        }
-    }
-
     public DevNetGenesisConfig() {
-        super(new DevNetConstants());
+        super(Constants.devnet());
     }
 
     @Override

@@ -20,7 +20,6 @@
 package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -31,7 +30,6 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
-import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
@@ -43,7 +41,6 @@ import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,12 +51,6 @@ public class ImportLightTest {
 
     public static BlockChainImpl createBlockchain(Genesis genesis) {
         TestSystemProperties config = new TestSystemProperties();
-        config.setBlockchainConfig(new GenesisConfig(new GenesisConfig.GenesisConstants() {
-            @Override
-            public BlockDifficulty getMinimumDifficulty() {
-                return new BlockDifficulty(BigInteger.ONE);
-            }
-        }));
         BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 

@@ -37,7 +37,7 @@ public class GasLimitCalculatorTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
-    private Constants constants = new Constants();
+    private Constants constants = Constants.regtest();
     private ParentGasLimitRule rule = new ParentGasLimitRule(1024);
 
     @Test
