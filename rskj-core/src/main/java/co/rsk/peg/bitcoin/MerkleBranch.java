@@ -30,6 +30,11 @@ public class MerkleBranch {
         this.hashes = Collections.unmodifiableList(hashes);
         this.path = path;
 
+        //We validate that the number of hashes is uint8 as described in https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki
+        if (hashes.size() > 255) {
+            throw new InvalidMerkleBranchException("The number of hashes can't be bigger than 255");
+        }
+
         // We validate here that there are no more bits in the
         // path than those needed to reduce the branch to the
         // merkle root. That is, that the number of significant
@@ -70,7 +75,7 @@ public class MerkleBranch {
      */
     public Sha256Hash reduceFrom(Sha256Hash txHash) {
         Sha256Hash current = txHash;
-        byte index = 0;
+        int index = 0;
         while (index < hashes.size()) {
             boolean currentRight = ((path >> index) & 1) == 1;
             if (currentRight) {
