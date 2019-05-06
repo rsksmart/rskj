@@ -501,10 +501,6 @@ public abstract class SystemProperties {
         return publicIp;
     }
 
-    public String getKeyValueDataSource() {
-        return configFromFiles.getString("keyvalue.datasource");
-    }
-
     public boolean isSyncEnabled() {
         return this.syncEnabled == null ? configFromFiles.getBoolean("sync.enabled") : syncEnabled;
     }
@@ -532,10 +528,6 @@ public abstract class SystemProperties {
 
     public void setGenesisInfo(String genesisInfo){
         this.genesisInfo = genesisInfo;
-    }
-
-    public String dump() {
-        return configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false));
     }
 
     public boolean scoringPunishmentEnabled() {
