@@ -36,18 +36,11 @@ public class GenesisConfig extends AbstractConfig {
     // Before launch, they must be removed or exchanged with the current non-prefixed methods.
 
     public GenesisConfig() {
-        this(new GenesisConstants());
+        this(Constants.regtest());
     }
 
     public GenesisConfig(Constants constants) {
         super(constants);
-    }
-
-    public static class GenesisConstants extends Constants {
-        @Override
-        public int getDurationLimit() {
-            return 13;
-        }
     }
 
     @Override

@@ -303,7 +303,7 @@ public class RemascStorageProviderTest {
     public void alwaysPaysBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new TestNetBeforeBridgeSyncConfig());
-        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
+        Constants constants = spy(Constants.testnet());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((TestNetBeforeBridgeSyncConfig) blockchainConfig).isRskip85()).thenReturn(false);
@@ -330,7 +330,7 @@ public class RemascStorageProviderTest {
     public void alwaysPaysFedBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new TestNetBeforeBridgeSyncConfig());
-        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
+        Constants constants = spy(Constants.testnet());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((TestNetBeforeBridgeSyncConfig) blockchainConfig).isRskip85()).thenReturn(false);
@@ -361,7 +361,7 @@ public class RemascStorageProviderTest {
     public void doesntPayFedBelowMinimumRewardAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new TestNetDifficultyDropEnabledConfig());
-        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
+        Constants constants = spy(Constants.testnet());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
@@ -389,7 +389,7 @@ public class RemascStorageProviderTest {
     public void doesntPayBelowMinimumRewardAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new TestNetDifficultyDropEnabledConfig());
-        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
+        Constants constants = spy(Constants.testnet());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
@@ -413,7 +413,7 @@ public class RemascStorageProviderTest {
     public void paysFedWhenHigherThanMinimumRewardAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new TestNetDifficultyDropEnabledConfig());
-        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
+        Constants constants = spy(Constants.testnet());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
@@ -443,7 +443,7 @@ public class RemascStorageProviderTest {
     public void paysWhenHigherThanMinimumRewardAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new TestNetDifficultyDropEnabledConfig());
-        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
+        Constants constants = spy(Constants.testnet());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);
@@ -468,7 +468,7 @@ public class RemascStorageProviderTest {
     public void paysOnlyBlocksWithEnoughBalanceAccumulatedAfterRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         BlockchainNetConfig blockchainConfig = spy(new TestNetDifficultyDropEnabledConfig());
-        Constants constants = spy(new TestNetBeforeBridgeSyncConfig.TestNetConstants());
+        Constants constants = spy(Constants.testnet());
         when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
         when(blockchainConfig.getCommonConstants()).thenReturn(constants);
         when(((BlockchainConfig)blockchainConfig).getConstants()).thenReturn(constants);

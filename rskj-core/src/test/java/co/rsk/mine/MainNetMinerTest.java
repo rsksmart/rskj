@@ -12,7 +12,7 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.config.blockchain.FallbackMainNetConfig;
+import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
@@ -49,7 +49,7 @@ public class MainNetMinerTest {
     @Before
     public void setup() {
         config = new TestSystemProperties();
-        config.setBlockchainConfig(new FallbackMainNetConfig());
+        config.setBlockchainConfig(new MainNetConfig());
         RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
