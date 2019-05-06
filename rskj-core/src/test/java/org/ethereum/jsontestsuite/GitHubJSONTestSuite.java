@@ -263,8 +263,9 @@ public class GitHubJSONTestSuite {
             List<String> result = StateTestRunner.run(testCases.get(testName));
 
 
-            if (!result.isEmpty())
+            if (!result.isEmpty()) {
                 summary.put(testName, false);
+            }
             else
                 summary.put(testName, true);
         }

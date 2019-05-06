@@ -44,6 +44,7 @@ import org.ethereum.jsontestsuite.model.BlockTck;
 import org.ethereum.jsontestsuite.model.TransactionTck;
 import org.ethereum.jsontestsuite.validators.BlockHeaderValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
+import org.ethereum.jsontestsuite.validators.ValidationStats;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.util.ByteUtil;
@@ -86,6 +87,23 @@ public class TestRunner {
     private ProgramTrace trace = null;
     private boolean setNewStateRoot;
     private boolean validateGasUsed = false; // until EIP150 test cases are ready.
+    private boolean validateBalances = true;
+    private boolean validateStateRoots =false;
+
+    public TestRunner setValidateGasUsed( boolean v) {
+        validateGasUsed= v;
+        return this;
+    }
+
+    public TestRunner setValidateStateRoots ( boolean v) {
+        validateStateRoots = v;
+        return this;
+    }
+
+    public TestRunner setValidateBalances(boolean v) {
+        validateBalances = v;
+        return this;
+    }
 
     public List<String> runTestSuite(TestSuite testSuite) {
 
@@ -107,6 +125,8 @@ public class TestRunner {
 
     public List<String> runTestCase(BlockTestCase testCase) {
         /* 1 */ // Create genesis + init pre state
+        ValidationStats vStats = new ValidationStats();
+
         Block genesis = build(testCase.getGenesisBlockHeader(), null, null);
         Repository repository = RepositoryBuilder.build(testCase.getPre());
 
@@ -165,7 +185,7 @@ public class TestRunner {
                 tBlock = blockFactory.decodeBlock(rlp);
 
                 ArrayList<String> outputSummary =
-                        BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader());
+                        BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader(),null);
 
                 if (!outputSummary.isEmpty()){
                     for (String output : outputSummary)
@@ -193,17 +213,16 @@ public class TestRunner {
         byte[] bestHash = Hex.decode(testCase.getLastblockhash());
         String finalRoot = Hex.toHexString(blockStore.getBlockByHash(bestHash).getStateRoot());
 
-        /*
-        if (!blockchain.byTest) // If this comes from ETH, it won't match
-        if (!finalRoot.equals(currRoot)){
-            String formattedString = String.format("Root hash doesn't match best: expected: %s current: %s",
-                    finalRoot, currRoot);
-            results.add(formattedString);
+        if (validateStateRoots) {
+            if (!finalRoot.equals(currRoot)) {
+                String formattedString = String.format("Root hash doesn't match best: expected: %s current: %s",
+                        finalRoot, currRoot);
+                results.add(formattedString);
+            }
         }
-        */
 
         Repository postRepository = RepositoryBuilder.build(testCase.getPostState());
-        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, false /*!blockchain.byTest*/);
+        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, validateStateRoots,validateBalances,null);
         results.addAll(repoResults);
 
         return results;

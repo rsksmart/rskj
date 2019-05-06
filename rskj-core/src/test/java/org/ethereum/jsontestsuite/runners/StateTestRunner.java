@@ -38,6 +38,7 @@ import org.ethereum.jsontestsuite.builder.*;
 import org.ethereum.jsontestsuite.validators.LogsValidator;
 import org.ethereum.jsontestsuite.validators.OutputValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
+import org.ethereum.jsontestsuite.validators.ValidationStats;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
@@ -74,6 +75,7 @@ public class StateTestRunner {
     protected Env env;
     protected ProgramInvokeFactory invokeFactory;
     protected Block block;
+    protected ValidationStats vStats;
 
     // Enable when State tests are changed to support paying
     // the fees into REMASC instead that into the coinbase account
@@ -128,7 +130,7 @@ public class StateTestRunner {
     }
 
     public List<String> runImpl() {
-
+        vStats = new ValidationStats();
         logger.info("");
         repository = RepositoryBuilder.build(stateTestCase.getPre());
         logger.info("loaded repository");
@@ -180,14 +182,16 @@ public class StateTestRunner {
         List<LogInfo> origLogs = programResult.getLogInfoList();
         List<LogInfo> postLogs = LogBuilder.build(stateTestCase.getLogs());
 
-        List<String> logsResult = LogsValidator.valid(origLogs, postLogs);
+        List<String> logsResult = LogsValidator.valid(origLogs, postLogs,vStats);
 
         Repository postRepository = RepositoryBuilder.build(stateTestCase.getPost());
-        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, false /*!blockchain.byTest*/);
+
+        // Balances cannot be validated because has consumption for CALLs differ.
+        List<String> repoResults = RepositoryValidator.valid(repository, postRepository,  false ,false,vStats);
 
         logger.info("--------- POST Validation---------");
         List<String> outputResults =
-                OutputValidator.valid(Hex.toHexString(programResult.getHReturn()), stateTestCase.getOut());
+                OutputValidator.valid(Hex.toHexString(programResult.getHReturn()), stateTestCase.getOut(),vStats);
 
         List<String> results = new ArrayList<>();
         results.addAll(repoResults);
@@ -198,14 +202,25 @@ public class StateTestRunner {
             logger.error(result);
         }
 
+        if ((vStats.storageChecks==0) && (vStats.logChecks==0) &&
+                (vStats.balancetChecks==0) && (vStats.outputChecks==0) &&
+                (vStats.blockChecks==0)) {
+            // This generally mean that the test didn't check anything
+            // AccountChecks are considered not indicative of the result of the test
+            logger.info("IRRELEVANT\n");
+        }
         logger.info("\n\n");
         return results;
     }
 
+    public static final byte[] ZERO32_BYTE_ARRAY = new byte[32];
     public Block build(Env env) {
         return new Block(
                 blockFactory.newHeader(
-                        ByteUtil.EMPTY_BYTE_ARRAY, ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentCoinbase(),
+                        // Don't use the empty parent hash because it's used to log and
+                        // when log entries are printed with empty parent hash it throws
+                        // an exception.
+                        ZERO32_BYTE_ARRAY , ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentCoinbase(),
                         EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentDifficulty(), byteArrayToLong(env.getCurrentNumber()),
                         env.getCurrentGasLimit(), 0L, byteArrayToLong(env.getCurrentTimestamp()),
