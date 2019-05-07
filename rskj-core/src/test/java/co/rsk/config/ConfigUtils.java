@@ -12,7 +12,8 @@ public class ConfigUtils {
                 0,
                 10,
                 7,
-                new GasLimitConfig(3000000, 500000, true)
+                new GasLimitConfig(3000000, 500000, true),
+                true
         );
     }
 }

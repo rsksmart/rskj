@@ -65,7 +65,6 @@ import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -1236,7 +1235,8 @@ public class RskContext implements NodeBootstrapper {
                             rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit(),
                             rskSystemProperties.getTargetGasLimit(),
                             rskSystemProperties.getForceTargetGasLimit()
-                    )
+                    ),
+                    rskSystemProperties.isMinerServerFixedClock()
             );
         }
 
@@ -1281,9 +1281,7 @@ public class RskContext implements NodeBootstrapper {
 
     private MinerClock getMinerClock() {
         if (minerClock == null) {
-            minerClock = new MinerClock(
-                    getRskSystemProperties().getBlockchainConfig() instanceof RegTestConfig, Clock.systemUTC()
-            );
+            minerClock = new MinerClock(getMiningConfig().isFixedClock(), Clock.systemUTC());
         }
 
         return minerClock;
