@@ -18,13 +18,13 @@
 
 package co.rsk.net.utils;
 
-import co.rsk.config.TestSystemProperties;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.Utils;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -57,7 +57,7 @@ public class TransactionUtils {
     }
 
     public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
-        Transaction tx = new Transaction(new TestSystemProperties(), toAddress, value, nonce, gasPrice, gasLimit);
+        Transaction tx = new Transaction(toAddress, value, nonce, gasPrice, gasLimit, Constants.REGTEST_CHAIN_ID);
         tx.sign(privateKey);
         return tx;
     }

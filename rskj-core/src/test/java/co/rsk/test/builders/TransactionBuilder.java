@@ -18,11 +18,11 @@
 
 package co.rsk.test.builders;
 
-import co.rsk.config.TestSystemProperties;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -92,8 +92,8 @@ public class TransactionBuilder {
 
     public Transaction build() {
         Transaction tx = new Transaction(
-                new TestSystemProperties(), receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
-                value, nonce, gasPrice, gasLimit, data);
+                receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
+                value, nonce, gasPrice, gasLimit, data, Constants.REGTEST_CHAIN_ID);
         tx.sign(sender.getEcKey().getPrivKeyBytes());
 
         if (this.immutable) {

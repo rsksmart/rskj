@@ -22,7 +22,11 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.*;
+import org.ethereum.config.Constants;
+import org.ethereum.core.Account;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
@@ -42,11 +46,13 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     private final RskSystemProperties config;
     private final Wallet wallet;
     private final TransactionPool transactionPool;
+    private final Constants constants;
 
     public EthModuleTransactionBase(RskSystemProperties config, Wallet wallet, TransactionPool transactionPool) {
         this.config = config;
         this.wallet = wallet;
         this.transactionPool = transactionPool;
+        this.constants = config.getBlockchainConfig().getCommonConstants();
     }
 
     @Override
@@ -66,7 +72,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
             synchronized (transactionPool) {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
-                Transaction tx = new Transaction(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
+                Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, constants.getChainId());
                 tx.sign(account.getEcKey().getPrivKeyBytes());
                 transactionPool.addTransaction(tx.toImmutableTransaction())
                         .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
