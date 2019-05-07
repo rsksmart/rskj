@@ -96,7 +96,7 @@ public class BridgeUtilsTest {
         tx2.addOutput(Coin.COIN, federationAddress);
         TransactionInput txIn = new TransactionInput(params, tx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
-        signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), bridgeConstants.getFederatorPrivateKeys(), txIn, tx2, bridgeConstants);
+        signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx2, bridgeConstants);
         assertFalse(BridgeUtils.isLockTx(tx2, federation, btcContext, bridgeConstants));
 
         // Tx sending 1 btc to the federation, is a lock tx
@@ -336,19 +336,19 @@ public class BridgeUtilsTest {
     @Test
     public void isFreeBridgeTxTrue() {
         config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
-        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxOtherContract() {
         config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
-        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxFreeTxDisabled() {
         config.setBlockchainConfig(new RegtestBlockchainNetConfig(ActivationConfigsForTest.all()));
-        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
@@ -402,7 +402,7 @@ public class BridgeUtilsTest {
         NetworkParameters params = RegTestParams.get();
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         Federation federation = bridgeConstants.getGenesisFederation();
-        List<BtcECKey> federationPrivateKeys = bridgeConstants.getFederatorPrivateKeys();
+        List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
 
         BtcTransaction releaseTx1 = new BtcTransaction(params);

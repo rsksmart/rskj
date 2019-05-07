@@ -19,12 +19,14 @@
 
 package org.ethereum.config;
 
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.*;
 import co.rsk.core.BlockDifficulty;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.List;
 
 /**
  * Describes different constants specific for a blockchain
@@ -181,7 +183,7 @@ public class Constants {
         );
     }
 
-    public static Constants devnet() {
+    public static Constants devnetWithFederation(List<BtcECKey> federationPublicKeys) {
         return new Constants(
                 DEVNET_CHAIN_ID,
                 false,
@@ -190,7 +192,7 @@ public class Constants {
                 new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
                 BigInteger.valueOf(50),
                 540,
-                BridgeDevNetConstants.getInstance()
+                new BridgeDevNetConstants(federationPublicKeys)
         );
     }
 
@@ -217,6 +219,19 @@ public class Constants {
                 BigInteger.valueOf(2048),
                 0,
                 BridgeRegTestConstants.getInstance()
+        );
+    }
+
+    public static Constants regtestWithFederation(List<BtcECKey> genesisFederationPublicKeys) {
+        return new Constants(
+                REGTEST_CHAIN_ID,
+                true,
+                10,
+                new BlockDifficulty(BigInteger.ONE),
+                BlockDifficulty.ZERO,
+                BigInteger.valueOf(2048),
+                0,
+                new BridgeRegTestConstants(genesisFederationPublicKeys)
         );
     }
 }

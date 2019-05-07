@@ -104,7 +104,7 @@ public class BridgeTest {
     public static void setUpBeforeClass() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
-        BtcECKey fedBTCPrivateKey = bridgeConstants.getFederatorPrivateKeys().get(0);
+        BtcECKey fedBTCPrivateKey = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0);
         fedECPrivateKey = ECKey.fromPrivate(fedBTCPrivateKey.getPrivKey());
     }
 
@@ -1061,7 +1061,7 @@ public class BridgeTest {
                 0,
                 Bridge.UPDATE_COLLECTIONS,
                 Constants.REGTEST_CHAIN_ID);
-        rskTx.sign(bridgeConstants.getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        rskTx.sign(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
 
@@ -1159,7 +1159,7 @@ public class BridgeTest {
             );
         }
 
-        rskTx.sign(bridgeConstants.getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        rskTx.sign(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
 
         BlockGenerator blockGenerator = new BlockGenerator();
         Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));

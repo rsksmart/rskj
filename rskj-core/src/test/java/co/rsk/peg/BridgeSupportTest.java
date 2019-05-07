@@ -800,19 +800,19 @@ public class BridgeSupportTest {
 
     @Test
     public void addSignatureWithLessSignaturesThanExpected() throws Exception {
-        List<BtcECKey> keys = Lists.newArrayList(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0));
+        List<BtcECKey> keys = Arrays.asList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 0, true, false, "InvalidParameters");
     }
 
     @Test
     public void addSignatureWithMoreSignaturesThanExpected() throws Exception {
-        List<BtcECKey> keys = Lists.newArrayList(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0));
+        List<BtcECKey> keys = Arrays.asList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 2, true, false, "InvalidParameters");
     }
 
     @Test
     public void addSignatureNonCanonicalSignature() throws Exception {
-        List<BtcECKey> keys = Lists.newArrayList(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0));
+        List<BtcECKey> keys = Arrays.asList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, false, false, "InvalidParameters");
     }
 
@@ -851,7 +851,7 @@ public class BridgeSupportTest {
         byte[] program = chunks.get(chunks.size() - 1).data;
         Script redeemScript = new Script(program);
         Sha256Hash sigHash = btcTx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
-        BtcECKey privateKeyToSignWith = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0);
+        BtcECKey privateKeyToSignWith = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0);
 
         BtcECKey.ECDSASignature sig = privateKeyToSignWith.sign(sigHash);
         List derEncodedSigs = Collections.singletonList(sig.encodeToDER());
@@ -882,20 +882,20 @@ public class BridgeSupportTest {
 
     @Test
     public void addSignatureTwice() throws Exception {
-        List<BtcECKey> keys = Lists.newArrayList(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0));
+        List<BtcECKey> keys = Arrays.asList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, true, true, "PartiallySigned");
     }
 
     @Test
     public void addSignatureOneSignature() throws Exception {
-        List<BtcECKey> keys = Lists.newArrayList(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0));
+        List<BtcECKey> keys = Arrays.asList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, true, false, "PartiallySigned");
     }
 
     @Test
     public void addSignatureTwoSignatures() throws Exception {
-        List<BtcECKey> federatorPrivateKeys = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys();
-        List<BtcECKey> keys = Lists.newArrayList(federatorPrivateKeys.get(0), federatorPrivateKeys.get(1));
+        List<BtcECKey> federatorPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
+        List<BtcECKey> keys = Arrays.asList(federatorPrivateKeys.get(0), federatorPrivateKeys.get(1));
         addSignatureFromValidFederator(keys, 1, true, false, "FullySigned");
     }
 
@@ -938,8 +938,8 @@ public class BridgeSupportTest {
         // Generate valid signatures for inputs
         List<byte[]> derEncodedSigsFirstFed = new ArrayList<>();
         List<byte[]> derEncodedSigsSecondFed = new ArrayList<>();
-        BtcECKey privateKeyOfFirstFed = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0);
-        BtcECKey privateKeyOfSecondFed = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(1);
+        BtcECKey privateKeyOfFirstFed = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0);
+        BtcECKey privateKeyOfSecondFed = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(1);
 
         BtcECKey.ECDSASignature lastSig = null;
         for (int i = 0; i < 3; i++) {
@@ -1419,12 +1419,12 @@ public class BridgeSupportTest {
         Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
         Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
         // Sign by federator 0
-        BtcECKey.ECDSASignature sig0 = bridgeConstants.getFederatorPrivateKeys().get(0).sign(sighash);
+        BtcECKey.ECDSASignature sig0 = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).sign(sighash);
         TransactionSignature txSig0 = new TransactionSignature(sig0, BtcTransaction.SigHash.ALL, false);
         int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, federation.getBtcPublicKeys().get(0));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig0.encodeToBitcoin(), sigIndex0, 1, 1);
         // Sign by federator 1
-        BtcECKey.ECDSASignature sig1 = bridgeConstants.getFederatorPrivateKeys().get(1).sign(sighash);
+        BtcECKey.ECDSASignature sig1 = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(1).sign(sighash);
         TransactionSignature txSig1 = new TransactionSignature(sig1, BtcTransaction.SigHash.ALL, false);
         int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, federation.getBtcPublicKeys().get(1));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig1.encodeToBitcoin(), sigIndex1, 1, 1);

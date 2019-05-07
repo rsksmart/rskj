@@ -19,6 +19,9 @@
 
 package org.ethereum.config;
 
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.config.BridgeDevNetConstants;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
@@ -63,6 +66,7 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_BLOCKCHAIN_CONFIG = "blockchain.config";
     public static final String PROPERTY_BC_CONFIG_NAME = PROPERTY_BLOCKCHAIN_CONFIG + ".name";
+    public static final String PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS = "genesis_constants.federationPublicKeys";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_BASE_PATH = "database.dir";
     public static final String PROPERTY_DB_RESET = "database.reset";
@@ -170,10 +174,14 @@ public abstract class SystemProperties {
                     constants = Constants.testnet();
                     break;
                 case "devnet":
-                    constants = Constants.devnet();
+                    constants = Constants.devnetWithFederation(
+                            getGenesisFederationPublicKeys().orElse(BridgeDevNetConstants.DEVNET_FEDERATION_PUBLIC_KEYS)
+                    );
                     break;
                 case "regtest":
-                    constants = Constants.regtest();
+                    constants = Constants.regtestWithFederation(
+                            getGenesisFederationPublicKeys().orElse(BridgeRegTestConstants.REGTEST_FEDERATION_PUBLIC_KEYS)
+                    );
                     break;
                 default:
                     throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
@@ -648,5 +656,17 @@ public abstract class SystemProperties {
         } catch (UnknownHostException e) {
             throw new IllegalArgumentException("Invalid address: '" + ipToParse + "'", e);
         }
+    }
+
+    private Optional<List<BtcECKey>> getGenesisFederationPublicKeys() {
+        if (!configFromFiles.hasPath(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS)) {
+            return Optional.empty();
+        }
+
+        List<String> configFederationPublicKeys = configFromFiles.getStringList(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS);
+        return Optional.of(
+                configFederationPublicKeys.stream()
+                        .map(key -> BtcECKey.fromPublicOnly(Hex.decode(key))).collect(Collectors.toList())
+        );
     }
 }

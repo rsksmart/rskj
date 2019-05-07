@@ -50,7 +50,7 @@ import java.util.List;
 
 public class RskForksBridgeTest {
     private static ECKey fedECPrivateKey = ECKey.fromPrivate(
-            BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKey()
+            BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKey()
     );
 
     private Repository repository;

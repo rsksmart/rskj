@@ -81,7 +81,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 null,
                 Constants.REGTEST_CHAIN_ID);
         BridgeRegTestConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
-        tx4.sign(bridgeRegTestConstants.getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        tx4.sign(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(blockchainConfig);
 
