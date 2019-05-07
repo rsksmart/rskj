@@ -19,9 +19,6 @@
 
 package org.ethereum.config.blockchain.testnet;
 
-import co.rsk.core.BlockDifficulty;
-import org.ethereum.core.BlockHeader;
-
 public class TestNetDifficultyDropEnabledConfig extends TestNetBeforeBridgeSyncConfig {
 
     @Override
@@ -30,13 +27,7 @@ public class TestNetDifficultyDropEnabledConfig extends TestNetBeforeBridgeSyncC
     }
 
     @Override
-    public BlockDifficulty calcDifficulty(BlockHeader currentBlockHeader, BlockHeader parentBlockHeader) {
-        long tenMinutesInSeconds = 600;
-        // If more than 10 minutes, reset to minimum difficulty
-        if (currentBlockHeader.getTimestamp() >= parentBlockHeader.getTimestamp() + tenMinutesInSeconds) {
-            return getConstants().getMinimumDifficulty();
-        }
-
-        return getBlockDifficulty(currentBlockHeader, parentBlockHeader, getConstants());
+    public boolean difficultyDropEnabled() {
+        return true;
     }
 }

@@ -20,10 +20,8 @@
 package org.ethereum.config.blockchain.testnet;
 
 
-import co.rsk.core.BlockDifficulty;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.GenesisConfig;
-import org.ethereum.core.BlockHeader;
 
 public class TestNetBeforeBridgeSyncConfig extends GenesisConfig {
 
@@ -78,12 +76,12 @@ public class TestNetBeforeBridgeSyncConfig extends GenesisConfig {
     }
 
     @Override
-    public boolean isRskip98() {
+    public boolean isRskip97() {
         return true;
     }
 
-    @Override //Rskip97
-    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
-        return getBlockDifficulty(curBlock, parent, getConstants());
+    @Override
+    public boolean isRskip98() {
+        return true;
     }
 }

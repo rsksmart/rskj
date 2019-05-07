@@ -19,12 +19,8 @@
 
 package org.ethereum.config.blockchain;
 
-import co.rsk.core.BlockDifficulty;
 import co.rsk.peg.Federation;
 import org.ethereum.config.Constants;
-import org.ethereum.core.BlockHeader;
-
-import java.math.BigInteger;
 
 /**
  * Created by Anton Nashatyrev on 25.02.2016.
@@ -47,21 +43,4 @@ public class GenesisConfig extends AbstractConfig {
     public Federation getGenesisFederation() {
         return getConstants().getBridgeConstants().getGenesisFederation();
     }
-
-    @Override
-    protected BigInteger getCalcDifficultyMultiplier(BlockHeader curBlock, BlockHeader parent) {
-        return BigInteger.valueOf(curBlock.getTimestamp() >= parent.getTimestamp() +
-                getConstants().getDurationLimit() ? -1 : 1);
-    }
-
-    @Override
-    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
-        // If more than 10 minutes, reset to minimum difficulty to allow private mining
-        if (curBlock.getTimestamp() >= parent.getTimestamp() + 600) {
-            return getConstants().getMinimumDifficulty();
-        }
-
-        return super.calcDifficulty(curBlock, parent);
-    }
-
 }

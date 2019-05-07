@@ -19,9 +19,6 @@
 
 package org.ethereum.config;
 
-import co.rsk.core.BlockDifficulty;
-import org.ethereum.core.BlockHeader;
-
 /**
  * Describes constants and algorithms used for a specific blockchain at specific stage
  *
@@ -34,12 +31,9 @@ public interface BlockchainConfig {
      */
     Constants getConstants();
 
-    /**
-     * Calculates the difficulty for the block depending on the parent
-     */
-    BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent);
-
     boolean areBridgeTxsFree();
+
+    boolean difficultyDropEnabled();
 
     boolean isRskip90();
     
@@ -60,6 +54,8 @@ public interface BlockchainConfig {
     boolean isRskip93();
 
     boolean isRskip94();
+
+    boolean isRskip97();
 
     boolean isRskip98();
 

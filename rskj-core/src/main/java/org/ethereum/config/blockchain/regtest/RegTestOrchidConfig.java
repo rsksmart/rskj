@@ -19,9 +19,6 @@
 
 package org.ethereum.config.blockchain.regtest;
 
-import co.rsk.core.BlockDifficulty;
-import org.ethereum.core.BlockHeader;
-
 public class RegTestOrchidConfig extends RegTestGenesisConfig {
 
     @Override
@@ -66,13 +63,12 @@ public class RegTestOrchidConfig extends RegTestGenesisConfig {
     @Override public boolean isRskip94() { return true; }
 
     @Override
-    public boolean isRskip98() {
+    public boolean isRskip97() {
         return true;
     }
 
-    //RSKIP97
     @Override
-    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
-        return getBlockDifficulty(curBlock, parent, getConstants());
+    public boolean isRskip98() {
+        return true;
     }
 }

@@ -19,9 +19,6 @@
 
 package org.ethereum.config.blockchain.devnet;
 
-import co.rsk.core.BlockDifficulty;
-import org.ethereum.core.BlockHeader;
-
 /**
  * Created by Oscar Guindzberg on 25.10.2016.
  */
@@ -66,13 +63,12 @@ public class DevNetOrchidConfig extends DevNetGenesisConfig {
     @Override public boolean isRskip94() { return true; }
 
     @Override
-    public boolean isRskip98() {
+    public boolean isRskip97() {
         return true;
     }
 
-    //RSKIP97
     @Override
-    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
-        return getBlockDifficulty(curBlock, parent, getConstants());
+    public boolean isRskip98() {
+        return true;
     }
 }
