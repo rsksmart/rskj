@@ -4,10 +4,13 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
+import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.regtest.RegTestSecondForkConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -35,6 +38,17 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     private List<Sha256Hash> merkleBranchHashes;
     private int expectedConfirmations;
 
+    private class DiskAccessRepositoryBlockStore extends RepositoryBlockStore {
+        public DiskAccessRepositoryBlockStore(SystemProperties config, Repository repository, RskAddress contractAddress) {
+            super(config, repository, contractAddress);
+        }
+
+        @Override
+        public synchronized StoredBlock getFromCache(Sha256Hash hash) throws BlockStoreException {
+            return this.get(hash);
+        }
+    }
+
     @Before
     public void setRskipToTrue() {
         config.setBlockchainConfig(new RegTestSecondForkConfig());
@@ -46,30 +60,48 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
         // so that we get even numbers at the end
         System.out.print("Doing an initial pass... ");
         setQuietMode(true);
-        estimateGetBtcTransactionConfirmations("foo", 20, 4000, 750, 1000);
+        estimateGetBtcTransactionConfirmations("foo", 10, 4000, 750, 1000, true);
+        estimateGetBtcTransactionConfirmations("foo", 10, 4000, 750, 1000, false);
         setQuietMode(false);
         System.out.print("Done!\n");
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Weighed() {
+    public void getBtcTransactionConfirmations_Weighed_Cache() {
         final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
         // We always consider the average BTC block case from https://www.blockchain.com/charts/n-transactions-per-block
 
         // One day of BTC blocks
-        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 300, 144, 750, 3000));
+        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 300, 144, 750, 3000, true));
         // Maximum number of confirmations
-        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 10, BridgeSupport.BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH, 750, 3000));
+        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 10, BridgeSupport.BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH, 750, 3000, true));
         // Single confirmation
-        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 10, 0,750,3000));
+        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 10, 0,750,3000, true));
 
         BridgePerformanceTest.addStats(stats);
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Even() {
+    public void getBtcTransactionConfirmations_Weighed_Disk() {
+        final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
+        CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
+
+        // We always consider the average BTC block case from https://www.blockchain.com/charts/n-transactions-per-block
+
+        // One day of BTC blocks
+        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 300, 144, 750, 3000, false));
+        // Maximum number of confirmations
+        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 10, BridgeSupport.BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH, 750, 3000, false));
+        // Single confirmation
+        stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 10, 0,750,3000, false));
+
+        BridgePerformanceTest.addStats(stats);
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_Even_Cache() {
         final String CASE_NAME = "getBtcTransactionConfirmations-even";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -77,7 +109,22 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
         final int MAX_CONFIRMATIONS = 6*24*2;
 
         for (int numConfirmations = 0; numConfirmations <= MAX_CONFIRMATIONS; numConfirmations++) {
-            stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 100, numConfirmations, 750, 3000));
+            stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 100, numConfirmations, 750, 3000, true));
+        }
+
+        BridgePerformanceTest.addStats(stats);
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_Even_Disk() {
+        final String CASE_NAME = "getBtcTransactionConfirmations-even";
+        CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
+
+        // Up to two days of confirmations (average of 6 blocks per hour)
+        final int MAX_CONFIRMATIONS = 6*24*2;
+
+        for (int numConfirmations = 0; numConfirmations <= MAX_CONFIRMATIONS; numConfirmations++) {
+            stats.add(estimateGetBtcTransactionConfirmations(CASE_NAME, 100, numConfirmations, 750, 3000, false));
         }
 
         BridgePerformanceTest.addStats(stats);
@@ -87,7 +134,12 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     public void getBtcTransactionConfirmations_Zero() {
         BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
                 "getBtcTransactionConfirmations-zero",
-                2000, 0, 750, 3000
+                2000, 0, 750, 3000, true
+        ));
+
+        BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
+                "getBtcTransactionConfirmations-zero",
+                2000, 0, 750, 3000, false
         ));
     }
 
@@ -95,14 +147,19 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     public void getBtcTransactionConfirmations_Hundred() {
         BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
                 "getBtcTransactionConfirmations-hundred",
-                2000, 100, 750, 3000
+                2000, 100, 750, 3000, true
+        ));
+
+        BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
+                "getBtcTransactionConfirmations-hundred",
+                2000, 100, 750, 3000, false
         ));
     }
 
     private ExecutionStats estimateGetBtcTransactionConfirmations(
             String caseName,
             int times, int confirmations, int  minTransactions,
-            int maxTransactions) {
+            int maxTransactions, boolean useCache) {
 
         BridgeStorageProviderInitializer storageInitializer = generateBlockChainInitializer(
                 1000,
@@ -112,7 +169,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 maxTransactions
         );
 
-        String name = String.format("%s-%d", caseName, confirmations);
+        String name = String.format("%s-%d-%s", caseName, confirmations, useCache ? "cache" : "disk");
         ExecutionStats stats = new ExecutionStats(name);
 
         executeAndAverage(
@@ -127,6 +184,15 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                     byte[] res = executionResult;
                     int numberOfConfirmations = new BigInteger(executionResult).intValueExact();
                     Assert.assertEquals(expectedConfirmations, numberOfConfirmations);
+                },
+                (EnvironmentBuilder.Environment environment) -> {
+                    if (!useCache) {
+                        Bridge bridge = (Bridge) environment.getContract();
+                        BridgeSupport bridgeSupport = Whitebox.getInternalState(bridge, "bridgeSupport");
+                        Repository repository = Whitebox.getInternalState(bridgeSupport, "rskRepository");
+                        BtcBlockStore diskAccessRepositoryBlockStore = new DiskAccessRepositoryBlockStore(new TestSystemProperties(), repository, PrecompiledContracts.BRIDGE_ADDR);
+                        Whitebox.setInternalState(bridgeSupport, "btcBlockStore", diskAccessRepositoryBlockStore);
+                    }
                 }
         );
 
