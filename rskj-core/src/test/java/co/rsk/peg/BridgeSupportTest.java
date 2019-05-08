@@ -3715,7 +3715,6 @@ public class BridgeSupportTest {
                                                                    bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = new BridgeSupport(BridgeRegTestConstants.getInstance(), provider,  mock(BridgeEventLogger.class),
                                                         track, null, btcBlockStore, mock(BtcBlockChain.class));
-
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
 
         Assert.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE.intValue(), confirmations);
@@ -3783,7 +3782,6 @@ public class BridgeSupportTest {
                                                                    bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = new BridgeSupport(BridgeRegTestConstants.getInstance(), provider,  mock(BridgeEventLogger.class),
                                                         track, null, btcBlockStore, mock(BtcBlockChain.class));
-
         MerkleBranch merkleBranch = mock(MerkleBranch.class);
         when(merkleBranch.proves(btcTransactionHash, blockHeader)).thenReturn(false);
 
