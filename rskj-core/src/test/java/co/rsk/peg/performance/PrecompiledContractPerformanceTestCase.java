@@ -162,6 +162,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
                     value.toByteArray(),
                     null);
             tx.sign(sender.getPrivKeyBytes());
+            tx.setLocalCallTransaction(true);
 
             return tx;
         }
