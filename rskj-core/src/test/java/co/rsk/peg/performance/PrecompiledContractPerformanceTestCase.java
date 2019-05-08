@@ -209,7 +209,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
             }
         }
 
-        Environment initialize(int executionIndex, Transaction tx, int height);
+        Environment initialize(int executionIndex, TxBuilder txBuilder, int height);
         void teardown();
     }
 
@@ -230,7 +230,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
         // Initialize the environment, obtaining a fresh contract ready for execution
         EnvironmentBuilder.Environment environment = testEnvironment.initialize(
                 executionIndex,
-                txBuilder.build(executionIndex),
+                txBuilder,
                 heightProvider.getHeight(executionIndex)
         );
 
