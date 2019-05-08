@@ -70,6 +70,10 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             return base.multiply(randomInRange(min, max));
         }
 
+        public static TxBuilder getZeroValueValueTxBuilderFromFedMember() {
+            return Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey());
+        }
+
         public static BtcBlock generateAndAddBlocks(BtcBlockChain btcBlockChain, int blocksToGenerate) {
             BtcBlock block = btcBlockChain.getChainHead().getHeader();
             int initialHeight = btcBlockChain.getBestChainHeight();
