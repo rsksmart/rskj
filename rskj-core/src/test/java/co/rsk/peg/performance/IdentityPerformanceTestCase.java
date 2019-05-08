@@ -35,7 +35,7 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             @Override
-            public Environment initialize(int executionIndex, Transaction tx, int height) {
+            public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
                 return new Environment(
                         new PrecompiledContracts.Identity(),
                         () -> new BenchmarkedRepository.Statistics()

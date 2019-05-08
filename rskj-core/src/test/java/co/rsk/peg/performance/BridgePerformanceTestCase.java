@@ -159,7 +159,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             }
 
             @Override
-            public Environment initialize(int executionIndex, Transaction tx, int height) {
+            public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
                 RepositoryImpl repository = createRepositoryImpl(config);
                 Repository track = repository.startTracking();
                 BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(executionIndex));
@@ -180,6 +180,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
                 bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
                 Blockchain blockchain = BlockChainBuilder.ofSize(height);
+                Transaction tx = txBuilder.build(executionIndex);
                 bridge.init(
                         tx,
                         blockchain.getBestBlock(),
