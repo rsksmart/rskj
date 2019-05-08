@@ -19,9 +19,9 @@
 
 package co.rsk.pcc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-import junit.framework.AssertionFailedError;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
@@ -71,34 +71,11 @@ public class NativeContractTest {
         config = new TestSystemProperties();
         methodsProvider = () -> Collections.emptyList();
         defaultMethodProvider = () -> Optional.empty();
-        beforeRan = false;
-        afterRan = false;
-
-        contract = new NativeContract(config, new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")) {
-            @Override
-            public List<NativeMethod> getMethods() {
-                return methodsProvider.get();
-            }
-
-            @Override
-            public Optional<NativeMethod> getDefaultMethod() {
-                return defaultMethodProvider.get();
-            }
-
-            @Override
-            public void before() {
-                beforeRan = true;
-            }
-
-            @Override
-            public void after() {
-                afterRan = true;
-            }
-        };
     }
 
     @Test
     public void createsExecutionEnvironmentUponInit() {
+        contract = new EmptyNativeContract(config);
         Assert.assertNull(contract.getExecutionEnvironment());
 
         doInit();
@@ -115,36 +92,50 @@ public class NativeContractTest {
 
     @Test
     public void getGasForDataFailsWhenNoInit() {
+        contract = new EmptyNativeContract(config);
         assertFails(() -> contract.getGasForData(Hex.decode("aabb")));
     }
 
     @Test
     public void getGasForDataZeroWhenNullData() {
+        contract = new EmptyNativeContract(config);
         doInit();
         Assert.assertEquals(0L, contract.getGasForData(null));
     }
 
     @Test
     public void getGasForDataZeroWhenEmptyData() {
+        contract = new EmptyNativeContract(config);
         doInit();
         Assert.assertEquals(0L, contract.getGasForData(null));
     }
 
     @Test
     public void getGasForNullDataAndDefaultMethod() {
-        doInit();
         NativeMethod method = mock(NativeMethod.class);
         when(method.getGas(any(), any())).thenReturn(10L);
-        defaultMethodProvider = () -> Optional.of(method);
+        contract = new EmptyNativeContract(config) {
+            @Override
+            public Optional<NativeMethod> getDefaultMethod() {
+                return Optional.of(method);
+            }
+        };
+        doInit();
         Assert.assertEquals(10L, contract.getGasForData(null));
     }
 
     @Test
     public void getGasForEmptyDataAndDefaultMethod() {
-        doInit();
+        contract = new EmptyNativeContract(config);
         NativeMethod method = mock(NativeMethod.class);
         when(method.getGas(any(), any())).thenReturn(10L);
-        defaultMethodProvider = () -> Optional.of(method);
+        contract = new EmptyNativeContract(config) {
+            @Override
+            public Optional<NativeMethod> getDefaultMethod() {
+                return Optional.of(method);
+            }
+        };
+        doInit();
         Assert.assertEquals(10L, contract.getGasForData(new byte[]{}));
     }
 
@@ -437,4 +428,34 @@ public class NativeContractTest {
     private void assertContractExecutionFails(String hexData) {
         assertFails(() -> contract.execute(Hex.decode(hexData)));
     }
+
+    static class EmptyNativeContract extends NativeContract {
+
+    boolean beforeRan = false;
+    boolean afterRan = false;
+
+        EmptyNativeContract(RskSystemProperties config){
+            super(config, new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        }
+
+        @Override
+        public List<NativeMethod> getMethods() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public Optional<NativeMethod> getDefaultMethod() {
+            return Optional.empty();
+        }
+
+        @Override
+        public void before() {
+            beforeRan = true;
+        }
+
+        @Override
+        public void after() {
+            afterRan = true;
+        }
+    };
 }
