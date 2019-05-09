@@ -42,11 +42,12 @@ import static org.junit.Assert.assertNotEquals;
 public class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final byte chainId = config.getNetworkConstants().getChainId();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {
-        if (config.getBlockchainConfig().getCommonConstants().getChainId() != 0)
+        if (chainId != 0)
             return;
 
         // cat --> 79b08ad8787060333663d19704909ee7b1903e58
@@ -226,9 +227,9 @@ public class TransactionTest {
                 {
                     Repository track = repository.startTracking();
 
-                    Transaction txConst = CallTransaction.createCallTransaction(config, 0, 0, 100000000000000L,
+                    Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
                             new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
-                            CallTransaction.Function.fromSignature("get"));
+                            CallTransaction.Function.fromSignature("get"), chainId);
                     txConst.sign(new byte[32]);
 
                     Block bestBlock = block;
@@ -312,36 +313,36 @@ public class TransactionTest {
 
     @Test
     public void isContractCreationWhenReceiveAddressIsNull() {
-        Transaction tx = new Transaction(config, null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction(null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsEmptyString() {
-        Transaction tx = new Transaction(config, "", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction("", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test(expected = RuntimeException.class)
     public void isContractCreationWhenReceiveAddressIs00() {
-        new Transaction(config, "00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        new Transaction("00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
-        Transaction tx = new Transaction(config, "0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction("0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsCowAddress() {
-        Transaction tx = new Transaction(config, "cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
-        Transaction tx = new Transaction(config, PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
         Assert.assertFalse(tx.isContractCreation());
     }
 

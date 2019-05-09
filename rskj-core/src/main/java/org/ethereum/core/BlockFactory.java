@@ -24,7 +24,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
-import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -38,10 +39,10 @@ import java.util.stream.Collectors;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
-    private final BlockchainNetConfig blockchainConfig;
+    private final ActivationConfig activationConfig;
 
-    public BlockFactory(BlockchainNetConfig blockchainConfig) {
-        this.blockchainConfig = blockchainConfig;
+    public BlockFactory(ActivationConfig activationConfig) {
+        this.activationConfig = activationConfig;
     }
 
     public Block cloneBlockForModification(Block block) {
@@ -94,7 +95,7 @@ public class BlockFactory {
             Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
             byte[] bitcoinMergedMiningCoinbaseTransaction,
             byte[] minimumGasPrice, int uncleCount) {
-        boolean useRskip92Encoding = blockchainConfig.getConfigForBlock(number).isRskip92();
+        boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, number);
         return new BlockHeader(
                 parentHash, unclesHash, new RskAddress(coinbase),
                 stateRoot, txTrieRoot, receiptTrieRoot,
@@ -185,7 +186,7 @@ public class BlockFactory {
             bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
         }
 
-        boolean useRskip92Encoding = blockchainConfig.getConfigForBlock(number).isRskip92();
+        boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, number);
         return new BlockHeader(
                 parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, logsBloom, difficulty,

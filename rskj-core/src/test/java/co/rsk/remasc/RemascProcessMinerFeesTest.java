@@ -32,8 +32,8 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
-import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
@@ -80,10 +80,7 @@ public class RemascProcessMinerFeesTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
-        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
-        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        RemascProcessMinerFeesTest.config.setBlockchainConfig(blockchainConfig);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 
         accountsAddressesUpToD = new LinkedList<>();
@@ -95,8 +92,8 @@ public class RemascProcessMinerFeesTest {
 
     @Before
     public void setup() {
-        blockFactory = new BlockFactory(config.getBlockchainConfig());
-        stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        blockFactory = new BlockFactory(config.getActivationConfig());
+        stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
         blockchainBuilder = new BlockChainBuilder()
                 .setStateRootHandler(stateRootHandler)
                 .setGenesis(genesisBlock)
@@ -768,7 +765,7 @@ public class RemascProcessMinerFeesTest {
                 PrecompiledContracts.REMASC_ADDR.getBytes() ,
                 Coin.valueOf(txValue*2).getBytes(),
                 null,
-                config.getBlockchainConfig().getCommonConstants().getChainId());
+                config.getNetworkConstants().getChainId());
         tx.sign(cowKey.getPrivKeyBytes());
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                 PegTestUtils.createHash3(), TestUtils.randomAddress(), Collections.emptyList(), null, tx);
@@ -864,7 +861,7 @@ public class RemascProcessMinerFeesTest {
                 null ,
                 Coin.ZERO.getBytes(),
                 Hex.decode("6060604052346000575b6077806100176000396000f30060606040525b3460005760495b6000600890508073ffffffffffffffffffffffffffffffffffffffff166040518090506000604051808303816000866161da5a03f1915050505b50565b0000a165627a7a7230582036692fbb1395da1688af0189be5b0ac18df3d93a2402f4fc8f927b31c1baa2460029"),
-                config.getBlockchainConfig().getCommonConstants().getChainId());
+                config.getNetworkConstants().getChainId());
         txCreateContract.sign(cowKey.getPrivKeyBytes());
         long txCallRemascGasLimit = 21828;
         Transaction txCallRemasc = new Transaction(
@@ -874,7 +871,7 @@ public class RemascProcessMinerFeesTest {
                 Hex.decode("da7ce79725418f4f6e13bf5f520c89cec5f6a974") ,
                 Coin.ZERO.getBytes(),
                 null,
-                config.getBlockchainConfig().getCommonConstants().getChainId());
+                config.getNetworkConstants().getChainId());
         txCallRemasc.sign(cowKey.getPrivKeyBytes());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
@@ -906,9 +903,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void siblingIncludedOneBlockLater() {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
-        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
@@ -936,9 +931,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void oneSiblingIncludedOneBlockLaterAndAnotherIncludedRightAfter() {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
-        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
@@ -972,9 +965,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void siblingIncludedSevenBlocksLater() {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
-        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
@@ -1007,9 +998,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void siblingsFeeForMiningBlockMustBeRoundedAndTheRoundedSurplusBurned() {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
-        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
         long minerFee = 21000;
@@ -1051,9 +1040,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void unclesPublishingFeeMustBeRoundedAndTheRoundedSurplusBurned() {
         RskSystemProperties config = spy(new TestSystemProperties());
-        BlockchainNetConfig blockchainConfig = spy(new RegTestGenesisConfig());
-        when(config.getBlockchainConfig()).thenReturn(blockchainConfig);
-        when(((RegTestGenesisConfig) blockchainConfig).isRskip85()).thenReturn(false);
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
         long minerFee = 21000;
@@ -1113,7 +1100,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     private void validateFederatorsBalanceIsCorrect(Repository repository, long federationReward, Block executionBlock) {
-        RemascFederationProvider provider = new RemascFederationProvider(config, repository, executionBlock);
+        RemascFederationProvider provider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository, executionBlock);
 
         int nfederators = provider.getFederationSize();
 

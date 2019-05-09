@@ -18,9 +18,9 @@
 
 package org.ethereum.validator;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
@@ -34,8 +34,7 @@ import static org.junit.Assert.assertTrue;
  * @since 02.23.2016
  */
 public class ParentGasLimitRuleTest {
-    private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
     private ParentGasLimitRule rule = new ParentGasLimitRule(1024);
 
     @Test // pass rule

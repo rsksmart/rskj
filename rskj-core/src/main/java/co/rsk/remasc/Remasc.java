@@ -19,11 +19,12 @@
 package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
@@ -44,7 +45,8 @@ import java.util.stream.Collectors;
 public class Remasc {
     private static final Logger logger = LoggerFactory.getLogger(Remasc.class);
 
-    private final RskSystemProperties config;
+    private final Constants constants;
+    private final ActivationConfig activationConfig;
     private final Repository repository;
     private final BlockStore blockStore;
     private final RemascConfig remascConstants;
@@ -55,8 +57,16 @@ public class Remasc {
     private final RemascStorageProvider provider;
     private final RemascFeesPayer feesPayer;
 
-    public Remasc(RskSystemProperties config, Repository repository, BlockStore blockStore, RemascConfig remascConstants, Transaction executionTx, RskAddress contractAddress, Block executionBlock, List<LogInfo> logs) {
-        this.config = config;
+    public Remasc(
+            Constants constants,
+            ActivationConfig activationConfig,
+            Repository repository,
+            BlockStore blockStore,
+            RemascConfig remascConstants,
+            Transaction executionTx,
+            RskAddress contractAddress,
+            Block executionBlock,
+            List<LogInfo> logs) {
         this.repository = repository;
         this.blockStore = blockStore;
         this.remascConstants = remascConstants;
@@ -66,6 +76,8 @@ public class Remasc {
 
         this.provider = new RemascStorageProvider(repository, contractAddress);
         this.feesPayer = new RemascFeesPayer(repository, contractAddress);
+        this.constants = constants;
+        this.activationConfig = activationConfig;
     }
 
     public void save() {
@@ -93,7 +105,6 @@ public class Remasc {
         }
 
         long blockNbr = executionBlock.getNumber();
-        BlockchainConfig configForBlock = config.getBlockchainConfig().getConfigForBlock(blockNbr);
 
         long processingBlockNumber = blockNbr - remascConstants.getMaturity();
         if (processingBlockNumber < 1 ) {
@@ -101,7 +112,7 @@ public class Remasc {
             return;
         }
 
-        int uncleGenerationLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        int uncleGenerationLimit = constants.getUncleGenerationLimit();
         Deque<Map<Long, List<Sibling>>> descendantsBlocks = new LinkedList<>();
 
         // this search can be optimized if have certainty that the execution block is not in a fork
@@ -140,9 +151,9 @@ public class Remasc {
 
         // Takes from rewardBalance this block's height reward.
         Coin syntheticReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
-        boolean isRskip85Enabled = configForBlock.isRskip85();
+        boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, blockNbr);
         if (isRskip85Enabled) {
-            BigInteger minimumPayableGas = configForBlock.getConstants().getMinimumPayableGas();
+            BigInteger minimumPayableGas = constants.getMinimumPayableGas();
             Coin minPayableFees = executionBlock.getMinimumGasPrice().multiply(minimumPayableGas);
             if (syntheticReward.compareTo(minPayableFees) < 0) {
                 logger.debug("Synthetic Reward: {} is lower than minPayableFees: {} at block: {}",
@@ -158,7 +169,7 @@ public class Remasc {
         Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
         syntheticReward = syntheticReward.subtract(payToRskLabs);
-        Coin payToFederation = payToFederation(configForBlock, isRskip85Enabled, processingBlock, processingBlockHeader, syntheticReward);
+        Coin payToFederation = payToFederation(constants, isRskip85Enabled, processingBlock, processingBlockHeader, syntheticReward);
         syntheticReward = syntheticReward.subtract(payToFederation);
 
         if (!siblings.isEmpty()) {
@@ -175,8 +186,8 @@ public class Remasc {
         }
     }
 
-    private Coin payToFederation(BlockchainConfig configForBlock, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config, repository, processingBlock);
+    private Coin payToFederation(Constants constants, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
+        RemascFederationProvider federationProvider = new RemascFederationProvider(activationConfig, constants.getBridgeConstants(), repository, processingBlock);
         Coin federationReward = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
         Coin payToFederation = provider.getFederationBalance().add(federationReward);
@@ -187,7 +198,7 @@ public class Remasc {
         Coin restToLastFederator = payAndRemainderToFederator[1];
 
         if (isRskip85Enabled) {
-            BigInteger minimumFederatorPayableGas = configForBlock.getConstants().getFederatorMinimumPayableGas();
+            BigInteger minimumFederatorPayableGas = constants.getFederatorMinimumPayableGas();
             Coin minPayableFederatorFees = executionBlock.getMinimumGasPrice().multiply(minimumFederatorPayableGas);
             if (payToFederator.compareTo(minPayableFederatorFees) < 0) {
                 provider.setFederationBalance(payToFederation);

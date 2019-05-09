@@ -264,7 +264,7 @@ public class MinerManagerTest {
         SimpleEthereum ethereum = new SimpleEthereum();
         ethereum.repository = repository;
         ethereum.blockchain = blockchain;
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         return new MinerServerImpl(
                 config,
@@ -278,7 +278,7 @@ public class MinerManagerTest {
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         new BlockValidationRuleDummy(),
                         config,
                         null,

@@ -20,17 +20,15 @@
 package org.ethereum.config;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.config.BridgeDevNetConstants;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.ConfigLoader;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.HardForkActivationConfig;
-import org.ethereum.config.net.DevNetConfig;
-import org.ethereum.config.net.MainNetConfig;
-import org.ethereum.config.net.RegTestConfig;
-import org.ethereum.config.net.TestNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.net.p2p.P2pHandler;
@@ -40,11 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -71,9 +64,8 @@ import java.util.stream.Collectors;
 public abstract class SystemProperties {
     private static Logger logger = LoggerFactory.getLogger("general");
 
-    public static final String PROPERTY_BC_CONFIG_NAME = "blockchain.config.name";
-    // TODO: define a proper name for this config setting
-    public static final String PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME = "blockchain.config.hardforkActivationHeights";
+    public static final String PROPERTY_BLOCKCHAIN_CONFIG = "blockchain.config";
+    public static final String PROPERTY_BC_CONFIG_NAME = PROPERTY_BLOCKCHAIN_CONFIG + ".name";
     public static final String PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS = "genesis_constants.federationPublicKeys";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_BASE_PATH = "database.dir";
@@ -95,16 +87,6 @@ public abstract class SystemProperties {
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
     private static final String DEFAULT_BLOCKS_LOADER = "";
 
-
-
-    /**
-     * Marks config accessor methods which need to be called (for value validation)
-     * upon config creation or modification
-     */
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    private @interface ValidateMe {}
-
     protected final Config configFromFiles;
 
     // mutable options for tests
@@ -120,7 +102,9 @@ public abstract class SystemProperties {
     private Boolean discoveryEnabled = null;
 
     protected BlockchainNetConfig blockchainConfig;
-    
+    private ActivationConfig activationConfig;
+    private Constants constants;
+
     protected SystemProperties(ConfigLoader loader) {
         try {
             this.configFromFiles = loader.getConfig();
@@ -128,7 +112,6 @@ public abstract class SystemProperties {
                     "Config trace: {}",
                     configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
             );
-            validateConfig();
 
             Properties props = new Properties();
             try (InputStream is = getClass().getResourceAsStream("/version.properties")) {
@@ -161,19 +144,10 @@ public abstract class SystemProperties {
         return configFromFiles;
     }
 
-    private void validateConfig() {
-        for (Method method : getClass().getMethods()) {
-            try {
-                if (method.isAnnotationPresent(ValidateMe.class)) {
-                    method.invoke(this);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Error validating config method: " + method, e);
-            }
-        }
-    }
-
-    @ValidateMe
+    /**
+     * @deprecated use {@link ActivationConfig} instead, and prefer constructor injection to simplify mocking
+     */
+    @Deprecated
     public synchronized BlockchainNetConfig getBlockchainConfig() {
         if (blockchainConfig == null) {
             blockchainConfig = buildBlockchainConfig();
@@ -182,59 +156,55 @@ public abstract class SystemProperties {
         return blockchainConfig;
     }
 
-    protected BlockchainNetConfig buildBlockchainConfig() {
-        BlockchainNetConfig blockchainConfig;
-        String netName = netName();
-        if (netName != null && configFromFiles.hasPath("blockchain.config.class")) {
-            throw new RuntimeException(String.format(
-                    "Only one of two options should be defined: '%s' and 'blockchain.config.class'",
-                    PROPERTY_BC_CONFIG_NAME)
-            );
-        }
-        if (netName != null) {
-            switch(netName) {
-                case "main":
-                    blockchainConfig = new MainNetConfig();
-                    break;
-                case "testnet":
-                    blockchainConfig = new TestNetConfig();
-                    break;
-                case "devnet":
-                    blockchainConfig = DevNetConfig.getFromConfig(getHardForkActivationConfig(), getGenesisFederationPublicKeys());
-                    break;
-                case "regtest":
-                    blockchainConfig = RegTestConfig.getFromConfig(getHardForkActivationConfig(), getGenesisFederationPublicKeys());
-                    break;
-                default:
-                    throw new RuntimeException(String.format(
-                            "Unknown value for '%s': '%s'",
-                            PROPERTY_BC_CONFIG_NAME,
-                            netName)
-                    );
-            }
-            return blockchainConfig;
+    public ActivationConfig getActivationConfig() {
+        if (activationConfig == null) {
+            activationConfig = ActivationConfig.read(configFromFiles.getConfig(PROPERTY_BLOCKCHAIN_CONFIG));
         }
 
-        String className = configFromFiles.getString("blockchain.config.class");
-        try {
-            Class<? extends BlockchainNetConfig> aClass = (Class<? extends BlockchainNetConfig>) Class.forName(className);
-            blockchainConfig = aClass.newInstance();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' not found" , e);
-        } catch (ClassCastException e) {
-            throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' is not instance of org.ethereum.config.BlockchainForkConfig" , e);
-        } catch (InstantiationException|IllegalAccessException e) {
-            throw new RuntimeException("The class specified via blockchain.config.class '" + className + "' couldn't be instantiated (check for default constructor and its accessibility)" , e);
-        }
-        return blockchainConfig;
+        return activationConfig;
     }
 
+    public Constants getNetworkConstants() {
+        if (constants == null) {
+            switch (netName()) {
+                case "main":
+                    constants = Constants.mainnet();
+                    break;
+                case "testnet":
+                    constants = Constants.testnet();
+                    break;
+                case "devnet":
+                    constants = Constants.devnetWithFederation(
+                            getGenesisFederationPublicKeys().orElse(BridgeDevNetConstants.DEVNET_FEDERATION_PUBLIC_KEYS)
+                    );
+                    break;
+                case "regtest":
+                    constants = Constants.regtestWithFederation(
+                            getGenesisFederationPublicKeys().orElse(BridgeRegTestConstants.REGTEST_FEDERATION_PUBLIC_KEYS)
+                    );
+                    break;
+                default:
+                    throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
+            }
+        }
+
+        return constants;
+    }
+
+    private BlockchainNetConfig buildBlockchainConfig() {
+        return new BlockchainNetConfig(getNetworkConstants(), getActivationConfig());
+    }
+
+    /**
+     * @deprecated this method mutates state that should never change, and so it has been deprecated.
+     *             use {@link ActivationConfig} and mocking for testing
+     */
+    @Deprecated
     @VisibleForTesting
     public void setBlockchainConfig(BlockchainNetConfig config) {
         blockchainConfig = config;
     }
 
-    @ValidateMe
     public boolean isPeerDiscoveryEnabled() {
         return discoveryEnabled == null ? configFromFiles.getBoolean("peer.discovery.enabled") : discoveryEnabled;
     }
@@ -243,34 +213,28 @@ public abstract class SystemProperties {
         this.discoveryEnabled = discoveryEnabled;
     }
 
-    @ValidateMe
     public int peerConnectionTimeout() {
         return configFromFiles.getInt("peer.connection.timeout") * 1000;
     }
 
-    @ValidateMe
     public int defaultP2PVersion() {
         return configFromFiles.hasPath("peer.p2p.version") ? configFromFiles.getInt("peer.p2p.version") : P2pHandler.VERSION;
     }
 
-    @ValidateMe
     public int rlpxMaxFrameSize() {
         return configFromFiles.hasPath("peer.p2p.framing.maxSize") ? configFromFiles.getInt("peer.p2p.framing.maxSize") : MessageCodec.NO_FRAMING;
     }
 
-    @ValidateMe
     public List<String> peerDiscoveryIPList() {
         return configFromFiles.hasPath("peer.discovery.ip.list") ? configFromFiles.getStringList("peer.discovery.ip.list") : new ArrayList<>();
     }
 
-    @ValidateMe
     public boolean databaseReset() {
         return configFromFiles.getBoolean("database.reset");
     }
 
 
 
-    @ValidateMe
     public List<Node> peerActive() {
         if (!configFromFiles.hasPath("peer.active")) {
             return Collections.emptyList();
@@ -310,7 +274,6 @@ public abstract class SystemProperties {
         throw new RuntimeException("Unexpected element within 'peer.active' config list: " + configObject);
     }
 
-    @ValidateMe
     public NodeFilter trustedPeers() {
         List<? extends ConfigObject> list = configFromFiles.getObjectList("peer.trusted");
         NodeFilter ret = new NodeFilter();
@@ -325,22 +288,18 @@ public abstract class SystemProperties {
         return ret;
     }
 
-    @ValidateMe
     public Integer peerChannelReadTimeout() {
         return configFromFiles.getInt("peer.channel.read.timeout");
     }
 
-    @ValidateMe
     public String dumpStyle() {
         return configFromFiles.getString("dump.style");
     }
 
-    @ValidateMe
     public int dumpBlock() {
         return configFromFiles.getInt("dump.block");
     }
 
-    @ValidateMe
     public String databaseDir() {
         return databaseDir == null ? configFromFiles.getString(PROPERTY_BASE_PATH) : databaseDir;
     }
@@ -349,17 +308,14 @@ public abstract class SystemProperties {
         this.databaseDir = dataBaseDir;
     }
 
-    @ValidateMe
     public boolean playVM() {
         return configFromFiles.getBoolean("play.vm");
     }
 
-    @ValidateMe
     public int maxHashesAsk() {
         return configFromFiles.getInt("sync.max.hashes.ask");
     }
 
-    @ValidateMe
     public int syncPeerCount() {
         return configFromFiles.getInt("sync.peer.count");
     }
@@ -372,52 +328,42 @@ public abstract class SystemProperties {
     }
 
 
-    @ValidateMe
     public String projectVersion() {
         return projectVersion;
     }
 
-    @ValidateMe
     public String projectVersionModifier() {
         return projectVersionModifier;
     }
 
-    @ValidateMe
     public String helloPhrase() {
         return configFromFiles.getString("hello.phrase");
     }
 
-    @ValidateMe
     public String rootHashStart() {
         return configFromFiles.hasPath("root.hash.start") ? configFromFiles.getString("root.hash.start") : null;
     }
 
-    @ValidateMe
     public List<String> peerCapabilities() {
         return configFromFiles.hasPath("peer.capabilities") ?  configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
     }
 
-    @ValidateMe
     public boolean vmTrace() {
         return configFromFiles.getBoolean("vm.structured.trace");
     }
 
-    @ValidateMe
     public boolean vmTraceCompressed() {
         return configFromFiles.getBoolean("vm.structured.compressed");
     }
 
-    @ValidateMe
     public int vmTraceInitStorageLimit() {
         return configFromFiles.getInt("vm.structured.initStorageLimit");
     }
 
-    @ValidateMe
     public String vmTraceDir() {
         return configFromFiles.getString("vm.structured.dir");
     }
 
-    @ValidateMe
     public String privateKey() {
         if (configFromFiles.hasPath("peer.privateKey")) {
             String key = configFromFiles.getString("peer.privateKey");
@@ -451,7 +397,6 @@ public abstract class SystemProperties {
         }
     }
 
-    @ValidateMe
     public ECKey getMyKey() {
         return ECKey.fromPrivate(Hex.decode(privateKey())).decompress();
     }
@@ -459,37 +404,30 @@ public abstract class SystemProperties {
     /**
      *  Home NodeID calculated from 'peer.privateKey' property
      */
-    @ValidateMe
     public byte[] nodeId() {
         return getMyKey().getNodeId();
     }
 
-    @ValidateMe
     public int networkId() {
         return configFromFiles.getInt("peer.networkId");
     }
 
-    @ValidateMe
     public int maxActivePeers() {
         return configFromFiles.getInt("peer.maxActivePeers");
     }
 
-    @ValidateMe
     public int maxConnectionsAllowed() {
         return configFromFiles.getInt("peer.filter.maxConnections");
     }
 
-    @ValidateMe
     public int networkCIDR() {
         return configFromFiles.getInt("peer.filter.networkCidr");
     }
 
-    @ValidateMe
     public boolean eip8() {
         return configFromFiles.getBoolean("peer.p2p.eip8");
     }
 
-    @ValidateMe
     public int getPeerPort() {
         return configFromFiles.getInt(PROPERTY_PEER_PORT);
     }
@@ -563,12 +501,6 @@ public abstract class SystemProperties {
         return publicIp;
     }
 
-    @ValidateMe
-    public String getKeyValueDataSource() {
-        return configFromFiles.getString("keyvalue.datasource");
-    }
-
-    @ValidateMe
     public boolean isSyncEnabled() {
         return this.syncEnabled == null ? configFromFiles.getBoolean("sync.enabled") : syncEnabled;
     }
@@ -577,7 +509,6 @@ public abstract class SystemProperties {
         this.syncEnabled = syncEnabled;
     }
 
-    @ValidateMe
     public String genesisInfo() {
 
         if (genesisInfo == null) {
@@ -587,22 +518,16 @@ public abstract class SystemProperties {
         }
     }
 
-    @ValidateMe
     public int txOutdatedThreshold() {
         return configFromFiles.getInt("transaction.outdated.threshold");
     }
 
-    @ValidateMe
     public int txOutdatedTimeout() {
         return configFromFiles.getInt("transaction.outdated.timeout");
     }
 
     public void setGenesisInfo(String genesisInfo){
         this.genesisInfo = genesisInfo;
-    }
-
-    public String dump() {
-        return configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false));
     }
 
     public boolean scoringPunishmentEnabled() {
@@ -733,19 +658,15 @@ public abstract class SystemProperties {
         }
     }
 
-    private HardForkActivationConfig getHardForkActivationConfig() {
-        if (!this.getConfig().hasPath(PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME)) {
-            return null;
+    private Optional<List<BtcECKey>> getGenesisFederationPublicKeys() {
+        if (!configFromFiles.hasPath(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS)) {
+            return Optional.empty();
         }
-        return new HardForkActivationConfig(this.getConfig().getObject(PROPERTY_BC_CONFIG_HARDFORKACTIVATION_NAME).toConfig());
-    }
 
-    private List<BtcECKey> getGenesisFederationPublicKeys() {
-        List<BtcECKey> genesisFederationsPublicKeys = Collections.emptyList();
-        if (configFromFiles.hasPath(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS)) {
-            List<String> configFederationPublicKeys = configFromFiles.getStringList(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS);
-            genesisFederationsPublicKeys = configFederationPublicKeys.stream().map(key -> BtcECKey.fromPublicOnly(Hex.decode(key))).collect(Collectors.toList());
-        }
-        return genesisFederationsPublicKeys;
+        List<String> configFederationPublicKeys = configFromFiles.getStringList(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS);
+        return Optional.of(
+                configFederationPublicKeys.stream()
+                        .map(key -> BtcECKey.fromPublicOnly(Hex.decode(key))).collect(Collectors.toList())
+        );
     }
 }

@@ -18,12 +18,13 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.vm.VMPerformanceTest;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.RegtestBlockchainNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -42,7 +43,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public abstract class PrecompiledContractPerformanceTestCase {
-    protected static TestSystemProperties config;
+    protected static BlockchainNetConfig blockchainNetConfig;
 
     private boolean oldCpuTimeEnabled;
     private ThreadMXBean thread;
@@ -104,8 +105,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
 
     @BeforeClass
     public static void setupA() throws Exception {
-        config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestGenesisConfig());
+        blockchainNetConfig = new RegtestBlockchainNetConfig(ActivationConfigsForTest.genesis());
     }
 
     @AfterClass

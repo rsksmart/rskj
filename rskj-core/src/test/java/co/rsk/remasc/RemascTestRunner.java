@@ -121,7 +121,7 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
-        BlockFactory blockFactory = new BlockFactory(builder.getConfig().getBlockchainConfig());
+        BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockExecutor blockExecutor = new BlockExecutor(
                 blockchain.getRepository(),

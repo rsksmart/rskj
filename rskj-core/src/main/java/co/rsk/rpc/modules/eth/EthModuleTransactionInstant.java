@@ -18,10 +18,10 @@
 
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.TransactionInfo;
@@ -37,8 +37,14 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
     private final MinerClient minerClient;
     private final Blockchain blockchain;
 
-    public EthModuleTransactionInstant(RskSystemProperties config, Wallet wallet, TransactionPool transactionPool, MinerServer minerServer, MinerClient minerClient, Blockchain blockchain) {
-        super(config,wallet, transactionPool);
+    public EthModuleTransactionInstant(
+            Constants constants,
+            Wallet wallet,
+            TransactionPool transactionPool,
+            MinerServer minerServer,
+            MinerClient minerClient,
+            Blockchain blockchain) {
+        super(constants, wallet, transactionPool);
 
         this.minerServer = minerServer;
         this.minerClient = minerClient;

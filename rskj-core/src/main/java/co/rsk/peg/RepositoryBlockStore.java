@@ -20,9 +20,9 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
@@ -46,13 +46,13 @@ public class RepositoryBlockStore implements BtcBlockstoreWithCache {
 
     private final NetworkParameters params;
 
-    public RepositoryBlockStore(SystemProperties config, Repository repository, RskAddress contractAddress) {
+    public RepositoryBlockStore(BridgeConstants bridgeConstants, Repository repository, RskAddress contractAddress) {
         this.repository = repository;
         this.contractAddress = contractAddress;
 
         // Insert the genesis block.
         try {
-            this.params = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+            this.params = bridgeConstants.getBtcParams();
             if (getChainHead()==null) {
                 BtcBlock genesisHeader = params.getGenesisBlock().cloneAsHeader();
                 StoredBlock storedGenesis = new StoredBlock(genesisHeader, genesisHeader.getWork(), 0);

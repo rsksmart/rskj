@@ -112,7 +112,7 @@ public class BlockBuilder {
                     track1,
                     blockChain.getBlockStore(),
                     null,
-                    new BlockFactory(config.getBlockchainConfig()),
+                    new BlockFactory(config.getActivationConfig()),
                     programInvokeFactory,
                     block1,
                     null,
@@ -126,7 +126,7 @@ public class BlockBuilder {
                     config.databaseDir(),
                     config.vmTraceDir(),
                     config.vmTraceCompressed()
-            ), new StateRootHandler(config, new HashMapDB(), new HashMap<>()));
+            ), new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>()));
             executor.executeAndFill(block, parent.getHeader());
         }
 

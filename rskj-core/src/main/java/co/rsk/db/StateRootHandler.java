@@ -18,11 +18,10 @@
 
 package co.rsk.db;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.KeyValueDataSource;
 
@@ -31,20 +30,19 @@ import java.util.Map;
 import java.util.Objects;
 
 public class StateRootHandler {
-    private final BlockchainNetConfig blockchainConfig;
+    private final ActivationConfig activationConfig;
     private final StateRootTranslator stateRootTranslator;
 
     public StateRootHandler(
-            RskSystemProperties config,
+            ActivationConfig activationConfig,
             KeyValueDataSource stateRootDB,
             Map<Keccak256, Keccak256> stateRootCache) {
-        this.blockchainConfig = config.getBlockchainConfig();
+        this.activationConfig = activationConfig;
         this.stateRootTranslator = new StateRootTranslator(stateRootDB, stateRootCache);
     }
 
     public Keccak256 translate(BlockHeader block) {
-        BlockchainConfig configForBlock = blockchainConfig.getConfigForBlock(block.getNumber());
-        boolean isRskip85Enabled = configForBlock.isRskip85();
+        boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, block.getNumber());
         Keccak256 blockStateRoot = new Keccak256(block.getStateRoot());
         if (isRskip85Enabled || block.isGenesis()) {
             return blockStateRoot;
@@ -57,8 +55,7 @@ public class StateRootHandler {
     }
 
     public void register(BlockHeader executedBlock, Keccak256 calculatedStateRoot) {
-        BlockchainConfig configForBlock = blockchainConfig.getConfigForBlock(executedBlock.getNumber());
-        boolean isRskip85Enabled = configForBlock.isRskip85();
+        boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, executedBlock.getNumber());
         // we only save state root translations for blocks before 0.5.0 activation
         if (!isRskip85Enabled) {
             Keccak256 blockStateRoot = new Keccak256(executedBlock.getStateRoot());
@@ -67,8 +64,7 @@ public class StateRootHandler {
     }
 
     public boolean validate(BlockHeader block, BlockResult result) {
-        BlockchainConfig configForBlock = blockchainConfig.getConfigForBlock(block.getNumber());
-        boolean isRskip85Enabled = configForBlock.isRskip85();
+        boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, block.getNumber());
         if (!isRskip85Enabled) {
             return true;
         }

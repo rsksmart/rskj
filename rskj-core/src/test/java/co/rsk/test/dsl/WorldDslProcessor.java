@@ -244,7 +244,7 @@ public class WorldDslProcessor {
                                                                track1,
                     world.getBlockChain().getBlockStore(),
                     null,
-                    new BlockFactory(config.getBlockchainConfig()),
+                    new BlockFactory(config.getActivationConfig()),
                     programInvokeFactory,
                                                                block1,
                     null,
@@ -259,7 +259,7 @@ public class WorldDslProcessor {
                                                                config.vmTraceDir(),
                                                                config.vmTraceCompressed()
                                                        ),
-                    new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                    new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
             );
             executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);

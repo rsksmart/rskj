@@ -18,7 +18,7 @@
 
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.config.RskSystemProperties;
+import org.ethereum.config.Constants;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
@@ -28,9 +28,9 @@ import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
  */
 public class EthModuleTransactionDisabled extends EthModuleTransactionBase {
 
-    public EthModuleTransactionDisabled(RskSystemProperties config, TransactionPool transactionPool) {
+    public EthModuleTransactionDisabled(Constants constants, TransactionPool transactionPool) {
         // wallet is only used from EthModuleTransactionBase::sendTransaction, which is overrode
-        super(config, null, transactionPool);
+        super(constants, null, transactionPool);
     }
 
     @Override

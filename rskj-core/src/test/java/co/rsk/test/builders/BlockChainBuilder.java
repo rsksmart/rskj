@@ -128,10 +128,10 @@ public class BlockChainBuilder {
             repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true), new HashMapDB(), new TrieStorePoolOnMemory());
 
         if (stateRootHandler == null) {
-            stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+            stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
         }
 
-        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
@@ -197,7 +197,7 @@ public class BlockChainBuilder {
             }
 
             Repository track = this.repository.startTracking();
-            new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
+            new RepositoryBlockStore(config.getNetworkConstants().getBridgeConstants(), track, PrecompiledContracts.BRIDGE_ADDR);
             track.commit();
 
             this.genesis.setStateRoot(this.repository.getRoot());

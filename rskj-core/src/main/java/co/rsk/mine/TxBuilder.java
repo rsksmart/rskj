@@ -18,9 +18,10 @@
 
 package co.rsk.mine;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.net.BlockProcessor;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -30,7 +31,6 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +43,7 @@ import java.security.SecureRandom;
 
 public class TxBuilder {
 
-    private final RskSystemProperties config;
+    private final Constants constants;
     private final Ethereum ethereum;
     private final BlockProcessor blockProcessor;
     private final Repository repository;
@@ -54,8 +54,8 @@ public class TxBuilder {
     private byte[] privateKeyBytes  = HashUtil.keccak256("this is a seed".getBytes(StandardCharsets.UTF_8));
     private ECKey key;
 
-    public TxBuilder(RskSystemProperties config, Ethereum ethereum, BlockProcessor blockProcessor, Repository repository) {
-        this.config = config;
+    public TxBuilder(Constants constants, Ethereum ethereum, BlockProcessor blockProcessor, Repository repository) {
+        this.constants = constants;
         this.ethereum = ethereum;
         this.blockProcessor = blockProcessor;
         this.repository = repository;
@@ -122,7 +122,7 @@ public class TxBuilder {
     {
         String toAddress = Hex.toHexString(new ECKey(Utils.getRandom()).getAddress());
 
-        Transaction tx = new Transaction(config, toAddress, BigInteger.valueOf(1000), txNonce, gasPrice, gasLimit);
+        Transaction tx = new Transaction(toAddress, BigInteger.valueOf(1000), txNonce, gasPrice, gasLimit, constants.getChainId());
         tx.sign(privateKeyBytes);
 
         return tx;

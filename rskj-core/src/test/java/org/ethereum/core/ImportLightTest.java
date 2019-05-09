@@ -51,7 +51,7 @@ public class ImportLightTest {
 
     public static BlockChainImpl createBlockchain(Genesis genesis) {
         TestSystemProperties config = new TestSystemProperties();
-        BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
         TrieStore.Pool pool = new TrieStorePoolOnMemory();
@@ -66,7 +66,7 @@ public class ImportLightTest {
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, blockFactory, null, listener, 10, 100);
 
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        StateRootHandler stateRootHandler = new StateRootHandler(config, new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,

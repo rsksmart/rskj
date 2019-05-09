@@ -63,7 +63,7 @@ public class Tx {
 
         Mockito.when(transaction.getSender()).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
-        Mockito.when(transaction.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())).thenReturn(Boolean.TRUE);
+        Mockito.when(transaction.acceptTransactionSignature(config.getNetworkConstants().getChainId())).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
         ArrayList<Byte> bytes = new ArrayList();
         long amount = 21000;

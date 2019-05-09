@@ -20,49 +20,45 @@ package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
-import co.rsk.config.TestSystemProperties;
-import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.fail;
 
 public class RemascContractExecuteTest {
 
-    private static BlockchainNetConfig blockchainNetConfigOriginal;
-    private static RemascConfig remascConfig;
-    private static TestSystemProperties config;
+    private static RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestGenesisConfig());
-        remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
+    private RemascContract remasc;
+
+    @Before
+    public void setUp() throws Exception {
+        remasc = new RemascContract(
+                PrecompiledContracts.REMASC_ADDR,
+                remascConfig,
+                Constants.regtest(),
+                ActivationConfigsForTest.all()
+        );
     }
 
     @Test(expected = Program.OutOfGasException.class)
     public void executeWithFunctionSignatureLengthTooShort() throws Exception{
-        RemascContract remasc = new RemascContract(config, remascConfig, PrecompiledContracts.REMASC_ADDR);
-
         remasc.execute(new byte[3]);
         fail("Expected OutOfGasException");
     }
 
     @Test(expected = Program.OutOfGasException.class)
     public void executeWithInexistentFunction() throws Exception{
-        RemascContract remasc = new RemascContract(config, remascConfig, PrecompiledContracts.REMASC_ADDR);
-
         remasc.execute(new byte[4]);
         fail("Expected OutOfGasException");
     }
 
     @Test(expected = Program.OutOfGasException.class)
     public void executeWithDataLengthTooLong() throws Exception{
-        RemascContract remasc = new RemascContract(config, remascConfig, PrecompiledContracts.REMASC_ADDR);
-
         remasc.execute(new byte[6]);
         fail("Expected OutOfGasException");
     }

@@ -21,8 +21,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
@@ -35,15 +33,13 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class FederationSupportTest {
 
     private FederationSupport federationSupport;
-    private BlockchainNetConfig blockchainNetConfig;
-    private Constants commonConstants;
     private BridgeConstants bridgeConstants;
     private BridgeStorageProvider provider;
     private Block executionBlock;
@@ -52,13 +48,9 @@ public class FederationSupportTest {
     @Before
     public void setUp() {
         provider = mock(BridgeStorageProvider.class);
-        blockchainNetConfig = mock(BlockchainNetConfig.class);
-        commonConstants = mock(Constants.class);
-        when(blockchainNetConfig.getCommonConstants()).thenReturn(commonConstants);
         bridgeConstants = mock(BridgeConstants.class);
-        when(commonConstants.getBridgeConstants()).thenReturn(bridgeConstants);
         executionBlock = mock(Block.class);
-        federationSupport = new FederationSupport(provider, blockchainNetConfig, executionBlock);
+        federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock);
     }
 
     @Test
@@ -66,7 +58,7 @@ public class FederationSupportTest {
         Federation genesisFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
                 .thenReturn(null);
-        when(blockchainNetConfig.getGenesisFederation())
+        when(bridgeConstants.getGenesisFederation())
                 .thenReturn(genesisFederation);
 
         assertThat(federationSupport.getActiveFederation(), is(genesisFederation));

@@ -24,8 +24,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.GenesisConfig;
-import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
@@ -57,7 +55,7 @@ import static org.junit.Assert.assertNull;
 public class TransactionTest {
 
     private TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */
     public void test1() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, IOException {
@@ -435,8 +433,8 @@ public class TransactionTest {
                 {
                     Repository track = repository.startTracking();
 
-                    Transaction txConst = CallTransaction.createCallTransaction(config, 0, 0, 100000000000000L,
-                            new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0, CallTransaction.Function.fromSignature("get"));
+                    Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
+                            new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0, CallTransaction.Function.fromSignature("get"), config.getNetworkConstants().getChainId());
                     txConst.sign(new byte[32]);
 
                     Block bestBlock = block;
@@ -562,13 +560,8 @@ public class TransactionTest {
 
         System.out.println(json.replaceAll("'", "\""));
 
-        try {
-            config.setBlockchainConfig(new GenesisConfig());
-            List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")).runImpl();
-            if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
-        } finally {
-            config.setBlockchainConfig(new MainNetConfig());
-        }
+        List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")).runImpl();
+        if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
     }
 
     @Test
@@ -596,7 +589,7 @@ public class TransactionTest {
 
          */
 
-        BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
+        BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
 
@@ -666,7 +659,7 @@ public class TransactionTest {
 
          */
 
-        BigInteger nonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
+        BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true));
 

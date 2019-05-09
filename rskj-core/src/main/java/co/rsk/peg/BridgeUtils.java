@@ -232,7 +232,7 @@ public class BridgeUtils {
                netConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
                rskTx.acceptTransactionSignature(netConfig.getCommonConstants().getChainId()) &&
                (
-                       isFromFederateMember(rskTx, netConfig.getGenesisFederation()) ||
+                       isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation()) ||
                        isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants) ||
                        isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants) ||
                        isFromFeePerKbChangeAuthorizedSender(rskTx, bridgeConstants)

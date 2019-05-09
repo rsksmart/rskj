@@ -29,8 +29,9 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Pack;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.ECKey;
@@ -53,17 +54,15 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
-    private final RskSystemProperties config;
-    private final BlockchainNetConfig blockchainConfig;
     private final BridgeConstants bridgeConstants;
     private final Constants constants;
+    private final ActivationConfig activationConfig;
     private boolean fallbackMiningEnabled = true;
 
     public ProofOfWorkRule(RskSystemProperties config) {
-        this.config = config;
-        this.blockchainConfig = config.getBlockchainConfig();
-        this.bridgeConstants = blockchainConfig.getCommonConstants().getBridgeConstants();
-        this.constants = blockchainConfig.getCommonConstants();
+        this.activationConfig = config.getActivationConfig();
+        this.constants = config.getNetworkConstants();
+        this.bridgeConstants = constants.getBridgeConstants();
     }
 
     @VisibleForTesting
@@ -78,11 +77,9 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
     }
 
     private boolean isFallbackMiningPossible(BlockHeader header) {
-        if (config.getBlockchainConfig().getConfigForBlock(header.getNumber()).isRskip98()) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP98, header.getNumber())) {
             return false;
         }
-
-        Constants constants = config.getBlockchainConfig().getCommonConstants();
 
         if (header.getDifficulty().compareTo(constants.getFallbackMiningDifficulty()) > 0) {
             return false;
@@ -129,7 +126,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = bridgeConstants.getBtcParams();
         MerkleProofValidator mpValidator;
         try {
-            if (blockchainConfig.getConfigForBlock(header.getNumber()).isRskip92()) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP92, header.getNumber())) {
                 mpValidator = new Rskip92MerkleProofValidator(header.getBitcoinMergedMiningMerkleProof());
             } else {
                 mpValidator = new GenesisMerkleProofValidator(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());

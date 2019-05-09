@@ -24,10 +24,9 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
-import com.google.common.collect.Lists;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -37,23 +36,23 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BridgeRegTestConstants extends BridgeConstants {
-    private static BridgeRegTestConstants instance = new BridgeRegTestConstants();
+    // IMPORTANT: BTC, RSK and MST keys are the same.
+    // Change upon implementation of the <INSERT FORK NAME HERE> fork.
+    public static final List<BtcECKey> REGTEST_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+            BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))),
+            BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8))),
+            BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)))
+    );
+    public static final List<BtcECKey> REGTEST_FEDERATION_PUBLIC_KEYS = REGTEST_FEDERATION_PRIVATE_KEYS.stream()
+            .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
+            .collect(Collectors.toList());
 
-    protected List<BtcECKey> federatorPrivateKeys;
+    private static BridgeRegTestConstants instance = new BridgeRegTestConstants(REGTEST_FEDERATION_PUBLIC_KEYS);
 
-    BridgeRegTestConstants() {
+    public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
 
-        BtcECKey federator0PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8)));
-        BtcECKey federator1PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8)));
-        BtcECKey federator2PrivateKey = BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)));
-
-        federatorPrivateKeys = Lists.newArrayList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey);
-        List<BtcECKey> federatorPublicKeys = federatorPrivateKeys.stream().map(key -> BtcECKey.fromPublicOnly(key.getPubKey())).collect(Collectors.toList());
-
-        // IMPORTANT: BTC, RSK and MST keys are the same.
-        // Change upon implementation of the <INSERT FORK NAME HERE> fork.
-        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federatorPublicKeys);
+        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(federationPublicKeys);
 
         Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
@@ -115,10 +114,6 @@ public class BridgeRegTestConstants extends BridgeConstants {
         );
 
         genesisFeePerKb = Coin.MILLICOIN;
-    }
-
-    public List<BtcECKey> getFederatorPrivateKeys() {
-        return federatorPrivateKeys;
     }
 
     public static BridgeRegTestConstants getInstance() {

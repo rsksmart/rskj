@@ -71,7 +71,7 @@ public class BlockValidatorBuilder {
     public BlockValidatorBuilder addBlockTxsValidationRule(Repository repository) {
         this.blockTxsValidationRule = new BlockTxsValidationRule(
                 repository,
-                new StateRootHandler(config, new HashMapDB(), new HashMap<>())
+                new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
         );
         return this;
     }
@@ -103,8 +103,8 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockHeaderValidationRule validationRule, BlockHeaderParentDependantValidationRule parentValidationRule) {
-        int uncleListLimit = config.getBlockchainConfig().getCommonConstants().getUncleListLimit();
-        int uncleGenLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        int uncleListLimit = config.getNetworkConstants().getUncleListLimit();
+        int uncleGenLimit = config.getNetworkConstants().getUncleGenerationLimit();
         this.blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
         return this;
     }
@@ -125,7 +125,7 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addDifficultyRule() {
-        this.difficultyRule = new BlockDifficultyRule(new DifficultyCalculator(config));
+        this.difficultyRule = new BlockDifficultyRule(new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()));
         return this;
     }
 

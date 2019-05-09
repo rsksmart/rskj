@@ -23,7 +23,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.helpers.PerformanceTestConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.config.blockchain.BlockchainConfigImpl;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
@@ -57,10 +57,10 @@ import static org.junit.Assert.assertEquals;
  */
 public class VMPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getBlockchainConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
-    private final BlockchainConfig blockchainConfig = new RegTestGenesisConfig();
+    private final BlockchainConfig blockchainConfig = new BlockchainConfigImpl(null, null, 0);
     private ProgramInvokeMockImpl invoke;
     private Program program;
     ThreadMXBean thread;

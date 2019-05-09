@@ -65,7 +65,6 @@ import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.config.net.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -97,13 +96,14 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
@@ -122,6 +122,8 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
  * Note that many methods are public to allow the fed node overriding.
  */
 public class RskContext implements NodeBootstrapper {
+    private static Logger logger = LoggerFactory.getLogger(RskContext.class);
+
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
     private RskSystemProperties rskSystemProperties;
@@ -226,7 +228,7 @@ public class RskContext implements NodeBootstrapper {
 
     public BlockFactory getBlockFactory() {
         if (blockFactory == null) {
-            blockFactory = new BlockFactory(getRskSystemProperties().getBlockchainConfig());
+            blockFactory = new BlockFactory(getRskSystemProperties().getActivationConfig());
         }
 
         return blockFactory;
@@ -373,7 +375,8 @@ public class RskContext implements NodeBootstrapper {
     public EthModule getEthModule() {
         if (ethModule == null) {
             ethModule = new EthModule(
-                    getRskSystemProperties(),
+                    getRskSystemProperties().getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                    getRskSystemProperties().getActivationConfig(),
                     getBlockchain(),
                     getReversibleTransactionExecutor(),
                     getExecutionBlockRetriever(),
@@ -442,6 +445,7 @@ public class RskContext implements NodeBootstrapper {
                 props.load(buildInfoFile);
                 buildInfo = new BuildInfo(props.getProperty("build.hash"), props.getProperty("build.branch"));
             } catch (IOException | NullPointerException e) {
+                logger.trace("Can't find build info class, using dev configuration", e);
                 buildInfo = new BuildInfo("dev", "dev");
             }
         }
@@ -646,7 +650,7 @@ public class RskContext implements NodeBootstrapper {
             try {
                 Files.createDirectories(FileUtil.getDatabaseDirectoryPath(databaseDir, "database"));
             } catch (IOException e) {
-                throw new IllegalStateException("Could not re-create database directory");
+                throw new IllegalStateException("Could not re-create database directory", e);
             }
         }
 
@@ -687,7 +691,7 @@ public class RskContext implements NodeBootstrapper {
 
     protected StateRootHandler buildStateRootHandler() {
         KeyValueDataSource stateRootsDB = makeDataSource("stateRoots", getRskSystemProperties().databaseDir());
-        return new StateRootHandler(getRskSystemProperties(), stateRootsDB, new HashMap<>());
+        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), stateRootsDB, new HashMap<>());
     }
 
     protected CompositeEthereumListener buildCompositeEthereumListener() {
@@ -941,7 +945,11 @@ public class RskContext implements NodeBootstrapper {
 
     private DifficultyCalculator getDifficultyCalculator() {
         if (difficultyCalculator == null) {
-            difficultyCalculator = new DifficultyCalculator(getRskSystemProperties());
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            difficultyCalculator = new DifficultyCalculator(
+                    rskSystemProperties.getActivationConfig(),
+                    rskSystemProperties.getNetworkConstants()
+            );
         }
 
         return difficultyCalculator;
@@ -983,10 +991,7 @@ public class RskContext implements NodeBootstrapper {
                 return null;
             }
 
-            String database = rskSystemProperties.databaseDir();
-            String filename = "messages";
-            Path filePath = Paths.get(database).isAbsolute() ? Paths.get(database, filename) :
-                    Paths.get(System.getProperty("user.dir"), database, filename);
+            Path filePath = FileUtil.getDatabaseDirectoryPath(rskSystemProperties.databaseDir(), "messages");
 
             String fullFilename = filePath.toString();
             MessageFilter filter = new MessageFilter(rskSystemProperties.getMessageRecorderCommands());
@@ -1024,7 +1029,7 @@ public class RskContext implements NodeBootstrapper {
             try {
                 ethModuleSolidity = new EthModuleSolidityEnabled(getSolidityCompiler());
             } catch (RuntimeException e) {
-                // the only way we currently have to check if Solidity is available is catching this exception
+                logger.trace("Can't find find Solidity compiler, disabling Solidity support in Web3", e);
                 ethModuleSolidity = new EthModuleSolidityDisabled();
             }
         }
@@ -1043,13 +1048,14 @@ public class RskContext implements NodeBootstrapper {
     private EthModuleTransaction getEthModuleTransaction() {
         if (ethModuleTransaction == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            Constants constants = rskSystemProperties.getNetworkConstants();
             Wallet wallet = getWallet();
             TransactionPool transactionPool = getTransactionPool();
             if (wallet == null) {
-                ethModuleTransaction = new EthModuleTransactionDisabled(rskSystemProperties, transactionPool);
+                ethModuleTransaction = new EthModuleTransactionDisabled(constants, transactionPool);
             } else if (rskSystemProperties.minerClientAutoMine()) {
                 ethModuleTransaction = new EthModuleTransactionInstant(
-                        rskSystemProperties,
+                        constants,
                         wallet,
                         transactionPool,
                         getMinerServer(),
@@ -1057,7 +1063,7 @@ public class RskContext implements NodeBootstrapper {
                         getBlockchain()
                 );
             } else {
-                ethModuleTransaction = new EthModuleTransactionBase(rskSystemProperties, wallet, transactionPool);
+                ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool);
             }
         }
 
@@ -1236,7 +1242,8 @@ public class RskContext implements NodeBootstrapper {
                             rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit(),
                             rskSystemProperties.getTargetGasLimit(),
                             rskSystemProperties.getForceTargetGasLimit()
-                    )
+                    ),
+                    rskSystemProperties.isMinerServerFixedClock()
             );
         }
 
@@ -1245,7 +1252,7 @@ public class RskContext implements NodeBootstrapper {
 
     private GasLimitCalculator getGasLimitCalculator() {
         if (gasLimitCalculator == null) {
-            gasLimitCalculator = new GasLimitCalculator(getRskSystemProperties());
+            gasLimitCalculator = new GasLimitCalculator(getRskSystemProperties().getNetworkConstants());
         }
 
         return gasLimitCalculator;
@@ -1281,9 +1288,7 @@ public class RskContext implements NodeBootstrapper {
 
     private MinerClock getMinerClock() {
         if (minerClock == null) {
-            minerClock = new MinerClock(
-                    getRskSystemProperties().getBlockchainConfig() instanceof RegTestConfig, Clock.systemUTC()
-            );
+            minerClock = new MinerClock(getMiningConfig().isFixedClock(), Clock.systemUTC());
         }
 
         return minerClock;

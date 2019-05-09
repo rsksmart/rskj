@@ -1,8 +1,9 @@
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.TestSystemProperties;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.test.builders.BlockChainBuilder;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
 import org.junit.Assert;
@@ -33,6 +34,11 @@ public class RemascFederationProviderTest {
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
         Blockchain blockchain = builder.build();
 
-        return new RemascFederationProvider(new TestSystemProperties(), blockchain.getRepository(), blockchain.getBestBlock());
+        return new RemascFederationProvider(
+                ActivationConfigsForTest.all(),
+                BridgeRegTestConstants.getInstance(),
+                blockchain.getRepository(),
+                blockchain.getBestBlock()
+        );
     }
 }

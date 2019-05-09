@@ -12,7 +12,9 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.config.net.MainNetConfig;
+import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
@@ -24,9 +26,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Clock;
 
@@ -49,7 +48,7 @@ public class MainNetMinerTest {
     @Before
     public void setup() {
         config = new TestSystemProperties();
-        config.setBlockchainConfig(new MainNetConfig());
+        config.setBlockchainConfig(new BlockchainNetConfig(Constants.mainnet(), ActivationConfigsForTest.all()));
         RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
@@ -103,18 +102,6 @@ public class MainNetMinerTest {
             Mockito.verify(ethereumImpl, Mockito.times(0)).addNewMinedBlock(Mockito.any());
         } finally {
             minerServer.stop();
-        }
-    }
-
-    //throws IOException, FileNotFoundException
-    public static void saveToFile(byte[] array, File f) {
-        try {
-            FileOutputStream fos = new FileOutputStream(f);
-            fos.write(array);
-            fos.close();
-        } catch (IOException e) {
-            System.out.println("Something is wrong when writing to file "+f.getName()+". Aborting");
-            System.exit(-1);
         }
     }
 
@@ -203,8 +190,8 @@ public class MainNetMinerTest {
                 repository,
                 blockStore,
                 transactionPool,
-                new DifficultyCalculator(config),
-                new GasLimitCalculator(config),
+                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
+                new GasLimitCalculator(config.getNetworkConstants()),
                 unclesValidationRule,
                 config,
                 null,
