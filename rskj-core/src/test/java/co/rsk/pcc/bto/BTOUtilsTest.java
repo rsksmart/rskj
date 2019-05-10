@@ -22,28 +22,21 @@ package co.rsk.pcc.bto;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeMethod;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.util.Optional;
 
-import static org.mockito.Mockito.mock;
-
 public class BTOUtilsTest {
     private RskSystemProperties config;
-    private ExecutionEnvironment executionEnvironment;
     private BTOUtils contract;
 
     @Before
     public void createContract() {
         config = new TestSystemProperties();
-        executionEnvironment = mock(ExecutionEnvironment.class);
         contract = new BTOUtils(config, new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
-        Whitebox.setInternalState(contract, "executionEnvironment", executionEnvironment);
     }
 
     @Test
@@ -58,33 +51,27 @@ public class BTOUtilsTest {
 
     @Test
     public void hasToBase58Check() {
-        assertHasMethod(ToBase58Check.class, false);
+        assertHasMethod(ToBase58Check.class);
     }
 
     @Test
     public void hasDeriveExtendedPublicKey() {
-        assertHasMethod(DeriveExtendedPublicKey.class, true);
+        assertHasMethod(DeriveExtendedPublicKey.class);
     }
 
     @Test
     public void hasExtractPublicKeyFromExtendedPublicKey() {
-        assertHasMethod(ExtractPublicKeyFromExtendedPublicKey.class, true);
+        assertHasMethod(ExtractPublicKeyFromExtendedPublicKey.class);
     }
 
     @Test
     public void hasGetMultisigScriptHash() {
-        assertHasMethod(GetMultisigScriptHash.class, false);
+        assertHasMethod(GetMultisigScriptHash.class);
     }
 
-    private void assertHasMethod(Class clazz, boolean withHelper) {
+    private void assertHasMethod(Class clazz) {
         Optional<NativeMethod> method = contract.getMethods().stream()
                 .filter(m -> m.getClass() == clazz).findFirst();
         Assert.assertTrue(method.isPresent());
-        Assert.assertEquals(executionEnvironment, method.get().getExecutionEnvironment());
-        if (withHelper) {
-            Object helper = Whitebox.getInternalState(method.get(), "helper");
-            Assert.assertNotNull(helper);
-            Assert.assertEquals(BTOUtilsHelper.class, helper.getClass());
-        }
     }
 }

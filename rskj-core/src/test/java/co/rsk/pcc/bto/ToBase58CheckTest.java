@@ -76,6 +76,21 @@ public class ToBase58CheckTest {
     }
 
     @Test
+    public void validatesHashPresence() {
+        boolean failed = false;
+        try {
+            method.execute(new Object[]{
+                    Hex.decode("aabbcc"),
+                    BigInteger.valueOf(111L)
+            });
+        } catch (NativeContractIllegalArgumentException e) {
+            failed = true;
+            Assert.assertTrue(e.getMessage().contains("Invalid hash160"));
+        }
+        Assert.assertTrue(failed);
+    }
+
+    @Test
     public void validatesHashLength() {
         boolean failed = false;
         try {

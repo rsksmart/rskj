@@ -63,6 +63,9 @@ public class GetMultisigScriptHash extends NativeMethod {
 
     @Override
     public Object execute(Object[] arguments) {
+        if (arguments[0] == null) {
+            throw new NativeContractIllegalArgumentException("Minimum required signatures must be present and greater than zero");
+        }
         int minimumSignatures = ((BigInteger) arguments[0]).intValueExact();
         Object[] publicKeys = (Object[]) arguments[1];
 
@@ -70,7 +73,7 @@ public class GetMultisigScriptHash extends NativeMethod {
             throw new NativeContractIllegalArgumentException("Minimum required signatures must be greater than zero");
         }
 
-        if (publicKeys.length == 0) {
+        if (publicKeys == null || publicKeys.length == 0) {
             throw new NativeContractIllegalArgumentException("At least one public key is required");
         }
 

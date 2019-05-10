@@ -62,6 +62,9 @@ public class ToBase58Check extends NativeMethod {
     @Override
     public Object execute(Object[] arguments) {
         byte[] hash = (byte[]) arguments[0];
+        if (hash == null) {
+            throw new NativeContractIllegalArgumentException("hash160 must be present");
+        }
         if (hash.length != 20) {
             throw new NativeContractIllegalArgumentException(String.format(
                     "Invalid hash160 '%s' (should be 20 bytes and is %d bytes)",

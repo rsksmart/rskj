@@ -74,7 +74,7 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         // Covering special case: upon splitting a string, if the string ends with the delimiter, then
         // there is no empty string as a last element. Make sure that the whole path starts and ends with a digit
         // just in case.
-        if (path.length() == 0 || !isDecimal(path.charAt(0)) || !isDecimal(path.charAt(path.length()-1))) {
+        if (path == null || path.length() == 0 || !isDecimal(path.charAt(0)) || !isDecimal(path.charAt(path.length()-1))) {
             throwInvalidPath(path);
         }
 
