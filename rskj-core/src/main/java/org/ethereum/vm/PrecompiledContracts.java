@@ -24,7 +24,7 @@ import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
-import co.rsk.pcc.bto.BTOUtils;
+import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -60,13 +60,13 @@ public class PrecompiledContracts {
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
-    public static final String BTOUTILS_ADDR_STR = "0000000000000000000000000000000001000009";
+    public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
 
     public static final RskAddress BRIDGE_ADDR = new RskAddress(BRIDGE_ADDR_STR);
     public static final RskAddress IDENTITY_ADDR = new RskAddress(IDENTITY_ADDR_STR);
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_STR);
     public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
-    public static final RskAddress BTOUTILS_ADDR = new RskAddress(BTOUTILS_ADDR_STR);
+    public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
 
 
     public static final DataWord BRIDGE_ADDR_DW = DataWord.valueOf(BRIDGE_ADDR.getBytes());
@@ -77,7 +77,7 @@ public class PrecompiledContracts {
     public static final DataWord BIG_INT_MODEXP_ADDR_DW = DataWord.valueFromHex(BIG_INT_MODEXP_ADDR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR);
     public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueOf(BLOCK_HEADER_ADDR.getBytes());
-    public static final DataWord BTOUTILS_ADDR_DW = DataWord.valueOf(BTOUTILS_ADDR.getBytes());
+    public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueOf(HD_WALLET_UTILS_ADDR.getBytes());
 
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
@@ -123,8 +123,8 @@ public class PrecompiledContracts {
             return new BlockHeaderContract(config.getActivationConfig(), BLOCK_HEADER_ADDR);
         }
 
-        if (activations.isActive(ConsensusRule.RSKIP106) && address.equals(BTOUTILS_ADDR_DW)) {
-            return new BlockHeaderContract(config.getActivationConfig(), BTOUTILS_ADDR);
+        if (activations.isActive(ConsensusRule.RSKIP106) && address.equals(HD_WALLET_UTILS_ADDR_DW)) {
+            return new BlockHeaderContract(config.getActivationConfig(), HD_WALLET_UTILS_ADDR);
         }
 
         return null;

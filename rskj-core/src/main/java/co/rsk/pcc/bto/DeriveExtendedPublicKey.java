@@ -33,7 +33,7 @@ import java.util.List;
 
 /**
  * This implements the "deriveExtendedPublicKey" method
- * that belongs to the BTOUtils native contract.
+ * that belongs to the HDWalletUtils native contract.
  *
  * @author Ariel Mendelzon
  */
@@ -44,9 +44,12 @@ public class DeriveExtendedPublicKey extends NativeMethod {
             new String[]{"string"}
     );
 
-    private final BTOUtilsHelper helper;
+    private final HDWalletUtilsHelper helper;
 
-    public DeriveExtendedPublicKey(ExecutionEnvironment executionEnvironment, BTOUtilsHelper helper) {
+    private final String XPUB_AND_PATH_NULL = "Must provide xpub and path arguments. None was provided.";
+    private final String INVALID_XPUB = "Invalid extended public key '%s";
+
+    public DeriveExtendedPublicKey(ExecutionEnvironment executionEnvironment, HDWalletUtilsHelper helper) {
         super(executionEnvironment);
         this.helper = helper;
     }
@@ -58,6 +61,9 @@ public class DeriveExtendedPublicKey extends NativeMethod {
 
     @Override
     public Object execute(Object[] arguments) {
+        if (arguments == null) {
+            throw new NativeContractIllegalArgumentException(XPUB_AND_PATH_NULL);
+        }
         String xpub = (String) arguments[0];
         String path = (String) arguments[1];
 
@@ -66,7 +72,7 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         try {
             key = DeterministicKey.deserializeB58(xpub, params);
         } catch (IllegalArgumentException e) {
-            throw new NativeContractIllegalArgumentException(String.format("Invalid extended public key '%s", xpub), e);
+            throw new NativeContractIllegalArgumentException(String.format(INVALID_XPUB, xpub), e);
         }
 
         // Path must be of the form S, with S ::= n || n/S with n an unsigned integer
@@ -74,7 +80,7 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         // Covering special case: upon splitting a string, if the string ends with the delimiter, then
         // there is no empty string as a last element. Make sure that the whole path starts and ends with a digit
         // just in case.
-        if (path.length() == 0 || !isDecimal(path.charAt(0)) || !isDecimal(path.charAt(path.length()-1))) {
+        if (path == null || path.length() == 0 || !isDecimal(path.charAt(0)) || !isDecimal(path.charAt(path.length()-1))) {
             throwInvalidPath(path);
         }
 
@@ -92,8 +98,8 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         }
 
         DeterministicKey derived = key;
-        for (int i = 0; i < pathList.size(); i++) {
-            derived = HDKeyDerivation.deriveChildKey(derived, pathList.get(i).getI());
+        for (ChildNumber pathItem : pathList) {
+            derived = HDKeyDerivation.deriveChildKey(derived, pathItem.getI());
         }
 
         return derived.serializePubB58(params);
@@ -122,6 +128,6 @@ public class DeriveExtendedPublicKey extends NativeMethod {
     }
 
     private boolean isDecimal(String s) {
-        return s.chars().mapToObj(c -> (char) c).allMatch(c -> isDecimal(c));
+        return s.chars().mapToObj(c -> (char) c).allMatch(this::isDecimal);
     }
 }

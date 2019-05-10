@@ -30,14 +30,12 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 
 public class DeriveExtendedPublicKeyTest {
-    private ExecutionEnvironment executionEnvironment;
-    private BTOUtilsHelper helper;
     private DeriveExtendedPublicKey method;
 
     @Before
     public void createMethod() {
-        executionEnvironment = mock(ExecutionEnvironment.class);
-        helper = new BTOUtilsHelper();
+        ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
+        HDWalletUtilsHelper helper = new HDWalletUtilsHelper();
         method = new DeriveExtendedPublicKey(executionEnvironment, helper);
     }
 
@@ -99,11 +97,31 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
+    public void ExtendedPublicKeyCannotBeNull() {
+        assertFailsWithMessage(() -> {
+            method.execute(new Object[]{
+                    null,
+                    "M/0/1/2"
+            });
+        }, "Invalid extended public key 'null");
+    }
+
+    @Test
     public void pathCannotBeAnything() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
                     "this-is-not-a-path"
+            });
+        }, "Invalid path");
+    }
+
+    @Test
+    public void pathCannotBeNull() {
+        assertFailsWithMessage(() -> {
+            method.execute(new Object[]{
+                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                    null
             });
         }, "Invalid path");
     }
@@ -179,13 +197,11 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     private void assertFailsWithMessage(Runnable statement, String message) {
-        boolean failed = false;
         try {
             statement.run();
+            Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            failed = true;
             Assert.assertTrue(e.getMessage().contains(message));
         }
-        Assert.assertTrue(failed);
     }
 }

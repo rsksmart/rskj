@@ -35,12 +35,11 @@ import java.util.function.Consumer;
 import static org.mockito.Mockito.mock;
 
 public class GetMultisigScriptHashTest {
-    private ExecutionEnvironment executionEnvironment;
     private GetMultisigScriptHash method;
 
     @Before
     public void createMethod() {
-        executionEnvironment = mock(ExecutionEnvironment.class);
+        ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         method = new GetMultisigScriptHash(executionEnvironment);
     }
 
@@ -120,6 +119,17 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
+    public void minimumSignaturesMustBePresent() {
+        assertFails(
+                () -> method.execute(new Object[]{
+                        null,
+                        new Object[]{}
+                }),
+                "Minimum required signatures"
+        );
+    }
+
+    @Test
     public void minimumSignaturesMustBeGreaterThanZero() {
         assertFails(
                 () -> method.execute(new Object[]{
@@ -136,6 +146,24 @@ public class GetMultisigScriptHashTest {
                 () -> method.execute(new Object[]{
                         BigInteger.ONE,
                         new Object[]{}
+                }),
+                "At least one public key"
+        );
+        assertFails(
+                () -> method.execute(new Object[]{
+                        BigInteger.ONE,
+                        null
+                }),
+                "At least one public key"
+        );
+    }
+
+    @Test
+    public void publicKeyCannotBeNull() {
+        assertFails(
+                () -> method.execute(new Object[]{
+                        BigInteger.ONE,
+                        null,
                 }),
                 "At least one public key"
         );
@@ -158,8 +186,9 @@ public class GetMultisigScriptHashTest {
     @Test
     public void atMostFifteenPublicKeys() {
         byte[][] keys = new byte[16][];
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < 16; i++) {
             keys[i] = new BtcECKey().getPubKeyPoint().getEncoded(true);
+        }
 
         assertFails(
                 () -> method.execute(new Object[]{

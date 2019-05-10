@@ -34,7 +34,7 @@ import java.util.List;
 
 /**
  * This implements the "getMultisigScriptHash" method
- * that belongs to the BTOUtils native contract.
+ * that belongs to the HDWalletUtils native contract.
  *
  * @author Ariel Mendelzon
  */
@@ -52,6 +52,11 @@ public class GetMultisigScriptHash extends NativeMethod {
     // (see https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki#520byte_limitation_on_serialized_script_size)
     private final static int MAXIMUM_ALLOWED_SIGNATURES = 15;
 
+    private final String REQUIRED_SIGNATURE_NULL_OR_ZERO = "Minimum required signatures must be present and greater than zero";
+    private final String PUBLIC_KEYS_NULL_OR_ZERO = "At least one public key is required";
+    private final String INVALID_REQUIRED_SIGNATURE_AND_PUBLIC_KEYS_PAIR = "Given public keys (%d) are less than the minimum required signatures (%d)";
+
+
     public GetMultisigScriptHash(ExecutionEnvironment executionEnvironment) {
         super(executionEnvironment);
     }
@@ -63,20 +68,23 @@ public class GetMultisigScriptHash extends NativeMethod {
 
     @Override
     public Object execute(Object[] arguments) {
+        if (arguments == null || arguments[0] == null) {
+            throw new NativeContractIllegalArgumentException(REQUIRED_SIGNATURE_NULL_OR_ZERO);
+        }
         int minimumSignatures = ((BigInteger) arguments[0]).intValueExact();
         Object[] publicKeys = (Object[]) arguments[1];
 
-        if (minimumSignatures == 0) {
-            throw new NativeContractIllegalArgumentException("Minimum required signatures must be greater than zero");
+        if (minimumSignatures <= 0) {
+            throw new NativeContractIllegalArgumentException(REQUIRED_SIGNATURE_NULL_OR_ZERO);
         }
 
-        if (publicKeys.length == 0) {
-            throw new NativeContractIllegalArgumentException("At least one public key is required");
+        if (publicKeys == null || publicKeys.length == 0) {
+            throw new NativeContractIllegalArgumentException(PUBLIC_KEYS_NULL_OR_ZERO);
         }
 
         if (publicKeys.length < minimumSignatures) {
             throw new NativeContractIllegalArgumentException(String.format(
-                    "Given public keys (%d) are less than the minimum required signatures (%d)",
+                    INVALID_REQUIRED_SIGNATURE_AND_PUBLIC_KEYS_PAIR,
                     publicKeys.length, minimumSignatures
             ));
         }

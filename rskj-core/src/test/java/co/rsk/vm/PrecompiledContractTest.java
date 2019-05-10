@@ -23,7 +23,7 @@ import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.peg.Bridge;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import co.rsk.pcc.bto.BTOUtils;
+import co.rsk.pcc.bto.HDWalletUtils;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -85,7 +85,7 @@ public class PrecompiledContractTest {
 
     @Test
     public void getBtoUtilsBeforeRskip106() {
-        DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.BTOUTILS_ADDR.getBytes());
+        DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
         PrecompiledContract btoUtils = precompiledContracts.getContractForAddress(cr -> false, btoUtilsAddress);
 
         Assert.assertNull(btoUtils);
@@ -93,14 +93,14 @@ public class PrecompiledContractTest {
 
     @Test
     public void getBtoUtilsAfterRskip106() {
-        DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.BTOUTILS_ADDR.getBytes());
+        DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
         PrecompiledContract btoUtils1 = precompiledContracts.getContractForAddress(cr -> true, btoUtilsAddress);
         PrecompiledContract btoUtils2 = precompiledContracts.getContractForAddress(cr -> true, btoUtilsAddress);
 
         Assert.assertNotNull(btoUtils1);
         Assert.assertNotNull(btoUtils2);
-        Assert.assertEquals(BTOUtils.class, btoUtils1.getClass());
-        Assert.assertEquals(BTOUtils.class, btoUtils2.getClass());
+        Assert.assertEquals(HDWalletUtils.class, btoUtils1.getClass());
+        Assert.assertEquals(HDWalletUtils.class, btoUtils2.getClass());
         Assert.assertNotSame(btoUtils1, btoUtils2);
     }
 }

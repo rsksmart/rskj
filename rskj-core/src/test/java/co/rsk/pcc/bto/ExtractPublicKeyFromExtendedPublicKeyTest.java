@@ -31,14 +31,12 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 
 public class ExtractPublicKeyFromExtendedPublicKeyTest {
-    private ExecutionEnvironment executionEnvironment;
-    private BTOUtilsHelper helper;
     private ExtractPublicKeyFromExtendedPublicKey method;
 
     @Before
     public void createMethod() {
-        executionEnvironment = mock(ExecutionEnvironment.class);
-        helper = new BTOUtilsHelper();
+        ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
+        HDWalletUtilsHelper helper = new HDWalletUtilsHelper();
         method = new ExtractPublicKeyFromExtendedPublicKey(executionEnvironment, helper);
     }
 
@@ -75,29 +73,35 @@ public class ExtractPublicKeyFromExtendedPublicKeyTest {
 
     @Test
     public void validatesExtendedPublicKeyFormat() {
-        boolean failed = false;
         try {
             method.execute(new Object[]{
                     "this-is-not-an-xpub",
             });
+            Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            failed = true;
             Assert.assertTrue(e.getMessage().contains("Invalid extended public key"));
         }
-        Assert.assertTrue(failed);
     }
 
     @Test
     public void failsUponInvalidPublicKey() {
-        boolean failed = false;
         try {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1s",
             });
+            Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            failed = true;
             Assert.assertTrue(e.getMessage().contains("Invalid extended public key"));
         }
-        Assert.assertTrue(failed);
+    }
+
+    @Test
+    public void failsUponNull() {
+        try {
+            method.execute(null);
+            Assert.fail();
+        } catch (NativeContractIllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid extended public key"));
+        }
     }
 }

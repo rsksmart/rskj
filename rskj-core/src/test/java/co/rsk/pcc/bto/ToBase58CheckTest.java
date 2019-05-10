@@ -33,12 +33,11 @@ import java.math.BigInteger;
 import static org.mockito.Mockito.mock;
 
 public class ToBase58CheckTest {
-    private ExecutionEnvironment executionEnvironment;
     private ToBase58Check method;
 
     @Before
     public void createMethod() {
-        executionEnvironment = mock(ExecutionEnvironment.class);
+        ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         method = new ToBase58Check(executionEnvironment);
     }
 
@@ -76,17 +75,50 @@ public class ToBase58CheckTest {
     }
 
     @Test
-    public void validatesHashLength() {
-        boolean failed = false;
+    public void validatesHashPresence() {
         try {
             method.execute(new Object[]{
                     Hex.decode("aabbcc"),
                     BigInteger.valueOf(111L)
             });
+            Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            failed = true;
             Assert.assertTrue(e.getMessage().contains("Invalid hash160"));
         }
-        Assert.assertTrue(failed);
+    }
+
+    @Test
+    public void validatesHashLength() {
+        try {
+            method.execute(new Object[]{
+                    Hex.decode("aabbcc"),
+                    BigInteger.valueOf(111L)
+            });
+            Assert.fail();
+        } catch (NativeContractIllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid hash160"));
+        }
+    }
+
+    @Test
+    public void validatesVersion() {
+        try {
+            method.execute(new Object[]{
+                    Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
+                    BigInteger.valueOf(-1L)
+            });
+            Assert.fail();
+        } catch (NativeContractIllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("version must be a numeric value between 0 and 255"));
+        }
+        try {
+            method.execute(new Object[]{
+                    Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
+                    BigInteger.valueOf(256L)
+            });
+            Assert.fail();
+        } catch (NativeContractIllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("version must be a numeric value between 0 and 255"));
+        }
     }
 }

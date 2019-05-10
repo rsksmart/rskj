@@ -26,7 +26,6 @@ import co.rsk.db.BenchmarkedRepository;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -34,7 +33,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.IOException;
 import java.util.Random;
 
 @Ignore
@@ -42,18 +40,18 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
     private CallTransaction.Function function;
 
     @Test
-    public void extractPublicKeyFromExtendedPublicKey() throws IOException {
+    public void extractPublicKeyFromExtendedPublicKey() {
         function = new ExtractPublicKeyFromExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             @Override
             public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
-                BTOUtils contract = new BTOUtils(new TestSystemProperties(), PrecompiledContracts.BTOUTILS_ADDR);
+                HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
                 contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
 
                 return new Environment(
                         contract,
-                        () -> new BenchmarkedRepository.Statistics()
+                        BenchmarkedRepository.Statistics::new
                 );
             }
 
@@ -62,7 +60,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
             }
         };
 
-        BTOUtilsPerformanceTest.addStats(estimateExtractPublicKeyFromExtendedPublicKey(500, environmentBuilder));
+        HDWalletUtilsPerformanceTest.addStats(estimateExtractPublicKeyFromExtendedPublicKey(500, environmentBuilder));
     }
 
     private ExecutionStats estimateExtractPublicKeyFromExtendedPublicKey(int times, EnvironmentBuilder environmentBuilder) {

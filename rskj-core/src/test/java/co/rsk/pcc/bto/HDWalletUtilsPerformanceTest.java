@@ -31,5 +31,5 @@ import org.junit.runners.Suite;
         GetMultisigScriptHashPerformanceTestCase.class
 })
 @Ignore
-public class BTOUtilsPerformanceTest extends PrecompiledContractPerformanceTest {
+public class HDWalletUtilsPerformanceTest extends PrecompiledContractPerformanceTest {
 }

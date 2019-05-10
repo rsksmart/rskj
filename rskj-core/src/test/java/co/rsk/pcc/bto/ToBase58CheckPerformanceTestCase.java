@@ -23,14 +23,12 @@ import co.rsk.db.BenchmarkedRepository;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Random;
 
 @Ignore
@@ -41,18 +39,18 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
     private CallTransaction.Function function;
 
     @Test
-    public void toBase58Check() throws IOException {
+    public void toBase58Check() {
         function = new ToBase58Check(null).getFunction();
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             @Override
             public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
-                BTOUtils contract = new BTOUtils(new TestSystemProperties(), PrecompiledContracts.BTOUTILS_ADDR);
+                HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
                 contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
 
                 return new Environment(
                         contract,
-                        () -> new BenchmarkedRepository.Statistics()
+                        BenchmarkedRepository.Statistics::new
                 );
             }
 
@@ -61,7 +59,7 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
             }
         };
 
-        BTOUtilsPerformanceTest.addStats(estimateToBase58Check(2000, environmentBuilder));
+        HDWalletUtilsPerformanceTest.addStats(estimateToBase58Check(2000, environmentBuilder));
     }
 
     private ExecutionStats estimateToBase58Check(int times, EnvironmentBuilder environmentBuilder) {

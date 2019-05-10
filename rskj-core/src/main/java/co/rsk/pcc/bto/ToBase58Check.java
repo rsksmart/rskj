@@ -28,7 +28,7 @@ import java.math.BigInteger;
 
 /**
  * This implements the "toBase58Check" method
- * that belongs to the BTOUtils native contract.
+ * that belongs to the HDWalletUtils native contract.
  *
  * @author Ariel Mendelzon
  */
@@ -50,6 +50,10 @@ public class ToBase58Check extends NativeMethod {
             new String[]{"string"}
     );
 
+    private final String HASH_NOT_PRESENT = "hash160 must be present";
+    private final String HASH_INVALID = "Invalid hash160 '%s' (should be 20 bytes and is %d bytes)";
+    private final String INVALID_VERSION = "version must be a numeric value between 0 and 255";
+
     public ToBase58Check(ExecutionEnvironment executionEnvironment) {
         super(executionEnvironment);
     }
@@ -61,15 +65,24 @@ public class ToBase58Check extends NativeMethod {
 
     @Override
     public Object execute(Object[] arguments) {
+        if (arguments == null) {
+            throw new NativeContractIllegalArgumentException(HASH_NOT_PRESENT);
+        }
         byte[] hash = (byte[]) arguments[0];
+        if (hash == null) {
+            throw new NativeContractIllegalArgumentException(HASH_NOT_PRESENT);
+        }
         if (hash.length != 20) {
             throw new NativeContractIllegalArgumentException(String.format(
-                    "Invalid hash160 '%s' (should be 20 bytes and is %d bytes)",
+                    HASH_INVALID,
                     Hex.toHexString(hash), hash.length
             ));
         }
 
         int version = ((BigInteger) arguments[1]).intValueExact();
+        if (version < 0 || version >= 256) {
+            throw new NativeContractIllegalArgumentException(INVALID_VERSION);
+        }
 
         return new VersionedChecksummedBytes(version, hash).toBase58();
     }

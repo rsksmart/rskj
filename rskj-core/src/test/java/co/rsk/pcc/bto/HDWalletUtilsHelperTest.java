@@ -25,12 +25,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class BTOUtilsHelperTest {
-    private BTOUtilsHelper helper;
+public class HDWalletUtilsHelperTest {
+    private HDWalletUtilsHelper helper;
 
     @Before
     public void createHelper() {
-        helper = new BTOUtilsHelper();
+        helper = new HDWalletUtilsHelper();
     }
 
     @Test

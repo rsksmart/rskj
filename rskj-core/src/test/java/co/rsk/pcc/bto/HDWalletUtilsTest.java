@@ -27,23 +27,22 @@ import co.rsk.pcc.NativeMethod;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
-public class BTOUtilsTest {
-    private RskSystemProperties config;
-    private ExecutionEnvironment executionEnvironment;
-    private BTOUtils contract;
+public class HDWalletUtilsTest {
+    private HDWalletUtils contract;
 
     @Before
     public void createContract() {
-        config = new TestSystemProperties();
-        executionEnvironment = mock(ExecutionEnvironment.class);
-        contract = new BTOUtils(config.getActivationConfig(), new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
-        Whitebox.setInternalState(contract, "executionEnvironment", executionEnvironment);
+        RskSystemProperties config = new TestSystemProperties();
+        ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
+        contract = spy(new HDWalletUtils(config.getActivationConfig(), new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
+        when(contract.getExecutionEnvironment()).thenReturn(executionEnvironment);
     }
 
     @Test
@@ -58,33 +57,27 @@ public class BTOUtilsTest {
 
     @Test
     public void hasToBase58Check() {
-        assertHasMethod(ToBase58Check.class, false);
+        assertHasMethod(ToBase58Check.class);
     }
 
     @Test
     public void hasDeriveExtendedPublicKey() {
-        assertHasMethod(DeriveExtendedPublicKey.class, true);
+        assertHasMethod(DeriveExtendedPublicKey.class);
     }
 
     @Test
     public void hasExtractPublicKeyFromExtendedPublicKey() {
-        assertHasMethod(ExtractPublicKeyFromExtendedPublicKey.class, true);
+        assertHasMethod(ExtractPublicKeyFromExtendedPublicKey.class);
     }
 
     @Test
     public void hasGetMultisigScriptHash() {
-        assertHasMethod(GetMultisigScriptHash.class, false);
+        assertHasMethod(GetMultisigScriptHash.class);
     }
 
-    private void assertHasMethod(Class clazz, boolean withHelper) {
+    private void assertHasMethod(Class clazz) {
         Optional<NativeMethod> method = contract.getMethods().stream()
                 .filter(m -> m.getClass() == clazz).findFirst();
         Assert.assertTrue(method.isPresent());
-        Assert.assertEquals(executionEnvironment, method.get().getExecutionEnvironment());
-        if (withHelper) {
-            Object helper = Whitebox.getInternalState(method.get(), "helper");
-            Assert.assertNotNull(helper);
-            Assert.assertEquals(BTOUtilsHelper.class, helper.getClass());
-        }
     }
 }

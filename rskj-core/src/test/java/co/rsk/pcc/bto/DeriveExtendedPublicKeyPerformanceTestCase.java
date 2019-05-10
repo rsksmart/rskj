@@ -27,14 +27,12 @@ import co.rsk.peg.performance.CombinedExecutionStats;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -46,18 +44,18 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
     private CallTransaction.Function function;
 
     @Test
-    public void deriveExtendedPublicKey() throws IOException {
+    public void deriveExtendedPublicKey() {
         function = new DeriveExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             @Override
             public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
-                BTOUtils contract = new BTOUtils(new TestSystemProperties(), PrecompiledContracts.BTOUTILS_ADDR);
+                HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
                 contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
 
                 return new Environment(
                         contract,
-                        () -> new BenchmarkedRepository.Statistics()
+                        BenchmarkedRepository.Statistics::new
                 );
             }
 
@@ -79,7 +77,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
         stats.add(estimateDeriveExtendedPublicKey(2000, 2, environmentBuilder));
         stats.add(estimateDeriveExtendedPublicKey(500, 4, environmentBuilder));
 
-        BTOUtilsPerformanceTest.addStats(stats);
+        HDWalletUtilsPerformanceTest.addStats(stats);
     }
 
     private ExecutionStats estimateDeriveExtendedPublicKey(int times, int pathLength, EnvironmentBuilder environmentBuilder) {

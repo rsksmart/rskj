@@ -33,12 +33,12 @@ import java.util.Optional;
  *
  * @author Ariel Mendelzon
  */
-public class BTOUtils extends NativeContract {
-    private final BTOUtilsHelper helper;
+public class HDWalletUtils extends NativeContract {
+    private final HDWalletUtilsHelper helper;
 
-    public BTOUtils(ActivationConfig config, RskAddress contractAddress) {
+    public HDWalletUtils(ActivationConfig config, RskAddress contractAddress) {
         super(config, contractAddress);
-        this.helper = new BTOUtilsHelper();
+        this.helper = new HDWalletUtilsHelper();
     }
 
     @Override
