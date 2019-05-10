@@ -22,19 +22,19 @@ import org.ethereum.core.Block;
 import java.time.Clock;
 
 public class MinerClock {
-    private final boolean isRegtest;
+    private final boolean isFixedClock;
     private final Clock clock;
 
     private long timeAdjustment;
 
-    public MinerClock(boolean isRegtest, Clock clock) {
-        this.isRegtest = isRegtest;
+    public MinerClock(boolean isFixedClock, Clock clock) {
+        this.isFixedClock = isFixedClock;
         this.clock = clock;
     }
 
     public long calculateTimestampForChild(Block parent) {
         long previousTimestamp = parent.getTimestamp();
-        if (isRegtest) {
+        if (isFixedClock) {
             return previousTimestamp + timeAdjustment;
         }
 
