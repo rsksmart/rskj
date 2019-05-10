@@ -23,14 +23,12 @@ import co.rsk.db.BenchmarkedRepository;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Random;
 
 @Ignore
@@ -41,7 +39,7 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
     private CallTransaction.Function function;
 
     @Test
-    public void toBase58Check() throws IOException {
+    public void toBase58Check() {
         function = new ToBase58Check(null).getFunction();
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
@@ -52,7 +50,7 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
 
                 return new Environment(
                         contract,
-                        () -> new BenchmarkedRepository.Statistics()
+                        BenchmarkedRepository.Statistics::new
                 );
             }
 

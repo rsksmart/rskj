@@ -26,7 +26,6 @@ import co.rsk.db.BenchmarkedRepository;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -34,7 +33,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.IOException;
 import java.util.Random;
 
 @Ignore
@@ -42,7 +40,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
     private CallTransaction.Function function;
 
     @Test
-    public void extractPublicKeyFromExtendedPublicKey() throws IOException {
+    public void extractPublicKeyFromExtendedPublicKey() {
         function = new ExtractPublicKeyFromExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
@@ -53,7 +51,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
 
                 return new Environment(
                         contract,
-                        () -> new BenchmarkedRepository.Statistics()
+                        BenchmarkedRepository.Statistics::new
                 );
             }
 

@@ -30,14 +30,12 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 
 public class DeriveExtendedPublicKeyTest {
-    private ExecutionEnvironment executionEnvironment;
-    private BTOUtilsHelper helper;
     private DeriveExtendedPublicKey method;
 
     @Before
     public void createMethod() {
-        executionEnvironment = mock(ExecutionEnvironment.class);
-        helper = new BTOUtilsHelper();
+        ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
+        BTOUtilsHelper helper = new BTOUtilsHelper();
         method = new DeriveExtendedPublicKey(executionEnvironment, helper);
     }
 
@@ -199,13 +197,11 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     private void assertFailsWithMessage(Runnable statement, String message) {
-        boolean failed = false;
         try {
             statement.run();
+            Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            failed = true;
             Assert.assertTrue(e.getMessage().contains(message));
         }
-        Assert.assertTrue(failed);
     }
 }

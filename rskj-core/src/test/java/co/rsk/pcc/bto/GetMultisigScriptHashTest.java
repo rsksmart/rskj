@@ -35,12 +35,11 @@ import java.util.function.Consumer;
 import static org.mockito.Mockito.mock;
 
 public class GetMultisigScriptHashTest {
-    private ExecutionEnvironment executionEnvironment;
     private GetMultisigScriptHash method;
 
     @Before
     public void createMethod() {
-        executionEnvironment = mock(ExecutionEnvironment.class);
+        ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         method = new GetMultisigScriptHash(executionEnvironment);
     }
 
@@ -154,6 +153,17 @@ public class GetMultisigScriptHashTest {
                 () -> method.execute(new Object[]{
                         BigInteger.ONE,
                         null
+                }),
+                "At least one public key"
+        );
+    }
+
+    @Test
+    public void publicKeyCannotBeNull() {
+        assertFails(
+                () -> method.execute(new Object[]{
+                        BigInteger.ONE,
+                        null,
                 }),
                 "At least one public key"
         );

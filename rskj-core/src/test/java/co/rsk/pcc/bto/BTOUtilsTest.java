@@ -29,14 +29,15 @@ import org.junit.Test;
 
 import java.util.Optional;
 
+import static org.mockito.Mockito.spy;
+
 public class BTOUtilsTest {
-    private RskSystemProperties config;
     private BTOUtils contract;
 
     @Before
     public void createContract() {
-        config = new TestSystemProperties();
-        contract = new BTOUtils(config, new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        RskSystemProperties config = new TestSystemProperties();
+        contract = spy(new BTOUtils(config, new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
     }
 
     @Test

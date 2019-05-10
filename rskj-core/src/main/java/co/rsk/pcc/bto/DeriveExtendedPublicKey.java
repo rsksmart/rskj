@@ -92,8 +92,8 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         }
 
         DeterministicKey derived = key;
-        for (int i = 0; i < pathList.size(); i++) {
-            derived = HDKeyDerivation.deriveChildKey(derived, pathList.get(i).getI());
+        for (ChildNumber pathItem : pathList) {
+            derived = HDKeyDerivation.deriveChildKey(derived, pathItem.getI());
         }
 
         return derived.serializePubB58(params);
@@ -122,6 +122,6 @@ public class DeriveExtendedPublicKey extends NativeMethod {
     }
 
     private boolean isDecimal(String s) {
-        return s.chars().mapToObj(c -> (char) c).allMatch(c -> isDecimal(c));
+        return s.chars().mapToObj(c -> (char) c).allMatch(this::isDecimal);
     }
 }

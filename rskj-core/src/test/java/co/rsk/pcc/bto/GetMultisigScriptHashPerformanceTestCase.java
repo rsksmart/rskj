@@ -19,9 +19,6 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.crypto.DeterministicKey;
-import co.rsk.bitcoinj.crypto.HDKeyDerivation;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.BenchmarkedRepository;
@@ -29,7 +26,6 @@ import co.rsk.peg.performance.CombinedExecutionStats;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -37,7 +33,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -47,7 +42,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
     private CallTransaction.Function function;
 
     @Test
-    public void getMultisigScriptHash() throws IOException {
+    public void getMultisigScriptHash() {
         function = new GetMultisigScriptHash(null).getFunction();
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
@@ -58,7 +53,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
 
                 return new Environment(
                         contract,
-                        () -> new BenchmarkedRepository.Statistics()
+                        BenchmarkedRepository.Statistics::new
                 );
             }
 
@@ -96,7 +91,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
 
         String expectedHashHex = Hex.toHexString(ScriptBuilder.createP2SHOutputScript(
                 minimumSignatures,
-                Arrays.stream(publicKeys).map(pk -> BtcECKey.fromPublicOnly(pk)).collect(Collectors.toList())
+                Arrays.stream(publicKeys).map(BtcECKey::fromPublicOnly).collect(Collectors.toList())
         ).getPubKeyHash());
 
         ABIEncoder abiEncoder = (int executionIndex) -> function.encode(new Object[]{

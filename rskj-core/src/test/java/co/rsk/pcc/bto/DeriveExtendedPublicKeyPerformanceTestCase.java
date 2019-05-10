@@ -27,14 +27,12 @@ import co.rsk.peg.performance.CombinedExecutionStats;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -46,7 +44,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
     private CallTransaction.Function function;
 
     @Test
-    public void deriveExtendedPublicKey() throws IOException {
+    public void deriveExtendedPublicKey() {
         function = new DeriveExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
@@ -57,7 +55,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
 
                 return new Environment(
                         contract,
-                        () -> new BenchmarkedRepository.Statistics()
+                        BenchmarkedRepository.Statistics::new
                 );
             }
 
