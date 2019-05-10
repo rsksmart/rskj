@@ -39,7 +39,6 @@ public class PrecompiledContractAddressTests {
     public static final String RIPEMPD160_ADDR = "0000000000000000000000000000000000000003";
     public static final String IDENTITY_ADDR_STR = "0000000000000000000000000000000000000004";
     public static final String BIG_INT_MODEXP_ADDR = "0000000000000000000000000000000000000005";
-    public static final String SAMPLE_ADDR_STR = "0000000000000000000000000000000001000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
@@ -54,7 +53,6 @@ public class PrecompiledContractAddressTests {
         checkAddr(pcList,RIPEMPD160_ADDR ,"Ripempd160");
         checkAddr(pcList,IDENTITY_ADDR_STR ,"Identity");
         checkAddr(pcList,BIG_INT_MODEXP_ADDR ,"BigIntegerModexp");
-        //checkAddr(pcList,SAMPLE_ADDR_STR ,"SamplePrecompiledContract");
         checkAddr(pcList,BRIDGE_ADDR_STR ,"Bridge");
         checkAddr(pcList,REMASC_ADDR_STR ,"RemascContract");
         checkAddr(pcList,BLOCK_HEADER_ADDR_STR,"BlockHeaderContract");

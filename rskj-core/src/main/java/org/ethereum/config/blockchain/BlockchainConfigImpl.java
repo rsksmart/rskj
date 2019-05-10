@@ -91,11 +91,6 @@ public class BlockchainConfigImpl implements BlockchainConfig {
     }
 
     @Override
-    public boolean isRskip93() {
-        return activationConfig.isActive(RSKIP93, blockNumber);
-    }
-
-    @Override
     public boolean isRskip94() {
         return activationConfig.isActive(RSKIP94, blockNumber);
     }

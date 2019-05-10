@@ -37,7 +37,6 @@ public class ActivationConfigsForTest {
                 ConsensusRule.RSKIP90,
                 ConsensusRule.RSKIP91,
                 ConsensusRule.RSKIP92,
-                ConsensusRule.RSKIP93,
                 ConsensusRule.RSKIP94,
                 ConsensusRule.RSKIP97,
                 ConsensusRule.RSKIP98
