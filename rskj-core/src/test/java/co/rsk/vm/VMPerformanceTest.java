@@ -22,8 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.helpers.PerformanceTestConstants;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.blockchain.BlockchainConfigImpl;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
@@ -60,7 +59,7 @@ public class VMPerformanceTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
-    private final BlockchainConfig blockchainConfig = new BlockchainConfigImpl(null, null, 0);
+    private final ActivationConfig.ForBlock activations = cr -> true;
     private ProgramInvokeMockImpl invoke;
     private Program program;
     ThreadMXBean thread;
@@ -260,7 +259,7 @@ public class VMPerformanceTest {
 
         byte[] newCode = getClonedCode(code,cloneCount);
 
-        program = new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, newCode, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, newCode, invoke, null);
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -488,7 +487,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, code, invoke, null);
+        program =new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null);
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -599,7 +598,7 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     public void testRunTime(byte[] code, String s_expected) {
-        program = new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, code, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null);
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
         startMeasure();

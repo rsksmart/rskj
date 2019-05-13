@@ -18,8 +18,8 @@
 
 package co.rsk.pcc;
 
-import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -43,7 +43,7 @@ public class ExecutionEnvironment {
     private ReceiptStore receiptStore;
     private List<LogInfo> logs;
     private BlockchainNetConfig config;
-    private BlockchainConfig blockConfig;
+    private ActivationConfig.ForBlock blockConfig;
 
     public ExecutionEnvironment(
             BlockchainNetConfig config,
@@ -67,7 +67,7 @@ public class ExecutionEnvironment {
         return config;
     }
 
-    public BlockchainConfig getBlockConfig() {
+    public ActivationConfig.ForBlock getBlockConfig() {
         return blockConfig;
     }
 

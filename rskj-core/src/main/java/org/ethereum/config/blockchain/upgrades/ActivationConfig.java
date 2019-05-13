@@ -49,6 +49,10 @@ public class ActivationConfig {
         return 0 <= activationHeight && activationHeight <= blockNumber;
     }
 
+    public ActivationConfig.ForBlock forBlock(long blockNumber) {
+        return consensusRule -> isActive(consensusRule, blockNumber);
+    }
+
     public static ActivationConfig read(Config config) {
         Map<NetworkUpgrade, Long> networkUpgrades = new EnumMap<>(NetworkUpgrade.class);
         Config networkUpgradesConfig = config.getConfig(PROPERTY_ACTIVATION_HEIGHTS);
@@ -85,5 +89,9 @@ public class ActivationConfig {
 
             return networkUpgrades.get(networkUpgrade);
         }
+    }
+
+    public interface ForBlock {
+        boolean isActive(ConsensusRule consensusRule);
     }
 }

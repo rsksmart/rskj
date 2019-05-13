@@ -6,6 +6,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.genesis.GenesisLoader;
 
@@ -46,7 +47,7 @@ public class RskTestFactory extends RskTestContext {
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {
-        boolean useRskip92Encoding = config.getBlockchainConfig().getConfigForBlock(0).isRskip92();
+        boolean useRskip92Encoding = config.getBlockchainConfig().getConfigForBlock(0).isActive(ConsensusRule.RSKIP92);
         return GenesisLoader.loadGenesis(config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, useRskip92Encoding);
     }
 }

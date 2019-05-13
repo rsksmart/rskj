@@ -20,7 +20,8 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -59,14 +60,14 @@ public class PrecompiledContractAddressTests {
     }
 
     void checkAddr(PrecompiledContracts pcList,String addr,String className) {
-        BlockchainConfig bcConfig = mock(BlockchainConfig.class);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         // Enabling necessary RSKIPs for every precompiled contract to be available
-        when(bcConfig.isRskip119()).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(true);
 
         RskAddress a;
         a = new RskAddress(addr);
-        PrecompiledContracts.PrecompiledContract pc = pcList.getContractForAddress(bcConfig, DataWord.valueOf(a.getBytes()));
+        PrecompiledContracts.PrecompiledContract pc = pcList.getContractForAddress(activations, DataWord.valueOf(a.getBytes()));
         Assert.assertEquals(className,pc.getClass().getSimpleName());
     }
 }

@@ -66,6 +66,8 @@ import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -669,12 +671,12 @@ public class RskContext implements NodeBootstrapper {
 
     protected Genesis buildGenesis() {
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        BlockchainNetConfig blockchainConfig = rskSystemProperties.getBlockchainConfig();
+        ActivationConfig.ForBlock genesisActivations = rskSystemProperties.getActivationConfig().forBlock(0L);
         return GenesisLoader.loadGenesis(
                 rskSystemProperties.genesisInfo(),
-                blockchainConfig.getCommonConstants().getInitialNonce(),
+                rskSystemProperties.getNetworkConstants().getInitialNonce(),
                 true,
-                blockchainConfig.getConfigForBlock(0).isRskip92()
+                genesisActivations.isActive(ConsensusRule.RSKIP92)
         );
     }
 

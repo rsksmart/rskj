@@ -21,7 +21,8 @@ package co.rsk.vm;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.peg.Bridge;
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -58,21 +59,21 @@ public class PrecompiledContractTest {
 
     @Test
     public void getBlockHeaderContractBeforeRskip119() {
-        BlockchainConfig afterRskip119 = mock(BlockchainConfig.class);
-        when(afterRskip119.isRskip119()).thenReturn(false);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(false);
         DataWord blockHeaderContractAddress = DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
-        PrecompiledContract blockHeaderContract = precompiledContracts.getContractForAddress(afterRskip119, blockHeaderContractAddress);
+        PrecompiledContract blockHeaderContract = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
 
         Assert.assertNull(blockHeaderContract);
     }
 
     @Test
     public void getBlockHeaderContractAfterRskip119() {
-        BlockchainConfig afterRskip119 = mock(BlockchainConfig.class);
-        when(afterRskip119.isRskip119()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(true);
         DataWord blockHeaderContractAddress = DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
-        PrecompiledContract blockHeaderContract1 = precompiledContracts.getContractForAddress(afterRskip119, blockHeaderContractAddress);
-        PrecompiledContract blockHeaderContract2 = precompiledContracts.getContractForAddress(afterRskip119, blockHeaderContractAddress);
+        PrecompiledContract blockHeaderContract1 = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
+        PrecompiledContract blockHeaderContract2 = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
 
         Assert.assertNotNull(blockHeaderContract1);
         Assert.assertNotNull(blockHeaderContract2);

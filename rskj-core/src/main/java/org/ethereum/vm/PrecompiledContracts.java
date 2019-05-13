@@ -26,7 +26,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -86,7 +87,7 @@ public class PrecompiledContracts {
     }
 
 
-    public PrecompiledContract getContractForAddress(BlockchainConfig blockchainConfig, DataWord address) {
+    public PrecompiledContract getContractForAddress(ActivationConfig.ForBlock activations, DataWord address) {
 
         if (address == null) {
             return identity;
@@ -113,12 +114,8 @@ public class PrecompiledContracts {
             RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
             return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig());
         }
-
-        // Precompiled contracts depending on blockchainConfig
-        if (blockchainConfig != null) {
-            if (blockchainConfig.isRskip119() && address.equals(BLOCK_HEADER_ADDR_DW)) {
-                return new BlockHeaderContract(config, BLOCK_HEADER_ADDR);
-            }
+        if (activations.isActive(ConsensusRule.RSKIP119) && address.equals(BLOCK_HEADER_ADDR_DW)) {
+            return new BlockHeaderContract(config, BLOCK_HEADER_ADDR);
         }
 
         return null;

@@ -71,9 +71,14 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Before
     public void setUp() {
-        RskTestFactory factory = new RskTestFactory(config);
+        RskTestFactory factory = new RskTestFactory(config) {
+            @Override
+            protected Repository buildRepository() {
+                return Mockito.spy(super.buildRepository());
+            }
+        };
         blockchain = factory.getBlockchain();
-        repository = Mockito.spy(factory.getRepository());
+        repository = factory.getRepository();
         blockStore = factory.getBlockStore();
         transactionPool = factory.getTransactionPool();
         blockFactory = factory.getBlockFactory();

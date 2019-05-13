@@ -19,7 +19,6 @@
 
 package org.ethereum.config;
 
-import org.ethereum.config.blockchain.BlockchainConfigImpl;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 /**
@@ -39,8 +38,8 @@ public class BlockchainNetConfig {
     /**
      * Get the config for the specific block
      */
-    public BlockchainConfig getConfigForBlock(long blockNumber) {
-        return new BlockchainConfigImpl(networkConstants, activationConfig, blockNumber);
+    public ActivationConfig.ForBlock getConfigForBlock(long blockNumber) {
+        return activationConfig.forBlock(blockNumber);
     }
 
     /**

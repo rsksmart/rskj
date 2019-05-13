@@ -38,7 +38,11 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.*;
+import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.Constants;
+import org.ethereum.config.RegtestBlockchainNetConfig;
+import org.ethereum.config.UnitTestBlockchainNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -76,6 +80,7 @@ import java.time.Instant;
 import java.util.*;
 
 import static co.rsk.bitcoinj.core.Utils.uint32ToByteStreamLE;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Mockito.*;
 
@@ -298,10 +303,10 @@ public class BridgeTest {
     @Test
     public void executeWithFunctionSignatureLengthTooShortAfterRskip88() {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(false);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(false);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Repository repository = createRepositoryImpl();
         Repository track = repository.startTracking();
 
@@ -329,10 +334,10 @@ public class BridgeTest {
     @Test
     public void executeWithInexistentFunctionAfterRskip88() {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(false);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(false);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Repository repository = createRepositoryImpl();
         Repository track = repository.startTracking();
 
@@ -1023,10 +1028,10 @@ public class BridgeTest {
     @Test
     public void getBtcBlockchainBlockLocatorAfterRskip88And89Fork() {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(true);
-        when(blockchainConfigForBlock.isRskip89()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(true);
+        when(activationConfig.isActive(RSKIP89)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Repository repository = createRepositoryImpl();
         Repository track = repository.startTracking();
 
@@ -1297,9 +1302,9 @@ public class BridgeTest {
     @Test
     public void getFederatorPublicKey_beforeMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1329,9 +1334,9 @@ public class BridgeTest {
     @Test
     public void getFederatorPublicKey_afterMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1344,9 +1349,9 @@ public class BridgeTest {
     @Test
     public void getFederatorPublicKeyOfType_beforeMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
@@ -1360,9 +1365,9 @@ public class BridgeTest {
     @Test
     public void getFederatorPublicKeyOfType_afterMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
@@ -1438,9 +1443,9 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKey_beforeMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1470,9 +1475,9 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKey_afterMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1485,9 +1490,9 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKeyOfType_beforeMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1500,9 +1505,9 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKeyOfType_afterMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1545,9 +1550,9 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKey_beforeMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1577,9 +1582,9 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKey_afterMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1592,9 +1597,9 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKeyOfType_beforeMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1607,9 +1612,9 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKeyOfType_afterMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1653,9 +1658,9 @@ public class BridgeTest {
     @Test
     public void addFederatorPublicKey_beforeMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Transaction txMock = mock(Transaction.class);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
@@ -1675,9 +1680,9 @@ public class BridgeTest {
     @Test
     public void addFederatorPublicKey_afterMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Transaction txMock = mock(Transaction.class);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
@@ -1695,9 +1700,9 @@ public class BridgeTest {
     @Test
     public void addFederatorPublicKeyMultikey_beforeMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Transaction txMock = mock(Transaction.class);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
@@ -1717,9 +1722,9 @@ public class BridgeTest {
     @Test
     public void addFederatorPublicKeyMultikey_afterMultikey() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip123()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP123)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Transaction txMock = mock(Transaction.class);
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainConfig));
@@ -1804,10 +1809,10 @@ public class BridgeTest {
     @Test
     public void getLockWhitelistEntryByAddressBeforeRskip87And88Fork() throws IOException {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(false);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(false);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Address address = new BtcECKey().toAddress(networkParameters);
 
         Repository repository = createRepositoryImpl();
@@ -1826,10 +1831,10 @@ public class BridgeTest {
         Transaction mockedTransaction;
 
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(true);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(true);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         Repository repository = createRepositoryImpl();
         Repository track = repository.startTracking();
 
@@ -1871,10 +1876,10 @@ public class BridgeTest {
     @Test
     public void addLockWhitelistAddressBeforeRskip87Fork() throws IOException {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(false);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(false);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Repository repository = createRepositoryImpl();
         Repository track = repository.startTracking();
@@ -1900,10 +1905,10 @@ public class BridgeTest {
     @Test
     public void addLockWhitelistAddressAfterRskip87And88Fork() throws IOException {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(true);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(true);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Repository repository = createRepositoryImpl();
         Repository track = repository.startTracking();
@@ -1925,10 +1930,10 @@ public class BridgeTest {
     @Test
     public void addOneOffLockWhitelistAddressBeforeRskip87And88Fork() throws IOException {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(false);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(false);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Repository repository = createRepositoryImpl();
         Repository track = repository.startTracking();
@@ -1943,10 +1948,10 @@ public class BridgeTest {
     @Test
     public void addOneOffLockWhitelistAddressAfterRskip87Fork() throws IOException {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(true);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(true);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Repository repository = createRepositoryImpl();
         Repository track = repository.startTracking();
@@ -1972,10 +1977,10 @@ public class BridgeTest {
     @Test
     public void addUnlimitedLockWhitelistAddressBeforeRskip87And88Fork() {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(false);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(false);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Repository repository = createRepositoryImpl();
         Repository track = repository.startTracking();
@@ -1990,10 +1995,10 @@ public class BridgeTest {
     @Test
     public void addUnlimitedLockWhitelistAddressAfterRskip87Fork() {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(true);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(true);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Repository repository = createRepositoryImpl();
         Repository track = repository.startTracking();
@@ -2120,10 +2125,10 @@ public class BridgeTest {
     @Test
     public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx_beforeOrchid() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(false);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(false);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(false);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(false);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(false);
@@ -2141,10 +2146,10 @@ public class BridgeTest {
     @Test
     public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx() throws Exception {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(false);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(false);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
@@ -2258,7 +2263,7 @@ public class BridgeTest {
 
         try {
             // Run the program on the VM
-            Program program = new Program(config.getVmConfig(), precompiledContracts, blockFactory, mock(BlockchainConfig.class), code, invoke, tx);
+            Program program = new Program(config.getVmConfig(), precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, tx);
             for (int i = 0; i < numOps; i++) {
                 vm.step(program);
             }
@@ -2271,10 +2276,10 @@ public class BridgeTest {
     @Test
     public void testCallFromContract_afterOrchid() {
         BlockchainNetConfig blockchainConfig = spy(BridgeTest.blockchainConfig);
-        BlockchainConfig blockchainConfigForBlock = mock(BlockchainConfig.class);
-        when(blockchainConfigForBlock.isRskip87()).thenReturn(false);
-        when(blockchainConfigForBlock.isRskip88()).thenReturn(true);
-        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(blockchainConfigForBlock);
+        ActivationConfig.ForBlock activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP87)).thenReturn(false);
+        when(activationConfig.isActive(RSKIP88)).thenReturn(true);
+        when(blockchainConfig.getConfigForBlock(anyLong())).thenReturn(activationConfig);
         TestSystemProperties spyConfig = spy(BridgeTest.config);
         when(spyConfig.getBlockchainConfig()).thenReturn(blockchainConfig);
         blockFactory = new BlockFactory(spyConfig.getActivationConfig());
@@ -2304,7 +2309,7 @@ public class BridgeTest {
         when(tx.getHash()).thenReturn(new Keccak256("001122334455667788990011223344556677889900112233445566778899aabb"));
 
         // Run the program on the VM
-        Program program = new Program(spyConfig.getVmConfig(), precompiledContracts, blockFactory, blockchainConfigForBlock, code, invoke, tx);
+        Program program = new Program(spyConfig.getVmConfig(), precompiledContracts, blockFactory, activationConfig, code, invoke, tx);
         try {
             for (int i = 0; i < numOps; i++) {
                 vm.step(program);

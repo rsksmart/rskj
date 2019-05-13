@@ -23,6 +23,7 @@ import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
 
@@ -48,7 +49,7 @@ public class RskTestContext extends RskContext {
     }
 
     @Override
-    protected RepositoryImpl buildRepository() {
+    protected Repository buildRepository() {
         return new RepositoryImpl(
                 new Trie(new TrieStoreImpl(new HashMapDB()), true),
                 new HashMapDB(),
