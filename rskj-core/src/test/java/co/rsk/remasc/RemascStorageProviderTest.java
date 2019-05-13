@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryImpl;
@@ -31,13 +32,12 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
 import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -420,32 +420,18 @@ public class RemascStorageProviderTest {
 
         blocks.addAll(createSimpleBlocks(blocks.get(blocks.size()-1),10, coinbase));
 
-        Repository repository = blockchain.getRepository();
-        BlockStore blockStore = blockchain.getBlockStore();
-        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor blockExecutor = new BlockExecutor(repository, (tx, txindex, coinbase1, track, block, totalGasUsed) -> new TransactionExecutor(
-                tx,
-                txindex,
-                block.getCoinbase(),
-                track,
-                blockStore,
-                null,
-                blockFactory,
-                programInvokeFactory,
-                block,
-                null,
-                totalGasUsed,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ), new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>()));
+        BlockExecutor blockExecutor = new BlockExecutor(
+                blockchain.getRepository(),
+                new TransactionExecutorFactory(
+                        config,
+                        blockchain.getBlockStore(),
+                        null,
+                        new BlockFactory(config.getActivationConfig()),
+                        new ProgramInvokeFactoryImpl(),
+                        null
+                ),
+                new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
+        );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());

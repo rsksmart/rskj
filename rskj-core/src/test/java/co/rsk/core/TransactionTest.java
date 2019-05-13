@@ -234,28 +234,17 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
-                    TransactionExecutor executor = new TransactionExecutor(
-                            txConst,
-                            0,
-                            bestBlock.getCoinbase(),
-                            track,
+                    TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                            config,
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
                             invokeFactory,
-                            bestBlock,
-                            new EthereumListenerAdapter(),
-                            0,
-                            config.getVmConfig(),
-                            config.getBlockchainConfig(),
-                            config.playVM(),
-                            config.isRemascEnabled(),
-                            config.vmTrace(),
-                            new PrecompiledContracts(config),
-                            config.databaseDir(),
-                            config.vmTraceDir(),
-                            config.vmTraceCompressed())
-                        .setLocalCall(true);
+                            new EthereumListenerAdapter()
+                    );
+                    TransactionExecutor executor = transactionExecutorFactory
+                            .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
+                            .setLocalCall(true);
 
                     executor.init();
                     executor.execute();

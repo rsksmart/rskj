@@ -216,13 +216,8 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-    public void disableRemasc() {
-        this.remascEnabled = false;
-    }
-
-    //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-    public void enableRemasc() {
-        this.remascEnabled = true;
+    public void setRemascEnabled(boolean remascEnabled) {
+        this.remascEnabled = remascEnabled;
     }
 
     public long peerDiscoveryMessageTimeOut() {

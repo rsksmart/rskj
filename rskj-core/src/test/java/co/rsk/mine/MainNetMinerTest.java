@@ -5,6 +5,7 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.db.StateRootHandler;
@@ -44,6 +45,7 @@ public class MainNetMinerTest {
     private Repository repository;
     private BlockFactory blockFactory;
     private StateRootHandler stateRootHandler;
+    private TransactionExecutorFactory transactionExecutorFactory;
 
     @Before
     public void setup() {
@@ -57,6 +59,7 @@ public class MainNetMinerTest {
         repository = factory.getRepository();
         blockFactory = factory.getBlockFactory();
         stateRootHandler = factory.getStateRootHandler();
+        transactionExecutorFactory = factory.getTransactionExecutorFactory();
     }
 
     /*
@@ -193,11 +196,10 @@ public class MainNetMinerTest {
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                 new GasLimitCalculator(config.getNetworkConstants()),
                 unclesValidationRule,
-                config,
-                null,
                 clock,
                 blockFactory,
-                stateRootHandler
+                stateRootHandler,
+                transactionExecutorFactory
         );
     }
 }

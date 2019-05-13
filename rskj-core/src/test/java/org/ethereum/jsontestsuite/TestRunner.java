@@ -24,6 +24,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
@@ -139,32 +140,33 @@ public class TestRunner {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, blockFactory, null, listener, 10, 100);
-
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
-        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, null, new DummyBlockValidator(), false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                config,
                 blockStore,
                 receiptStore,
                 blockFactory,
-                programInvokeFactory,
-                block1,
+                new ProgramInvokeFactoryImpl(),
+                listener
+        );
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
+
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
+        BlockChainImpl blockchain = new BlockChainImpl(
+                repository,
+                blockStore,
+                receiptStore,
+                transactionPool,
                 null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ), stateRootHandler), stateRootHandler);
+                new DummyBlockValidator(),
+                false,
+                1,
+                new BlockExecutor(
+                        repository,
+                        transactionExecutorFactory,
+                        stateRootHandler
+                ),
+                stateRootHandler
+        );
 
         blockchain.setNoValidation(true);
         blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());

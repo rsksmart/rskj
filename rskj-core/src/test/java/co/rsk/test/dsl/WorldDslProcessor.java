@@ -20,6 +20,7 @@ package co.rsk.test.dsl;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -30,7 +31,6 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -236,29 +236,16 @@ public class WorldDslProcessor {
             Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
-            BlockExecutor executor = new BlockExecutor(world.getRepository(),
-                    (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                                                               tx1,
-                                                               txindex1,
-                                                               block1.getCoinbase(),
-                                                               track1,
-                    world.getBlockChain().getBlockStore(),
-                    null,
-                    new BlockFactory(config.getActivationConfig()),
-                    programInvokeFactory,
-                                                               block1,
-                    null,
-                                                               totalGasUsed1,
-                                                               config.getVmConfig(),
-                                                               config.getBlockchainConfig(),
-                                                               config.playVM(),
-                                                               config.isRemascEnabled(),
-                                                               config.vmTrace(),
-                                                               new PrecompiledContracts(config),
-                                                               config.databaseDir(),
-                                                               config.vmTraceDir(),
-                                                               config.vmTraceCompressed()
-                                                       ),
+            BlockExecutor executor = new BlockExecutor(
+                    world.getRepository(),
+                    new TransactionExecutorFactory(
+                            config,
+                            world.getBlockChain().getBlockStore(),
+                            null,
+                            new BlockFactory(config.getActivationConfig()),
+                            programInvokeFactory,
+                            null
+                    ),
                     new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
             );
             executor.executeAndFill(block, parent.getHeader());

@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
@@ -28,13 +29,9 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,10 +60,9 @@ public class TransactionPoolImpl implements TransactionPool {
     private final RskSystemProperties config;
     private final BlockStore blockStore;
     private final Repository repository;
-    private final ReceiptStore receiptStore;
     private final BlockFactory blockFactory;
-    private final ProgramInvokeFactory programInvokeFactory;
     private final EthereumListener listener;
+    private final TransactionExecutorFactory transactionExecutorFactory;
     private final int outdatedThreshold;
     private final int outdatedTimeout;
 
@@ -77,22 +73,21 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final TxPendingValidator validator;
 
-    public TransactionPoolImpl(RskSystemProperties config,
-                               Repository repository,
-                               BlockStore blockStore,
-                               ReceiptStore receiptStore,
-                               BlockFactory blockFactory,
-                               ProgramInvokeFactory programInvokeFactory,
-                               EthereumListener listener,
-                               int outdatedThreshold,
-                               int outdatedTimeout) {
+    public TransactionPoolImpl(
+            RskSystemProperties config,
+            Repository repository,
+            BlockStore blockStore,
+            BlockFactory blockFactory,
+            EthereumListener listener,
+            TransactionExecutorFactory transactionExecutorFactory,
+            int outdatedThreshold,
+            int outdatedTimeout) {
         this.config = config;
         this.blockStore = blockStore;
         this.repository = repository;
-        this.receiptStore = receiptStore;
         this.blockFactory = blockFactory;
-        this.programInvokeFactory = programInvokeFactory;
         this.listener = listener;
+        this.transactionExecutorFactory = transactionExecutorFactory.withFakeListener();
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
 
@@ -135,30 +130,15 @@ public class TransactionPoolImpl implements TransactionPool {
     public PendingState getPendingState() {
         removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
         return new PendingState(
-            repository,
-            new TransactionSet(pendingTransactions),
-            (repository, tx) ->
-                new TransactionExecutor(
-                    tx,
-                    0,
-                    bestBlock.getCoinbase(),
-                    repository,
-                    blockStore,
-                    receiptStore,
-                    blockFactory,
-                    programInvokeFactory,
-                    createFakePendingBlock(bestBlock),
-                    new EthereumListenerAdapter(),
-                    0,
-                    config.getVmConfig(),
-                    config.getBlockchainConfig(),
-                    config.playVM(),
-                    config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed()
+                repository,
+                new TransactionSet(pendingTransactions),
+                (repository, tx) -> transactionExecutorFactory.newInstance(
+                        tx,
+                        0,
+                        bestBlock.getCoinbase(),
+                        repository,
+                        createFakePendingBlock(bestBlock),
+                        0
                 )
         );
     }

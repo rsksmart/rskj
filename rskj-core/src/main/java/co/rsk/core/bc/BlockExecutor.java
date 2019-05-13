@@ -19,12 +19,12 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.StateRootHandler;
-import org.bouncycastle.util.encoders.Hex;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -275,9 +275,5 @@ public class BlockExecutor {
         BlockResult result =  new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees);
         profiler.stop(metric);
         return result;
-    }
-
-    public interface TransactionExecutorFactory {
-        TransactionExecutor newInstance(Transaction tx, int txindex, RskAddress coinbase, Repository track, Block block, long totalGasUsed);
     }
 }

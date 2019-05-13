@@ -21,6 +21,7 @@ package co.rsk.remasc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -32,7 +33,6 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
@@ -125,27 +125,13 @@ class RemascTestRunner {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockExecutor blockExecutor = new BlockExecutor(
                 blockchain.getRepository(),
-                (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
-                    tx,
-                    txindex,
-                    block.getCoinbase(),
-                    track,
-                    blockchain.getBlockStore(),
-                    null,
-                    blockFactory,
-                    programInvokeFactory,
-                    block,
-                    null,
-                    totalGasUsed,
-                    builder.getConfig().getVmConfig(),
-                    builder.getConfig().getBlockchainConfig(),
-                    builder.getConfig().playVM(),
-                    builder.getConfig().isRemascEnabled(),
-                    builder.getConfig().vmTrace(),
-                    new PrecompiledContracts(builder.getConfig()),
-                    builder.getConfig().databaseDir(),
-                    builder.getConfig().vmTraceDir(),
-                    builder.getConfig().vmTraceCompressed()
+                new TransactionExecutorFactory(
+                        builder.getConfig(),
+                        blockchain.getBlockStore(),
+                        null,
+                        blockFactory,
+                        programInvokeFactory,
+                        null
                 ),
                 builder.getStateRootHandler()
         );

@@ -3,14 +3,11 @@ package org.ethereum.util;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Genesis;
-import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.genesis.GenesisLoader;
-import org.ethereum.vm.PrecompiledContracts;
 
 /**
  * @deprecated use {@link RskTestContext} instead which builds the same graph of dependencies than the productive code
@@ -18,10 +15,6 @@ import org.ethereum.vm.PrecompiledContracts;
 @Deprecated
 public class RskTestFactory extends RskTestContext {
     private final TestSystemProperties config;
-
-    private BlockExecutor blockExecutor;
-    private BlockExecutor.TransactionExecutorFactory transactionExecutorFactory;
-    private PrecompiledContracts precompiledContracts;
 
     public RskTestFactory() {
         this(new TestSystemProperties());
@@ -50,56 +43,6 @@ public class RskTestFactory extends RskTestContext {
     @Override
     public SyncConfiguration buildSyncConfiguration() {
         return SyncConfiguration.IMMEDIATE_FOR_TESTING;
-    }
-
-    public BlockExecutor getBlockExecutor() {
-        if (blockExecutor == null) {
-            blockExecutor = new BlockExecutor(
-                    getRepository(),
-                    getTransactionExecutorFactory(),
-                    getStateRootHandler()
-            );
-        }
-
-        return blockExecutor;
-    }
-
-    private BlockExecutor.TransactionExecutorFactory getTransactionExecutorFactory() {
-        if (transactionExecutorFactory == null) {
-            RskSystemProperties config = getRskSystemProperties();
-            transactionExecutorFactory = (tx, txindex, coinbase, track, block, totalGasUsed) -> new TransactionExecutor(
-                    tx,
-                    txindex,
-                    block.getCoinbase(),
-                    track,
-                    getBlockStore(),
-                    getReceiptStore(),
-                    getBlockFactory(),
-                    getProgramInvokeFactory(),
-                    block,
-                    getCompositeEthereumListener(),
-                    totalGasUsed,
-                    config.getVmConfig(),
-                    config.getBlockchainConfig(),
-                    config.playVM(),
-                    config.isRemascEnabled(),
-                    config.vmTrace(),
-                    getPrecompiledContracts(),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed()
-            );
-        }
-
-        return transactionExecutorFactory;
-    }
-
-    private PrecompiledContracts getPrecompiledContracts() {
-        if (precompiledContracts == null) {
-            precompiledContracts = new PrecompiledContracts(getRskSystemProperties());
-        }
-
-        return precompiledContracts;
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {

@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
@@ -38,7 +39,6 @@ import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.util.HashMap;
@@ -63,9 +63,16 @@ public class ImportLightTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, blockFactory, null, listener, 10, 100);
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                config,
+                blockStore,
+                receiptStore,
+                blockFactory,
+                new ProgramInvokeFactoryImpl(),
+                listener
+        );
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
 
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
@@ -76,28 +83,11 @@ public class ImportLightTest {
                 new DummyBlockValidator(),
                 false,
                 1,
-                new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                        tx1,
-                        txindex1,
-                        block1.getCoinbase(),
-                        track1,
-                        blockStore,
-                        receiptStore,
-                        blockFactory,
-                        programInvokeFactory,
-                        block1,
-                        listener,
-                        totalGasUsed1,
-                        config.getVmConfig(),
-                        config.getBlockchainConfig(),
-                        config.playVM(),
-                        config.isRemascEnabled(),
-                        config.vmTrace(),
-                        new PrecompiledContracts(config),
-                        config.databaseDir(),
-                        config.vmTraceDir(),
-                        config.vmTraceCompressed()
-                ), stateRootHandler),
+                new BlockExecutor(
+                        repository,
+                        transactionExecutorFactory,
+                        stateRootHandler
+                ),
                 stateRootHandler
         );
 

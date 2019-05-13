@@ -48,6 +48,7 @@ import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.ChannelManagerImpl;
@@ -80,7 +81,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, null, blockFactory, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100);
 
         Web3Impl web3 = createEnvironment(blockchain, null, repository, transactionPool, blockStore, false);
 
@@ -103,7 +104,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, null, blockFactory, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100);
 
         Web3Impl web3 = createEnvironment(blockchain, null, repository, transactionPool, blockStore, true);
 
@@ -132,7 +133,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, blockFactory, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, true);
 
@@ -157,7 +158,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, blockFactory, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, true);
 
@@ -183,7 +184,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, blockFactory, null, null, 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, false);
 
@@ -272,11 +273,10 @@ public class TransactionModuleTest {
                         new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                         new GasLimitCalculator(config.getNetworkConstants()),
                         Mockito.mock(BlockUnclesValidationRule.class),
-                        config,
-                        receiptStore,
                         minerClock,
                         blockFactory,
-                        new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
+                        new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>()),
+                        buildTransactionExecutorFactory(blockStore, receiptStore)
                 ),
                 minerClock,
                 blockFactory,
@@ -288,7 +288,7 @@ public class TransactionModuleTest {
         MinerClient minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
         EthModuleTransaction transactionModule = null;
 
-        ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(config, repository, blockStore, receiptStore, blockFactory, null);
+        ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(repository, buildTransactionExecutorFactory(blockStore, receiptStore));
 
         if (mineInstant) {
             transactionModule = new EthModuleTransactionInstant(config.getNetworkConstants(), wallet, transactionPool, minerServer, minerClient, blockchain);
@@ -326,6 +326,17 @@ public class TransactionModuleTest {
                 configCapabilities,
                 null,
                 null
+        );
+    }
+
+    private TransactionExecutorFactory buildTransactionExecutorFactory(BlockStore blockStore, ReceiptStore receiptStore) {
+        return new TransactionExecutorFactory(
+                config,
+                blockStore,
+                receiptStore,
+                blockFactory,
+                null,
+                new EthereumListenerAdapter()
         );
     }
 }

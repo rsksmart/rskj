@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -34,7 +35,6 @@ import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -439,28 +439,17 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
-                    TransactionExecutor executor = new TransactionExecutor(
-                            txConst,
-                            0,
-                            bestBlock.getCoinbase(),
-                            track,
+                    TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                            config,
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
                             invokeFactory,
-                            bestBlock,
-                            new EthereumListenerAdapter(),
-                            0,
-                            config.getVmConfig(),
-                            config.getBlockchainConfig(),
-                            config.playVM(),
-                            config.isRemascEnabled(),
-                            config.vmTrace(),
-                            new PrecompiledContracts(config),
-                            config.databaseDir(),
-                            config.vmTraceDir(),
-                            config.vmTraceCompressed())
-                        .setLocalCall(true);
+                            new EthereumListenerAdapter()
+                    );
+                    TransactionExecutor executor = transactionExecutorFactory
+                            .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
+                            .setLocalCall(true);
 
                     executor.init();
                     executor.execute();
@@ -709,28 +698,16 @@ public class TransactionTest {
 
     private TransactionExecutor executeTransaction(Blockchain blockchain, Transaction tx) {
         Repository track = blockchain.getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(
-                tx,
-                0,
-                RskAddress.nullAddress(),
-                blockchain.getRepository(),
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                config,
                 blockchain.getBlockStore(),
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                blockchain.getBestBlock(),
-                new EthereumListenerAdapter(),
-                0,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                new EthereumListenerAdapter()
         );
+        TransactionExecutor executor = transactionExecutorFactory
+                .newInstance(tx, 0, RskAddress.nullAddress(), blockchain.getRepository(), blockchain.getBestBlock(), 0);
 
         executor.init();
         executor.execute();

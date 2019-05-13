@@ -5,6 +5,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
@@ -13,7 +14,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
@@ -109,27 +109,16 @@ public class ContractRunner {
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = repository.startTracking();
         RskSystemProperties config = new TestSystemProperties();
-        TransactionExecutor executor = new TransactionExecutor(
-                transaction,
-                0,
-                RskAddress.nullAddress(),
-                repository,
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                config,
                 blockStore,
                 receiptStore,
                 new BlockFactory(config.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
-                blockchain.getBestBlock(),
-                new EthereumListenerAdapter(),
-                0,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed());
+                new EthereumListenerAdapter()
+        );
+        TransactionExecutor executor = transactionExecutorFactory
+                .newInstance(transaction, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
         executor.init();
         executor.execute();
         executor.go();

@@ -20,13 +20,13 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.vm.PrecompiledContracts;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,28 +89,16 @@ public class MinerHelper {
         int txindex = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
-
-            TransactionExecutor executor = new TransactionExecutor(
-                    tx,
-                    txindex++,
-                    block.getCoinbase(),
-                    track,
+            TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                    config,
                     null,
                     null,
                     blockFactory,
                     null,
-                    block,
-                    new EthereumListenerAdapter(),
-                    totalGasUsed,
-                    config.getVmConfig(),
-                    config.getBlockchainConfig(),
-                    config.playVM(),
-                    config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed());
+                    new EthereumListenerAdapter()
+            );
+            TransactionExecutor executor = transactionExecutorFactory
+                    .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 
             executor.init();
             executor.execute();

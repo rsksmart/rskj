@@ -19,14 +19,11 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
-import org.ethereum.core.*;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.core.Block;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 /**
  * Encapsulates the logic to execute a transaction in an
@@ -34,26 +31,12 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
  */
 public class ReversibleTransactionExecutor {
 
-    private final RskSystemProperties config;
     private final Repository track;
-    private final BlockStore blockStore;
-    private final ReceiptStore receiptStore;
-    private final ProgramInvokeFactory programInvokeFactory;
-    private final BlockFactory blockFactory;
+    private final TransactionExecutorFactory transactionExecutorFactory;
 
-    public ReversibleTransactionExecutor(
-            RskSystemProperties config,
-            Repository track,
-            BlockStore blockStore,
-            ReceiptStore receiptStore,
-            BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory) {
-        this.config = config;
+    public ReversibleTransactionExecutor(Repository track, TransactionExecutorFactory transactionExecutorFactory) {
         this.track = track;
-        this.blockStore = blockStore;
-        this.receiptStore = receiptStore;
-        this.programInvokeFactory = programInvokeFactory;
-        this.blockFactory = blockFactory;
+        this.transactionExecutorFactory = transactionExecutorFactory.withFakeListener();
     }
 
     public ProgramResult executeTransaction(
@@ -78,12 +61,9 @@ public class ReversibleTransactionExecutor {
                 fromAddress
         );
 
-        TransactionExecutor executor = new TransactionExecutor(
-                tx, 0, coinbase, repository, blockStore, receiptStore,
-                blockFactory, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0, config.getVmConfig(),
-                config.getBlockchainConfig(), config.playVM(), config.isRemascEnabled(), config.vmTrace(), new PrecompiledContracts(config),
-                config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed()
-        ).setLocalCall(true);
+        TransactionExecutor executor = transactionExecutorFactory
+                .newInstance(tx, 0, coinbase, repository, executionBlock, 0)
+                .setLocalCall(true);
 
         executor.init();
         executor.execute();

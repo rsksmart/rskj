@@ -19,10 +19,10 @@
 package co.rsk.mine;
 
 import co.rsk.config.MiningConfig;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.db.StateRootHandler;
@@ -31,9 +31,6 @@ import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,11 +71,10 @@ public class BlockToMineBuilder {
             DifficultyCalculator difficultyCalculator,
             GasLimitCalculator gasLimitCalculator,
             BlockValidationRule validationRules,
-            RskSystemProperties config,
-            ReceiptStore receiptStore,
             MinerClock clock,
             BlockFactory blockFactory,
-            StateRootHandler stateRootHandler) {
+            StateRootHandler stateRootHandler,
+            TransactionExecutorFactory transactionExecutorFactory) {
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
         this.blockStore = Objects.requireNonNull(blockStore);
@@ -90,29 +86,11 @@ public class BlockToMineBuilder {
         this.blockFactory = blockFactory;
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        this.executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                blockStore,
-                receiptStore,
-                blockFactory,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ), stateRootHandler);
+        this.executor = new BlockExecutor(
+                repository,
+                transactionExecutorFactory.withFakeListener(),
+                stateRootHandler
+        );
 
         this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
     }

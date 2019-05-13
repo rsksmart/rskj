@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
@@ -337,28 +338,17 @@ public class RskForksBridgeTest {
                 Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}), beforeBambooProperties.getBlockchainConfig().getCommonConstants().getChainId());
         rskTx.sign(new byte[32]);
 
-        TransactionExecutor executor = new TransactionExecutor(
-                rskTx,
-                0,
-                blockChain.getBestBlock().getCoinbase(),
-                repository,
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                beforeBambooProperties,
                 blockChain.getBlockStore(),
                 null,
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
-                blockChain.getBestBlock(),
-                new EthereumListenerAdapter(),
-                0,
-                beforeBambooProperties.getVmConfig(),
-                beforeBambooProperties.getBlockchainConfig(),
-                beforeBambooProperties.playVM(),
-                beforeBambooProperties.isRemascEnabled(),
-                beforeBambooProperties.vmTrace(),
-                new PrecompiledContracts(beforeBambooProperties),
-                beforeBambooProperties.databaseDir(),
-                beforeBambooProperties.vmTraceDir(),
-                beforeBambooProperties.vmTraceCompressed())
-            .setLocalCall(true);
+                new EthereumListenerAdapter()
+        );
+        TransactionExecutor executor = transactionExecutorFactory
+                .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository, blockChain.getBestBlock(), 0)
+                .setLocalCall(true);
 
         executor.init();
         executor.execute();

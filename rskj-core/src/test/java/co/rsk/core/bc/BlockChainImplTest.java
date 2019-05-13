@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
@@ -35,10 +36,9 @@ import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.db.TrieStorePoolOnMemory;
+import org.ethereum.db.*;
+import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -56,6 +56,7 @@ import java.util.Map;
 public class BlockChainImplTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
+    private static final StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
@@ -856,29 +857,12 @@ public class BlockChainImplTest {
         Block block = new BlockBuilder().minGasPrice(BigInteger.ZERO).transactions(txs)
                 .parent(genesis).build();
 
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockExecutor executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
+        BlockExecutor executor = createExecutor(
+                repository,
                 null,
                 null,
-                blockFactory,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ), new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>()));
+                null
+        );
         executor.executeAndFill(block, genesis.getHeader());
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
@@ -914,31 +898,27 @@ public class BlockChainImplTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, receiptStore, blockFactory, null, listener, 10, 100);
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
-        return new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                config,
                 blockStore,
                 receiptStore,
                 blockFactory,
-                programInvokeFactory,
-                block1,
+                null,
+                new EthereumListenerAdapter()
+        );
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, blockFactory, listener, transactionExecutorFactory, 10, 100);
+        return new BlockChainImpl(
+                repository,
+                blockStore,
+                receiptStore,
+                transactionPool,
                 listener,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ), stateRootHandler), stateRootHandler);
+                blockValidator,
+                false,
+                1,
+                createExecutor(repository, listener, receiptStore, blockStore),
+                stateRootHandler
+        );
     }
 
     public static Block getGenesisBlock(Blockchain blockChain) {
@@ -958,30 +938,34 @@ public class BlockChainImplTest {
         return genesis;
     }
 
-    private static BlockExecutor createExecutor(BlockChainImpl blockChain, BlockExecutorTest.SimpleEthereumListener listener) {
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        return new BlockExecutor(blockChain.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                blockChain.getBlockStore(),
-                null,
-                blockFactory,
-                programInvokeFactory,
-                block1,
+    private static BlockExecutor createExecutor(
+            BlockChainImpl blockChain,
+            EthereumListener listener) {
+        return createExecutor(
+                blockChain.getRepository(),
                 listener,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ), new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>()));
+                null,
+                blockChain.getBlockStore()
+        );
+    }
+
+    private static BlockExecutor createExecutor(
+            Repository repository,
+            EthereumListener listener,
+            ReceiptStore receiptStore,
+            BlockStore blockStore) {
+        return new BlockExecutor(
+                repository,
+                new TransactionExecutorFactory(
+                        config,
+                        blockStore,
+                        receiptStore,
+                        blockFactory,
+                        new ProgramInvokeFactoryImpl(),
+                        listener
+                ),
+                stateRootHandler
+        );
     }
 
     private static void alterBytes(byte[] bytes) {

@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -53,6 +54,7 @@ public class MinerManagerTest {
     private BlockStore blockStore;
     private BlockFactory blockFactory;
     private StateRootHandler stateRootHandler;
+    private TransactionExecutorFactory transactionExecutorFactory;
 
     @Before
     public void setup() {
@@ -63,6 +65,7 @@ public class MinerManagerTest {
         blockStore = factory.getBlockStore();
         blockFactory = factory.getBlockFactory();
         stateRootHandler = factory.getStateRootHandler();
+        transactionExecutorFactory = factory.getTransactionExecutorFactory();
     }
 
     @Test
@@ -280,11 +283,10 @@ public class MinerManagerTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         new BlockValidationRuleDummy(),
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,

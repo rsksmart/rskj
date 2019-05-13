@@ -25,16 +25,14 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockUnclesValidationRule;
-import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RskTestFactory;
@@ -66,6 +64,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     private TransactionPool transactionPool;
     private BlockFactory blockFactory;
     private StateRootHandler stateRootHandler;
+    private TransactionExecutorFactory transactionExecutorFactory;
 
     public MinerServerTest(TestSystemProperties config) {
         super(config);
@@ -81,6 +80,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         transactionPool = factory.getTransactionPool();
         blockFactory = factory.getBlockFactory();
         stateRootHandler = factory.getStateRootHandler();
+        transactionExecutorFactory = factory.getTransactionExecutorFactory();
     }
 
     @Test
@@ -124,11 +124,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -168,11 +167,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -236,11 +234,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -289,11 +286,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -345,11 +341,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -408,11 +403,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -463,11 +457,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -523,11 +516,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -565,11 +557,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -607,11 +598,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -653,11 +643,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        transactionExecutorFactory
                 ),
                 clock,
                 blockFactory,
@@ -718,36 +707,5 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 throw new RuntimeException(e); // Cannot happen.
             }
         }
-    }
-
-    private MinerServerImpl getMinerServerWithMocks() {
-        return new MinerServerImpl(
-                config,
-                Mockito.mock(Ethereum.class),
-                blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                getBuilderWithMocks(),
-                new MinerClock(true, Clock.systemUTC()),
-                blockFactory,
-                ConfigUtils.getDefaultMiningConfig()
-        );
-    }
-
-    private BlockToMineBuilder getBuilderWithMocks() {
-        return new BlockToMineBuilder(
-                ConfigUtils.getDefaultMiningConfig(),
-                Mockito.mock(Repository.class),
-                blockStore,
-                Mockito.mock(TransactionPool.class),
-                difficultyCalculator,
-                new GasLimitCalculator(config.getNetworkConstants()),
-                Mockito.mock(BlockValidationRule.class),
-                config,
-                Mockito.mock(ReceiptStore.class),
-                Mockito.mock(MinerClock.class),
-                blockFactory,
-                stateRootHandler
-        );
     }
 }

@@ -38,8 +38,6 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +61,7 @@ public class BlockChainLoader {
     private final TransactionPool transactionPool;
     private final EthereumListener listener;
     private final BlockValidator blockValidator;
-    private final BlockFactory blockFactory;
+    private final BlockExecutor blockExecutor;
     private final Genesis genesis;
     private final StateRootHandler stateRootHandler;
 
@@ -75,10 +73,9 @@ public class BlockChainLoader {
             TransactionPool transactionPool,
             EthereumListener listener,
             BlockValidator blockValidator,
-            BlockFactory blockFactory,
+            BlockExecutor blockExecutor,
             Genesis genesis,
             StateRootHandler stateRootHandler) {
-
         this.config = config;
         this.blockStore = blockStore;
         this.repository = repository;
@@ -86,13 +83,12 @@ public class BlockChainLoader {
         this.transactionPool = transactionPool;
         this.listener = listener;
         this.blockValidator = blockValidator;
-        this.blockFactory = blockFactory;
+        this.blockExecutor = blockExecutor;
         this.genesis = genesis;
         this.stateRootHandler = stateRootHandler;
     }
 
     public BlockChainImpl loadBlockchain() {
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
@@ -102,32 +98,7 @@ public class BlockChainLoader {
                 blockValidator,
                 config.isFlushEnabled(),
                 config.flushNumberOfBlocks(),
-                new BlockExecutor(
-                    repository,
-                        (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                            tx1,
-                            txindex1,
-                            block1.getCoinbase(),
-                            track1,
-                            blockStore,
-                            receiptStore,
-                            blockFactory,
-                            programInvokeFactory,
-                            block1,
-                            listener,
-                            totalGasUsed1,
-                            config.getVmConfig(),
-                            config.getBlockchainConfig(),
-                            config.playVM(),
-                            config.isRemascEnabled(),
-                            config.vmTrace(),
-                            new PrecompiledContracts(config),
-                            config.databaseDir(),
-                            config.vmTraceDir(),
-                            config.vmTraceCompressed()
-                        ),
-                    stateRootHandler
-                ),
+                blockExecutor,
                 stateRootHandler
         );
 
