@@ -41,7 +41,7 @@ public class BridgeStateTest {
         TestSystemProperties config = new TestSystemProperties();
         Repository repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB()), true), new HashMapDB(), new TrieStorePoolOnMemory());
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
-        BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(0));
+        BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getActivationConfig().forBlock(0L));
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
 
         BridgeState state = new BridgeState(42, provider);

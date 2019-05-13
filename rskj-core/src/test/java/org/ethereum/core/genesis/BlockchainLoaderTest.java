@@ -39,8 +39,7 @@ public class BlockchainLoaderTest {
         RskTestFactory objects = new RskTestFactory() {
             @Override
             public Genesis buildGenesis() {
-                boolean useRskip92Encoding = getRskSystemProperties().getBlockchainConfig().getConfigForBlock(0).isActive(ConsensusRule.RSKIP92);
-                return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true, useRskip92Encoding);
+                return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true, true);
             }
         };
         objects.getBlockchain(); // calls loadBlockchain

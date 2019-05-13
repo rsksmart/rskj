@@ -29,7 +29,7 @@ import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -187,11 +187,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
     public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
 
+    private final Constants constants;
     private final BridgeConstants bridgeConstants;
+    private final ActivationConfig activationConfig;
 
-    private BlockchainNetConfig blockchainNetConfig;
     private ActivationConfig.ForBlock activations;
-
     private org.ethereum.core.Transaction rskTx;
     private org.ethereum.core.Block rskExecutionBlock;
     private Repository repository;
@@ -199,10 +199,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private BridgeSupport bridgeSupport;
 
-    public Bridge(RskAddress contractAddress, BridgeConstants bridgeConstants, BlockchainNetConfig blockchainNetConfig) {
+    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig) {
         this.contractAddress = contractAddress;
-        this.bridgeConstants = bridgeConstants;
-        this.blockchainNetConfig = blockchainNetConfig;
+        this.constants = constants;
+        this.bridgeConstants = constants.getBridgeConstants();
+        this.activationConfig = activationConfig;
     }
 
     @Override
@@ -212,7 +213,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new NullPointerException();
         }
 
-        if (BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber(), blockchainNetConfig)) {
+        if (BridgeUtils.isFreeBridgeTx(rskTx, constants, activations)) {
             return 0;
         }
 
@@ -277,11 +278,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public void init(Transaction rskTx, Block rskExecutionBlock, Repository repository, BlockStore rskBlockStore, ReceiptStore rskReceiptStore, List<LogInfo> logs) {
+        this.activations = activationConfig.forBlock(rskExecutionBlock.getNumber());
         this.rskTx = rskTx;
         this.rskExecutionBlock = rskExecutionBlock;
         this.repository = repository;
         this.logs = logs;
-        this.activations = blockchainNetConfig.getConfigForBlock(rskExecutionBlock.getNumber());
     }
 
     @Override

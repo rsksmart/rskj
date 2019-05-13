@@ -105,7 +105,7 @@ public class PrecompiledContracts {
             return identity;
         }
         if (address.equals(BRIDGE_ADDR_DW)) {
-            return new Bridge(BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), config.getBlockchainConfig());
+            return new Bridge(BRIDGE_ADDR, config.getNetworkConstants(), config.getActivationConfig());
         }
         if (address.equals(BIG_INT_MODEXP_ADDR_DW)) {
             return bigIntegerModexp;
@@ -115,7 +115,7 @@ public class PrecompiledContracts {
             return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig());
         }
         if (activations.isActive(ConsensusRule.RSKIP119) && address.equals(BLOCK_HEADER_ADDR_DW)) {
-            return new BlockHeaderContract(config, BLOCK_HEADER_ADDR);
+            return new BlockHeaderContract(config.getActivationConfig(), BLOCK_HEADER_ADDR);
         }
 
         return null;

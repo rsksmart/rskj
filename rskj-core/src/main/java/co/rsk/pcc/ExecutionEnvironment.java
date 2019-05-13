@@ -18,7 +18,6 @@
 
 package co.rsk.pcc;
 
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -36,25 +35,23 @@ import java.util.List;
  * @author Ariel Mendelzon
  */
 public class ExecutionEnvironment {
+    private ActivationConfig.ForBlock activations;
     private Transaction transaction;
     private Block block;
     private Repository repository;
     private BlockStore blockStore;
     private ReceiptStore receiptStore;
     private List<LogInfo> logs;
-    private BlockchainNetConfig config;
-    private ActivationConfig.ForBlock blockConfig;
 
     public ExecutionEnvironment(
-            BlockchainNetConfig config,
+            ActivationConfig activationConfig,
             Transaction transaction,
             Block block,
             Repository repository,
             BlockStore blockStore,
             ReceiptStore receiptStore,
             List<LogInfo> logs) {
-        this.config = config;
-        this.blockConfig = config.getConfigForBlock(block.getNumber());
+        this.activations = activationConfig.forBlock(block.getNumber());
         this.transaction = transaction;
         this.block = block;
         this.repository = repository;
@@ -63,12 +60,8 @@ public class ExecutionEnvironment {
         this.logs = logs;
     }
 
-    public BlockchainNetConfig getConfig() {
-        return config;
-    }
-
-    public ActivationConfig.ForBlock getBlockConfig() {
-        return blockConfig;
+    public ActivationConfig.ForBlock getActivations() {
+        return activations;
     }
 
     public Transaction getTransaction() {

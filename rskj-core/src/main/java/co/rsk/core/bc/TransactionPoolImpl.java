@@ -91,7 +91,7 @@ public class TransactionPoolImpl implements TransactionPool {
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
 
-        this.validator = new TxPendingValidator(config.getBlockchainConfig());
+        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig());
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
@@ -443,11 +443,18 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private Coin getTxBaseCost(Transaction tx) {
         Coin gasCost = tx.getValue();
-        if (bestBlock == null || tx.transactionCost(bestBlock.getNumber(), config.getBlockchainConfig()) > 0) {
+        if (bestBlock == null || getTransactionCost(tx, bestBlock.getNumber()) > 0) {
             BigInteger gasLimit = new BigInteger(1, tx.getGasLimit());
             gasCost = gasCost.add(tx.getGasPrice().multiply(gasLimit));
         }
 
         return gasCost;
+    }
+
+    private long getTransactionCost(Transaction tx, long number) {
+        return tx.transactionCost(
+                config.getNetworkConstants(),
+                config.getActivationConfig().forBlock(number)
+        );
     }
 }

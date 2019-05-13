@@ -26,7 +26,8 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.util.MaxSizeHashMap;
-import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.PrecompiledContracts;
@@ -218,20 +219,20 @@ public class BridgeUtils {
         return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
     }
 
-    public static boolean isFreeBridgeTx(Transaction rskTx, long blockNumber, BlockchainNetConfig netConfig) {
+    public static boolean isFreeBridgeTx(Transaction rskTx, Constants constants, ActivationConfig.ForBlock activations) {
         RskAddress receiveAddress = rskTx.getReceiveAddress();
         if (receiveAddress.equals(RskAddress.nullAddress())) {
             return false;
         }
 
-        BridgeConstants bridgeConstants = netConfig.getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = constants.getBridgeConstants();
 
         // Temporary assumption: if areBridgeTxsFree() is true then the current federation
         // must be the genesis federation.
         // Once the original federation changes, txs are always paid.
         return PrecompiledContracts.BRIDGE_ADDR.equals(receiveAddress) &&
-               !netConfig.getConfigForBlock(blockNumber).isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
-               rskTx.acceptTransactionSignature(netConfig.getCommonConstants().getChainId()) &&
+               !activations.isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
+               rskTx.acceptTransactionSignature(constants.getChainId()) &&
                (
                        isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation()) ||
                        isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants) ||

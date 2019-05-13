@@ -67,4 +67,10 @@ public class ActivationConfigsForTest {
         return new ActivationConfig(consensusRules);
     }
 
+    public static ActivationConfig bridgeUnitTest() {
+        Map<ConsensusRule, Long> allDisabled = EnumSet.allOf(ConsensusRule.class).stream()
+                .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
+        allDisabled.put(ConsensusRule.ARE_BRIDGE_TXS_PAID, 10L);
+        return new ActivationConfig(allDisabled);
+    }
 }

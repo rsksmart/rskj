@@ -19,10 +19,10 @@
 package co.rsk.vm;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.test.World;
+import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
@@ -78,7 +78,7 @@ public class BlockchainVMTest {
                 dstAddress ,
                 transferAmount.getBytes(),
                 null,
-                new TestSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
+                Constants.REGTEST_CHAIN_ID);
 
         t.sign(binfo.faucetKey.getPrivKeyBytes());
         List<Transaction> txs = Collections.singletonList(t);

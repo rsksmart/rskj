@@ -19,10 +19,10 @@
 
 package co.rsk.pcc.blockheader;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.pcc.NativeContract;
 import co.rsk.pcc.NativeMethod;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 import java.util.Arrays;
 import java.util.List;
@@ -40,8 +40,8 @@ public class BlockHeaderContract extends NativeContract {
 
     private final BlockAccessor blockAccessor;
 
-    public BlockHeaderContract(RskSystemProperties config, RskAddress contractAddress) {
-        super(config, contractAddress);
+    public BlockHeaderContract(ActivationConfig activationConfig, RskAddress contractAddress) {
+        super(activationConfig, contractAddress);
         this.blockAccessor = new BlockAccessor(MAX_DEPTH);
     }
 

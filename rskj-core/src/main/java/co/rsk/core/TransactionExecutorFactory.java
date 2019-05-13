@@ -75,6 +75,8 @@ public class TransactionExecutorFactory {
             Block block,
             long totalGasUsed) {
         return new TransactionExecutor(
+                config.getNetworkConstants(),
+                config.getActivationConfig(),
                 tx,
                 txindex,
                 coinbase,
@@ -86,7 +88,6 @@ public class TransactionExecutorFactory {
                 block,
                 totalGasUsed,
                 config.getVmConfig(),
-                config.getBlockchainConfig(),
                 config.playVM(),
                 config.isRemascEnabled(),
                 precompiledContracts,

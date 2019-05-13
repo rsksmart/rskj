@@ -64,7 +64,6 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -408,7 +407,7 @@ public class RskContext implements NodeBootstrapper {
     public EthModule getEthModule() {
         if (ethModule == null) {
             ethModule = new EthModule(
-                    getRskSystemProperties().getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                    getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
                     getRskSystemProperties().getActivationConfig(),
                     getBlockchain(),
                     getReversibleTransactionExecutor(),
@@ -885,7 +884,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockValidationRule getBlockValidationRule() {
         if (blockValidationRule == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            Constants commonConstants = rskSystemProperties.getBlockchainConfig().getCommonConstants();
+            Constants commonConstants = rskSystemProperties.getNetworkConstants();
             BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture()
             );
@@ -922,7 +921,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockValidationRule getMinerServerBlockValidationRule() {
         if (minerServerBlockValidationRule == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            Constants commonConstants = rskSystemProperties.getBlockchainConfig().getCommonConstants();
+            Constants commonConstants = rskSystemProperties.getNetworkConstants();
             minerServerBlockValidationRule = new BlockUnclesValidationRule(
                     getBlockStore(),
                     commonConstants.getUncleListLimit(),
@@ -959,7 +958,7 @@ public class RskContext implements NodeBootstrapper {
 
     private BlockParentDependantValidationRule getBlockParentDependantValidationRule() {
         if (blockParentDependantValidationRule == null) {
-            Constants commonConstants = getRskSystemProperties().getBlockchainConfig().getCommonConstants();
+            Constants commonConstants = getRskSystemProperties().getNetworkConstants();
             blockParentDependantValidationRule = new BlockParentCompositeRule(
                     new BlockTxsFieldsValidationRule(),
                     new BlockTxsValidationRule(getRepository(), getStateRootHandler()),
@@ -1272,10 +1271,10 @@ public class RskContext implements NodeBootstrapper {
                     rskSystemProperties.minerMinFeesNotifyInDollars(),
                     rskSystemProperties.minerGasUnitInDollars(),
                     rskSystemProperties.minerMinGasPrice(),
-                    rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleListLimit(),
-                    rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit(),
+                    rskSystemProperties.getNetworkConstants().getUncleListLimit(),
+                    rskSystemProperties.getNetworkConstants().getUncleGenerationLimit(),
                     new GasLimitConfig(
-                            rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit(),
+                            rskSystemProperties.getNetworkConstants().getMinGasLimit(),
                             rskSystemProperties.getTargetGasLimit(),
                             rskSystemProperties.getForceTargetGasLimit()
                     ),

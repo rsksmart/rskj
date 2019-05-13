@@ -47,7 +47,7 @@ public class RskTestFactory extends RskTestContext {
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {
-        boolean useRskip92Encoding = config.getBlockchainConfig().getConfigForBlock(0).isActive(ConsensusRule.RSKIP92);
+        boolean useRskip92Encoding = config.getActivationConfig().isActive(ConsensusRule.RSKIP92, 0L);
         return GenesisLoader.loadGenesis(config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, useRskip92Encoding);
     }
 }

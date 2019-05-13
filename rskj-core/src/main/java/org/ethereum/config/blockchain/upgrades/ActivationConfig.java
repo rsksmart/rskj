@@ -49,7 +49,7 @@ public class ActivationConfig {
         return 0 <= activationHeight && activationHeight <= blockNumber;
     }
 
-    public ActivationConfig.ForBlock forBlock(long blockNumber) {
+    public ForBlock forBlock(long blockNumber) {
         return consensusRule -> isActive(consensusRule, blockNumber);
     }
 

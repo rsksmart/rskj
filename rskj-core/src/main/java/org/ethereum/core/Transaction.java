@@ -30,8 +30,8 @@ import co.rsk.peg.BridgeUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.ECDSASignature;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
@@ -214,9 +214,9 @@ public class Transaction {
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:
     // "return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION)
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
-    public long transactionCost(long blockNumber, BlockchainNetConfig netConfig) {
+    public long transactionCost(Constants constants, ActivationConfig.ForBlock activations) {
         // Federators txs to the bridge are free during system setup
-        if (BridgeUtils.isFreeBridgeTx(this, blockNumber, netConfig)) {
+        if (BridgeUtils.isFreeBridgeTx(this, constants, activations)) {
             return 0;
         }
 

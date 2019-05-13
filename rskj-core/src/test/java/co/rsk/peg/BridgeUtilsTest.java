@@ -27,18 +27,15 @@ import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.RegtestBlockchainNetConfig;
-import org.ethereum.config.UnitTestBlockchainNetConfig;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.Block;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.ImmutableTransaction;
-import org.ethereum.core.Transaction;
-import org.ethereum.util.RskTestFactory;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.*;
+import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
@@ -56,8 +53,7 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class BridgeUtilsTest {
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
@@ -66,11 +62,13 @@ public class BridgeUtilsTest {
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
-    private TestSystemProperties config;
+    private Constants constants;
+    private ActivationConfig activationConfig;
 
     @Before
     public void setupConfig(){
-        config = new TestSystemProperties();
+        constants = Constants.regtest();
+        activationConfig = spy(ActivationConfigsForTest.all());
     }
 
     @Test
@@ -280,7 +278,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void getAddressFromEthTransaction() {
-        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, config.getNetworkConstants().getChainId());
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, constants.getChainId());
         byte[] privKey = generatePrivKey();
         tx.sign(privKey);
 
@@ -292,7 +290,7 @@ public class BridgeUtilsTest {
 
     @Test(expected = Exception.class)
     public void getAddressFromEthNotSignTransaction() {
-        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, config.getNetworkConstants().getChainId());
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, constants.getChainId());
         BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
     }
 
@@ -335,25 +333,25 @@ public class BridgeUtilsTest {
 
     @Test
     public void isFreeBridgeTxTrue() {
-        config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+        activationConfig = ActivationConfigsForTest.bridgeUnitTest();
         isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxOtherContract() {
-        config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+        activationConfig = ActivationConfigsForTest.bridgeUnitTest();
         isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxFreeTxDisabled() {
-        config.setBlockchainConfig(new RegtestBlockchainNetConfig(ActivationConfigsForTest.all()));
+        activationConfig = ActivationConfigsForTest.only(ConsensusRule.ARE_BRIDGE_TXS_PAID);
         isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxNonFederatorKey() {
-        config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+        activationConfig = ActivationConfigsForTest.bridgeUnitTest();
         isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, new BtcECKey().getPrivKeyBytes());
     }
 
@@ -482,7 +480,7 @@ public class BridgeUtilsTest {
 
 
     private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, byte[] privKeyBytes) {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), config.getBlockchainConfig());
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,
@@ -490,11 +488,15 @@ public class BridgeUtilsTest {
                 1,
                 destinationAddress,
                 0,
-                Bridge.UPDATE_COLLECTIONS, config.getNetworkConstants().getChainId());
+                Bridge.UPDATE_COLLECTIONS, constants.getChainId());
         rskTx.sign(privKeyBytes);
 
-        Block rskExecutionBlock = new BlockGenerator().createChildBlock(RskTestFactory.getGenesisInstance(config));
+        Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance());
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
-        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber(), config.getBlockchainConfig()));
+        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
+    }
+
+    private Genesis getGenesisInstance() {
+        return GenesisLoader.loadGenesis("frontier.json", constants.getInitialNonce(), false, true);
     }
 }

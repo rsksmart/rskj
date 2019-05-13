@@ -130,8 +130,7 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addParentGasLimitRule() {
-        parentGasLimitRule = new BlockParentGasLimitRule(config.getBlockchainConfig().
-                        getCommonConstants().getGasLimitBoundDivisor());
+        parentGasLimitRule = new BlockParentGasLimitRule(config.getNetworkConstants().getGasLimitBoundDivisor());
         return this;
     }
 
