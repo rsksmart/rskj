@@ -29,12 +29,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
+
 
 public class BlocksFilePlayer {
     private final Blockchain targetBlockchain;
     private final BlockFactory blockFactory;
     private final String filename;
+    private List<Integer> numbers;
 
     private BlocksFilePlayer(String filename, RskContext objects) {
         this.targetBlockchain = objects.getBlockchain();
@@ -43,12 +46,12 @@ public class BlocksFilePlayer {
     }
 
     private void connectBlocks() throws IOException {
-        try (Stream<String> lines = Files.lines(Paths.get(filename))) {
-            long blocksToSkip = targetBlockchain.getBestBlock().getNumber();
-            lines.skip(blocksToSkip).map(this::readBlock).forEach(this::connectBlock);
+        Stream<String> lines = Files.lines(Paths.get(filename));
+        long blocksToSkip = targetBlockchain.getBestBlock().getNumber();
+        lines.skip(blocksToSkip).map(this::readBlock).forEach(this::connectBlock);
 
-            System.out.printf("Best block is now %7d%n", targetBlockchain.getBestBlock().getNumber());
-        }
+        System.out.printf("Best block is now %7d%n", targetBlockchain.getBestBlock().getNumber());
+
     }
 
     private Block readBlock(String line) {
