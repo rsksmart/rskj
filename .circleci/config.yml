@@ -15,7 +15,7 @@ jobs:
       - run: gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
       - run: ./configure.sh
       - run: ./gradlew --no-daemon dependencies
-      - run: ./gradlew --no-daemon --stacktrace build -Dsonar.projectKey=rsksmart_rskj -Dsonar.organization=rsksmart -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_TOKEN
+      - run: ./gradlew --no-daemon --stacktrace -Dsonar.projectKey=rsksmart_rskj -Dsonar.organization=rsksmart -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_TOKEN build
       - run:
           name: Save test results
           command: |
