@@ -147,6 +147,52 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
+    // This method is an optimized way to traverse a branch in search for a block at a given depth. Starting at a given
+    // block (by hash) it tries to find the first block that is part of the best chain, when it finds one we now that
+    // we can jump to the block that is at the remaining depth. If not block is found then it continues traversing the
+    // branch from parent to parent. The search is limited by the maximum depth received as parameter.
+    // This method either needs to traverse the parent chain or if a block in the parent chain is part of the best chain
+    // then it can skip the traversal by going directly to the block at the remaining depth.
+    public Block getBlockAtDepthStartingAt(long depth, byte[] hash) {
+        Block start = this.getBlockByHash(hash);
+
+        if (start != null && depth == 0) {
+            return start;
+        }
+
+        if (start == null || start.getNumber() <= depth) {
+            return null;
+        }
+
+        Block block = start;
+
+        for (long i = 0; i < depth; i++) {
+            if (isBlockInMainChain(block.getNumber(), block.getHash())) {
+                return getChainBlockByNumber(start.getNumber() - depth);
+            }
+
+            block = this.getBlockByHash(block.getParentHash().getBytes());
+        }
+
+        return block;
+    }
+
+    public boolean isBlockInMainChain(long blockNumber, Keccak256 blockHash){
+        List<BlockInfo> blockInfos = index.get(blockNumber);
+        if (blockInfos == null) {
+            return false;
+        }
+
+        for (BlockInfo blockInfo : blockInfos) {
+            if (blockInfo.isMainChain() && blockHash.equals(blockInfo.getHash())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
     public synchronized void flush() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         
