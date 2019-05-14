@@ -10,7 +10,6 @@ buildscript {
 
 plugins {
     id 'application'
-    id "org.sonarqube" version "2.7"
 }
 
 apply plugin: 'witness'
