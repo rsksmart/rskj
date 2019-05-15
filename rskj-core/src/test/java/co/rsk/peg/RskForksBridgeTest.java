@@ -33,7 +33,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -343,8 +342,7 @@ public class RskForksBridgeTest {
                 blockChain.getBlockStore(),
                 null,
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
-                new ProgramInvokeFactoryImpl(),
-                new EthereumListenerAdapter()
+                new ProgramInvokeFactoryImpl()
         );
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository, blockChain.getBestBlock(), 0)

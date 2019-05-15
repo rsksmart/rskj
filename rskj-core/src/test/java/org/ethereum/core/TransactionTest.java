@@ -32,7 +32,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.ProgramResult;
@@ -444,8 +443,7 @@ public class TransactionTest {
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
-                            invokeFactory,
-                            new EthereumListenerAdapter()
+                            invokeFactory
                     );
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
@@ -703,8 +701,7 @@ public class TransactionTest {
                 blockchain.getBlockStore(),
                 null,
                 blockFactory,
-                new ProgramInvokeFactoryImpl(),
-                new EthereumListenerAdapter()
+                new ProgramInvokeFactoryImpl()
         );
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), blockchain.getRepository(), blockchain.getBestBlock(), 0);

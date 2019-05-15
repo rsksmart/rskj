@@ -130,8 +130,7 @@ class RemascTestRunner {
                         blockchain.getBlockStore(),
                         null,
                         blockFactory,
-                        programInvokeFactory,
-                        null
+                        programInvokeFactory
                 ),
                 builder.getStateRootHandler()
         );

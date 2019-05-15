@@ -36,7 +36,7 @@ public class ReversibleTransactionExecutor {
 
     public ReversibleTransactionExecutor(Repository track, TransactionExecutorFactory transactionExecutorFactory) {
         this.track = track;
-        this.transactionExecutorFactory = transactionExecutorFactory.withFakeListener();
+        this.transactionExecutorFactory = transactionExecutorFactory;
     }
 
     public ProgramResult executeTransaction(

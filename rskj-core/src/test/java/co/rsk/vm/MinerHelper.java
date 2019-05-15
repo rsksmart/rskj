@@ -26,7 +26,6 @@ import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,8 +93,7 @@ public class MinerHelper {
                     null,
                     null,
                     blockFactory,
-                    null,
-                    new EthereumListenerAdapter()
+                    null
             );
             TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);

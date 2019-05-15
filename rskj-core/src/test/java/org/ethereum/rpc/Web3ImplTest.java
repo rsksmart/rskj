@@ -21,7 +21,6 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
-import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.mine.MinerClient;
@@ -53,7 +52,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
@@ -1455,8 +1453,7 @@ public class Web3ImplTest {
                 blockChain.getBlockStore(),
                 null,
                 blockFactory,
-                null,
-                new EthereumListenerAdapter()
+                null
         );
     }
 }

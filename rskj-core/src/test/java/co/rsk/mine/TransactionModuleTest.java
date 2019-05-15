@@ -48,7 +48,6 @@ import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.ChannelManagerImpl;
@@ -335,8 +334,7 @@ public class TransactionModuleTest {
                 blockStore,
                 receiptStore,
                 blockFactory,
-                null,
-                new EthereumListenerAdapter()
+                null
         );
     }
 }

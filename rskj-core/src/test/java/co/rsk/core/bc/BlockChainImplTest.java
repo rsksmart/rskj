@@ -21,8 +21,8 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.test.builders.BlockBuilder;
@@ -37,8 +37,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
-import org.ethereum.listener.EthereumListener;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -333,14 +331,12 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1bBigger?block1:block1b));
 
         Assert.assertNotNull(listener.getLatestBlock());
-        Assert.assertNotNull(listener.getLatestTrace());
         Assert.assertEquals(block1bBigger?block1.getHash():block1b.getHash(),
                 listener.getLatestBlock().getHash());
 
         Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1bBigger?block1b:block1));
 
         Assert.assertNotNull(listener.getLatestBlock());
-        Assert.assertNotNull(listener.getLatestTrace());
         Assert.assertEquals(block1bBigger?block1b.getHash():block1.getHash(),
                 listener.getLatestBlock().getHash());
 
@@ -695,7 +691,7 @@ public class BlockChainImplTest {
         Block genesis = getGenesisBlock(blockChain);
         Block block = new BlockGenerator().createChildBlock(genesis);
 
-        BlockExecutor executor = createExecutor(blockChain, listener);
+        BlockExecutor executor = createExecutor(blockChain);
 
         Assert.assertTrue(executor.executeAndValidate(block, genesis.getHeader()));
     }
@@ -715,7 +711,7 @@ public class BlockChainImplTest {
         Block block6 = blockGenerator.createChildBlock(block5);
         Block block7 = blockGenerator.createChildBlock(block6);
 
-        BlockExecutor executor = createExecutor(blockChain, listener);
+        BlockExecutor executor = createExecutor(blockChain);
 
         Assert.assertTrue(executor.executeAndValidate(block1, genesis.getHeader()));
         Assert.assertTrue(executor.executeAndValidate(block2, block1.getHeader()));
@@ -768,19 +764,6 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void listenTransactionSummary() {
-        BlockExecutorTest.TestObjects objects = BlockExecutorTest.generateBlockWithOneTransaction();
-        BlockExecutorTest.SimpleEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
-        BlockChainImpl blockChain = createBlockChain(objects.getRepository(), listener);
-
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(objects.getParent()));
-        Assert.assertNull(listener.getLatestSummary());
-
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(objects.getBlock()));
-        Assert.assertNotNull(listener.getLatestSummary());
-    }
-
-    @Test
     public void listenOnBlockWhenAddingBlock() {
         BlockExecutorTest.SimpleEthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
         BlockChainImpl blockChain = createBlockChain(listener);
@@ -792,7 +775,6 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Assert.assertNotNull(listener.getLatestBlock());
-        Assert.assertNotNull(listener.getLatestTrace());
         Assert.assertEquals(block1.getHash(), listener.getLatestBlock().getHash());
     }
 
@@ -860,7 +842,6 @@ public class BlockChainImplTest {
         BlockExecutor executor = createExecutor(
                 repository,
                 null,
-                null,
                 null
         );
         executor.executeAndFill(block, genesis.getHeader());
@@ -903,8 +884,7 @@ public class BlockChainImplTest {
                 blockStore,
                 receiptStore,
                 blockFactory,
-                null,
-                new EthereumListenerAdapter()
+                null
         );
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, blockStore, blockFactory, listener, transactionExecutorFactory, 10, 100);
         return new BlockChainImpl(
@@ -916,7 +896,7 @@ public class BlockChainImplTest {
                 blockValidator,
                 false,
                 1,
-                createExecutor(repository, listener, receiptStore, blockStore),
+                createExecutor(repository, receiptStore, blockStore),
                 stateRootHandler
         );
     }
@@ -938,12 +918,9 @@ public class BlockChainImplTest {
         return genesis;
     }
 
-    private static BlockExecutor createExecutor(
-            BlockChainImpl blockChain,
-            EthereumListener listener) {
+    private static BlockExecutor createExecutor(BlockChainImpl blockChain) {
         return createExecutor(
                 blockChain.getRepository(),
-                listener,
                 null,
                 blockChain.getBlockStore()
         );
@@ -951,7 +928,6 @@ public class BlockChainImplTest {
 
     private static BlockExecutor createExecutor(
             Repository repository,
-            EthereumListener listener,
             ReceiptStore receiptStore,
             BlockStore blockStore) {
         return new BlockExecutor(
@@ -961,8 +937,7 @@ public class BlockChainImplTest {
                         blockStore,
                         receiptStore,
                         blockFactory,
-                        new ProgramInvokeFactoryImpl(),
-                        listener
+                        new ProgramInvokeFactoryImpl()
                 ),
                 stateRootHandler
         );

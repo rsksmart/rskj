@@ -32,7 +32,6 @@ import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
@@ -92,8 +91,6 @@ public class TransactionExecutor {
     private ProgramResult result = new ProgramResult();
     private final Block executionBlock;
 
-    private final EthereumListener listener;
-
     private VM vm;
     private Program program;
 
@@ -106,7 +103,7 @@ public class TransactionExecutor {
     private boolean localCall = false;
 
     public TransactionExecutor(Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
-                               BlockFactory blockFactory, ProgramInvokeFactory programInvokeFactory, Block executionBlock, EthereumListener listener, long gasUsedInTheBlock,
+                               BlockFactory blockFactory, ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock,
                                VmConfig vmConfig, BlockchainNetConfig blockchainConfig, boolean playVm, boolean remascEnabled,
                                boolean vmTrace, PrecompiledContracts precompiledContracts, String databaseDir, String vmTraceDir, boolean vmTraceCompressed) {
         this.tx = tx;
@@ -119,7 +116,6 @@ public class TransactionExecutor {
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.executionBlock = executionBlock;
-        this.listener = listener;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
@@ -520,10 +516,6 @@ public class TransactionExecutor {
         // Traverse list of suicides
         result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
 
-        if (listener != null) {
-            listener.onTransactionExecuted(summary);
-        }
-
         logger.trace("tx listener done");
 
         if (vmTrace && program != null) {
@@ -531,9 +523,6 @@ public class TransactionExecutor {
             String txHash = tx.getHash().toHexString();
             try {
                 saveProgramTraceFile(txHash, trace, databaseDir, vmTraceDir, vmTraceCompressed);
-                if (listener != null) {
-                    listener.onVMTraceCreated(txHash, trace);
-                }
             } catch (IOException e) {
                 String errorMessage = String.format("Cannot write trace to file: %s", e.getMessage());
                 panicProcessor.panic("executor", errorMessage);

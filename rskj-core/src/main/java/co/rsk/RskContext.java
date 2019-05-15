@@ -320,8 +320,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockStore(),
                     getReceiptStore(),
                     getBlockFactory(),
-                    getProgramInvokeFactory(),
-                    getCompositeEthereumListener()
+                    getProgramInvokeFactory()
             );
         }
 

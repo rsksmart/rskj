@@ -22,8 +22,6 @@ import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.listener.EthereumListener;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
@@ -33,7 +31,6 @@ public class TransactionExecutorFactory {
     private final ReceiptStore receiptStore;
     private final BlockFactory blockFactory;
     private final ProgramInvokeFactory programInvokeFactory;
-    private final EthereumListener listener;
     private final PrecompiledContracts precompiledContracts;
 
     public TransactionExecutorFactory(
@@ -41,30 +38,13 @@ public class TransactionExecutorFactory {
             BlockStore blockStore,
             ReceiptStore receiptStore,
             BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory,
-            EthereumListener listener) {
+            ProgramInvokeFactory programInvokeFactory) {
         this.config = config;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
-        this.listener = listener;
         this.precompiledContracts = new PrecompiledContracts(config);
-    }
-
-    /**
-     * Returns a clone of this factory with the specified listener,
-     * which is used in classes that do not impact the blockchain.
-     */
-    public TransactionExecutorFactory withFakeListener() {
-        return new TransactionExecutorFactory(
-                config,
-                blockStore,
-                receiptStore,
-                blockFactory,
-                programInvokeFactory,
-                new EthereumListenerAdapter()
-        );
     }
 
     public TransactionExecutor newInstance(
@@ -84,7 +64,6 @@ public class TransactionExecutorFactory {
                 blockFactory,
                 programInvokeFactory,
                 block,
-                listener,
                 totalGasUsed,
                 config.getVmConfig(),
                 config.getBlockchainConfig(),

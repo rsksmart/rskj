@@ -43,7 +43,6 @@ import org.ethereum.jsontestsuite.validators.LogsValidator;
 import org.ethereum.jsontestsuite.validators.OutputValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
 import org.ethereum.jsontestsuite.validators.ValidationStats;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.ProgramResult;
@@ -98,8 +97,7 @@ public class StateTestRunner {
                 new BlockStoreDummy(),
                 null,
                 blockFactory,
-                invokeFactory,
-                new EthereumListenerAdapter()
+                invokeFactory
         );
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
@@ -145,8 +143,7 @@ public class StateTestRunner {
                                 blockStore,
                                 null,
                                 blockFactory,
-                                new ProgramInvokeFactoryImpl(),
-                                null
+                                new ProgramInvokeFactoryImpl()
                         ),
                         stateRootHandler
                 ),

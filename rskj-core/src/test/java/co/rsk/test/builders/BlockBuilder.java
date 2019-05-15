@@ -111,8 +111,7 @@ public class BlockBuilder {
                             blockChain.getBlockStore(),
                             null,
                             new BlockFactory(config.getActivationConfig()),
-                            new ProgramInvokeFactoryImpl(),
-                            null
+                            new ProgramInvokeFactoryImpl()
                     ),
                     new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
             );

@@ -87,7 +87,7 @@ public class TransactionPoolImpl implements TransactionPool {
         this.repository = repository;
         this.blockFactory = blockFactory;
         this.listener = listener;
-        this.transactionExecutorFactory = transactionExecutorFactory.withFakeListener();
+        this.transactionExecutorFactory = transactionExecutorFactory;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
 

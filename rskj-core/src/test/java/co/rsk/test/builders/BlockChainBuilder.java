@@ -22,8 +22,8 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
@@ -37,7 +37,6 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -165,8 +164,7 @@ public class BlockChainBuilder {
                 blockStore,
                 receiptStore,
                 blockFactory,
-                new ProgramInvokeFactoryImpl(),
-                new EthereumListenerAdapter()
+                new ProgramInvokeFactoryImpl()
         );
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, blockFactory, new TestCompositeEthereumListener(), transactionExecutorFactory, 10, 100);
 

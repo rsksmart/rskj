@@ -145,8 +145,7 @@ public class TestRunner {
                 blockStore,
                 receiptStore,
                 blockFactory,
-                new ProgramInvokeFactoryImpl(),
-                listener
+                new ProgramInvokeFactoryImpl()
         );
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
 

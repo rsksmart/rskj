@@ -12,7 +12,6 @@ import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -114,8 +113,7 @@ public class ContractRunner {
                 blockStore,
                 receiptStore,
                 new BlockFactory(config.getActivationConfig()),
-                new ProgramInvokeFactoryImpl(),
-                new EthereumListenerAdapter()
+                new ProgramInvokeFactoryImpl()
         );
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(transaction, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);

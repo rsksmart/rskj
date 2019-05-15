@@ -670,8 +670,7 @@ public class SyncProcessorTest {
                         blockchain.getBlockStore(),
                         null,
                         blockFactory,
-                        new ProgramInvokeFactoryImpl(),
-                        null
+                        new ProgramInvokeFactoryImpl()
                 ),
                 new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
         );

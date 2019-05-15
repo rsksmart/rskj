@@ -972,8 +972,7 @@ public class RemascProcessMinerFeesTest {
                         blockchain.getBlockStore(),
                         null,
                         blockFactory,
-                        new ProgramInvokeFactoryImpl(),
-                        null
+                        new ProgramInvokeFactoryImpl()
                 ),
                 stateRootHandler
         );

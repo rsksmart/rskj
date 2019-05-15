@@ -88,7 +88,7 @@ public class BlockToMineBuilder {
         this.minerUtils = new MinerUtils();
         this.executor = new BlockExecutor(
                 repository,
-                transactionExecutorFactory.withFakeListener(),
+                transactionExecutorFactory,
                 stateRootHandler
         );
 
