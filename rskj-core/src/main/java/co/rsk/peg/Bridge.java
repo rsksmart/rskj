@@ -382,10 +382,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         // Dynamic cost based on the number of headers
-        // TODO: define and implement this. At the moment the cost is set to a higher fixed value
-        // TODO: plus the number of headers actually received times 100
         final int numberOfHeaders = ((Object[]) args[0]).length;
-        return 100_000L + numberOfHeaders * 100;
+        return 66_000L + (numberOfHeaders-1) * 1650;
     }
 
     public void receiveHeaders(Object[] args)
