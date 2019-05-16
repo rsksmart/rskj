@@ -19,9 +19,9 @@ jobs:
           name: Run SonarQube analysis
           # https://community.sonarsource.com/t/no-code-or-issue-found-in-pull-request-decorations-github-circleci/8496
           command: |
-            git branch -f master origin/master
             if [ ! -z $CIRCLE_PULL_REQUEST ]; then
               PULL_REQUEST=$(echo $CIRCLE_PULL_REQUEST | awk '{print substr($1,39)}')
+              git branch -f master origin/master
               ./gradlew sonarqube --no-daemon -x build -x test \
                 -Dsonar.pullrequest.base=master \
                 -Dsonar.pullrequest.branch=$CIRCLE_BRANCH \
