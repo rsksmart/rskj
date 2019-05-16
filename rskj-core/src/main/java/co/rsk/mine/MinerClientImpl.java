@@ -139,7 +139,7 @@ public class MinerClientImpl implements MinerClient {
         }
 
         if (foundNonce) {
-            logger.info("Mined block: " + work.getBlockHashForMergedMining());
+            logger.info("Mined block: {}", work.getBlockHashForMergedMining());
             minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
         }
 
@@ -167,7 +167,7 @@ public class MinerClientImpl implements MinerClient {
             // No, so increment the nonce and try again.
             bitcoinMergedMiningBlock.setNonce(nextNonceToUse++);
             if (bitcoinMergedMiningBlock.getNonce() % 100000 == 0) {
-                logger.debug("Solving block. Nonce: " + bitcoinMergedMiningBlock.getNonce());
+                logger.debug("Solving block. Nonce: {}", bitcoinMergedMiningBlock.getNonce());
             }
         }
 
@@ -193,7 +193,7 @@ public class MinerClientImpl implements MinerClient {
             if (previousWork != null && receivedWork != null &&
                     !receivedWork.getBlockHashForMergedMining().equals(previousWork.getBlockHashForMergedMining())) {
                 newBestBlockArrivedFromAnotherNode = true;
-                logger.debug("There is a new best block : " + receivedWork.getBlockHashForMergedMining());
+                logger.debug("There is a new best block: {}", receivedWork.getBlockHashForMergedMining());
             }
         }
     }

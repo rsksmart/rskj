@@ -64,7 +64,7 @@ public class EthModuleSolidityEnabled implements EthModuleSolidity {
 
             return compilationResultDTOMap;
         } finally {
-            LOGGER.debug("eth_compileSolidity(" + contract + ")" + compilationResultDTOMap);
+            LOGGER.debug("eth_compileSolidity({}) {}", contract, compilationResultDTOMap);
         }
     }
 }

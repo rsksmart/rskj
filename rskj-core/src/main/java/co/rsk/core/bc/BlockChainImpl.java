@@ -286,7 +286,7 @@ public class BlockChainImpl implements Blockchain {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
                 logger.trace("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
-                        status.getTotalDifficulty().toString(), totalDifficulty.toString());
+                        status.getTotalDifficulty(), totalDifficulty);
                 BlockFork fork = new BlockFork();
                 fork.calculate(bestBlock, block, blockStore);
                 blockStore.reBranch(block);
@@ -320,7 +320,7 @@ public class BlockChainImpl implements Blockchain {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
                 logger.trace("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
-                        status.getTotalDifficulty().toString(), totalDifficulty.toString());
+                        status.getTotalDifficulty(), totalDifficulty);
             }
 
             logger.trace("Start extendAlternativeBlockChain");

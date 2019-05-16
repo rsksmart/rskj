@@ -121,7 +121,7 @@ public class BlockChainLoader {
 
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     blockchain.getBestBlock().getNumber(),
-                    blockchain.getTotalDifficulty().toString(),
+                    blockchain.getTotalDifficulty(),
                     Hex.toHexString(blockchain.getBestBlock().getStateRoot()));
         }
 

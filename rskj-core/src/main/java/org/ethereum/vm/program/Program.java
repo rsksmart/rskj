@@ -774,9 +774,7 @@ public class Program {
             // Therefore, the regundGas also fits in a long.
             refundGas(refundGas.longValue(), "remaining gas from the internal call");
             if (isGasLogEnabled) {
-                gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ",
-                        senderAddress,
-                        refundGas.toString());
+                gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundGas);
             }
         }
         return childCallSuccessful;

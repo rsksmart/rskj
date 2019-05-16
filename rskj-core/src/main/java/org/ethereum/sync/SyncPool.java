@@ -294,7 +294,7 @@ public class SyncPool {
         synchronized (peers) {
             for (Channel peer : peers.values()) {
                 if (!peer.isIdle() && peer.getSyncStats().secondsSinceLastUpdate() > config.peerChannelReadTimeout()) {
-                    logger.info("Peer {}: no response after %d seconds", peer.getPeerIdShort(), config.peerChannelReadTimeout());
+                    logger.info("Peer {}: no response after {} seconds", peer.getPeerIdShort(), config.peerChannelReadTimeout());
                     peer.dropConnection();
                 }
             }

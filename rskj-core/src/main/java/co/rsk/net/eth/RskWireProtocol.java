@@ -249,7 +249,7 @@ public class RskWireProtocol extends EthHandler {
         // RSK new protocol send status
         Status status = new Status(bestBlock.getNumber(), bestBlock.getHash().getBytes(), bestBlock.getParentHash().getBytes(), totalDifficulty);
         RskMessage rskmessage = new RskMessage(new StatusMessage(status));
-        loggerNet.trace("Sending status best block {} to {}", status.getBestBlockNumber(), this.messageSender.getPeerNodeID().toString());
+        loggerNet.trace("Sending status best block {} to {}", status.getBestBlockNumber(), this.messageSender.getPeerNodeID());
         sendMessage(rskmessage);
 
         ethState = EthState.STATUS_SENT;

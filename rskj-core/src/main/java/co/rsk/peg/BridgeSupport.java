@@ -413,7 +413,7 @@ public class BridgeSupport {
                     logger.info("whitelist money return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
                 } else {
                     logger.warn("whitelist money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
-                    panicProcessor.panic("whitelist-return-funds", String.format("whitelist money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
+                    panicProcessor.panic("whitelist-return-funds", String.format("whitelist money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
                 }
             } else {
                 org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
@@ -690,8 +690,7 @@ public class BridgeSupport {
                 logger.warn(
                         "Couldn't build a release BTC tx for <{}, {}>",
                         releaseRequest.getDestination().toBase58(),
-                        releaseRequest.getAmount().toString()
-                );
+                        releaseRequest.getAmount());
                 return false;
             }
 
