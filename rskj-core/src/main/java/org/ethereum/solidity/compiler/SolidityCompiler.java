@@ -19,13 +19,14 @@
 
 package org.ethereum.solidity.compiler;
 
-import com.google.common.base.Joiner;
 import org.ethereum.config.SystemProperties;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -122,7 +123,8 @@ public class SolidityCompiler {
         commandParts.add(solc.getExecutable().getCanonicalPath());
         if (combinedJson) {
             commandParts.add("--combined-json");
-            commandParts.add(Joiner.on(',').join(options));
+            String combined = Arrays.stream(options).map(Options::toString).collect(Collectors.joining(","));
+            commandParts.add(combined);
         } else {
             for (Options option : options) {
                 commandParts.add("--" + option.getName());
