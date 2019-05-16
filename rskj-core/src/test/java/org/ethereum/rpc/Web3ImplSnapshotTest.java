@@ -216,7 +216,7 @@ public class Web3ImplSnapshotTest {
                         rule,
                         clock,
                         blockFactory,
-                        factory.getBlockExecutorFactory()
+                        factory.getBlockExecutor()
                 ),
                 clock,
                 blockFactory,

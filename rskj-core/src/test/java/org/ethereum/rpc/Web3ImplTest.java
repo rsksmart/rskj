@@ -1490,7 +1490,7 @@ public class Web3ImplTest {
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(BlockChainImpl blockChain) {
-        return new TestTransactionExecutorFactory(
+        return new TransactionExecutorFactory(
                 config,
                 blockChain.getBlockStore(),
                 null,

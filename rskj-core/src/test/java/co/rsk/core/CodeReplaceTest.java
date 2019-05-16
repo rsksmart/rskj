@@ -25,10 +25,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -226,7 +223,7 @@ public class CodeReplaceTest {
 
     public TransactionExecutor executeTransaction(BlockChainImpl blockchain, Transaction tx) {
         Repository track = blockchain.getRepository().startTracking();
-        TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
                 blockchain.getBlockStore(),
                 null,

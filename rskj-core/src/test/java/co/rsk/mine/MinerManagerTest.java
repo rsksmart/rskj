@@ -23,7 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
-import co.rsk.core.bc.BlockExecutorFactory;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -54,7 +54,7 @@ public class MinerManagerTest {
     private StateRootHandler stateRootHandler;
     private BlockStore blockStore;
     private BlockFactory blockFactory;
-    private BlockExecutorFactory blockExecutorFactory;
+    private BlockExecutor blockExecutor;
 
     @Before
     public void setup() {
@@ -65,7 +65,7 @@ public class MinerManagerTest {
         stateRootHandler = factory.getStateRootHandler();
         blockStore = factory.getBlockStore();
         blockFactory = factory.getBlockFactory();
-        blockExecutorFactory = factory.getBlockExecutorFactory();
+        blockExecutor = factory.getBlockExecutor();
     }
 
     @Test
@@ -287,7 +287,7 @@ public class MinerManagerTest {
                         new BlockValidationRuleDummy(),
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,

@@ -25,39 +25,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by Angel on 15/04/2019.
- */
 public class MemoryProgramTraceProcessor implements ProgramTraceProcessor {
-    private final boolean traceEnabled;
     private final Map<Keccak256, ProgramTrace> traces = new HashMap<>();
 
-    public MemoryProgramTraceProcessor(boolean traceEnabled) {
-        this.traceEnabled = traceEnabled;
-    }
-
     @Override
-    public boolean enabled() { return this.traceEnabled; }
-
-    @Override
-    public void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash)  throws IOException {
-        if (!this.traceEnabled) {
-            return;
-        }
-
+    public void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash) {
         this.traces.put(txHash, programTrace);
     }
 
-    public ProgramTrace getProgramTrace(Keccak256 txHash) {
-        return this.traces.get(txHash);
-    }
-
     public JsonNode getProgramTraceAsJsonNode(Keccak256 txHash) {
-        ProgramTrace trace = this.getProgramTrace(txHash);
+        ProgramTrace trace = this.traces.get(txHash);
 
         if (trace == null) {
             return null;

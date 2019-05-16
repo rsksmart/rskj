@@ -24,7 +24,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
@@ -37,6 +36,7 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +60,7 @@ public class BlockChainLoader {
     private final BlockExecutor blockExecutor;
     private final Genesis genesis;
     private final StateRootHandler stateRootHandler;
+    private final ProgramTraceProcessor programTraceProcessor;
 
     public BlockChainLoader(
             RskSystemProperties config,
@@ -69,7 +70,8 @@ public class BlockChainLoader {
             TransactionPool transactionPool,
             EthereumListener listener,
             BlockValidator blockValidator,
-            BlockExecutorFactory blockExecutorFactory,
+            BlockExecutor blockExecutor,
+            ProgramTraceProcessor programTraceProcessor,
             Genesis genesis,
             StateRootHandler stateRootHandler) {
         this.config = config;
@@ -79,7 +81,8 @@ public class BlockChainLoader {
         this.transactionPool = transactionPool;
         this.listener = listener;
         this.blockValidator = blockValidator;
-        this.blockExecutor = blockExecutorFactory.build();
+        this.blockExecutor = blockExecutor;
+        this.programTraceProcessor = programTraceProcessor;
         this.genesis = genesis;
         this.stateRootHandler = stateRootHandler;
     }
@@ -95,6 +98,7 @@ public class BlockChainLoader {
                 config.isFlushEnabled(),
                 config.flushNumberOfBlocks(),
                 blockExecutor,
+                programTraceProcessor,
                 stateRootHandler
         );
 

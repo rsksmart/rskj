@@ -21,36 +21,30 @@ package org.ethereum.vm.trace;
 
 import co.rsk.crypto.Keccak256;
 import org.ethereum.vm.VMUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-/**
- * Created by ajlopez on 09/04/2019.
- */
 public class FileProgramTraceProcessor implements ProgramTraceProcessor {
-    private final boolean vmTrace;
+    private static final Logger logger = LoggerFactory.getLogger(FileProgramTraceProcessor.class);
+
     private final String databaseDir;
     private final String vmTraceDir;
     private final boolean vmTraceCompressed;
 
-    public FileProgramTraceProcessor(boolean vmTrace, String databaseDir, String vmTraceDir, boolean vmTraceCompressed) {
-        this.vmTrace = vmTrace;
+    public FileProgramTraceProcessor(String databaseDir, String vmTraceDir, boolean vmTraceCompressed) {
         this.databaseDir = databaseDir;
         this.vmTraceDir = vmTraceDir;
         this.vmTraceCompressed = vmTraceCompressed;
     }
 
     @Override
-    public boolean enabled() {
-        return this.vmTrace;
-    }
-
-    @Override
-    public void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash)  throws IOException {
-        if (!this.vmTrace) {
-            return;
+    public void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash) {
+        try {
+            VMUtils.saveProgramTraceFile(txHash.toHexString(), programTrace, databaseDir, vmTraceDir, vmTraceCompressed);
+        } catch (IOException e) {
+            logger.error("Cannot write trace to file", e);
         }
-
-        VMUtils.saveProgramTraceFile(txHash.toHexString(), programTrace, databaseDir, vmTraceDir, vmTraceCompressed);
     }
 }

@@ -21,7 +21,7 @@ package co.rsk.test.dsl;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TestTransactionExecutorFactory;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
@@ -246,16 +246,16 @@ public class WorldDslProcessor {
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
             BlockExecutor executor = new BlockExecutor(
+                    config.getActivationConfig(),
                     world.getRepository(),
-                    new TestTransactionExecutorFactory(
+                    new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                    new TransactionExecutorFactory(
                             config,
                             world.getBlockChain().getBlockStore(),
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory
-                    ),
-                    new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
-                    config.getActivationConfig()
+                    )
             );
             executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);

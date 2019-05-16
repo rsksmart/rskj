@@ -2,9 +2,7 @@ package org.ethereum.util;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.TestTransactionExecutorFactory;
+import co.rsk.core.*;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
@@ -107,7 +105,7 @@ public class ContractRunner {
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = repository.startTracking();
         RskSystemProperties config = new TestSystemProperties();
-        TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,

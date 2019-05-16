@@ -19,7 +19,6 @@
 package co.rsk.rpc.modules.debug;
 
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.net.MessageHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.ethereum.core.Block;
@@ -41,17 +40,17 @@ public class DebugModuleImpl implements DebugModule {
     private final ReceiptStore receiptStore;
 
     private final MessageHandler messageHandler;
-    private final BlockExecutorFactory blockExecutorFactory;
+    private final BlockExecutor blockExecutor;
 
     public DebugModuleImpl(
             BlockStore blockStore,
             ReceiptStore receiptStore,
             MessageHandler messageHandler,
-            BlockExecutorFactory blockExecutorFactory) {
+            BlockExecutor blockExecutor) {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.messageHandler = messageHandler;
-        this.blockExecutorFactory = blockExecutorFactory;
+        this.blockExecutor = blockExecutor;
     }
 
     @Override
@@ -77,11 +76,8 @@ public class DebugModuleImpl implements DebugModule {
         Transaction tx = block.getTransactionsList().get(txInfo.getIndex());
         txInfo.setTransaction(tx);
 
-        MemoryProgramTraceProcessor programTraceProcessor = new MemoryProgramTraceProcessor(true);
-
-        BlockExecutor blockExecutor = blockExecutorFactory.buildForTrace(programTraceProcessor);
-
-        blockExecutor.execute(block, parent.getHeader(), false);
+        MemoryProgramTraceProcessor programTraceProcessor = new MemoryProgramTraceProcessor();
+        blockExecutor.executeAndTrace(programTraceProcessor, block, parent.getHeader(), false, false);
 
         return programTraceProcessor.getProgramTraceAsJsonNode(tx.getHash());
     }

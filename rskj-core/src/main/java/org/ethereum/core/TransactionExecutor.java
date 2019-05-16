@@ -22,7 +22,6 @@ package org.ethereum.core;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
@@ -41,7 +40,6 @@ import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
@@ -75,7 +73,6 @@ public class TransactionExecutor {
     private final PrecompiledContracts precompiledContracts;
     private final boolean playVm;
     private final boolean enableRemasc;
-    private final ProgramTraceProcessor programTraceProcessor;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
@@ -103,8 +100,7 @@ public class TransactionExecutor {
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock,long gasUsedInTheBlock, VmConfig vmConfig,
-            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts,
-            ProgramTraceProcessor programTraceProcessor) {
+            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts) {
         this.constants = constants;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
         this.tx = tx;
@@ -122,7 +118,6 @@ public class TransactionExecutor {
         this.precompiledContracts = precompiledContracts;
         this.playVm = playVm;
         this.enableRemasc = remascEnabled;
-        this.programTraceProcessor = programTraceProcessor;
     }
 
     /**
@@ -517,19 +512,14 @@ public class TransactionExecutor {
 
         logger.trace("tx listener done");
 
-        if (programTraceProcessor.enabled() && program != null) {
-            ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
-            Keccak256 txHash = tx.getHash();
-            try {
-                programTraceProcessor.processProgramTrace(trace, txHash);
-            } catch (IOException e) {
-                String errorMessage = String.format("Cannot write trace to file: %s", e.getMessage());
-                panicProcessor.panic("executor", errorMessage);
-                logger.error(errorMessage);
-            }
-        }
-
         logger.trace("tx finalization done");
+    }
+
+    public void extractTrace(ProgramTraceProcessor programTraceProcessor) {
+        if (program != null) {
+            ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
+            programTraceProcessor.processProgramTrace(trace, tx.getHash());
+        }
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {

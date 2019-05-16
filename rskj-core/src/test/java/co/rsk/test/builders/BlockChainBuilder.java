@@ -21,8 +21,9 @@ package co.rsk.test.builders;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.DisabledProgramTraceProcessor;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TestTransactionExecutorFactory;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
@@ -162,7 +163,7 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
-        TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,
@@ -173,11 +174,11 @@ public class BlockChainBuilder {
                 config, this.repository, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
                 transactionExecutorFactory, 10, 100
         );
-        BlockExecutorFactory blockExecutorFactory = new BlockExecutorFactory(
+        BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
-                transactionExecutorFactory,
                 repository,
-                stateRootHandler
+                stateRootHandler,
+                transactionExecutorFactory
         );
         BlockChainImpl blockChain = new BlockChainLoader(
                 config,
@@ -187,7 +188,8 @@ public class BlockChainBuilder {
                 transactionPool,
                 listener,
                 blockValidator,
-                blockExecutorFactory,
+                blockExecutor,
+                new DisabledProgramTraceProcessor(),
                 genesis,
                 stateRootHandler
         ).loadBlockchain();
@@ -198,7 +200,6 @@ public class BlockChainBuilder {
         }
 
         if (this.blocks != null) {
-            BlockExecutor blockExecutor = blockExecutorFactory.build();
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());
                 blockChain.tryToConnect(b);

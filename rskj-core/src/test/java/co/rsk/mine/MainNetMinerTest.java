@@ -2,13 +2,12 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
-import co.rsk.core.bc.BlockExecutorFactory;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -49,7 +48,7 @@ public class MainNetMinerTest {
     private Repository repository;
     private StateRootHandler stateRootHandler;
     private BlockFactory blockFactory;
-    private BlockExecutorFactory blockExecutorFactory;
+    private BlockExecutor blockExecutor;
 
     @Before
     public void setup() {
@@ -71,7 +70,7 @@ public class MainNetMinerTest {
         repository = factory.getRepository();
         stateRootHandler = factory.getStateRootHandler();
         blockFactory = factory.getBlockFactory();
-        blockExecutorFactory = factory.getBlockExecutorFactory();
+        blockExecutor = factory.getBlockExecutor();
     }
 
     /*
@@ -209,7 +208,7 @@ public class MainNetMinerTest {
                 unclesValidationRule,
                 clock,
                 blockFactory,
-                blockExecutorFactory
+                blockExecutor
         );
     }
 }
