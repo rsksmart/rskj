@@ -21,8 +21,8 @@ package co.rsk.remasc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
-import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
@@ -125,7 +125,7 @@ class RemascTestRunner {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockExecutor blockExecutor = new BlockExecutor(
                 blockchain.getRepository(),
-                new TransactionExecutorFactory(
+                new TestTransactionExecutorFactory(
                         builder.getConfig(),
                         blockchain.getBlockStore(),
                         null,

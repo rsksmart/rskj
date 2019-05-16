@@ -19,7 +19,7 @@
 package co.rsk.test;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
@@ -92,7 +92,7 @@ public class World {
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
                     this.getRepository(),
-                    new TransactionExecutorFactory(
+                    new TestTransactionExecutorFactory(
                             config,
                             this.getBlockChain().getBlockStore(),
                             null,

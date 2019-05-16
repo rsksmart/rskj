@@ -37,7 +37,7 @@ public class DebugModuleImplTest {
     @Before
     public void setup(){
         messageHandler = Web3Mocks.getMockMessageHandler();
-        debugModule = new DebugModuleImpl(messageHandler);
+        debugModule = new DebugModuleImpl(null, null, messageHandler, null);
     }
 
     @Test

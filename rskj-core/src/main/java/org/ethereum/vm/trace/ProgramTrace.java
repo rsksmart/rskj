@@ -83,7 +83,7 @@ public class ProgramTrace {
                         DataWord key = keysIterator.next();
                         DataWord value = informationProvider.getStorageValue(ownerAddress, key);
                         if (key == null || value == null) {
-                            LOGGER.info("Null storage key/value: address[{}]" ,address);
+                            LOGGER.info("Null storage key/value: address[{}]", address);
                             continue;
                         }
 

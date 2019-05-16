@@ -20,7 +20,7 @@ package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.test.World;
@@ -106,7 +106,7 @@ public class BlockBuilder {
             final TestSystemProperties config = new TestSystemProperties();
             BlockExecutor executor = new BlockExecutor(
                     blockChain.getRepository(),
-                    new TransactionExecutorFactory(
+                    new TestTransactionExecutorFactory(
                             config,
                             blockChain.getBlockStore(),
                             null,

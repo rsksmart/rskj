@@ -22,6 +22,7 @@ package org.ethereum.jsontestsuite.runners;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -92,7 +93,7 @@ public class StateTestRunner {
     protected ProgramResult executeTransaction(Transaction tx) {
         Repository track = repository.startTracking();
 
-        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+        TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
                 config,
                 new BlockStoreDummy(),
                 null,
@@ -138,7 +139,7 @@ public class StateTestRunner {
                 1,
                 new BlockExecutor(
                         repository,
-                        new TransactionExecutorFactory(
+                        new TestTransactionExecutorFactory(
                                 config,
                                 blockStore,
                                 null,

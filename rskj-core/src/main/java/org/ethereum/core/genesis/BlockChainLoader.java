@@ -24,6 +24,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
@@ -67,13 +68,13 @@ public class BlockChainLoader {
 
     public BlockChainLoader(
             RskSystemProperties config,
-            org.ethereum.core.Repository repository,
-            org.ethereum.db.BlockStore blockStore,
+            Repository repository,
+            BlockStore blockStore,
             ReceiptStore receiptStore,
             TransactionPool transactionPool,
             EthereumListener listener,
             BlockValidator blockValidator,
-            BlockExecutor blockExecutor,
+            BlockExecutorFactory blockExecutorFactory,
             Genesis genesis,
             StateRootHandler stateRootHandler) {
         this.config = config;
@@ -83,7 +84,7 @@ public class BlockChainLoader {
         this.transactionPool = transactionPool;
         this.listener = listener;
         this.blockValidator = blockValidator;
-        this.blockExecutor = blockExecutor;
+        this.blockExecutor = blockExecutorFactory.build();
         this.genesis = genesis;
         this.stateRootHandler = stateRootHandler;
     }

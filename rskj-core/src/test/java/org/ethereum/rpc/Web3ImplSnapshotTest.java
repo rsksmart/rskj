@@ -23,7 +23,6 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.db.StateRootHandler;
 import co.rsk.mine.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -56,14 +55,12 @@ public class Web3ImplSnapshotTest {
     private RskTestFactory factory;
     private Blockchain blockchain;
     private BlockFactory blockFactory;
-    private StateRootHandler stateRootHandler;
 
     @Before
     public void setUp() {
         factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         blockFactory = factory.getBlockFactory();
-        stateRootHandler = factory.getStateRootHandler();
     }
 
     @Test
@@ -160,7 +157,7 @@ public class Web3ImplSnapshotTest {
         EvmModule evmModule = new EvmModuleImpl(minerServer, minerClient, minerClock, blockchain, factory.getTransactionPool());
         PersonalModule pm = new PersonalModuleWalletDisabled();
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
+        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
 
         ethereum.repository = factory.getRepository();
         ethereum.blockchain = blockchain;
@@ -216,8 +213,7 @@ public class Web3ImplSnapshotTest {
                         rule,
                         clock,
                         blockFactory,
-                        stateRootHandler,
-                        factory.getTransactionExecutorFactory()
+                        factory.getBlockExecutorFactory()
                 ),
                 clock,
                 blockFactory,

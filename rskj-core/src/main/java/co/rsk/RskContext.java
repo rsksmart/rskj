@@ -20,9 +20,8 @@ package co.rsk;
 
 import co.rsk.cli.CliArgs;
 import co.rsk.config.*;
-import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.*;
-import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.core.bc.BlockValidatorImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
@@ -95,6 +94,7 @@ import org.ethereum.util.BuildInfo;
 import org.ethereum.util.FileUtil;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.vm.trace.FileProgramTraceProcessor;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
@@ -132,7 +132,6 @@ public class RskContext implements NodeBootstrapper {
     private Blockchain blockchain;
     private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
-    private BlockExecutor blockExecutor;
     private org.ethereum.db.BlockStore blockStore;
     private co.rsk.net.BlockStore netBlockStore;
     private Repository repository;
@@ -201,6 +200,7 @@ public class RskContext implements NodeBootstrapper {
     private MinerServer minerServer;
     private SolidityCompiler solidityCompiler;
     private BlocksBloomStore blocksBloomStore;
+    private BlockExecutorFactory blockExecutorFactory;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -280,6 +280,18 @@ public class RskContext implements NodeBootstrapper {
         return repository;
     }
 
+    public BlockExecutorFactory getBlockExecutorFactory() {
+        if (blockExecutorFactory == null) {
+            blockExecutorFactory = new BlockExecutorFactory(
+                    getTransactionExecutorFactory(),
+                    getRepository(),
+                    getStateRootHandler()
+            );
+        }
+
+        return blockExecutorFactory;
+    }
+
     public org.ethereum.db.BlockStore getBlockStore() {
         if (blockStore == null) {
             blockStore = buildBlockStore();
@@ -320,7 +332,13 @@ public class RskContext implements NodeBootstrapper {
                     getBlockStore(),
                     getReceiptStore(),
                     getBlockFactory(),
-                    getProgramInvokeFactory()
+                    getProgramInvokeFactory(),
+                    new FileProgramTraceProcessor(
+                            getRskSystemProperties().vmTrace(),
+                            getRskSystemProperties().databaseDir(),
+                            getRskSystemProperties().vmTraceDir(),
+                            getRskSystemProperties().vmTraceCompressed()
+                    )
             );
         }
 
@@ -484,7 +502,12 @@ public class RskContext implements NodeBootstrapper {
 
     public DebugModule getDebugModule() {
         if (debugModule == null) {
-            debugModule = new DebugModuleImpl(getNodeMessageHandler());
+            debugModule = new DebugModuleImpl(
+                    getBlockStore(),
+                    getReceiptStore(),
+                    getNodeMessageHandler(),
+                    getBlockExecutorFactory()
+            );
         }
 
         return debugModule;
@@ -771,25 +794,13 @@ public class RskContext implements NodeBootstrapper {
                     getTransactionPool(),
                     getCompositeEthereumListener(),
                     getBlockValidator(),
-                    getBlockExecutor(),
+                    getBlockExecutorFactory(),
                     getGenesis(),
                     getStateRootHandler()
             );
         }
 
         return blockChainLoader;
-    }
-
-    public BlockExecutor getBlockExecutor() {
-        if (blockExecutor == null) {
-            blockExecutor = new BlockExecutor(
-                    getRepository(),
-                    getTransactionExecutorFactory(),
-                    getStateRootHandler()
-            );
-        }
-
-        return blockExecutor;
     }
 
     private SyncConfiguration getSyncConfiguration() {
@@ -992,8 +1003,7 @@ public class RskContext implements NodeBootstrapper {
                     getMinerServerBlockValidationRule(),
                     getMinerClock(),
                     getBlockFactory(),
-                    getStateRootHandler(),
-                    getTransactionExecutorFactory()
+                    getBlockExecutorFactory()
             );
         }
 

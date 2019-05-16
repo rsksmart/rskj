@@ -5,10 +5,9 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
-import co.rsk.db.StateRootHandler;
+import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
@@ -44,8 +43,7 @@ public class MainNetMinerTest {
     private NodeBlockProcessor blockProcessor;
     private Repository repository;
     private BlockFactory blockFactory;
-    private StateRootHandler stateRootHandler;
-    private TransactionExecutorFactory transactionExecutorFactory;
+    private BlockExecutorFactory blockExecutorFactory;
 
     @Before
     public void setup() {
@@ -58,8 +56,7 @@ public class MainNetMinerTest {
         blockProcessor = factory.getNodeBlockProcessor();
         repository = factory.getRepository();
         blockFactory = factory.getBlockFactory();
-        stateRootHandler = factory.getStateRootHandler();
-        transactionExecutorFactory = factory.getTransactionExecutorFactory();
+        blockExecutorFactory = factory.getBlockExecutorFactory();
     }
 
     /*
@@ -198,8 +195,7 @@ public class MainNetMinerTest {
                 unclesValidationRule,
                 clock,
                 blockFactory,
-                stateRootHandler,
-                transactionExecutorFactory
+                blockExecutorFactory
         );
     }
 }

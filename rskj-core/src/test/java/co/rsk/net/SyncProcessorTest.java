@@ -5,7 +5,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.messages.*;
@@ -665,7 +665,7 @@ public class SyncProcessorTest {
 
         BlockExecutor blockExecutor = new BlockExecutor(
                 blockchain.getRepository(),
-                new TransactionExecutorFactory(
+                new TestTransactionExecutorFactory(
                         config,
                         blockchain.getBlockStore(),
                         null,

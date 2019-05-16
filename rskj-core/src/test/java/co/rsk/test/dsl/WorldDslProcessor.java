@@ -20,8 +20,8 @@ package co.rsk.test.dsl;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
@@ -238,7 +238,7 @@ public class WorldDslProcessor {
             final TestSystemProperties config = new TestSystemProperties();
             BlockExecutor executor = new BlockExecutor(
                     world.getRepository(),
-                    new TransactionExecutorFactory(
+                    new TestTransactionExecutorFactory(
                             config,
                             world.getBlockChain().getBlockStore(),
                             null,

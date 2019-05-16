@@ -22,7 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -71,7 +71,7 @@ public class BlockExecutorTest {
     public void setUp() {
         RskTestFactory objects = new RskTestFactory(config);
         blockchain = objects.getBlockchain();
-        executor = objects.getBlockExecutor();
+        executor = objects.getBlockExecutorFactory().build();
         repository = objects.getRepository();
     }
 
@@ -608,7 +608,7 @@ public class BlockExecutorTest {
     private static BlockExecutor buildBlockExecutor(Repository repository) {
         return new BlockExecutor(
                 repository,
-                new TransactionExecutorFactory(
+                new TestTransactionExecutorFactory(
                         config,
                         null,
                         null,

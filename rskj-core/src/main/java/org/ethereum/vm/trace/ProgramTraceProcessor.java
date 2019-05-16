@@ -1,6 +1,7 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,13 +17,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.rpc.modules.debug;
+package org.ethereum.vm.trace;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import co.rsk.crypto.Keccak256;
 
-public interface DebugModule {
+import java.io.IOException;
 
-    String wireProtocolQueueSize();
+/**
+ * Created by ajlopez on 15/04/2019.
+ */
+public interface ProgramTraceProcessor {
+    boolean enabled();
 
-    JsonNode traceTransaction(String transactionHash) throws Exception;
+    void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash)  throws IOException;
 }
