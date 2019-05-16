@@ -26,6 +26,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -111,11 +112,11 @@ public class Constants {
     }
 
     public byte[] getFallbackMiningPubKey0() {
-        return FALLBACKMINING_PUBKEY_0;
+        return Arrays.copyOf(FALLBACKMINING_PUBKEY_0, FALLBACKMINING_PUBKEY_0.length);
     }
 
     public byte[] getFallbackMiningPubKey1() {
-        return FALLBACKMINING_PUBKEY_1;
+        return Arrays.copyOf(FALLBACKMINING_PUBKEY_1, FALLBACKMINING_PUBKEY_1.length);
     }
 
     public int getMaximumExtraDataSize() {

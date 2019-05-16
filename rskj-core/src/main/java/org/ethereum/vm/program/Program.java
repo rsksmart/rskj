@@ -856,7 +856,7 @@ public class Program {
     }
 
     public byte[] getCode() {
-        return ops;
+        return Arrays.copyOf(ops, ops.length);
     }
 
     public int getCodeLengthAt(RskAddress addr) {
