@@ -27,7 +27,6 @@ import org.ethereum.core.*;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +52,7 @@ public class TransactionPoolImplTest {
         blockChain = factory.getBlockchain();
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
         blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
-        transactionPool = new TransactionPoolImpl(config, factory.getRepository(), null, null, factory.getBlockFactory(), new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
+        transactionPool = new TransactionPoolImpl(config, factory.getRepository(), null, factory.getBlockFactory(), new TestCompositeEthereumListener(), factory.getTransactionExecutorFactory(), 10, 100);
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
     }

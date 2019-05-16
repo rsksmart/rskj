@@ -19,19 +19,18 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -234,28 +233,16 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
-                    TransactionExecutor executor = new TransactionExecutor(
-                            txConst,
-                            0,
-                            bestBlock.getCoinbase(),
-                            track,
+                    TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                            config,
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
-                            invokeFactory,
-                            bestBlock,
-                            new EthereumListenerAdapter(),
-                            0,
-                            config.getVmConfig(),
-                            config.getBlockchainConfig(),
-                            config.playVM(),
-                            config.isRemascEnabled(),
-                            config.vmTrace(),
-                            new PrecompiledContracts(config),
-                            config.databaseDir(),
-                            config.vmTraceDir(),
-                            config.vmTraceCompressed())
-                        .setLocalCall(true);
+                            invokeFactory
+                    );
+                    TransactionExecutor executor = transactionExecutorFactory
+                            .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
+                            .setLocalCall(true);
 
                     executor.init();
                     executor.execute();

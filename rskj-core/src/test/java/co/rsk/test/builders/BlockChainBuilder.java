@@ -23,6 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
@@ -158,31 +159,32 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, receiptStore, blockFactory, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
-
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, transactionPool, listener, blockValidator, false, 1, new BlockExecutor(this.repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                this.blockStore,
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                config,
+                blockStore,
                 receiptStore,
                 blockFactory,
-                programInvokeFactory,
-                block1,
+                new ProgramInvokeFactoryImpl()
+        );
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, blockFactory, new TestCompositeEthereumListener(), transactionExecutorFactory, 10, 100);
+
+        BlockExecutor blockExecutor = new BlockExecutor(
+                repository,
+                transactionExecutorFactory,
+                stateRootHandler
+        );
+        BlockChainImpl blockChain = new BlockChainImpl(
+                this.repository,
+                this.blockStore,
+                receiptStore,
+                transactionPool,
                 listener,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ), stateRootHandler), stateRootHandler);
+                blockValidator,
+                false,
+                1,
+                blockExecutor,
+                stateRootHandler
+        );
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
@@ -206,30 +208,6 @@ public class BlockChainBuilder {
         }
 
         if (this.blocks != null) {
-            final ProgramInvokeFactoryImpl programInvokeFactory1 = new ProgramInvokeFactoryImpl();
-            BlockExecutor blockExecutor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                    tx1,
-                    txindex1,
-                    block1.getCoinbase(),
-                    track1,
-                    blockStore,
-                    receiptStore,
-                    blockFactory,
-                    programInvokeFactory1,
-                    block1,
-                    listener,
-                    totalGasUsed1,
-                    config.getVmConfig(),
-                    config.getBlockchainConfig(),
-                    config.playVM(),
-                    config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed()
-            ), stateRootHandler);
-
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());
                 blockChain.tryToConnect(b);

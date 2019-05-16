@@ -20,7 +20,9 @@ package co.rsk;
 
 import co.rsk.cli.CliArgs;
 import co.rsk.config.*;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.*;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockValidatorImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
@@ -130,6 +132,7 @@ public class RskContext implements NodeBootstrapper {
     private Blockchain blockchain;
     private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
+    private BlockExecutor blockExecutor;
     private org.ethereum.db.BlockStore blockStore;
     private co.rsk.net.BlockStore netBlockStore;
     private Repository repository;
@@ -191,6 +194,7 @@ public class RskContext implements NodeBootstrapper {
     private Eth62MessageFactory eth62MessageFactory;
     private GasLimitCalculator gasLimitCalculator;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
+    private TransactionExecutorFactory transactionExecutorFactory;
     private ExecutionBlockRetriever executionBlockRetriever;
     private NodeManager nodeManager;
     private StaticMessages staticMessages;
@@ -241,10 +245,9 @@ public class RskContext implements NodeBootstrapper {
                     rskSystemProperties,
                     getRepository(),
                     getBlockStore(),
-                    getReceiptStore(),
                     getBlockFactory(),
-                    getProgramInvokeFactory(),
                     getCompositeEthereumListener(),
+                    getTransactionExecutorFactory(),
                     rskSystemProperties.txOutdatedThreshold(),
                     rskSystemProperties.txOutdatedTimeout()
             );
@@ -302,8 +305,18 @@ public class RskContext implements NodeBootstrapper {
     public ReversibleTransactionExecutor getReversibleTransactionExecutor() {
         if (reversibleTransactionExecutor == null) {
             reversibleTransactionExecutor = new ReversibleTransactionExecutor(
-                    getRskSystemProperties(),
                     getRepository(),
+                    getTransactionExecutorFactory()
+            );
+        }
+
+        return reversibleTransactionExecutor;
+    }
+
+    public TransactionExecutorFactory getTransactionExecutorFactory() {
+        if (transactionExecutorFactory == null) {
+            transactionExecutorFactory = new TransactionExecutorFactory(
+                    getRskSystemProperties(),
                     getBlockStore(),
                     getReceiptStore(),
                     getBlockFactory(),
@@ -311,7 +324,7 @@ public class RskContext implements NodeBootstrapper {
             );
         }
 
-        return reversibleTransactionExecutor;
+        return transactionExecutorFactory;
     }
 
     public NodeBlockProcessor getNodeBlockProcessor() {
@@ -758,13 +771,25 @@ public class RskContext implements NodeBootstrapper {
                     getTransactionPool(),
                     getCompositeEthereumListener(),
                     getBlockValidator(),
-                    getBlockFactory(),
+                    getBlockExecutor(),
                     getGenesis(),
                     getStateRootHandler()
             );
         }
 
         return blockChainLoader;
+    }
+
+    public BlockExecutor getBlockExecutor() {
+        if (blockExecutor == null) {
+            blockExecutor = new BlockExecutor(
+                    getRepository(),
+                    getTransactionExecutorFactory(),
+                    getStateRootHandler()
+            );
+        }
+
+        return blockExecutor;
     }
 
     private SyncConfiguration getSyncConfiguration() {
@@ -965,11 +990,10 @@ public class RskContext implements NodeBootstrapper {
                     getDifficultyCalculator(),
                     getGasLimitCalculator(),
                     getMinerServerBlockValidationRule(),
-                    getRskSystemProperties(),
-                    getReceiptStore(),
                     getMinerClock(),
                     getBlockFactory(),
-                    getStateRootHandler()
+                    getStateRootHandler(),
+                    getTransactionExecutorFactory()
             );
         }
 

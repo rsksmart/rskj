@@ -42,7 +42,7 @@ public class LocalBlockTest {
 
     @BeforeClass
     public static void init() {
-        config.disableRemasc();
+        config.setRemascEnabled(false);
     }
 
     private void run(String name) throws IOException, ParseException {

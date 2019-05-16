@@ -214,11 +214,10 @@ public class Web3ImplSnapshotTest {
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
                         rule,
-                        config,
-                        null,
                         clock,
                         blockFactory,
-                        stateRootHandler
+                        stateRootHandler,
+                        factory.getTransactionExecutorFactory()
                 ),
                 clock,
                 blockFactory,
