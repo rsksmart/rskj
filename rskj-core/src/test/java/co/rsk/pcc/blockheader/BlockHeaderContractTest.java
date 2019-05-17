@@ -38,8 +38,9 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.util.DifficultyUtils;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.CallTransaction;
@@ -99,13 +100,13 @@ public class BlockHeaderContractTest {
         blockFactory = new BlockFactory(config.getActivationConfig());
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
-        BlockchainConfig bcConfig = mock(BlockchainConfig.class);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         // Enabling necessary RSKIPs for every precompiled contract to be available
-        when(bcConfig.isRskip119()).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(true);
 
         world = new World();
-        contract = (BlockHeaderContract) precompiledContracts.getContractForAddress(bcConfig, DataWord.valueFromHex(BLOCK_HEADER_CONTRACT_ADDRESS));
+        contract = (BlockHeaderContract) precompiledContracts.getContractForAddress(activations, DataWord.valueFromHex(BLOCK_HEADER_CONTRACT_ADDRESS));
 
         // contract methods
         getCoinbaseFunction = getContractFunction(contract, GetCoinbaseAddress.class);

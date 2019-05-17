@@ -9,7 +9,8 @@ import co.rsk.helpers.Stopwatch;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Account;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Transaction;
@@ -198,12 +199,12 @@ public class VMSpecificOpcodesPerformanceTest {
         return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(number * 1000 + 1000)).build();
     }
 
-    private BlockchainConfig getBlockchainConfig() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip91()).thenReturn(true);
-        when(blockchainConfig.isRskip90()).thenReturn(true);
-        when(blockchainConfig.isRskip89()).thenReturn(true);
-        return blockchainConfig;
+    private ActivationConfig.ForBlock getBlockchainConfig() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP91)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP90)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP89)).thenReturn(true);
+        return activations;
     }
 
     private VM getSubject() {

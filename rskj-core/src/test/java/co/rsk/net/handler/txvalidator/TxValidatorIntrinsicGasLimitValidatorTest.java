@@ -20,11 +20,10 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.BridgeRegTestConstants;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.config.RegtestBlockchainNetConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -37,11 +36,13 @@ import java.math.BigInteger;
 
 public class TxValidatorIntrinsicGasLimitValidatorTest {
 
-    private BlockchainNetConfig blockchainConfig;
+    private Constants constants;
+    private ActivationConfig activationConfig;
 
     @Before
     public void setUp() {
-        blockchainConfig = new RegtestBlockchainNetConfig(ActivationConfigsForTest.allBut(ConsensusRule.ARE_BRIDGE_TXS_PAID));
+        constants = Constants.regtest();
+        activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.ARE_BRIDGE_TXS_PAID);
     }
 
     @Test
@@ -83,7 +84,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
         BridgeRegTestConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
         tx4.sign(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
 
-        TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(blockchainConfig);
+        TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig);
 
         Assert.assertTrue(tvigpv.validate(tx1, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
         Assert.assertTrue(tvigpv.validate(tx2, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
@@ -131,7 +132,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 Constants.REGTEST_CHAIN_ID);
         tx4.sign(new ECKey().getPrivKeyBytes());
 
-        TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(blockchainConfig);
+        TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig);
 
         Assert.assertFalse(tvigpv.validate(tx1, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
         Assert.assertFalse(tvigpv.validate(tx2, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());

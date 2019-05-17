@@ -194,7 +194,7 @@ public class FullNodeRunner implements NodeRunner {
     }
 
     private void enableSimulateTxs() {
-        new TxBuilder(rskSystemProperties.getBlockchainConfig().getCommonConstants(), rsk, nodeBlockProcessor, repository).simulateTxs();
+        new TxBuilder(rskSystemProperties.getNetworkConstants(), rsk, nodeBlockProcessor, repository).simulateTxs();
     }
 
     private void enableSimulateTxsEx() {

@@ -29,8 +29,9 @@ import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -84,7 +85,7 @@ public class Program {
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
 
-    private final BlockchainConfig blockchainConfig;
+    private final ActivationConfig.ForBlock activations;
     private final Transaction transaction;
 
     private final ProgramInvoke invoke;
@@ -123,14 +124,14 @@ public class Program {
             VmConfig config,
             PrecompiledContracts precompiledContracts,
             BlockFactory blockFactory,
-            BlockchainConfig blockchainConfig,
+            ActivationConfig.ForBlock activations,
             byte[] ops,
             ProgramInvoke programInvoke,
             Transaction transaction) {
         this.config = config;
         this.precompiledContracts = precompiledContracts;
         this.blockFactory = blockFactory;
-        this.blockchainConfig = blockchainConfig;
+        this.activations = activations;
         this.transaction = transaction;
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
@@ -479,7 +480,7 @@ public class Program {
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
-            Program program = new Program(config, precompiledContracts, blockFactory, blockchainConfig, programCode, programInvoke, internalTx);
+            Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
         }
@@ -707,7 +708,7 @@ public class Program {
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
-        Program program = new Program(config, precompiledContracts, blockFactory, blockchainConfig, programCode, programInvoke, internalTx);
+        Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx);
         vm.play(program);
         childResult  = program.getResult();
 
@@ -1170,8 +1171,8 @@ public class Program {
         return Optional.of(copiedData);
     }
 
-    public BlockchainConfig getBlockchainConfig() {
-        return blockchainConfig;
+    public ActivationConfig.ForBlock getActivations() {
+        return activations;
     }
 
     public void addListener(ProgramOutListener listener) {
@@ -1264,7 +1265,7 @@ public class Program {
 
             byte[] out = contract.execute(data);
 
-            if (getBlockchainConfig().isRskip90()) {
+            if (getActivations().isActive(ConsensusRule.RSKIP90)) {
                 this.returnDataBuffer = out;
             }
 

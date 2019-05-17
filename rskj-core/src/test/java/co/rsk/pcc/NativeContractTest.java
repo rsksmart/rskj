@@ -19,10 +19,10 @@
 
 package co.rsk.pcc;
 
-import co.rsk.config.RskSystemProperties;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.*;
 
 public class NativeContractTest {
 
-    private TestSystemProperties config;
+    private ActivationConfig activationConfig;
     private NativeContract contract;
     private Transaction tx;
     private Block block;
@@ -56,8 +56,8 @@ public class NativeContractTest {
 
     @Before
     public void beforeTests() {
-        config = new TestSystemProperties();
-        contract = spy(new EmptyNativeContract(config));
+        activationConfig = ActivationConfigsForTest.all();
+        contract = spy(new EmptyNativeContract(activationConfig));
     }
 
     @Test
@@ -97,7 +97,7 @@ public class NativeContractTest {
     public void getGasForNullDataAndDefaultMethod() {
         NativeMethod method = mock(NativeMethod.class);
         when(method.getGas(any(), any())).thenReturn(10L);
-        contract = new EmptyNativeContract(config) {
+        contract = new EmptyNativeContract(activationConfig) {
             @Override
             public Optional<NativeMethod> getDefaultMethod() {
                 return Optional.of(method);
@@ -111,7 +111,7 @@ public class NativeContractTest {
     public void getGasForEmptyDataAndDefaultMethod() {
         NativeMethod method = mock(NativeMethod.class);
         when(method.getGas(any(), any())).thenReturn(10L);
-        contract = new EmptyNativeContract(config) {
+        contract = new EmptyNativeContract(activationConfig) {
             @Override
             public Optional<NativeMethod> getDefaultMethod() {
                 return Optional.of(method);
@@ -416,8 +416,8 @@ public class NativeContractTest {
 
     static class EmptyNativeContract extends NativeContract {
 
-        EmptyNativeContract(RskSystemProperties config){
-            super(config, new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        EmptyNativeContract(ActivationConfig activationConfig){
+            super(activationConfig, new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
         }
 
         @Override

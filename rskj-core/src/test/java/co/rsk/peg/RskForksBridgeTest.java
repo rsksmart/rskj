@@ -334,7 +334,7 @@ public class RskForksBridgeTest {
                 Long.MAX_VALUE,
                 PrecompiledContracts.BRIDGE_ADDR,
                 0,
-                Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}), beforeBambooProperties.getBlockchainConfig().getCommonConstants().getChainId());
+                Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}), beforeBambooProperties.getNetworkConstants().getChainId());
         rskTx.sign(new byte[32]);
 
         TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
@@ -357,7 +357,7 @@ public class RskForksBridgeTest {
 
         Object[] result = Bridge.GET_STATE_FOR_DEBUGGING.decodeResult(res.getHReturn());
 
-        return BridgeState.create(beforeBambooProperties.getBlockchainConfig().getCommonConstants().getBridgeConstants(), (byte[])result[0]);
+        return BridgeState.create(beforeBambooProperties.getNetworkConstants().getBridgeConstants(), (byte[])result[0]);
     }
 
 

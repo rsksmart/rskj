@@ -18,15 +18,15 @@
 
 package co.rsk.net.handler.txvalidator;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -80,7 +80,7 @@ public class TxValidatorAccountBalanceValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
-                new TestSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
+                Constants.REGTEST_CHAIN_ID);
 
         tx.sign(new ECKey().getPrivKeyBytes());
 

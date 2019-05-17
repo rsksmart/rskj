@@ -21,22 +21,23 @@ package org.ethereum.vm;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.config.BlockchainConfig;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.OpCode.CALL;
 
@@ -769,9 +770,9 @@ public class VM {
         } else {
             DataWord address = program.stackPop();
             codeLength = DataWord.valueOf(program.getCodeAt(address).length);
-            BlockchainConfig blockchainConfig = program.getBlockchainConfig();
-            if (blockchainConfig.isRskip90()) {
-                PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, address);
+            ActivationConfig.ForBlock activations = program.getActivations();
+            if (activations.isActive(RSKIP90)) {
+                PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, address);
                 if (precompiledContract != null) {
                     codeLength = DataWord.valueOf(BigIntegers.asUnsignedByteArray(DataWord.MAX_VALUE));
                 }
@@ -1068,7 +1069,7 @@ public class VM {
     }
 
     protected void doLOG(){
-        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
+        if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
             throw Program.ExceptionHelper.modificationException();
         }
 
@@ -1206,7 +1207,7 @@ public class VM {
     }
 
     protected void doSSTORE() {
-        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
+        if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
             throw Program.ExceptionHelper.modificationException();
         }
 
@@ -1343,7 +1344,7 @@ public class VM {
     }
 
     protected void doCREATE(){
-        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
+        if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
             throw Program.ExceptionHelper.modificationException();
         }
 
@@ -1383,9 +1384,9 @@ public class VM {
 
         DataWord value;
 
-        BlockchainConfig config = program.getBlockchainConfig();
+        ActivationConfig.ForBlock activations = program.getActivations();
 
-        if (config.isRskip103()) {
+        if (activations.isActive(RSKIP103)) {
             // value is always zero in a DELEGATECALL or STATICCALL operation
             value = op == OpCode.DELEGATECALL || op == OpCode.STATICCALL ? DataWord.ZERO : program.stackPop();
         } else {
@@ -1461,8 +1462,8 @@ public class VM {
     }
 
     private void callToAddress(DataWord codeAddress, MessageCall msg) {
-        BlockchainConfig blockchainConfig = program.getBlockchainConfig();
-        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(blockchainConfig, codeAddress);
+        ActivationConfig.ForBlock activations = program.getActivations();
+        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, codeAddress);
 
         if (contract != null) {
             program.callToPrecompiledAddress(msg, contract);
@@ -1538,7 +1539,7 @@ public class VM {
     }
 
     protected void doSUICIDE(){
-        if (program.isStaticCall() && program.getBlockchainConfig().isRskip91()) {
+        if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
             throw Program.ExceptionHelper.modificationException();
         }
 
@@ -1611,7 +1612,7 @@ public class VM {
 
     protected void executeOpcode() {
         // Execute operation
-        BlockchainConfig config = program.getBlockchainConfig();
+        ActivationConfig.ForBlock activations = program.getActivations();
         switch (op.val()) {
             /**
              * Stop and Arithmetic Operations
@@ -1666,19 +1667,19 @@ public class VM {
             case OpCodes.OP_MULMOD: doMULMOD();
             break;
             case OpCodes.OP_SHL:
-                if (!config.isRskip120()) {
+                if (!activations.isActive(RSKIP120)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doSHL();
             break;
             case OpCodes.OP_SHR:
-                if (!config.isRskip120()) {
+                if (!activations.isActive(RSKIP120)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doSHR();
             break;
             case OpCodes.OP_SAR:
-                if (!config.isRskip120()) {
+                if (!activations.isActive(RSKIP120)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doSAR();
@@ -1846,7 +1847,7 @@ public class VM {
                 doCALL();
             break;
             case OpCodes.OP_STATICCALL:
-                if (!config.isRskip91()) {
+                if (!activations.isActive(RSKIP91)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doCALL();
@@ -1858,7 +1859,7 @@ public class VM {
             case OpCodes.OP_SUICIDE: doSUICIDE();
             break;
             case OpCodes.OP_CODEREPLACE:
-                if (config.isRskip94()) {
+                if (activations.isActive(RSKIP94)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doCODEREPLACE();

@@ -162,7 +162,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
                 RepositoryImpl repository = createRepositoryImpl();
                 Repository track = repository.startTracking();
-                BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(blockchainNetConfig.getConfigForBlock(executionIndex));
+                BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(activationConfig.forBlock((long) executionIndex));
                 BridgeStorageProvider storageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,bridgeStorageConfigurationAtThisHeight);
 
                 storageInitializer.initialize(storageProvider, track, executionIndex);
@@ -178,7 +178,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
 
-                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, blockchainNetConfig);
+                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
                 Blockchain blockchain = BlockChainBuilder.ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);
                 bridge.init(

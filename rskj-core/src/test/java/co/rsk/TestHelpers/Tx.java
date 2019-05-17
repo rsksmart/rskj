@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
 
 
 public class Tx {
@@ -84,7 +83,7 @@ public class Tx {
             b[i] = bytes.get(i);
         }
         Mockito.when(transaction.getData()).thenReturn(b);
-        Mockito.when(transaction.transactionCost(any(Integer.class), eq(config.getBlockchainConfig()))).thenReturn(amount);
+        Mockito.when(transaction.transactionCost(any(), any())).thenReturn(amount);
 
         return transaction;
     }

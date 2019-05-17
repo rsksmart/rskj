@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.BridgeDevNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.ConfigLoader;
-import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
@@ -101,7 +100,6 @@ public abstract class SystemProperties {
     private Boolean syncEnabled = null;
     private Boolean discoveryEnabled = null;
 
-    protected BlockchainNetConfig blockchainConfig;
     private ActivationConfig activationConfig;
     private Constants constants;
 
@@ -144,18 +142,6 @@ public abstract class SystemProperties {
         return configFromFiles;
     }
 
-    /**
-     * @deprecated use {@link ActivationConfig} instead, and prefer constructor injection to simplify mocking
-     */
-    @Deprecated
-    public synchronized BlockchainNetConfig getBlockchainConfig() {
-        if (blockchainConfig == null) {
-            blockchainConfig = buildBlockchainConfig();
-        }
-
-        return blockchainConfig;
-    }
-
     public ActivationConfig getActivationConfig() {
         if (activationConfig == null) {
             activationConfig = ActivationConfig.read(configFromFiles.getConfig(PROPERTY_BLOCKCHAIN_CONFIG));
@@ -189,20 +175,6 @@ public abstract class SystemProperties {
         }
 
         return constants;
-    }
-
-    private BlockchainNetConfig buildBlockchainConfig() {
-        return new BlockchainNetConfig(getNetworkConstants(), getActivationConfig());
-    }
-
-    /**
-     * @deprecated this method mutates state that should never change, and so it has been deprecated.
-     *             use {@link ActivationConfig} and mocking for testing
-     */
-    @Deprecated
-    @VisibleForTesting
-    public void setBlockchainConfig(BlockchainNetConfig config) {
-        blockchainConfig = config;
     }
 
     public boolean isPeerDiscoveryEnabled() {

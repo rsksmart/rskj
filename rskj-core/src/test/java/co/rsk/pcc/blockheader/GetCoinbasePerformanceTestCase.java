@@ -56,7 +56,7 @@ public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerforman
             @Override
             public Environment initialize(int executionIndex, TxBuilder txBuilder, int height) {
                 World world = buildWorld(6000, 500, 6);
-                BlockHeaderContract contract = new BlockHeaderContract(config,  new RskAddress("0000000000000000000000000000000001000010"));
+                BlockHeaderContract contract = new BlockHeaderContract(activationConfig, new RskAddress("0000000000000000000000000000000001000010"));
                 contract.init(txBuilder.build(executionIndex), world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
 
                 return new EnvironmentBuilder.Environment(
@@ -108,7 +108,7 @@ public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerforman
     }
 
     private Block mineBlock(Block parent, int txPerBlock, int unclesPerBlock) {
-        BlockGenerator blockGenerator = new BlockGenerator(config.getNetworkConstants(), config.getActivationConfig());
+        BlockGenerator blockGenerator = new BlockGenerator(constants, activationConfig);
         byte[] prefix = new byte[1000];
         byte[] compressedTag = Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG);
 
@@ -120,17 +120,17 @@ public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerforman
 
         BigInteger targetDifficulty = DifficultyUtils.difficultyToTarget(parent.getDifficulty());
 
-        new BlockMiner(config.getActivationConfig()).findNonce(mergedMiningBlock, targetDifficulty);
+        new BlockMiner(activationConfig).findNonce(mergedMiningBlock, targetDifficulty);
 
         // We need to clone to allow modifications
-        Block newBlock = new BlockFactory(config.getActivationConfig()).cloneBlockForModification(
+        Block newBlock = new BlockFactory(activationConfig).cloneBlockForModification(
                 blockGenerator.createChildBlock(parent, txPerBlock, parent.getDifficulty().asBigInteger().longValue())
         );
 
         newBlock.setBitcoinMergedMiningHeader(mergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 
         byte[] merkleProof = MinerUtils.buildMerkleProof(
-                config.getActivationConfig(),
+                activationConfig,
                 pb -> pb.buildFromBlock(mergedMiningBlock),
                 newBlock.getNumber()
         );

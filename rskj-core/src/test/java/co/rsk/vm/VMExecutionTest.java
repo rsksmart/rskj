@@ -21,7 +21,7 @@ package co.rsk.vm;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -36,6 +36,7 @@ import org.junit.Test;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP120;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -94,8 +95,8 @@ public class VMExecutionTest {
     }
 
 
-    private void executeShift(String number, String shiftAmount, String expect,String op ,BlockchainConfig blockchainConfig){
-        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH1 "+shiftAmount+" "+op, 3, blockchainConfig);
+    private void executeShift(String number, String shiftAmount, String expect, String op , ActivationConfig.ForBlock activations){
+        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH1 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -104,52 +105,52 @@ public class VMExecutionTest {
 
     @Test
     public void testSHL1() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x00",
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "SHL",
-                blockchainConfig);
+                activations);
     }
 
 
     @Test
     public void testSHL2() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x01",
                 "0000000000000000000000000000000000000000000000000000000000000002",
                 "SHL",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSHL3() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0xff",
                 "8000000000000000000000000000000000000000000000000000000000000000",
                 "SHL",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSHL4() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         String number = "0x0000000000000000000000000000000000000000000000000000000000000001";
         String shiftAmount = "0x0100";
         String op = "SHL";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, blockchainConfig);
+        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -158,124 +159,124 @@ public class VMExecutionTest {
 
     @Test
     public void testSHL5() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0x00",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "SHL",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSHL6() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0xff",
                 "8000000000000000000000000000000000000000000000000000000000000000",
                 "SHL",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSHL7() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0x01",
                 "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
                 "SHL",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSHR1() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x00",
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "SHR",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSHR2() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x01",
                 "0000000000000000000000000000000000000000000000000000000000000000",
                 "SHR",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSHR3() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
                 "0x01",
                 "4000000000000000000000000000000000000000000000000000000000000000",
                 "SHR",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSHR4() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
                 "0xff",
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "SHR",
-                blockchainConfig);
+                activations);
     }
 
 
     @Test
     public void testSHR5() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0x00",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "SHR",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSHR6() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0xff",
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "SHR",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSHR7() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         String number = "0x8000000000000000000000000000000000000000000000000000000000000000";
         String shiftAmount = "0x0100";
         String op = "SHR";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, blockchainConfig);
+        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -284,105 +285,105 @@ public class VMExecutionTest {
 
     @Test
     public void testSAR1() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x00",
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "SAR",
-                blockchainConfig);
+                activations);
     }
 
 
     @Test
     public void testSAR2() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x01",
                 "0000000000000000000000000000000000000000000000000000000000000000",
                 "SAR",
-                blockchainConfig);
+                activations);
     }
 
 
     @Test
     public void testSAR3() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
                 "0x01",
                 "c000000000000000000000000000000000000000000000000000000000000000",
                 "SAR",
-                blockchainConfig);
+                activations);
     }
 
 
     @Test
     public void testSAR4() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
                 "0xff",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "SAR",
-                blockchainConfig);
+                activations);
     }
 
 
     @Test
     public void testSAR5() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0x00",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "SAR",
-                blockchainConfig);
+                activations);
     }
 
 
     @Test
     public void testSAR6() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0x01",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "SAR",
-                blockchainConfig);
+                activations);
     }
 
 
     @Test
     public void testSAR7() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         executeShift("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0xf8",
                 "000000000000000000000000000000000000000000000000000000000000007f",
                 "SAR",
-                blockchainConfig);
+                activations);
     }
 
     @Test
     public void testSAR8() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(true);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(true);
 
         String number = "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
         String shiftAmount = "0x0100";
         String op = "SAR";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, blockchainConfig);
+        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -393,25 +394,25 @@ public class VMExecutionTest {
 
     @Test(expected = Program.IllegalOperationException.class)
     public void testSAR3ShouldFailOnOldVersion() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(false);
-        executeCodeWithBlockchainConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3,blockchainConfig);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(false);
+        executeCodeWithBlockchainConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3, activations);
     }
 
     @Test(expected = Program.IllegalOperationException.class)
     public void testSHL1ShouldFailOnOldVersion() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(false);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(false);
 
-        executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3, blockchainConfig);
+        executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3, activations);
     }
 
     @Test(expected = Program.IllegalOperationException.class)
     public void testSHR1ShouldFailOnOldVersion() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip120()).thenReturn(false);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP120)).thenReturn(false);
 
-        executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, blockchainConfig);
+        executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, activations);
     }
 
     @Test
@@ -569,7 +570,7 @@ public class VMExecutionTest {
     @Test
     public void dupnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST DUPN 0x5b 0x5b");
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(BlockchainConfig.class), code, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null);
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -584,7 +585,7 @@ public class VMExecutionTest {
     @Test
     public void swapnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST SWAPN 0x5b 0x5b");
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(BlockchainConfig.class), code, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null);
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -671,22 +672,22 @@ public class VMExecutionTest {
     }
 
     private Program executeCode(String code, int nsteps) {
-        return executeCodeWithBlockchainConfig(compiler.compile(code), nsteps, mock(BlockchainConfig.class));
+        return executeCodeWithBlockchainConfig(compiler.compile(code), nsteps, mock(ActivationConfig.ForBlock.class));
     }
 
     private void testCode(byte[] code, int nsteps, String expected) {
-        Program program = executeCodeWithBlockchainConfig(code, nsteps, mock(BlockchainConfig.class));
+        Program program = executeCodeWithBlockchainConfig(code, nsteps, mock(ActivationConfig.ForBlock.class));
 
         assertEquals(expected, Hex.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    private Program executeCodeWithBlockchainConfig(String code, int nsteps, BlockchainConfig blockchainConfig) {
-        return executeCodeWithBlockchainConfig(compiler.compile(code), nsteps, blockchainConfig);
+    private Program executeCodeWithBlockchainConfig(String code, int nsteps, ActivationConfig.ForBlock activations) {
+        return executeCodeWithBlockchainConfig(compiler.compile(code), nsteps, activations);
     }
 
-    private Program executeCodeWithBlockchainConfig(byte[] code, int nsteps, BlockchainConfig blockchainConfig) {
+    private Program executeCodeWithBlockchainConfig(byte[] code, int nsteps, ActivationConfig.ForBlock activations) {
         VM vm = new VM(vmConfig, precompiledContracts);
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, blockchainConfig, code, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null);
 
         for (int k = 0; k < nsteps; k++) {
             vm.step(program);

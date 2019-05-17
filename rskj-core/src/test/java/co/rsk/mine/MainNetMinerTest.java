@@ -12,7 +12,6 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
@@ -28,6 +27,9 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.time.Clock;
+
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by SerAdmin on 1/3/2018.
@@ -47,8 +49,9 @@ public class MainNetMinerTest {
 
     @Before
     public void setup() {
-        config = new TestSystemProperties();
-        config.setBlockchainConfig(new BlockchainNetConfig(Constants.mainnet(), ActivationConfigsForTest.all()));
+        config = spy(new TestSystemProperties());
+        when(config.getNetworkConstants()).thenReturn(Constants.mainnet());
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.all());
         RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
@@ -122,7 +125,7 @@ public class MainNetMinerTest {
         blockchain.setStatus(gen, gen.getCumulativeDifficulty());
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
@@ -183,7 +186,7 @@ public class MainNetMinerTest {
 
     private BlockToMineBuilder blockToMineBuilder() {
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         return new BlockToMineBuilder(
                 ConfigUtils.getDefaultMiningConfig(),

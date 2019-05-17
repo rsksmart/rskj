@@ -18,10 +18,10 @@
 
 package co.rsk.pcc;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -45,13 +45,13 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
     private static final Logger logger = LoggerFactory.getLogger(NativeContract.class);
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final RskSystemProperties config;
+    private final ActivationConfig activationConfig;
 
     private ExecutionEnvironment executionEnvironment;
 
-    public NativeContract(RskSystemProperties config, RskAddress contractAddress) {
+    public NativeContract(ActivationConfig activationConfig, RskAddress contractAddress) {
         this.contractAddress = contractAddress;
-        this.config = config;
+        this.activationConfig = activationConfig;
     }
 
     public ExecutionEnvironment getExecutionEnvironment() {
@@ -75,7 +75,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
         super.init(tx, executionBlock, repository, blockStore, receiptStore, logs);
 
         executionEnvironment = new ExecutionEnvironment(
-                config.getBlockchainConfig(),
+                activationConfig,
                 tx,
                 executionBlock,
                 repository,

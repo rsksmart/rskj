@@ -27,9 +27,8 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
@@ -64,6 +63,8 @@ public class TransactionExecutor {
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
+    private final Constants constants;
+    private final ActivationConfig.ForBlock activations;
     private final Transaction tx;
     private final int txindex;
     private final Repository track;
@@ -73,7 +74,6 @@ public class TransactionExecutor {
     private final BlockFactory blockFactory;
     private final VmConfig vmConfig;
     private final PrecompiledContracts precompiledContracts;
-    private final BlockchainNetConfig netConfig;
     private final boolean playVm;
     private final boolean enableRemasc;
     private final ProgramTraceProcessor programTraceProcessor;
@@ -100,10 +100,14 @@ public class TransactionExecutor {
 
     private boolean localCall = false;
 
-    public TransactionExecutor(Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
-                               BlockFactory blockFactory, ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock,
-                               VmConfig vmConfig, BlockchainNetConfig blockchainConfig, boolean playVm, boolean remascEnabled,
-                               PrecompiledContracts precompiledContracts, ProgramTraceProcessor programTraceProcessor) {
+    public TransactionExecutor(
+            Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
+            Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
+            ProgramInvokeFactory programInvokeFactory, Block executionBlock,long gasUsedInTheBlock, VmConfig vmConfig,
+            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts,
+            ProgramTraceProcessor programTraceProcessor) {
+        this.constants = constants;
+        this.activations = activationConfig.forBlock(executionBlock.getNumber());
         this.tx = tx;
         this.txindex = txindex;
         this.coinbase = coinbase;
@@ -117,7 +121,6 @@ public class TransactionExecutor {
         this.gasUsedInTheBlock = gasUsedInTheBlock;
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
-        this.netConfig = blockchainConfig;
         this.playVm = playVm;
         this.enableRemasc = remascEnabled;
         this.programTraceProcessor = programTraceProcessor;
@@ -129,7 +132,7 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     public boolean init() {
-        basicTxCost = tx.transactionCost(executionBlock.getNumber(), netConfig);
+        basicTxCost = tx.transactionCost(constants, activations);
 
         if (localCall) {
             readyToExecute = true;
@@ -198,7 +201,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        if (!tx.acceptTransactionSignature(netConfig.getCommonConstants().getChainId())) {
+        if (!tx.acceptTransactionSignature(constants.getChainId())) {
             logger.warn("Transaction {} signature not accepted: {}", tx.getHash(), tx.getSignature());
             logger.warn("Transaction Data: {}", tx);
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
@@ -254,8 +257,7 @@ public class TransactionExecutor {
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        BlockchainConfig blockchainConfig = netConfig.getConfigForBlock(executionBlock.getNumber());
-        precompiledContract = precompiledContracts.getContractForAddress(blockchainConfig, DataWord.valueOf(targetAddress.getBytes()));
+        precompiledContract = precompiledContracts.getContractForAddress(activations, DataWord.valueOf(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
@@ -299,8 +301,7 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
-                BlockchainConfig configForBlock = netConfig.getConfigForBlock(executionBlock.getNumber());
-                this.program = new Program(vmConfig, precompiledContracts, blockFactory, configForBlock, code, programInvoke, tx);
+                this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx);
             }
         }
 
@@ -319,8 +320,7 @@ public class TransactionExecutor {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
-            BlockchainConfig configForBlock = netConfig.getConfigForBlock(executionBlock.getNumber());
-            this.program = new Program(vmConfig, precompiledContracts, blockFactory, configForBlock, tx.getData(), programInvoke, tx);
+            this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
@@ -361,7 +361,7 @@ public class TransactionExecutor {
         try {
 
             // Charge basic cost of the transaction
-            program.spendGas(tx.transactionCost(executionBlock.getNumber(), netConfig), "TRANSACTION COST");
+            program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
 
             if (playVm) {
                 vm.play(program);

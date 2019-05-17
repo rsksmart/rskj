@@ -1231,7 +1231,7 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         // Overriding BridgeStorageConfiguration to make sure it serializes the unlimited whitelist data
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
-                BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(500)));
+                BridgeStorageConfiguration.fromBlockchainConfig(config.getActivationConfig().forBlock(500L)));
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
         .then((InvocationOnMock invocation) -> {
@@ -1290,7 +1290,7 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
-                BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(500)));
+                BridgeStorageConfiguration.fromBlockchainConfig(config.getActivationConfig().forBlock(500L)));
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class)))
             .then((InvocationOnMock invocation) -> {
@@ -1331,7 +1331,7 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         // Overriding BridgeStorageConfiguration to make sure it serializes the unlimited whitelist data
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
-                BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(500)));
+                BridgeStorageConfiguration.fromBlockchainConfig(config.getActivationConfig().forBlock(500L)));
 
         // Mock the One-Off serialization
         PowerMockito
@@ -1400,7 +1400,7 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         OneOffWhiteListEntry oneOffEntry = new OneOffWhiteListEntry(getBtcAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), Coin.COIN);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
-                BridgeStorageConfiguration.fromBlockchainConfig(config.getBlockchainConfig().getConfigForBlock(500)));
+                BridgeStorageConfiguration.fromBlockchainConfig(config.getActivationConfig().forBlock(500L)));
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
                 .then((InvocationOnMock invocation) -> new byte[]{(byte)0xaa});
