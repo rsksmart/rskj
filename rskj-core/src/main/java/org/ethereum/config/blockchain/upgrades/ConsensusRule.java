@@ -28,7 +28,6 @@ public enum ConsensusRule {
     RSKIP90("rskip90"),
     RSKIP91("rskip91"),
     RSKIP92("rskip92"),
-    RSKIP93("rskip93"),
     RSKIP94("rskip94"),
     RSKIP97("rskip97"),
     RSKIP98("rskip98"),
