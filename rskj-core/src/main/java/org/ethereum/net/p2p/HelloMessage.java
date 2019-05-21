@@ -19,18 +19,18 @@
 
 package org.ethereum.net.p2p;
 
-import com.google.common.base.Joiner;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.client.Capability;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -191,10 +191,15 @@ public class HelloMessage extends P2pMessage {
         if (!parsed) {
             parse();
         }
-        return "[" + this.getCommand().name() + " p2pVersion="
-                + this.p2pVersion + " clientId=" + this.clientId
-                + " capabilities=[" + Joiner.on(" ").join(this.capabilities)
-                + "]" + " getPeerPort=" + this.listenPort + " peerId="
-                + this.peerId + "]";
+
+        return String.format(
+                "[%s p2pVersion=%s clientId=%s capabilities=[%s] getPeerPort=%d peerId=%s]",
+                this.getCommand().name(),
+                this.p2pVersion,
+                this.clientId,
+                this.capabilities.stream().map(Capability::toString).collect(Collectors.joining(" ")),
+                this.listenPort,
+                this.peerId
+        );
     }
 }

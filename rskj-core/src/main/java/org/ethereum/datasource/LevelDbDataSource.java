@@ -106,7 +106,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 panicProcessor.panic("leveldb", ioe.getMessage());
                 throw new RuntimeException("Can't initialize database");
             }
-            logger.debug("<~ LevelDbDataSource.init(): " + name);
+            logger.debug("<~ LevelDbDataSource.init(): {}", name);
         } finally {
             profiler.stop(metric);
             resetDbLock.writeLock().unlock();

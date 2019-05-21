@@ -554,7 +554,9 @@ public class RskContext implements NodeBootstrapper {
     public MinerClient getMinerClient() {
         if (minerClient == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            if (rskSystemProperties.minerClientAutoMine()) {
+            if (!rskSystemProperties.isMinerClientEnabled()) {
+                minerClient = new DisabledMinerClient();
+            } else if (rskSystemProperties.minerClientAutoMine()) {
                 minerClient = new AutoMinerClient(getMinerServer());
             } else {
                 minerClient = new MinerClientImpl(

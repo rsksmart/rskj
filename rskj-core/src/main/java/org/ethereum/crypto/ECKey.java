@@ -34,9 +34,6 @@ package org.ethereum.crypto;
  * limitations under the License.
  */
 
-import org.ethereum.config.Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
@@ -53,9 +50,11 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.security.SignatureException;
@@ -88,7 +87,7 @@ import static org.ethereum.util.ByteUtil.bigIntegerToBytes;
  * See <a href="https://github.com/bitcoinj/bitcoinj/blob/master/core/src/main/java/com/google/bitcoin/core/ECKey.java">
  * bitcoinj on GitHub</a>.
  */
-public class ECKey implements Serializable {
+public class ECKey {
     private static final Logger logger = LoggerFactory.getLogger(ECKey.class);
 
     /**
@@ -103,7 +102,6 @@ public class ECKey implements Serializable {
     public static final BigInteger HALF_CURVE_ORDER;
 
     private static final SecureRandom secureRandom;
-    private static final long serialVersionUID = -728224901792295832L;
 
     static {
         // All clients must agree on the curve to use by agreement. Ethereum uses secp256k1.
@@ -116,12 +114,12 @@ public class ECKey implements Serializable {
     // The two parts of the key. If "priv" is set, "pub" can always be calculated. If "pub" is set but not "priv", we
     // can only verify signatures not make them.
     // TODO: Redesign this class to use consistent internals and more efficient serialization.
-    private BigInteger priv;
-    protected final ECPoint pub;
+    private final BigInteger priv;
+    private final ECPoint pub;
 
     // Transient because it's calculated on demand.
-    private transient byte[] pubKeyHash;
-    private transient byte[] nodeId;
+    private byte[] pubKeyHash;
+    private byte[] nodeId;
 
     /**
      * Generates an entirely new keypair. Point compression is used so the resulting public key will be 33 bytes

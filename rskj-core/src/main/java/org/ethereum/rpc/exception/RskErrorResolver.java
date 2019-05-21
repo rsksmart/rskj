@@ -24,7 +24,7 @@ public class RskErrorResolver implements ErrorResolver {
         } else if (t instanceof InvalidFormatException) {
             error = new JsonError(-32603, "Internal server error, probably due to invalid parameter type", null);
         } else {
-            logger.error("JsonRPC error when for method " + method + " with arguments " + arguments, t);
+            logger.error("JsonRPC error when for method {} with arguments {}", method, arguments, t);
             error = new JsonError(-32603, "Internal server error", null);
         }
         return error;

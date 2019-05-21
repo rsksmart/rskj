@@ -63,7 +63,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         try {
             return s = wallet.getAccountAddressesAsHex();
         } finally {
-            LOGGER.debug("eth_accounts(): " + Arrays.toString(s));
+            LOGGER.debug("eth_accounts(): {}", Arrays.toString(s));
         }
     }
 

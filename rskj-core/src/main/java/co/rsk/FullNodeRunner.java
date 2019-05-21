@@ -22,7 +22,6 @@ import co.rsk.core.Rsk;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.mine.TxBuilder;
-import co.rsk.mine.TxBuilderEx;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.TransactionGateway;
@@ -141,10 +140,6 @@ public class FullNodeRunner implements NodeRunner {
             enableSimulateTxs();
         }
 
-        if (rskSystemProperties.simulateTxsEx()) {
-            enableSimulateTxsEx();
-        }
-
         startWeb3(rskSystemProperties);
 
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {
@@ -161,10 +156,7 @@ public class FullNodeRunner implements NodeRunner {
 
         if (rskSystemProperties.isMinerServerEnabled()) {
             minerServer.start();
-
-            if (rskSystemProperties.isMinerClientEnabled()) {
-                minerClient.mine();
-            }
+            minerClient.start();
         }
 
         logger.info("done");
@@ -195,10 +187,6 @@ public class FullNodeRunner implements NodeRunner {
 
     private void enableSimulateTxs() {
         new TxBuilder(rskSystemProperties.getNetworkConstants(), rsk, nodeBlockProcessor, repository).simulateTxs();
-    }
-
-    private void enableSimulateTxsEx() {
-        new TxBuilderEx(rskSystemProperties, rsk, repository, nodeBlockProcessor, transactionPool).simulateTxs();
     }
 
     private void waitRskSyncDone() throws InterruptedException {
@@ -238,9 +226,7 @@ public class FullNodeRunner implements NodeRunner {
 
         if (rskSystemProperties.isMinerServerEnabled()) {
             minerServer.stop();
-            if (rskSystemProperties.isMinerClientEnabled()) {
-                minerClient.stop();
-            }
+            minerClient.stop();
         }
 
         peerServer.stop();

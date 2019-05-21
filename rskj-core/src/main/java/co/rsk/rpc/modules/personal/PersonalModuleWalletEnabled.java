@@ -132,7 +132,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         try {
             return s = sendTransaction(args, getAccount(args.from, passphrase));
         } finally {
-            LOGGER.debug("eth_sendTransaction(" + args + "): " + s);
+            LOGGER.debug("eth_sendTransaction({}): {}", args,  s);
         }
     }
 

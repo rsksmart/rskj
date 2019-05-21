@@ -154,18 +154,6 @@ public class RskSystemProperties extends SystemProperties {
         return getBoolean("simulateTxs.enabled", false);
     }
 
-    public boolean simulateTxsEx() {
-        return getBoolean("simulateTxsEx.enabled", false);
-    }
-
-    public Long simulateTxsExFounding() {
-        return getLong("simulateTxsEx.foundingAmount", 10000000000L);
-    }
-
-    public String simulateTxsExAccountSeed() {
-        return getString("simulateTxsEx.accountSeed", "this is a seed");
-    }
-
     public boolean waitForSync() {
         return getBoolean("sync.waitForSync", false);
     }

@@ -110,13 +110,9 @@ public class TxBuilder {
 
         logger.info("Added pending tx={}", tx.getHash());
 
-        try {
-            SecureRandom random = new SecureRandom();
-            
-            Thread.sleep(random.nextInt(51000));
-        } catch (InterruptedException e) {
-            throw e;
-        }    }
+        SecureRandom random = new SecureRandom();
+        Thread.sleep(random.nextInt(51000));
+    }
 
     public Transaction createNewTransaction(BigInteger gasPrice, BigInteger gasLimit, BigInteger txNonce)
     {
