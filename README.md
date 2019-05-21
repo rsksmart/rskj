@@ -1,5 +1,6 @@
 # Welcome to RskJ
 [![CircleCI](https://circleci.com/gh/rsksmart/rskj/tree/master.svg?style=svg)](https://circleci.com/gh/rsksmart/rskj/tree/master)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=rskj&metric=alert_status)](https://sonarcloud.io/dashboard?id=rskj)
 
 
 # About
