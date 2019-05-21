@@ -38,6 +38,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -82,7 +83,12 @@ public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerforman
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                null
+                (EnvironmentBuilder.Environment environment, byte[] result) -> {
+                    Object[] decodedResult = function.decodeResult(result);
+                    Assert.assertEquals(byte[].class, decodedResult[0].getClass());
+                    byte[] address = (byte[]) decodedResult[0];
+                    Assert.assertTrue(0== address.length || 20 == address.length);
+                }
         );
     }
 
