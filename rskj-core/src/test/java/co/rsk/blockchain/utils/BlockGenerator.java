@@ -22,7 +22,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleRskTransaction;
@@ -74,7 +74,11 @@ public class BlockGenerator {
         return getNewGenesisBlock(3141592, Collections.emptyMap(), new byte[] { 2, 0, 0});
     }
 
-    private Genesis getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap, byte[] difficulty) {
+    public Genesis getGenesisBlock(Map<RskAddress, AccountState> accounts) {
+        return getNewGenesisBlock(3141592, accounts, new byte[] {2, 0, 0});
+    }
+
+    private Genesis getNewGenesisBlock(long initialGasLimit, Map<RskAddress, AccountState> accounts, byte[] difficulty) {
         /* Unimportant address. Because there is no subsidy
         ECKey ecKey;
         byte[] address;
@@ -91,17 +95,12 @@ public class BlockGenerator {
 
         long   gasLimit         = initialGasLimit;
 
-        Map<RskAddress, AccountState> accounts = new HashMap<>();
-        for (Map.Entry<byte[], BigInteger> accountEntry : preMineMap.entrySet()) {
-            AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(accountEntry.getValue()));
-            accounts.put(new RskAddress(accountEntry.getKey()), acctState);
-        }
-
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, 0);
         return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 null, null, null, BigInteger.valueOf(100L).toByteArray(), useRskip92Encoding,
-                accounts, Collections.emptyMap(), Collections.emptyMap()
+                isRskip126Enabled, accounts, Collections.emptyMap(), Collections.emptyMap()
         );
     }
 
@@ -133,7 +132,7 @@ public class BlockGenerator {
     public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        return new Block(
+        return blockFactory.newBlock(
                 blockFactory.newHeader(
                         parent.getHash().getBytes(), unclesListHash, parent.getCoinbase().getBytes(),
                         ByteUtils.clone(parent.getStateRoot()), EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
@@ -154,16 +153,18 @@ public class BlockGenerator {
     public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot, byte[] coinbase) {
         Bloom logBloom = new Bloom();
 
-        return new Block(
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+        return blockFactory.newBlock(
                 blockFactory.newHeader(
                         parent.getHash().getBytes(), EMPTY_LIST_HASH, coinbase,
-                        stateRoot, BlockChainImpl.calcTxTrie(txs), EMPTY_TRIE_HASH,
-                        logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
+                        stateRoot, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled),
+                        EMPTY_TRIE_HASH, logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
                         EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
                 ),
                 txs,
-                Collections.emptyList()
+                Collections.emptyList(),
+                false
         );
     }
 
@@ -229,13 +230,12 @@ public class BlockGenerator {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+        newHeader.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled));
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
-        Block newBlock = new Block(newHeader, txs, uncles);
-
-        return newBlock;
+        return blockFactory.newBlock(newHeader, txs, uncles, false);
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
@@ -256,10 +256,11 @@ public class BlockGenerator {
         Coin previousMGP = parent.getMinimumGasPrice() != null ? parent.getMinimumGasPrice() : Coin.valueOf(10L);
         Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
 
-        return new Block(
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+        return blockFactory.newBlock(
                 blockFactory.newHeader(
                         parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
-                        EMPTY_TRIE_HASH, Block.getTxTrie(txs).getHash().getBytes(), EMPTY_TRIE_HASH,
+                        EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled), EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), number,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
                         EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, minimumGasPrice.getBytes(), 0
@@ -278,7 +279,7 @@ public class BlockGenerator {
             txs.add(new SimpleRskTransaction(PegTestUtils.createHash3().getBytes()));
         }
 
-        return new Block(
+        return blockFactory.newBlock(
                 blockFactory.newHeader(
                         parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
                         EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
@@ -382,7 +383,13 @@ public class BlockGenerator {
     }
 
     public Block getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap) {
-        return getNewGenesisBlock(initialGasLimit,preMineMap, new byte[] { 0 });
+        Map<RskAddress, AccountState> accounts = new HashMap<>();
+        for (Map.Entry<byte[], BigInteger> accountEntry : preMineMap.entrySet()) {
+            AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(accountEntry.getValue()));
+            accounts.put(new RskAddress(accountEntry.getKey()), acctState);
+        }
+
+        return getNewGenesisBlock(initialGasLimit, accounts, new byte[] { 0 });
     }
 
     private static byte[] nullReplace(byte[] e) {

@@ -35,8 +35,6 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
 
-import static org.mockito.Mockito.any;
-
 @RunWith(PowerMockRunner.class)
 public class PendingFederationTest {
     private PendingFederation pendingFederation;

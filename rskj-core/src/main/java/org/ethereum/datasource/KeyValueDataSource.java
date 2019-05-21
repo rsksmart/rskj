@@ -52,10 +52,4 @@ public interface KeyValueDataSource extends DataSource {
      * This makes things go to disk. To enable caching.
      */
     void flush();
-
-    default void copyFrom(KeyValueDataSource ds) {
-        for (byte[] key : ds.keys()) {
-            this.put(key, ds.get(key));
-        }
-    }
 }

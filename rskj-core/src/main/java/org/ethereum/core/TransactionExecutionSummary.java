@@ -42,7 +42,6 @@ public class TransactionExecutionSummary {
 
     private List<DataWord> deletedAccounts = emptyList();
     private List<InternalTransaction> internalTransactions = emptyList();
-    private Map<DataWord, DataWord> storageDiff = emptyMap();
 
     private byte[] result;
     private List<LogInfo> logs;
@@ -113,10 +112,6 @@ public class TransactionExecutionSummary {
         return internalTransactions;
     }
 
-    public Map<DataWord, DataWord> getStorageDiff() {
-        return storageDiff;
-    }
-
     public BigInteger getGasRefund() {
         return gasRefund;
     }
@@ -176,11 +171,6 @@ public class TransactionExecutionSummary {
             for (DataWord account : deletedAccounts) {
                 summary.deletedAccounts.add(account);
             }
-            return this;
-        }
-
-        public Builder storageDiff(Map<DataWord, DataWord> storageDiff) {
-            summary.storageDiff = unmodifiableMap(storageDiff);
             return this;
         }
 

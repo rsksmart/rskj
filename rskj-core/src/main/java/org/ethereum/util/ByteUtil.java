@@ -322,16 +322,18 @@ public class ByteUtil {
     }
 
     public static byte[] stripLeadingZeroes(byte[] data) {
+        return stripLeadingZeroes(data, ZERO_BYTE_ARRAY);
+    }
 
+    public static byte[] stripLeadingZeroes(byte[] data, byte[] valueForZero) {
         if (data == null) {
             return null;
         }
 
         final int firstNonZero = firstNonZeroByte(data);
-
         switch (firstNonZero) {
             case -1:
-                return ZERO_BYTE_ARRAY;
+                return valueForZero;
 
             case 0:
                 return data;

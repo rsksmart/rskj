@@ -24,6 +24,7 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockExecutorFactory;
+import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
@@ -50,6 +51,7 @@ public class MinerManagerTest {
     private Blockchain blockchain;
     private TransactionPool transactionPool;
     private Repository repository;
+    private StateRootHandler stateRootHandler;
     private BlockStore blockStore;
     private BlockFactory blockFactory;
     private BlockExecutorFactory blockExecutorFactory;
@@ -60,6 +62,7 @@ public class MinerManagerTest {
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
         repository = factory.getRepository();
+        stateRootHandler = factory.getStateRootHandler();
         blockStore = factory.getBlockStore();
         blockFactory = factory.getBlockFactory();
         blockExecutorFactory = factory.getBlockExecutorFactory();
@@ -273,8 +276,10 @@ public class MinerManagerTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,

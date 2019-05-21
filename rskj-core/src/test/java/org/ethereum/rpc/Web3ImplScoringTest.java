@@ -356,7 +356,11 @@ public class Web3ImplScoringTest {
         Wallet wallet = WalletFactory.createWallet();
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
-        EthModule em = new EthModule(config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), world.getBlockChain(), null, new ExecutionBlockRetriever(world.getBlockChain(), null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null);
+        EthModule em = new EthModule(
+                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), world.getBlockChain(),
+                null, new ExecutionBlockRetriever(world.getBlockChain(), null, null),
+                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null
+        );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
         return new Web3RskImpl(
@@ -375,6 +379,7 @@ public class Web3ImplScoringTest {
                 Web3Mocks.getMockChannelManager(),
                 rsk.getRepository(),
                 peerScoringManager,
+                null,
                 null,
                 null,
                 null,

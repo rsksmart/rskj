@@ -185,7 +185,8 @@ public class Web3ImplSnapshotTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                factory.getStateRootHandler()
         );
     }
 
@@ -204,8 +205,10 @@ public class Web3ImplSnapshotTest {
                 factory.getNodeBlockProcessor(),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         factory.getRepository(),
+                        factory.getStateRootHandler(),
                         factory.getBlockStore(),
                         factory.getTransactionPool(),
                         difficultyCalculator,

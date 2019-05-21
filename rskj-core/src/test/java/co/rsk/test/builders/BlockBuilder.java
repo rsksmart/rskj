@@ -24,6 +24,7 @@ import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.test.World;
+import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -58,7 +59,7 @@ public class BlockBuilder {
         this(blockChain, new BlockGenerator());
     }
 
-    public BlockBuilder(Blockchain blockChain, BlockGenerator blockGenerator) {
+    private BlockBuilder(Blockchain blockChain, BlockGenerator blockGenerator) {
         this.blockChain = blockChain;
         this.blockGenerator = blockGenerator;
         // sane defaults
@@ -113,7 +114,8 @@ public class BlockBuilder {
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl()
                     ),
-                    new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
+                    new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                    config.getActivationConfig()
             );
             executor.executeAndFill(block, parent.getHeader());
         }

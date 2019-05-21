@@ -21,27 +21,26 @@ package co.rsk.test.builders;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.*;
-import co.rsk.db.RepositoryImpl;
 import co.rsk.db.StateRootHandler;
-import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
+import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -125,15 +124,19 @@ public class BlockChainBuilder {
             config = new TestSystemProperties();
         }
 
-        if (repository == null)
-            repository = new RepositoryImpl(new Trie(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)), true), new HashMapDB(), new TrieStorePoolOnMemory());
+        if (repository == null) {
+            repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB().setClearOnClose(false))));
+        }
 
         if (stateRootHandler == null) {
-            stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>());
+            stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        }
+        
+        if (genesis == null) {
+            genesis = new BlockGenerator().getGenesisBlock();
         }
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-        
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         }
@@ -166,48 +169,36 @@ public class BlockChainBuilder {
                 blockFactory,
                 new ProgramInvokeFactoryImpl()
         );
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, this.repository, this.blockStore, blockFactory, new TestCompositeEthereumListener(), transactionExecutorFactory, 10, 100);
-
-        BlockExecutor blockExecutor = new BlockExecutor(
-                repository,
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(
+                config, this.repository, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
+                transactionExecutorFactory, 10, 100
+        );
+        BlockExecutorFactory blockExecutorFactory = new BlockExecutorFactory(
+                config.getActivationConfig(),
                 transactionExecutorFactory,
+                repository,
                 stateRootHandler
         );
-        BlockChainImpl blockChain = new BlockChainImpl(
-                this.repository,
-                this.blockStore,
+        BlockChainImpl blockChain = new BlockChainLoader(
+                config,
+                repository,
+                blockStore,
                 receiptStore,
                 transactionPool,
                 listener,
                 blockValidator,
-                false,
-                1,
-                blockExecutor,
+                blockExecutorFactory,
+                genesis,
                 stateRootHandler
-        );
+        ).loadBlockchain();
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
             blockChain.setNoValidation(true);
         }
 
-        if (this.genesis != null) {
-            for (Map.Entry<RskAddress, AccountState> accountsEntry : genesis.getAccounts().entrySet()) {
-                RskAddress accountAddress = accountsEntry.getKey();
-                repository.createAccount(accountAddress);
-                repository.addBalance(accountAddress, accountsEntry.getValue().getBalance());
-            }
-
-            Repository track = this.repository.startTracking();
-            new RepositoryBlockStore(config.getNetworkConstants().getBridgeConstants(), track, PrecompiledContracts.BRIDGE_ADDR);
-            track.commit();
-
-            this.genesis.setStateRoot(this.repository.getRoot());
-            this.genesis.flushRLP();
-            blockChain.setStatus(this.genesis, this.genesis.getCumulativeDifficulty());
-        }
-
         if (this.blocks != null) {
+            BlockExecutor blockExecutor = blockExecutorFactory.build();
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());
                 blockChain.tryToConnect(b);
@@ -222,28 +213,13 @@ public class BlockChainBuilder {
     }
 
     public static Blockchain ofSize(int size, boolean mining) {
-        return ofSize(size, mining, null, null);
+        return ofSize(size, mining, Collections.emptyMap());
     }
 
-    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<Coin> balances) {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        BlockChainImpl blockChain = builder.build();
-
+    public static Blockchain ofSize(int size, boolean mining, Map<RskAddress, AccountState> accounts) {
         BlockGenerator blockGenerator = new BlockGenerator();
-        Block genesis = blockGenerator.getGenesisBlock();
-
-        if (accounts != null)
-            for (int k = 0; k < accounts.size(); k++) {
-                Account account = accounts.get(k);
-                Coin balance = balances.get(k);
-                blockChain.getRepository().createAccount(account.getAddress());
-                blockChain.getRepository().addBalance(account.getAddress(), balance);
-            }
-
-        genesis.setStateRoot(blockChain.getRepository().getRoot());
-        genesis.flushRLP();
-
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
+        Genesis genesis = blockGenerator.getGenesisBlock(accounts);
+        BlockChainImpl blockChain = new BlockChainBuilder().setGenesis(genesis).build();
 
         if (size > 0) {
             List<Block> blocks = mining ? blockGenerator.getMinedBlockChain(genesis, size) : blockGenerator.getBlockChain(genesis, size);

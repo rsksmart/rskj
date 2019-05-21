@@ -261,10 +261,8 @@ public class Transaction {
 
     public Keccak256 getHash() {
         if (hash == null) {
-            Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRX_GET_HASH);
             byte[] plainMsg = this.getEncoded();
             this.hash = new Keccak256(HashUtil.keccak256(plainMsg));
-            profiler.stop(metric);
         }
 
         return this.hash;
@@ -272,10 +270,8 @@ public class Transaction {
 
     public Keccak256 getRawHash() {
         if (rawHash == null) {
-            Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRX_GET_HASH);
             byte[] plainMsg = this.getEncodedRaw();
             this.rawHash = new Keccak256(HashUtil.keccak256(plainMsg));
-            profiler.stop(metric);
         }
 
         return this.rawHash;
@@ -372,9 +368,12 @@ public class Transaction {
      */
 
     public ECKey getKey() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         byte[] raw = getRawHash().getBytes();
         //We clear the 4th bit, the compress bit, in case a signature is using compress in true
-        return ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, raw, true);
+        ECKey key = ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, raw, true);
+        profiler.stop(metric);
+        return key;
     }
 
     public synchronized RskAddress getSender() {
@@ -441,7 +440,6 @@ public class Transaction {
     }
 
     public byte[] getEncoded() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.GET_ENCODED_TRX);
         if (this.rlpEncoding == null) {
             byte[] v;
             byte[] r;
@@ -460,9 +458,7 @@ public class Transaction {
             this.rlpEncoding = encode(v, r, s);
         }
 
-        byte[] result =  ByteUtil.cloneBytes(this.rlpEncoding);
-        profiler.stop(metric);
-        return  result;
+        return ByteUtil.cloneBytes(this.rlpEncoding);
     }
 
     private byte[] encode(byte[] v, byte[] r, byte[] s) {

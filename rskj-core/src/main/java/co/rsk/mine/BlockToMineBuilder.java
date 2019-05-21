@@ -24,9 +24,13 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockExecutorFactory;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.FamilyUtils;
+import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -46,8 +50,10 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 public class BlockToMineBuilder {
     private static final Logger logger = LoggerFactory.getLogger("blocktominebuilder");
 
+    private final ActivationConfig activationConfig;
     private final MiningConfig miningConfig;
     private final Repository repository;
+    private final StateRootHandler stateRootHandler;
     private final BlockStore blockStore;
     private final TransactionPool transactionPool;
     private final DifficultyCalculator difficultyCalculator;
@@ -63,8 +69,10 @@ public class BlockToMineBuilder {
     private final Coin minerMinGasPriceTarget;
 
     public BlockToMineBuilder(
+            ActivationConfig activationConfig,
             MiningConfig miningConfig,
             Repository repository,
+            StateRootHandler stateRootHandler,
             BlockStore blockStore,
             TransactionPool transactionPool,
             DifficultyCalculator difficultyCalculator,
@@ -73,8 +81,10 @@ public class BlockToMineBuilder {
             MinerClock clock,
             BlockFactory blockFactory,
             BlockExecutorFactory blockExecutorFactory) {
+        this.activationConfig = Objects.requireNonNull(activationConfig);
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
+        this.stateRootHandler = Objects.requireNonNull(stateRootHandler);
         this.blockStore = Objects.requireNonNull(blockStore);
         this.transactionPool = Objects.requireNonNull(transactionPool);
         this.difficultyCalculator = Objects.requireNonNull(difficultyCalculator);
@@ -132,7 +142,7 @@ public class BlockToMineBuilder {
 
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
 
-        Repository originalRepo = repository.getSnapshotTo(parent.getStateRoot());
+        Repository originalRepo = repository.getSnapshotTo(stateRootHandler.translate(parent.getHeader()).getBytes());
 
         return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }
@@ -148,8 +158,8 @@ public class BlockToMineBuilder {
             Coin minimumGasPrice,
             byte[] extraData) {
         final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice, extraData);
-        final Block newBlock = new Block(newHeader, txs, uncles);
-        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, Collections.emptyList());
+        final Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, false);
+        return validationRules.isValid(newBlock) ? newBlock : blockFactory.newBlock(newHeader, txs, Collections.emptyList(), false);
     }
 
     private BlockHeader createHeader(
@@ -171,16 +181,19 @@ public class BlockToMineBuilder {
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
                                                                         gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
+        long blockNumber = newBlockParent.getNumber() + 1;
         final BlockHeader newHeader = blockFactory.newHeader(
                 newBlockParent.getHash().getBytes(),
                 unclesListHash,
                 miningConfig.getCoinbaseAddress().getBytes(),
                 EMPTY_TRIE_HASH,
-                Block.getTxTrie(txs).getHash().getBytes(),
+                BlockHashesHelper.getTxTrieRoot(
+                        txs, activationConfig.isActive(ConsensusRule.RSKIP126, blockNumber)
+                ),
                 EMPTY_TRIE_HASH,
                 new Bloom().getData(),
                 new byte[]{1},
-                newBlockParent.getNumber() + 1,
+                blockNumber,
                 gasLimit.toByteArray(),
                 0,
                 timestampSeconds,

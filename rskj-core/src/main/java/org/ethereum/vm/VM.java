@@ -769,7 +769,7 @@ public class VM {
             codeLength = DataWord.valueOf(program.getCode().length); // during initialization it will return the initialization code size
         } else {
             DataWord address = program.stackPop();
-            codeLength = DataWord.valueOf(program.getCodeAt(address).length);
+            codeLength = DataWord.valueOf(program.getCodeLengthAt(address));
             ActivationConfig.ForBlock activations = program.getActivations();
             if (activations.isActive(RSKIP90)) {
                 PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, address);

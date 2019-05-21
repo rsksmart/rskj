@@ -497,6 +497,6 @@ public class BridgeUtilsTest {
     }
 
     private Genesis getGenesisInstance() {
-        return GenesisLoader.loadGenesis("frontier.json", constants.getInitialNonce(), false, true);
+        return GenesisLoader.loadGenesis("frontier.json", constants.getInitialNonce(), false, true, true);
     }
 }

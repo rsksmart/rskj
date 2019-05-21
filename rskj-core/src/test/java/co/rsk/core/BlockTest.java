@@ -20,8 +20,7 @@ package co.rsk.core;
 
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.remasc.RemascTransaction;
 import org.bouncycastle.util.encoders.Hex;
@@ -72,11 +71,11 @@ public class BlockTest {
         Transaction remascTx = new RemascTransaction(1);
         txs.add(remascTx);
 
-        Block block =  new Block(
+        Block block = blockFactory.newBlock(
                 blockFactory.newHeader(
                         PegTestUtils.createHash3().getBytes(), EMPTY_LIST_HASH, TestUtils.randomAddress().getBytes(),
-                        HashUtil.EMPTY_TRIE_HASH, BlockChainImpl.calcTxTrie(txs), HashUtil.EMPTY_TRIE_HASH,
-                        new Bloom().getData(), BigInteger.ONE.toByteArray(), 1,
+                        HashUtil.EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, true),
+                        HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), BigInteger.ONE.toByteArray(), 1,
                         BigInteger.valueOf(4000000).toByteArray(), 3000000, 100, new byte[0], Coin.ZERO,
                         null, null, null, BigInteger.TEN.toByteArray(), 0
                 ),
@@ -337,8 +336,8 @@ public class BlockTest {
     @Test
     public void checkTxTrieShouldBeEqualForHeaderAndBody() {
         Block block = new BlockGenerator().createBlock(10, 5);
-        Keccak256 trieHash = new Keccak256(block.getTxTrieRoot());
-        Keccak256 trieListHash = Block.getTxTrie(block.getTransactionsList()).getHash();
-        Assert.assertEquals(trieHash, trieListHash);
+        byte[] trieHash = block.getTxTrieRoot();
+        byte[] trieListHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), true);
+        Assert.assertArrayEquals(trieHash, trieListHash);
     }
 }

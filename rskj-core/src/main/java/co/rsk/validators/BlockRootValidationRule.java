@@ -18,11 +18,16 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
+
+import java.util.Arrays;
 
 /**
  * Validate the transaction root of a block.
@@ -36,18 +41,27 @@ public class BlockRootValidationRule implements BlockValidationRule {
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
+    private final ActivationConfig activationConfig;
+
+    public BlockRootValidationRule(ActivationConfig activationConfig) {
+        this.activationConfig = activationConfig;
+    }
+
     @Override
     public boolean isValid(Block block) {
-        String trieHash = Hex.toHexString(block.getTxTrieRoot());
-        String trieListHash = Block.getTxTrie(block.getTransactionsList()).getHash().toHexString();
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, block.getNumber());
+        byte[] blockTxRootHash = block.getTxTrieRoot();
+        byte[] txListRootHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskip126Enabled);
 
-        boolean isValid = true;
+        if (!Arrays.equals(blockTxRootHash, txListRootHash)) {
+            String message = String.format("Block's given Trie Hash doesn't match: %s != %s",
+                      Hex.toHexString(blockTxRootHash), Hex.toHexString(txListRootHash));
 
-        if (!trieHash.equals(trieListHash)) {
-            logger.warn("Block's given Trie Hash doesn't match: {} != {}", trieHash, trieListHash);
-            panicProcessor.panic("invalidtrie", String.format("Block's given Trie Hash doesn't match: %s != %s", trieHash, trieListHash));
-            isValid = false;
+            logger.warn(message);
+            panicProcessor.panic("invalidtrie", message);
+            return false;
         }
-        return isValid;
+
+        return true;
     }
 }

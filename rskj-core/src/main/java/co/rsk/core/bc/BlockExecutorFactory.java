@@ -20,18 +20,22 @@ package co.rsk.core.bc;
 
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.StateRootHandler;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.trace.MemoryProgramTraceProcessor;
 
 public class BlockExecutorFactory {
+    private final ActivationConfig activationConfig;
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final Repository repository;
     private final StateRootHandler stateRootHandler;
 
     public BlockExecutorFactory(
+            ActivationConfig activationConfig,
             TransactionExecutorFactory transactionExecutorFactory,
             Repository repository,
             StateRootHandler stateRootHandler) {
+        this.activationConfig = activationConfig;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.repository = repository;
         this.stateRootHandler = stateRootHandler;
@@ -41,7 +45,8 @@ public class BlockExecutorFactory {
         return new BlockExecutor(
                 repository,
                 transactionExecutorFactory,
-                stateRootHandler
+                stateRootHandler,
+                activationConfig
         );
     }
 
@@ -49,7 +54,8 @@ public class BlockExecutorFactory {
         return new BlockExecutor(
                 repository,
                 transactionExecutorFactory.forTrace(programTraceProcessor),
-                stateRootHandler
+                stateRootHandler,
+                activationConfig
         );
     }
 }

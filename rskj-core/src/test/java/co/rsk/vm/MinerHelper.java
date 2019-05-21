@@ -21,10 +21,11 @@ package co.rsk.vm;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.TestTransactionExecutorFactory;
-import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
@@ -127,7 +128,8 @@ public class MinerHelper {
     public void completeBlock(Block newBlock, Block parent) {
         processBlock(newBlock, parent);
 
-        newBlock.getHeader().setReceiptsRoot(BlockChainImpl.calcReceiptsTrie(txReceipts));
+        boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, newBlock.getNumber());
+        newBlock.getHeader().setReceiptsRoot(BlockHashesHelper.calculateReceiptsTrieRoot(txReceipts, isRskip126Enabled));
         newBlock.getHeader().setStateRoot(latestStateRootHash);
         newBlock.getHeader().setGasUsed(totalGasUsed);
 

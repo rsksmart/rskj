@@ -24,7 +24,9 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import org.bouncycastle.util.encoders.Hex;
+import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 
 /**
  * BlockExecutor has methods to execute block with its transactions.
@@ -48,14 +52,18 @@ public class BlockExecutor {
     private final Repository repository;
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final StateRootHandler stateRootHandler;
+    private final ActivationConfig activationConfig;
 
+    // TODO(mc) reorder Act, Repo, SRG, TRF
     public BlockExecutor(
             Repository repository,
             TransactionExecutorFactory transactionExecutorFactory,
-            StateRootHandler stateRootHandler) {
+            StateRootHandler stateRootHandler,
+            ActivationConfig activationConfig) {
         this.repository = repository;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.stateRootHandler = stateRootHandler;
+        this.activationConfig = activationConfig;
     }
 
     /**
@@ -83,14 +91,15 @@ public class BlockExecutor {
 
     private void fill(Block block, BlockResult result) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.FILLING_EXECUTED_BLOCK);
-        block.setTransactionsList(result.getExecutedTransactions());
         BlockHeader header = block.getHeader();
-        header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash().getBytes());
-        header.setReceiptsRoot(result.getReceiptsRoot());
+        block.setTransactionsList(result.getExecutedTransactions());
+        boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, block.getNumber());
+        header.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskip126Enabled));
+        header.setReceiptsRoot(BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), isRskip126Enabled));
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
-        block.setStateRoot(result.getStateRoot());
-        header.setLogsBloom(result.getLogsBloom());
+        block.setStateRoot(stateRootHandler.convert(header, result.getFinalState()).getBytes());
+        header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
 
         block.flushRLP();
         profiler.stop(metric);
@@ -119,38 +128,34 @@ public class BlockExecutor {
     public boolean validate(Block block, BlockResult result) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_FINAL_STATE_VALIDATION);
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
-            logger.error("Block's execution was interrupted because of an invalid transaction: {} {}.", block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] execution was interrupted because of an invalid transaction", block.getNumber(), block.getShortHash());
             profiler.stop(metric);
             return false;
         }
 
-        boolean isValidStateRoot = stateRootHandler.validate(block.getHeader(), result);
+        boolean isValidStateRoot = validateStateRoot(block.getHeader(), result);
         if (!isValidStateRoot) {
-            logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot()));
+            logger.error("Block {} [{}] given State Root is invalid", block.getNumber(), block.getShortHash());
             profiler.stop(metric);
             return false;
         }
 
-        if (!Arrays.equals(result.getReceiptsRoot(), block.getReceiptsRoot())) {
-            logger.error("Block's given Receipt Hash doesn't match: {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(result.getReceiptsRoot()));
+        boolean isValidReceiptsRoot = validateReceiptsRoot(block.getHeader(), result);
+        if (!isValidReceiptsRoot) {
+            logger.error("Block {} [{}] given Receipt Root is invalid", block.getNumber(), block.getShortHash());
             profiler.stop(metric);
             return false;
         }
 
-        byte[] resultLogsBloom = result.getLogsBloom();
-        byte[] blockLogsBloom = block.getLogBloom();
-
-        if (!Arrays.equals(resultLogsBloom, blockLogsBloom)) {
-            String resultLogsBloomString = Hex.toHexString(resultLogsBloom);
-            String blockLogsBloomString = Hex.toHexString(blockLogsBloom);
-
-            logger.error("Block's given logBloom Hash doesn't match: {} != {} Block {} {}", resultLogsBloomString, blockLogsBloomString, block.getNumber(), block.getShortHash());
+        boolean isValidLogsBloom = validateLogsBloom(block.getHeader(), result);
+        if (!isValidLogsBloom) {
+            logger.error("Block {} [{}] given Logs Bloom is invalid", block.getNumber(), block.getShortHash());
             profiler.stop(metric);
             return false;
         }
 
         if (result.getGasUsed() != block.getGasUsed()) {
-            logger.error("Block's given gasUsed doesn't match: {} != {} Block {} {}", block.getGasUsed(), result.getGasUsed(), block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] given gasUsed doesn't match: {} != {}", block.getNumber(), block.getShortHash(), block.getGasUsed(), result.getGasUsed());
             profiler.stop(metric);
             return false;
         }
@@ -159,7 +164,7 @@ public class BlockExecutor {
         Coin feesPaidToMiner = block.getFeesPaidToMiner();
 
         if (!paidFees.equals(feesPaidToMiner))  {
-            logger.error("Block's given paidFees doesn't match: {} != {} Block {} {}", feesPaidToMiner, paidFees, block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] given paidFees doesn't match: {} != {}", block.getNumber(), block.getShortHash(), feesPaidToMiner, paidFees);
             profiler.stop(metric);
             return false;
         }
@@ -168,13 +173,39 @@ public class BlockExecutor {
         List<Transaction> transactionsList = block.getTransactionsList();
 
         if (!executedTransactions.equals(transactionsList))  {
-            logger.error("Block's given txs doesn't match: {} != {} Block {} {}", transactionsList, executedTransactions, block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] given txs doesn't match: {} != {}", block.getNumber(), block.getShortHash(), transactionsList, executedTransactions);
             profiler.stop(metric);
             return false;
         }
 
         profiler.stop(metric);
         return true;
+    }
+
+    private boolean validateStateRoot(BlockHeader header, BlockResult result) {
+        boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, header.getNumber());
+        if (!isRskip85Enabled) {
+            return true;
+        }
+
+        boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, header.getNumber());
+        if (!isRskip126Enabled) {
+            byte[] orchidStateRoot = stateRootHandler.convert(header, result.getFinalState()).getBytes();
+            return Arrays.equals(orchidStateRoot, header.getStateRoot());
+        }
+
+        // we only validate state roots of blocks newer than 0.5.0 activation
+        return Arrays.equals(result.getFinalState().getHash().getBytes(), header.getStateRoot());
+    }
+
+    private boolean validateReceiptsRoot(BlockHeader header, BlockResult result) {
+        boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, header.getNumber());
+        byte[] receiptsTrieRoot = BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), isRskip126Enabled);
+        return Arrays.equals(receiptsTrieRoot, header.getReceiptsRoot());
+    }
+
+    private boolean validateLogsBloom(BlockHeader header, BlockResult result) {
+        return Arrays.equals(calculateLogsBloom(result.getTransactionReceipts()), header.getLogsBloom());
     }
 
     /**
@@ -195,6 +226,17 @@ public class BlockExecutor {
     private BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
+        // Forks the repo, does not change "repository". It will have a completely different
+        // image of the repo, where the middle caches are immediately ignored.
+        // In fact, while cloning everything, it asserts that no cache elements remains.
+        // (see assertNoCache())
+        // Which means that you must commit changes and save them to be able to recover
+        // in the next block processed.
+        // Note that creating a snapshot is important when the block is executed twice
+        // (e.g. once while building the block in tests/mining, and the other when trying
+        // to conect the block). This is because the first execution will change the state
+        // of the repository to the state post execution, so it's necessary to get it to
+        // the state prior execution again.
         byte[] lastStateRootHash = stateRootHandler.translate(parent).getBytes();
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
         Repository initialRepository = repository.getSnapshotTo(lastStateRootHash);
@@ -240,7 +282,7 @@ public class BlockExecutor {
 
             logger.trace("tx executed");
 
-            track.commit();
+            // No need to commit the changes here. track.commit();
 
             logger.trace("track commit");
 
@@ -254,14 +296,13 @@ public class BlockExecutor {
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
             receipt.setCumulativeGas(totalGasUsed);
-            lastStateRootHash = initialRepository.getRoot();
+
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
             receipt.setStatus(txExecutor.getReceipt().getStatus());
 
-            logger.trace("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), tx.getHash(),
-                         Hex.toHexString(lastStateRootHash));
+            logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
 
             logger.trace("tx[{}].receipt", i);
 
@@ -272,8 +313,33 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
-        BlockResult result =  new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees);
+        // This commitment changes the initialRepository's view of the state
+        // This does not affect the parent's (repository) view or state, but it DOES
+        // affect the storage of the parent.
+        track.commit();
+
+        // All data saved to store
+        initialRepository.save();
+
+        BlockResult result = new BlockResult(
+                executedTransactions,
+                receipts,
+                totalGasUsed,
+                totalPaidFees,
+                initialRepository.getMutableTrie().getTrie()
+        );
         profiler.stop(metric);
         return result;
+    }
+
+    @VisibleForTesting
+    public static byte[] calculateLogsBloom(List<TransactionReceipt> receipts) {
+        Bloom logBloom = new Bloom();
+
+        for (TransactionReceipt receipt : receipts) {
+            logBloom.or(receipt.getBloomFilter());
+        }
+
+        return logBloom.getData();
     }
 }

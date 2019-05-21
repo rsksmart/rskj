@@ -26,7 +26,11 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.validators.BlockCompositeRule;
+import co.rsk.validators.BlockRootValidationRule;
+import co.rsk.validators.BlockUnclesHashValidationRule;
 import co.rsk.validators.DummyBlockValidationRule;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
@@ -116,7 +120,13 @@ public class SimpleAsyncNode extends SimpleNode {
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
         SimpleChannelManager channelManager = new SimpleChannelManager();
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()));
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        SyncProcessor syncProcessor = new SyncProcessor(
+                blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockFactory,
+                blockValidationRule,
+                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
+                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants())
+        );
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }

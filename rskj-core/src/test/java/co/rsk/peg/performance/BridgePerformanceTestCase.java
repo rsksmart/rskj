@@ -22,20 +22,20 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.BenchmarkedRepository;
-import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.TrieStorePoolOnMemory;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.BeforeClass;
@@ -159,13 +159,13 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             private Bridge bridge;
             private RepositoryTrackWithBenchmarking benchmarkerTrack;
 
-            private RepositoryImpl createRepositoryImpl() {
-                return new RepositoryImpl(new Trie(null, true), new HashMapDB(), new TrieStorePoolOnMemory());
+            private Repository createRepository() {
+                return new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB())));
             }
 
             @Override
             public Environment build(int executionIndex, TxBuilder txBuilder, int height) {
-                RepositoryImpl repository = createRepositoryImpl();
+                Repository repository = createRepository();
                 BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(activationConfig.forBlock((long) executionIndex));
 
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);

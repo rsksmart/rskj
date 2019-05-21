@@ -80,10 +80,15 @@ public class AccountBuilder {
             if (this.balance != null)
                 track.addBalance(account.getAddress(), this.balance);
 
-            if (this.code != null)
+            if (this.code != null) {
                 track.saveCode(account.getAddress(), this.code);
-
+                track.getCode(account.getAddress());
+            }
             track.commit();
+            track.save();
+
+            // Check that code is there...
+            repository.getCode(account.getAddress());
 
             best.setStateRoot(repository.getRoot());
             best.flushRLP();

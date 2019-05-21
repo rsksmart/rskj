@@ -301,6 +301,7 @@
                 }
             },
             "62c01474f089b07dae603491675dc5b5748f7049" : {
+                "forcedContract" : true,
                 "balance" : "0x00",
                 "code" : "0x",
                 "nonce" : "0x00",
@@ -378,6 +379,7 @@
                 }
             },
             "62c01474f089b07dae603491675dc5b5748f7049" : {
+                "forcedContract": true,
                 "balance" : "0x00",
                 "code" : "0x",
                 "nonce" : "0x00",
@@ -565,6 +567,7 @@
                 }
             },
             "d2571607e241ecf590ed94b12d87c94babe36db6" : {
+                "forcedContract": true,
                 "balance" : "0x00",
                 "code" : "0x",
                 "nonce" : "0x00",
@@ -1008,6 +1011,7 @@
                 }
             },
             "6295ee1b4f6dd65047762f924ecd367c17eabf8f" : {
+                "forcedContract": true,
                 "balance" : "0x01",
                 "code" : "0x",
                 "nonce" : "0x00",

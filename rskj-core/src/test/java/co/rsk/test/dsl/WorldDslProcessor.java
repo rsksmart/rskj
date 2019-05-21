@@ -29,6 +29,7 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -186,6 +187,13 @@ public class WorldDslProcessor {
             Block block = world.getBlockByName(name);
             BlockExecutor executor = world.getBlockExecutor();
 
+            // This execution is JUST to fill the receipts/stateRoot values
+            // of the block, since the block will not contain the correct values for
+            // these fields. The block will be executed AGAIN in tryToConnect().
+            // Note that the repoisitory state will have changed after this execution.
+            // The state is automatically reverted in tryToConnect to the state prior
+            // execution.
+
             if (block.getParentHash().equals(blockChain.getBestBlock().getHash())) {
                 executor.executeAndFill(block, blockChain.getBestBlock().getHeader());
             }
@@ -196,6 +204,7 @@ public class WorldDslProcessor {
             block.seal();
 
             latestImportResult = blockChain.tryToConnect(block);
+            blockChain.getRepository().syncToRoot(block.getStateRoot());
         }
     }
 
@@ -245,7 +254,8 @@ public class WorldDslProcessor {
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory
                     ),
-                    new StateRootHandler(config.getActivationConfig(), new HashMapDB(), new HashMap<>())
+                    new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                    config.getActivationConfig()
             );
             executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);

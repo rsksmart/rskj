@@ -2,12 +2,14 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.ConfigUtils;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutorFactory;
+import co.rsk.db.StateRootHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
@@ -15,6 +17,7 @@ import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
+import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.util.RskTestFactory;
@@ -44,6 +47,7 @@ public class MainNetMinerTest {
     private BlockStore blockStore;
     private NodeBlockProcessor blockProcessor;
     private Repository repository;
+    private StateRootHandler stateRootHandler;
     private BlockFactory blockFactory;
     private BlockExecutorFactory blockExecutorFactory;
 
@@ -52,12 +56,20 @@ public class MainNetMinerTest {
         config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(Constants.mainnet());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.all());
-        RskTestFactory factory = new RskTestFactory(config);
+        RskTestFactory factory = new RskTestFactory(config) {
+            @Override
+            public Genesis buildGenesis() {
+                Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
+                genesis.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
+                return genesis;
+            }
+        };
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
         blockStore = factory.getBlockStore();
         blockProcessor = factory.getNodeBlockProcessor();
         repository = factory.getRepository();
+        stateRootHandler = factory.getStateRootHandler();
         blockFactory = factory.getBlockFactory();
         blockExecutorFactory = factory.getBlockExecutorFactory();
     }
@@ -120,9 +132,6 @@ public class MainNetMinerTest {
         // medium minimum difficulty (this is not the mainnet nor the regnet)
         ////////////////////////////////////////////////////////////////////
         /* We need a low, but not too low, target */
-        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(blockchain);
-        gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
-        blockchain.setStatus(gen, gen.getCumulativeDifficulty());
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
@@ -189,8 +198,10 @@ public class MainNetMinerTest {
         when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         return new BlockToMineBuilder(
+                config.getActivationConfig(),
                 ConfigUtils.getDefaultMiningConfig(),
                 repository,
+                stateRootHandler,
                 blockStore,
                 transactionPool,
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
