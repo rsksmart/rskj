@@ -182,6 +182,7 @@ public class BridgeSupport {
                 CheckpointManager.checkpoint(btcParams, checkpoints, btcBlockStore, time);
             }
         }
+        BridgeUtils.populateLatestBlocks(btcBlockStore);
         return btcBlockStore;
     }
 
@@ -214,7 +215,9 @@ public class BridgeSupport {
         this.ensureBtcBlockChain();
         for (int i = 0; i < headers.length; i++) {
             try {
-                btcBlockChain.add(headers[i]);
+                if(btcBlockChain.add(headers[i])) {
+                    BridgeUtils.addLatestBlock(btcBlockStore, btcBlockStore.get(headers[i].getHash()));
+                }
             } catch (Exception e) {
                 // If we tray to add an orphan header bitcoinj throws an exception
                 // This catches that case and any other exception that may be thrown
@@ -1079,8 +1082,7 @@ public class BridgeSupport {
         // the cost.
         Context.propagate(btcContext);
         try {
-            this.ensureBtcBlockStore();
-            final StoredBlock block = btcBlockStore.getFromCache(btcBlockHash);
+            final StoredBlock block = BridgeUtils.getLatestBlock(btcBlockHash);
 
             // Block not found, default to basic cost
             if (block == null) {
@@ -1098,7 +1100,7 @@ public class BridgeSupport {
             }
 
             return BASIC_COST + blockDepth*STEP_COST;
-        } catch (IOException | BlockStoreException e) {
+        } catch (IOException e) {
             logger.warn("getBtcTransactionConfirmations: there was a problem " +
                     "gathering the block depth while calculating the gas cost. " +
                     "Defaulting to basic cost.", e);
@@ -1118,8 +1120,9 @@ public class BridgeSupport {
         this.ensureBtcBlockChain();
 
         // Get the block using the given block hash
-        StoredBlock block = btcBlockStore.getFromCache(btcBlockHash);
+        StoredBlock block = BridgeUtils.getLatestBlock(btcBlockHash);
         if (block == null) {
+            //Este error ahora podria ser inexistente too old or too deep, ya no se puede saber el motivo por el que no esta en cache
             return BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE;
         }
 
@@ -1134,7 +1137,7 @@ public class BridgeSupport {
         // Make sure it belongs to the best chain by diving to its height from the current best block
         StoredBlock blockAtHeight;
         try {
-            blockAtHeight = BridgeUtils.getStoredBlockAtHeight(this.btcBlockStore, block.getHeight());
+            blockAtHeight = BridgeUtils.getLatestStoredBlockAtHeight(this.btcBlockStore, block.getHeight());
         } catch (IllegalStateException e) {
             logger.warn(String.format(
                     "Illegal state trying to get block at height %d with hash %s",

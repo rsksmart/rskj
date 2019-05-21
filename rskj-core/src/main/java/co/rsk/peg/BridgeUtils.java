@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
@@ -45,6 +46,111 @@ public class BridgeUtils {
 
     // power of 2 size that contains enough hashes to handle one year of hashes
     private static Map<Sha256Hash, Sha256Hash> parentMap = new MaxSizeHashMap<>(RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS, false);
+    public static final int MAX_SIZE_MAP_HEIGHT_BLOCKS = 4320;
+    private static Map<Sha256Hash, StoredBlock> latestBlocks = new MaxSizeHashMap<>(RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS, true);
+
+    public static StoredBlock getLatestBlock(Sha256Hash blockHash) {
+        return latestBlocks.get(blockHash);
+    }
+
+    public static void addLatestBlock(BtcBlockStore blockStore, StoredBlock newBlock) throws BlockStoreException {
+        StoredBlock chainHead = blockStore.getChainHead();
+        long newBlockHight = newBlock.getHeight();
+        if(chainHead.getHeight() - newBlockHight < MAX_SIZE_MAP_HEIGHT_BLOCKS) {
+            Sha256Hash newBlockHash = newBlock.getHeader().getHash();
+            latestBlocks.put(newBlockHash, newBlock);
+        }
+    }
+
+    public static void populateLatestBlocks(BtcBlockstoreWithCache blockStore) throws BlockStoreException {
+        StoredBlock storedBlock = blockStore.getChainHead();
+        Sha256Hash blockHash = storedBlock.getHeader().getHash();
+
+        int headHeight = storedBlock.getHeight();
+        int height = headHeight - MAX_SIZE_MAP_HEIGHT_BLOCKS;
+
+        if (height < 0) {
+            height = 0;
+        }
+
+        for (int i = 0; i < (headHeight - height); i++) {
+            if (blockHash == null) {
+                return;
+            }
+
+            Sha256Hash prevBlockHash = parentMap.get(blockHash);
+
+            if (prevBlockHash == null) {
+                StoredBlock currentBlock = blockStore.getFromCache(blockHash);
+
+                if (currentBlock == null) {
+                    return;
+                }
+
+                prevBlockHash = currentBlock.getHeader().getPrevBlockHash();
+                parentMap.put(blockHash, prevBlockHash);
+                latestBlocks.put(blockHash, currentBlock);
+            }
+
+            blockHash = prevBlockHash;
+        }
+
+        if (blockHash == null) {
+            return;
+        }
+
+        storedBlock = blockStore.getFromCache(blockHash);
+
+        if (storedBlock != null) {
+            if (storedBlock.getHeight() != height) {
+                throw new IllegalStateException("Block height is " + storedBlock.getHeight() + " but should be " + headHeight);
+            }
+
+            latestBlocks.put(blockHash, storedBlock);
+            return;
+        }
+    }
+
+    public static StoredBlock getLatestStoredBlockAtHeight(BtcBlockstoreWithCache blockStore, int height) throws BlockStoreException {
+        StoredBlock storedBlock = blockStore.getChainHead();
+        Sha256Hash blockHash = storedBlock.getHeader().getHash();
+
+        int headHeight = storedBlock.getHeight();
+
+        if (height > headHeight) {
+            return null;
+        }
+
+        for (int i = 0; i < (headHeight - height); i++) {
+            if (blockHash == null) {
+                return null;
+            }
+
+            StoredBlock currentBlock = latestBlocks.get(blockHash);
+
+            if (currentBlock == null) {
+                return null;
+            }
+
+            blockHash = currentBlock.getHeader().getPrevBlockHash();
+        }
+
+        if (blockHash == null) {
+            return null;
+        }
+
+        storedBlock = latestBlocks.get(blockHash);
+
+        if (storedBlock != null) {
+            if (storedBlock.getHeight() != height) {
+                throw new IllegalStateException("Block height is " + storedBlock.getHeight() + " but should be " + headHeight);
+            }
+            return storedBlock;
+        } else {
+            return null;
+        }
+    }
+
 
     public static StoredBlock getStoredBlockAtHeight(BtcBlockstoreWithCache blockStore, int height) throws BlockStoreException {
         StoredBlock storedBlock = blockStore.getChainHead();
