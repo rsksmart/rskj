@@ -43,12 +43,12 @@ public class AutoMinerClientTest {
     }
 
     @Test
-    public void minesBlock() {
+    public void minesBlockAfterStart() {
         MinerWork work = mock(MinerWork.class);
         when(work.getBlockHashForMergedMining()).thenReturn("0x404142");
         when(work.getTarget()).thenReturn("0x10000000000000000000000000000000000000000000000000000000000000");
         when(minerServer.getWork()).thenReturn(work);
-        autoMinerClient.mine();
+        autoMinerClient.start();
 
         assertThat(autoMinerClient.isMining(), is(true));
         assertThat(autoMinerClient.mineBlock(), is(true));
@@ -57,7 +57,7 @@ public class AutoMinerClientTest {
 
     @Test
     public void disablesMining() {
-        autoMinerClient.mine();
+        autoMinerClient.start();
         autoMinerClient.stop();
 
         assertThat(autoMinerClient.isMining(), is(false));

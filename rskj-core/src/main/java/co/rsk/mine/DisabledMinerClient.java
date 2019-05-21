@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,13 +18,27 @@
 
 package co.rsk.mine;
 
-public interface MinerClient {
-    void start();
+/**
+ * This implements the MinerClient interface but does nothing.
+ */
+public class DisabledMinerClient implements MinerClient {
+    @Override
+    public void start() {
+        // do nothing
+    }
 
-    // Mines a PoW block
-    boolean mineBlock();
+    @Override
+    public boolean mineBlock() {
+        return false;
+    }
 
-    void stop();
+    @Override
+    public void stop() {
+        // do nothing
+    }
 
-    boolean isMining();
+    @Override
+    public boolean isMining() {
+        return false;
+    }
 }

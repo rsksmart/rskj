@@ -41,7 +41,7 @@ public class AutoMinerClient implements MinerClient {
     }
 
     @Override
-    public void mine() {
+    public void start() {
         isMining = true;
     }
 

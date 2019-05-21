@@ -63,7 +63,7 @@ public class MinerClientImpl implements MinerClient {
         this.delayBetweenRefreshes = delayBetweenRefreshes;
     }
 
-    public void mine() {
+    public void start() {
         aTimer = new Timer("Refresh work for mining");
         aTimer.schedule(createRefreshWork(), 0, this.delayBetweenRefreshes.toMillis());
 
