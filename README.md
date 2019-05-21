@@ -1,6 +1,5 @@
 # Welcome to RskJ
 [![CircleCI](https://circleci.com/gh/rsksmart/rskj/tree/master.svg?style=svg)](https://circleci.com/gh/rsksmart/rskj/tree/master)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/rsksmart/rskj.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rsksmart/rskj/alerts/)
 
 
 # About
