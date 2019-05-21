@@ -18,6 +18,7 @@
 
 package co.rsk.mine;
 
+import co.rsk.bitcoinj.core.BtcBlock;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,14 +64,12 @@ public class AutoMinerClient implements MinerClient {
         co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 
         BigInteger target = new BigInteger(1, TypeConverter.stringHexToByteArray(work.getTarget()));
-        boolean foundNonce = findNonce(bitcoinMergedMiningBlock, target);
+        findNonce(bitcoinMergedMiningBlock, target);
 
-        if (foundNonce) {
-            logger.info("Mined block: {}", work.getBlockHashForMergedMining());
-            minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
-        }
+        logger.info("Mined block: {}", work.getBlockHashForMergedMining());
+        minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        return foundNonce;
+        return true;
     }
 
     @Override
@@ -82,8 +81,8 @@ public class AutoMinerClient implements MinerClient {
     /**
      * Find a valid nonce for bitcoinMergedMiningBlock, that satisfies the given target difficulty.
      */
-    private boolean findNonce(
-            co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock,
+    private void findNonce(
+            BtcBlock bitcoinMergedMiningBlock,
             BigInteger target) {
         long nextNonceToUse = 0;
         bitcoinMergedMiningBlock.setNonce(nextNonceToUse++);
@@ -92,7 +91,7 @@ public class AutoMinerClient implements MinerClient {
             // Is our proof of work valid yet?
             BigInteger blockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
             if (blockHashBI.compareTo(target) <= 0) {
-                return true;
+                return;
             }
             // No, so increment the nonce and try again.
             bitcoinMergedMiningBlock.setNonce(nextNonceToUse++);
