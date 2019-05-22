@@ -20,12 +20,10 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
-import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -34,7 +32,10 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Oscar Guindzberg
@@ -42,56 +43,6 @@ import java.util.*;
 public class BridgeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
-
-    // power of 2 size that contains enough hashes to handle one year of hashes
-    private static Map<Sha256Hash, Sha256Hash> parentMap = new MaxSizeHashMap<>(RepositoryBlockStore.MAX_SIZE_MAP_STORED_BLOCKS, false);
-
-    public static StoredBlock getStoredBlockAtHeight(BtcBlockstoreWithCache blockStore, int height) throws BlockStoreException {
-        StoredBlock storedBlock = blockStore.getChainHead();
-        Sha256Hash blockHash = storedBlock.getHeader().getHash();
-
-        int headHeight = storedBlock.getHeight();
-
-        if (height > headHeight) {
-            return null;
-        }
-
-        for (int i = 0; i < (headHeight - height); i++) {
-            if (blockHash == null) {
-                return null;
-            }
-
-            Sha256Hash prevBlockHash = parentMap.get(blockHash);
-
-            if (prevBlockHash == null) {
-                StoredBlock currentBlock = blockStore.getFromCache(blockHash);
-
-                if (currentBlock == null) {
-                    return null;
-                }
-
-                prevBlockHash = currentBlock.getHeader().getPrevBlockHash();
-                parentMap.put(blockHash, prevBlockHash);
-            }
-
-            blockHash = prevBlockHash;
-        }
-
-        if (blockHash == null) {
-            return null;
-        }
-
-        storedBlock = blockStore.getFromCache(blockHash);
-
-        if (storedBlock != null) {
-            if (storedBlock.getHeight() != height) {
-                throw new IllegalStateException("Block height is " + storedBlock.getHeight() + " but should be " + headHeight);
-            }
-            return storedBlock;
-        } else {
-            return null;
-        }
-    }
 
     public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
         return getFederationsNoSpendWallet(btcContext, Arrays.asList(federation));
