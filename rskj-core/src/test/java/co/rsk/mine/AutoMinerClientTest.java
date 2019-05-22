@@ -43,7 +43,7 @@ public class AutoMinerClientTest {
     }
 
     @Test
-    public void minesBlockAfterStart() {
+    public void minesBlock() {
         MinerWork work = mock(MinerWork.class);
         when(work.getBlockHashForMergedMining()).thenReturn("0x404142");
         when(work.getTarget()).thenReturn("0x10000000000000000000000000000000000000000000000000000000000000");
