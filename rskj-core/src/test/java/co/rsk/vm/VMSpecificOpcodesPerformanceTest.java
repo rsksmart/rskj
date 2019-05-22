@@ -41,7 +41,7 @@ public class VMSpecificOpcodesPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
     public static String padZeroesLeft(String s, int n) {
         return StringUtils.leftPad(s, n, '0');

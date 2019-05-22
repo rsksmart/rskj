@@ -30,6 +30,7 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
@@ -432,7 +433,8 @@ public class RemascStorageProviderTest {
                         blockchain.getBlockStore(),
                         null,
                         new BlockFactory(config.getActivationConfig()),
-                        new ProgramInvokeFactoryImpl()
+                        new ProgramInvokeFactoryImpl(),
+                        new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()))
                 )
         );
 

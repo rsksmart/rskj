@@ -31,7 +31,6 @@ public class BridgeConstants {
     protected int btc2RskMinimumAcceptableConfirmations;
     protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
     protected int rsk2BtcMinimumAcceptableConfirmations;
-    protected int btcBroadcastingMinimumAcceptableBlocks;
 
     protected int updateBridgeExecutionPeriod;
 

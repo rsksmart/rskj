@@ -2,7 +2,6 @@ package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.peg.exception.InvalidMerkleBranchException;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import org.ethereum.util.Utils;
 
@@ -23,24 +22,23 @@ import java.util.List;
  * @author Ariel Mendelzon
  */
 public class MerkleBranch {
-    private List<Sha256Hash> hashes;
-    private int path;
+    private final List<Sha256Hash> hashes;
+    private final int path;
 
     public MerkleBranch(List<Sha256Hash> hashes, int path) {
         this.hashes = Collections.unmodifiableList(hashes);
         this.path = path;
 
         //We validate that the number of hashes is uint8 as described in https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki
-        if (hashes.size() > 255) {
-            throw new InvalidMerkleBranchException("The number of hashes can't be bigger than 255");
+        if (hashes.size() > 32) {
+            throw new IllegalArgumentException("The number of hashes can't be bigger than 255");
         }
-
         // We validate here that there are no more bits in the
         // path than those needed to reduce the branch to the
         // merkle root. That is, that the number of significant
         // bits is lower or equal to the number of hashes
         if (Utils.significantBitCount(path) > hashes.size()) {
-            throw new InvalidMerkleBranchException("The number of significant bits must be lower or equal to the number of hashes");
+            throw new IllegalArgumentException("The number of significant bits must be lower or equal to the number of hashes");
         }
     }
 

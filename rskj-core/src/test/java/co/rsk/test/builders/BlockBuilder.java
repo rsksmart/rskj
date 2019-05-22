@@ -24,11 +24,13 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.test.World;
 import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
@@ -47,6 +49,7 @@ public class BlockBuilder {
     private List<BlockHeader> uncles;
     private BigInteger minGasPrice;
     private byte[] gasLimit;
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
     public BlockBuilder() {
         this.blockGenerator = new BlockGenerator();
@@ -54,6 +57,7 @@ public class BlockBuilder {
 
     public BlockBuilder(World world) {
         this(world.getBlockChain(), new BlockGenerator());
+        this.btcBlockStoreFactory = world.getBtcBlockStoreFactory();
     }
 
     public BlockBuilder(Blockchain blockChain) {
@@ -116,7 +120,8 @@ public class BlockBuilder {
                             blockChain.getBlockStore(),
                             null,
                             new BlockFactory(config.getActivationConfig()),
-                            new ProgramInvokeFactoryImpl()
+                            new ProgramInvokeFactoryImpl(),
+                            new PrecompiledContracts(config, btcBlockStoreFactory)
                     )
             );
             executor.executeAndFill(block, parent.getHeader());

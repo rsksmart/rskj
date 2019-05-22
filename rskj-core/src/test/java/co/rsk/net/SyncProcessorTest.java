@@ -13,6 +13,7 @@ import co.rsk.net.sync.DownloadingBodiesSyncState;
 import co.rsk.net.sync.DownloadingHeadersSyncState;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.StatusUtils;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
@@ -26,6 +27,7 @@ import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
@@ -787,7 +789,8 @@ public class SyncProcessorTest {
                         blockchain.getBlockStore(),
                         null,
                         blockFactory,
-                        new ProgramInvokeFactoryImpl()
+                        new ProgramInvokeFactoryImpl(),
+                        new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()))
                 )
         );
         Assert.assertEquals(1, block.getTransactionsList().size());

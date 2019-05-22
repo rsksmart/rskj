@@ -25,6 +25,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeSupport;
+import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -60,6 +61,7 @@ public class EthModule
     private final EthModuleTransaction ethModuleTransaction;
     private final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
+    private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -70,7 +72,8 @@ public class EthModule
             RepositoryLocator repositoryLocator,
             EthModuleSolidity ethModuleSolidity,
             EthModuleWallet ethModuleWallet,
-            EthModuleTransaction ethModuleTransaction) {
+            EthModuleTransaction ethModuleTransaction,
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
         this.blockchain = blockchain;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
@@ -80,6 +83,7 @@ public class EthModule
         this.ethModuleTransaction = ethModuleTransaction;
         this.bridgeConstants = bridgeConstants;
         this.activationConfig = activationConfig;
+        this.btcBlockStoreFactory = btcBlockStoreFactory;
     }
 
     @Override
@@ -97,8 +101,8 @@ public class EthModule
                         activationConfig.isActive(ConsensusRule.RSKIP87, bestBlock.getNumber()),
                         activationConfig.isActive(ConsensusRule.RSKIP123, bestBlock.getNumber())
                 ),
-                null, repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR
-        );
+                null, repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR,
+                btcBlockStoreFactory);
 
         byte[] result = bridgeSupport.getStateForDebugging();
 

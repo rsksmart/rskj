@@ -18,16 +18,10 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.BtcBlockChain;
-import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.RepositoryBlockStore;
 import org.ethereum.core.Repository;
-import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.bouncycastle.util.encoders.Hex;

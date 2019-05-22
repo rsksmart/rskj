@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 public class PrecompiledContractTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
     @Test
     public void getBridgeContract() {
@@ -84,7 +84,7 @@ public class PrecompiledContractTest {
     }
 
     @Test
-    public void getBtoUtilsBeforeRskip106() {
+    public void getHdWalletUtilsBeforeRskip106() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP106)).thenReturn(false);
         DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
@@ -94,7 +94,7 @@ public class PrecompiledContractTest {
     }
 
     @Test
-    public void getBtoUtilsAfterRskip106() {
+    public void getHdWalletUtilsAfterRskip106() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP106)).thenReturn(true);
         DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());

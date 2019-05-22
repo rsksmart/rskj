@@ -203,12 +203,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private List<LogInfo> logs;
 
     private BridgeSupport bridgeSupport;
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
-    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig) {
+    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig, BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
         this.contractAddress = contractAddress;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
         this.activationConfig = activationConfig;
+        this.btcBlockStoreFactory = btcBlockStoreFactory;
     }
 
     @Override
@@ -288,7 +290,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.rskExecutionBlock = rskExecutionBlock;
         this.repository = repository;
         this.logs = logs;
-        this.bridgeSupport = setup();
     }
 
     @Override
@@ -321,6 +322,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 throw new BridgeIllegalArgumentException(errorMessage);
             }
 
+            this.bridgeSupport = setup();
             Optional<?> result;
             try {
                 // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
@@ -357,7 +359,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                         BridgeStorageConfiguration.fromBlockchainConfig(activations)
                 ),
                 new BridgeEventLoggerImpl(bridgeConstants, logs),
-                repository, rskExecutionBlock, null, null
+                repository,
+                rskExecutionBlock,
+                btcBlockStoreFactory,
+                null
         );
     }
 
@@ -594,9 +599,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     public long getBtcTransactionConfirmationsGetCost(Object[] args) {
-        Sha256Hash btcBlockHash = Sha256Hash.wrap((byte[]) args[1]);
-
-        return bridgeSupport.getBtcTransactionConfirmationsGetCost(btcBlockHash);
+        return bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
     }
 
     public int getBtcTransactionConfirmations(Object[] args)
@@ -1022,7 +1025,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.removeLockWhitelistAddress(rskTx, addressBase58);
     }
 
-    public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException {
+    public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException, BlockStoreException {
         logger.trace("setLockWhitelistDisableBlockDelay");
         BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
         return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);

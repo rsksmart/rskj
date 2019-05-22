@@ -19,9 +19,12 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.*;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -62,15 +65,17 @@ public class CallContractTest {
         Block bestBlock = world.getBlockChain().getBestBlock();
 
         Repository repository = world.getRepository().startTracking();
-
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
         try {
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                     config,
                     null,
                     null,
                     blockFactory,
-                    new ProgramInvokeFactoryImpl()
-            );
+                    new ProgramInvokeFactoryImpl(),
+                    new PrecompiledContracts(config, btcBlockStoreFactory)
+                    );
+
             org.ethereum.core.TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
                     .setLocalCall(true);

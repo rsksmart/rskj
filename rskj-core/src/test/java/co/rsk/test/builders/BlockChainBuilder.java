@@ -26,6 +26,8 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
@@ -38,6 +40,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 
@@ -61,6 +64,7 @@ public class BlockChainBuilder {
     private RskSystemProperties config;
     private EthereumListener listener;
     private StateRootHandler stateRootHandler;
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -104,6 +108,11 @@ public class BlockChainBuilder {
 
     public BlockChainBuilder setListener(EthereumListener listener) {
         this.listener = listener;
+        return this;
+    }
+
+    public BlockChainBuilder setBtcBlockStoreFactory(BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
+        this.btcBlockStoreFactory = btcBlockStoreFactory;
         return this;
     }
 
@@ -156,6 +165,11 @@ public class BlockChainBuilder {
             listener = new BlockExecutorTest.SimpleEthereumListener();
         }
 
+        if(btcBlockStoreFactory == null) {
+            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()
+            );
+        }
+
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
 
         validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
@@ -168,7 +182,8 @@ public class BlockChainBuilder {
                 blockStore,
                 receiptStore,
                 blockFactory,
-                new ProgramInvokeFactoryImpl()
+                new ProgramInvokeFactoryImpl(),
+                new PrecompiledContracts(config, btcBlockStoreFactory)
         );
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(
                 config, this.repository, this.blockStore, blockFactory, new TestCompositeEthereumListener(),

@@ -105,7 +105,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
     }
 
     @BeforeClass
-    public static void setupA() throws Exception {
+    public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.genesis();
     }

@@ -21,7 +21,6 @@ package co.rsk.peg.bitcoin;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.peg.exception.InvalidMerkleBranchException;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,7 +41,7 @@ public class MerkleBranchTest {
                     Collections.nCopies(256, Sha256Hash.of(Hex.decode("aa")))
                     , 0b111);
             Assert.fail();
-        } catch (InvalidMerkleBranchException e) {
+        } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("number of hashes"));
         }
     }
@@ -55,7 +54,7 @@ public class MerkleBranchTest {
                     Sha256Hash.of(Hex.decode("bb"))
             ), 0b111);
             Assert.fail();
-        } catch (InvalidMerkleBranchException e) {
+        } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("significant bits"));
         }
     }
@@ -70,7 +69,7 @@ public class MerkleBranchTest {
                     Sha256Hash.of(Hex.decode("dd"))
             ), 0b000010000);
             Assert.fail();
-        } catch (InvalidMerkleBranchException e) {
+        } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("significant bits"));
         }
     }
