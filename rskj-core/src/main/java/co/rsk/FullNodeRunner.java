@@ -156,7 +156,10 @@ public class FullNodeRunner implements NodeRunner {
 
         if (rskSystemProperties.isMinerServerEnabled()) {
             minerServer.start();
-            minerClient.start();
+
+            if (rskSystemProperties.isMinerClientEnabled()) {
+                minerClient.start();
+            }
         }
 
         logger.info("done");
@@ -226,7 +229,9 @@ public class FullNodeRunner implements NodeRunner {
 
         if (rskSystemProperties.isMinerServerEnabled()) {
             minerServer.stop();
-            minerClient.stop();
+            if (rskSystemProperties.isMinerClientEnabled()) {
+                minerClient.stop();
+            }
         }
 
         peerServer.stop();
