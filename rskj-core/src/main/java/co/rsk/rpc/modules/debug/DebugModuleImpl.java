@@ -27,7 +27,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.vm.trace.MemoryProgramTraceProcessor;
+import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,8 +76,8 @@ public class DebugModuleImpl implements DebugModule {
         Transaction tx = block.getTransactionsList().get(txInfo.getIndex());
         txInfo.setTransaction(tx);
 
-        MemoryProgramTraceProcessor programTraceProcessor = new MemoryProgramTraceProcessor();
-        blockExecutor.executeAndTrace(programTraceProcessor, block, parent.getHeader(), false, false);
+        ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
+        blockExecutor.traceBlock(programTraceProcessor, block, parent.getHeader(), false, false);
 
         return programTraceProcessor.getProgramTraceAsJsonNode(tx.getHash());
     }

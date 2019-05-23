@@ -20,7 +20,6 @@
 package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.DisabledProgramTraceProcessor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -87,7 +86,6 @@ public class ImportLightTest {
                         stateRootHandler,
                         transactionExecutorFactory
                 ),
-                new DisabledProgramTraceProcessor(),
                 stateRootHandler
         );
 

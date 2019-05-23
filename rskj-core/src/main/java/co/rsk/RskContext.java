@@ -97,8 +97,6 @@ import org.ethereum.util.BuildInfo;
 import org.ethereum.util.FileUtil;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.ethereum.vm.trace.FileProgramTraceProcessor;
-import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
@@ -205,7 +203,6 @@ public class RskContext implements NodeBootstrapper {
     private SolidityCompiler solidityCompiler;
     private BlocksBloomStore blocksBloomStore;
     private BlockExecutor blockExecutor;
-    private ProgramTraceProcessor programTraceProcessor;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -352,23 +349,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return transactionExecutorFactory;
-    }
-
-    private ProgramTraceProcessor getProgramTraceProcessor() {
-        if (programTraceProcessor == null) {
-            if (getRskSystemProperties().vmTrace()) {
-                // TODO(mc) delete this
-                programTraceProcessor = new FileProgramTraceProcessor(
-                        getRskSystemProperties().databaseDir(),
-                        getRskSystemProperties().vmTraceDir(),
-                        getRskSystemProperties().vmTraceCompressed()
-                );
-            } else {
-                programTraceProcessor = new DisabledProgramTraceProcessor();
-            }
-        }
-
-        return programTraceProcessor;
     }
 
     public NodeBlockProcessor getNodeBlockProcessor() {
@@ -814,7 +794,6 @@ public class RskContext implements NodeBootstrapper {
                     getCompositeEthereumListener(),
                     getBlockValidator(),
                     getBlockExecutor(),
-                    getProgramTraceProcessor(),
                     getGenesis(),
                     getStateRootHandler()
             );

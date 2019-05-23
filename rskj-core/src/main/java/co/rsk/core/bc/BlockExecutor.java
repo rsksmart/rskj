@@ -19,7 +19,6 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
-import co.rsk.core.DisabledProgramTraceProcessor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
@@ -33,9 +32,11 @@ import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 
@@ -217,24 +218,31 @@ public class BlockExecutor {
         return execute(block, parent, discardInvalidTxs, false);
     }
 
-    private BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
-        return executeAndTrace(new DisabledProgramTraceProcessor(), block, parent, discardInvalidTxs, ignoreReadyToExecute);
+    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
+        return executeInternal(null, block, parent, discardInvalidTxs, ignoreReadyToExecute);
     }
 
     /**
-     * Execute a block, from initial state, returning the final state data.
-     *
-     * @param programTraceProcessor A trace processor to trace transactions
-     * @param block        A block to validate
-     * @param parent       The parent of the block to validate
-     * @return BlockResult with the final state data.
+     * Execute a block while saving the execution trace in the trace processor
      */
-    public BlockResult executeAndTrace(
+    public void traceBlock(
             ProgramTraceProcessor programTraceProcessor,
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean ignoreReadyToExecute) {
+        executeInternal(
+                Objects.requireNonNull(programTraceProcessor), block, parent, discardInvalidTxs, ignoreReadyToExecute
+        );
+    }
+
+    private BlockResult executeInternal(
+            @Nullable ProgramTraceProcessor programTraceProcessor,
+            Block block,
+            BlockHeader parent,
+            boolean discardInvalidTxs,
+            boolean ignoreReadyToExecute) {
+        boolean vmTrace = programTraceProcessor != null;
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         // Forks the repo, does not change "repository". It will have a completely different
@@ -270,7 +278,8 @@ public class BlockExecutor {
                     block.getCoinbase(),
                     track,
                     block,
-                    totalGasUsed
+                    totalGasUsed,
+                    vmTrace
             );
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {
@@ -290,7 +299,9 @@ public class BlockExecutor {
             txExecutor.execute();
             txExecutor.go();
             txExecutor.finalization();
-            txExecutor.extractTrace(programTraceProcessor);
+            if (vmTrace) {
+                txExecutor.extractTrace(programTraceProcessor);
+            }
 
             logger.trace("tx executed");
 

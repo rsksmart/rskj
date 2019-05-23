@@ -36,7 +36,6 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +59,6 @@ public class BlockChainLoader {
     private final BlockExecutor blockExecutor;
     private final Genesis genesis;
     private final StateRootHandler stateRootHandler;
-    private final ProgramTraceProcessor programTraceProcessor;
 
     public BlockChainLoader(
             RskSystemProperties config,
@@ -71,7 +69,6 @@ public class BlockChainLoader {
             EthereumListener listener,
             BlockValidator blockValidator,
             BlockExecutor blockExecutor,
-            ProgramTraceProcessor programTraceProcessor,
             Genesis genesis,
             StateRootHandler stateRootHandler) {
         this.config = config;
@@ -82,7 +79,6 @@ public class BlockChainLoader {
         this.listener = listener;
         this.blockValidator = blockValidator;
         this.blockExecutor = blockExecutor;
-        this.programTraceProcessor = programTraceProcessor;
         this.genesis = genesis;
         this.stateRootHandler = stateRootHandler;
     }
@@ -98,7 +94,6 @@ public class BlockChainLoader {
                 config.isFlushEnabled(),
                 config.flushNumberOfBlocks(),
                 blockExecutor,
-                programTraceProcessor,
                 stateRootHandler
         );
 

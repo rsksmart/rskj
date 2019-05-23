@@ -32,7 +32,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +94,6 @@ public class BlockChainImpl implements Blockchain {
     private final boolean flushEnabled;
     private final int flushNumberOfBlocks;
     private final BlockExecutor blockExecutor;
-    private final ProgramTraceProcessor programTraceProcessor;
     private boolean noValidation;
 
     public BlockChainImpl(Repository repository,
@@ -107,7 +105,6 @@ public class BlockChainImpl implements Blockchain {
                           boolean flushEnabled,
                           int flushNumberOfBlocks,
                           BlockExecutor blockExecutor,
-                          ProgramTraceProcessor programTraceProcessor,
                           StateRootHandler stateRootHandler) {
         this.repository = repository;
         this.blockStore = blockStore;
@@ -117,7 +114,6 @@ public class BlockChainImpl implements Blockchain {
         this.flushEnabled = flushEnabled;
         this.flushNumberOfBlocks = flushNumberOfBlocks;
         this.blockExecutor = blockExecutor;
-        this.programTraceProcessor = programTraceProcessor;
         this.transactionPool = transactionPool;
         this.stateRootHandler = stateRootHandler;
     }
@@ -252,7 +248,7 @@ public class BlockChainImpl implements Blockchain {
             long saveTime = System.nanoTime();
             logger.trace("execute start");
 
-            result = blockExecutor.executeAndTrace(programTraceProcessor, block, parent.getHeader(), false, noValidation);
+            result = blockExecutor.execute(block, parent.getHeader(), false, noValidation);
 
             logger.trace("execute done");
 

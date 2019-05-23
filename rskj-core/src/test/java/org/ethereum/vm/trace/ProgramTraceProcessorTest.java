@@ -33,12 +33,12 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class MemoryProgramTraceProcessorTest {
+public class ProgramTraceProcessorTest {
     @Test
     public void getUnknownTrace() {
         Keccak256 hash = TestUtils.randomHash();
         Keccak256 otherHash = TestUtils.randomHash();
-        MemoryProgramTraceProcessor processor = new MemoryProgramTraceProcessor();
+        ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
         ProgramTrace trace = buildTestTrace(DataWord.valueOf(42));
         processor.processProgramTrace(trace, hash);
@@ -49,7 +49,7 @@ public class MemoryProgramTraceProcessorTest {
     @Test
     public void setAndGetTraceAsJsonNode() {
         Keccak256 hash = TestUtils.randomHash();
-        MemoryProgramTraceProcessor processor = new MemoryProgramTraceProcessor();
+        ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
         DataWord ownerDW = DataWord.valueOf(42);
         ProgramTrace trace = buildTestTrace(ownerDW);

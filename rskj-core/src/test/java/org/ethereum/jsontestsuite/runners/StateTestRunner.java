@@ -147,7 +147,6 @@ public class StateTestRunner {
                                 new ProgramInvokeFactoryImpl()
                         )
                 ),
-                new DisabledProgramTraceProcessor(),
                 stateRootHandler
         );
 

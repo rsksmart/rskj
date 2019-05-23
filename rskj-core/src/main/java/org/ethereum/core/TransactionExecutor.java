@@ -515,6 +515,10 @@ public class TransactionExecutor {
         logger.trace("tx finalization done");
     }
 
+    /**
+     * This extracts the trace to an object in memory.
+     * Refer to {@link org.ethereum.vm.VMUtils#saveProgramTraceFile} for a way to saving the trace to a file.
+     */
     public void extractTrace(ProgramTraceProcessor programTraceProcessor) {
         if (program != null) {
             ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
