@@ -138,7 +138,7 @@ public class BlockGenerator {
                         ByteUtils.clone(parent.getStateRoot()), EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         ByteUtils.clone(new Bloom().getData()), difficulty, parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count, EMPTY_BYTE_ARRAY,
-                        Coin.valueOf(fees), null, null, null, null, uncles.size()
+                        Coin.valueOf(fees), null, null, null, new byte[12], null, uncles.size()
                 ),
                 Collections.emptyList(),
                 uncles
@@ -160,7 +160,7 @@ public class BlockGenerator {
                         stateRoot, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled),
                         EMPTY_TRIE_HASH, logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], null, 0
                 ),
                 txs,
                 Collections.emptyList(),
@@ -219,6 +219,7 @@ public class BlockGenerator {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
+                new byte[]{},
                 (minGasPrice != null) ? minGasPrice.toByteArray() : null,
                 uncles.size()
         );
@@ -263,7 +264,7 @@ public class BlockGenerator {
                         EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled), EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), number,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, minimumGasPrice.getBytes(), 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], minimumGasPrice.getBytes(), 0
                 ),
                 txs,
                 Collections.emptyList()
@@ -285,7 +286,7 @@ public class BlockGenerator {
                         EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, Coin.valueOf(10).getBytes(), 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0
                 ),
                 txs,
                 Collections.emptyList()

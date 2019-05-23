@@ -86,14 +86,14 @@ public class BlockFactory {
             byte[] logsBloom, byte[] difficulty, long number,
             byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
             byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-            byte[] bitcoinMergedMiningCoinbaseTransaction,
+            byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] miningForkDetectionData,
             byte[] minimumGasPrice, int uncleCount) {
         return newHeader(
                 parentHash, unclesHash, coinbase,
                 ByteUtils.clone(EMPTY_TRIE_HASH), null, ByteUtils.clone(EMPTY_TRIE_HASH),
                 logsBloom, difficulty, number, gasLimit, gasUsed, timestamp, extraData, Coin.ZERO,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, minimumGasPrice, uncleCount
+                bitcoinMergedMiningCoinbaseTransaction, miningForkDetectionData, minimumGasPrice, uncleCount
         );
     }
 
@@ -102,7 +102,7 @@ public class BlockFactory {
             byte[] stateRoot, byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, byte[] difficulty, long number,
             byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
             Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-            byte[] bitcoinMergedMiningCoinbaseTransaction,
+            byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
             byte[] minimumGasPrice, int uncleCount) {
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, number);
         return new BlockHeader(
@@ -123,7 +123,7 @@ public class BlockFactory {
         return newHeader(
                 parentHash, unclesHash, coinbase, logsBloom, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
-                null, null, null,
+                null, null, null, null,
                 minimumGasPrice, uncleCount
         );
     }
@@ -200,7 +200,8 @@ public class BlockFactory {
                 parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
-                paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
+                paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction,
                 minimumGasPrice, uncleCount, sealed, useRskip92Encoding
         );
     }

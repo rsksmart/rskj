@@ -77,7 +77,7 @@ public class BlockTest {
                         HashUtil.EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, true),
                         HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), BigInteger.ONE.toByteArray(), 1,
                         BigInteger.valueOf(4000000).toByteArray(), 3000000, 100, new byte[0], Coin.ZERO,
-                        null, null, null, BigInteger.TEN.toByteArray(), 0
+                        null, null, null, new byte[12], BigInteger.TEN.toByteArray(), 0
                 ),
                 txs,
                 Collections.emptyList()

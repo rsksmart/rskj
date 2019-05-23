@@ -216,6 +216,7 @@ public class Web3ImplSnapshotTest {
                         factory.getTransactionPool(),
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
+                        new ForkDetectionDataCalculator(),
                         rule,
                         clock,
                         blockFactory,
