@@ -2,6 +2,7 @@ package co.rsk.net;
 
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
 import co.rsk.scoring.EventType;
@@ -33,6 +34,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     private final Blockchain blockchain;
+    private final ConsensusValidationMainchainView consensusValidationMainchainView;
     private final BlockSyncService blockSyncService;
     private final PeerScoringManager peerScoringManager;
     private final ChannelManager channelManager;
@@ -48,6 +50,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private long lastRequestId;
 
     public SyncProcessor(Blockchain blockchain,
+                         ConsensusValidationMainchainView consensusValidationMainchainView,
                          BlockSyncService blockSyncService,
                          PeerScoringManager peerScoringManager,
                          ChannelManager channelManager,
@@ -57,6 +60,7 @@ public class SyncProcessor implements SyncEventsHandler {
                          BlockCompositeRule blockValidationRule,
                          DifficultyCalculator difficultyCalculator) {
         this.blockchain = blockchain;
+        this.consensusValidationMainchainView = consensusValidationMainchainView;
         this.blockSyncService = blockSyncService;
         this.peerScoringManager = peerScoringManager;
         this.channelManager = channelManager;
@@ -237,7 +241,14 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint) {
-        setSyncState(new DownloadingHeadersSyncState(this.syncConfiguration, this, syncInformation, skeletons, connectionPoint));
+        setSyncState(
+                new DownloadingHeadersSyncState(
+                        this.syncConfiguration,
+                        this,
+                        syncInformation,
+                        skeletons,
+                        connectionPoint,
+                        consensusValidationMainchainView));
     }
 
     @Override

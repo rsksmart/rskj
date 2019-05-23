@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.NodeID;
 import org.ethereum.core.BlockIdentifier;
 import org.junit.Assert;
@@ -9,13 +10,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.Mockito.mock;
+
 public class DownloadingHeadersSyncStateTest {
     @Test
     public void itIgnoresNewPeerInformation() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         Map<NodeID, List<BlockIdentifier>> skeletons = Collections.singletonMap(null, null);
-        SyncState syncState = new DownloadingHeadersSyncState(syncConfiguration, syncEventsHandler, new SimpleSyncInformation(), skeletons, 0);
+        SyncState syncState = new DownloadingHeadersSyncState(
+                syncConfiguration,
+                syncEventsHandler,
+                new SimpleSyncInformation(),
+                skeletons,
+                0,
+                mock(ConsensusValidationMainchainView.class));
 
         for (int i = 0; i < 10; i++) {
             syncState.newPeerStatus();
@@ -27,7 +36,13 @@ public class DownloadingHeadersSyncStateTest {
     public void itTimeoutsWhenWaitingForRequest() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
-        SyncState syncState = new DownloadingHeadersSyncState(syncConfiguration, syncEventsHandler, new SimpleSyncInformation(), Collections.emptyMap(), 0);
+        SyncState syncState = new DownloadingHeadersSyncState(
+                syncConfiguration,
+                syncEventsHandler,
+                new SimpleSyncInformation(),
+                Collections.emptyMap(),
+                0,
+                mock(ConsensusValidationMainchainView.class));
 
         syncState.newPeerStatus();
         Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
@@ -43,7 +58,13 @@ public class DownloadingHeadersSyncStateTest {
     public void itDoesntTimeoutWhenSendingMessages() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
-        DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(syncConfiguration, syncEventsHandler, new SimpleSyncInformation(), Collections.emptyMap(), 0);
+        DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(
+                syncConfiguration,
+                syncEventsHandler,
+                new SimpleSyncInformation(),
+                Collections.emptyMap(),
+                0,
+                mock(ConsensusValidationMainchainView.class));
 
         syncState.newPeerStatus();
         Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());

@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleBlockProcessor;
@@ -320,7 +321,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, blockFactory, new DummyBlockValidationRule(),
+        final SyncProcessor syncProcessor = new SyncProcessor(blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, blockFactory, new DummyBlockValidationRule(),
                                                               new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                                                               null);
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, syncProcessor, null, null, null,

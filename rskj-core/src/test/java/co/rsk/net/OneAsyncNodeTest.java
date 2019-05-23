@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.SyncConfiguration;
@@ -40,6 +41,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by ajlopez on 5/14/2016.
  */
@@ -56,7 +59,7 @@ public class OneAsyncNodeTest {
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         SimpleChannelManager channelManager = new SimpleChannelManager();
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager, syncConfiguration,
+                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager, syncConfiguration,
                 new BlockFactory(config.getActivationConfig()),
                 new DummyBlockValidationRule(),
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),

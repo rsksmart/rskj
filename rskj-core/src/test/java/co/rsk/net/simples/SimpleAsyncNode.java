@@ -20,6 +20,7 @@ package co.rsk.net.simples;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.SyncConfiguration;
@@ -37,6 +38,8 @@ import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
 
 import java.util.concurrent.*;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 5/15/2016.
@@ -122,7 +125,7 @@ public class SimpleAsyncNode extends SimpleNode {
         SimpleChannelManager channelManager = new SimpleChannelManager();
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockFactory,
+                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockFactory,
                 blockValidationRule,
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants())
