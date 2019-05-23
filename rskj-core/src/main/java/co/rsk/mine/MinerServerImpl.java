@@ -25,6 +25,7 @@ import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
@@ -66,7 +67,7 @@ public class MinerServerImpl implements MinerServer {
     private static final int CACHE_SIZE = 20;
 
     private final Ethereum ethereum;
-    private final Blockchain blockchain;
+    private final MiningMainchainView mainchainView;
     private final ProofOfWorkRule powRule;
     private final BlockToMineBuilder builder;
     private final ActivationConfig activationConfig;
@@ -101,7 +102,7 @@ public class MinerServerImpl implements MinerServer {
     public MinerServerImpl(
             RskSystemProperties config,
             Ethereum ethereum,
-            Blockchain blockchain,
+            MiningMainchainView mainchainView,
             BlockProcessor nodeBlockProcessor,
             ProofOfWorkRule powRule,
             BlockToMineBuilder builder,
@@ -109,7 +110,7 @@ public class MinerServerImpl implements MinerServer {
             BlockFactory blockFactory,
             MiningConfig miningConfig) {
         this.ethereum = ethereum;
-        this.blockchain = blockchain;
+        this.mainchainView = mainchainView;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.powRule = powRule;
         this.builder = builder;
@@ -170,7 +171,7 @@ public class MinerServerImpl implements MinerServer {
             started = true;
             blockListener = new NewBlockListener();
             ethereum.addListener(blockListener);
-            buildBlockToMine(blockchain.getBestBlock(), false);
+            buildBlockToMine(false);
 
             if (refreshWorkTimer != null) {
                 refreshWorkTimer.cancel();
@@ -378,22 +379,40 @@ public class MinerServerImpl implements MinerServer {
     }
 
     /**
-     * buildBlockToMine creates a block to mine based on the given block as parent.
+     * buildBlockToMine creates a block to mine using the block received as parent.
+     * This method calls buildBlockToMine and that one uses the internal mainchainView
+     * Hence, mainchainView must be updated to reflect the new mainchain status.
+     * Note. This method is NOT intended to be used in any part of the mining flow and
+     * is only here to be consumed from SnapshotManager.
      *
-     * @param newBlockParent         the new block parent.
+     * @param blockToMineOnTopOf     parent of the block to be built.
      * @param createCompetitiveBlock used for testing.
      */
     @Override
-    public void buildBlockToMine(@Nonnull Block newBlockParent, boolean createCompetitiveBlock) {
+    public void buildBlockToMine(@Nonnull Block blockToMineOnTopOf, boolean createCompetitiveBlock) {
+        mainchainView.addBestBlock(blockToMineOnTopOf);
+        buildBlockToMine(createCompetitiveBlock);
+    }
+
+    /**
+     * buildBlockToMine creates a block to mine using the current best block as parent.
+     * best block is obtained from a blockchain view that has the latest mainchain blocks.
+     *
+     * @param createCompetitiveBlock used for testing.
+     */
+    @Override
+    public void buildBlockToMine(boolean createCompetitiveBlock) {
+        List<Block> mainchainBlocks = mainchainView.get();
+        Block newBlockParent = mainchainView.getBestBlock();
         // See BlockChainImpl.calclBloom() if blocks has txs
         if (createCompetitiveBlock) {
-            // Just for testing, mine on top of bestblock's parent
-            newBlockParent = blockchain.getBlockByHash(newBlockParent.getParentHash().getBytes());
+            // Just for testing, mine on top of best block's parent
+            newBlockParent = mainchainBlocks.get(1);
         }
 
         logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
 
-        final Block newBlock = builder.build(newBlockParent, extraData);
+        final Block newBlock = builder.build(mainchainBlocks, extraData);
         clock.clearIncreaseTime();
 
         synchronized (lock) {
@@ -451,31 +470,23 @@ public class MinerServerImpl implements MinerServer {
     class NewBlockListener extends EthereumListenerAdapter {
 
         @Override
-        /**
-         * onBlock checks if we have to mine over a new block. (Only if the blockchain's best block changed).
-         * This method will be called on every block added to the blockchain, even if it doesn't go to the best chain.
-         * TODO(???): It would be cleaner to just send this when the blockchain's best block changes.
-         * **/
         // This event executes in the thread context of the caller.
         // In case of private miner, it's the "Private Mining timer" task
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
+        public void onBestBlock(Block newBestBlock, List<TransactionReceipt> receipts) {
             if (isSyncing()) {
                 return;
             }
 
-            logger.trace("Start onBlock");
-            Block bestBlock = blockchain.getBestBlock();
-            MinerWork work = currentWork;
-            String bestBlockHash = bestBlock.getHashJsonString();
+            logger.trace("Start onBestBlock");
 
-            if (!work.getParentBlockHash().equals(bestBlockHash)) {
-                logger.debug("There is a new best block: {}, number: {}", bestBlock.getShortHashForMergedMining(), bestBlock.getNumber());
-                buildBlockToMine(bestBlock, false);
-            } else {
-                logger.debug("New block arrived but there is no need to build a new block to mine: {}", block.getShortHashForMergedMining());
-            }
+            logger.debug(
+                    "There is a new best block: {}, number: {}",
+                    newBestBlock.getShortHashForMergedMining(),
+                    newBestBlock.getNumber());
+            mainchainView.addBestBlock(newBestBlock);
+            buildBlockToMine(false);
 
-            logger.trace("End onBlock");
+            logger.trace("End onBestBlock");
         }
 
         private boolean isSyncing() {
@@ -489,9 +500,8 @@ public class MinerServerImpl implements MinerServer {
     private class RefreshBlock extends TimerTask {
         @Override
         public void run() {
-            Block bestBlock = blockchain.getBestBlock();
             try {
-                buildBlockToMine(bestBlock, false);
+                buildBlockToMine(false);
             } catch (Throwable th) {
                 logger.error("Unexpected error: {}", th);
                 panicProcessor.panic("mserror", th.getMessage());

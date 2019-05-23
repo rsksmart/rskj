@@ -8,6 +8,7 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -37,11 +38,10 @@ import static org.mockito.Mockito.when;
  * Created by SerAdmin on 1/3/2018.
  */
 public class MainNetMinerTest {
-    private Blockchain blockchain;
-
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
     private TestSystemProperties config;
+    private MiningMainchainView mainchainView;
     private TransactionPool transactionPool;
     private BlockStore blockStore;
     private NodeBlockProcessor blockProcessor;
@@ -63,7 +63,7 @@ public class MainNetMinerTest {
                 return genesis;
             }
         };
-        blockchain = factory.getBlockchain();
+        mainchainView = factory.getMiningMainchainView();
         transactionPool = factory.getTransactionPool();
         blockStore = factory.getBlockStore();
         blockProcessor = factory.getNodeBlockProcessor();
@@ -92,7 +92,7 @@ public class MainNetMinerTest {
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
-                this.blockchain,
+                mainchainView,
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 blockToMineBuilder(),
@@ -139,7 +139,7 @@ public class MainNetMinerTest {
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 ethereumImpl,
-                this.blockchain,
+                mainchainView,
                 blockProcessor,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 blockToMineBuilder(),

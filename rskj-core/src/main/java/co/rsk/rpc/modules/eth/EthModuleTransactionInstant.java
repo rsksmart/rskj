@@ -66,7 +66,7 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
     }
 
     private void mineTransaction() {
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(false);
         minerClient.mineBlock();
     }
 

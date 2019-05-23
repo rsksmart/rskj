@@ -21,9 +21,7 @@ package co.rsk;
 import co.rsk.cli.CliArgs;
 import co.rsk.config.*;
 import co.rsk.core.*;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.BlockValidatorImpl;
-import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
@@ -131,6 +129,7 @@ public class RskContext implements NodeBootstrapper {
 
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
+    private MiningMainchainView miningMainchainView;
     private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
     private org.ethereum.db.BlockStore blockStore;
@@ -230,6 +229,16 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return blockchain;
+    }
+
+    public MiningMainchainView getMiningMainchainView() {
+        if (miningMainchainView == null) {
+            miningMainchainView = new MiningMainchainViewImpl(
+                    getBlockchain(),
+                    MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION);
+        }
+
+        return miningMainchainView;
     }
 
     public BlockFactory getBlockFactory() {
@@ -567,7 +576,7 @@ public class RskContext implements NodeBootstrapper {
             minerServer = new MinerServerImpl(
                     getRskSystemProperties(),
                     getRsk(),
-                    getBlockchain(),
+                    getMiningMainchainView(),
                     getNodeBlockProcessor(),
                     getProofOfWorkRule(),
                     getBlockToMineBuilder(),
@@ -1300,7 +1309,7 @@ public class RskContext implements NodeBootstrapper {
     private ExecutionBlockRetriever getExecutionBlockRetriever() {
         if (executionBlockRetriever == null) {
             executionBlockRetriever = new ExecutionBlockRetriever(
-                    getBlockchain(),
+                    getMiningMainchainView(),
                     getMinerServer(),
                     getBlockToMineBuilder()
             );

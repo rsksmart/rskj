@@ -927,7 +927,7 @@ public class Web3Impl implements Web3 {
         // TODO(mc): this is a quick solution that seems to work with OpenZeppelin tests, but needs to be reviewed
         // We do the same as in Ganache: mine a block in each request to getFilterChanges so block filters work
         if (config.isMinerClientEnabled() && config.minerClientAutoMine()) {
-            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            minerServer.buildBlockToMine(false);
             minerClient.mineBlock();
         }
 

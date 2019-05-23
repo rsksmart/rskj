@@ -23,6 +23,7 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -54,12 +55,14 @@ public class Web3ImplSnapshotTest {
     private static final TestSystemProperties config = new TestSystemProperties();
     private RskTestFactory factory;
     private Blockchain blockchain;
+    private MiningMainchainView mainchainView;
     private BlockFactory blockFactory;
 
     @Before
     public void setUp() {
         factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
+        mainchainView = factory.getMiningMainchainView();
         blockFactory = factory.getBlockFactory();
     }
 
@@ -201,7 +204,7 @@ public class Web3ImplSnapshotTest {
         return new MinerServerImpl(
                 config,
                 ethereum,
-                blockchain,
+                mainchainView,
                 factory.getNodeBlockProcessor(),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(

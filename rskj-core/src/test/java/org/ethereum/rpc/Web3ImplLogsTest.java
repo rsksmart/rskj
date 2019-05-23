@@ -23,7 +23,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
+import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.logfilter.BlocksBloomStore;
+import co.rsk.core.bc.MainchainView;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -87,6 +89,7 @@ public class Web3ImplLogsTest {
     private final static String GET_VALUE_METHOD_SIGNATURE = "20965255";
     private final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockChain;
+    private MiningMainchainView mainchainView;
     private TransactionPool transactionPool;
     private Rsk eth;
     private ReceiptStore receiptStore;
@@ -99,6 +102,7 @@ public class Web3ImplLogsTest {
     public void setUp() {
         RskTestFactory factory = new RskTestFactory();
         blockChain = factory.getBlockchain();
+        mainchainView = factory.getMiningMainchainView();
         transactionPool = factory.getTransactionPool();
         eth = factory.getRsk();
         receiptStore = factory.getReceiptStore();
@@ -943,7 +947,7 @@ public class Web3ImplLogsTest {
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockChain,
-                null, new ExecutionBlockRetriever(blockChain, null, null),
+                null, new ExecutionBlockRetriever(mainchainView, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);

@@ -23,7 +23,9 @@ import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
+import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
+import co.rsk.core.bc.MainchainView;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -57,6 +59,7 @@ public class Web3RskImplTest {
     public void web3_ext_dumpState() throws Exception {
         Rsk rsk = Mockito.mock(Rsk.class);
         Blockchain blockchain = Mockito.mock(Blockchain.class);
+        MiningMainchainView mainchainView = Mockito.mock(MiningMainchainView.class);
 
         NetworkStateExporter networkStateExporter = Mockito.mock(NetworkStateExporter.class);
         Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
@@ -76,7 +79,7 @@ public class Web3RskImplTest {
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
-                null, new ExecutionBlockRetriever(blockchain, null, null),
+                null, new ExecutionBlockRetriever(mainchainView, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null
         );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
