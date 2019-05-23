@@ -75,8 +75,10 @@ public class Genesis extends Block {
                         parentHash, unclesHash, new RskAddress(coinbase), ByteUtils.clone(EMPTY_TRIE_HASH),
                         ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH), logsBloom, RLP.parseBlockDifficulty(difficulty),
                         number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData, Coin.ZERO,
-                        bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
-                        RLP.parseSignedCoinNonNullZero(minimumGasPrice), 0, false, useRskip92Encoding) {
+                        bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                        bitcoinMergedMiningCoinbaseTransaction, new byte[0],
+                        RLP.parseSignedCoinNonNullZero(minimumGasPrice), 0, false,
+                        useRskip92Encoding, false) {
 
                     @Override
                     protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {

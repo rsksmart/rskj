@@ -24,7 +24,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import org.bouncycastle.util.BigIntegers;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
@@ -42,6 +41,8 @@ import static org.ethereum.util.ByteUtil.toHexString;
  */
 public class BlockHeader {
 
+    private static final int HASH_FOR_MERGED_MINING_PREFIX_LENGTH = 20;
+    private static final int FORK_DETECTION_DATA_LENGTH = 12;
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
     private byte[] parentHash;
@@ -94,6 +95,9 @@ public class BlockHeader {
     private byte[] bitcoinMergedMiningMerkleProof;
     /* The bitcoin protobuf serialized coinbase tx for merged mining */
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
+
+    private byte[] miningForkDetectionData;
+
     /**
      * The mgp for a tx to be included in the block.
      */
@@ -106,12 +110,16 @@ public class BlockHeader {
     /* Indicates if the block was mined according to RSKIP-92 rules */
     private boolean useRskip92Encoding;
 
+    /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
+    private boolean includeForkDetectionData;
+
     public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                       byte[] bitcoinMergedMiningCoinbaseTransaction,
-                       Coin minimumGasPrice, int uncleCount, boolean sealed, boolean useRskip92Encoding) {
+                       byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
+                       Coin minimumGasPrice, int uncleCount, boolean sealed,
+                       boolean useRskip92Encoding, boolean includeForkDetectionData) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -131,8 +139,10 @@ public class BlockHeader {
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
+        this.miningForkDetectionData = mergedMiningForkDetectionData;
         this.sealed = sealed;
         this.useRskip92Encoding = useRskip92Encoding;
+        this.includeForkDetectionData = includeForkDetectionData;
     }
 
     @VisibleForTesting
@@ -340,6 +350,10 @@ public class BlockHeader {
             }
         }
 
+        if (shouldForkDetectionDataBeAdded(includeForkDetectionData, miningForkDetectionData)) {
+            byte[] encodedMiningForkDetectionData = RLP.encodeElement(miningForkDetectionData);
+            fieldToEncodeList.add(encodedMiningForkDetectionData);
+        }
 
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
@@ -460,7 +474,18 @@ public class BlockHeader {
     }
 
     public byte[] getHashForMergedMining() {
-        return HashUtil.keccak256(getEncoded(false, false));
+        byte[] encodedBlock = getEncoded(false, false);
+        byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
+        if (shouldForkDetectionDataBeAdded(includeForkDetectionData, miningForkDetectionData)) {
+            System.arraycopy(
+                    miningForkDetectionData,
+                    0,
+                    hashForMergedMining,
+                    HASH_FOR_MERGED_MINING_PREFIX_LENGTH,
+                    FORK_DETECTION_DATA_LENGTH);
+        }
+
+        return hashForMergedMining;
     }
 
     public String getShortHash() {
@@ -471,7 +496,18 @@ public class BlockHeader {
         return HashUtil.shortHash(getParentHash().getBytes());
     }
 
-    private static BigInteger parseBigInteger(byte[] bytes) {
-        return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
+    public byte[] getMiningForkDetectionData() {
+        return miningForkDetectionData;
+    }
+
+    /**
+     *  forkDetectionData inclusion depends on hard fork activation height and blockchain height.
+     *  mainnet will have it on since a block with height > 449 so the data will always exist.
+     *  other networks will have it on since the first block after genesis so the value will not exist for
+     *  the fist 449 blocks and that explains the existence check.
+     *  note. read class ForkDetectionDataCalculator or RSKIP-110 to understand why 449.
+    */
+    private boolean shouldForkDetectionDataBeAdded(boolean includeForkDetectionData, byte[] miningForkDetectionData) {
+        return includeForkDetectionData && miningForkDetectionData.length > 0;
     }
 }
