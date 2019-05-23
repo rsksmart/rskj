@@ -138,6 +138,7 @@ public class RskContext implements NodeBootstrapper {
     private Genesis genesis;
     private CompositeEthereumListener compositeEthereumListener;
     private DifficultyCalculator difficultyCalculator;
+    private ForkDetectionDataCalculator forkDetectionDataCalculator;
     private ProofOfWorkRule proofOfWorkRule;
     private BlockParentDependantValidationRule blockParentDependantValidationRule;
     private BlockValidationRule blockValidationRule;
@@ -979,6 +980,14 @@ public class RskContext implements NodeBootstrapper {
         return blockParentDependantValidationRule;
     }
 
+    private ForkDetectionDataCalculator getForkDetectionDataCalculator() {
+        if (forkDetectionDataCalculator == null) {
+            forkDetectionDataCalculator = new ForkDetectionDataCalculator();
+        }
+
+        return forkDetectionDataCalculator;
+    }
+
     private ProofOfWorkRule getProofOfWorkRule() {
         if (proofOfWorkRule == null) {
             proofOfWorkRule = new ProofOfWorkRule(getRskSystemProperties());
@@ -1010,6 +1019,7 @@ public class RskContext implements NodeBootstrapper {
                     getTransactionPool(),
                     getDifficultyCalculator(),
                     getGasLimitCalculator(),
+                    getForkDetectionDataCalculator(),
                     getMinerServerBlockValidationRule(),
                     getMinerClock(),
                     getBlockFactory(),

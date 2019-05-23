@@ -1275,7 +1275,7 @@ public class Program {
                             ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
                             ByteUtils.clone(EMPTY_TRIE_HASH), EMPTY_BYTE_ARRAY, getDifficulty().getData(),
                             getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
-                            EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
+                            EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, null, 0
                     ),
                     Collections.emptyList(),
                     Collections.emptyList()

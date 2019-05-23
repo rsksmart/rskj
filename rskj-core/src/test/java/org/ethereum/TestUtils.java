@@ -126,7 +126,7 @@ public final class TestUtils {
                             HashUtil.randomHash(), EMPTY_TRIE_HASH, null,
                             null, difficutly, lastIndex,
                             new byte[] {0}, 0, 0, null, Coin.ZERO,
-                            null, null, null, null, 0
+                            null, null, null, null, null, 0
                     ),
                     Collections.emptyList(),
                     Collections.emptyList()

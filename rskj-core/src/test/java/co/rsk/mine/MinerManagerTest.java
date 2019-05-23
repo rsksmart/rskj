@@ -294,6 +294,7 @@ public class MinerManagerTest {
                         transactionPool,
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
+                        new ForkDetectionDataCalculator(),
                         new BlockValidationRuleDummy(),
                         clock,
                         blockFactory,

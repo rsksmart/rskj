@@ -301,6 +301,7 @@ public class TransactionModuleTest {
                         transactionPool,
                         new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                         new GasLimitCalculator(config.getNetworkConstants()),
+                        new ForkDetectionDataCalculator(),
                         Mockito.mock(BlockUnclesValidationRule.class),
                         minerClock,
                         blockFactory,
