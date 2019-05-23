@@ -34,6 +34,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -56,7 +57,7 @@ public class BlockFactoryTest {
     @Test
     public void newHeaderWithNoForkDetectionDataAndRskip110On() {
         long number = 20L;
-        enableRulesAt(number, RSKIP92);
+        enableRulesAt(number, RSKIP92, RSKIP110);
 
         BlockHeader header = createBlockHeader(number, new byte[0]);
 
@@ -72,7 +73,7 @@ public class BlockFactoryTest {
     @Test
     public void decodeWithNoForkDetectionDataAndRskip110On() {
         long number = 20L;
-        enableRulesAt(number, RSKIP92);
+        enableRulesAt(number, RSKIP92, RSKIP110);
 
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0]);
 
@@ -129,7 +130,7 @@ public class BlockFactoryTest {
     @Test
     public void decodeWithForkDetectionDataAndRskip110On() {
         long number = 20L;
-        enableRulesAt(number, RSKIP92);
+        enableRulesAt(number, RSKIP92, RSKIP110);
 
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData);
@@ -168,7 +169,7 @@ public class BlockFactoryTest {
     @Test
     public void decodeWithNoMergedMiningDataAndRskip110OnAndForkDetectionData() {
         long number = 20L;
-        enableRulesAt(number, RSKIP92);
+        enableRulesAt(number, RSKIP92, RSKIP110);
 
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
         BlockHeader header = createBlockHeader(number, forkDetectionData);
