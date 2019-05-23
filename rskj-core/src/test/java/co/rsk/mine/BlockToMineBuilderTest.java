@@ -67,7 +67,7 @@ public class BlockToMineBuilderTest {
         StateRootHandler stateRootHandler = mock(StateRootHandler.class);
         MiningConfig miningConfig = mock(MiningConfig.class);
         DifficultyCalculator difficultyCalculator = mock(DifficultyCalculator.class);
-        MinimumGasPriceCalculator mininumGasPriceCalculator = mock(MinimumGasPriceCalculator.class);
+        MinimumGasPriceCalculator minimumGasPriceCalculator = mock(MinimumGasPriceCalculator.class);
         MinerUtils minerUtils = mock(MinerUtils.class);
 
         blockBuilder = new BlockToMineBuilder(
@@ -82,7 +82,7 @@ public class BlockToMineBuilderTest {
                 mock(MinerClock.class),
                 new BlockFactory(ActivationConfigsForTest.all()),
                 mock(BlockExecutor.class),
-                mininumGasPriceCalculator,
+                minimumGasPriceCalculator,
                 minerUtils
         );
 
@@ -93,7 +93,7 @@ public class BlockToMineBuilderTest {
         when(minerUtils.getAllTransactions(any())).thenReturn(new ArrayList<>());
         when(minerUtils.filterTransactions(any(), any(), any(), any(), any())).thenReturn(new ArrayList<>());
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
-        when(mininumGasPriceCalculator.calculate(any())).thenReturn(mock(Coin.class));
+        when(minimumGasPriceCalculator.calculate(any())).thenReturn(mock(Coin.class));
         when(stateRootHandler.translate(any())).thenReturn(TestUtils.randomHash());
         when(miningConfig.getGasLimit()).thenReturn(gasLimitConfig);
         when(miningConfig.getUncleListLimit()).thenReturn(10);
@@ -107,7 +107,7 @@ public class BlockToMineBuilderTest {
 
         when(validationRules.isValid(any())).thenReturn(false);
 
-        Block nextBLock = blockBuilder.build(parent, new byte[0]);
+        Block nextBLock = blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
 
         assertThat(nextBLock.getUncleList(), empty());
     }
@@ -118,7 +118,7 @@ public class BlockToMineBuilderTest {
 
         when(validationRules.isValid(any())).thenReturn(true);
 
-        Block nextBLock = blockBuilder.build(parent, new byte[0]);
+        Block nextBLock = blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
 
         assertThat(nextBLock.getUncleList(), hasSize(1));
     }

@@ -18,14 +18,13 @@
 
 package co.rsk.mine;
 
-import org.ethereum.core.Blockchain;
 
 /**
  * Created by ajlopez on 15/04/2017.
  */
 public class MinerManager {
-    public void mineBlock(Blockchain blockchain, MinerClient minerClient, MinerServer minerServer) {
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+    public void mineBlock(MinerClient minerClient, MinerServer minerServer) {
+        minerServer.buildBlockToMine(false);
         minerClient.mineBlock();
     }
 }

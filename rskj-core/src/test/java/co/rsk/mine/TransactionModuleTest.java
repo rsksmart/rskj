@@ -22,9 +22,7 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
-import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.rpc.ExecutionBlockRetriever;
@@ -71,7 +69,6 @@ import java.time.Clock;
 import java.util.HashMap;
 
 public class TransactionModuleTest {
-    Wallet wallet;
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private TransactionExecutorFactory transactionExecutorFactory;
@@ -133,16 +130,22 @@ public class TransactionModuleTest {
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
+        MiningMainchainView mainchainView = new MiningMainchainViewImpl(blockchain, 1);
+
         Repository repository = blockchain.getRepository();
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repository, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, true);
+        Web3Impl web3 = createEnvironment(blockchain, mainchainView, receiptStore, repository, transactionPool, blockStore, true);
 
         for (int i = 1; i < 100; i++) {
             String tx = sendTransaction(web3, repository);
+            // The goal of this test is transaction testing and not block mining testing
+            // Hence, there is no setup for listeners and best blocks must be added manually
+            // to mainchain view object that is used by miner server to build new blocks.
+            mainchainView.addBestBlock(blockchain.getBestBlock());
             Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, tx);
             repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
             Assert.assertEquals(i, blockchain.getBestBlock().getNumber());
@@ -256,7 +259,22 @@ public class TransactionModuleTest {
         return args;
     }
 
-    private Web3Impl createEnvironment(BlockChainImpl blockchain, ReceiptStore receiptStore, Repository repository, TransactionPool transactionPool, BlockStore blockStore, boolean mineInstant) {
+    private Web3Impl createEnvironment(Blockchain blockchain,
+                                       ReceiptStore receiptStore,
+                                       Repository repository,
+                                       TransactionPool transactionPool,
+                                       BlockStore blockStore,
+                                       boolean mineInstant) {
+        return createEnvironment(blockchain,
+                new MiningMainchainViewImpl(blockchain, 1),
+                receiptStore,
+                repository,
+                transactionPool,
+                blockStore,
+                mineInstant);
+    }
+
+    private Web3Impl createEnvironment(Blockchain blockchain, MiningMainchainView mainchainView, ReceiptStore receiptStore, Repository repository, TransactionPool transactionPool, BlockStore blockStore, boolean mineInstant) {
 
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
         CompositeEthereumListener compositeEthereumListener = new CompositeEthereumListener();
@@ -275,7 +293,7 @@ public class TransactionModuleTest {
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 eth,
-                blockchain,
+                mainchainView,
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
@@ -303,7 +321,7 @@ public class TransactionModuleTest {
                 miningConfig
         );
 
-        wallet = WalletFactory.createWallet();
+        Wallet wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
         MinerClient minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
         EthModuleTransaction transactionModule;
@@ -321,7 +339,7 @@ public class TransactionModuleTest {
 
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
-                reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null),
+                reversibleTransactionExecutor1, new ExecutionBlockRetriever(mainchainView, null, null),
                 repositoryLocator, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);

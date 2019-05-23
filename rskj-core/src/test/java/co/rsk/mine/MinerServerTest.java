@@ -27,6 +27,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.remasc.RemascTransaction;
@@ -63,7 +64,7 @@ import static org.mockito.Mockito.when;
 public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     private final DifficultyCalculator difficultyCalculator;
-    private Blockchain blockchain;
+    private MiningMainchainView blockchain;
     private Repository repository;
     private RepositoryLocator repositoryLocator;
     private BlockStore blockStore;
@@ -86,7 +87,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 return Mockito.spy(super.buildRepository());
             }
         };
-        blockchain = factory.getBlockchain();
+        blockchain = factory.getMiningMainchainView();
         repository = factory.getRepository();
         repositoryLocator = factory.getRepositoryLocator();
         blockStore = factory.getBlockStore();
@@ -150,7 +151,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ConfigUtils.getDefaultMiningConfig()
         );
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(false);
         Block blockAtHeightOne = minerServer.getBlocksWaitingforPoW().entrySet().iterator().next().getValue();
 
         List<Transaction> blockTransactions = blockAtHeightOne.getTransactionsList();
@@ -199,11 +200,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         minerServer.setExtraData(extraData);
         minerServer.start();
         MinerWork work = minerServer.getWork();
-        Block bestBlock = blockchain.getBestBlock();
 
         extraData = ByteBuffer.allocate(4).putInt(2).array();
         minerServer.setExtraData(extraData);
-        minerServer.buildBlockToMine(bestBlock, false);
+        minerServer.buildBlockToMine(false);
         MinerWork work2 = minerServer.getWork(); // only the tag is used
         Assert.assertNotEquals(work2.getBlockHashForMergedMining(),work.getBlockHashForMergedMining());
 
@@ -737,7 +737,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         String hashForMergedMining = work.getBlockHashForMergedMining();
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(false);
 
         work = minerServer.getWork();
         assertEquals(hashForMergedMining, work.getBlockHashForMergedMining());

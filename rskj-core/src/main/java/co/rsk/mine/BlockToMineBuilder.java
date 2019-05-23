@@ -96,12 +96,13 @@ public class BlockToMineBuilder {
     }
 
     /**
-     * build creates a block to mine based on the given block as parent.
+     * Creates a new block to mine based on the previous mainchain blocks.
      *
-     * @param newBlockParent the new block parent.
-     * @param extraData      extra data to pass to the block being built
+     * @param mainchain last best chain blocks where 0 index is the best block and so on.
+     * @param extraData extra data to pass to the block being built.
      */
-    public Block build(Block newBlockParent, byte[] extraData) {
+    public Block build(List<Block> mainchain, byte[] extraData) {
+        Block newBlockParent = mainchain.get(0);
         List<BlockHeader> uncles = FamilyUtils.getUnclesHeaders(
                 blockStore,
                 newBlockParent.getNumber() + 1,
@@ -118,7 +119,7 @@ public class BlockToMineBuilder {
 
         final List<Transaction> txsToRemove = new ArrayList<>();
         final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
-        final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice, extraData);
+        final Block newBlock = createBlock(mainchain, uncles, txs, minimumGasPrice, extraData);
 
         removePendingTransactions(txsToRemove);
         executor.executeAndFill(newBlock, newBlockParent.getHeader());
@@ -145,12 +146,12 @@ public class BlockToMineBuilder {
     }
 
     private Block createBlock(
-            Block newBlockParent,
+            List<Block> mainchain,
             List<BlockHeader> uncles,
             List<Transaction> txs,
             Coin minimumGasPrice,
             byte[] extraData) {
-        BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice, extraData);
+        BlockHeader newHeader = createHeader(mainchain, uncles, txs, minimumGasPrice, extraData);
         Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, false);
 
         // TODO(nacho): The validation rules should accept a list of uncles and we should never build invalid blocks.
@@ -162,18 +163,19 @@ public class BlockToMineBuilder {
         // log the panic, and create again the block without uncles to avoid fail abruptly.
         panicProcessor.panic("buildBlock", "some validation failed trying to create a new block");
 
-        newHeader = createHeader(newBlockParent, Collections.emptyList(), txs, minimumGasPrice, extraData);
+        newHeader = createHeader(mainchain, Collections.emptyList(), txs, minimumGasPrice, extraData);
         return blockFactory.newBlock(newHeader, txs, Collections.emptyList(), false);
     }
 
     private BlockHeader createHeader(
-            Block newBlockParent,
+            List<Block> mainchain,
             List<BlockHeader> uncles,
             List<Transaction> txs,
             Coin minimumGasPrice,
             byte[] extraData) {
         final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
+        Block newBlockParent = mainchain.get(0);
         final long timestampSeconds = clock.calculateTimestampForChild(newBlockParent);
 
         // Set gas limit before executing block

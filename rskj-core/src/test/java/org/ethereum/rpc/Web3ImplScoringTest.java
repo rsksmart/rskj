@@ -21,6 +21,8 @@ package org.ethereum.rpc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
+import co.rsk.core.bc.MiningMainchainViewImpl;
+import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.net.NodeID;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
@@ -352,13 +354,14 @@ public class Web3ImplScoringTest {
 
         World world = new World();
         rsk.blockchain = world.getBlockChain();
+        MiningMainchainView blockchain = new MiningMainchainViewImpl(world.getBlockChain(), 2);
 
         Wallet wallet = WalletFactory.createWallet();
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), world.getBlockChain(),
-                null, new ExecutionBlockRetriever(world.getBlockChain(), null, null),
+                null, new ExecutionBlockRetriever(blockchain, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null
         );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());

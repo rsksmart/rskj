@@ -18,14 +18,15 @@
 
 package co.rsk.rpc;
 
+import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.util.Utils;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -36,22 +37,24 @@ public class ExecutionBlockRetriever {
     private static final String LATEST_ID = "latest";
     private static final String PENDING_ID = "pending";
 
-    private final Blockchain blockchain;
+    private final MiningMainchainView miningMainchainView;
     private final MinerServer minerServer;
     private final BlockToMineBuilder builder;
 
     @Nullable
     private Block cachedBlock;
 
-    public ExecutionBlockRetriever(Blockchain blockchain, MinerServer minerServer, BlockToMineBuilder builder) {
-        this.blockchain = blockchain;
+    public ExecutionBlockRetriever(MiningMainchainView miningMainchainView,
+                                   MinerServer minerServer,
+                                   BlockToMineBuilder builder) {
+        this.miningMainchainView = miningMainchainView;
         this.minerServer = minerServer;
         this.builder = builder;
     }
 
     public Block getExecutionBlock(String bnOrId) {
         if (LATEST_ID.equals(bnOrId)) {
-            return blockchain.getBestBlock();
+            return miningMainchainView.getBestBlock();
         }
 
         if (PENDING_ID.equals(bnOrId)) {
@@ -60,9 +63,10 @@ public class ExecutionBlockRetriever {
                 return latestBlock.get();
             }
 
-            Block bestBlock = blockchain.getBestBlock();
+            Block bestBlock = miningMainchainView.getBestBlock();
             if (cachedBlock == null || !bestBlock.isParentOf(cachedBlock)) {
-                cachedBlock = builder.build(bestBlock, null);
+                List<Block> mainchainBlocks = miningMainchainView.get();
+                cachedBlock = builder.build(mainchainBlocks, null);
             }
 
             return cachedBlock;
@@ -78,7 +82,7 @@ public class ExecutionBlockRetriever {
         }
 
         if (executionBlockNumber.isPresent()) {
-            Block executionBlock = blockchain.getBlockByNumber(executionBlockNumber.get());
+            Block executionBlock = miningMainchainView.getBlockByNumber(executionBlockNumber.get());
             if (executionBlock == null) {
                 throw new JsonRpcInvalidParamException(String.format("Invalid block number %d", executionBlockNumber.get()));
             }
