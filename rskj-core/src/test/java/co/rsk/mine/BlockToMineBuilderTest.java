@@ -78,6 +78,7 @@ public class BlockToMineBuilderTest {
                 mock(TransactionPool.class),
                 difficultyCalculator,
                 new GasLimitCalculator(Constants.mainnet()),
+                new ForkDetectionDataCalculator(),
                 validationRules,
                 mock(MinerClock.class),
                 new BlockFactory(ActivationConfigsForTest.all()),
@@ -150,8 +151,8 @@ public class BlockToMineBuilderTest {
                 EMPTY_TRIE_HASH, null, EMPTY_TRIE_HASH,
                 new Bloom().getData(), BlockDifficulty.ZERO, 1L,
                 EMPTY_BYTE_ARRAY, 0L, 0L, EMPTY_BYTE_ARRAY, Coin.ZERO,
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
-                Coin.ZERO, 0, false, true
+                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
+                Coin.ZERO, 0, false, true, false
         );
     }
 }

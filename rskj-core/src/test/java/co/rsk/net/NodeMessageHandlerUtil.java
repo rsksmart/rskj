@@ -2,6 +2,7 @@ package co.rsk.net;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
@@ -32,7 +33,7 @@ public class NodeMessageHandlerUtil {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(),
+                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(),
                 RskMockFactory.getChannelManager(), syncConfiguration, blockFactory, new DummyBlockValidationRule(),
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 DIFFICULTY_CALCULATOR
@@ -73,7 +74,7 @@ public class NodeMessageHandlerUtil {
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockFactory,
+                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockFactory,
                 blockValidationRule, new BlockCompositeRule(new BlockUnclesHashValidationRule(),
                 new BlockRootValidationRule(config.getActivationConfig())), DIFFICULTY_CALCULATOR
         );

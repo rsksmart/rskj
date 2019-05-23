@@ -131,6 +131,7 @@ public class RskContext implements NodeBootstrapper {
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
     private MiningMainchainView miningMainchainView;
+    private ConsensusValidationMainchainView consensusValidationMainchainView;
     private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
     private org.ethereum.db.BlockStore blockStore;
@@ -141,6 +142,7 @@ public class RskContext implements NodeBootstrapper {
     private DifficultyCalculator difficultyCalculator;
     private ForkDetectionDataCalculator forkDetectionDataCalculator;
     private ProofOfWorkRule proofOfWorkRule;
+    private ForkDetectionDataRule forkDetectionDataRule;
     private BlockParentDependantValidationRule blockParentDependantValidationRule;
     private BlockValidationRule blockValidationRule;
     private BlockValidationRule minerServerBlockValidationRule;
@@ -242,6 +244,14 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return miningMainchainView;
+    }
+
+    public ConsensusValidationMainchainView getConsensusValidationMainchainView() {
+        if (consensusValidationMainchainView == null) {
+            consensusValidationMainchainView = new ConsensusValidationMainchainViewImpl(getBlockStore());
+        }
+
+        return consensusValidationMainchainView;
     }
 
     public BlockFactory getBlockFactory() {
@@ -912,6 +922,7 @@ public class RskContext implements NodeBootstrapper {
                             commonConstants.getUncleGenerationLimit(),
                             new BlockHeaderCompositeRule(
                                     getProofOfWorkRule(),
+                                    getForkDetectionDataRule(),
                                     blockTimeStampValidationRule,
                                     new ValidGasUsedRule()
                             ),
@@ -1002,6 +1013,19 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return proofOfWorkRule;
+    }
+
+    private ForkDetectionDataRule getForkDetectionDataRule() {
+        if (forkDetectionDataRule == null) {
+            forkDetectionDataRule = new ForkDetectionDataRule(
+                    getRskSystemProperties().getActivationConfig(),
+                    getConsensusValidationMainchainView(),
+                    getForkDetectionDataCalculator(),
+                    MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION
+            );
+        }
+
+        return forkDetectionDataRule;
     }
 
     private DifficultyCalculator getDifficultyCalculator() {
@@ -1137,6 +1161,7 @@ public class RskContext implements NodeBootstrapper {
         if (syncProcessor == null) {
             syncProcessor = new SyncProcessor(
                     getBlockchain(),
+                    getConsensusValidationMainchainView(),
                     getBlockSyncService(),
                     getPeerScoringManager(),
                     getChannelManager(),
