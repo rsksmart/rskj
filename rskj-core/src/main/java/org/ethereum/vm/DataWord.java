@@ -57,7 +57,7 @@ public final class DataWord implements Comparable<DataWord> {
     /**
      * Use this constructor for internal operations that don't need copying
      */
-    private DataWord(byte[] data) {
+    public DataWord(byte[] data) {
         if (data.length != BYTES) {
             throw new IllegalArgumentException(String.format("A DataWord must be %d bytes long", BYTES));
         }

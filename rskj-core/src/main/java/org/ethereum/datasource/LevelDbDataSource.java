@@ -304,6 +304,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 logger.error("Error, retrying one more time...", e);
                 // try one more time
                 try {
+                    //TODO: 10 100 1000 10000
                     updateBatchInternal(rows, deleteKeys);
                     if (logger.isTraceEnabled()) {
                         logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
