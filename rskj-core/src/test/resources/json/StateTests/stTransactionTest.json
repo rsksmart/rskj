@@ -252,7 +252,7 @@
             "f1ecf98489fa9ed60a664fc4998db699cfa39d40" : {
                 "balance" : "0x00",
                 "code" : "0x",
-                "nonce" : "0x00",
+                "nonce" : "0x01",
                 "storage" : {
                     "0x00" : "0x0c"
                 }

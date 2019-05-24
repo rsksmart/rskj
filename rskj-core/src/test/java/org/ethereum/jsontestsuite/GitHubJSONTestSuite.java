@@ -255,6 +255,9 @@ public class GitHubJSONTestSuite {
         }
 
         Set<String> testNames = stateTestSuite.getTestCases().keySet();
+
+        HashMap<String,List<String>> results = new HashMap<>();
+
         int ignores = 0;
         for (String testName : testNames){
 
@@ -271,6 +274,7 @@ public class GitHubJSONTestSuite {
             logger.info(line);
 
             List<String> result = StateTestRunner.run(testCases.get(testName));
+            results.put(testName,result);
 
 
             if (!result.isEmpty()) {
@@ -296,7 +300,9 @@ public class GitHubJSONTestSuite {
 
         logger.info(" - Total: Pass: {}, Failed: {} - Ignore: {} -", pass, fails,ignores);
 
-        Assert.assertTrue(fails == 0);
+        for (String testname : results.keySet()) {
+            Assert.assertTrue(testname + " error array not empty: "+results.get(testname), results.get(testname).isEmpty());
+        }
     }
 
 }

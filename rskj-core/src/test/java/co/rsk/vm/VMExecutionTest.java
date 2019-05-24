@@ -96,7 +96,7 @@ public class VMExecutionTest {
 
 
     private void executeShift(String number, String shiftAmount, String expect, String op , ActivationConfig.ForBlock activations){
-        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH1 "+shiftAmount+" "+op, 3, activations);
+        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH1 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -150,7 +150,7 @@ public class VMExecutionTest {
         String op = "SHL";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
+        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -276,7 +276,7 @@ public class VMExecutionTest {
         String op = "SHR";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
+        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -383,7 +383,7 @@ public class VMExecutionTest {
         String op = "SAR";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithBlockchainConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
+        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -396,7 +396,7 @@ public class VMExecutionTest {
     public void testSAR3ShouldFailOnOldVersion() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
-        executeCodeWithBlockchainConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3, activations);
+        executeCodeWithActivationConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3, activations);
     }
 
     @Test(expected = Program.IllegalOperationException.class)
@@ -404,7 +404,7 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
 
-        executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3, activations);
+        executeCodeWithActivationConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3, activations);
     }
 
     @Test(expected = Program.IllegalOperationException.class)
@@ -412,7 +412,7 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
 
-        executeCodeWithBlockchainConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, activations);
+        executeCodeWithActivationConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, activations);
     }
 
     @Test
@@ -672,28 +672,27 @@ public class VMExecutionTest {
     }
 
     private Program executeCode(String code, int nsteps) {
-        return executeCodeWithBlockchainConfig(compiler.compile(code), nsteps, mock(ActivationConfig.ForBlock.class));
+        return executeCodeWithActivationConfig(compiler.compile(code), nsteps, mock(ActivationConfig.ForBlock.class));
     }
 
     private void testCode(byte[] code, int nsteps, String expected) {
-        Program program = executeCodeWithBlockchainConfig(code, nsteps, mock(ActivationConfig.ForBlock.class));
+        Program program = executeCodeWithActivationConfig(code, nsteps, mock(ActivationConfig.ForBlock.class));
 
         assertEquals(expected, Hex.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    private Program executeCodeWithBlockchainConfig(String code, int nsteps, ActivationConfig.ForBlock activations) {
-        return executeCodeWithBlockchainConfig(compiler.compile(code), nsteps, activations);
+    private Program executeCodeWithActivationConfig(String code, int nsteps, ActivationConfig.ForBlock activations) {
+        return executeCodeWithActivationConfig(compiler.compile(code), nsteps, activations);
     }
 
-    private Program executeCodeWithBlockchainConfig(byte[] code, int nsteps, ActivationConfig.ForBlock activations) {
+    private Program executeCodeWithActivationConfig(byte[] code, int nsteps, ActivationConfig.ForBlock activations) {
         VM vm = new VM(vmConfig, precompiledContracts);
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke,null);
 
         for (int k = 0; k < nsteps; k++) {
             vm.step(program);
         }
 
         return program;
-
     }
 }

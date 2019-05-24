@@ -162,7 +162,7 @@
                 "forcedContract": true,
                 "balance" : "0x00",
                 "code" : "0x",
-                "nonce" : "0x00",
+                "nonce" : "0x01",
                 "storage" : {
                 }
             },
