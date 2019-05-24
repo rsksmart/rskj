@@ -1378,6 +1378,36 @@ public class VM {
         program.step();
     }
 
+    protected void doCREATE2(){
+        if (program.isStaticCall()) {
+            throw Program.ExceptionHelper.modificationException();
+        }
+
+        if (computeGas){
+            Long codeSize = stack.get(stack.size() - 3).longValueSafe();
+            gasCost = GasCost.CREATE +
+                    calcMemGas(oldMemSize, memNeeded(stack.get(stack.size() - 2), codeSize), 0) +
+                    (codeSize+31)/32 * GasCost.SHA3_WORD;
+            spendOpCodeGas();
+        }
+
+        DataWord value = program.stackPop();
+        DataWord inOffset = program.stackPop();
+        DataWord inSize = program.stackPop();
+        DataWord salt = program.stackPop();
+
+        if (logger.isInfoEnabled()) {
+            logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
+                    String.format("%-12s", op.name()),
+                    program.getRemainingGas(),
+                    program.getCallDeep(), hint);
+        }
+
+        program.createContract2(value, inOffset, inSize, salt);
+
+        program.step();
+    }
+
     protected void doCALL(){
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
@@ -1840,6 +1870,12 @@ public class VM {
             case OpCodes.OP_JUMPDEST: doJUMPDEST();
             break;
             case OpCodes.OP_CREATE: doCREATE();
+            break;
+            case OpCodes.OP_CREATE2:
+                if (!activations.isActive(RSKIP125)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doCREATE2();
             break;
             case OpCodes.OP_CALL:
             case OpCodes.OP_CALLCODE:

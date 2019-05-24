@@ -63,6 +63,7 @@ import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.util.ByteUtil.toHexString;
 
 /**
  * @author Roman Mandeleil
@@ -417,13 +418,33 @@ public class Program {
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void createContract(DataWord value, DataWord memStart, DataWord memSize) {
+        RskAddress senderAddress = new RskAddress(getOwnerAddress());
 
+        byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
+        byte[] newAddressBytes = HashUtil.calcNewAddr(getOwnerAddress().getLast20Bytes(), nonce);
+        RskAddress newAddress = new RskAddress(newAddressBytes);
+
+        createContract(senderAddress, nonce, value, memStart, memSize, newAddress);
+    }
+
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
+    public void createContract2(DataWord value, DataWord memStart, DataWord memSize, DataWord salt) {
+        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
+
+        byte[] newAddressBytes = HashUtil.calcSaltAddr(senderAddress, programCode, salt.getData());
+        byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
+        RskAddress newAddress = new RskAddress(newAddressBytes);
+
+        createContract(senderAddress, nonce, value, memStart, memSize, newAddress);
+    }
+
+    private void createContract( RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress) {
         if (getCallDeep() == MAX_DEPTH) {
             stackPushZero();
             return;
         }
 
-        RskAddress senderAddress = getOwnerRskAddress();
         Coin endowment = new Coin(value.getData());
         if (isNotCovers(getStorage().getBalance(senderAddress), endowment)) {
             stackPushZero();
@@ -441,10 +462,6 @@ public class Program {
         long gasLimit = getRemainingGas();
         spendGas(gasLimit, "internal call");
 
-        // [2] CREATE THE CONTRACT ADDRESS
-        byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
-        byte[] newAddressBytes = HashUtil.calcNewAddr(getOwnerAddress().getLast20Bytes(), nonce);
-        RskAddress newAddress = new RskAddress(newAddressBytes);
 
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
@@ -461,32 +478,92 @@ public class Program {
         // Start tracking repository changes for the constructor of the contract
         Repository track = getStorage().startTracking();
 
+        ProgramResult programResult = ProgramResult.empty();
+
         //In case of hashing collisions, check for any balance before createAccount()
-        if (track.isExist(newAddress)) {
-            Coin oldBalance = track.getBalance(newAddress);
-            track.createAccount(newAddress);
-            track.addBalance(newAddress, oldBalance);
+        if (track.isExist(contractAddress)) {
+            // Hashing collisions in CREATE are rare, but in CREATE2 are possible
+            // We check for the nonce to non zero and that the code to be not empty
+            // if any of this conditions is true, the contract creation fails
+
+            byte[] code = track.getCode(contractAddress);
+            boolean hasNonEmptyCode = (code != null && code.length != 0);
+            boolean nonZeroNonce = track.getNonce(contractAddress).longValue() != 0;
+
+            if (getActivations().isActive(ConsensusRule.RSKIP125) && (hasNonEmptyCode || nonZeroNonce)) {
+                // Contract collision we fail with exactly the same behavior as would arise if
+                // the first byte in the init code were an invalid opcode
+                programResult.setException(ExceptionHelper.addressCollisionException(contractAddress));
+                if (isLogEnabled) {
+                    logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
+                            contractAddress,
+                            programResult.getException());
+                }
+
+                // The programResult is empty and internalTx was not created so we skip this part
+                /*if (internalTx == null) {
+                    throw new NullPointerException();
+                }
+
+                internalTx.reject();
+                programResult.rejectInternalTransactions();
+                programResult.rejectLogInfos();*/
+
+                track.rollback();
+                stackPushZero();
+
+                return;
+            }
+
+            Coin oldBalance = track.getBalance(contractAddress);
+            track.createAccount(contractAddress);
+            track.addBalance(contractAddress, oldBalance);
         } else {
-            track.createAccount(newAddress);
+            track.createAccount(contractAddress);
         }
 
-        track.setupContract(newAddress);
+        track.setupContract(contractAddress);
+
+        if (getActivations().isActive(ConsensusRule.RSKIP125)) {
+            track.increaseNonce(contractAddress);
+        }
 
         // [4] TRANSFER THE BALANCE
         track.addBalance(senderAddress, endowment.negate());
         Coin newBalance = Coin.ZERO;
         if (!byTestingSuite()) {
-            newBalance = track.addBalance(newAddress, endowment);
+            newBalance = track.addBalance(contractAddress, endowment);
         }
 
 
         // [5] COOK THE INVOKE AND EXECUTE
+        programResult = getProgramResult(senderAddress, nonce, value, contractAddress, endowment, programCode, gasLimit, track, newBalance, programResult);
+        if (programResult == null) {
+            return;
+        }
+
+        // REFUND THE REMAIN GAS
+        long refundGas = gasLimit - programResult.getGasUsed();
+        if (refundGas > 0) {
+            refundGas(refundGas, "remain gas from the internal call");
+            if (isGasLogEnabled) {
+                gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
+                        Hex.toHexString(getOwnerAddress().getLast20Bytes()),
+                        refundGas);
+            }
+        }
+    }
+
+    private ProgramResult getProgramResult(RskAddress senderAddress, byte[] nonce, DataWord value,
+                                           RskAddress contractAddress, Coin endowment, byte[] programCode,
+                                           long gasLimit, Repository track, Coin newBalance, ProgramResult programResult) {
+
+
         InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
-                this, DataWord.valueOf(newAddressBytes), getOwnerAddress(), value, gasLimit,
+                this, DataWord.valueOf(contractAddress.getBytes()), getOwnerAddress(), value, gasLimit,
                 newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
-        ProgramResult programResult = ProgramResult.empty();
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
@@ -498,7 +575,7 @@ public class Program {
         if (programResult.getException() != null || programResult.isRevert()) {
             if (isLogEnabled) {
                 logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
-                        newAddress,
+                        contractAddress,
                         programResult.getException());
             }
 
@@ -513,13 +590,13 @@ public class Program {
             track.rollback();
             stackPushZero();
             if (programResult.getException() != null) {
-                return;
+                return null;
             } else {
                 returnDataBuffer = result.getHReturn();
             }
         }
         else {
-            // 4. CREATE THE CONTRACT OUT OF RETURN
+            // CREATE THE CONTRACT OUT OF RETURN
             byte[] code = programResult.getHReturn();
             int codeLength = getLength(code);
 
@@ -538,7 +615,7 @@ public class Program {
                                 codeLength));
             } else {
                 programResult.spendGas(storageCost);
-                track.saveCode(newAddress, code);
+                track.saveCode(contractAddress, code);
             }
 
             track.commit();
@@ -547,19 +624,9 @@ public class Program {
             getResult().addLogInfos(programResult.getLogInfoList());
 
             // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
-            stackPush(DataWord.valueOf(newAddressBytes));
+            stackPush(DataWord.valueOf(contractAddress.getBytes()));
         }
-
-        // 5. REFUND THE REMAIN GAS
-        long refundGas = gasLimit - programResult.getGasUsed();
-        if (refundGas > 0) {
-            refundGas(refundGas, "remain gas from the internal call");
-            if (isGasLogEnabled) {
-                gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
-                        Hex.toHexString(getOwnerAddress().getLast20Bytes()),
-                        refundGas);
-            }
-        }
+        return programResult;
     }
 
     public static long limitToMaxLong(DataWord gas) {
@@ -1353,6 +1420,12 @@ public class Program {
         }
     }
 
+    public static class AddressCollisionException extends RuntimeException {
+        public AddressCollisionException(String message) {
+            super(message);
+        }
+    }
+
     public static class ExceptionHelper {
 
         private ExceptionHelper() { }
@@ -1398,6 +1471,10 @@ public class Program {
 
         public static RuntimeException tooLargeContractSize(int maxSize, int actualSize) {
             return new RuntimeException(format("Maximum contract size allowed %d but actual %d;", maxSize, actualSize));
+        }
+
+        public static AddressCollisionException addressCollisionException(RskAddress address) {
+            return new AddressCollisionException("Trying to create a contract with existing contract address: 0x" + address.toString());
         }
     }
 
