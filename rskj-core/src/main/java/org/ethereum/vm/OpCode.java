@@ -635,6 +635,12 @@ public enum OpCode {
      *  also the Value parameter is omitted for this code
      */
     DELEGATECALL(0xf4, 6, 1, SPECIAL_TIER),
+
+    /**
+     * (0xf5) Skinny CREATE2, same as CREATE but with deterministic address
+     */
+    CREATE2(0xf5, 4, 1, SPECIAL_TIER),
+
     /**
      * (0xfc) Halt execution as an invalid opcode
      * setting version==256 assures it's never considered valid.
