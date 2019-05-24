@@ -19,6 +19,7 @@
 
 package org.ethereum.crypto;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
@@ -91,12 +92,12 @@ public class HashUtil {
 
 
     /**
-     * Calculates RIGTMOST160(SHA3(input)). This is used in address calculations.
+     * Calculates RIGTMOST160(KECCAK256(input)). This is used in address calculations.
      * *
      * @param input - data
      * @return - 20 right bytes of the hash sha3 of the data
      */
-    public static byte[] sha3omit12(byte[] input) {
+    public static byte[] keccak256Omit12(byte[] input) {
         byte[] hash = keccak256(input);
         return copyOfRange(hash, 12, hash.length);
     }
@@ -113,7 +114,34 @@ public class HashUtil {
         byte[] encSender = RLP.encodeElement(addr);
         byte[] encNonce = RLP.encodeBigInteger(new BigInteger(1, nonce));
 
-        return sha3omit12(RLP.encodeList(encSender, encNonce));
+        return keccak256Omit12(RLP.encodeList(encSender, encNonce));
+    }
+
+    /**
+     * The way to calculate new address inside ethereum for {@link org.ethereum.vm.OpCode#CREATE2}
+     * keccak256(0xff ++ msg.sender ++ salt ++ keccak256(init_code)))[12:]
+     *
+     * @param senderAddress - creating address
+     * @param initCode - contract init code
+     * @param salt - salt to make different result addresses
+     * @return new address
+     */
+    public static byte[] calcSaltAddr(RskAddress senderAddress, byte[] initCode, byte[] salt) {
+        // 0xff is of length 1
+        // keccak-256 of the address is of length 32
+        // Then we add the lengths of the senderAddress and the salt
+        byte[] data = new byte[1 + 32 + senderAddress.getBytes().length + salt.length];
+
+        data[0] = (byte) 0xff;
+        int currentOffset = 1;
+        System.arraycopy(senderAddress.getBytes(), 0, data, currentOffset, senderAddress.getBytes().length);
+        currentOffset += senderAddress.getBytes().length;
+        System.arraycopy(salt, 0, data, currentOffset, salt.length);
+        currentOffset += salt.length;
+        byte[] keccak256InitCode = keccak256(initCode);
+        System.arraycopy(keccak256InitCode, 0, data, currentOffset, keccak256InitCode.length);
+
+        return keccak256Omit12(data);
     }
 
     /**
