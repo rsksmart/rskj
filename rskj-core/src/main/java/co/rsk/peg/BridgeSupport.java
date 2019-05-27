@@ -167,22 +167,27 @@ public class BridgeSupport {
         this.btcBlockChain = btcBlockChain;
     }
 
-    private BtcBlockStoreWithCache buildBtcBlockstoreWithCache() throws BlockStoreException, IOException {
-        NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
+    private BtcBlockStoreWithCache buildBtcBlockstoreWithCache() {
         BtcBlockStoreWithCache btcBlockStore = new RepositoryBlockStore(
                 bridgeConstants,
                 this.rskRepository,
                 PrecompiledContracts.BRIDGE_ADDR
         );
-        if (btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
+        return btcBlockStore;
+    }
+
+    // Make sure the local bitcoin blockstore is instantiated
+    private void ensureCheckpoint() throws BlockStoreException, IOException {
+        NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
+
+        if (this.btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
             // We are building the blockstore for the first time, so we have not set the checkpoints yet.
             long time = federationSupport.getActiveFederation().getCreationTime().toEpochMilli();
             InputStream checkpoints = this.getCheckPoints();
             if (time > 0 && checkpoints != null) {
-                CheckpointManager.checkpoint(btcParams, checkpoints, btcBlockStore, time);
+                CheckpointManager.checkpoint(btcParams, checkpoints, this.btcBlockStore, time);
             }
         }
-        return btcBlockStore;
     }
 
     @VisibleForTesting
@@ -2027,11 +2032,12 @@ public class BridgeSupport {
     // Make sure the local bitcoin blockstore is instantiated
     private void ensureBtcBlockStore() throws IOException {
         if (this.btcBlockStore == null) {
-            try {
-                this.btcBlockStore = this.buildBtcBlockstoreWithCache();
-            } catch (BlockStoreException e) {
-                throw new IOException(e);
-            }
+            this.btcBlockStore = this.buildBtcBlockstoreWithCache();
+        }
+        try {
+            ensureCheckpoint();
+        } catch (BlockStoreException e) {
+            throw new IOException(e);
         }
     }
 

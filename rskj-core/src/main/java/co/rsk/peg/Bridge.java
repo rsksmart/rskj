@@ -203,12 +203,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private List<LogInfo> logs;
 
     private BridgeSupport bridgeSupport;
+    private BtcBlockStoreWithCache btcBlockStore;
 
-    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig) {
+    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig, BtcBlockStoreWithCache btcBlockStore) {
         this.contractAddress = contractAddress;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
         this.activationConfig = activationConfig;
+        this.btcBlockStore = btcBlockStore;
     }
 
     @Override
@@ -357,7 +359,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                         BridgeStorageConfiguration.fromBlockchainConfig(activations)
                 ),
                 new BridgeEventLoggerImpl(bridgeConstants, logs),
-                repository, rskExecutionBlock, null, null
+                repository, rskExecutionBlock, btcBlockStore, null
         );
     }
 

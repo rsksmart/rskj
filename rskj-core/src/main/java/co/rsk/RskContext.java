@@ -44,6 +44,8 @@ import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -95,6 +97,7 @@ import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.FileUtil;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.ethereum.vm.trace.FileProgramTraceProcessor;
@@ -204,6 +207,8 @@ public class RskContext implements NodeBootstrapper {
     private SolidityCompiler solidityCompiler;
     private BlocksBloomStore blocksBloomStore;
     private BlockExecutorFactory blockExecutorFactory;
+    private BtcBlockStoreWithCache btcBlockStore;
+    private PrecompiledContracts precompiledContracts;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -304,6 +309,34 @@ public class RskContext implements NodeBootstrapper {
         return blockExecutorFactory;
     }
 
+    public PrecompiledContracts getPrecompiledContracts() {
+        if (precompiledContracts == null) {
+            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), btcBlockStore);;
+        }
+
+        return precompiledContracts;
+    }
+
+
+    public BtcBlockStoreWithCache getBtcBlockStore() {
+        if (btcBlockStore == null) {
+            btcBlockStore = buildBtcBlockstoreWithCache();
+        }
+
+        return btcBlockStore;
+    }
+
+    private BtcBlockStoreWithCache buildBtcBlockstoreWithCache() {
+        BridgeConstants bridgeConstants =  getRskSystemProperties().getNetworkConstants().getBridgeConstants();
+        BtcBlockStoreWithCache btcBlockStore = new RepositoryBlockStore(
+                bridgeConstants,
+                getRepository(),
+                PrecompiledContracts.BRIDGE_ADDR
+        );
+        //TODO Checkpoints are loaded on BrigeSupport, we should load them here
+        return btcBlockStore;
+    }
+
     public org.ethereum.db.BlockStore getBlockStore() {
         if (blockStore == null) {
             blockStore = buildBlockStore();
@@ -351,8 +384,8 @@ public class RskContext implements NodeBootstrapper {
                             getRskSystemProperties().databaseDir(),
                             getRskSystemProperties().vmTraceDir(),
                             getRskSystemProperties().vmTraceCompressed()
-                    )
-            );
+                    ),
+                    getPrecompiledContracts());
         }
 
         return transactionExecutorFactory;

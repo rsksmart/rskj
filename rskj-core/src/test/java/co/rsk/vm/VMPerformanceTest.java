@@ -58,7 +58,7 @@ public class VMPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
     private final ActivationConfig.ForBlock activations = cr -> true;
     private ProgramInvokeMockImpl invoke;
     private Program program;
@@ -118,7 +118,7 @@ public class VMPerformanceTest {
 
         Boolean old = thread.isThreadCpuTimeEnabled();
         thread.setThreadCpuTimeEnabled(true);
-        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config, null));
         if (useProfiler)
             waitForProfiler();
 
@@ -460,7 +460,7 @@ public class VMPerformanceTest {
 } // contract
         */
 
-        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config, null));
         // Strip the first 16 bytes which are added by Solidity to store the contract.
         byte[] codePlusPrefix = Hex.decode(
                 //---------------------------------------------------------------------------------------------------------------------nn
@@ -546,7 +546,7 @@ public class VMPerformanceTest {
          }
          } // contract
          ********************************************************************************************/
-        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config, null));
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // To increase precesion of the measurement, the maximum k value was increased
         // until the contract took more than 30 seconds

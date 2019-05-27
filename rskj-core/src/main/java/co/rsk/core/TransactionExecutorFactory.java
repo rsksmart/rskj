@@ -42,14 +42,15 @@ public class TransactionExecutorFactory {
             ReceiptStore receiptStore,
             BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory,
-            ProgramTraceProcessor programTraceProcessor) {
+            ProgramTraceProcessor programTraceProcessor,
+            PrecompiledContracts precompiledContracts) {
         this.config = config;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.programTraceProcessor = programTraceProcessor;
-        this.precompiledContracts = new PrecompiledContracts(config);
+        this.precompiledContracts = precompiledContracts;
     }
 
     /**
@@ -63,8 +64,8 @@ public class TransactionExecutorFactory {
                 receiptStore,
                 blockFactory,
                 programInvokeFactory,
-                programTraceProcessor
-        );
+                programTraceProcessor,
+                null);
     }
 
     public TransactionExecutor newInstance(

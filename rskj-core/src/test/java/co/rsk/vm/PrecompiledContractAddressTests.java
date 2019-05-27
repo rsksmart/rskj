@@ -49,7 +49,7 @@ public class PrecompiledContractAddressTests {
 
     @Test
     public void testGetPrecompile() {
-        PrecompiledContracts pcList = new PrecompiledContracts(config);
+        PrecompiledContracts pcList = new PrecompiledContracts(config, null);
         checkAddr(pcList,ECRECOVER_ADDR, "ECRecover");
         checkAddr(pcList,SHA256_ADDR, "Sha256");
         checkAddr(pcList,RIPEMPD160_ADDR ,"Ripempd160");

@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 public class PrecompiledContractTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
     @Test
     public void getBridgeContract() {

@@ -83,7 +83,7 @@ public class TestRunner {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;

@@ -145,7 +145,7 @@ public class BridgeTest {
 
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(new ECKey().getPrivKeyBytes());
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         World world = new World();
         bridge.init(rskTx, world.getBlockChain().getBestBlock(), track, world.getBlockChain().getBlockStore(), null, new LinkedList<>());
         try {
@@ -180,7 +180,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         World world = new World();
         bridge.init(rskTx, world.getBlockChain().getBestBlock(), track, world.getBlockChain().getBlockStore(), null, new LinkedList<>());
 
@@ -226,7 +226,7 @@ public class BridgeTest {
 
         world.getBlockChain().getBlockStore().saveBlock(blocks.get(1), new BlockDifficulty(BigInteger.ONE), true);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, blocks.get(9), track, world.getBlockChain().getBlockStore(), null, new LinkedList<>());
 
         bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
@@ -245,7 +245,7 @@ public class BridgeTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), track, null, null, null);
         try {
             bridge.execute(Bridge.RECEIVE_HEADERS.encode());
@@ -265,7 +265,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         bridge.execute(Bridge.RECEIVE_HEADERS.encode());
@@ -281,7 +281,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<>());
@@ -301,7 +301,7 @@ public class BridgeTest {
     @Test
     public void executeWithFunctionSignatureLengthTooShortBeforeRskip88() {
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         Transaction mockedTx = mock(Transaction.class);
         bridge.init(mockedTx, getGenesisBlock(), null, null, null, null);
         Assert.assertNull(bridge.execute(new byte[3]));
@@ -314,7 +314,7 @@ public class BridgeTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         Transaction mockedTx = mock(Transaction.class);
 
         try {
@@ -329,7 +329,7 @@ public class BridgeTest {
 
     @Test
     public void executeWithInexistentFunctionBeforeRskip88() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         Transaction mockedTx = mock(Transaction.class);
         bridge.init(mockedTx, getGenesisBlock(), null, null, null, null);
         Assert.assertNull(bridge.execute(new byte[4]));
@@ -342,7 +342,7 @@ public class BridgeTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         Transaction mockedTx = mock(Transaction.class);
 
         try {
@@ -362,7 +362,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
         try {
             bridge.execute(Bridge.RECEIVE_HEADERS.encode());
@@ -382,7 +382,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         Object[] objectArray = new Object[1];
@@ -402,7 +402,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         final int numBlocks = 10;
@@ -456,7 +456,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
-        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         spiedBridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         final int numBlocks = 10;
@@ -528,7 +528,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
 
@@ -550,7 +550,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         NetworkParameters btcParams = RegTestParams.get();
@@ -596,7 +596,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
 
@@ -640,7 +640,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         byte[] serializedTx = tx.bitcoinSerialize();
@@ -715,7 +715,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         NetworkParameters btcParams = RegTestParams.get();
@@ -736,7 +736,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         NetworkParameters btcParams = RegTestParams.get();
@@ -757,7 +757,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         NetworkParameters btcParams = RegTestParams.get();
@@ -799,7 +799,7 @@ public class BridgeTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         Transaction mockedTx = mock(Transaction.class);
         when(mockedTx.isLocalCallTransaction()).thenReturn(true);
         bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
@@ -815,7 +815,7 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         Transaction mockedTx = mock(Transaction.class);
         when(mockedTx.isLocalCallTransaction()).thenReturn(true);
         bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
@@ -833,7 +833,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new byte[3];
@@ -857,7 +857,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new byte[3];
@@ -876,7 +876,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
@@ -895,7 +895,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
@@ -914,7 +914,7 @@ public class BridgeTest {
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
@@ -927,7 +927,7 @@ public class BridgeTest {
 
     @Test
     public void exceptionInUpdateCollection() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
 
         try {
             bridge.updateCollections(null);
@@ -940,7 +940,7 @@ public class BridgeTest {
 
     @Test
     public void exceptionInReleaseBtc() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
 
         try {
             bridge.releaseBtc(null);
@@ -953,7 +953,7 @@ public class BridgeTest {
 
     @Test
     public void exceptionInGetStateForBtcReleaseClient() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
 
         try {
             bridge. getStateForBtcReleaseClient(null);
@@ -966,7 +966,7 @@ public class BridgeTest {
 
     @Test
     public void exceptionInGetStateForDebugging() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
 
         try {
             bridge.getStateForDebugging(null);
@@ -979,7 +979,7 @@ public class BridgeTest {
 
     @Test
     public void exceptionInGetBtcBlockchainBestChainHeight() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
 
         try {
             bridge.getBtcBlockchainBestChainHeight(null);
@@ -992,7 +992,7 @@ public class BridgeTest {
 
     @Test
     public void exceptionInGetBtcBlockchainBlockLocator() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
 
         try {
             bridge.getBtcBlockchainBlockLocator(null);
@@ -1016,7 +1016,7 @@ public class BridgeTest {
         when(bridgeSupportMock.getBtcBlockchainBlockLocator())
                 .then((InvocationOnMock invocation) -> Arrays.asList(hash));
 
-        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
 
         spiedBridge.init(mock(Transaction.class), getGenesisBlock(), track, null, null, null);
@@ -1035,7 +1035,7 @@ public class BridgeTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), track, null, null, null);
 
@@ -1056,7 +1056,7 @@ public class BridgeTest {
     public void getGasForDataFreeTx() {
         activationConfig = ActivationConfigsForTest.bridgeUnitTest();
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,
@@ -1139,7 +1139,7 @@ public class BridgeTest {
     private void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object... funcArgs) {
         activationConfig = ActivationConfigsForTest.bridgeUnitTest();
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         org.ethereum.core.Transaction rskTx;
         if (function==null) {
             rskTx = CallTransaction.createRawTransaction(
@@ -1181,7 +1181,7 @@ public class BridgeTest {
 
     @Test
     public void isBtcTxHashAlreadyProcessed_normalFlow() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1203,7 +1203,7 @@ public class BridgeTest {
 
     @Test
     public void isBtcTxHashAlreadyProcessed_exception() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1220,7 +1220,7 @@ public class BridgeTest {
 
     @Test
     public void getBtcTxHashProcessedHeight_normalFlow() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1241,7 +1241,7 @@ public class BridgeTest {
 
     @Test
     public void getBtcTxHashProcessedHeight_exception() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1258,7 +1258,7 @@ public class BridgeTest {
 
     @Test
     public void getFederationSize() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1269,7 +1269,7 @@ public class BridgeTest {
 
     @Test
     public void getFederationThreshold() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1280,7 +1280,7 @@ public class BridgeTest {
 
     @Test
     public void getFederationCreationTime() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1291,7 +1291,7 @@ public class BridgeTest {
 
     @Test
     public void getFederationCreationBlockNumber() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getFederationCreationBlockNumber()).thenReturn(42L);
@@ -1302,7 +1302,7 @@ public class BridgeTest {
     @Test
     public void getFederatorPublicKey_beforeMultikey() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1333,7 +1333,7 @@ public class BridgeTest {
     @Test
     public void getFederatorPublicKey_afterMultikey() throws Exception {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
@@ -1346,7 +1346,7 @@ public class BridgeTest {
     public void getFederatorPublicKeyOfType_beforeMultikey() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
@@ -1359,7 +1359,7 @@ public class BridgeTest {
     public void getFederatorPublicKeyOfType_afterMultikey() throws Exception {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1391,7 +1391,7 @@ public class BridgeTest {
 
     @Test
     public void getRetiringFederationSize() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1402,7 +1402,7 @@ public class BridgeTest {
 
     @Test
     public void getRetiringFederationThreshold() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1413,7 +1413,7 @@ public class BridgeTest {
 
     @Test
     public void getRetiringFederationCreationTime() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1424,7 +1424,7 @@ public class BridgeTest {
 
     @Test
     public void getRetiringFederationCreationBlockNumber() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getRetiringFederationCreationBlockNumber()).thenReturn(42L);
@@ -1435,7 +1435,7 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKey_beforeMultikey() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1467,7 +1467,7 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKey_afterMultikey() throws Exception {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
@@ -1479,7 +1479,7 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKeyOfType_beforeMultikey() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
@@ -1491,7 +1491,7 @@ public class BridgeTest {
     @Test
     public void getRetiringFederatorPublicKeyOfType_afterMultikey() throws Exception {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1523,7 +1523,7 @@ public class BridgeTest {
 
     @Test
     public void getPendingFederationSize() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1535,7 +1535,7 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKey_beforeMultikey() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1566,7 +1566,7 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKey_afterMultikey() throws Exception {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
@@ -1578,7 +1578,7 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKeyOfType_beforeMultikey() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
@@ -1590,7 +1590,7 @@ public class BridgeTest {
     @Test
     public void getPendingFederatorPublicKeyOfType_afterMultikey() throws Exception {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1623,7 +1623,7 @@ public class BridgeTest {
     @Test
     public void createFederation() throws IOException {
         Transaction txMock = mock(Transaction.class);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1638,7 +1638,7 @@ public class BridgeTest {
 
         Transaction txMock = mock(Transaction.class);
 
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1659,7 +1659,7 @@ public class BridgeTest {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
         Transaction txMock = mock(Transaction.class);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
@@ -1676,7 +1676,7 @@ public class BridgeTest {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
 
         Transaction txMock = mock(Transaction.class);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
@@ -1696,7 +1696,7 @@ public class BridgeTest {
 
         Transaction txMock = mock(Transaction.class);
 
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1718,7 +1718,7 @@ public class BridgeTest {
     @Test
     public void commitFederation_ok() throws IOException {
         Transaction txMock = mock(Transaction.class);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1730,7 +1730,7 @@ public class BridgeTest {
 
     @Test
     public void commitFederation_wrongParameterType() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1742,7 +1742,7 @@ public class BridgeTest {
     @Test
     public void rollbackFederation() throws IOException {
         Transaction txMock = mock(Transaction.class);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1753,7 +1753,7 @@ public class BridgeTest {
 
     @Test
     public void getLockWhitelistSize() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1764,7 +1764,7 @@ public class BridgeTest {
 
     @Test
     public void getLockWhitelistAddress() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         OneOffWhiteListEntry mockedEntry10 = new OneOffWhiteListEntry(new BtcECKey().toAddress(networkParameters), Coin.COIN);
@@ -1787,7 +1787,7 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
         Transaction mockedTransaction = mock(Transaction.class);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         Assert.assertNull(bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toBase58() })));
@@ -1812,7 +1812,7 @@ public class BridgeTest {
         when(bridgeSupportMock.getLockWhitelistEntryByAddress(mockedAddressForOneOff.toBase58()))
                 .then((InvocationOnMock invocation) -> new OneOffWhiteListEntry(mockedAddressForOneOff, Coin.COIN));
 
-        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
 
         mockedTransaction = mock(Transaction.class);
@@ -1851,7 +1851,7 @@ public class BridgeTest {
         RskAddress sender = new RskAddress(fedECPrivateKey.getAddress());
         when(mockedTransaction.getSender()).thenReturn(sender);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         byte[] result = bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
@@ -1873,7 +1873,7 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
         Transaction mockedTransaction = mock(Transaction.class);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         try {
@@ -1895,7 +1895,7 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
         Transaction mockedTransaction = mock(Transaction.class);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         Assert.assertNull(bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) })));
@@ -1914,7 +1914,7 @@ public class BridgeTest {
         RskAddress sender = new RskAddress(fedECPrivateKey.getAddress());
         when(mockedTransaction.getSender()).thenReturn(sender);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         byte[] result = bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
@@ -1936,7 +1936,7 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
         Transaction mockedTransaction = mock(Transaction.class);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         Assert.assertNull(bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address" })));
@@ -1955,7 +1955,7 @@ public class BridgeTest {
         RskAddress sender = new RskAddress(fedECPrivateKey.getAddress());
         when(mockedTransaction.getSender()).thenReturn(sender);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         byte[] result = bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
@@ -1974,7 +1974,7 @@ public class BridgeTest {
     @Test
     public void removeLockWhitelistAddress() throws IOException {
         Transaction mockedTransaction = mock(Transaction.class);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(mockedTransaction, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -1985,7 +1985,7 @@ public class BridgeTest {
 
     @Test
     public void getFeePerKb() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getFeePerKb())
@@ -1997,7 +1997,7 @@ public class BridgeTest {
     @Test
     public void voteFeePerKb_ok() throws IOException {
         Transaction txMock = mock(Transaction.class);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -2009,7 +2009,7 @@ public class BridgeTest {
 
     @Test
     public void voteFeePerKb_wrongParameterType() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -2041,7 +2041,7 @@ public class BridgeTest {
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         // Setup bridge
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
 
         Logger mockedLogger = mock(Logger.class);
@@ -2056,7 +2056,7 @@ public class BridgeTest {
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(true);
 
-        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Address address = new BtcECKey().toAddress(networkParameters);
@@ -2079,7 +2079,7 @@ public class BridgeTest {
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(false);
 
-        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getFederationAddress()).thenReturn(new BtcECKey().toAddress(networkParameters));
@@ -2102,7 +2102,7 @@ public class BridgeTest {
         try {
             Transaction tx = mock(Transaction.class);
             when(tx.isLocalCallTransaction()).thenReturn(false);
-            Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+            Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
             PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
             spiedBridge.init(tx, getGenesisBlock(), null, null, null, null);
 
@@ -2129,7 +2129,7 @@ public class BridgeTest {
         Transaction tx = mock(Transaction.class);
         when(tx.isLocalCallTransaction()).thenReturn(localCall);
 
-        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(spiedBridge, "setup");
         when(bridgeSupportMock.voteFeePerKbChange(tx, Coin.CENT)).thenReturn(1);
@@ -2152,7 +2152,7 @@ public class BridgeTest {
     }
 
     public void getBtcBlockchainInitialBlockHeight() throws  IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -2167,7 +2167,7 @@ public class BridgeTest {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP122), anyLong());
 
         Transaction txMock = mock(Transaction.class);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
@@ -2179,7 +2179,7 @@ public class BridgeTest {
     @Test
     public void getBtcTransactionConfirmationsAfterSecondFork_ok() throws Exception {
         Transaction txMock = mock(Transaction.class);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -2234,7 +2234,7 @@ public class BridgeTest {
     @Test
     public void getBtcTransactionConfirmationsAfterSecondFork_errorInBridgeSupport() throws Exception {
         Transaction txMock = mock(Transaction.class);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -2295,7 +2295,7 @@ public class BridgeTest {
     @Test
     public void getBtcTransactionConfirmationsAfterSecondFork_merkleBranchConstructionError() throws Exception {
         Transaction txMock = mock(Transaction.class);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -2344,7 +2344,7 @@ public class BridgeTest {
         PowerMockito.mockStatic(BridgeUtils.class);
         Transaction txMock = mock(Transaction.class);
         doReturn(true).when(activationConfig).isActive(eq(RSKIP122), anyLong());
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null));
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -2399,7 +2399,7 @@ public class BridgeTest {
 
     @Test
     public void getBtcBlockchainBlockHashAtDepth() throws BlockStoreException, IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -2420,7 +2420,7 @@ public class BridgeTest {
 //        config.setBlockchainConfig(mockedConfig);
         blockFactory = new BlockFactory(config.getActivationConfig());
 
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
         EVMAssembler assembler = new EVMAssembler();
         ProgramInvoke invoke = new ProgramInvokeMockImpl();
 
@@ -2462,7 +2462,7 @@ public class BridgeTest {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP88), anyLong());
         blockFactory = new BlockFactory(activationConfig);
 
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
         EVMAssembler assembler = new EVMAssembler();
         ProgramInvoke invoke = new ProgramInvokeMockImpl();
 

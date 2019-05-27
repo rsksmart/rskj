@@ -203,7 +203,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
                 List<LogInfo> logs = new ArrayList<>();
 
-                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
                 Blockchain blockchain = BlockChainBuilder.ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);
                 bridge.init(

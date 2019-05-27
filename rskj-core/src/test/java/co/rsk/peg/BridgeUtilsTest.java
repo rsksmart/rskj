@@ -480,7 +480,7 @@ public class BridgeUtilsTest {
 
 
     private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, byte[] privKeyBytes) {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,

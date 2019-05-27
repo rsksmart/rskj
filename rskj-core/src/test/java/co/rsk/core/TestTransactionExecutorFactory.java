@@ -23,6 +23,7 @@ import co.rsk.crypto.Keccak256;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
@@ -40,8 +41,8 @@ public class TestTransactionExecutorFactory extends TransactionExecutorFactory {
                 receiptStore,
                 blockFactory,
                 programInvokeFactory,
-                new DisabledProgramTraceProcessor()
-        );
+                new DisabledProgramTraceProcessor(),
+                new PrecompiledContracts(config, null));
     }
 
     public static class DisabledProgramTraceProcessor implements ProgramTraceProcessor {
