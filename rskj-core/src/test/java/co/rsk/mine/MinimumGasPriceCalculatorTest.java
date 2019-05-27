@@ -96,4 +96,13 @@ public class MinimumGasPriceCalculatorTest {
 
         Assert.assertEquals(Coin.ZERO, mgp);
     }
+
+    @Test
+    public void cantGetMGPtoBeNegative() {
+        MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator();
+        Coin target = Coin.valueOf(-100);
+        Coin previous = Coin.ZERO;
+        previous = mgpCalculator.calculate(previous, target);
+        Assert.assertTrue(previous.compareTo(Coin.valueOf(-1)) > 0);
+    }
 }
