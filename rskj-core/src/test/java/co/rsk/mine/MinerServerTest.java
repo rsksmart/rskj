@@ -25,7 +25,7 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.bc.BlockExecutorFactory;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
@@ -64,7 +64,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     private BlockStore blockStore;
     private TransactionPool transactionPool;
     private BlockFactory blockFactory;
-    private BlockExecutorFactory blockExecutorFactory;
+    private BlockExecutor blockExecutor;
 
     public MinerServerTest(TestSystemProperties config) {
         super(config);
@@ -85,7 +85,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         blockStore = factory.getBlockStore();
         transactionPool = factory.getTransactionPool();
         blockFactory = factory.getBlockFactory();
-        blockExecutorFactory = factory.getBlockExecutorFactory();
+        blockExecutor = factory.getBlockExecutor();
     }
 
     @Test
@@ -133,7 +133,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,
@@ -177,7 +177,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,
@@ -245,7 +245,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,
@@ -298,7 +298,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,
@@ -354,7 +354,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,
@@ -417,7 +417,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,
@@ -472,7 +472,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,
@@ -532,7 +532,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,
@@ -574,7 +574,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,
@@ -616,7 +616,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,
@@ -662,7 +662,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutorFactory
+                        blockExecutor
                 ),
                 clock,
                 blockFactory,

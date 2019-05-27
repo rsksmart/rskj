@@ -21,7 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TestTransactionExecutorFactory;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
@@ -61,7 +61,7 @@ public class ImportLightTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,
@@ -81,10 +81,10 @@ public class ImportLightTest {
                 false,
                 1,
                 new BlockExecutor(
+                        config.getActivationConfig(),
                         repository,
-                        transactionExecutorFactory,
                         stateRootHandler,
-                        config.getActivationConfig()
+                        transactionExecutorFactory
                 ),
                 stateRootHandler
         );

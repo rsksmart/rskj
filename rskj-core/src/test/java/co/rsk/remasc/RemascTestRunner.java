@@ -21,7 +21,7 @@ package co.rsk.remasc;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TestTransactionExecutorFactory;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
@@ -125,16 +125,16 @@ class RemascTestRunner {
         BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockExecutor blockExecutor = new BlockExecutor(
+                builder.getConfig().getActivationConfig(),
                 blockchain.getRepository(),
-                new TestTransactionExecutorFactory(
+                builder.getStateRootHandler(),
+                new TransactionExecutorFactory(
                         builder.getConfig(),
                         blockchain.getBlockStore(),
                         null,
                         blockFactory,
                         programInvokeFactory
-                ),
-                builder.getStateRootHandler(),
-                builder.getConfig().getActivationConfig()
+                )
         );
 
         for(int i = 0; i <= this.initialHeight; i++) {

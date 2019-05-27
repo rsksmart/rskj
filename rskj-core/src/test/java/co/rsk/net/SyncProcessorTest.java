@@ -776,16 +776,16 @@ public class SyncProcessorTest {
         Block block = new BlockGenerator().createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
 
         BlockExecutor blockExecutor = new BlockExecutor(
+                config.getActivationConfig(),
                 blockchain.getRepository(),
-                new TestTransactionExecutorFactory(
+                new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                new TransactionExecutorFactory(
                         config,
                         blockchain.getBlockStore(),
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl()
-                ),
-                new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
-                config.getActivationConfig()
+                )
         );
         Assert.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis.getHeader());

@@ -24,7 +24,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
@@ -69,7 +68,7 @@ public class BlockChainLoader {
             TransactionPool transactionPool,
             EthereumListener listener,
             BlockValidator blockValidator,
-            BlockExecutorFactory blockExecutorFactory,
+            BlockExecutor blockExecutor,
             Genesis genesis,
             StateRootHandler stateRootHandler) {
         this.config = config;
@@ -79,7 +78,7 @@ public class BlockChainLoader {
         this.transactionPool = transactionPool;
         this.listener = listener;
         this.blockValidator = blockValidator;
-        this.blockExecutor = blockExecutorFactory.build();
+        this.blockExecutor = blockExecutor;
         this.genesis = genesis;
         this.stateRootHandler = stateRootHandler;
     }

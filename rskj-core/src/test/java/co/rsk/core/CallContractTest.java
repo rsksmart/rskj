@@ -64,7 +64,7 @@ public class CallContractTest {
         Repository repository = world.getRepository().startTracking();
 
         try {
-            TestTransactionExecutorFactory transactionExecutorFactory = new TestTransactionExecutorFactory(
+            TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                     config,
                     null,
                     null,

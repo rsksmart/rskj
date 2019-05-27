@@ -20,14 +20,11 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
-import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockValidator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -35,23 +32,15 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.util.RskTestFactory;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -62,8 +51,6 @@ public class BlockChainImplTest {
     private RskTestFactory objects;
     private RskSystemProperties config;
     private Blockchain blockChain;
-    private StateRootHandler stateRootHandler;
-    private BlockFactory blockFactory;
     private BlockExecutor blockExecutor;
     private BlockExecutorTest.SimpleEthereumListener listener;
 
@@ -82,9 +69,7 @@ public class BlockChainImplTest {
         };
         config = objects.getRskSystemProperties();
         blockChain = objects.getBlockchain();
-        stateRootHandler = objects.getStateRootHandler();
-        blockFactory = objects.getBlockFactory();
-        blockExecutor = objects.getBlockExecutorFactory().build();
+        blockExecutor = objects.getBlockExecutor();
         listener = (BlockExecutorTest.SimpleEthereumListener) objects.getCompositeEthereumListener();
     }
 

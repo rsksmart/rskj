@@ -20,14 +20,41 @@
 package org.ethereum.vm.trace;
 
 import co.rsk.crypto.Keccak256;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Created by ajlopez on 15/04/2019.
+ * Provides tracing and exporting to JSON
  */
-public interface ProgramTraceProcessor {
-    boolean enabled();
+public class ProgramTraceProcessor {
+    private final Map<Keccak256, ProgramTrace> traces = new HashMap<>();
 
-    void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash)  throws IOException;
+    public void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash) {
+        this.traces.put(txHash, programTrace);
+    }
+
+    public JsonNode getProgramTraceAsJsonNode(Keccak256 txHash) {
+        ProgramTrace trace = traces.get(txHash);
+
+        if (trace == null) {
+            return null;
+        }
+
+        ObjectMapper mapper = Serializers.createMapper(true);
+        mapper.setVisibility(fieldsOnlyVisibilityChecker(mapper));
+
+        return mapper.valueToTree(trace);
+    }
+
+    private static VisibilityChecker<?> fieldsOnlyVisibilityChecker(ObjectMapper mapper) {
+        return mapper.getSerializationConfig().getDefaultVisibilityChecker()
+                .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE);
+    }
 }

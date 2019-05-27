@@ -28,22 +28,25 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 
 /**
- * BlockExecutor has methods to execute block with its transactions.
+ * This is a stateless class with methods to execute blocks with its transactions.
  * There are two main use cases:
  * - execute and validate the block final state
  * - execute and complete the block final state
- * <p>
- * Created by ajlopez on 29/07/2016.
+ *
+ * Note that this class IS NOT guaranteed to be thread safe because its dependencies might hold state.
  */
 public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
@@ -54,12 +57,11 @@ public class BlockExecutor {
     private final StateRootHandler stateRootHandler;
     private final ActivationConfig activationConfig;
 
-    // TODO(mc) reorder Act, Repo, SRG, TRF
     public BlockExecutor(
+            ActivationConfig activationConfig,
             Repository repository,
-            TransactionExecutorFactory transactionExecutorFactory,
             StateRootHandler stateRootHandler,
-            ActivationConfig activationConfig) {
+            TransactionExecutorFactory transactionExecutorFactory) {
         this.repository = repository;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.stateRootHandler = stateRootHandler;
@@ -73,15 +75,17 @@ public class BlockExecutor {
      * @param parent       The parent of the block.
      */
     public void executeAndFill(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, true);
+        BlockResult result = execute(block, parent, true, false);
         fill(block, result);
     }
 
+    @VisibleForTesting
     public void executeAndFillAll(Block block, BlockHeader parent) {
-        BlockResult result = executeAll(block, parent);
+        BlockResult result = execute(block, parent, false, true);
         fill(block, result);
     }
 
+    @VisibleForTesting
     public void executeAndFillReal(Block block, BlockHeader parent) {
         BlockResult result = execute(block, parent, false, false);
         if (result != BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
@@ -112,8 +116,9 @@ public class BlockExecutor {
      * @param parent       The parent of the block.
      * @return true if the block final state is equalBytes to the calculated final state.
      */
+    @VisibleForTesting
     public boolean executeAndValidate(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, false);
+        BlockResult result = execute(block, parent, false, false);
 
         return this.validate(block, result);
     }
@@ -208,22 +213,36 @@ public class BlockExecutor {
         return Arrays.equals(calculateLogsBloom(result.getTransactionReceipts()), header.getLogsBloom());
     }
 
-    /**
-     * Execute a block, from initial state, returning the final state data.
-     *
-     * @param block        A block to validate
-     * @param parent       The parent of the block to validate
-     * @return BlockResult with the final state data.
-     */
+    @VisibleForTesting
     public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
         return execute(block, parent, discardInvalidTxs, false);
     }
 
-    public BlockResult executeAll(Block block, BlockHeader parent) {
-        return execute(block, parent, false, true);
+    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
+        return executeInternal(null, block, parent, discardInvalidTxs, ignoreReadyToExecute);
     }
 
-    private BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
+    /**
+     * Execute a block while saving the execution trace in the trace processor
+     */
+    public void traceBlock(
+            ProgramTraceProcessor programTraceProcessor,
+            Block block,
+            BlockHeader parent,
+            boolean discardInvalidTxs,
+            boolean ignoreReadyToExecute) {
+        executeInternal(
+                Objects.requireNonNull(programTraceProcessor), block, parent, discardInvalidTxs, ignoreReadyToExecute
+        );
+    }
+
+    private BlockResult executeInternal(
+            @Nullable ProgramTraceProcessor programTraceProcessor,
+            Block block,
+            BlockHeader parent,
+            boolean discardInvalidTxs,
+            boolean ignoreReadyToExecute) {
+        boolean vmTrace = programTraceProcessor != null;
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         // Forks the repo, does not change "repository". It will have a completely different
@@ -259,7 +278,8 @@ public class BlockExecutor {
                     block.getCoinbase(),
                     track,
                     block,
-                    totalGasUsed
+                    totalGasUsed,
+                    vmTrace
             );
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {
@@ -279,6 +299,9 @@ public class BlockExecutor {
             txExecutor.execute();
             txExecutor.go();
             txExecutor.finalization();
+            if (vmTrace) {
+                txExecutor.extractTrace(programTraceProcessor);
+            }
 
             logger.trace("tx executed");
 

@@ -23,7 +23,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.BlockExecutorFactory;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.db.StateRootHandler;
@@ -61,10 +60,10 @@ public class BlockToMineBuilder {
     private final BlockValidationRule validationRules;
     private final MinerClock clock;
     private final BlockFactory blockFactory;
+    private final BlockExecutor executor;
 
     private final MinimumGasPriceCalculator minimumGasPriceCalculator;
     private final MinerUtils minerUtils;
-    private final BlockExecutor executor;
 
     private final Coin minerMinGasPriceTarget;
 
@@ -80,7 +79,7 @@ public class BlockToMineBuilder {
             BlockValidationRule validationRules,
             MinerClock clock,
             BlockFactory blockFactory,
-            BlockExecutorFactory blockExecutorFactory) {
+            BlockExecutor blockExecutor) {
         this.activationConfig = Objects.requireNonNull(activationConfig);
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
@@ -92,9 +91,9 @@ public class BlockToMineBuilder {
         this.validationRules = Objects.requireNonNull(validationRules);
         this.clock = Objects.requireNonNull(clock);
         this.blockFactory = blockFactory;
+        this.executor = blockExecutor;
         this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
         this.minerUtils = new MinerUtils();
-        this.executor = blockExecutorFactory.build();
 
         this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
     }

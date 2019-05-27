@@ -19,66 +19,48 @@
 
 package org.ethereum.vm.trace;
 
-import co.rsk.config.TestSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.crypto.Keccak256;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.core.Repository;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-/**
- * Created by ajlopez on 16/04/2019.
- */
-public class MemoryProgramTraceProcessorTest {
-    private final TestSystemProperties config = new TestSystemProperties();
-
-    @Test
-    public void enableTrace() {
-        MemoryProgramTraceProcessor processor = new MemoryProgramTraceProcessor(true);
-
-        Assert.assertTrue(processor.enabled());
-    }
-
-    @Test
-    public void disableTrace() {
-        MemoryProgramTraceProcessor processor = new MemoryProgramTraceProcessor(false);
-
-        Assert.assertFalse(processor.enabled());
-    }
-
+public class ProgramTraceProcessorTest {
     @Test
     public void getUnknownTrace() {
         Keccak256 hash = TestUtils.randomHash();
-        MemoryProgramTraceProcessor processor = new MemoryProgramTraceProcessor(true);
+        Keccak256 otherHash = TestUtils.randomHash();
+        ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
-        Assert.assertNull(processor.getProgramTrace(hash));
-    }
-
-    @Test
-    public void setAndGetTrace() throws IOException {
-        Keccak256 hash = TestUtils.randomHash();
-        MemoryProgramTraceProcessor processor = new MemoryProgramTraceProcessor(true);
-
-        ProgramTrace trace = new ProgramTrace(config.getVmConfig(), null);
+        ProgramTrace trace = buildTestTrace(DataWord.valueOf(42));
         processor.processProgramTrace(trace, hash);
-        Assert.assertEquals(trace, processor.getProgramTrace(hash));
+
+        Assert.assertNull(processor.getProgramTraceAsJsonNode(otherHash));
     }
 
     @Test
-    public void setAndGetTraceAsJsonNode() throws IOException {
+    public void setAndGetTraceAsJsonNode() {
         Keccak256 hash = TestUtils.randomHash();
-        MemoryProgramTraceProcessor processor = new MemoryProgramTraceProcessor(true);
+        ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
-        ProgramTrace trace = new ProgramTrace(config.getVmConfig(), null);
+        DataWord ownerDW = DataWord.valueOf(42);
+        ProgramTrace trace = buildTestTrace(ownerDW);
         processor.processProgramTrace(trace, hash);
 
         JsonNode jnode = processor.getProgramTraceAsJsonNode(hash);
+
         Assert.assertNotNull(jnode);
+        Assert.assertEquals(Hex.toHexString(ownerDW.getLast20Bytes()), jnode.get("contractAddress").asText());
 
         String jsonText = jnode.toString();
-
         Assert.assertNotNull(jsonText);
         Assert.assertTrue(jsonText.contains("\"contractAddress\""));
         Assert.assertTrue(jsonText.contains("\"initStorage\""));
@@ -86,5 +68,14 @@ public class MemoryProgramTraceProcessorTest {
         Assert.assertTrue(jsonText.contains("\"structLogs\""));
         Assert.assertTrue(jsonText.contains("\"result\""));
         Assert.assertTrue(jsonText.contains("\"storageSize\""));
+    }
+
+    private ProgramTrace buildTestTrace(DataWord ownerDW) {
+        ProgramInvoke programInvoke = mock(ProgramInvoke.class);
+        when(programInvoke.getOwnerAddress()).thenReturn(ownerDW);
+        when(programInvoke.getRepository()).thenReturn(mock(Repository.class));
+        VmConfig vmConfig = mock(VmConfig.class);
+        when(vmConfig.vmTrace()).thenReturn(true);
+        return new ProgramTrace(vmConfig, programInvoke);
     }
 }

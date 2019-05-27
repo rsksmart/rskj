@@ -22,7 +22,7 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.BlockExecutorFactory;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.rpc.ExecutionBlockRetriever;
@@ -286,11 +286,11 @@ public class TransactionModuleTest {
                         Mockito.mock(BlockUnclesValidationRule.class),
                         minerClock,
                         blockFactory,
-                        new BlockExecutorFactory(
+                        new BlockExecutor(
                                 config.getActivationConfig(),
-                                transactionExecutorFactory,
                                 repository,
-                                stateRootHandler
+                                stateRootHandler,
+                                transactionExecutorFactory
                         )
                 ),
                 minerClock,
@@ -354,7 +354,7 @@ public class TransactionModuleTest {
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(BlockStore blockStore, ReceiptStore receiptStore) {
-        return new TestTransactionExecutorFactory(
+        return new TransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,
