@@ -311,7 +311,7 @@ public class RskContext implements NodeBootstrapper {
 
     public PrecompiledContracts getPrecompiledContracts() {
         if (precompiledContracts == null) {
-            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), btcBlockStore);;
+            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBtcBlockStore());
         }
 
         return precompiledContracts;
@@ -330,7 +330,7 @@ public class RskContext implements NodeBootstrapper {
         BridgeConstants bridgeConstants =  getRskSystemProperties().getNetworkConstants().getBridgeConstants();
         BtcBlockStoreWithCache btcBlockStore = new RepositoryBlockStore(
                 bridgeConstants,
-                getRepository(),
+                getRepository().startTracking(),
                 PrecompiledContracts.BRIDGE_ADDR
         );
         //TODO Checkpoints are loaded on BrigeSupport, we should load them here

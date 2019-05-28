@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.TestTransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
+import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.test.World;
 import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.BigIntegers;
@@ -46,6 +47,7 @@ public class BlockBuilder {
     private List<BlockHeader> uncles;
     private BigInteger minGasPrice;
     private byte[] gasLimit;
+    private BtcBlockStoreWithCache btcBlockStore;
 
     public BlockBuilder() {
         this.blockGenerator = new BlockGenerator();
@@ -53,6 +55,7 @@ public class BlockBuilder {
 
     public BlockBuilder(World world) {
         this(world.getBlockChain(), new BlockGenerator());
+        this.btcBlockStore = world.getBtcBlockStore();
     }
 
     public BlockBuilder(Blockchain blockChain) {
@@ -112,8 +115,8 @@ public class BlockBuilder {
                             blockChain.getBlockStore(),
                             null,
                             new BlockFactory(config.getActivationConfig()),
-                            new ProgramInvokeFactoryImpl()
-                    ),
+                            new ProgramInvokeFactoryImpl(),
+                            btcBlockStore),
                     new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
                     config.getActivationConfig()
             );

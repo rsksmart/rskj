@@ -20,6 +20,7 @@ package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.BtcBlockStoreWithCache;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -34,7 +35,8 @@ public class TestTransactionExecutorFactory extends TransactionExecutorFactory {
             BlockStore blockStore,
             ReceiptStore receiptStore,
             BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory) {
+            ProgramInvokeFactory programInvokeFactory,
+            BtcBlockStoreWithCache btcBlockStore) {
         super(
                 config,
                 blockStore,
@@ -42,7 +44,7 @@ public class TestTransactionExecutorFactory extends TransactionExecutorFactory {
                 blockFactory,
                 programInvokeFactory,
                 new DisabledProgramTraceProcessor(),
-                new PrecompiledContracts(config, null));
+                new PrecompiledContracts(config, btcBlockStore));
     }
 
     public static class DisabledProgramTraceProcessor implements ProgramTraceProcessor {

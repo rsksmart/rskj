@@ -39,7 +39,6 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -429,8 +428,8 @@ public class RemascStorageProviderTest {
                         blockchain.getBlockStore(),
                         null,
                         new BlockFactory(config.getActivationConfig()),
-                        new ProgramInvokeFactoryImpl()
-                ),
+                        new ProgramInvokeFactoryImpl(),
+                        null),
                 new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
                 config.getActivationConfig()
         );

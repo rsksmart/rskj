@@ -94,8 +94,8 @@ public class MinerHelper {
                     null,
                     null,
                     blockFactory,
-                    null
-            );
+                    null,
+                    null);
             TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 

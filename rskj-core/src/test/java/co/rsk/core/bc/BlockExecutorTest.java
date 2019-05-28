@@ -670,8 +670,8 @@ public class BlockExecutorTest {
                         null,
                         null,
                         blockFactory,
-                        new ProgramInvokeFactoryImpl()
-                ),
+                        new ProgramInvokeFactoryImpl(),
+                        null),
                 new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
                 config.getActivationConfig()
         );

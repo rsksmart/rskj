@@ -112,8 +112,8 @@ public class ContractRunner {
                 blockStore,
                 receiptStore,
                 new BlockFactory(config.getActivationConfig()),
-                new ProgramInvokeFactoryImpl()
-        );
+                new ProgramInvokeFactoryImpl(),
+                null);
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(transaction, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
         executor.init();

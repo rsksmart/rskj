@@ -69,8 +69,8 @@ public class CallContractTest {
                     null,
                     null,
                     blockFactory,
-                    new ProgramInvokeFactoryImpl()
-            );
+                    new ProgramInvokeFactoryImpl(),
+                    null);
             org.ethereum.core.TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
                     .setLocalCall(true);

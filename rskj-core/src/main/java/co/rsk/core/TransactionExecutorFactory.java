@@ -65,7 +65,7 @@ public class TransactionExecutorFactory {
                 blockFactory,
                 programInvokeFactory,
                 programTraceProcessor,
-                null);
+                precompiledContracts);
     }
 
     public TransactionExecutor newInstance(

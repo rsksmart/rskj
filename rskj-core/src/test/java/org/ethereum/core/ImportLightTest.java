@@ -66,8 +66,9 @@ public class ImportLightTest {
                 blockStore,
                 receiptStore,
                 blockFactory,
-                new ProgramInvokeFactoryImpl()
-        );
+                new ProgramInvokeFactoryImpl(),
+
+                null);
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
 
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());

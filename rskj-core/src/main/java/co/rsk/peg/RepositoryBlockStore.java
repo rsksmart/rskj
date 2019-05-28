@@ -123,7 +123,7 @@ public class RepositoryBlockStore implements BtcBlockStoreWithCache {
     }
 
     @Override
-    public synchronized StoredBlock get(Sha256Hash hash) throws BlockStoreException {
+    public synchronized StoredBlock get(Sha256Hash hash) {
         StoredBlock storedBlock = knownBlocks.get(hash);
 
         if (storedBlock != null) {
@@ -145,7 +145,7 @@ public class RepositoryBlockStore implements BtcBlockStoreWithCache {
     }
 
     @Override
-    public synchronized StoredBlock getChainHead() throws BlockStoreException {
+    public synchronized StoredBlock getChainHead() {
         if (this.chainHeadInfo == null) {
             byte[] ba = repository.getStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY));
             if (ba == null) {
@@ -165,14 +165,26 @@ public class RepositoryBlockStore implements BtcBlockStoreWithCache {
 
     }
 
-    public synchronized void populateCache(StoredBlock chainHead) throws BlockStoreException {
+    public synchronized void populateCache(StoredBlock chainHead) {
         storeBlockInCache(chainHead, true);
         Sha256Hash blockHash = chainHead.getHeader().getPrevBlockHash();
         int spaceInCache = MAX_SIZE_MAP_INDEXED_BLOCKS-1;
         while (blockHash != null && spaceInCache > 0) {
-            StoredBlock currentBlock = get(blockHash);
-            if (currentBlock == null) {
-                break;
+            StoredBlock currentBlock = knownBlocks.get(blockHash);
+            //Check if its already in cache
+            if (currentBlock != null) {
+                Map<Sha256Hash, BtcBlockInfo> currentChainMap = index.getOrDefault(currentBlock.getHeight(), new HashMap<>());
+                BtcBlockInfo currentChainInfo = currentChainMap.get(blockHash);
+                if(currentChainInfo != null && currentChainInfo.isMainChain()) {
+                    break;
+                }
+            }
+            else {
+                //Check if its in disk
+                currentBlock = get(blockHash);
+                if (currentBlock == null) {
+                    break;
+                }
             }
             storeBlockInCache(currentBlock, true);
             spaceInCache--;
@@ -181,7 +193,7 @@ public class RepositoryBlockStore implements BtcBlockStoreWithCache {
     }
 
     @Override
-    public synchronized void setChainHead(StoredBlock chainHead) throws BlockStoreException {
+    public synchronized void setChainHead(StoredBlock chainHead) {
         byte[] ba = storedBlockToByteArray(chainHead);
         repository.addStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY), ba);
 
@@ -266,7 +278,7 @@ public class RepositoryBlockStore implements BtcBlockStoreWithCache {
         return branchBlock;
     }
 
-    public BtcBlockInfo getFromCacheMainChain(Sha256Hash branchBlockHash) throws BlockStoreException {
+    public BtcBlockInfo getBlockInfoFromCache(Sha256Hash branchBlockHash) throws BlockStoreException {
         StoredBlock branchBlock = knownBlocks.get(branchBlockHash);
         if (branchBlock == null) {
             throw new BlockStoreException("Requested block : " + branchBlockHash + " not found in cache ");
@@ -295,7 +307,7 @@ public class RepositoryBlockStore implements BtcBlockStoreWithCache {
         return null;
     }
 
-    public StoredBlock getStoredBlockAtHeight(int height) throws  BlockStoreException{
+    public StoredBlock getStoredBlockAtHeight(int height) {
         StoredBlock block = getMainChainCacheAtHeight(height);
         if (block != null) {
             return block;

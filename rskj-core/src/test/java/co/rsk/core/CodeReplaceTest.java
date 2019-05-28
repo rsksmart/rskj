@@ -231,8 +231,8 @@ public class CodeReplaceTest {
                 blockchain.getBlockStore(),
                 null,
                 blockFactory,
-                new ProgramInvokeFactoryImpl()
-        );
+                new ProgramInvokeFactoryImpl(),
+                null);
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), blockchain.getRepository(), blockchain.getBestBlock(), 0);
 

@@ -123,7 +123,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
         final int maxBtcBlocks = 1000;
 
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBlockStore(BridgeRegTestConstants.getInstance(), repository, PrecompiledContracts.BRIDGE_ADDR);
+            BtcBlockStore btcBlockStore = new RepositoryBlockStore(BridgeRegTestConstants.getInstance(), repository.startTracking(), PrecompiledContracts.BRIDGE_ADDR);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {

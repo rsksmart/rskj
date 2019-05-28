@@ -1495,7 +1495,7 @@ public class Web3ImplTest {
                 blockChain.getBlockStore(),
                 null,
                 blockFactory,
-                null
-        );
+                null,
+                null);
     }
 }

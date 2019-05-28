@@ -127,6 +127,11 @@ public class BridgeSupport {
                 ),
                 eventLogger, repository, rskExecutionBlock, null, null
         );
+        this.btcBlockStore =  new RepositoryBlockStore(
+                bridgeConstants,
+                this.rskRepository,
+                PrecompiledContracts.BRIDGE_ADDR
+        );
     }
 
     // Used by unit tests
@@ -167,14 +172,6 @@ public class BridgeSupport {
         this.btcBlockChain = btcBlockChain;
     }
 
-    private BtcBlockStoreWithCache buildBtcBlockstoreWithCache() {
-        BtcBlockStoreWithCache btcBlockStore = new RepositoryBlockStore(
-                bridgeConstants,
-                this.rskRepository,
-                PrecompiledContracts.BRIDGE_ADDR
-        );
-        return btcBlockStore;
-    }
 
     // Make sure the local bitcoin blockstore is instantiated
     private void ensureCheckpoint() throws BlockStoreException, IOException {
@@ -1136,7 +1133,7 @@ public class BridgeSupport {
         }
 
         try {
-            RepositoryBlockStore.BtcBlockInfo blockInfo = btcBlockStore.getFromCacheMainChain(btcBlockHash);
+            RepositoryBlockStore.BtcBlockInfo blockInfo = btcBlockStore.getBlockInfoFromCache(btcBlockHash);
             // Make sure it belongs to the best chain
             if (!blockInfo.isMainChain()){
                 return BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE;
@@ -2031,9 +2028,6 @@ public class BridgeSupport {
 
     // Make sure the local bitcoin blockstore is instantiated
     private void ensureBtcBlockStore() throws IOException {
-        if (this.btcBlockStore == null) {
-            this.btcBlockStore = this.buildBtcBlockstoreWithCache();
-        }
         try {
             ensureCheckpoint();
         } catch (BlockStoreException e) {

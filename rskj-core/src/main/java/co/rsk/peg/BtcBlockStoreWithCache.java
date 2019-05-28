@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,7 +33,7 @@ public interface BtcBlockStoreWithCache extends BtcBlockStore {
 
     StoredBlock getFromCache(Sha256Hash branchBlockHash) throws BlockStoreException;
 
-    RepositoryBlockStore.BtcBlockInfo getFromCacheMainChain(Sha256Hash branchBlockHash) throws BlockStoreException;
+    RepositoryBlockStore.BtcBlockInfo getBlockInfoFromCache(Sha256Hash branchBlockHash) throws BlockStoreException;
 
     StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException;
 

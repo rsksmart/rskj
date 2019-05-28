@@ -247,8 +247,8 @@ public class TransactionTest {
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
-                            invokeFactory
-                    );
+                            invokeFactory,
+                            null);
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);

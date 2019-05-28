@@ -252,8 +252,8 @@ public class WorldDslProcessor {
                             world.getBlockChain().getBlockStore(),
                             null,
                             new BlockFactory(config.getActivationConfig()),
-                            programInvokeFactory
-                    ),
+                            programInvokeFactory,
+                            null),
                     new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
                     config.getActivationConfig()
             );

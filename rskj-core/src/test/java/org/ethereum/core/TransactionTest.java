@@ -443,8 +443,8 @@ public class TransactionTest {
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
-                            invokeFactory
-                    );
+                            invokeFactory,
+                            null);
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
@@ -703,8 +703,8 @@ public class TransactionTest {
                 blockchain.getBlockStore(),
                 null,
                 blockFactory,
-                new ProgramInvokeFactoryImpl()
-        );
+                new ProgramInvokeFactoryImpl(),
+                null);
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), blockchain.getRepository(), blockchain.getBestBlock(), 0);
 

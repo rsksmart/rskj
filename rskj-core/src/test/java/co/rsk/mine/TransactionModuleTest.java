@@ -359,7 +359,7 @@ public class TransactionModuleTest {
                 blockStore,
                 receiptStore,
                 blockFactory,
-                null
-        );
+                null,
+                null);
     }
 }
