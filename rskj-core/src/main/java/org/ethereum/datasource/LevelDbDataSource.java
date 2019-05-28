@@ -269,17 +269,28 @@ public class LevelDbDataSource implements KeyValueDataSource {
             throw new IllegalArgumentException("Cannot update null values");
         }
         // Note that this is not atomic.
+        int batch_threshold = 100;
+        int counter = 0;
+
         try (WriteBatch batch = db.createWriteBatch()) {
+
+            if (counter == 0) {
+                for (ByteArrayWrapper deleteKey : deleteKeys) {
+                    batch.delete(deleteKey.getData());
+                }
+                db.write(batch);
+            }
+
             for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
                 batch.put(entry.getKey().getData(), entry.getValue());
+                if ((counter + 1) % batch_threshold == 0) {
+                    db.write(batch);
+                }
+                counter++;
             }
-            for (ByteArrayWrapper deleteKey : deleteKeys) {
-                batch.delete(deleteKey.getData());
-            }
-            db.write(batch);
-            profiler.stop(metric);
-        }
 
+        }
+        profiler.stop(metric);
     }
 
     @Override
