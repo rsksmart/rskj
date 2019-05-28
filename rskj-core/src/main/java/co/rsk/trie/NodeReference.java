@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class NodeReference {
-    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 43;
+    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 43; //40 y 47
 
     private final TrieStore store;
 

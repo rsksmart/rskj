@@ -9,6 +9,7 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.KeyValueDataSource;
 import com.opencsv.*;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
@@ -19,13 +20,14 @@ import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static co.rsk.TrieMetricsUtils.*;
 
 
 public class TrieMetrics {
 
-    public static final int QTY_ACCOUNTS = 500000;
+    public static final int QTY_ACCOUNTS = 1000000;
     private CSVWriter writer;
 
     public TrieMetrics(String path){
@@ -84,16 +86,16 @@ public class TrieMetrics {
         }
     }
 
-    public Repository unitrieWithOneContract(RskContext rskContext){
+    public Repository unitrieWithOneContract(Repository repository){
         long start = System.nanoTime();
-        Repository repository = rskContext.getRepository();
         RskAddress contractAddress = randomAccountAddress();
         byte[] zeros = ByteUtil.bigIntegerToBytes(BigInteger.ZERO,12);
         for (int i = 0; i < QTY_ACCOUNTS; i++) {
             byte[] addrss = ByteUtil.merge(zeros, randomAccountAddress().getBytes());
             repository.addStorageRow(contractAddress ,new DataWord(addrss), DataWord.valueOf(randomBytes(12)));
-            if (i % 1000 == 0){
-                repository.commit();
+            if ((i+1) % 100000 == 0){
+                System.out.println(i+1);
+                repository.flush();
             }
         }
 
@@ -102,9 +104,10 @@ public class TrieMetrics {
             AccountState accState = repository.createAccount(addr);
             accState.addToBalance(randomCoin(18, 1000));
             accState.setNonce(randomBigInteger(1));  // 1 ?
-            repository.updateAccountState(addr,accState);
-            if (i % 1000 == 0){
-                repository.commit();
+            repository.updateAccountState(addr, accState);
+            if ((i+1) % 100000 == 0){
+                System.out.println(i+1);
+                repository.flush();
             }
         }
 
@@ -141,15 +144,64 @@ public class TrieMetrics {
         System.out.println("Total Size:" + totalLength/1000000);
     }
 
+    public static List<String> compareRepositories(Repository repositoryA, Repository repositoryB){
+
+        List<String> errorMessages = new ArrayList<>();
+
+
+        if(ByteUtil.fastEquals(repositoryA.getRoot(), repositoryB.getRoot()) == false){
+            errorMessages.add("RepositoryA.root != RepositoryB.root");
+        }
+
+        List<RskAddress> accountKeysB = repositoryB.getAccountsKeys().stream().collect(Collectors.toList());
+        System.out.println("ACCOUNT KEYS B GOT");
+
+        List<RskAddress> accountKeysA = repositoryA.getAccountsKeys().stream().collect(Collectors.toList());
+        System.out.println("ACCOUNT KEYS A GOT");
+
+
+
+        if(accountKeysA.size() != accountKeysB.size()){
+            errorMessages.add("AccountKeysA != AccountKeysB");
+        }
+
+        for(int i = 0; i<accountKeysA.size(); i++){
+            RskAddress accountA = accountKeysA.get(i);
+            RskAddress accountB = accountKeysB.get(i);
+            System.out.println("Evaluating AccountA ["+accountA+"] and Account B ["+accountB+"]");
+            if(!accountA.equals(accountB)){
+                errorMessages.add("AccountA ["+accountA+"] != AccountB ["+accountB+"]");
+            }
+
+            byte[] accountStateA = repositoryA.getAccountState(accountA).getEncoded();
+            byte[] accountStateB = repositoryB.getAccountState(accountB).getEncoded();
+
+            if(ByteUtil.fastEquals(accountStateA, accountStateB)==false){
+                errorMessages.add("AccountStateA != AccountStateB");
+            }
+
+
+            if(ByteUtil.fastEquals(repositoryA.getRoot(), repositoryB.getRoot()) == false){
+                errorMessages.add("RepositoryA Root != RepositoryB Root");
+            }
+        }
+
+        if (errorMessages.isEmpty()){
+            System.out.println("Both repositories are equals");
+        }
+        return errorMessages;
+
+    }
+
 
     public static void main(String[] args) {
         String path = "resultado.csv";
-        deleteFile("/home/julian/.rsk/unitrie-test");
-        RskContext rskContext = new RskContext(new String[]{"-base-path", "/home/julian/.rsk/unitrie-test"});
+        deleteFile("/home/julian/.rsk/juli");
         TrieMetrics trieMetrics = new TrieMetrics(path);
-        Repository repository = trieMetrics.unitrieWithOneContract(rskContext);
+        Repository repository = trieMetrics.unitrieWithOneContract(new MutableRepository(new Trie(new TrieStoreImpl(RskContext.makeDataSource("juli", "/home/julian/.rsk/")))));
+        //Repository repositoryStored = new MutableRepository(new Trie(new TrieStoreImpl(RskContext.makeDataSource("juli", "/home/julian/.rsk/"))));
+        //compareRepositories(repository, repositoryStored);
         trieMetrics.unitrieAnalysis(repository);
-
 
     }
 }

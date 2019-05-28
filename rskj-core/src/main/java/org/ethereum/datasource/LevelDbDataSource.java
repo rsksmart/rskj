@@ -34,10 +34,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -261,7 +258,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             profiler.stop(metric);
         }
     }
-
+    //TODO: 10 100 1000 10000
     private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) throws IOException {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         if (rows.containsKey(null) || rows.containsValue(null)) {
@@ -269,26 +266,36 @@ public class LevelDbDataSource implements KeyValueDataSource {
             throw new IllegalArgumentException("Cannot update null values");
         }
         // Note that this is not atomic.
-        int batch_threshold = 100;
-        int counter = 0;
 
         try (WriteBatch batch = db.createWriteBatch()) {
-
-            if (counter == 0) {
-                for (ByteArrayWrapper deleteKey : deleteKeys) {
-                    batch.delete(deleteKey.getData());
-                }
-                db.write(batch);
+            for (ByteArrayWrapper deleteKey : deleteKeys) {
+                batch.delete(deleteKey.getData());
             }
+        }
+        Iterator<Map.Entry<ByteArrayWrapper, byte[]>> iterator = rows.entrySet().iterator();
+        int counter = 0;
+        while (counter < rows.entrySet().size()){
+            try (WriteBatch batch = db.createWriteBatch()) {
 
-            for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
-                batch.put(entry.getKey().getData(), entry.getValue());
-                if ((counter + 1) % batch_threshold == 0) {
-                    db.write(batch);
+                if (rows.entrySet().size() - counter < 1000){
+                    while(iterator.hasNext()){
+                        Map.Entry<ByteArrayWrapper, byte[]> entry = iterator.next();
+                        batch.put(entry.getKey().getData(), entry.getValue());
+                    }
+                } else {
+                    while(iterator.hasNext() && (counter+1)%1000 != 0){
+                        Map.Entry<ByteArrayWrapper, byte[]> entry = iterator.next();
+                        batch.put(entry.getKey().getData(), entry.getValue());
+                        counter++;
+                    }
+                        Map.Entry<ByteArrayWrapper, byte[]> entry = iterator.next();
+                        batch.put(entry.getKey().getData(), entry.getValue());
+                        counter++;
+
+                        db.write(batch);
                 }
-                counter++;
-            }
 
+            }
         }
         profiler.stop(metric);
     }
@@ -315,7 +322,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 logger.error("Error, retrying one more time...", e);
                 // try one more time
                 try {
-                    //TODO: 10 100 1000 10000
                     updateBatchInternal(rows, deleteKeys);
                     if (logger.isTraceEnabled()) {
                         logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
