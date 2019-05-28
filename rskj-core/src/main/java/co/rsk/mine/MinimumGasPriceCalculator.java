@@ -26,7 +26,13 @@ import co.rsk.core.Coin;
  */
 public class MinimumGasPriceCalculator {
 
-    public Coin calculate(Coin previousMGP, Coin targetMGP) {
+    private final Coin targetMGP;
+
+    public MinimumGasPriceCalculator(Coin targetMGP) {
+        this.targetMGP = targetMGP;
+    }
+
+    public Coin calculate(Coin previousMGP) {
         BlockGasPriceRange priceRange = new BlockGasPriceRange(previousMGP);
         if (priceRange.inRange(targetMGP)) {
             return targetMGP;
