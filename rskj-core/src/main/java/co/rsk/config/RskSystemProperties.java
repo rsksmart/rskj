@@ -139,7 +139,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public long minerMinGasPrice() {
-        return getLong("miner.minGasPrice", 0);
+        return configFromFiles.getLong("miner.minGasPrice");
     }
 
     public double minerGasUnitInDollars() {

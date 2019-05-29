@@ -65,8 +65,6 @@ public class BlockToMineBuilder {
     private final MinimumGasPriceCalculator minimumGasPriceCalculator;
     private final MinerUtils minerUtils;
 
-    private final Coin minerMinGasPriceTarget;
-
     public BlockToMineBuilder(
             ActivationConfig activationConfig,
             MiningConfig miningConfig,
@@ -92,10 +90,8 @@ public class BlockToMineBuilder {
         this.clock = Objects.requireNonNull(clock);
         this.blockFactory = blockFactory;
         this.executor = blockExecutor;
-        this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
+        this.minimumGasPriceCalculator = new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget()));
         this.minerUtils = new MinerUtils();
-
-        this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
     }
 
     /**
@@ -117,10 +113,7 @@ public class BlockToMineBuilder {
             uncles = uncles.subList(0, miningConfig.getUncleListLimit());
         }
 
-        Coin minimumGasPrice = minimumGasPriceCalculator.calculate(
-                newBlockParent.getMinimumGasPrice(),
-                minerMinGasPriceTarget
-        );
+        Coin minimumGasPrice = minimumGasPriceCalculator.calculate(newBlockParent.getMinimumGasPrice());
 
         final List<Transaction> txsToRemove = new ArrayList<>();
         final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);

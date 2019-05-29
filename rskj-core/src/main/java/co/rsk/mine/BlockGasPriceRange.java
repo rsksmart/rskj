@@ -35,8 +35,9 @@ public class BlockGasPriceRange {
     public BlockGasPriceRange(Coin center) {
         Coin mgpDelta = center.multiply(VARIATION_PERCENTAGE_RANGE).divide(BigInteger.valueOf(100));
         mgpDelta = mgpDelta.equals(Coin.ZERO) ? Coin.valueOf(1L) : mgpDelta;
+        Coin candidateLower = center.subtract(mgpDelta);
         this.upperLimit = center.add(mgpDelta);
-        this.lowerLimit = center.subtract(mgpDelta);
+        this.lowerLimit = candidateLower.compareTo(Coin.ZERO) < 0 ? Coin.ZERO : candidateLower;
     }
 
     public boolean inRange(Coin mgp) {

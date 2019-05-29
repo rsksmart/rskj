@@ -254,7 +254,7 @@ public class BlockGenerator {
         }
 
         Coin previousMGP = parent.getMinimumGasPrice() != null ? parent.getMinimumGasPrice() : Coin.valueOf(10L);
-        Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
+        Coin minimumGasPrice = new MinimumGasPriceCalculator(Coin.valueOf(100L)).calculate(previousMGP);
 
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
         return blockFactory.newBlock(
