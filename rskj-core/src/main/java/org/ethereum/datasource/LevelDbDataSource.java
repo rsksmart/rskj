@@ -46,6 +46,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    public static final int SUB_BATCH_SIZE = 10000;
 
     private final String databaseDir;
     private final String name;
@@ -277,13 +278,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
         while (counter < rows.entrySet().size()){
             try (WriteBatch batch = db.createWriteBatch()) {
 
-                if (rows.entrySet().size() - counter < 1000){
+                if (rows.entrySet().size() - counter < SUB_BATCH_SIZE){
                     while(iterator.hasNext()){
                         Map.Entry<ByteArrayWrapper, byte[]> entry = iterator.next();
                         batch.put(entry.getKey().getData(), entry.getValue());
                     }
                 } else {
-                    while(iterator.hasNext() && (counter+1)%1000 != 0){
+                    while(iterator.hasNext() && (counter+1)% SUB_BATCH_SIZE != 0){
                         Map.Entry<ByteArrayWrapper, byte[]> entry = iterator.next();
                         batch.put(entry.getKey().getData(), entry.getValue());
                         counter++;

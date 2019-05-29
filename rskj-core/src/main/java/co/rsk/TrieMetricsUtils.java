@@ -2,17 +2,71 @@ package co.rsk;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.ethereum.core.Repository;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class TrieMetricsUtils {
 
 
 
     private static Random random;
+
+    public static List<String> compareRepositories(Repository repositoryA, Repository repositoryB){
+
+        List<String> errorMessages = new ArrayList<>();
+
+
+        if(ByteUtil.fastEquals(repositoryA.getRoot(), repositoryB.getRoot()) == false){
+            errorMessages.add("RepositoryA.root != RepositoryB.root");
+        }
+
+        List<RskAddress> accountKeysB = repositoryB.getAccountsKeys().stream().collect(Collectors.toList());
+        System.out.println("ACCOUNT KEYS B GOT");
+
+        List<RskAddress> accountKeysA = repositoryA.getAccountsKeys().stream().collect(Collectors.toList());
+        System.out.println("ACCOUNT KEYS A GOT");
+
+
+
+        if(accountKeysA.size() != accountKeysB.size()){
+            errorMessages.add("AccountKeysA != AccountKeysB");
+        }
+
+        for(int i = 0; i<accountKeysA.size(); i++){
+            RskAddress accountA = accountKeysA.get(i);
+            RskAddress accountB = accountKeysB.get(i);
+            System.out.println("Evaluating AccountA ["+accountA+"] and Account B ["+accountB+"]");
+            if(!accountA.equals(accountB)){
+                errorMessages.add("AccountA ["+accountA+"] != AccountB ["+accountB+"]");
+            }
+
+            byte[] accountStateA = repositoryA.getAccountState(accountA).getEncoded();
+            byte[] accountStateB = repositoryB.getAccountState(accountB).getEncoded();
+
+            if(ByteUtil.fastEquals(accountStateA, accountStateB)==false){
+                errorMessages.add("AccountStateA != AccountStateB");
+            }
+
+
+            if(ByteUtil.fastEquals(repositoryA.getRoot(), repositoryB.getRoot()) == false){
+                errorMessages.add("RepositoryA Root != RepositoryB Root");
+            }
+        }
+
+        if (errorMessages.isEmpty()){
+            System.out.println("Both repositories are equals");
+        }
+        return errorMessages;
+
+    }
 
     public static Coin randomCoin(int decimalZeros, int maxValue) {
         return new Coin(BigInteger.TEN.pow(decimalZeros).multiply(

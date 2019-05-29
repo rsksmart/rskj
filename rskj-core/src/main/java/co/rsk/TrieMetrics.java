@@ -20,7 +20,6 @@ import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static co.rsk.TrieMetricsUtils.*;
 
@@ -28,6 +27,7 @@ import static co.rsk.TrieMetricsUtils.*;
 public class TrieMetrics {
 
     public static final int QTY_ACCOUNTS = 1000000;
+    public static final int COMMITS_SIZE = 10000;
     private CSVWriter writer;
 
     public TrieMetrics(String path){
@@ -86,18 +86,8 @@ public class TrieMetrics {
         }
     }
 
-    public Repository unitrieWithOneContract(Repository repository){
+    public Repository addRandomAccounts(Repository repository){
         long start = System.nanoTime();
-        RskAddress contractAddress = randomAccountAddress();
-        byte[] zeros = ByteUtil.bigIntegerToBytes(BigInteger.ZERO,12);
-        for (int i = 0; i < QTY_ACCOUNTS; i++) {
-            byte[] addrss = ByteUtil.merge(zeros, randomAccountAddress().getBytes());
-            repository.addStorageRow(contractAddress ,new DataWord(addrss), DataWord.valueOf(randomBytes(12)));
-            if ((i+1) % 100000 == 0){
-                System.out.println(i+1);
-                repository.flush();
-            }
-        }
 
         for (int i = 0; i < QTY_ACCOUNTS; i++) {
             RskAddress addr = randomAccountAddress();
@@ -105,7 +95,7 @@ public class TrieMetrics {
             accState.addToBalance(randomCoin(18, 1000));
             accState.setNonce(randomBigInteger(1));  // 1 ?
             repository.updateAccountState(addr, accState);
-            if ((i+1) % 100000 == 0){
+            if ((i+1) % COMMITS_SIZE == 0){
                 System.out.println(i+1);
                 repository.flush();
             }
@@ -123,17 +113,38 @@ public class TrieMetrics {
 
     }
 
+    public Repository addErc20BalanceRow(Repository repository) {
+        RskAddress contractAddress = randomAccountAddress();
+        byte[] zeros = ByteUtil.bigIntegerToBytes(BigInteger.ZERO,12);
+
+        for (int i = 0; i < QTY_ACCOUNTS; i++) {
+            byte[] addrss = ByteUtil.merge(zeros, randomAccountAddress().getBytes());
+            repository.addStorageRow(contractAddress ,new DataWord(addrss), DataWord.valueOf(randomBytes(12)));
+            if ((i+1) % COMMITS_SIZE == 0){
+                System.out.println(i+1);
+                repository.flush();
+            }
+        }
+
+        repository.save();
+        repository.flush();
+        repository.close();
+
+        return repository;
+    }
+
+
     private void unitrieAnalysis(Repository repository) {
 
         Trie retrieve = repository.getMutableTrie().getTrie();
         Iterator<Trie.IterationElement> inOrderIterator = retrieve.getInOrderIterator();
 
-        int totalLength = 0;
+        double totalLength = 0;
 
         while (inOrderIterator.hasNext()) {
             Trie.IterationElement next =  inOrderIterator.next();
             Trie node = next.getNode();
-            int length = node.toMessage().length;
+            long length = node.toMessage().length;
             if (!node.isTerminal() || length > 43) {
                 totalLength += length;
             }
@@ -144,64 +155,23 @@ public class TrieMetrics {
         System.out.println("Total Size:" + totalLength/1000000);
     }
 
-    public static List<String> compareRepositories(Repository repositoryA, Repository repositoryB){
-
-        List<String> errorMessages = new ArrayList<>();
-
-
-        if(ByteUtil.fastEquals(repositoryA.getRoot(), repositoryB.getRoot()) == false){
-            errorMessages.add("RepositoryA.root != RepositoryB.root");
-        }
-
-        List<RskAddress> accountKeysB = repositoryB.getAccountsKeys().stream().collect(Collectors.toList());
-        System.out.println("ACCOUNT KEYS B GOT");
-
-        List<RskAddress> accountKeysA = repositoryA.getAccountsKeys().stream().collect(Collectors.toList());
-        System.out.println("ACCOUNT KEYS A GOT");
 
 
 
-        if(accountKeysA.size() != accountKeysB.size()){
-            errorMessages.add("AccountKeysA != AccountKeysB");
-        }
-
-        for(int i = 0; i<accountKeysA.size(); i++){
-            RskAddress accountA = accountKeysA.get(i);
-            RskAddress accountB = accountKeysB.get(i);
-            System.out.println("Evaluating AccountA ["+accountA+"] and Account B ["+accountB+"]");
-            if(!accountA.equals(accountB)){
-                errorMessages.add("AccountA ["+accountA+"] != AccountB ["+accountB+"]");
-            }
-
-            byte[] accountStateA = repositoryA.getAccountState(accountA).getEncoded();
-            byte[] accountStateB = repositoryB.getAccountState(accountB).getEncoded();
-
-            if(ByteUtil.fastEquals(accountStateA, accountStateB)==false){
-                errorMessages.add("AccountStateA != AccountStateB");
-            }
-
-
-            if(ByteUtil.fastEquals(repositoryA.getRoot(), repositoryB.getRoot()) == false){
-                errorMessages.add("RepositoryA Root != RepositoryB Root");
-            }
-        }
-
-        if (errorMessages.isEmpty()){
-            System.out.println("Both repositories are equals");
-        }
-        return errorMessages;
-
-    }
-
-
-    public static void main(String[] args) {
+    public static void main (String[] args) {
         String path = "resultado.csv";
-        deleteFile("/home/julian/.rsk/juli");
+        //deleteFile("/home/julian/.rsk/unitrie-test");
         TrieMetrics trieMetrics = new TrieMetrics(path);
-        Repository repository = trieMetrics.unitrieWithOneContract(new MutableRepository(new Trie(new TrieStoreImpl(RskContext.makeDataSource("juli", "/home/julian/.rsk/")))));
-        //Repository repositoryStored = new MutableRepository(new Trie(new TrieStoreImpl(RskContext.makeDataSource("juli", "/home/julian/.rsk/"))));
+        MutableRepository repositoryDB = new MutableRepository(new Trie(new TrieStoreImpl(RskContext.makeDataSource("unitrie-test", "/home/julian/.rsk/"))));
+        //trieMetrics.addErc20BalanceRow(repositoryDB );
+        trieMetrics.addRandomAccounts(repositoryDB);
+        //trieMetrics.unitrieAnalysis(repository);
         //compareRepositories(repository, repositoryStored);
-        trieMetrics.unitrieAnalysis(repository);
 
     }
 }
+
+
+
+//TODO: Hago 2 corridas independientes, luego hago una que no guarde en la bd pero que quede en memoria. Comparo ambos repository, si son
+// iguales entonces tengo memoria y db.
