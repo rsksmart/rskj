@@ -715,12 +715,11 @@ public class BridgeSupportTest {
         BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(bridgeConstants, track, PrecompiledContracts.BRIDGE_ADDR);
         BtcBlockChain btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
 
-
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, bridgeConstants, bridgeStorageConfigurationAtHeightZero);
 
         BridgeSupport bridgeSupport = new BridgeSupport(bridgeConstants, provider, null, track, null, btcBlockStore, btcBlockChain);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, btcParams.getGenesisBlock().getDifficultyTarget(), 1, new ArrayList<BtcTransaction>());
         co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
         headers[0] = block;
 
