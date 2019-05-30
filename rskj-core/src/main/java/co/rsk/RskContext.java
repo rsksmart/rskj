@@ -1360,7 +1360,7 @@ public class RskContext implements NodeBootstrapper {
         return new IndexedBlockStore(blockFactory, indexMap, blocksDB, indexDB);
     }
 
-    private static KeyValueDataSource makeDataSource(String name, String databaseDir) {
+    public static KeyValueDataSource makeDataSource(String name, String databaseDir) {
         KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir);
         ds.init();
         return ds;

@@ -44,7 +44,8 @@ public class BlockchainLoaderTest {
         objects.getBlockchain(); // calls loadBlockchain
         Repository repository = objects.getRepository();
 
-        Assert.assertEquals(12, repository.getAccountsKeys().size());
+        int genesisAccountKeysSize = 12; // PCCs + test accounts in blockchain_loader_genesis.json
+        Assert.assertEquals(genesisAccountKeysSize, repository.getAccountsKeys().size());
 
         RskAddress daba01 = new RskAddress("dabadabadabadabadabadabadabadabadaba0001");
         Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(daba01));
