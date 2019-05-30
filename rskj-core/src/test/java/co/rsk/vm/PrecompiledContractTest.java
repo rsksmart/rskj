@@ -85,17 +85,21 @@ public class PrecompiledContractTest {
 
     @Test
     public void getBtoUtilsBeforeRskip106() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP106)).thenReturn(false);
         DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
-        PrecompiledContract btoUtils = precompiledContracts.getContractForAddress(cr -> false, btoUtilsAddress);
+        PrecompiledContract btoUtils = precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
 
         Assert.assertNull(btoUtils);
     }
 
     @Test
     public void getBtoUtilsAfterRskip106() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP106)).thenReturn(true);
         DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
-        PrecompiledContract btoUtils1 = precompiledContracts.getContractForAddress(cr -> true, btoUtilsAddress);
-        PrecompiledContract btoUtils2 = precompiledContracts.getContractForAddress(cr -> true, btoUtilsAddress);
+        PrecompiledContract btoUtils1 = precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
+        PrecompiledContract btoUtils2 = precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
 
         Assert.assertNotNull(btoUtils1);
         Assert.assertNotNull(btoUtils2);

@@ -21,7 +21,6 @@ package org.ethereum.core.genesis;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RskTestFactory;
@@ -39,15 +38,13 @@ public class BlockchainLoaderTest {
         RskTestFactory objects = new RskTestFactory() {
             @Override
             public Genesis buildGenesis() {
-                boolean useRskip92Encoding = getRskSystemProperties().getActivationConfig().isActive(ConsensusRule.RSKIP92, 0);
-                boolean isRskip126Enabled = getRskSystemProperties().getActivationConfig().isActive(ConsensusRule.RSKIP126, 0);
-                return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true, useRskip92Encoding, isRskip126Enabled);
+                return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true, true, true);
             }
         };
         objects.getBlockchain(); // calls loadBlockchain
         Repository repository = objects.getRepository();
 
-        Assert.assertEquals(5, repository.getAccountsKeys().size());
+        Assert.assertEquals(12, repository.getAccountsKeys().size());
 
         RskAddress daba01 = new RskAddress("dabadabadabadabadabadabadabadabadaba0001");
         Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(daba01));

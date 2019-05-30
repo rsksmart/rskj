@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
@@ -28,17 +29,15 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * This is a stateless class with methods to execute blocks with its transactions.
@@ -102,7 +101,7 @@ public class BlockExecutor {
         header.setReceiptsRoot(BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), isRskip126Enabled));
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
-        block.setStateRoot(stateRootHandler.convert(header, result.getFinalState()).getBytes());
+        header.setStateRoot(stateRootHandler.convert(header, result.getFinalState()).getBytes());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
 
         block.flushRLP();
@@ -188,7 +187,7 @@ public class BlockExecutor {
     }
 
     private boolean validateStateRoot(BlockHeader header, BlockResult result) {
-        boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, header.getNumber());
+        boolean isRskip85Enabled = activationConfig.isActive(RSKIP85, header.getNumber());
         if (!isRskip85Enabled) {
             return true;
         }
@@ -261,6 +260,9 @@ public class BlockExecutor {
         Repository initialRepository = repository.getSnapshotTo(lastStateRootHash);
 
         Repository track = initialRepository.startTracking();
+
+        maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
+
         int i = 1;
         long totalGasUsed = 0;
         Coin totalPaidFees = Coin.ZERO;
@@ -353,6 +355,31 @@ public class BlockExecutor {
         );
         profiler.stop(metric);
         return result;
+    }
+
+    /**
+     * Precompiled contracts storage is setup like any other contract for consistency. Here, we apply this logic on the
+     * exact activation block.
+     * This method is called automatically for every block except for the Genesis (which makes an explicit call).
+     */
+    public static void maintainPrecompiledContractStorageRoots(Repository track, ActivationConfig.ForBlock activations) {
+        if (activations.isActivating(RSKIP126)) {
+            for (RskAddress addr : PrecompiledContracts.GENESIS_ADDRESSES) {
+                if (!track.isExist(addr)) {
+                    track.createAccount(addr);
+                }
+                track.setupContract(addr);
+            }
+        }
+
+        for (Map.Entry<RskAddress, ConsensusRule> e : PrecompiledContracts.CONSENSUS_ENABLED_ADDRESSES.entrySet()) {
+            ConsensusRule contractActivationRule = e.getValue();
+            if (activations.isActivating(contractActivationRule)) {
+                RskAddress addr = e.getKey();
+                track.createAccount(addr);
+                track.setupContract(addr);
+            }
+        }
     }
 
     @VisibleForTesting

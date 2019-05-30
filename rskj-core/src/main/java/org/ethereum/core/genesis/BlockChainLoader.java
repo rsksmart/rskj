@@ -30,6 +30,8 @@ import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
@@ -163,7 +165,20 @@ public class BlockChainLoader {
             repository.updateAccountState(accountEntry.getKey(), accountEntry.getValue());
         }
 
+        setupPrecompiledContractsStorage(repository);
+
         repository.commit();
         repository.save();
+    }
+
+    /**
+     * When created, contracts are marked in storage for consistency.
+     * Here, we apply this logic to precompiled contracts depending on consensus rules
+     */
+    private void setupPrecompiledContractsStorage(Repository repository) {
+        ActivationConfig.ForBlock genesisActivations = config.getActivationConfig().forBlock(0);
+        if (genesisActivations.isActivating(ConsensusRule.RSKIP126)) {
+            BlockExecutor.maintainPrecompiledContractStorageRoots(repository, genesisActivations);
+        }
     }
 }
