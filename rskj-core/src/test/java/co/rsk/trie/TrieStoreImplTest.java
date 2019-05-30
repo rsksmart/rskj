@@ -131,7 +131,7 @@ public class TrieStoreImplTest {
 
         trie.save();
 
-        verify(map, times(trie.trieSize() + 2)).put(any(), any());
+        verify(map, times(trie.trieSize())).put(any(), any());
         verifyNoMoreInteractions(map);
     }
 

@@ -45,8 +45,13 @@ public class TrieStoreImpl implements TrieStore {
     @Override
     public void save(Trie trie) {
         this.store.put(trie.getHash().getBytes(), trie.toMessage());
-
         if (trie.hasLongValue()) {
+            saveValue(trie);
+        }
+    }
+
+    @Override
+    public void saveValue(Trie trie) {
             // Note that there is no distinction in keys between node data and value data. This could bring problems in
             // the future when trying to garbage-collect the data. We could split the key spaces bit a single
             // overwritten MSB of the hash. Also note that when storing a node that has long value it could be the case
@@ -57,7 +62,6 @@ public class TrieStoreImpl implements TrieStore {
             // value also, so manually checking pre-existence here seems it will add overhead on the average case,
             // instead of reducing it.
             this.store.put(trie.getValueHash().getBytes(), trie.getValue());
-        }
     }
 
     @Override
