@@ -553,7 +553,17 @@ public class Trie {
             buffer.put(this.value);
         }
 
+        if (messageLength==0)
+            messageLength =buffer.array().length;
+
         return buffer.array();
+    }
+
+    private int messageLength;
+
+    public int getMessageLength() {
+        toMessage();
+        return messageLength;
     }
 
     /**
@@ -626,10 +636,14 @@ public class Trie {
      * store, not only to this node.
      */
     public void flush() {
-        if (this.store==null) {
+        if (this.store == null) {
             return;
         }
         this.store.flush();
+    }
+
+    public boolean ifEmbedded() {
+        return isTerminal() && getMessageLength()<=NodeReference.MAX_EMBEDDED_NODE_SIZE_IN_BYTES;
     }
 
     /**
@@ -643,6 +657,10 @@ public class Trie {
 
         // Without store, nodes cannot be saved. Abort silently
         if (this.store == null) {
+            return;
+        }
+
+        if (ifEmbedded()) {
             return;
         }
 
