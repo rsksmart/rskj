@@ -20,6 +20,8 @@ package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.VarInt;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public class BtcTransactionFormatUtils {
     private static int MIN_BLOCK_HEADER_SIZE = 80;
@@ -34,7 +36,8 @@ public class BtcTransactionFormatUtils {
         return inputsCounter.value;
     }
 
-    public static boolean isBlockHeaderSize(int size) {
-        return size >= MIN_BLOCK_HEADER_SIZE && size <= MAX_BLOCK_HEADER_SIZE;
+    public static boolean isBlockHeaderSize(int size, ActivationConfig.ForBlock activations) {
+        return (activations.isActive(ConsensusRule.RSKIP124) && size == MIN_BLOCK_HEADER_SIZE) ||
+                (!activations.isActive(ConsensusRule.RSKIP124) && size >= MIN_BLOCK_HEADER_SIZE && size <= MAX_BLOCK_HEADER_SIZE);
     }
 }

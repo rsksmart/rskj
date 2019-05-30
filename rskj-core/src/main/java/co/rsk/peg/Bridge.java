@@ -407,7 +407,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         // Before going and actually deserializing and calling the underlying function,
         // check that all block headers passed in are actually block headers doing
         // a simple size check. If this check fails, just fail.
-        if (Arrays.stream(btcBlockSerializedArray).anyMatch(bytes -> !BtcTransactionFormatUtils.isBlockHeaderSize(((byte[])bytes).length))) {
+        if (Arrays.stream(btcBlockSerializedArray).anyMatch(bytes -> !BtcTransactionFormatUtils.isBlockHeaderSize(((byte[])bytes).length, activations))) {
             // This exception type bypasses bridge teardown, signalling no work done
             // and preventing the overhead of saving bridge storage
             logger.warn("Unexpected BTC header(s) received (size mismatch). Aborting processing.");
