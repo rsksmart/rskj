@@ -695,7 +695,7 @@ public class RskContext implements NodeBootstrapper {
         }
 
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = makeDataSource("state", databaseDir);
+        KeyValueDataSource ds = makeDataSource("unitrie", databaseDir);
 
         if (statesCacheSize != 0) {
             ds = new DataSourceWithCache(ds, statesCacheSize);
