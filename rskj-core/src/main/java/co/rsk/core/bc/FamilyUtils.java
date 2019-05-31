@@ -47,10 +47,10 @@ public class FamilyUtils {
      * @return set of ancestors block hashes
      */
     public static Set<Keccak256> getAncestors(BlockStore blockStore, Block block, int limitNum) {
-        return getAncestors(blockStore, block.getNumber(), block.getParentHash().getBytes(), limitNum);
+        return getAncestors(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
-    public static Set<Keccak256> getAncestors(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
+    public static Set<Keccak256> getAncestors(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
         Set<Keccak256> ret = new HashSet<>();
 
         if (blockStore == null) {
@@ -58,7 +58,7 @@ public class FamilyUtils {
         }
 
         int limit = (int) max(0, blockNumber - limitNum);
-        Block it = blockStore.getBlockByHash(parentHash);
+        Block it = blockStore.getBlockByHash(parentHash.getBytes());
 
         while(it != null && it.getNumber() >= limit) {
             ret.add(it.getHash());
@@ -78,10 +78,10 @@ public class FamilyUtils {
      * @return set of already used uncles block hashes
      */
     public static Set<Keccak256> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
-        return getUsedUncles(blockStore, block.getNumber(), block.getParentHash().getBytes(), limitNum);
+        return getUsedUncles(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
-    public static Set<Keccak256> getUsedUncles(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
+    public static Set<Keccak256> getUsedUncles(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
         Set<Keccak256> ret = new HashSet<>();
 
         if (blockStore == null) {
@@ -89,7 +89,7 @@ public class FamilyUtils {
         }
 
         long minNumber = max(0, blockNumber - limitNum);
-        Block it = blockStore.getBlockByHash(parentHash);
+        Block it = blockStore.getBlockByHash(parentHash.getBytes());
 
         while(it != null && it.getNumber() >= minNumber) {
             for (BlockHeader uncle : it.getUncleList()) {
@@ -102,10 +102,10 @@ public class FamilyUtils {
     }
 
     public static List<BlockHeader> getUnclesHeaders(BlockStore store, Block block, int levels) {
-        return getUnclesHeaders(store, block.getNumber(), block.getParentHash().getBytes(), levels);
+        return getUnclesHeaders(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, byte[] parentHash, int levels) {
+    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         List<BlockHeader> uncles = new ArrayList<>();
         Set<Keccak256> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
 
@@ -121,10 +121,10 @@ public class FamilyUtils {
     }
 
     public static Set<Keccak256> getUncles(BlockStore store, Block block, int levels) {
-        return getUncles(store, block.getNumber(), block.getParentHash().getBytes(), levels);
+        return getUncles(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static Set<Keccak256> getUncles(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
+    public static Set<Keccak256> getUncles(BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         Set<Keccak256> family = getFamily(store, blockNumber, parentHash, levels);
         Set<Keccak256> ancestors = getAncestors(store, blockNumber, parentHash, levels);
         family.removeAll(ancestors);
@@ -134,14 +134,14 @@ public class FamilyUtils {
     }
 
     public static Set<Keccak256> getFamily(BlockStore store, Block block, int levels) {
-        return getFamily(store, block.getNumber(), block.getParentHash().getBytes(), levels);
+        return getFamily(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static Set<Keccak256> getFamily(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
+    public static Set<Keccak256> getFamily(BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         long minNumber = max(0, blockNumber - levels);
 
         List<Block> ancestors = new ArrayList<>();
-        Block parent = store.getBlockByHash(parentHash);
+        Block parent = store.getBlockByHash(parentHash.getBytes());
 
         while (parent != null && parent.getNumber() >= minNumber) {
             ancestors.add(0, parent);

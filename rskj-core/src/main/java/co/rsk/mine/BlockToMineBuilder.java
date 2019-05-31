@@ -104,7 +104,7 @@ public class BlockToMineBuilder {
         List<BlockHeader> uncles = FamilyUtils.getUnclesHeaders(
                 blockStore,
                 newBlockParent.getNumber() + 1,
-                newBlockParent.getHash().getBytes(),
+                newBlockParent.getHash(),
                 miningConfig.getUncleGenerationLimit()
         );
 
