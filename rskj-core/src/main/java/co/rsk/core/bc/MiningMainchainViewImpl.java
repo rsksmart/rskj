@@ -57,7 +57,14 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
             blocksByHash.put(bestBlock.getHash(), bestBlock);
             addToBlockByNumberMap(bestBlock);
 
-            fillInternalsBlockStore(bestBlock);
+            Block previousBest = mainchain.get(0);
+            if (previousBest.isParentOf(bestBlock)) {
+                mainchain.add(0, bestBlock);
+            } else {
+                // new block is not on the current chain, so we need to recalculate it to keep it consistent
+                fillInternalsBlockStore(bestBlock);
+            }
+
             deleteEntriesOutOfBoundaries(bestBlock.getNumber());
         }
     }
