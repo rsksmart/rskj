@@ -30,7 +30,6 @@ import org.ethereum.util.Utils;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Encapsulates the logic to retrieve or create an execution block

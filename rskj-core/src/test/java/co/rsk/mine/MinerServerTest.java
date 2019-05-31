@@ -699,7 +699,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         try {
             minerServer.start();
             minerServer.getWork();
-            minerServer.buildBlockToMine(blockchain.getBestBlock(),false);
+            minerServer.buildBlockToMine(false);
             MinerWork work = minerServer.getWork();
 
             assertTrue(work.getNotify());

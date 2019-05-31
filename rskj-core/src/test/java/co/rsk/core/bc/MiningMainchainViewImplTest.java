@@ -21,7 +21,6 @@ package co.rsk.core.bc;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockStore;
 import org.junit.Test;
 
@@ -95,6 +94,40 @@ public class MiningMainchainViewImplTest {
 
         assertNotNull(result);
         assertThat(result.size(), is(6));
+    }
+
+    @Test
+    public void createWithOnlyGenesisAndHeightOne() {
+        BlockStore blockStore = createBlockStore(1);
+        Block genesis = blockStore.getChainBlockByNumber(0L);
+        when(blockStore.getBestBlock()).thenReturn(genesis);
+
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
+                blockStore,
+                1);
+
+        List<BlockHeader> result = testBlockchain.get();
+
+        assertNotNull(result);
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0).isGenesis(), is(true));
+    }
+
+    @Test
+    public void createWithOnlyGenesisAndHeightGreaterThanOne() {
+        BlockStore blockStore = createBlockStore(1);
+        Block genesis = blockStore.getChainBlockByNumber(0L);
+        when(blockStore.getBestBlock()).thenReturn(genesis);
+
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
+                blockStore,
+                10);
+
+        List<BlockHeader> result = testBlockchain.get();
+
+        assertNotNull(result);
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0).isGenesis(), is(true));
     }
 
     /**
@@ -190,12 +223,179 @@ public class MiningMainchainViewImplTest {
         assertThat(result.get(0).getHash(), is(newBestBlockC.getHash()));
     }
 
+    /**
+     * Real Blockchain has blocks A -> B -> C -> D -> E -> F (best block)
+     * The abstract chain has a certain block window, suppose D -> E -> F (best)
+     * A new block child of C, D', has been added to the real blockchain triggering an add on the abstract blockchain
+     * After the add, abstract blockchain must roll back and recover older blocks B and C, which would result in
+     * the abstract chain B -> C -> D' (best block)
+     *
+     * While the test addNewBestBlockAndItsBranchToTheTipOfTheBlockchain covers branch situations
+     * this test tries to address a specific performance improvement in the addBest logic, which involves
+     * searching for ancestor in the chain and appending the new best header to it instead of redoing a
+     * complete retrieval of the chain
+     */
+    @Test
+    public void addNewBestBlockAndItsNotChildOfTheTipButHasAParentInTheChain() {
+        BlockStore blockStore = createBlockStore(10);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
+                blockStore,
+                4);
+
+        Block ancestor = blockStore.getChainBlockByNumber(6L);
+
+        Block newBestBlock = createBlock(7, ancestor.getHash());
+        when(blockStore.getBlockByHash(newBestBlock.getHash().getBytes())).thenReturn(newBestBlock);
+        when(blockStore.getChainBlockByNumber(7L)).thenReturn(newBestBlock);
+
+        BlockHeader ancestorHeader = ancestor.getHeader();
+        BlockHeader bestHeader = newBestBlock.getHeader();
+        when(ancestorHeader.isParentOf(bestHeader)).thenReturn(true);
+
+        List<BlockHeader> result = testBlockchain.get();
+        assertThat(result.get(0).getNumber(), is(9L));
+        assertThat(result.get(1).getNumber(), is(8L));
+        assertThat(result.get(2).getNumber(), is(7L));
+        assertThat(result.get(3).getNumber(), is(6L));
+
+        testBlockchain.addBest(newBestBlock.getHeader());
+
+        result = testBlockchain.get();
+
+        assertThat(result.size(), is(4));
+
+        assertThat(result.get(0).getNumber(), is(7L));
+        assertThat(result.get(1).getNumber(), is(6L));
+        assertThat(result.get(2).getNumber(), is(5L));
+        assertThat(result.get(3).getNumber(), is(4L));
+
+        assertThat(result.get(0).getHash(), is(newBestBlock.getHash()));
+    }
+
+
+    /**
+     * Real Blockchain has blocks A -> B -> C -> D -> E -> F (best block)
+     * The abstract chain has a certain block window, suppose D -> E -> F (best)
+     * A new block child of genesis, G, has been added to the real blockchain triggering an add on the abstract blockchain
+     * After the add, the result is the abstract chain Genesis -> G (best block)
+     *
+     * While the test addNewBestBlockAndItsBranchToTheTipOfTheBlockchain covers branching situations
+     * this test tries to address a specific performance improvement in the addBest logic, which involves
+     * searching for ancestor in the chain instead of performing a complete recalculation
+     *
+     * This particular test is for corner cases involving the genesis which would happen in development environments
+     */
+    @Test
+    public void addNewBestBlockAndItsNotChildOfTheTipButHasGenesisAsParent() {
+        BlockStore blockStore = createBlockStore(10);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
+                blockStore,
+                4);
+
+        Block ancestor = blockStore.getChainBlockByNumber(0L);
+
+        Block newBestBlock = createBlock(1, ancestor.getHash());
+        when(blockStore.getBlockByHash(newBestBlock.getHash().getBytes())).thenReturn(newBestBlock);
+        when(blockStore.getChainBlockByNumber(1L)).thenReturn(newBestBlock);
+
+        BlockHeader ancestorHeader = ancestor.getHeader();
+        BlockHeader bestHeader = newBestBlock.getHeader();
+        when(ancestorHeader.isParentOf(bestHeader)).thenReturn(true);
+
+        List<BlockHeader> result = testBlockchain.get();
+        assertThat(result.get(0).getNumber(), is(9L));
+        assertThat(result.get(1).getNumber(), is(8L));
+        assertThat(result.get(2).getNumber(), is(7L));
+        assertThat(result.get(3).getNumber(), is(6L));
+
+        testBlockchain.addBest(newBestBlock.getHeader());
+
+        result = testBlockchain.get();
+
+        assertThat(result.size(), is(2));
+
+        assertThat(result.get(0).getNumber(), is(1L));
+        assertThat(result.get(1).getNumber(), is(0L));
+
+        assertThat(result.get(1).isGenesis(), is(true));
+
+        assertThat(result.get(0).getHash(), is(newBestBlock.getHash()));
+    }
+
+    /**
+     * Corner case found though other test cases. In production it's nigh impossible for this situation to take place
+     */
+    @Test
+    public void addBlockWhenBlockStoreHasOnlyGenesisAndHeightIsOne() {
+        BlockStore blockStore = createBlockStore(1);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
+                blockStore,
+                1);
+
+        Block ancestor = blockStore.getChainBlockByNumber(0L);
+
+        Block newBestBlock = createBlock(1, ancestor.getHash());
+        when(blockStore.getBlockByHash(newBestBlock.getHash().getBytes())).thenReturn(newBestBlock);
+        when(blockStore.getChainBlockByNumber(1L)).thenReturn(newBestBlock);
+
+        BlockHeader ancestorHeader = ancestor.getHeader();
+        BlockHeader bestHeader = newBestBlock.getHeader();
+        when(ancestorHeader.isParentOf(bestHeader)).thenReturn(true);
+
+        List<BlockHeader> result = testBlockchain.get();
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0).getNumber(), is(0L));
+        assertThat(result.get(0).isGenesis(), is(true));
+
+        testBlockchain.addBest(newBestBlock.getHeader());
+
+        result = testBlockchain.get();
+
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0).getNumber(), is(1L));
+        assertThat(result.get(0).getHash(), is(newBestBlock.getHash()));
+    }
+
+    /**
+     * This is a corner case to avoid errors due to block having a null parent
+     *
+     * Note that it shouldn't be possible for a block of this kind to reach the MiningMainchainViewImpl
+     */
+    @Test
+    public void addNewBestBlockWithMissingParent() {
+        BlockStore blockStore = createBlockStore(10);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
+                blockStore,
+                4);
+
+        Block newBestBlock = createBlock(13, new Keccak256(getRandomHash()));
+        when(blockStore.getBlockByHash(newBestBlock.getHash().getBytes())).thenReturn(newBestBlock);
+        when(blockStore.getChainBlockByNumber(13L)).thenReturn(newBestBlock);
+
+        List<BlockHeader> result = testBlockchain.get();
+        assertThat(result.get(0).getNumber(), is(9L));
+        assertThat(result.get(1).getNumber(), is(8L));
+        assertThat(result.get(2).getNumber(), is(7L));
+        assertThat(result.get(3).getNumber(), is(6L));
+
+        testBlockchain.addBest(newBestBlock.getHeader());
+
+        result = testBlockchain.get();
+
+        assertThat(result.size(), is(1));
+
+        assertThat(result.get(0).getNumber(), is(13L));
+
+        assertThat(result.get(0).getHash(), is(newBestBlock.getHash()));
+    }
+
     private BlockStore createBlockStore(int height) {
         BlockStore blockStore = mock(BlockStore.class);
 
         Block previousBlock = createGenesisBlock();
         when(blockStore.getBlockByHash(previousBlock.getHash().getBytes())).thenReturn(previousBlock);
         when(blockStore.getChainBlockByNumber(0L)).thenReturn(previousBlock);
+        when(blockStore.getBestBlock()).thenReturn(previousBlock);
 
         for(long i = 1; i < height; i++) {
             Block block = createBlock(i, previousBlock.getHash());

@@ -17,7 +17,6 @@
  */
 package co.rsk.mine;
 
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
 import java.time.Clock;
