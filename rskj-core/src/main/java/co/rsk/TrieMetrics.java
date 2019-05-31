@@ -103,19 +103,6 @@ public class TrieMetrics {
                 repository.flush();
             }
         }
-/*
-        RskAddress contractAddress = randomAccountAddress();
-        byte[] zeros = ByteUtil.bigIntegerToBytes(BigInteger.ZERO,12);
-
-        for (int i = 0; i < QTY_ACCOUNTS; i++) {
-            byte[] addrss = ByteUtil.merge(zeros, randomAccountAddress().getBytes());
-            repository.addStorageRow(contractAddress ,new DataWord(addrss), DataWord.valueOf(randomBytes(12)));
-            if ((i+1) % COMMITS_SIZE == 0){
-                System.out.println(i+1);
-                repository.flush();
-            }
-        }
-*/
 
         long finalTime = System.nanoTime();
         System.out.println("Pre save " + (finalTime-start));
@@ -184,13 +171,13 @@ public class TrieMetrics {
 
     public static void main (String[] args) {
         String path = "resultado.csv";
-        //deleteFile("/home/julian/.rsk/unitrie-test");
+        deleteFile("/home/julian/.rsk/unitrie-test");
         TrieMetrics trieMetrics = new TrieMetrics(path);
         MutableRepository repositoryDB = new MutableRepository(new Trie(new TrieStoreImpl(RskContext.makeDataSource("unitrie-test-47", "/home/julian/.rsk/"))));
 
         //stage1(trieMetrics,repositoryDB);
         //stage2(trieMetrics, "", repositoryDB);
-        stage3(trieMetrics, "3fcf5a13d17f284036ad4e7af3038b2b8d234e359c9e31cb6e643d5c3fa17db2", repositoryDB);
+        stage3(trieMetrics, "", repositoryDB);
 
         //compareRepositories(repository, repositoryStored);
 
