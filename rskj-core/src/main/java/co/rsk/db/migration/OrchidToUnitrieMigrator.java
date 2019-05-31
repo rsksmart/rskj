@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.cli.migration;
+package co.rsk.db.migration;
 
 import co.rsk.RskContext;
 import co.rsk.core.RskAddress;
@@ -50,9 +50,9 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 /**
  * This is a one-time tool and should be removed after SecondFork (TBD) fork activation
  */
-public class UnitrieMigrationTool {
+public class OrchidToUnitrieMigrator {
 
-    private static final Logger logger = LoggerFactory.getLogger(UnitrieMigrationTool.class);
+    private static final Logger logger = LoggerFactory.getLogger(OrchidToUnitrieMigrator.class);
 
     private final KeyValueDataSource orchidContractDetailsDataStore;
     private final KeyValueDataSource orchidContractsStorage;
@@ -67,11 +67,11 @@ public class UnitrieMigrationTool {
     private final Repository unitrieRepository;
     private final StateRootHandler stateRootHandler;
 
-    public UnitrieMigrationTool(Block blockToMigrate,
-                                String databaseDir,
-                                Repository unitrieRepository,
-                                StateRootHandler stateRootHandler,
-                                TrieConverter trieConverter) {
+    public OrchidToUnitrieMigrator(Block blockToMigrate,
+                                   String databaseDir,
+                                   Repository unitrieRepository,
+                                   StateRootHandler stateRootHandler,
+                                   TrieConverter trieConverter) {
         this.databaseDir = databaseDir;
         this.blockToMigrate = blockToMigrate;
         this.unitrieRepository = unitrieRepository;
@@ -126,7 +126,7 @@ public class UnitrieMigrationTool {
             System.exit(1);
         }
 
-        UnitrieMigrationTool unitrieMigrationTool = new UnitrieMigrationTool(
+        OrchidToUnitrieMigrator unitrieMigrationTool = new OrchidToUnitrieMigrator(
                 blockToMigrate,
                 databaseDir,
                 ctx.getRepository(),

@@ -17,7 +17,7 @@
  */
 package co.rsk;
 
-import co.rsk.cli.migration.UnitrieMigrationTool;
+import co.rsk.db.migration.OrchidToUnitrieMigrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ public class Start {
     public static void main(String[] args) throws IOException {
         RskContext ctx = new RskContext(args);
         // this feature is only needed until the secondFork (TBD) network upgrade is activated.
-        UnitrieMigrationTool.migrateStateToUnitrieIfNeeded(ctx);
+        OrchidToUnitrieMigrator.migrateStateToUnitrieIfNeeded(ctx);
 
         NodeRunner runner = ctx.getNodeRunner();
         try {
@@ -44,5 +44,4 @@ public class Start {
             System.exit(1);
         }
     }
-
 }

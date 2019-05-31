@@ -79,7 +79,7 @@
     <logger name="org.bitcoinj" level="INFO"/>
     <logger name="metrics" level="INFO"/>
     <logger name="messageProcess" level="INFO"/>
-    <logger name="co.rsk.cli.migration.UnitrieMigrationTool" level="INFO"/>
+    <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
 
     <root level="DEBUG">
         <appender-ref ref="stdout"/>
