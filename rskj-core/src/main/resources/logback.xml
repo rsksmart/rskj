@@ -80,6 +80,7 @@
     <logger name="metrics" level="INFO"/>
     <logger name="messageProcess" level="INFO"/>
     <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
+    <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
 
     <root level="DEBUG">
         <appender-ref ref="stdout"/>

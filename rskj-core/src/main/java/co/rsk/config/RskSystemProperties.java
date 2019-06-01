@@ -29,6 +29,8 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 
 import javax.annotation.Nullable;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -323,5 +325,14 @@ public class RskSystemProperties extends SystemProperties {
 
     public long getDatabaseMigrationMinimumHeight() {
         return configFromFiles.getLong("database.unitrie-migration.minimum-height");
+    }
+
+    public URL getDatabaseMissingStorageKeysUrl() {
+        String missingKeysUrl = configFromFiles.getString("database.unitrie-migration.missing-keys-url");
+        try {
+            return new URL(missingKeysUrl);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 }

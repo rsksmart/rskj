@@ -53,9 +53,9 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 public class OrchidToUnitrieMigrator {
 
     private static final Logger logger = LoggerFactory.getLogger(OrchidToUnitrieMigrator.class);
-
     private final KeyValueDataSource orchidContractDetailsDataStore;
     private final KeyValueDataSource orchidContractsStorage;
+    private final MissingOrchidStorageKeysProvider missingOrchidStorageKeysProvider;
     private final TrieStore orchidContractsTrieStore;
     private final TrieStore orchidAccountsTrieStore;
     private final String databaseDir;
@@ -71,7 +71,8 @@ public class OrchidToUnitrieMigrator {
                                    String databaseDir,
                                    Repository unitrieRepository,
                                    StateRootHandler stateRootHandler,
-                                   TrieConverter trieConverter) {
+                                   TrieConverter trieConverter,
+                                   MissingOrchidStorageKeysProvider missingOrchidStorageKeysProvider) {
         this.databaseDir = databaseDir;
         this.blockToMigrate = blockToMigrate;
         this.unitrieRepository = unitrieRepository;
@@ -80,6 +81,7 @@ public class OrchidToUnitrieMigrator {
 
         this.orchidContractDetailsDataStore = RskContext.makeDataSource("details", databaseDir);
         this.orchidContractsStorage = RskContext.makeDataSource("contracts-storage", databaseDir);
+        this.missingOrchidStorageKeysProvider = missingOrchidStorageKeysProvider;
         this.orchidContractsTrieStore = new CachedTrieStore(new TrieStoreImpl(orchidContractsStorage));
         this.orchidAccountsTrieStore = new CachedTrieStore(new TrieStoreImpl(RskContext.makeDataSource("state", databaseDir)));
         this.keccak256Cache = new HashMap<>();
@@ -131,7 +133,11 @@ public class OrchidToUnitrieMigrator {
                 databaseDir,
                 ctx.getRepository(),
                 ctx.getStateRootHandler(),
-                ctx.getTrieConverter()
+                ctx.getTrieConverter(),
+                new MissingOrchidStorageKeysProvider(
+                        databaseDir,
+                        ctx.getRskSystemProperties().getDatabaseMissingStorageKeysUrl()
+                )
         );
 
         unitrieMigrationTool.migrate();
@@ -257,7 +263,7 @@ public class OrchidToUnitrieMigrator {
                 Trie.IterationElement iterationElement = inOrderIterator.next();
                 if (iterationElement.getNode().getValue() != null) {
                     Keccak256 storageKeyHash = new Keccak256(iterationElement.getNodeKey().encode());
-                    DataWord storageKey = keccak256Cache.get(storageKeyHash);
+                    DataWord storageKey = keccak256Cache.computeIfAbsent(storageKeyHash, missingOrchidStorageKeysProvider::getKeccak256PreImage);
                     if (storageKey == null) {
                         missingStorageKeys.add(storageKeyHash);
                         continue;
