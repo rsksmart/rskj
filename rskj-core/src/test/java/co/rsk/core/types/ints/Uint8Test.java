@@ -42,6 +42,12 @@ public class Uint8Test {
         assertThat(Uint8.decode(val.encode(), 0), is(val));
     }
 
+    @Test
+    public void asByteReturnsByteValue() {
+        Uint8 fortyTwo = new Uint8(42);
+        assertThat(fortyTwo.asByte(), is((byte)42));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void instantiateMaxPlusOne() {
         new Uint8((Uint8.MAX_VALUE.intValue() + 1));

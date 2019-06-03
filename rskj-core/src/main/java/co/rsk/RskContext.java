@@ -240,7 +240,8 @@ public class RskContext implements NodeBootstrapper {
         if (miningMainchainView == null) {
             miningMainchainView = new MiningMainchainViewImpl(
                     getBlockchain(),
-                    MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION);
+                    MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION
+            );
         }
 
         return miningMainchainView;

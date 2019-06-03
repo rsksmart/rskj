@@ -21,6 +21,7 @@ package co.rsk.mine;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.RegTestParams;
+import co.rsk.core.types.ints.Uint8;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
@@ -63,8 +64,8 @@ public class ForkDetectionDataCalculator {
         byte[] commitToParentsVector = buildCommitToParentsVector(mainchainBlockHeaders);
         System.arraycopy(commitToParentsVector, 0, forkDetectionData, 0, 7);
 
-        short numberOfUncles = getNumberOfUncles(mainchainBlockHeaders);
-        forkDetectionData[7] = ByteBuffer.allocate(2).putShort(numberOfUncles).array()[1];
+        Uint8 numberOfUncles = getNumberOfUncles(mainchainBlockHeaders);
+        forkDetectionData[7] = numberOfUncles.asByte();
 
         byte[] blockBeingMinedHeight = getBlockBeingMinedHeight(mainchainBlockHeaders);
         System.arraycopy(blockBeingMinedHeight, 0, forkDetectionData, 8, 4);
@@ -78,10 +79,7 @@ public class ForkDetectionDataCalculator {
 
         long bestBlockHeight = mainchainBlocks.get(0).getNumber();
         long blockBeingMinedHeight = bestBlockHeight + 1;
-        long cpvStartHeight = (isMultipleOf64(blockBeingMinedHeight) ?
-                                (long)Math.floor((blockBeingMinedHeight - 1) / (double)CPV_JUMP_FACTOR) :
-                                (long)Math.floor(blockBeingMinedHeight / (double)CPV_JUMP_FACTOR))
-                                * CPV_JUMP_FACTOR;
+        long cpvStartHeight = ((blockBeingMinedHeight - 1) / CPV_JUMP_FACTOR) * CPV_JUMP_FACTOR;
 
         byte[] commitToParentsVector = new byte[7];
         for(int i = 0; i < CPV_SIZE; i++){
@@ -98,16 +96,12 @@ public class ForkDetectionDataCalculator {
         return commitToParentsVector;
     }
 
-    private boolean isMultipleOf64(long number){
-        return number % 64 == 0;
-    }
-
-    private short getNumberOfUncles(List<BlockHeader> mainchainBlocks) {
-        // int to short is a safe cast since number of uncles is max 7 and blocks evaluated are at most 32.
+    private Uint8 getNumberOfUncles(List<BlockHeader> mainchainBlocks) {
+        // int to Uint8 is a safe creation since number of uncles is max 7 and blocks evaluated are at most 32.
         // Hence, 7 * 32 = 224 and 224 < 255 (max number that fits on a short type variable)
-        return (short)IntStream
+        return new Uint8(IntStream
                 .range(0, NUMBER_OF_UNCLES)
-                .map(i -> mainchainBlocks.get(i).getUncleCount()).sum();
+                .map(i -> mainchainBlocks.get(i).getUncleCount()).sum());
     }
 
     private byte[] getBlockBeingMinedHeight(List<BlockHeader> mainchainBlocks) {
