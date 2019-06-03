@@ -24,14 +24,18 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import static java.lang.System.arraycopy;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.toHexString;
 
@@ -139,7 +143,8 @@ public class BlockHeader {
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
-        this.miningForkDetectionData = mergedMiningForkDetectionData;
+        this.miningForkDetectionData =
+                Arrays.copyOf(mergedMiningForkDetectionData, mergedMiningForkDetectionData.length);
         this.sealed = sealed;
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
@@ -350,11 +355,6 @@ public class BlockHeader {
             }
         }
 
-        if (shouldForkDetectionDataBeAdded(includeForkDetectionData, miningForkDetectionData)) {
-            byte[] encodedMiningForkDetectionData = RLP.encodeElement(miningForkDetectionData);
-            fieldToEncodeList.add(encodedMiningForkDetectionData);
-        }
-
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
 
@@ -393,7 +393,6 @@ public class BlockHeader {
     }
 
     public static byte[] getUnclesEncoded(List<BlockHeader> uncleList) {
-
         byte[][] unclesEncoded = new byte[uncleList.size()][];
         int i = 0;
         for (BlockHeader uncle : uncleList) {
@@ -476,9 +475,12 @@ public class BlockHeader {
     public byte[] getHashForMergedMining() {
         byte[] encodedBlock = getEncoded(false, false);
         byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
-        if (shouldForkDetectionDataBeAdded(includeForkDetectionData, miningForkDetectionData)) {
-            System.arraycopy(
-                    miningForkDetectionData,
+        if (includeForkDetectionData) {
+            byte[] mergedMiningForkDetectionData = hasMiningFields() ?
+                    getMiningForkDetectionData() :
+                    miningForkDetectionData;
+            arraycopy(
+                    mergedMiningForkDetectionData,
                     0,
                     hashForMergedMining,
                     HASH_FOR_MERGED_MINING_PREFIX_LENGTH,
@@ -497,17 +499,29 @@ public class BlockHeader {
     }
 
     public byte[] getMiningForkDetectionData() {
-        return miningForkDetectionData;
-    }
+        if(includeForkDetectionData) {
+            if (hasMiningFields()) {
+                byte[] encodedBlock = getEncoded(false, false);
+                byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
 
-    /**
-     *  forkDetectionData inclusion depends on hard fork activation height and blockchain height.
-     *  mainnet will have it on since a block with height > 449 so the data will always exist.
-     *  other networks will have it on since the first block after genesis so the value will not exist for
-     *  the fist 449 blocks and that explains the existence check.
-     *  note. read class ForkDetectionDataCalculator or RSKIP-110 to understand why 449.
-    */
-    private boolean shouldForkDetectionDataBeAdded(boolean includeForkDetectionData, byte[] miningForkDetectionData) {
-        return includeForkDetectionData && miningForkDetectionData.length > 0;
+                byte[] hashForMergedMiningPrefix = Arrays.copyOfRange(hashForMergedMining, 0, HASH_FOR_MERGED_MINING_PREFIX_LENGTH);
+                byte[] coinbaseTransaction = getBitcoinMergedMiningCoinbaseTransaction();
+
+                List<Byte> hashForMergedMiningPrefixAsList = Arrays.asList(ArrayUtils.toObject(hashForMergedMiningPrefix));
+                List<Byte> coinbaseAsList = Arrays.asList(ArrayUtils.toObject(coinbaseTransaction));
+
+                int position = Collections.lastIndexOfSubList(coinbaseAsList, hashForMergedMiningPrefixAsList);
+                if (position == -1) {
+                    return new byte[12];
+                }
+
+                int from = position + HASH_FOR_MERGED_MINING_PREFIX_LENGTH;
+                return Arrays.copyOfRange(coinbaseTransaction, from, from + FORK_DETECTION_DATA_LENGTH);
+            } else {
+                return miningForkDetectionData;
+            }
+        }
+
+        return new byte[0];
     }
 }
