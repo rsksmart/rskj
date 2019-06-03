@@ -18,6 +18,7 @@
 package co.rsk.mine;
 
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 
 import java.time.Clock;
 
@@ -32,8 +33,8 @@ public class MinerClock {
         this.clock = clock;
     }
 
-    public long calculateTimestampForChild(Block parent) {
-        long previousTimestamp = parent.getTimestamp();
+    public long calculateTimestampForChild(BlockHeader parentHeader) {
+        long previousTimestamp = parentHeader.getTimestamp();
         if (isFixedClock) {
             return previousTimestamp + timeAdjustment;
         }
