@@ -24,6 +24,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.HashSet;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -182,7 +183,7 @@ public class VMSpecificOpcodesPerformanceTest {
     }
 
     private Program getProgram(byte[] code, Transaction transaction) {
-        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(), code, invoke, transaction);
+        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(), code, invoke, transaction, new HashSet<>());
     }
 
     private byte[] compile(String code) {

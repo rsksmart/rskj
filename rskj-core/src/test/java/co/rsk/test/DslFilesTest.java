@@ -363,4 +363,24 @@ public class DslFilesTest {
         Assert.assertNotNull(world.getBlockByName("c03"));
         Assert.assertEquals(3, world.getBlockChain().getStatus().getBestBlock().getNumber());
     }
+
+    @Test
+    public void runCreateAfterSuicide() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/createAfterSuicide.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Transaction transaction = world.getTransactionByName("callSecondCreator");
+
+        Assert.assertNotNull(transaction);
+
+        TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(transaction.getHash().getBytes());
+
+        Assert.assertNotNull(txinfo);
+        long gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed()).longValue();
+        
+        Assert.assertEquals(200000, gasUsed);
+        Assert.assertFalse("Address should not exist", world.getRepository().isExist(new RskAddress("0xa943B74640c466Fc700AF929Cabacb1aC6CC8895")));
+    }
 }

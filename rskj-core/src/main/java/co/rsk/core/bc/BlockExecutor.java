@@ -30,6 +30,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -268,8 +269,10 @@ public class BlockExecutor {
         Coin totalPaidFees = Coin.ZERO;
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
+        Set<DataWord> deletedAccounts = new HashSet<>();
 
         int txindex = 0;
+
 
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
@@ -281,9 +284,11 @@ public class BlockExecutor {
                     track,
                     block,
                     totalGasUsed,
-                    vmTrace
-            );
+                    vmTrace,
+                    deletedAccounts);
             boolean readyToExecute = txExecutor.init();
+
+
             if (!ignoreReadyToExecute && !readyToExecute) {
                 if (discardInvalidTxs) {
                     logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
@@ -317,6 +322,8 @@ public class BlockExecutor {
             if (paidFees != null) {
                 totalPaidFees = totalPaidFees.add(paidFees);
             }
+
+            deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);

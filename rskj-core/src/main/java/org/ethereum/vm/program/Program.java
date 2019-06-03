@@ -53,17 +53,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Optional;
+import java.util.*;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.toHexString;
 
 /**
  * @author Roman Mandeleil
@@ -129,6 +125,8 @@ public class Program {
 
     private RskAddress rskOwnerAddress;
 
+    private final Set<DataWord> deletedAccountsInBlock;
+
     public Program(
             VmConfig config,
             PrecompiledContracts precompiledContracts,
@@ -136,7 +134,8 @@ public class Program {
             ActivationConfig.ForBlock activations,
             byte[] ops,
             ProgramInvoke programInvoke,
-            Transaction transaction) {
+            Transaction transaction,
+            Set<DataWord> deletedAccounts) {
         this.config = config;
         this.precompiledContracts = precompiledContracts;
         this.blockFactory = blockFactory;
@@ -162,6 +161,7 @@ public class Program {
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
         this.storage = setupProgramListener(new Storage(programInvoke));
+        this.deletedAccountsInBlock = new HashSet<>(deletedAccounts);
 
         precompile();
         traceListener = new ProgramTraceListener(config);
@@ -480,6 +480,23 @@ public class Program {
 
         ProgramResult programResult = ProgramResult.empty();
 
+        if (getActivations().isActive(ConsensusRule.RSKIP125) &&
+                deletedAccountsInBlock.contains(DataWord.valueOf(contractAddress.getBytes()))) {
+            // Check if the address was previously deleted in the same block
+
+            programResult.setException(ExceptionHelper.addressCollisionException(contractAddress));
+            if (isLogEnabled) {
+                logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
+                        contractAddress,
+                        programResult.getException());
+            }
+
+            track.rollback();
+            stackPushZero();
+
+            return;
+        }
+
         //In case of hashing collisions, check for any balance before createAccount()
         if (track.isExist(contractAddress)) {
             // Hashing collisions in CREATE are rare, but in CREATE2 are possible
@@ -543,6 +560,10 @@ public class Program {
         }
 
         // REFUND THE REMAIN GAS
+        refundRemainingGas(gasLimit, programResult);
+    }
+
+    private void refundRemainingGas(long gasLimit, ProgramResult programResult) {
         long refundGas = gasLimit - programResult.getGasUsed();
         if (refundGas > 0) {
             refundGas(refundGas, "remain gas from the internal call");
@@ -567,7 +588,7 @@ public class Program {
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
-            Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx);
+            Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
             vm.play(program);
             programResult = program.getResult();
         }
@@ -787,7 +808,8 @@ public class Program {
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
-        Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx);
+        Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
+
         vm.play(program);
         childResult  = program.getResult();
 

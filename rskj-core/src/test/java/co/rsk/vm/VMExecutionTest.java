@@ -35,6 +35,7 @@ import org.junit.Test;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.util.HashSet;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP120;
 import static org.junit.Assert.assertEquals;
@@ -570,7 +571,7 @@ public class VMExecutionTest {
     @Test
     public void dupnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST DUPN 0x5b 0x5b");
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null, new HashSet<>());
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -585,7 +586,7 @@ public class VMExecutionTest {
     @Test
     public void swapnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST SWAPN 0x5b 0x5b");
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null, new HashSet<>());
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -687,7 +688,7 @@ public class VMExecutionTest {
 
     private Program executeCodeWithActivationConfig(byte[] code, int nsteps, ActivationConfig.ForBlock activations) {
         VM vm = new VM(vmConfig, precompiledContracts);
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke,null);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke,null, new HashSet<>());
 
         for (int k = 0; k < nsteps; k++) {
             vm.step(program);

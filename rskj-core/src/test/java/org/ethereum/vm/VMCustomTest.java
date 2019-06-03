@@ -36,6 +36,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import java.util.HashSet;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -526,7 +528,7 @@ public class VMCustomTest {
     }
 
     private Program getProgram(String ops) {
-        return new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), Hex.decode(ops), invoke, null);
+        return new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), Hex.decode(ops), invoke, null, new HashSet<>());
     }
 
 }

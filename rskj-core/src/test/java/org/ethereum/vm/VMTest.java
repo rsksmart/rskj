@@ -3060,7 +3060,7 @@ public class VMTest {
     }
 
     private Program getProgram(byte[] code, Transaction transaction, boolean preFixStaticCall) {
-        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(preFixStaticCall), code, invoke, transaction);
+        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(preFixStaticCall), code, invoke, transaction, new HashSet<>());
     }
 
     private byte[] compile(String code) {

@@ -41,6 +41,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.HashSet;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
 import static org.mockito.Mockito.*;
@@ -321,7 +322,7 @@ public class Create2Test {
         byte[] code = compiler.compile(stringCode);
         VM vm = new VM(vmConfig,precompiledContracts);
 
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, transaction );
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, transaction, new HashSet<>());
 
         while (!program.isStopped()){
             vm.step(program);
