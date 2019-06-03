@@ -168,7 +168,7 @@ public class BlockToMineBuilder {
         final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         Block newBlockParent = mainchain.get(0);
-        final long timestampSeconds = clock.calculateTimestampForChild(newBlockParent);
+        final long timestampSeconds = clock.calculateTimestampForChild(newBlockParent.getHeader());
 
         // Set gas limit before executing block
         BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getMininimum());
