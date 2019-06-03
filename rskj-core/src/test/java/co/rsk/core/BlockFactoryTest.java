@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
@@ -33,6 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
@@ -67,11 +69,8 @@ public class BlockFactoryTest {
         assertThat(hash.getBytes(), is(hashForMergedMining));
     }
 
-    /**
-     * Applies for blocks mined before number 449.
-     */
     @Test
-    public void decodeWithNoForkDetectionDataAndRskip110On() {
+    public void decodeBlockPriorToHeight449AndRskip110On() {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);
 
@@ -83,13 +82,11 @@ public class BlockFactoryTest {
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
 
-    /**
-     * Applies for blocks mined prior to RSKIP 110 activation
-     */
     @Test
-    public void decodeWithNoForkDetectionDataAndRskip110Off() {
+    public void decodeBlockPriorToHeight449AndRskip110Off() {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
@@ -101,20 +98,15 @@ public class BlockFactoryTest {
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
 
-    /**
-     *  If RSKIP 110 is off there should not be fork detection data in the block even if
-     *  a valid array with that data is passed to the BlockHeader constructor.
-     *  This case should not happen in real life.
-     */
     @Test
-    public void decodeWithForkDetectionDataAndRskip110Off() {
-        long number = 20L;
+    public void decodeBlockAfterHeight449AndRskip110OFF() {
+        long number = 457L;
         enableRulesAt(number, RSKIP92);
 
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0]);
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -122,25 +114,31 @@ public class BlockFactoryTest {
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
 
-    /**
-     * Applies for blocks mined after RSKIP 110 activation
-     */
     @Test
-    public void decodeWithForkDetectionDataAndRskip110On() {
-        long number = 20L;
+    public void decodeBlockAfterHeight449AndRskip110On() {
+        long number = 457L;
         enableRulesAt(number, RSKIP92, RSKIP110);
-
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData);
+
+        byte[] encodedBlock = header.getEncoded(false, false);
+        byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
+        byte[] coinbase = org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
+        coinbase = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, coinbase);
+        header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
+        header.seal();
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(20));
+        assertThat(headerRLP.size(), is(19));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
 
     /**
@@ -157,26 +155,6 @@ public class BlockFactoryTest {
         byte[] encodedHeader = header.getEncoded(false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(16));
-
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
-    }
-
-    /**
-     * Happens when a solution is submitted by a miner and an RSK block (number > 449)
-     * must be cloned in order to add merged mining fields.
-     */
-    @Test
-    public void decodeWithNoMergedMiningDataAndRskip110OnAndForkDetectionData() {
-        long number = 20L;
-        enableRulesAt(number, RSKIP92, RSKIP110);
-
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        BlockHeader header = createBlockHeader(number, forkDetectionData);
-
-        byte[] encodedHeader = header.getEncoded(false, false);
-        RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(17));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
         assertThat(header.getHash(), is(decodedHeader.getHash()));

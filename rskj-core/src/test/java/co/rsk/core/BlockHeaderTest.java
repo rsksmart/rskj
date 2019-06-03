@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import com.google.common.primitives.Bytes;
@@ -33,27 +34,34 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 
 public class BlockHeaderTest {
     @Test
-    public void getHashForMergedMiningWithNoForkDetectionDataAndIncludedOn() {
-        BlockHeader header = createBlockHeader(new byte[0], true);
+    public void getHashForMergedMiningWithForkDetectionDataAndIncludedOnAndMergedMiningFields() {
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true);
 
-        Keccak256 hash = header.getHash();
-        byte[] hashForMergedMining = header.getHashForMergedMining();
+        byte[] encodedBlock = header.getEncoded(false, false);
+        byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
+        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] coinbase = org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
+        header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
+        header.seal();
 
-        assertThat(hash.getBytes(), is(hashForMergedMining));
+        byte[] hashForMergedMiningResult = header.getHashForMergedMining();
+
+        assertThat(coinbase, is(hashForMergedMiningResult));
     }
 
     @Test
-    public void getHashForMergedMiningWithNoForkDetectionDataAndIncludedOff() {
-        BlockHeader header = createBlockHeader(new byte[0], false);
+    public void getHashForMergedMiningWithNoForkDetectionDataAndIncludedOffAndMergedMiningFields() {
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false);
 
         Keccak256 hash = header.getHash();
         byte[] hashForMergedMining = header.getHashForMergedMining();
 
-        assertThat(hash.getBytes(), is(hashForMergedMining));
+        assertNotEquals(hash.getBytes(), is(hashForMergedMining));
     }
 
     @Test
@@ -82,18 +90,7 @@ public class BlockHeaderTest {
     }
 
     @Test
-    public void getEncodedWithForkDetectionDataAndIncludedOff() {
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(forkDetectionData, false);
-
-        byte[] headerEncoded = header.getEncoded();
-        RLPList headerRLP = RLP.decodeList(headerEncoded);
-
-        assertThat(headerRLP.size(), is(19));
-    }
-
-    @Test
-    public void getEncodedWithNoForkDetectionDataAndIncludedOff() {
+    public void getEncodedWithMergedMiningFields() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false);
 
         byte[] headerEncoded = header.getEncoded();
@@ -103,25 +100,50 @@ public class BlockHeaderTest {
     }
 
     @Test
-    public void getEncodedWithForkDetectionDataAndIncludedOn() {
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(forkDetectionData, true);
+    public void getEncodedWithoutMergedMiningFields() {
+        BlockHeader header = createBlockHeader(new byte[0], false);
 
         byte[] headerEncoded = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
 
-        assertThat(headerRLP.size(), is(20));
-        assertThat(headerRLP.get(19).getRLPData(), is(forkDetectionData));
+        assertThat(headerRLP.size(), is(16));
     }
 
     @Test
-    public void getEncodedWithNoForkDetectionDataAndIncludedOn() {
+    public void getMiningForkDetectionData() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true);
 
-        byte[] headerEncoded = header.getEncoded();
-        RLPList headerRLP = RLP.decodeList(headerEncoded);
+        byte[] encodedBlock = header.getEncoded(false, false);
+        byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
+        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] coinbase = org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
+        coinbase = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, coinbase);
+        header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
+        header.seal();
 
-        assertThat(headerRLP.size(), is(19));
+        assertThat(forkDetectionData, is(header.getMiningForkDetectionData()));
+    }
+
+    /**
+     * This case is an error and should never happen in production
+     */
+    @Test
+    public void getMiningForkDetectionDataNoDataCanBeFound() {
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true);
+
+        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] coinbase = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, forkDetectionData);
+        header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
+        header.seal();
+
+        assertThat(new byte[12], is(header.getMiningForkDetectionData()));
+    }
+
+    @Test
+    public void getMiningForkDetectionDataNoDataMustBeIncluded() {
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false);
+
+        assertThat(new byte[0], is(header.getMiningForkDetectionData()));
     }
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
@@ -153,7 +175,7 @@ public class BlockHeaderTest {
                 forkDetectionData,
                 Coin.valueOf(10L),
                 0,
-                true,
+                false,
                 true,
                 includeForkDetectionData);
     }

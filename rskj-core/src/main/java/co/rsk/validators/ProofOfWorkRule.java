@@ -168,13 +168,15 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
         byte[] expectedCoinbaseMessageBytes = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, header.getHashForMergedMining());
 
-
         List<Byte> bitcoinMergedMiningCoinbaseTransactionTailAsList = Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionTail));
         List<Byte> expectedCoinbaseMessageBytesAsList = Arrays.asList(ArrayUtils.toObject(expectedCoinbaseMessageBytes));
 
         int rskTagPosition = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, expectedCoinbaseMessageBytesAsList);
         if (rskTagPosition == -1) {
-            logger.warn("bitcoin coinbase transaction tail message does not contain expected RSKBLOCK:RskBlockHeaderHash. Expected: {} . Actual: {} .", Arrays.toString(expectedCoinbaseMessageBytes), Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
+            logger.warn("bitcoin coinbase transaction tail message does not contain expected" +
+                    " RSKBLOCK:RskBlockHeaderHash. Expected: {} . Actual: {} .",
+                    Arrays.toString(expectedCoinbaseMessageBytes),
+                    Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
             return false;
         }
 
