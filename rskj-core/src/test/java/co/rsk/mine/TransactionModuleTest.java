@@ -318,8 +318,8 @@ public class TransactionModuleTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
                 reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule
-        );
+                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule,
+                null);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
 

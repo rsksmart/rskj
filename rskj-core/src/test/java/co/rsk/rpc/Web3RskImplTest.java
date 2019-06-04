@@ -77,8 +77,8 @@ public class Web3RskImplTest {
         EthModule em = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
                 null, new ExecutionBlockRetriever(blockchain, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null
-        );
+                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
+                null);
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
         Web3RskImpl web3 = new Web3RskImpl(

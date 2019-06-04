@@ -944,8 +944,8 @@ public class Web3ImplLogsTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockChain,
                 null, new ExecutionBlockRetriever(blockChain, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null
-        );
+                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
+                null);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
         return new Web3RskImpl(

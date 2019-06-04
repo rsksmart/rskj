@@ -451,7 +451,8 @@ public class RskContext implements NodeBootstrapper {
                     getStateRootHandler(),
                     getEthModuleSolidity(),
                     getEthModuleWallet(),
-                    getEthModuleTransaction()
+                    getEthModuleTransaction(),
+                    getBtcBlockStoreFactory()
             );
         }
 

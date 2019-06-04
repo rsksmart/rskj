@@ -361,7 +361,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 new BridgeEventLoggerImpl(bridgeConstants, logs),
                 repository,
                 rskExecutionBlock,
-                btcBlockStoreFactory.newInstance(repository),
+                btcBlockStoreFactory,
                 null
         );
     }

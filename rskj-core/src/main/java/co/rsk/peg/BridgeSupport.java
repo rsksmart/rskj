@@ -38,7 +38,6 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
-import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
@@ -106,6 +105,7 @@ public class BridgeSupport {
     private final FederationSupport federationSupport;
 
     private final Context btcContext;
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     private BtcBlockStoreWithCache btcBlockStore;
     private BtcBlockChain btcBlockChain;
     private final org.ethereum.core.Block rskExecutionBlock;
@@ -117,7 +117,8 @@ public class BridgeSupport {
             BridgeEventLogger eventLogger,
             Repository repository,
             Block rskExecutionBlock,
-            RskAddress contractAddress) {
+            RskAddress contractAddress,
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
         this(
                 bridgeConstants,
                 new BridgeStorageProvider(
@@ -126,13 +127,7 @@ public class BridgeSupport {
                         bridgeConstants,
                         bridgeStorageConfiguration
                 ),
-                eventLogger, repository, rskExecutionBlock, null, null
-        );
-        this.btcBlockStore =  new RepositoryBtcBlockStoreWithCache(
-                bridgeConstants.getBtcParams(),
-                this.rskRepository,
-                new MaxSizeHashMap<>(RepositoryBtcBlockStoreWithCache.MAX_SIZE_MAP_STORED_BLOCKS, true),
-                PrecompiledContracts.BRIDGE_ADDR
+                eventLogger, repository, rskExecutionBlock, btcBlockStoreFactory, null
         );
     }
 
@@ -143,13 +138,13 @@ public class BridgeSupport {
             BridgeEventLogger eventLogger,
             Repository repository,
             Block executionBlock,
-            BtcBlockStoreWithCache btcBlockStore,
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
             BtcBlockChain btcBlockChain) {
         this(
                 bridgeConstants, provider, eventLogger, repository, executionBlock,
                 new Context(bridgeConstants.getBtcParams()),
                 new FederationSupport(bridgeConstants, provider, executionBlock),
-                btcBlockStore, btcBlockChain
+                btcBlockStoreFactory, btcBlockChain
         );
     }
 
@@ -161,7 +156,7 @@ public class BridgeSupport {
             Block executionBlock,
             Context btcContext,
             FederationSupport federationSupport,
-            BtcBlockStoreWithCache btcBlockStore,
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
             BtcBlockChain btcBlockChain) {
         this.rskRepository = repository;
         this.provider = provider;
@@ -170,23 +165,8 @@ public class BridgeSupport {
         this.eventLogger = eventLogger;
         this.btcContext = btcContext;
         this.federationSupport = federationSupport;
-        this.btcBlockStore =  btcBlockStore;
+        this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.btcBlockChain = btcBlockChain;
-    }
-
-
-    // Make sure the local bitcoin blockstore is instantiated
-    private void ensureCheckpoint() throws BlockStoreException, IOException {
-        NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
-
-        if (this.btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
-            // We are building the blockstore for the first time, so we have not set the checkpoints yet.
-            long time = federationSupport.getActiveFederation().getCreationTime().toEpochMilli();
-            InputStream checkpoints = this.getCheckPoints();
-            if (time > 0 && checkpoints != null) {
-                CheckpointManager.checkpoint(btcParams, checkpoints, this.btcBlockStore, time);
-            }
-        }
     }
 
     @VisibleForTesting
@@ -207,7 +187,7 @@ public class BridgeSupport {
      * Receives an array of serialized Bitcoin block headers and adds them to the internal BlockChain structure.
      * @param headers The bitcoin headers
      */
-    public void receiveHeaders(BtcBlock[] headers) throws IOException {
+    public void receiveHeaders(BtcBlock[] headers) throws IOException, BlockStoreException {
         if (headers.length > 0) {
             logger.debug("Received {} headers. First {}, last {}.", headers.length, headers[0].getHash(), headers[headers.length - 1].getHash());
         } else {
@@ -2014,24 +1994,28 @@ public class BridgeSupport {
     }
 
     // Make sure the local bitcoin blockchain is instantiated
-    private void ensureBtcBlockChain() throws IOException {
+    private void ensureBtcBlockChain() throws IOException, BlockStoreException {
         this.ensureBtcBlockStore();
 
         if (this.btcBlockChain == null) {
-            try {
-                this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
-            } catch (BlockStoreException e) {
-                throw new IOException(e);
-            }
+            this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
         }
     }
 
     // Make sure the local bitcoin blockstore is instantiated
-    private void ensureBtcBlockStore() throws IOException {
-        try {
-            ensureCheckpoint();
-        } catch (BlockStoreException e) {
-            throw new IOException(e);
+    public void ensureBtcBlockStore() throws IOException, BlockStoreException {
+        if(btcBlockStore == null) {
+            btcBlockStore = btcBlockStoreFactory.newInstance(rskRepository);
+            NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
+
+            if (this.btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
+                // We are building the blockstore for the first time, so we have not set the checkpoints yet.
+                long time = federationSupport.getActiveFederation().getCreationTime().toEpochMilli();
+                InputStream checkpoints = this.getCheckPoints();
+                if (time > 0 && checkpoints != null) {
+                    CheckpointManager.checkpoint(btcParams, checkpoints, this.btcBlockStore, time);
+                }
+            }
         }
     }
 
