@@ -320,4 +320,8 @@ public class RskSystemProperties extends SystemProperties {
     public int getStatesCacheSize() {
         return configFromFiles.getInt("cache.states.max-elements");
     }
+
+    public long getDatabaseMigrationMinimumHeight() {
+        return configFromFiles.getLong("database.unitrie-migration.minimum-height");
+    }
 }

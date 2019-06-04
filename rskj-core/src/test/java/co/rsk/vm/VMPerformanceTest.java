@@ -23,6 +23,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.helpers.PerformanceTestConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
@@ -59,7 +60,7 @@ public class VMPerformanceTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
-    private final ActivationConfig.ForBlock activations = cr -> true;
+    private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
     private ProgramInvokeMockImpl invoke;
     private Program program;
     ThreadMXBean thread;

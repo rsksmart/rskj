@@ -49,8 +49,13 @@ public class ActivationConfig {
         return 0 <= activationHeight && activationHeight <= blockNumber;
     }
 
+    private boolean isActivating(ConsensusRule consensusRule, long blockNumber) {
+        long activationHeight = activationHeights.get(consensusRule);
+        return activationHeight == blockNumber;
+    }
+
     public ForBlock forBlock(long blockNumber) {
-        return consensusRule -> isActive(consensusRule, blockNumber);
+        return new ForBlock(blockNumber);
     }
 
     public static ActivationConfig read(Config config) {
@@ -91,7 +96,19 @@ public class ActivationConfig {
         }
     }
 
-    public interface ForBlock {
-        boolean isActive(ConsensusRule consensusRule);
+    public class ForBlock {
+        private final long blockNumber;
+
+        private ForBlock(long blockNumber) {
+            this.blockNumber = blockNumber;
+        }
+
+        public boolean isActive(ConsensusRule consensusRule) {
+            return ActivationConfig.this.isActive(consensusRule, blockNumber);
+        }
+
+        public boolean isActivating(ConsensusRule consensusRule) {
+            return ActivationConfig.this.isActivating(consensusRule, blockNumber);
+        }
     }
 }

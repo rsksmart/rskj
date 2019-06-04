@@ -17,8 +17,11 @@
  */
 package co.rsk;
 
+import co.rsk.cli.migration.UnitrieMigrationTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * The entrypoint for the RSK full node
@@ -26,8 +29,11 @@ import org.slf4j.LoggerFactory;
 public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         RskContext ctx = new RskContext(args);
+        // this feature is only needed until the secondFork (TBD) network upgrade is activated.
+        UnitrieMigrationTool.migrateStateToUnitrieIfNeeded(ctx);
+
         NodeRunner runner = ctx.getNodeRunner();
         try {
             runner.run();
@@ -38,4 +44,5 @@ public class Start {
             System.exit(1);
         }
     }
+
 }
